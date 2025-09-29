@@ -65601,7 +65601,7 @@ class ConsequenceGame {
     
     init() {
         console.log('Game starting...');
-        this.renderScene();
+        this.render();
     }
     
     renderScene() {
@@ -65692,7 +65692,7 @@ class ConsequenceGame {
         });
         
         this.state.currentScene = choice.next;
-        this.renderScene();
+        this.render();
     }
     
     saveGame() {
@@ -65703,7 +65703,7 @@ class ConsequenceGame {
         const saved = localStorage.getItem('consequence_save');
         if (saved) {
             this.state = JSON.parse(saved);
-            this.renderScene();
+            this.render();
             return true;
         }
         return false;
