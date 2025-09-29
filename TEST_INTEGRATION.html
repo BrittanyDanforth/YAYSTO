@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CONSEQUENCE - Integration Test</title>
+    <link rel="stylesheet" href="MYSTORY.CSS">
+    <style>
+        body {
+            background: #0a0a0a;
+            color: #e0e0e0;
+        }
+        .test-status {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            background: rgba(0,0,0,0.9);
+            border: 2px solid #ff6b35;
+            padding: 15px;
+            border-radius: 8px;
+            font-family: monospace;
+            font-size: 0.85em;
+            max-width: 300px;
+            z-index: 10000;
+        }
+        .test-pass { color: #44ff44; }
+        .test-fail { color: #ff4444; }
+        .test-warn { color: #ffaa00; }
+    </style>
+</head>
+<body>
+    <div class="test-status" id="test-status">
+        <h3 style="color: #ff6b35; margin: 0 0 10px 0;">Integration Test</h3>
+        <div id="test-results">Running tests...</div>
+    </div>
+
+    <div id="game-container">
+        <div class="game-header">
+            <h1>CONSEQUENCE</h1>
+            <div class="game-subtitle">Integration Test Mode</div>
+        </div>
+        <div id="main-content"></div>
+        <div class="sidebar-panels">
+            <div class="panel">
+                <h3>Test Panel</h3>
+                <div id="inventory">Test content</div>
+            </div>
+        </div>
+    </div>
+
+    <script src="NEW_MYSTORY_COMPLETE.js"></script>
+    <script>
+        const testResults = document.getElementById('test-results');
+        let tests = [];
+
+        function runTest(name, testFn) {
+            try {
+                const result = testFn();
+                if (result) {
+                    tests.push(`<div class="test-pass">✓ ${name}</div>`);
+                } else {
+                    tests.push(`<div class="test-fail">✗ ${name}</div>`);
+                }
+            } catch (e) {
+                tests.push(`<div class="test-fail">✗ ${name}: ${e.message}</div>`);
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            console.log('Running integration tests...');
+
+            // Test 1: STORY_DATABASE exists
+            runTest('STORY_DATABASE loaded', () => {
+                return typeof STORY_DATABASE !== 'undefined';
+            });
+
+            // Test 2: Start scene exists
+            runTest('Start scene exists', () => {
+                return STORY_DATABASE.start !== undefined;
+            });
+
+            // Test 3: Start scene has correct structure
+            runTest('Start scene has text', () => {
+                return STORY_DATABASE.start.text && STORY_DATABASE.start.text.length > 0;
+            });
+
+            // Test 4: Start scene has choices
+            runTest('Start scene has choices', () => {
+                return STORY_DATABASE.start.choices && STORY_DATABASE.start.choices.length > 0;
+            });
+
+            // Test 5: ConsequenceGame class exists
+            runTest('ConsequenceGame class exists', () => {
+                return typeof ConsequenceGame !== 'undefined';
+            });
+
+            // Test 6: Can instantiate game
+            let game;
+            runTest('Can create game instance', () => {
+                game = new ConsequenceGame();
+                return game !== undefined;
+            });
+
+            // Test 7: Game has required methods
+            runTest('Game has renderScene method', () => {
+                return typeof game.renderScene === 'function';
+            });
+
+            runTest('Game has updateStats method', () => {
+                return typeof game.updateStats === 'function';
+            });
+
+            runTest('Game has displayStory method', () => {
+                return typeof game.displayStory === 'function';
+            });
+
+            runTest('Game has displayChoices method', () => {
+                return typeof game.displayChoices === 'function';
+            });
+
+            runTest('Game has makeChoice method', () => {
+                return typeof game.makeChoice === 'function';
+            });
+
+            // Test 8: Game state initialized
+            runTest('Game state initialized', () => {
+                return game.state && game.state.currentScene === 'start';
+            });
+
+            // Test 9: Story count
+            const sceneCount = Object.keys(STORY_DATABASE).length;
+            runTest(`${sceneCount} scenes loaded`, () => {
+                return sceneCount > 3000;
+            });
+
+            // Test 10: Check for endings
+            const endings = Object.keys(STORY_DATABASE).filter(k => k.startsWith('ending_'));
+            runTest(`${endings.length} endings found`, () => {
+                return endings.length >= 6;
+            });
+
+            // Test 11: DOM elements created
+            runTest('Status bar created', () => {
+                return document.querySelector('.status-bar') !== null;
+            });
+
+            runTest('Story display created', () => {
+                return document.querySelector('#scene-text') !== null;
+            });
+
+            runTest('Choices container created', () => {
+                return document.querySelector('#choices') !== null;
+            });
+
+            // Display results
+            testResults.innerHTML = tests.join('');
+            
+            const passCount = tests.filter(t => t.includes('test-pass')).length;
+            const failCount = tests.filter(t => t.includes('test-fail')).length;
+            
+            testResults.innerHTML += `<hr style="margin: 10px 0; border-color: #ff6b35;">`;
+            testResults.innerHTML += `<div class="${failCount === 0 ? 'test-pass' : 'test-warn'}">`;
+            testResults.innerHTML += `${passCount}/${tests.length} tests passed</div>`;
+            
+            if (failCount === 0) {
+                testResults.innerHTML += `<div class="test-pass" style="margin-top: 10px; font-weight: bold;">✓ ALL SYSTEMS GO!</div>`;
+                console.log('✓ All integration tests passed!');
+            } else {
+                testResults.innerHTML += `<div class="test-fail" style="margin-top: 10px;">${failCount} tests failed</div>`;
+                console.error('Some tests failed - check console');
+            }
+        });
+    </script>
+</body>
+</html>
