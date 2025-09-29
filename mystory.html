@@ -6,7 +6,6 @@
     <title>CONSEQUENCE: THE BLOOM</title>
     <link rel="stylesheet" href="MYSTORY.CSS">
     <style>
-        /* Additional epic styles for atmosphere */
         @import url('https://fonts.googleapis.com/css2?family=Creepster&family=Special+Elite&display=swap');
         
         body {
@@ -15,34 +14,18 @@
                 radial-gradient(circle at 20% 50%, rgba(120, 20, 20, 0.3) 0%, transparent 50%),
                 radial-gradient(circle at 80% 80%, rgba(20, 120, 20, 0.2) 0%, transparent 50%),
                 radial-gradient(circle at 40% 20%, rgba(120, 120, 20, 0.2) 0%, transparent 50%);
-            animation: backgroundPulse 20s ease-in-out infinite;
         }
         
-        @keyframes backgroundPulse {
-            0%, 100% { filter: brightness(1); }
-            50% { filter: brightness(0.8); }
-        }
-        
-        .game-header h1 {
+        h1 {
             font-family: 'Creepster', cursive !important;
             font-size: 3em;
-            text-transform: uppercase;
-            letter-spacing: 0.1em;
-            animation: glitch 2s ease-in-out infinite;
             text-shadow: 
                 3px 3px 0 #ff0000,
                 -3px -3px 0 #00ff00,
                 6px 2px 5px rgba(255, 0, 0, 0.5);
         }
         
-        @keyframes glitch {
-            0%, 100% { text-shadow: 3px 3px 0 #ff0000, -3px -3px 0 #00ff00, 6px 2px 5px rgba(255, 0, 0, 0.5); }
-            25% { text-shadow: -3px 3px 0 #00ff00, 3px -3px 0 #ff0000, 6px 2px 5px rgba(0, 255, 0, 0.5); }
-            50% { text-shadow: 3px -3px 0 #ff0000, -3px 3px 0 #00ff00, 6px 2px 5px rgba(255, 0, 0, 0.5); }
-            75% { text-shadow: -3px -3px 0 #00ff00, 3px 3px 0 #ff0000, 6px 2px 5px rgba(0, 255, 0, 0.5); }
-        }
-        
-        .story-text {
+        .scene-text {
             font-family: 'Special Elite', monospace;
             font-size: 1.1em;
             line-height: 1.8;
@@ -55,27 +38,6 @@
         @keyframes fadeIn {
             from { opacity: 0; transform: translateY(20px); }
             to { opacity: 1; transform: translateY(0); }
-        }
-        
-        .choice {
-            position: relative;
-            overflow: hidden;
-            transition: all 0.3s;
-        }
-        
-        .choice::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: -100%;
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(90deg, transparent, rgba(255, 107, 53, 0.3), transparent);
-            transition: left 0.5s;
-        }
-        
-        .choice:hover::before {
-            left: 100%;
         }
         
         .loading-screen {
@@ -107,111 +69,28 @@
             0%, 100% { opacity: 0.5; }
             50% { opacity: 1; }
         }
-
-        /* Persona indicator styling */
-        .persona-indicator {
-            font-size: 0.75em;
-            opacity: 0.7;
-            margin-left: 8px;
-            color: var(--brand);
-        }
-
-        /* Ending notice */
-        .ending-notice {
-            text-align: center;
-            font-size: 1.2em;
-            color: var(--brand);
-            padding: 20px;
-            font-style: italic;
-        }
-
-        /* Game controls styling */
-        .controls {
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-            margin-top: 20px;
-        }
-
-        .controls button {
-            background: rgba(255, 107, 53, 0.1);
-            border: 2px solid var(--brand);
-            color: var(--brand);
-            padding: 12px 20px;
-            border-radius: 8px;
-            cursor: pointer;
-            font-weight: 500;
-            transition: all 0.3s ease;
-            font-size: 0.9em;
-        }
-
-        .controls button:hover {
-            background: rgba(255, 107, 53, 0.2);
-            transform: translateY(-1px);
-        }
-
-        /* Panel styling */
-        .panel {
-            background: rgba(0, 0, 0, 0.3);
-            border-radius: 8px;
-            padding: 15px;
-            margin-bottom: 15px;
-            border: 1px solid rgba(255, 255, 255, 0.1);
-        }
-
-        .panel h3 {
-            color: var(--brand);
-            font-size: 1em;
-            margin-bottom: 10px;
-            border-bottom: 1px solid rgba(255, 107, 53, 0.3);
-            padding-bottom: 5px;
-        }
-
-        .inventory-list {
-            color: var(--muted);
-            font-size: 0.9em;
-            min-height: 50px;
-        }
-
-        .event-log {
-            color: var(--muted);
-            font-size: 0.85em;
-            max-height: 200px;
-            overflow-y: auto;
-        }
     </style>
 </head>
 <body>
-    <!-- Loading Screen -->
     <div class="loading-screen">
         <div class="loading-text">THE BLOOM AWAKENS...</div>
     </div>
 
     <div id="game-container">
-        <!-- Header -->
         <div class="game-header">
             <h1>CONSEQUENCE</h1>
             <div class="game-subtitle">The Bloom - A Choice-Driven Narrative</div>
         </div>
 
-        <!-- Status Bar -->
         <div id="stats" class="stats-bar"></div>
 
-        <!-- Main Content Area -->
-        <div id="main-content">
-            <!-- Story Display (created by game engine) -->
-            <!-- Will be inserted here by ConsequenceGame.displayStory() -->
-            
-            <!-- Choices Display (created by game engine) -->
-            <!-- Will be inserted here by ConsequenceGame.displayChoices() -->
-        </div>
+        <div id="main-content"></div>
 
-        <!-- Sidebar Panels -->
         <div class="sidebar-panels">
             <div class="panel">
                 <h3>📦 Inventory</h3>
                 <div id="inventory" class="inventory-list">
-                    <em>Empty - No items yet</em>
+                    <em>Empty</em>
                 </div>
             </div>
             
@@ -229,11 +108,6 @@
             </div>
         </div>
     </div>
-
-    <!-- Audio for atmosphere (optional) -->
-    <audio id="ambient-sound" loop>
-        <source src="data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmwhBTGH0fPTgjMGHm7A7+OZURE" type="audio/wav">
-    </audio>
 
     <script src="NEWNEW_MYSTORY_COMPLETE.js"></script>
 </body>
