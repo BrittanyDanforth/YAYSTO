@@ -140,7 +140,20 @@
     <div id="game-container">
         <header>
             <h1>CONSEQUENCE</h1>
-            <div id="stats" class="stats-bar"></div>
+            <div id="status-bar" class="status-bar">
+                <div class="stats-group">
+                    <span class="stat-pill strength" id="stat-strength" title="Strength">STR: <span id="strength-value">6</span></span>
+                    <span class="stat-pill agility" id="stat-agility" title="Agility">AGI: <span id="agility-value">6</span></span>
+                    <span class="stat-pill willpower" id="stat-willpower" title="Willpower">WIL: <span id="willpower-value">6</span></span>
+                    <span class="stat-pill charisma" id="stat-charisma" title="Charisma">CHA: <span id="charisma-value">6</span></span>
+                </div>
+                <div class="status-indicators">
+                    <span class="status-pill morality-neutral" id="morality-indicator" title="Morality">Morality: <span id="morality-value">0</span></span>
+                    <span class="status-pill trauma-low" id="trauma-indicator" title="Trauma">Trauma: <span id="trauma-value">0</span></span>
+                    <span class="status-pill stress-low" id="stress-indicator" title="Stress">Stress: <span id="stress-value">0</span></span>
+                    <span class="status-pill" id="dayhour-indicator" title="In-game time">Day <span id="day-value">0</span>, <span id="hour-value">08</span>:00</span>
+                </div>
+            </div>
         </header>
 
         <main id="main-content">
@@ -175,6 +188,7 @@
         <source src="data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmwhBTGH0fPTgjMGHm7A7+OZURE" type="audio/wav">
     </audio>
 
+    <script src="FINAL_STORY.js"></script>
     <script src="script_5MB_FIXED.js"></script>
     <script>
         // Epic initialization
