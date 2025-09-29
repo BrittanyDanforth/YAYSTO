@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CONSEQUENCE - Integration Test</title>
+    <style>
+        body {
+            font-family: 'Courier New', monospace;
+            background: #0a0a0a;
+            color: #00ff00;
+            padding: 20px;
+            line-height: 1.6;
+        }
+        
+        h1 {
+            color: #ff6b6b;
+            text-align: center;
+            font-size: 2em;
+            margin-bottom: 30px;
+        }
+        
+        .test-results {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        
+        .test-item {
+            padding: 10px;
+            margin: 5px 0;
+            border-left: 3px solid #333;
+            background: #111;
+        }
+        
+        .test-item.pass {
+            border-left-color: #00ff00;
+            color: #00ff00;
+        }
+        
+        .test-item.fail {
+            border-left-color: #ff0000;
+            color: #ff6b6b;
+        }
+        
+        .summary {
+            margin-top: 30px;
+            padding: 20px;
+            background: #1a1a1a;
+            border: 2px solid #ff6b6b;
+            text-align: center;
+            font-size: 1.2em;
+        }
+        
+        .summary.all-pass {
+            border-color: #00ff00;
+            color: #00ff00;
+        }
+        
+        .summary.some-fail {
+            border-color: #ff6b6b;
+            color: #ff6b6b;
+        }
+        
+        code {
+            background: #222;
+            padding: 2px 6px;
+            border-radius: 3px;
+        }
+    </style>
+</head>
+<body>
+    <h1>⚠️ CONSEQUENCE - Integration Test ⚠️</h1>
+    <div id="test-results" class="test-results"></div>
+    <div id="summary" class="summary"></div>
+
+    <!-- Load the story database -->
+    <script src="FINAL_STORY.json"></script>
+    
+    <!-- Load the game engine -->
+    <script src="MYSTORY.JAVASCRIPT"></script>
+
+    <script>
+        // Test Suite
+        const tests = [];
+        let passCount = 0;
+        let failCount = 0;
+
+        function test(name, condition) {
+            const result = {
+                name: name,
+                pass: condition,
+                message: condition ? '✓' : '✗'
+            };
+            tests.push(result);
+            
+            if (condition) {
+                passCount++;
+            } else {
+                failCount++;
+            }
+            
+            return condition;
+        }
+
+        function runTests() {
+            console.log('🧪 Running Integration Tests...\n');
+
+            // Test 1: STORY_DATABASE loaded
+            test('STORY_DATABASE loaded', typeof STORY_DATABASE !== 'undefined' && STORY_DATABASE !== null);
+
+            // Test 2: Start scene exists
+            test('Start scene exists', STORY_DATABASE && STORY_DATABASE.intro !== undefined);
+
+            // Test 3: Start scene has text
+            test('Start scene has text', STORY_DATABASE && STORY_DATABASE.intro && STORY_DATABASE.intro.text && STORY_DATABASE.intro.text.length > 0);
+
+            // Test 4: Start scene has choices
+            test('Start scene has choices', STORY_DATABASE && STORY_DATABASE.intro && Array.isArray(STORY_DATABASE.intro.choices) && STORY_DATABASE.intro.choices.length > 0);
+
+            // Test 5: ConsequenceGame class exists
+            test('ConsequenceGame class exists', typeof ConsequenceGame !== 'undefined');
+
+            // Test 6: Can create game instance
+            let gameInstance = null;
+            try {
+                gameInstance = new ConsequenceGame();
+                test('Can create game instance', gameInstance !== null);
+            } catch (e) {
+                test('Can create game instance', false);
+                console.error('Error creating game instance:', e);
+            }
+
+            // Test 7-11: Game methods exist
+            if (gameInstance) {
+                test('Game has renderScene method', typeof gameInstance.renderScene === 'function');
+                test('Game has updateStats method', typeof gameInstance.updateStats === 'function' || typeof gameInstance.renderStats === 'function');
+                test('Game has displayStory method', typeof gameInstance.displayStory === 'function' || typeof gameInstance.renderScene === 'function');
+                test('Game has displayChoices method', typeof gameInstance.displayChoices === 'function' || typeof gameInstance.renderScene === 'function');
+                test('Game has makeChoice method', typeof gameInstance.makeChoice === 'function');
+            } else {
+                test('Game has renderScene method', false);
+                test('Game has updateStats method', false);
+                test('Game has displayStory method', false);
+                test('Game has displayChoices method', false);
+                test('Game has makeChoice method', false);
+            }
+
+            // Test 12: Game state initialized
+            test('Game state initialized', gameInstance && gameInstance.state !== undefined && gameInstance.state !== null);
+
+            // Test 13: Count scenes (should be 2159)
+            const sceneCount = STORY_DATABASE ? Object.keys(STORY_DATABASE).length : 0;
+            test(`2159 scenes loaded (found ${sceneCount})`, sceneCount === 2159);
+            
+            if (sceneCount !== 2159) {
+                console.warn(`Expected 2159 scenes, but found ${sceneCount}`);
+            }
+
+            // Test 14: Check for endings
+            let endingsFound = 0;
+            if (STORY_DATABASE) {
+                for (const [sceneId, scene] of Object.entries(STORY_DATABASE)) {
+                    if (sceneId.includes('ending') || (scene.choices && scene.choices.length === 0) || scene.isEnding) {
+                        endingsFound++;
+                    }
+                }
+            }
+            test(`${endingsFound} endings found`, endingsFound >= 6);
+
+            // Test 15: Status bar element check
+            // Create required DOM elements for the game
+            if (!document.getElementById('stats')) {
+                const statsBar = document.createElement('div');
+                statsBar.id = 'stats';
+                statsBar.className = 'stats-bar';
+                document.body.appendChild(statsBar);
+            }
+            test('Status bar created', document.getElementById('stats') !== null);
+
+            // Test 16: Story display element check
+            if (!document.getElementById('scene-text')) {
+                const sceneText = document.createElement('div');
+                sceneText.id = 'scene-text';
+                document.body.appendChild(sceneText);
+            }
+            test('Story display created', document.getElementById('scene-text') !== null);
+
+            // Test 17: Choices container element check
+            if (!document.getElementById('choices')) {
+                const choices = document.createElement('div');
+                choices.id = 'choices';
+                document.body.appendChild(choices);
+            }
+            test('Choices container created', document.getElementById('choices') !== null);
+
+            // Display results
+            displayResults();
+        }
+
+        function displayResults() {
+            const resultsDiv = document.getElementById('test-results');
+            const summaryDiv = document.getElementById('summary');
+
+            // Display individual test results
+            tests.forEach(testResult => {
+                const div = document.createElement('div');
+                div.className = `test-item ${testResult.pass ? 'pass' : 'fail'}`;
+                div.innerHTML = `${testResult.message} ${testResult.name}`;
+                resultsDiv.appendChild(div);
+                
+                // Log to console
+                console.log(`${testResult.message} ${testResult.name}`);
+            });
+
+            // Display summary
+            const total = tests.length;
+            summaryDiv.className = `summary ${failCount === 0 ? 'all-pass' : 'some-fail'}`;
+            summaryDiv.innerHTML = `
+                <strong>${passCount}/${total} tests passed</strong><br>
+                ${failCount > 0 ? `<span style="color: #ff6b6b;">${failCount} tests failed</span>` : '<span style="color: #00ff00;">All tests passed! 🎉</span>'}
+            `;
+
+            console.log(`\n${passCount}/${total} tests passed`);
+            if (failCount > 0) {
+                console.log(`${failCount} tests failed`);
+            }
+
+            // Check for looping issues
+            checkForLoops();
+        }
+
+        function checkForLoops() {
+            console.log('\n🔍 Checking for potential loops...');
+            
+            const visited = new Set();
+            const recursionStack = new Set();
+            const loops = [];
+
+            function detectLoop(sceneId, path = []) {
+                if (!STORY_DATABASE[sceneId]) return;
+                
+                if (recursionStack.has(sceneId)) {
+                    loops.push([...path, sceneId]);
+                    return;
+                }
+                
+                if (visited.has(sceneId)) return;
+                
+                visited.add(sceneId);
+                recursionStack.add(sceneId);
+                path.push(sceneId);
+
+                const scene = STORY_DATABASE[sceneId];
+                if (scene.choices && scene.choices.length > 0) {
+                    for (const choice of scene.choices) {
+                        if (choice.goTo) {
+                            detectLoop(choice.goTo, [...path]);
+                        }
+                    }
+                }
+
+                recursionStack.delete(sceneId);
+            }
+
+            // Start from intro
+            detectLoop('intro');
+
+            if (loops.length > 0) {
+                console.warn(`⚠️ Found ${loops.length} potential loops:`);
+                loops.slice(0, 5).forEach((loop, i) => {
+                    console.warn(`Loop ${i + 1}: ${loop.join(' -> ')}`);
+                });
+            } else {
+                console.log('✓ No obvious loops detected');
+            }
+
+            // Check for scenes that point to themselves
+            const selfLoops = [];
+            for (const [sceneId, scene] of Object.entries(STORY_DATABASE)) {
+                if (scene.choices) {
+                    scene.choices.forEach(choice => {
+                        if (choice.goTo === sceneId) {
+                            selfLoops.push(sceneId);
+                        }
+                    });
+                }
+            }
+
+            if (selfLoops.length > 0) {
+                console.warn(`⚠️ Found ${selfLoops.length} self-referencing scenes:`, selfLoops);
+            } else {
+                console.log('✓ No self-referencing scenes found');
+            }
+        }
+
+        // Run tests when page loads
+        window.addEventListener('load', () => {
+            setTimeout(runTests, 100);
+        });
+    </script>
+</body>
+</html>
