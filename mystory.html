@@ -194,8 +194,8 @@
             <div class="game-subtitle">The Bloom - A Choice-Driven Narrative</div>
         </div>
 
-        <!-- Status Bar (created by game engine) -->
-        <!-- Will be inserted here by ConsequenceGame.updateStats() -->
+        <!-- Status Bar -->
+        <div id="stats" class="stats-bar"></div>
 
         <!-- Main Content Area -->
         <div id="main-content">
@@ -235,76 +235,6 @@
         <source src="data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmwhBTGH0fPTgjMGHm7A7+OZURE" type="audio/wav">
     </audio>
 
-    <!-- Load the game engine -->
     <script src="NEWNEW_MYSTORY_COMPLETE.js"></script>
-    
-    <!-- Initialize game -->
-    <script>
-        console.log('🎮 CONSEQUENCE: THE BLOOM - Starting...');
-        
-        let game;
-
-        document.addEventListener('DOMContentLoaded', () => {
-            console.log('🌱 Initializing game engine...');
-            
-            // Create game instance
-            game = new ConsequenceGame();
-            
-            // Setup save/load/restart buttons
-            const saveBtn = document.getElementById('save-btn');
-            const loadBtn = document.getElementById('load-btn');
-            const restartBtn = document.getElementById('restart-btn');
-            
-            if (saveBtn) {
-                saveBtn.addEventListener('click', () => {
-                    game.saveGame();
-                    alert('💾 Game saved successfully!');
-                });
-            }
-            
-            if (loadBtn) {
-                loadBtn.addEventListener('click', () => {
-                    const loaded = game.loadGame();
-                    if (loaded) {
-                        alert('📂 Game loaded successfully!');
-                    } else {
-                        alert('❌ No saved game found!');
-                    }
-                });
-            }
-            
-            if (restartBtn) {
-                restartBtn.addEventListener('click', () => {
-                    game.restartGame();
-                });
-            }
-            
-            // Optional: Start ambient sound (commented out due to autoplay restrictions)
-            // const ambientSound = document.getElementById('ambient-sound');
-            // ambientSound.volume = 0.2;
-            // ambientSound.play().catch(e => console.log('Audio autoplay blocked'));
-            
-            // Epic welcome message
-            setTimeout(() => {
-                console.log('⚠️ THE WORLD HAS ENDED ⚠️');
-                console.log('💀 SURVIVAL IS NOT GUARANTEED 💀');
-                console.log('🌱 THE BLOOM WATCHES 🌱');
-                console.log('');
-                console.log('📊 Game loaded with', Object.keys(STORY_DATABASE).length, 'scenes');
-            }, 1000);
-        });
-        
-        // Add interactive background effect
-        document.addEventListener('mousemove', (e) => {
-            const x = e.clientX / window.innerWidth;
-            const y = e.clientY / window.innerHeight;
-            
-            document.body.style.backgroundImage = `
-                radial-gradient(circle at ${x * 100}% ${y * 100}%, rgba(120, 20, 20, 0.3) 0%, transparent 50%),
-                radial-gradient(circle at ${(1-x) * 100}% ${(1-y) * 100}%, rgba(20, 120, 20, 0.2) 0%, transparent 50%),
-                radial-gradient(circle at 50% 50%, rgba(120, 120, 20, 0.1) 0%, transparent 70%)
-            `;
-        });
-    </script>
 </body>
 </html>
