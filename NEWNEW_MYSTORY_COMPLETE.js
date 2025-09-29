@@ -1,4 +1,3 @@
-// CONSEQUENCE: THE BLOOM
 const STORY_DATABASE = {
   "ending_saint": {
     "id": "ending_saint",
@@ -65586,7 +65585,6 @@ const STORY_DATABASE = {
   }
 };
 
-// Game Engine - Works with YOUR HTML structure
 class ConsequenceGame {
     constructor() {
         this.state = {
@@ -65602,57 +65600,54 @@ class ConsequenceGame {
     }
     
     init() {
-        console.log('Game initializing...');
-        // Your HTML has #scene-container, make it visible
-        const container = document.getElementById('scene-container');
-        if (container) {
-            container.style.display = 'block';
-        }
+        console.log('Game starting...');
         this.renderScene();
     }
     
     renderScene() {
         const scene = STORY_DATABASE[this.state.currentScene];
-        if (!scene) {
-            console.error('Scene not found:', this.state.currentScene);
-            return;
-        }
+        if (!scene) return;
         
         this.updateStats();
         this.displayStory(scene);
         this.displayChoices(scene);
-        
-        if (scene.is_ending) {
-            console.log('ENDING REACHED!');
-        }
     }
     
     updateStats() {
-        // Your HTML has #stats element
         const stats = document.getElementById('stats');
         if (stats) {
-            stats.innerHTML = `Day ${this.state.day} | Hour ${this.state.hour} | Morality: ${this.state.stats.morality} | Trauma: ${this.state.stats.trauma} | Stress: ${this.state.stats.stress}`;
+            stats.innerHTML = `Day ${this.state.day} | Hour ${this.state.hour} | Morality: ${this.state.stats.morality} | Trauma: ${this.state.stats.trauma}`;
         }
     }
     
     displayStory(scene) {
-        // Your HTML has #scene-text
-        const display = document.getElementById('scene-text');
+        let display = document.getElementById('scene-text');
+        if (!display) {
+            display = document.createElement('div');
+            display.id = 'scene-text';
+            display.className = 'scene-text';
+            const main = document.getElementById('main-content');
+            if (main) main.appendChild(display);
+        }
         if (display) {
             display.innerHTML = scene.text.replace(/\n/g, '<br>');
-            display.className = 'scene-text fade-in';
         }
     }
     
     displayChoices(scene) {
-        // Your HTML has #choices
-        const container = document.getElementById('choices');
-        if (!container) return;
+        let container = document.getElementById('choices');
+        if (!container) {
+            container = document.createElement('div');
+            container.id = 'choices';
+            container.className = 'choices-container';
+            const main = document.getElementById('main-content');
+            if (main) main.appendChild(container);
+        }
         
         container.innerHTML = '';
         
         if (!scene.choices || scene.choices.length === 0) {
-            container.innerHTML = '<p style="text-align:center;color:#ff6b35;">THE END</p>';
+            container.innerHTML = '<p style="text-align:center;color:#ff6b35;font-size:1.5em;">THE END</p>';
             return;
         }
         
@@ -65666,9 +65661,6 @@ class ConsequenceGame {
     }
     
     makeChoice(choice) {
-        console.log('Choice:', choice.text);
-        
-        // Apply effects
         if (choice.effects) {
             Object.keys(choice.effects).forEach(key => {
                 if (this.state.stats[key] !== undefined) {
@@ -65677,38 +65669,34 @@ class ConsequenceGame {
             });
         }
         
-        // Add to log
         const log = document.getElementById('log');
         if (log) {
             const entry = document.createElement('div');
-            entry.textContent = `Day ${this.state.day}: ${choice.text}`;
+            entry.textContent = `${choice.text}`;
             entry.style.fontSize = '0.8em';
             entry.style.marginBottom = '5px';
+            entry.style.color = '#ffaa00';
             log.insertBefore(entry, log.firstChild);
         }
         
-        // Advance time
         this.state.hour += 1;
         if (this.state.hour >= 24) {
             this.state.hour = 0;
             this.state.day += 1;
         }
         
-        // Record
         this.state.decisionHistory.push({
             scene: this.state.currentScene,
             choice: choice.text,
             day: this.state.day
         });
         
-        // Next scene
         this.state.currentScene = choice.next;
         this.renderScene();
     }
     
     saveGame() {
         localStorage.setItem('consequence_save', JSON.stringify(this.state));
-        console.log('Game saved');
     }
     
     loadGame() {
@@ -65716,34 +65704,26 @@ class ConsequenceGame {
         if (saved) {
             this.state = JSON.parse(saved);
             this.renderScene();
-            console.log('Game loaded');
             return true;
         }
         return false;
     }
     
     restartGame() {
-        if (confirm('Restart? Progress will be lost.')) {
+        if (confirm('Restart?')) {
             localStorage.removeItem('consequence_save');
             location.reload();
         }
     }
 }
 
-// Auto-start
 let game;
 document.addEventListener('DOMContentLoaded', () => {
-    console.log('Starting CONSEQUENCE...');
     game = new ConsequenceGame();
-    
-    // Wire buttons
     const saveBtn = document.getElementById('save-btn');
     const loadBtn = document.getElementById('load-btn');
     const restartBtn = document.getElementById('restart-btn');
-    
     if (saveBtn) saveBtn.onclick = () => { game.saveGame(); alert('Saved!'); };
     if (loadBtn) loadBtn.onclick = () => { if (game.loadGame()) alert('Loaded!'); else alert('No save!'); };
     if (restartBtn) restartBtn.onclick = () => game.restartGame();
-    
-    console.log('Game ready!');
 });
