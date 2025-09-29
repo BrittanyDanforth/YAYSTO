@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FULL DEBUG TEST</title>
+    <style>
+        body {
+            background: #000;
+            color: #0f0;
+            font-family: monospace;
+            padding: 20px;
+            font-size: 14px;
+        }
+        .test { 
+            margin: 5px 0; 
+            padding: 8px; 
+            border-left: 3px solid #0f0;
+            background: rgba(0,255,0,0.05);
+        }
+        .pass { color: #0f0; border-left-color: #0f0; }
+        .fail { color: #f00; border-left-color: #f00; background: rgba(255,0,0,0.05); }
+        .warn { color: #ff0; border-left-color: #ff0; background: rgba(255,255,0,0.05); }
+        h1 { color: #0ff; }
+        h2 { color: #f0f; margin-top: 20px; }
+        .section { 
+            border: 1px solid #333; 
+            padding: 15px; 
+            margin: 15px 0;
+            background: #0a0a0a;
+        }
+        #game-display {
+            border: 2px solid #ff0;
+            padding: 20px;
+            margin: 20px 0;
+            background: #111;
+        }
+    </style>
+</head>
+<body>
+    <h1>🔍 FULL DEBUG TEST - CONSEQUENCE</h1>
+    
+    <div class="section">
+        <h2>📊 File Loading</h2>
+        <div id="file-tests"></div>
+    </div>
+    
+    <div class="section">
+        <h2>🎮 Game Object</h2>
+        <div id="game-tests"></div>
+    </div>
+    
+    <div class="section">
+        <h2>🎯 Methods</h2>
+        <div id="method-tests"></div>
+    </div>
+    
+    <div class="section">
+        <h2>📦 Story Data</h2>
+        <div id="story-tests"></div>
+    </div>
+    
+    <div class="section">
+        <h2>🖼️ DOM Elements</h2>
+        <div id="dom-tests"></div>
+    </div>
+
+    <div class="section">
+        <h2>🎬 Actual Game Display</h2>
+        <div id="game-display">
+            <div id="stats"></div>
+            <div id="main-content" style="margin: 20px 0;"></div>
+            <div id="log" style="margin-top: 20px;"></div>
+        </div>
+    </div>
+
+    <script src="NEWNEW_MYSTORY_COMPLETE.js"></script>
+    <script>
+        function log(container, message, type = 'pass') {
+            const div = document.createElement('div');
+            div.className = `test ${type}`;
+            div.innerHTML = message;
+            document.getElementById(container).appendChild(div);
+        }
+
+        // FILE LOADING TESTS
+        log('file-tests', `✓ JavaScript file loaded`, 'pass');
+        
+        if (typeof STORY_DATABASE !== 'undefined') {
+            log('file-tests', `✓ STORY_DATABASE exists`, 'pass');
+            log('file-tests', `✓ STORY_DATABASE has ${Object.keys(STORY_DATABASE).length} scenes`, 'pass');
+        } else {
+            log('file-tests', `✗ STORY_DATABASE NOT FOUND!`, 'fail');
+        }
+        
+        if (typeof ConsequenceGame !== 'undefined') {
+            log('file-tests', `✓ ConsequenceGame class exists`, 'pass');
+        } else {
+            log('file-tests', `✗ ConsequenceGame class NOT FOUND!`, 'fail');
+        }
+
+        // GAME OBJECT TESTS
+        let game;
+        try {
+            game = new ConsequenceGame();
+            log('game-tests', `✓ Game instance created successfully`, 'pass');
+            log('game-tests', `✓ Current scene: ${game.state.currentScene}`, 'pass');
+            log('game-tests', `✓ Day: ${game.state.day}, Hour: ${game.state.hour}`, 'pass');
+            log('game-tests', `✓ Stats: Morality ${game.state.stats.morality}, Trauma ${game.state.stats.trauma}, Stress ${game.state.stats.stress}`, 'pass');
+        } catch (e) {
+            log('game-tests', `✗ ERROR creating game: ${e.message}`, 'fail');
+            log('game-tests', `✗ Stack: ${e.stack}`, 'fail');
+            game = null;
+        }
+
+        // METHOD TESTS
+        if (game) {
+            const methods = ['render', 'choose', 'save', 'load', 'restart'];
+            methods.forEach(method => {
+                if (typeof game[method] === 'function') {
+                    log('method-tests', `✓ game.${method}() exists`, 'pass');
+                } else {
+                    log('method-tests', `✗ game.${method}() NOT FOUND!`, 'fail');
+                }
+            });
+        } else {
+            log('method-tests', `✗ Cannot test methods - game not created`, 'fail');
+        }
+
+        // STORY DATA TESTS
+        if (typeof STORY_DATABASE !== 'undefined') {
+            if (STORY_DATABASE.start) {
+                log('story-tests', `✓ Start scene exists`, 'pass');
+                log('story-tests', `✓ Start text length: ${STORY_DATABASE.start.text.length} chars`, 'pass');
+                log('story-tests', `✓ Start has ${STORY_DATABASE.start.choices ? STORY_DATABASE.start.choices.length : 0} choices`, 'pass');
+                
+                if (STORY_DATABASE.start.text.includes('Alex')) {
+                    log('story-tests', `✓ Alex mentioned in opening`, 'pass');
+                } else {
+                    log('story-tests', `✗ Alex NOT in opening!`, 'fail');
+                }
+            } else {
+                log('story-tests', `✗ Start scene MISSING!`, 'fail');
+            }
+            
+            const endings = Object.keys(STORY_DATABASE).filter(k => k.startsWith('ending_'));
+            log('story-tests', `✓ ${endings.length} endings found: ${endings.join(', ')}`, 'pass');
+            
+            // Check for loops
+            let hasLoops = false;
+            Object.keys(STORY_DATABASE).forEach(key => {
+                const scene = STORY_DATABASE[key];
+                if (scene.choices) {
+                    scene.choices.forEach(choice => {
+                        if (choice.next === key) {
+                            hasLoops = true;
+                            log('story-tests', `✗ LOOP FOUND: ${key} points to itself!`, 'fail');
+                        }
+                    });
+                }
+            });
+            if (!hasLoops) {
+                log('story-tests', `✓ No loops detected`, 'pass');
+            }
+        }
+
+        // DOM TESTS
+        setTimeout(() => {
+            const stats = document.getElementById('stats');
+            const sceneText = document.getElementById('scene-text');
+            const choices = document.getElementById('choices');
+            const mainContent = document.getElementById('main-content');
+            const logEl = document.getElementById('log');
+            
+            if (stats) {
+                log('dom-tests', `✓ #stats exists: "${stats.innerHTML}"`, 'pass');
+            } else {
+                log('dom-tests', `✗ #stats NOT FOUND!`, 'fail');
+            }
+            
+            if (sceneText) {
+                log('dom-tests', `✓ #scene-text created (${sceneText.innerHTML.length} chars)`, 'pass');
+                log('dom-tests', `Preview: "${sceneText.textContent.substring(0, 100)}..."`, 'warn');
+            } else {
+                log('dom-tests', `✗ #scene-text NOT CREATED!`, 'fail');
+            }
+            
+            if (choices) {
+                const btns = choices.querySelectorAll('button');
+                log('dom-tests', `✓ #choices created with ${btns.length} buttons`, 'pass');
+                btns.forEach((btn, i) => {
+                    log('dom-tests', `  ${i+1}. "${btn.textContent}"`, 'warn');
+                });
+            } else {
+                log('dom-tests', `✗ #choices NOT CREATED!`, 'fail');
+            }
+            
+            if (mainContent) {
+                log('dom-tests', `✓ #main-content exists`, 'pass');
+                log('dom-tests', `  Children: ${mainContent.children.length}`, 'warn');
+            }
+            
+            if (logEl) {
+                log('dom-tests', `✓ #log exists`, 'pass');
+            }
+            
+            // FINAL SUMMARY
+            const allTests = document.querySelectorAll('.test');
+            const passed = document.querySelectorAll('.test.pass').length;
+            const failed = document.querySelectorAll('.test.fail').length;
+            const warnings = document.querySelectorAll('.test.warn').length;
+            
+            const summary = document.createElement('div');
+            summary.style.cssText = 'position:fixed;top:10px;right:10px;background:#000;border:3px solid ' + (failed > 0 ? '#f00' : '#0f0') + ';padding:20px;border-radius:10px;font-size:18px;';
+            summary.innerHTML = `
+                <div style="color:#0ff;font-size:24px;margin-bottom:10px;">TEST RESULTS</div>
+                <div style="color:#0f0;">✓ PASSED: ${passed}</div>
+                <div style="color:#f00;">✗ FAILED: ${failed}</div>
+                <div style="color:#ff0;">⚠ WARNINGS: ${warnings}</div>
+                <hr style="margin:10px 0;border-color:#333;">
+                <div style="color:${failed === 0 ? '#0f0' : '#f00'};font-size:20px;font-weight:bold;">
+                    ${failed === 0 ? '✅ ALL GOOD!' : '❌ ISSUES FOUND'}
+                </div>
+            `;
+            document.body.appendChild(summary);
+            
+            console.log(`FINAL: ${passed} passed, ${failed} failed, ${warnings} warnings`);
+            
+        }, 1000);
+    </script>
+</body>
+</html>
