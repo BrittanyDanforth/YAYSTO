@@ -1,0 +1,197 @@
+╔═══════════════════════════════════════════════════════════════╗
+║                                                               ║
+║              🎮 TESTING GUIDE - TROUBLESHOOTING 🎮           ║
+║                                                               ║
+╚═══════════════════════════════════════════════════════════════╝
+
+If you can't see the game, try these test files:
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ 📂 TEST FILES CREATED
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+1. simple_test.html
+   - Shows what's loading
+   - Displays diagnostic information
+   - Shows if elements are being created
+
+2. minimal_game.html
+   - Bare minimum version
+   - Just the game, nothing else
+   - Easier to see what's happening
+
+3. debug_test.html
+   - Technical diagnostics
+   - Shows scene count, data loading
+   - Good for checking if JS is working
+
+4. mystory.html
+   - Full game with all styling
+   - This is the one you want to use once it's working
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ 🔍 TROUBLESHOOTING STEPS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+STEP 1: Try minimal_game.html first
+  → Open minimal_game.html in your browser
+  → You should see "CONSEQUENCE: THE BLOOM" as title
+  → Below that, the story should appear
+  → 4 choice buttons should be visible
+
+STEP 2: Check browser console
+  → Press F12 to open developer tools
+  → Click "Console" tab
+  → Look for errors (red text)
+  → You should see: "🎮 Minimal game starting..."
+  → And: "✓ Game created successfully"
+
+STEP 3: If you see errors:
+  → Look for "failed to load" messages
+  → Check if NEW_MYSTORY_COMPLETE.js is loading
+  → Make sure all 3 files are in same folder:
+    - minimal_game.html (or mystory.html)
+    - NEW_MYSTORY_COMPLETE.js
+    - MYSTORY.CSS
+
+STEP 4: Check file paths
+  → Right-click page, "View Page Source"
+  → Look for: <script src="NEW_MYSTORY_COMPLETE.js">
+  → Click that link - should show JavaScript code
+  → If it says "404 Not Found", file is not in right place
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ ✅ WHAT YOU SHOULD SEE
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+When working correctly, you'll see:
+
+1. Title: "CONSEQUENCE: THE BLOOM"
+
+2. Status Bar (top):
+   Day 0 | Hour 8 | Morality: 0 | Trauma: 0 | Stress: 0
+   NEUTRAL
+
+3. Story Text:
+   "You wake to the sound of pounding on your apartment door.
+    Frantic, desperate pounding...
+    
+    'PLEASE! OH GOD PLEASE OPEN UP!'
+    
+    It's Alex from 4B..."
+
+4. Four Choice Buttons:
+   □ Open the door and pull him inside [compassionate]
+   □ Ask what happened through the door [cautious]
+   □ Ignore him and check outside [survivalist]
+   □ Stay completely silent [ruthless]
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ 🐛 COMMON ISSUES
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+ISSUE: "Nothing shows up"
+FIX: 
+  - Open browser console (F12)
+  - Look for JavaScript errors
+  - Try minimal_game.html instead
+
+ISSUE: "Loading forever"
+FIX:
+  - NEW_MYSTORY_COMPLETE.js might not be loading
+  - Check if file is in same folder
+  - File is large (5.78 MB) - give it a few seconds
+
+ISSUE: "404 error"
+FIX:
+  - All 3 files must be in same folder
+  - Don't rename files
+  - Check exact filename: NEW_MYSTORY_COMPLETE.js
+
+ISSUE: "Blank white page"
+FIX:
+  - Check browser console for errors
+  - Try a different browser (Chrome, Firefox, Edge)
+  - Make sure JavaScript is enabled
+
+ISSUE: "Can see title but no story"
+FIX:
+  - Game might not be initializing
+  - Check console for "Game created successfully"
+  - Try simple_test.html to see diagnostics
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ 📊 BROWSER CONSOLE MESSAGES
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+When working correctly, console shows:
+
+  🎮 CONSEQUENCE LOADING...
+  🎮 Initializing CONSEQUENCE: THE BLOOM
+  📊 3203 scenes loaded
+  ⚠️ THE WORLD HAS ENDED ⚠️
+  💀 SURVIVAL IS NOT GUARANTEED 💀
+  🌱 THE BLOOM WATCHES 🌱
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ 📁 FILE CHECKLIST
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Make sure you have these files in the SAME folder:
+
+[✓] mystory.html (11 KB)
+[✓] NEW_MYSTORY_COMPLETE.js (5.78 MB)
+[✓] MYSTORY.CSS (31 KB)
+
+Optional test files:
+[ ] minimal_game.html
+[ ] simple_test.html
+[ ] debug_test.html
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ 🎮 QUICK START
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+EASIEST TEST:
+1. Open minimal_game.html
+2. Should load in 2-3 seconds
+3. Story and choices should appear
+4. Click a choice - next scene loads
+
+FULL GAME:
+1. Open mystory.html  
+2. See loading screen "THE BLOOM AWAKENS..."
+3. After 2 seconds, game appears
+4. Status bar at top, story in middle, choices below
+
+IF STILL NOT WORKING:
+1. Open simple_test.html
+2. Look at the diagnostic output
+3. Take a screenshot
+4. Check what's green (✓) and what's red (✗)
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ 💡 TIPS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+• Use Chrome or Firefox for best results
+• File is 5.78 MB - may take a moment to load
+• Press F12 to see console messages
+• Press F5 to reload if something looks wrong
+• Clear browser cache if you see old version
+• Make sure JavaScript is enabled in browser
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Still can't see it? 
+→ Open simple_test.html and check what the diagnostics say!
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━

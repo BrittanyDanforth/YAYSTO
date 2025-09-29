@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Debug Test</title>
+    <style>
+        body { background: #000; color: #0f0; font-family: monospace; padding: 20px; }
+        .test { margin: 10px 0; padding: 10px; border: 1px solid #0f0; }
+        .pass { color: #0f0; }
+        .fail { color: #f00; }
+    </style>
+</head>
+<body>
+    <h1>CONSEQUENCE - Debug Test</h1>
+    <div id="output"></div>
+    
+    <script src="NEW_MYSTORY_COMPLETE.js"></script>
+    <script>
+        const output = document.getElementById('output');
+        
+        function test(name, fn) {
+            const div = document.createElement('div');
+            div.className = 'test';
+            try {
+                const result = fn();
+                div.innerHTML = `<span class="pass">✓</span> ${name}: ${result}`;
+            } catch (e) {
+                div.innerHTML = `<span class="fail">✗</span> ${name}: ${e.message}`;
+            }
+            output.appendChild(div);
+        }
+        
+        test('STORY_DATABASE loaded', () => {
+            return typeof STORY_DATABASE !== 'undefined' ? 'YES' : 'NO';
+        });
+        
+        test('Scene count', () => {
+            return Object.keys(STORY_DATABASE).length;
+        });
+        
+        test('Start scene exists', () => {
+            return STORY_DATABASE.start ? 'YES' : 'NO';
+        });
+        
+        test('Start scene has text', () => {
+            return STORY_DATABASE.start.text ? STORY_DATABASE.start.text.substring(0, 50) + '...' : 'NO';
+        });
+        
+        test('ConsequenceGame class', () => {
+            return typeof ConsequenceGame !== 'undefined' ? 'YES' : 'NO';
+        });
+        
+        test('Create game instance', () => {
+            const game = new ConsequenceGame();
+            return game ? 'SUCCESS' : 'FAILED';
+        });
+        
+        test('Game state', () => {
+            const game = new ConsequenceGame();
+            return `Scene: ${game.state.currentScene}, Day: ${game.state.day}, Hour: ${game.state.hour}`;
+        });
+    </script>
+</body>
+</html>

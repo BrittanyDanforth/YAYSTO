@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simple Test</title>
+    <style>
+        body {
+            background: #0a0a0a;
+            color: #e0e0e0;
+            font-family: Arial, sans-serif;
+            padding: 20px;
+        }
+        #test-output {
+            background: #1a1a1a;
+            border: 2px solid #ff6b35;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+        }
+        .success { color: #44ff44; }
+        .error { color: #ff4444; }
+        .info { color: #4444ff; }
+    </style>
+</head>
+<body>
+    <h1>CONSEQUENCE - Simple Test</h1>
+    <div id="test-output">
+        <p>Loading JavaScript...</p>
+    </div>
+    
+    <div id="game-container" style="border: 2px dashed #ff6b35; padding: 20px; margin-top: 20px;">
+        <h2>Game Container</h2>
+        <div id="main-content" style="border: 1px solid #666; padding: 10px; margin: 10px 0;">
+            <p>Main content area - story and choices will appear here</p>
+        </div>
+    </div>
+
+    <script src="NEW_MYSTORY_COMPLETE.js"></script>
+    <script>
+        const output = document.getElementById('test-output');
+        
+        function log(msg, type = 'info') {
+            const p = document.createElement('p');
+            p.className = type;
+            p.textContent = msg;
+            output.appendChild(p);
+        }
+        
+        document.addEventListener('DOMContentLoaded', () => {
+            log('✓ DOMContentLoaded fired', 'success');
+            
+            // Check if STORY_DATABASE exists
+            if (typeof STORY_DATABASE !== 'undefined') {
+                log(`✓ STORY_DATABASE loaded with ${Object.keys(STORY_DATABASE).length} scenes`, 'success');
+            } else {
+                log('✗ STORY_DATABASE not found!', 'error');
+                return;
+            }
+            
+            // Check if ConsequenceGame exists
+            if (typeof ConsequenceGame !== 'undefined') {
+                log('✓ ConsequenceGame class found', 'success');
+            } else {
+                log('✗ ConsequenceGame class not found!', 'error');
+                return;
+            }
+            
+            // Try to create game
+            try {
+                log('Creating game instance...', 'info');
+                const testGame = new ConsequenceGame();
+                log('✓ Game instance created', 'success');
+                log(`  - Current scene: ${testGame.state.currentScene}`, 'info');
+                log(`  - Day: ${testGame.state.day}, Hour: ${testGame.state.hour}`, 'info');
+                
+                // Check if elements were created
+                setTimeout(() => {
+                    const statusBar = document.querySelector('.status-bar');
+                    const sceneText = document.querySelector('#scene-text');
+                    const choices = document.querySelector('#choices');
+                    
+                    log('\nChecking created elements:', 'info');
+                    log(`  - Status bar: ${statusBar ? '✓ Created' : '✗ Missing'}`, statusBar ? 'success' : 'error');
+                    log(`  - Scene text: ${sceneText ? '✓ Created' : '✗ Missing'}`, sceneText ? 'success' : 'error');
+                    log(`  - Choices: ${choices ? '✓ Created' : '✗ Missing'}`, choices ? 'success' : 'error');
+                    
+                    if (sceneText) {
+                        log(`  - Scene text content length: ${sceneText.textContent.length} chars`, 'info');
+                    }
+                    
+                    if (choices) {
+                        const choiceButtons = choices.querySelectorAll('.choice');
+                        log(`  - Choice buttons: ${choiceButtons.length} found`, 'info');
+                    }
+                }, 500);
+                
+            } catch (e) {
+                log(`✗ Error creating game: ${e.message}`, 'error');
+                log(`  Stack: ${e.stack}`, 'error');
+            }
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>CONSEQUENCE - Minimal Test</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            background: #0a0a0a;
+            color: #e0e0e0;
+            font-family: Arial, sans-serif;
+            padding: 20px;
+        }
+        
+        #game-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: #1a1a1a;
+            padding: 30px;
+            border-radius: 12px;
+            border: 2px solid #ff6b35;
+        }
+        
+        h1 {
+            color: #ff6b35;
+            text-align: center;
+            margin-bottom: 20px;
+            font-size: 2.5em;
+        }
+        
+        .status-bar {
+            background: rgba(0,0,0,0.5);
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+        
+        .stat-pill {
+            background: rgba(255,255,255,0.1);
+            padding: 8px 15px;
+            border-radius: 20px;
+            border: 1px solid rgba(255,255,255,0.2);
+        }
+        
+        #main-content {
+            background: rgba(0,0,0,0.3);
+            padding: 30px;
+            border-radius: 8px;
+            min-height: 400px;
+        }
+        
+        .story-display {
+            background: rgba(255,255,255,0.05);
+            padding: 20px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+            line-height: 1.8;
+            font-size: 1.1em;
+        }
+        
+        .choices-container {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+        
+        .choice {
+            background: rgba(255,255,255,0.05);
+            border: 2px solid rgba(255,255,255,0.1);
+            padding: 15px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-align: left;
+        }
+        
+        .choice:hover {
+            background: rgba(255,107,53,0.1);
+            border-color: #ff6b35;
+            transform: translateY(-2px);
+        }
+        
+        .persona-indicator {
+            color: #ff6b35;
+            font-size: 0.85em;
+            margin-left: 10px;
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 50px;
+            font-size: 1.5em;
+            color: #ff6b35;
+        }
+    </style>
+</head>
+<body>
+    <div id="game-container">
+        <h1>CONSEQUENCE: THE BLOOM</h1>
+        <div id="main-content">
+            <div class="loading">Loading game...</div>
+        </div>
+    </div>
+
+    <script src="NEW_MYSTORY_COMPLETE.js"></script>
+    <script>
+        console.log('🎮 Minimal game starting...');
+        
+        document.addEventListener('DOMContentLoaded', () => {
+            console.log('DOM loaded');
+            
+            // Check if game loaded
+            if (typeof ConsequenceGame === 'undefined') {
+                document.querySelector('.loading').innerHTML = '❌ ERROR: Game failed to load!<br>Check console for details.';
+                console.error('ConsequenceGame not found!');
+                return;
+            }
+            
+            if (typeof STORY_DATABASE === 'undefined') {
+                document.querySelector('.loading').innerHTML = '❌ ERROR: Story database failed to load!<br>Check console for details.';
+                console.error('STORY_DATABASE not found!');
+                return;
+            }
+            
+            console.log(`Story loaded: ${Object.keys(STORY_DATABASE).length} scenes`);
+            
+            // Create game
+            try {
+                console.log('Creating game instance...');
+                window.game = new ConsequenceGame();
+                console.log('✓ Game created successfully');
+                console.log(`Starting at: ${game.state.currentScene}, Day ${game.state.day}, Hour ${game.state.hour}`);
+            } catch (e) {
+                console.error('Error creating game:', e);
+                document.querySelector('.loading').innerHTML = `❌ ERROR: ${e.message}<br><small>${e.stack}</small>`;
+            }
+        });
+    </script>
+</body>
+</html>
