@@ -1,4 +1,4 @@
-const STORY_DATABASE = {
+{
   "ending_saint": {
     "id": "ending_saint",
     "text": "THE SAINT ENDING\n\nDay 47. You saved 63 people. The trauma broke you, but you kept your humanity. They call you a hero.\n\nYour hands shake from exhaustion and adrenaline. The weight of command presses down. Every face in your group represents a choice you made - to save them or not. The Bloom pulses outside, a living nightmare of fungal horror.",
@@ -75235,85 +75235,4 @@ const STORY_DATABASE = {
       }
     ]
   }
-};
-
-class ConsequenceGame {
-  constructor() {
-    this.state = {currentScene:"start",day:0,hour:8,stats:{morality:0,stress:0,trauma:0},decisionHistory:[]};
-    this.render();
-  }
-  render() {
-    const scene = STORY_DATABASE[this.state.currentScene];
-    if (!scene) return;
-    const stats = document.getElementById('stats');
-    if (stats) stats.innerHTML = `Day ${this.state.day} | Hour ${this.state.hour} | Morality: ${this.state.stats.morality} | Trauma: ${this.state.stats.trauma} | Stress: ${this.state.stats.stress}`;
-    let display = document.getElementById('scene-text');
-    if (!display) {
-      display = document.createElement('div');
-      display.id = 'scene-text';
-      display.className = 'scene-text';
-      document.getElementById('main-content').appendChild(display);
-    }
-    display.innerHTML = scene.text.replace(/\n/g, '<br>');
-    let choices = document.getElementById('choices');
-    if (!choices) {
-      choices = document.createElement('div');
-      choices.id = 'choices';
-      choices.className = 'choices-container';
-      document.getElementById('main-content').appendChild(choices);
-    }
-    choices.innerHTML = '';
-    if (scene.choices && scene.choices.length > 0) {
-      scene.choices.forEach(c => {
-        const btn = document.createElement('button');
-        btn.className = 'choice';
-        btn.textContent = c.text;
-        btn.onclick = () => this.choose(c);
-        choices.appendChild(btn);
-      });
-    } else {
-      choices.innerHTML = '<p style="text-align:center;color:#ff6b35;font-size:1.5em;">THE END</p>';
-    }
-  }
-  choose(choice) {
-    if (choice.effects) {
-      Object.keys(choice.effects).forEach(k => {
-        if (this.state.stats[k] !== undefined) this.state.stats[k] += choice.effects[k];
-      });
-    }
-    const log = document.getElementById('log');
-    if (log) {
-      const e = document.createElement('div');
-      e.textContent = choice.text;
-      e.style.color = '#ffaa00';
-      e.style.fontSize = '0.8em';
-      e.style.marginBottom = '5px';
-      log.insertBefore(e, log.firstChild);
-    }
-    this.state.hour++;
-    if (this.state.hour >= 24) {this.state.hour = 0; this.state.day++;}
-    this.state.currentScene = choice.next;
-    this.render();
-  }
-  save() {
-    localStorage.setItem('game', JSON.stringify(this.state));
-  }
-  load() {
-    const s = localStorage.getItem('game');
-    if (s) {this.state = JSON.parse(s); this.render(); return true;}
-    return false;
-  }
-  restart() {
-    if (confirm('Restart?')) {localStorage.removeItem('game'); location.reload();}
-  }
 }
-let game;
-document.addEventListener('DOMContentLoaded', () => {
-  game = new ConsequenceGame();
-  const sb = document.getElementById('save-btn');
-  const lb = document.getElementById('load-btn');
-  const rb = document.getElementById('restart-btn');
-  if (sb) sb.onclick = () => {game.save(); alert('Saved!');};
-  if (lb) lb.onclick = () => {if (game.load()) alert('Loaded!'); else alert('No save!');};
-  if (rb) rb.onclick = () => game.restart();
-});
