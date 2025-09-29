@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CONSEQUENCE - A Post-Apocalyptic Text Adventure</title>
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        /* Additional epic styles */
+        @import url('https://fonts.googleapis.com/css2?family=Creepster&family=Special+Elite&display=swap');
+        
+        body {
+            background: #0a0a0a;
+            background-image: 
+                radial-gradient(circle at 20% 50%, rgba(120, 20, 20, 0.3) 0%, transparent 50%),
+                radial-gradient(circle at 80% 80%, rgba(20, 120, 20, 0.2) 0%, transparent 50%),
+                radial-gradient(circle at 40% 20%, rgba(120, 120, 20, 0.2) 0%, transparent 50%);
+            animation: backgroundPulse 20s ease-in-out infinite;
+        }
+        
+        @keyframes backgroundPulse {
+            0%, 100% { filter: brightness(1); }
+            50% { filter: brightness(0.8); }
+        }
+        
+        h1 {
+            font-family: 'Creepster', cursive;
+            font-size: 4em;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            animation: glitch 2s ease-in-out infinite;
+            text-shadow: 
+                3px 3px 0 #ff0000,
+                -3px -3px 0 #00ff00,
+                6px 2px 5px rgba(255, 0, 0, 0.5);
+        }
+        
+        @keyframes glitch {
+            0%, 100% { text-shadow: 3px 3px 0 #ff0000, -3px -3px 0 #00ff00, 6px 2px 5px rgba(255, 0, 0, 0.5); }
+            25% { text-shadow: -3px 3px 0 #00ff00, 3px -3px 0 #ff0000, 6px 2px 5px rgba(0, 255, 0, 0.5); }
+            50% { text-shadow: 3px -3px 0 #ff0000, -3px 3px 0 #00ff00, 6px 2px 5px rgba(255, 0, 0, 0.5); }
+            75% { text-shadow: -3px -3px 0 #00ff00, 3px 3px 0 #ff0000, 6px 2px 5px rgba(0, 255, 0, 0.5); }
+        }
+        
+        .scene-text {
+            font-family: 'Special Elite', monospace;
+            font-size: 1.2em;
+            line-height: 1.8;
+        }
+        
+        .fade-in {
+            animation: fadeIn 0.8s ease-out;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .choice-button {
+            position: relative;
+            overflow: hidden;
+            transition: all 0.3s;
+        }
+        
+        .choice-button::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 107, 107, 0.3), transparent);
+            transition: left 0.5s;
+        }
+        
+        .choice-button:hover::before {
+            left: 100%;
+        }
+        
+        .stat-bar {
+            width: 100px;
+            height: 10px;
+            background: #333;
+            border-radius: 5px;
+            overflow: hidden;
+            display: inline-block;
+        }
+        
+        .stat-fill {
+            height: 100%;
+            transition: width 0.5s ease-out;
+        }
+        
+        .stress-fill {
+            background: linear-gradient(90deg, #ff6b6b, #ff3333);
+        }
+        
+        .trauma-fill {
+            background: linear-gradient(90deg, #9b59b6, #8e44ad);
+        }
+        
+        .loading-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: #000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+            animation: fadeOut 2s ease-out 1s forwards;
+        }
+        
+        @keyframes fadeOut {
+            to { opacity: 0; pointer-events: none; }
+        }
+        
+        .loading-text {
+            font-family: 'Creepster', cursive;
+            font-size: 3em;
+            color: #ff6b6b;
+            animation: pulse 1s ease-in-out infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 0.5; }
+            50% { opacity: 1; }
+        }
+    </style>
+</head>
+<body>
+    <!-- Loading Screen -->
+    <div class="loading-screen">
+        <div class="loading-text">LOADING...</div>
+    </div>
+
+    <div id="game-container">
+        <header>
+            <h1>CONSEQUENCE</h1>
+            <div id="stats" class="stats-bar"></div>
+        </header>
+
+        <main id="main-content">
+            <!-- Character creation will appear here first -->
+            <div id="scene-container" style="display: none;">
+                <div id="scene-text" class="scene-text"></div>
+                <div id="choices" class="choices-container"></div>
+            </div>
+        </main>
+
+        <aside id="sidebar">
+            <div class="panel">
+                <h3>Inventory</h3>
+                <div id="inventory" class="inventory-list">Empty</div>
+            </div>
+            
+            <div class="panel">
+                <h3>Event Log</h3>
+                <div id="log" class="event-log"></div>
+            </div>
+
+            <div class="controls">
+                <button id="save-btn">💾 Save Game</button>
+                <button id="load-btn">📂 Load Game</button>
+                <button id="restart-btn">🔄 Restart</button>
+            </div>
+        </aside>
+    </div>
+
+    <!-- Audio for atmosphere -->
+    <audio id="ambient-sound" loop>
+        <source src="data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmwhBTGH0fPTgjMGHm7A7+OZURE" type="audio/wav">
+    </audio>
+
+    <script src="script_5MB_FIXED.js"></script>
+    <script>
+        // Epic initialization
+        document.addEventListener('DOMContentLoaded', () => {
+            console.log('🎮 CONSEQUENCE LOADING...');
+            
+            // Initialize game
+            if (typeof game === 'undefined') {
+                window.game = new ConsequenceGame();
+            }
+            
+            // Start ambient sound (optional)
+            const ambientSound = document.getElementById('ambient-sound');
+            ambientSound.volume = 0.3;
+            // ambientSound.play().catch(e => console.log('Audio autoplay blocked'));
+            
+            // Epic welcome message
+            setTimeout(() => {
+                console.log('⚠️ THE WORLD HAS ENDED ⚠️');
+                console.log('💀 SURVIVAL IS NOT GUARANTEED 💀');
+                console.log('🌱 THE BLOOM WATCHES 🌱');
+            }, 1000);
+        });
+        
+        // Add some interactive effects
+        document.addEventListener('mousemove', (e) => {
+            const x = e.clientX / window.innerWidth;
+            const y = e.clientY / window.innerHeight;
+            
+            document.body.style.backgroundImage = `
+                radial-gradient(circle at ${x * 100}% ${y * 100}%, rgba(120, 20, 20, 0.3) 0%, transparent 50%),
+                radial-gradient(circle at ${(1-x) * 100}% ${(1-y) * 100}%, rgba(20, 120, 20, 0.2) 0%, transparent 50%),
+                radial-gradient(circle at 50% 50%, rgba(120, 120, 20, 0.1) 0%, transparent 70%)
+            `;
+        });
+    </script>
+</body>
+</html>
