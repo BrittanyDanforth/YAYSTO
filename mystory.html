@@ -5,107 +5,21 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>CONSEQUENCE: THE BLOOM</title>
     <link rel="stylesheet" href="MYSTORY.CSS">
-    <style>
-        @import url('https://fonts.googleapis.com/css2?family=Creepster&family=Special+Elite&display=swap');
-        
-        body {
-            background: #0a0a0a;
-            background-image: 
-                radial-gradient(circle at 20% 50%, rgba(120, 20, 20, 0.3) 0%, transparent 50%),
-                radial-gradient(circle at 80% 80%, rgba(20, 120, 20, 0.2) 0%, transparent 50%),
-                radial-gradient(circle at 40% 20%, rgba(120, 120, 20, 0.2) 0%, transparent 50%);
-        }
-        
-        h1 {
-            font-family: 'Creepster', cursive !important;
-            font-size: 3em;
-            text-shadow: 
-                3px 3px 0 #ff0000,
-                -3px -3px 0 #00ff00,
-                6px 2px 5px rgba(255, 0, 0, 0.5);
-        }
-        
-        .scene-text {
-            font-family: 'Special Elite', monospace;
-            font-size: 1.1em;
-            line-height: 1.8;
-        }
-        
-        .fade-in {
-            animation: fadeIn 0.8s ease-out;
-        }
-        
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(20px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-        
-        .loading-screen {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: #000;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            z-index: 9999;
-            animation: fadeOut 2s ease-out 1s forwards;
-        }
-        
-        @keyframes fadeOut {
-            to { opacity: 0; pointer-events: none; }
-        }
-        
-        .loading-text {
-            font-family: 'Creepster', cursive;
-            font-size: 3em;
-            color: #ff6b35;
-            animation: pulse 1s ease-in-out infinite;
-        }
-        
-        @keyframes pulse {
-            0%, 100% { opacity: 0.5; }
-            50% { opacity: 1; }
-        }
-    </style>
 </head>
 <body>
-    <div class="loading-screen">
-        <div class="loading-text">THE BLOOM AWAKENS...</div>
-    </div>
-
     <div id="game-container">
-        <div class="game-header">
-            <h1>CONSEQUENCE</h1>
-            <div class="game-subtitle">The Bloom - A Choice-Driven Narrative</div>
-        </div>
-
-        <div id="stats" class="stats-bar"></div>
-
-        <div id="main-content"></div>
-
-        <div class="sidebar-panels">
-            <div class="panel">
-                <h3>📦 Inventory</h3>
-                <div id="inventory" class="inventory-list">
-                    <em>Empty</em>
-                </div>
-            </div>
-            
-            <div class="panel">
-                <h3>📜 Event Log</h3>
-                <div id="log" class="event-log">
-                    <em>Your story begins...</em>
-                </div>
-            </div>
-
-            <div class="controls">
-                <button id="save-btn">💾 Save Game</button>
-                <button id="load-btn">📂 Load Game</button>
-                <button id="restart-btn">🔄 Restart</button>
-            </div>
+        <h1 style="text-align:center;color:#ff6b35;font-size:3em;margin-bottom:20px;">CONSEQUENCE</h1>
+        
+        <div id="stats" style="background:rgba(0,0,0,0.5);padding:15px;border-radius:8px;margin-bottom:20px;text-align:center;color:#ffaa00;"></div>
+        
+        <div id="main-content" style="background:rgba(20,20,20,0.8);padding:30px;border-radius:12px;min-height:400px;margin-bottom:20px;"></div>
+        
+        <div id="log" style="background:rgba(0,0,0,0.3);padding:15px;border-radius:8px;margin-bottom:20px;max-height:150px;overflow-y:auto;"></div>
+        
+        <div style="text-align:center;">
+            <button id="save-btn" style="background:rgba(255,107,53,0.1);border:2px solid #ff6b35;color:#ff6b35;padding:12px 24px;border-radius:8px;cursor:pointer;margin:5px;">💾 Save</button>
+            <button id="load-btn" style="background:rgba(255,107,53,0.1);border:2px solid #ff6b35;color:#ff6b35;padding:12px 24px;border-radius:8px;cursor:pointer;margin:5px;">📂 Load</button>
+            <button id="restart-btn" style="background:rgba(255,107,53,0.1);border:2px solid #ff6b35;color:#ff6b35;padding:12px 24px;border-radius:8px;cursor:pointer;margin:5px;">🔄 Restart</button>
         </div>
     </div>
 
