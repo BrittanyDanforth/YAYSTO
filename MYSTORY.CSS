@@ -30,6 +30,9 @@ body {
     margin: 0 auto;
     padding: 20px;
     min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
 }
 
 /* Header */
@@ -237,6 +240,25 @@ body {
 .stat-pill.willpower { color: #4444ff; }
 .stat-pill.charisma { color: #ff44ff; }
 
+/* Morality color classes */
+.morality-good {
+    color: #4e9af1;
+    background: rgba(78, 154, 241, 0.1);
+    border-color: rgba(78, 154, 241, 0.3);
+}
+
+.morality-bad {
+    color: #f14e4e;
+    background: rgba(241, 78, 78, 0.1);
+    border-color: rgba(241, 78, 78, 0.3);
+}
+
+.morality-neutral {
+    color: var(--muted);
+    background: rgba(176, 176, 176, 0.1);
+    border-color: rgba(176, 176, 176, 0.3);
+}
+
 .status-indicators {
     display: flex;
     gap: 10px;
@@ -292,10 +314,11 @@ body {
     margin-bottom: 20px;
 }
 
-.choices-display {
+.choices-display, .choices-container {
     display: flex;
     flex-direction: column;
     gap: 10px;
+    margin-top: 20px;
 }
 
 .choice {
@@ -404,6 +427,29 @@ body {
 
 .panel-content .row strong {
     color: var(--brand);
+}
+
+/* Main Content Area */
+#main-content {
+    background: rgba(20, 20, 20, 0.8);
+    border-radius: 12px;
+    padding: 30px;
+    backdrop-filter: blur(10px);
+    border: 1px solid var(--border);
+    min-height: 400px;
+}
+
+/* Sidebar Panels */
+.sidebar-panels {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 20px;
+}
+
+@media (max-width: 1024px) {
+    .sidebar-panels {
+        grid-template-columns: 1fr;
+    }
 }
 
 /* Game Controls */
