@@ -1,6 +1,4 @@
-// CONSEQUENCE: THE BLOOM - Clean Working Version
-// No filler, just game logic + story data
-
+// CONSEQUENCE: THE BLOOM
 const STORY_DATABASE = {
   "ending_saint": {
     "id": "ending_saint",
@@ -65588,7 +65586,7 @@ const STORY_DATABASE = {
   }
 };
 
-// Game Engine
+// Game Engine - Works with YOUR HTML structure
 class ConsequenceGame {
     constructor() {
         this.state = {
@@ -65604,46 +65602,61 @@ class ConsequenceGame {
     }
     
     init() {
-        document.getElementById('scene-container').style.display = 'block';
+        console.log('Game initializing...');
+        // Your HTML has #scene-container, make it visible
+        const container = document.getElementById('scene-container');
+        if (container) {
+            container.style.display = 'block';
+        }
         this.renderScene();
     }
     
     renderScene() {
         const scene = STORY_DATABASE[this.state.currentScene];
-        if (!scene) return;
+        if (!scene) {
+            console.error('Scene not found:', this.state.currentScene);
+            return;
+        }
         
         this.updateStats();
         this.displayStory(scene);
         this.displayChoices(scene);
         
         if (scene.is_ending) {
-            this.handleEnding();
+            console.log('ENDING REACHED!');
         }
     }
     
     updateStats() {
+        // Your HTML has #stats element
         const stats = document.getElementById('stats');
-        stats.innerHTML = `
-            Day ${this.state.day} | Hour ${this.state.hour} | 
-            Morality: ${this.state.stats.morality} | 
-            Trauma: ${this.state.stats.trauma} | 
-            Stress: ${this.state.stats.stress}
-        `;
+        if (stats) {
+            stats.innerHTML = `Day ${this.state.day} | Hour ${this.state.hour} | Morality: ${this.state.stats.morality} | Trauma: ${this.state.stats.trauma} | Stress: ${this.state.stats.stress}`;
+        }
     }
     
     displayStory(scene) {
+        // Your HTML has #scene-text
         const display = document.getElementById('scene-text');
-        display.innerHTML = scene.text.replace(/\n/g, '<br>');
-        display.className = 'scene-text fade-in';
+        if (display) {
+            display.innerHTML = scene.text.replace(/\n/g, '<br>');
+            display.className = 'scene-text fade-in';
+        }
     }
     
     displayChoices(scene) {
+        // Your HTML has #choices
         const container = document.getElementById('choices');
+        if (!container) return;
+        
         container.innerHTML = '';
         
-        if (!scene.choices || scene.choices.length === 0) return;
+        if (!scene.choices || scene.choices.length === 0) {
+            container.innerHTML = '<p style="text-align:center;color:#ff6b35;">THE END</p>';
+            return;
+        }
         
-        scene.choices.forEach((choice, i) => {
+        scene.choices.forEach(choice => {
             const btn = document.createElement('button');
             btn.className = 'choice choice-button';
             btn.textContent = choice.text;
@@ -65653,6 +65666,8 @@ class ConsequenceGame {
     }
     
     makeChoice(choice) {
+        console.log('Choice:', choice.text);
+        
         // Apply effects
         if (choice.effects) {
             Object.keys(choice.effects).forEach(key => {
@@ -65662,6 +65677,16 @@ class ConsequenceGame {
             });
         }
         
+        // Add to log
+        const log = document.getElementById('log');
+        if (log) {
+            const entry = document.createElement('div');
+            entry.textContent = `Day ${this.state.day}: ${choice.text}`;
+            entry.style.fontSize = '0.8em';
+            entry.style.marginBottom = '5px';
+            log.insertBefore(entry, log.firstChild);
+        }
+        
         // Advance time
         this.state.hour += 1;
         if (this.state.hour >= 24) {
@@ -65669,26 +65694,21 @@ class ConsequenceGame {
             this.state.day += 1;
         }
         
-        // Record decision
+        // Record
         this.state.decisionHistory.push({
             scene: this.state.currentScene,
             choice: choice.text,
             day: this.state.day
         });
         
-        // Move to next scene
+        // Next scene
         this.state.currentScene = choice.next;
         this.renderScene();
     }
     
-    handleEnding() {
-        console.log('ENDING REACHED');
-        document.getElementById('choices').innerHTML = '<p style="text-align:center;color:#ff6b35;font-size:1.5em;">THE END</p>';
-    }
-    
     saveGame() {
         localStorage.setItem('consequence_save', JSON.stringify(this.state));
-        alert('Game saved!');
+        console.log('Game saved');
     }
     
     loadGame() {
@@ -65696,32 +65716,34 @@ class ConsequenceGame {
         if (saved) {
             this.state = JSON.parse(saved);
             this.renderScene();
-            alert('Game loaded!');
+            console.log('Game loaded');
             return true;
         }
-        alert('No save found!');
         return false;
     }
     
     restartGame() {
-        if (confirm('Restart? All progress will be lost.')) {
+        if (confirm('Restart? Progress will be lost.')) {
             localStorage.removeItem('consequence_save');
             location.reload();
         }
     }
 }
 
-// Auto-init
+// Auto-start
 let game;
 document.addEventListener('DOMContentLoaded', () => {
+    console.log('Starting CONSEQUENCE...');
     game = new ConsequenceGame();
     
-    // Wire up buttons
+    // Wire buttons
     const saveBtn = document.getElementById('save-btn');
     const loadBtn = document.getElementById('load-btn');
     const restartBtn = document.getElementById('restart-btn');
     
-    if (saveBtn) saveBtn.onclick = () => game.saveGame();
-    if (loadBtn) loadBtn.onclick = () => game.loadGame();
+    if (saveBtn) saveBtn.onclick = () => { game.saveGame(); alert('Saved!'); };
+    if (loadBtn) loadBtn.onclick = () => { if (game.loadGame()) alert('Loaded!'); else alert('No save!'); };
     if (restartBtn) restartBtn.onclick = () => game.restartGame();
+    
+    console.log('Game ready!');
 });
