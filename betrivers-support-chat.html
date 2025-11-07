@@ -715,7 +715,7 @@
         </div>
         <div class="status-cluster">
           <span class="live-pill"><span class="live-dot" aria-hidden="true"></span> Live</span>
-          <div class="clock" id="clock">12:20 AM EST</div>
+          <div class="clock" id="clock">12:40 AM EST</div>
         </div>
       </header>
 
@@ -761,8 +761,8 @@
 
   <script>
     const state = {
-      connected:false,
-      minutesSinceMidnight:20,
+        connected:false,
+        minutesSinceMidnight:40,
       rakeback:false,
       notify:true,
       lastUserMessageTime:null,
@@ -815,8 +815,10 @@
         {speaker:'agent', text:'Keeping the three ~$300 payouts queued and re-flagging the batch.', time:'12:52 AM EST'},
         {speaker:'user', text:'it’s the next day and it’s still not there', time:'12:52 AM EST'},
         {speaker:'agent', text:'You’re right - it overshot the 1-3 hour window. That’s on us.', time:'12:52 AM EST'},
-        {speaker:'user', text:'so', time:'12:53 AM EST'},
-        {speaker:'agent', text:'Tell me exactly what you want done and I’ll do it.', time:'12:53 AM EST'}
+        {speaker:'user', text:'wait what? so I get an extra 15% stacked on my normal rakeback?', time:'12:53 AM EST'},
+        {speaker:'agent', text:'Exactly - the extra 15% stacks on your regular rakeback and stays active until the payouts hit.', time:'12:54 AM EST', tag:'Dana Alvarez'},
+        {speaker:'user', text:'Alright, that helps a lot. Thanks for pushing this.', time:'12:55 AM EST'},
+        {speaker:'agent', text:'Happy to help. Anything else you want me to run?', time:'12:55 AM EST'}
       ];
 
     const heuristics = [
@@ -892,6 +894,20 @@
           }, {delay:3200});
           return null;
         }
+      },
+        {
+          test: text => /(wait what|stacked|extra 15|double rakeback|confirm)/.test(text),
+          respond: () => ({
+            reply:'Yep - the extra 15% stacks on top of your existing rakeback and starts right away until the payouts clear.',
+            advanceMinutes:1
+          })
+        },
+      {
+        test: text => /(thanks|appreciate|sounds good|alright then)/.test(text),
+        respond: () => ({
+          reply:'Happy to help. Anything else you want me to run?',
+          advanceMinutes:1
+        })
       },
         {
           test: text => /next day|still not there/.test(text),
@@ -1196,7 +1212,7 @@
 
     function renderWelcome(){
       resetPanels();
-      state.minutesSinceMidnight = (23*60)+6;
+      state.minutesSinceMidnight = 40;
       dom.clock.textContent = formatClock(state.minutesSinceMidnight);
       dom.transcriptInner.innerHTML = '';
       buildMessage({
