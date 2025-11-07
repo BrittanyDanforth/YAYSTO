@@ -723,19 +723,6 @@
         <div class="transcript-inner" id="transcriptInner"></div>
       </section>
 
-      <div class="context-bar">
-        <div class="notice">
-          <div class="notice-icon" aria-hidden="true">⚡️</div>
-          <div>
-            <strong>Priority trace running</strong>
-            Batch flagged for the next LTC processor pass. Notifications stay live the instant a payout posts.
-          </div>
-        </div>
-        <span class="badge" id="rakebackBadge" hidden>15% rakeback active</span>
-      </div>
-
-      <div class="chips-row" id="chipsRow" aria-label="Quick insert phrases"></div>
-
       <footer class="composer">
         <div class="composer-shell">
           <label class="sr-only" for="composerInput">Type a message to Avery</label>
@@ -752,16 +739,20 @@
         <h2>Ticket Snapshot <span>br-171104</span></h2>
         <div class="ticket-grid">
           <div>
-            <div class="label">Client</div>
-            <div class="value">Verified · LTC Wallet · VIP Lane</div>
+            <div class="label">Account tier</div>
+            <div class="value">Level 433 · LTC Wallet</div>
           </div>
           <div>
-            <div class="label">Original request</div>
+            <div class="label">Original withdrawal</div>
             <div class="value">215.00 LTC — canceled ~03:10 AM ET</div>
           </div>
           <div>
             <div class="label">Current payout split</div>
             <div class="value">3 × 3.38 LTC (≈ $300) — queued</div>
+          </div>
+          <div>
+            <div class="label">Remaining outbound</div>
+            <div class="value">204.86 LTC scheduled to post</div>
           </div>
         </div>
       </article>
@@ -1156,6 +1147,7 @@
     }
 
     function initializeChips(){
+      if(!dom.chipsRow) return;
       quickPhrases.forEach(label=>{
         const chip = document.createElement('button');
         chip.type = 'button';
