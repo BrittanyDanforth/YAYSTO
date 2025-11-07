@@ -1,0 +1,1317 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>BetRivers • Priority Payout Support Desk</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root{
+      color-scheme: light;
+      --bg-main:#f5f8ff;
+      --panel:#ffffff;
+      --panel-soft:#ecf3ff;
+      --border:#d7e1f2;
+      --shadow-lg:0 32px 64px rgba(15,45,90,0.10);
+      --shadow-sm:0 16px 36px rgba(15,45,90,0.08);
+      --text:#101f3c;
+      --muted:#5c6f92;
+      --brand:#1a73e8;
+      --brand-soft:#e6efff;
+      --accent:#0ea5e9;
+      --agent-bubble:#edf3ff;
+      --agent-border:rgba(26,115,232,0.28);
+      --user-bubble:#f9fbff;
+      --chip-bg:#eef3fb;
+      --chip-border:#cad4e5;
+      --badge-bg:#e8f5ff;
+      --badge-border:#bcdfff;
+      --success:#0891b2;
+      --warning:#f59e0b;
+      --danger:#f97316;
+      --input-bg:#ffffff;
+    }
+
+    *,*::before,*::after{box-sizing:border-box}
+
+    body{
+      margin:0;
+      font-family:'Inter',system-ui,-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;
+      background:var(--bg-main);
+      color:var(--text);
+      display:flex;
+      justify-content:center;
+      align-items:flex-start;
+      padding:32px;
+      min-height:100vh;
+      overflow:auto;
+    }
+
+    @media (max-width:1080px){
+      body{padding:24px;}
+    }
+    @media (max-width:860px){
+      body{padding:18px;}
+    }
+    @media (max-width:720px){
+      body{padding:12px;}
+    }
+
+    .app{
+      width:min(1180px,100%);
+      max-width:1180px;
+      background:var(--panel);
+      border:1px solid var(--border);
+      border-radius:22px;
+      box-shadow:var(--shadow-lg);
+      display:grid;
+      grid-template-columns:minmax(0,1.6fr) minmax(0,1fr);
+      overflow:hidden;
+    }
+    @media (max-width:900px){
+      .app{grid-template-columns:1fr;}
+    }
+
+    .conversation-pane{
+      display:flex;
+      flex-direction:column;
+      border-right:1px solid var(--border);
+      background:linear-gradient(180deg,#ffffff 0%,#f4f8ff 100%);
+    }
+    @media (max-width:900px){
+      .conversation-pane{border-right:0;border-bottom:1px solid var(--border);}
+    }
+
+    .summary-pane{
+      background:#f8fbff;
+      padding:28px 28px 32px;
+      overflow-y:auto;
+    }
+
+    .app-header{
+      padding:22px 28px 16px;
+      display:flex;
+      align-items:flex-start;
+      gap:18px;
+    }
+    .logo{
+      width:54px;
+      height:54px;
+      border-radius:16px;
+      background:linear-gradient(135deg,#1a73e8 0%,#4c8bff 60%,#7ba9ff 100%);
+      display:grid;
+      place-items:center;
+      color:#fff;
+      font-weight:700;
+      letter-spacing:.06em;
+      box-shadow:0 14px 32px rgba(26,115,232,0.26);
+    }
+    .header-meta{
+      display:flex;
+      flex-direction:column;
+      gap:6px;
+    }
+    .brand{
+      font-weight:700;
+      letter-spacing:.02em;
+      font-size:1.1rem;
+    }
+    .subtitle{
+      color:var(--muted);
+      font-size:.86rem;
+    }
+    .status-cluster{
+      margin-left:auto;
+      display:flex;
+      align-items:center;
+      gap:12px;
+    }
+    .live-pill{
+      display:inline-flex;
+      align-items:center;
+      gap:8px;
+      padding:6px 12px;
+      border-radius:999px;
+      border:1px solid rgba(26,115,232,0.26);
+      background:var(--brand-soft);
+      font-size:.74rem;
+      font-weight:600;
+      text-transform:uppercase;
+      letter-spacing:.08em;
+      color:#1a4f9f;
+    }
+    .live-dot{
+      width:8px;
+      height:8px;
+      border-radius:50%;
+      background:#22d3ee;
+      position:relative;
+    }
+    .live-dot::after{
+      content:'';
+      position:absolute;
+      inset:-6px;
+      border-radius:inherit;
+      background:rgba(34,211,238,0.35);
+      filter:blur(4px);
+      animation:pulse 1.6s ease infinite;
+    }
+    @keyframes pulse{
+      0%,100%{opacity:.45;transform:scale(.6);}
+      45%{opacity:1;transform:scale(1);}
+    }
+    .clock{
+      font-size:.82rem;
+      padding:7px 14px;
+      border-radius:999px;
+      border:1px dashed rgba(26,115,232,0.26);
+      background:#fff;
+      color:#1a4f9f;
+      font-variant-numeric:tabular-nums;
+    }
+
+    .transcript{
+      flex:1;
+      overflow-y:auto;
+      padding:16px 28px 12px;
+      display:flex;
+      flex-direction:column;
+      gap:16px;
+    }
+    .transcript-inner{
+      display:flex;
+      flex-direction:column;
+      gap:16px;
+    }
+
+    .message-row{
+      display:flex;
+      gap:12px;
+      align-items:flex-end;
+      max-width:92%;
+      animation:fadeIn .24s ease both;
+    }
+    .message-row.user{margin-left:auto; justify-content:flex-end;}
+    .message-row.system{justify-content:center;}
+
+    .avatar{
+      width:40px;
+      height:40px;
+      border-radius:14px;
+      background:#eef3fb;
+      border:1px solid var(--border);
+      display:grid;
+      place-items:center;
+      font-weight:700;
+      font-size:.74rem;
+      color:#123261;
+    }
+
+    .message-wrap{
+      display:flex;
+      flex-direction:column;
+      gap:6px;
+      align-items:flex-start;
+      max-width:100%;
+    }
+    .message-row.user .message-wrap{align-items:flex-end;}
+
+    .message-bubble{
+      background:var(--agent-bubble);
+      border:1px solid var(--agent-border);
+      color:var(--text);
+      padding:14px 16px;
+      border-radius:18px;
+      line-height:1.52;
+      font-size:.95rem;
+      white-space:pre-wrap;
+    }
+    .message-row.user .message-bubble{
+      background:var(--user-bubble);
+      border-color:#d8e2f4;
+    }
+    .message-row.system .message-bubble{
+      background:#f1f5ff;
+      border:1px solid #d6e4ff;
+      color:#3057a4;
+      font-size:.8rem;
+      text-transform:uppercase;
+      letter-spacing:.1em;
+      padding:8px 16px;
+    }
+
+    .message-meta{
+      font-size:.72rem;
+      color:var(--muted);
+      display:flex;
+      gap:10px;
+    }
+    .timestamp::before{
+      content:'';
+      display:inline-block;
+      width:4px;
+      height:4px;
+      border-radius:50%;
+      background:rgba(92,111,146,0.45);
+      margin-right:6px;
+    }
+
+    .tag{
+      display:inline-flex;
+      align-items:center;
+      gap:6px;
+      background:var(--brand-soft);
+      border:1px solid rgba(26,115,232,0.28);
+      color:#1a4f9f;
+      text-transform:uppercase;
+      font-size:.7rem;
+      letter-spacing:.1em;
+      padding:4px 10px;
+      border-radius:999px;
+      font-weight:600;
+    }
+
+    .typing-indicator{
+      display:inline-flex;
+      align-items:center;
+      gap:6px;
+      padding:9px 14px;
+      border-radius:16px;
+      border:1px solid rgba(26,115,232,0.28);
+      background:#eef4ff;
+      animation:fadeIn .18s ease both;
+    }
+    .typing-dot{
+      width:6px;
+      height:6px;
+      border-radius:999px;
+      background:#6b87c5;
+      opacity:.2;
+      animation:blink 1.2s ease infinite;
+    }
+    .typing-dot:nth-child(2){animation-delay:.18s;}
+    .typing-dot:nth-child(3){animation-delay:.36s;}
+    @keyframes blink{
+      0%,70%,100%{opacity:.25;}
+      40%{opacity:1;}
+    }
+    @keyframes fadeIn{
+      from{opacity:0;transform:translateY(6px);}
+      to{opacity:1;transform:translateY(0);}
+    }
+
+    .context-bar{
+      padding:16px 28px;
+      border-top:1px solid var(--border);
+      background:#f8faff;
+      display:flex;
+      align-items:flex-start;
+      gap:18px;
+      justify-content:space-between;
+    }
+    .notice{
+      display:flex;
+      align-items:flex-start;
+      gap:12px;
+      color:var(--muted);
+      font-size:.85rem;
+      line-height:1.45;
+    }
+    .notice-icon{
+      width:32px;
+      height:32px;
+      border-radius:11px;
+      background:#eff6ff;
+      border:1px solid var(--border);
+      display:grid;
+      place-items:center;
+      color:var(--success);
+      font-size:1rem;
+    }
+    .notice strong{
+      display:block;
+      color:#134594;
+      font-size:.75rem;
+      letter-spacing:.09em;
+      text-transform:uppercase;
+      margin-bottom:4px;
+    }
+    .badge{
+      padding:7px 12px;
+      border-radius:999px;
+      background:var(--badge-bg);
+      border:1px solid var(--badge-border);
+      color:#1358aa;
+      text-transform:uppercase;
+      letter-spacing:.08em;
+      font-size:.7rem;
+      font-weight:600;
+    }
+
+    .chips-row{
+      padding:16px 28px 8px;
+      border-top:1px solid var(--border);
+      background:#ffffff;
+      display:flex;
+      flex-wrap:wrap;
+      gap:10px;
+    }
+    .chip{
+      padding:8px 14px;
+      border-radius:999px;
+      border:1px solid var(--chip-border);
+      background:var(--chip-bg);
+      color:var(--muted);
+      font-size:.82rem;
+      font-weight:500;
+      cursor:pointer;
+      transition:all .18s ease;
+    }
+    .chip:hover{
+      background:#e4eeff;
+      border-color:#9eb8eb;
+      color:#14418e;
+    }
+
+    .composer{
+      padding:14px 28px 26px;
+      border-top:1px solid var(--border);
+      background:#ffffff;
+    }
+    .composer-shell{
+      display:flex;
+      gap:12px;
+      align-items:flex-end;
+      background:#ffffff;
+      border:1px solid var(--border);
+      border-radius:18px;
+      padding:12px 14px;
+      box-shadow:inset 0 1px 0 rgba(255,255,255,0.6);
+    }
+    textarea{
+      flex:1;
+      border:0;
+      background:transparent;
+      color:var(--text);
+      font-size:.95rem;
+      line-height:1.5;
+      resize:none;
+      min-height:44px;
+      max-height:160px;
+      outline:none;
+    }
+    .send-btn{
+      appearance:none;
+      border:0;
+      border-radius:14px;
+      padding:12px 20px;
+      background:linear-gradient(135deg,#1a73e8 0%,#3e8bff 100%);
+      color:#fff;
+      font-weight:600;
+      font-size:.92rem;
+      display:inline-flex;
+      align-items:center;
+      gap:8px;
+      cursor:pointer;
+      box-shadow:0 14px 28px rgba(26,115,232,0.24);
+      transition:transform .16s ease, box-shadow .16s ease;
+    }
+    .send-btn:hover{
+      transform:translateY(-2px);
+      box-shadow:0 18px 32px rgba(26,115,232,0.28);
+    }
+    .send-btn:disabled{
+      background:#d4def1;
+      color:#7485a8;
+      box-shadow:none;
+      cursor:default;
+      transform:none;
+    }
+
+    .card{
+      background:var(--panel);
+      border:1px solid var(--border);
+      border-radius:18px;
+      padding:22px 22px 20px;
+      box-shadow:var(--shadow-sm);
+      margin-bottom:20px;
+    }
+    .card h2{
+      margin:0;
+      font-size:1.05rem;
+      display:flex;
+      align-items:center;
+      gap:10px;
+      letter-spacing:.01em;
+    }
+    .card h2 span{
+      font-size:.78rem;
+      text-transform:uppercase;
+      letter-spacing:.1em;
+      color:var(--muted);
+    }
+    .card p{
+      margin:12px 0 0;
+      color:var(--muted);
+      font-size:.9rem;
+      line-height:1.6;
+    }
+
+    .reference-controls{
+      margin-top:16px;
+      padding:12px 14px;
+      border-radius:12px;
+      background:#f4f8ff;
+      border:1px dashed var(--border);
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:14px;
+      flex-wrap:wrap;
+    }
+    .helper-text{
+      margin:0;
+      color:#385487;
+      font-size:.85rem;
+    }
+    .ghost-button{
+      appearance:none;
+      border:1px solid #b7c8e4;
+      background:#ffffff;
+      border-radius:12px;
+      padding:8px 14px;
+      color:#1358aa;
+      font-weight:600;
+      cursor:pointer;
+      transition:all .16s ease;
+    }
+    .ghost-button:hover{
+      border-color:#1a73e8;
+      color:#0f3f8c;
+      box-shadow:0 8px 16px rgba(26,115,232,0.14);
+    }
+
+    .ticket-grid{
+      margin-top:20px;
+      display:grid;
+      gap:12px;
+    }
+    .ticket-grid .label{
+      text-transform:uppercase;
+      font-size:.7rem;
+      letter-spacing:.12em;
+      color:var(--muted);
+    }
+    .ticket-grid .value{
+      font-weight:600;
+      color:#123261;
+      letter-spacing:.03em;
+    }
+
+    .priority-flag{
+      display:inline-flex;
+      align-items:center;
+      gap:8px;
+      padding:8px 12px;
+      border-radius:999px;
+      background:#fff4e6;
+      border:1px solid #f6d49c;
+      color:#b15d02;
+      text-transform:uppercase;
+      font-size:.72rem;
+      letter-spacing:.1em;
+      font-weight:600;
+      margin-top:16px;
+    }
+
+    .progress-track{
+      margin-top:20px;
+      display:grid;
+      gap:12px;
+    }
+    .progress-step{
+      display:flex;
+      align-items:flex-start;
+      gap:14px;
+      padding:12px 14px;
+      border-radius:14px;
+      background:#f4f7ff;
+      border:1px solid var(--border);
+    }
+    .progress-step.active{
+      border-color:#9ad7f5;
+      background:#e9f7ff;
+      box-shadow:0 10px 20px rgba(14,165,233,0.12);
+    }
+    .progress-step.done{
+      border-color:#80d299;
+      background:#ecfdf3;
+    }
+    .step-icon{
+      width:34px;
+      height:34px;
+      border-radius:12px;
+      background:#fff;
+      border:1px solid var(--border);
+      display:grid;
+      place-items:center;
+      font-weight:600;
+      color:#1358aa;
+    }
+    .progress-step h3{
+      margin:0;
+      font-size:.94rem;
+      color:#123261;
+      display:flex;
+      align-items:center;
+      gap:6px;
+    }
+    .progress-step h3 span{
+      text-transform:uppercase;
+      letter-spacing:.08em;
+      font-size:.72rem;
+      color:var(--muted);
+    }
+    .progress-step p{
+      margin:4px 0 0;
+      font-size:.82rem;
+      color:var(--muted);
+    }
+
+    .addresses{
+      margin-top:18px;
+      display:grid;
+      gap:10px;
+    }
+    .addr-pill{
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      padding:9px 12px;
+      border-radius:10px;
+      background:#ffffff;
+      border:1px solid var(--border);
+      font-size:.82rem;
+      color:#244271;
+      font-family:'Inter',monospace;
+      letter-spacing:.03em;
+    }
+    .addr-pill strong{
+      color:#123261;
+      font-size:.84rem;
+    }
+
+    .activity-log{
+      margin-top:20px;
+      display:grid;
+      gap:10px;
+      font-size:.82rem;
+    }
+    .activity-event{
+      border-left:3px solid rgba(26,115,232,0.35);
+      padding:6px 0 6px 12px;
+      background:#f6f9ff;
+      border-radius:6px;
+      color:var(--muted);
+      line-height:1.45;
+    }
+    .activity-event strong{
+      display:block;
+      color:#1a4f9f;
+      text-transform:uppercase;
+      letter-spacing:.08em;
+      font-size:.72rem;
+      margin-bottom:4px;
+    }
+
+    .action-grid{
+      margin-top:20px;
+      display:grid;
+      gap:12px;
+      grid-template-columns:repeat(auto-fit,minmax(160px,1fr));
+    }
+    .action-btn{
+      appearance:none;
+      border:1px solid rgba(26,115,232,0.35);
+      background:#f3f7ff;
+      border-radius:14px;
+      padding:16px 18px;
+      color:#134594;
+      font-weight:600;
+      font-size:.9rem;
+      cursor:pointer;
+      display:flex;
+      align-items:flex-start;
+      gap:10px;
+      flex-direction:column;
+      transition:transform .16s ease, box-shadow .16s ease;
+    }
+    .action-btn span{
+      font-size:.78rem;
+      font-weight:500;
+      color:var(--muted);
+    }
+    .action-btn:hover{
+      transform:translateY(-2px);
+      box-shadow:0 12px 20px rgba(26,115,232,0.16);
+    }
+    .action-btn.secondary{
+      border-color:#c6d3ea;
+      background:#ffffff;
+      color:#123261;
+    }
+    .action-btn.danger{
+      border-color:#f8c69e;
+      background:#fff3ec;
+      color:#b54707;
+    }
+
+    .quick-replies{
+      display:flex;
+      flex-wrap:wrap;
+      gap:8px;
+      margin-top:6px;
+    }
+    .quick-replies button{
+      border:1px solid #cdd7eb;
+      background:#f5f7ff;
+      color:#5a6f94;
+      border-radius:999px;
+      padding:6px 12px;
+      font-size:.76rem;
+      font-weight:500;
+      cursor:pointer;
+      transition:all .16s ease;
+    }
+    .quick-replies button:hover{
+      border-color:#1a73e8;
+      color:#1358aa;
+      background:#e6efff;
+    }
+
+    .sr-only{
+      position:absolute;
+      width:1px;
+      height:1px;
+      padding:0;
+      margin:-1px;
+      overflow:hidden;
+      clip:rect(0,0,0,0);
+      white-space:nowrap;
+      border:0;
+    }
+  </style>
+</head>
+<body>
+  <main class="app" aria-label="BetRivers priority payout support">
+    <section class="conversation-pane">
+      <header class="app-header">
+        <div class="logo">BR</div>
+        <div class="header-meta">
+          <div class="brand">BetRivers - Priority Payout Desk</div>
+          <div class="subtitle">Ticket BR-171104 · Live assistance around the clock</div>
+        </div>
+        <div class="status-cluster">
+          <span class="live-pill"><span class="live-dot" aria-hidden="true"></span> Live</span>
+          <div class="clock" id="clock">12:40 AM EST</div>
+        </div>
+      </header>
+
+      <section class="transcript" id="transcript" aria-live="polite">
+        <div class="transcript-inner" id="transcriptInner"></div>
+      </section>
+
+      <footer class="composer">
+        <div class="composer-shell">
+          <label class="sr-only" for="composerInput">Type a message to Avery</label>
+          <textarea id="composerInput" placeholder="Type here… (Shift+Enter for new line)" rows="1"></textarea>
+          <button id="sendBtn" class="send-btn">
+            <span>Send</span> ➤
+          </button>
+        </div>
+      </footer>
+    </section>
+
+    <aside class="summary-pane" aria-label="Ticket summary and actions">
+      <article class="card">
+        <h2>Ticket Snapshot <span>br-171104</span></h2>
+        <div class="ticket-grid">
+          <div>
+            <div class="label">Account tier</div>
+            <div class="value">Level 433 · LTC Wallet</div>
+          </div>
+          <div>
+            <div class="label">Original withdrawal</div>
+            <div class="value">215.00 LTC - canceled ~03:10 AM EST</div>
+          </div>
+          <div>
+            <div class="label">Current payout split</div>
+            <div class="value">3 × 3.38 LTC (≈ $300) - queued</div>
+          </div>
+          <div>
+            <div class="label">Remaining outbound</div>
+            <div class="value">204.86 LTC scheduled to post</div>
+          </div>
+        </div>
+      </article>
+    </aside>
+  </main>
+
+  <script>
+    const state = {
+        connected:false,
+        minutesSinceMidnight:40,
+      rakeback:false,
+      notify:true,
+      lastUserMessageTime:null,
+      finance:{
+        original:215.00,
+        packet:3.38,
+        count:3,
+        remainingUsd:'18,201',
+        get totalPacket(){return +(this.packet*this.count).toFixed(2);},
+        get remainder(){return +(this.original - this.totalPacket).toFixed(2);}
+      }
+    };
+
+    const dom = {
+      transcript: document.getElementById('transcript'),
+      transcriptInner: document.getElementById('transcriptInner'),
+      clock: document.getElementById('clock'),
+      chipsRow: document.getElementById('chipsRow'),
+      composer: document.getElementById('composerInput'),
+      send: document.getElementById('sendBtn'),
+      rakebackBadge: document.getElementById('rakebackBadge'),
+      progressTrack: document.getElementById('progressTrack'),
+      traceStatus: document.getElementById('traceStatusValue'),
+      activityLog: document.getElementById('activityLog'),
+      replay: document.getElementById('replayTranscript')
+    };
+
+    const defaults = {
+      activityHTML: dom.activityLog ? dom.activityLog.innerHTML : '',
+      progressHTML: dom.progressTrack ? dom.progressTrack.innerHTML : '',
+      traceText: dom.traceStatus ? dom.traceStatus.textContent : ''
+    };
+
+      const quickPhrases = [
+        'help','check live status','keep the three $300 payouts queued','where is my withdrawal',
+        'notify me','open a dispute','halt the three $300 payouts','change destinations',
+        'it’s the next day and it’s still not there','paste three LTC addresses','cancel my withdrawal'
+      ];
+
+      const seededTranscript = [
+        {speaker:'agent', text:'Welcome to BetRivers Support. This is Avery.', time:'12:40 AM EST'},
+        {speaker:'system', text:'Live assistance available 24/7', time:'12:40 AM EST'},
+        {speaker:'agent', text:'Connecting you to Avery… I’m here. What’s your issue right now?', time:'12:40 AM EST'},
+        {speaker:'user', text:'Where tf is my withdrawl last night i talked to somebody named nickolas it’s the next day and it’s STILL not there. please check my withdrawal. last night with Nickolas (around 2:45-3:39 AM EST) I canceled the original 215.00 LTC and asked to split into 3 x ~$300 (≈3.38 LTC each) to the three LTC addresses I gave him. where is it?', time:'12:42 AM EST'},
+        {speaker:'agent', text:`I looked up your ticket BR-171104 and your overnight thread with Nickolas (2:45-3:39 AM EST). You’re right - you were told 1-3 hours and it rolled into today. That’s on us, and I’m sorry.\n\nRecap I see on your account:\n• Original withdrawal: 215.00 LTC - canceled last night.\n• You asked to split into 3 × ~$300 payouts (≈ 3.38 LTC each) to the three LTC addresses you provided.\n• Remaining outbound: 204.86 LTC queued to follow once the split posts.\n\nGive me one moment while I check the live queue and keep the trace hot. I’ll notify you here the instant any of the three lands. What do you want me to do next?`, time:'12:45 AM EST', tag:'trace escalated'},
+        {speaker:'system', text:'Routing you to Dana Alvarez (Payouts Leadership)…', time:'12:46 AM EST'},
+        {speaker:'user', text:'open dispute', time:'12:50 AM EST'},
+        {speaker:'agent', text:'Priority trace opened and linked to BR-171104. I’ll update you as soon as Dana has a decision.', time:'12:51 AM EST'},
+        {speaker:'user', text:'keep the three $300 payouts queued', time:'12:51 AM EST'},
+        {speaker:'agent', text:'Keeping the three ~$300 payouts queued and re-flagging the batch.', time:'12:52 AM EST'},
+        {speaker:'user', text:'it’s the next day and it’s still not there', time:'12:52 AM EST'},
+        {speaker:'agent', text:'You’re right - it overshot the 1-3 hour window. That’s on us.', time:'12:52 AM EST'},
+        {speaker:'user', text:'wait what? so I get an extra 15% stacked on my normal rakeback?', time:'12:53 AM EST'},
+        {speaker:'agent', text:'Exactly - the extra 15% stacks on your regular rakeback and stays active until the payouts hit.', time:'12:54 AM EST', tag:'Dana Alvarez'},
+        {speaker:'user', text:'Alright, that helps a lot. Thanks for pushing this.', time:'12:55 AM EST'},
+        {speaker:'agent', text:'Happy to help. Anything else you want me to run?', time:'12:55 AM EST'}
+      ];
+
+    const heuristics = [
+        {
+          test: text => /help\b/.test(text),
+          respond: () => ({
+            reply:'Got it - tell me exactly what you want done.',
+            advanceMinutes:0
+          })
+        },
+      {
+        test: text => /change dest/.test(text) || /edit wallet/.test(text),
+        respond: () => ({
+          reply:'Drop the new LTC addresses here (one per line). I’ll verify checksum, swap them into the batch, and confirm before tonight’s sweep.',
+          advanceMinutes:0
+        })
+      },
+      {
+        test: text => /open a dispute|dispute/.test(text),
+        respond: () => ({
+          reply:`Priority trace opened and linked to BR-171104. I’ll update you as soon as Dana has a decision.`,
+          activity:{title:'Dispute flag raised', desc:'Finance leadership looped with transcript + wallet verification.'},
+          progress:{step:'processing', state:'active'}
+        })
+      },
+      {
+        test: text => /halt|stop/.test(text),
+        respond: () => ({
+          reply:'I can attempt a full stop if the packets haven’t left the queue yet. Confirm with “stop all three” and I’ll engage the processor desk.'
+        })
+      },
+      {
+        test: text => /stop all three/.test(text),
+        respond: () => ({
+          reply:'Working that now — I’ve pinged the processor desk to halt those packets. I’ll confirm once they respond.',
+          activity:{title:'Stop request submitted', desc:'Processor desk notified to intercept queued LTC packets.'},
+          progress:{step:'queued', state:'active'}
+        })
+      },
+      {
+        test: text => matchesComplaint(text),
+        respond: () => {
+          const each = state.finance.packet.toFixed(2);
+          const remainder = state.finance.remainder.toFixed(2);
+          return {
+            reply:`I looked up your ticket BR-171104 and your overnight thread with Nickolas (2:45-3:39 AM EST). You’re right - you were told 1-3 hours and it rolled into today. That’s on us, and I’m sorry.\n\nRecap I see on your account:\n• Original withdrawal: 215.00 LTC - canceled last night.\n• You asked to split into 3 × ~$300 payouts (≈ ${each} LTC each) to the three LTC addresses you provided.\n• Remaining outbound: ${remainder} LTC queued to follow once the split posts.\n\nGive me one moment while I check the live queue and keep the trace hot. I’ll notify you here the instant any of the three lands. What do you want me to do next?`,
+            rakeback:true,
+            progress:{step:'queued', state:'active'},
+            advanceMinutes:3
+          };
+        }
+      },
+      {
+        test: text => /(fast as fuck|fast af|one time|cant just|can't just|bro wdym|level ?4|400k|spent)/.test(text),
+          respond: () => {
+            simulateAgentResponse({
+              reply:'I get it - the payouts are usually fast. Stay with me while I bring in Dana Alvarez who can push this through.',
+              advanceMinutes:0
+            }, {delay:700, advanceMinutes:0});
+          setTimeout(()=>{
+            buildMessage({speaker:'system', text:'Routing you to Dana Alvarez (Payouts Leadership)…'});
+          }, 1400);
+          simulateAgentResponse({
+              reply:'Hi, this is Dana Alvarez. Give me one moment to review this chat so I can help you.',
+            advanceMinutes:0
+          }, {delay:1700, advanceMinutes:0});
+          const remainder = state.finance.remainder.toFixed(2);
+          simulateAgentResponse({
+              reply:`Thanks for waiting. I’m sorry for the delays - to keep you whole I’m stacking an additional 15% rakeback boost on top of the one already active. The three ~3.38 LTC packets stay prioritized and the remaining ${remainder} LTC fires right after they post - I’ll monitor and update you live.`,
+            advanceMinutes:2,
+            rakeback:true,
+              tag:'Dana Alvarez'
+          }, {delay:3200});
+          return null;
+        }
+      },
+        {
+          test: text => /(wait what|stacked|extra 15|double rakeback|confirm)/.test(text),
+          respond: () => ({
+            reply:'Yep - the extra 15% stacks on top of your existing rakeback and starts right away until the payouts clear.',
+            advanceMinutes:1
+          })
+        },
+      {
+        test: text => /(thanks|appreciate|sounds good|alright then)/.test(text),
+        respond: () => ({
+          reply:'Happy to help. Anything else you want me to run?',
+          advanceMinutes:1
+        })
+      },
+        {
+          test: text => /next day|still not there/.test(text),
+          respond: () => ({
+            reply:`You’re right - it overshot the 1-3 hour window. That’s on us.`,
+            rakeback:true
+          })
+        },
+      {
+        test: text => (text.includes('where') && /withdraw/.test(text)) || text.includes('balance'),
+        respond: () => {
+          const total = state.finance.totalPacket.toFixed(2);
+          const remainder = state.finance.remainder.toFixed(2);
+          return {
+            reply:`Here’s the breakdown: the original 215.00 LTC was canceled. Three ≈$300 packets cover ${total} LTC. Remaining outbound once those settle: ${remainder} LTC. I’ll keep watching the queue in real time.`
+          };
+        }
+      },
+      {
+        test: text => /check live status|update status|status/.test(text),
+        respond: () => ({
+          reply:'Running a live check… still queued for the next processor pass tonight. I’ll ping you the moment any of the three posts.'
+        })
+      },
+      {
+        test: text => /notify/.test(text),
+        respond: () => ({
+          reply:'Notifications toggled on. I’ll alert you instantly when any packet hits the chain.',
+          notify:true
+        })
+      },
+      {
+        test: text => /keep (the )?(three|3)/.test(text),
+        respond: () => ({
+          reply:'Keeping the three ~$300 payouts queued and re-flagging the batch.',
+          progress:{step:'queued', state:'active'}
+        })
+      },
+      {
+        test: text => /cancel my withdrawal|cancel withdrawal/.test(text),
+        respond: () => ({
+          reply:'The original 215.00 LTC was canceled last night. Say “halt the three $300 payouts” if you want the split packets stopped (only if they’re still in queue).'
+        })
+      },
+      {
+        test: text => findAddresses(text).length > 0,
+        respond: text => {
+          const addys = findAddresses(text);
+          return ({
+            reply:`I see these addresses: ${addys.join(', ')} - they match last night’s three. Each remains queued for ~3.38 LTC (~$300).`
+          });
+        }
+      },
+      {
+        test: text => /fuck|wtf|ridiculous|kidding|taking too long|bro where/.test(text),
+        respond: () => ({
+          reply:`I hear you - I’m on it and keeping the trace hot for you.`,
+          rakeback:true
+        })
+      },
+      {
+        test: text => /withdraw/.test(text),
+        respond: () => ({
+          reply:'Recap with Nickolas (2:45-3:39 AM): canceled original + queued three ~$300 packets. Current status: still in tonight’s processor pass - I’ll notify the second one posts.'
+        })
+      }
+    ];
+
+    function matchesComplaint(text){
+      const hasNick = /(nickolas|nicholas|nick)/.test(text);
+      const hasWithdraw = /withdraw/.test(text);
+      const showsDelay = /(next day|still|last night|overnight|day|hour|late|missing|where)/.test(text);
+      return hasNick && hasWithdraw && showsDelay;
+    }
+
+    function findAddresses(text){
+      const hits = text.match(/\b[L3][A-Za-z0-9]{25,60}\b/g);
+      return hits ? Array.from(new Set(hits)) : [];
+    }
+
+    function pad2(n){return String(n).padStart(2,'0');}
+    function formatClock(minutes){
+      const total = ((minutes % (24*60)) + (24*60)) % (24*60);
+      const h = Math.floor(total/60);
+      const m = total % 60;
+      const isPM = h >= 12;
+      const hh12 = (h % 12) || 12;
+      return `${hh12}:${pad2(m)} ${isPM ? 'PM' : 'AM'} EST`;
+    }
+    function parseTimeLabel(label){
+      const match = /^(\d{1,2}):(\d{2})\s+(AM|PM)/i.exec(label || '');
+      if(!match) return null;
+      let hours = parseInt(match[1],10);
+      const minutes = parseInt(match[2],10);
+      const suffix = match[3].toUpperCase();
+      if(hours === 12){
+        hours = suffix === 'AM' ? 0 : 12;
+      } else if(suffix === 'PM'){
+        hours += 12;
+      }
+      return hours*60 + minutes;
+    }
+    function tick(minutes = 1){
+      state.minutesSinceMidnight += minutes;
+      dom.clock.textContent = formatClock(state.minutesSinceMidnight);
+    }
+
+    function resetPanels(){
+      if(dom.activityLog) dom.activityLog.innerHTML = defaults.activityHTML;
+      if(dom.progressTrack) dom.progressTrack.innerHTML = defaults.progressHTML;
+      if(dom.traceStatus) dom.traceStatus.textContent = defaults.traceText;
+      if(dom.rakebackBadge) dom.rakebackBadge.hidden = true;
+      state.rakeback = false;
+    }
+
+    function buildMessage({speaker, text, time, quick, tag, meta}, options = {}){
+      const row = document.createElement('div');
+      row.className = `message-row ${speaker}`;
+
+      if(speaker === 'system'){
+        const bubble = document.createElement('div');
+        bubble.className = 'message-bubble';
+        bubble.textContent = text;
+        row.appendChild(bubble);
+        dom.transcriptInner.appendChild(row);
+        if(options.scroll !== false){
+          requestAnimationFrame(()=>dom.transcript.scrollTop = dom.transcript.scrollHeight);
+        }
+        return row;
+      }
+
+      if(speaker === 'agent'){
+        const avatar = document.createElement('div');
+        avatar.className = 'avatar';
+        avatar.textContent = 'BR';
+        row.appendChild(avatar);
+      }
+
+      const wrap = document.createElement('div');
+      wrap.className = 'message-wrap';
+
+      if(tag){
+        const tagEl = document.createElement('span');
+        tagEl.className = 'tag';
+        tagEl.textContent = tag;
+        wrap.appendChild(tagEl);
+      }
+
+      const bubble = document.createElement('div');
+      bubble.className = 'message-bubble';
+      bubble.textContent = text;
+      wrap.appendChild(bubble);
+
+      const metaLine = document.createElement('div');
+      metaLine.className = 'message-meta';
+      metaLine.innerHTML = `<span>${time || formatClock(state.minutesSinceMidnight)}</span>`;
+      if(meta && meta.length){
+        meta.forEach(item=>{
+          const span = document.createElement('span');
+          span.className = 'timestamp';
+          span.textContent = item;
+          metaLine.appendChild(span);
+        });
+      }
+      wrap.appendChild(metaLine);
+
+      if(quick && quick.length){
+        const quickWrap = document.createElement('div');
+        quickWrap.className = 'quick-replies';
+        quick.forEach(label=>{
+          const btn = document.createElement('button');
+          btn.type = 'button';
+          btn.textContent = label;
+          btn.addEventListener('click', ()=>{
+            dom.composer.value = label.toLowerCase();
+            dom.composer.focus();
+          });
+          quickWrap.appendChild(btn);
+        });
+        wrap.appendChild(quickWrap);
+      }
+
+      row.appendChild(wrap);
+
+      if(speaker === 'user'){
+        const avatar = document.createElement('div');
+        avatar.className = 'avatar';
+        avatar.textContent = 'YOU';
+        row.appendChild(avatar);
+      }
+
+      dom.transcriptInner.appendChild(row);
+      if(options.scroll !== false){
+        requestAnimationFrame(()=>dom.transcript.scrollTop = dom.transcript.scrollHeight);
+      }
+      return row;
+    }
+
+    function showTyping(){
+      const row = document.createElement('div');
+      row.className = 'message-row agent';
+      const avatar = document.createElement('div');
+      avatar.className = 'avatar';
+      avatar.textContent = 'BR';
+      row.appendChild(avatar);
+      const wrap = document.createElement('div');
+      wrap.className = 'message-wrap';
+      const bubble = document.createElement('div');
+      bubble.className = 'typing-indicator';
+      bubble.innerHTML = '<span class="typing-dot"></span><span class="typing-dot"></span><span class="typing-dot"></span>';
+      wrap.appendChild(bubble);
+      row.appendChild(wrap);
+      dom.transcriptInner.appendChild(row);
+      dom.transcript.scrollTop = dom.transcript.scrollHeight;
+      return ()=>row.remove();
+    }
+
+    function simulateAgentResponse(payload, opts = {}){
+      const stopTyping = showTyping();
+      const delay = opts.delay ?? 900;
+      setTimeout(()=>{
+        stopTyping();
+        const advance = payload.advanceMinutes ?? opts.advanceMinutes ?? 1;
+        tick(advance);
+        if(payload.rakeback){
+          applyRakeback();
+        }
+        if(payload.notify){
+          state.notify = true;
+        }
+        if(payload.progress){
+          updateProgress(payload.progress);
+        }
+        if(payload.activity && dom.activityLog){
+          appendActivity(payload.activity.title, payload.activity.desc);
+        }
+        buildMessage({
+          speaker:'agent',
+          text:payload.reply,
+          time:formatClock(state.minutesSinceMidnight),
+          quick:payload.quick,
+          tag:payload.tag
+        });
+      }, delay);
+    }
+
+    function applyRakeback(){
+      if(state.rakeback) return;
+      state.rakeback = true;
+      if(dom.rakebackBadge) dom.rakebackBadge.hidden = false;
+      appendActivity('Rakeback extended', '15% courtesy rakeback stays active until the payouts settle.');
+    }
+
+    function appendActivity(title, description){
+      if(!dom.activityLog) return;
+      const wrap = document.createElement('div');
+      wrap.className = 'activity-event';
+      wrap.innerHTML = `<strong>${formatClock(state.minutesSinceMidnight)} · ${title}</strong>${description}`;
+      dom.activityLog.prepend(wrap);
+    }
+
+    function updateProgress({step, state:progressState}){
+      if(!dom.progressTrack) return;
+      const stepEl = dom.progressTrack.querySelector(`[data-step="${step}"]`);
+      if(!stepEl) return;
+      dom.progressTrack.querySelectorAll('.progress-step').forEach(el=>{
+        if(el.dataset.step === step){
+          el.classList.remove('done','active');
+          if(progressState === 'active') el.classList.add('active');
+          if(progressState === 'done') el.classList.add('done');
+        }
+      });
+      if(dom.traceStatus && step === 'processing' && progressState === 'active'){
+        dom.traceStatus.textContent = 'Processor desk running live sweep';
+      }
+      if(dom.traceStatus && step === 'posted' && progressState === 'done'){
+        dom.traceStatus.textContent = 'Completed · Awaiting blockchain confirmations';
+      }
+    }
+
+    function initializeChips(){
+      if(!dom.chipsRow) return;
+      quickPhrases.forEach(label=>{
+        const chip = document.createElement('button');
+        chip.type = 'button';
+        chip.className = 'chip';
+        chip.textContent = label;
+        chip.dataset.fill = label;
+        chip.addEventListener('click', ()=>{
+          dom.composer.value = label;
+          dom.composer.focus();
+        });
+        dom.chipsRow.appendChild(chip);
+      });
+      document.querySelectorAll('.action-btn[data-fill]').forEach(btn=>{
+        btn.addEventListener('click', ()=>{
+          dom.composer.value = btn.dataset.fill;
+          dom.composer.focus();
+        });
+      });
+    }
+
+    function renderWelcome(){
+      resetPanels();
+      state.minutesSinceMidnight = 40;
+      dom.clock.textContent = formatClock(state.minutesSinceMidnight);
+      dom.transcriptInner.innerHTML = '';
+      buildMessage({
+        speaker:'agent',
+        text:'Welcome to BetRivers Support. This is Avery.',
+        time:formatClock(state.minutesSinceMidnight)
+      });
+      state.connected = false;
+    }
+
+    function loadReferenceTranscript(){
+      resetPanels();
+      dom.transcriptInner.innerHTML = '';
+      let delay = 0;
+      seededTranscript.forEach(entry=>{
+        setTimeout(()=>{
+          buildMessage(entry);
+          if(entry.tag === 'trace escalated'){
+            appendActivity('Trace escalated', 'Ticket BR-171104 linked with overnight transcript; finance leadership looped.');
+            applyRakeback();
+            updateProgress({step:'queued', state:'active'});
+          }
+        }, delay);
+        delay += 320;
+      });
+      const last = seededTranscript[seededTranscript.length-1];
+      if(dom.clock && last && last.time){
+        const parsed = parseTimeLabel(last.time);
+        if(parsed !== null){
+          setTimeout(()=>{
+            state.minutesSinceMidnight = parsed;
+            dom.clock.textContent = formatClock(state.minutesSinceMidnight);
+          }, delay);
+        }
+      }
+      state.connected = true;
+    }
+
+    function handleSend(){
+      const value = dom.composer.value.trim();
+      if(!value) return;
+      const lower = value.toLowerCase();
+      buildMessage({speaker:'user', text:value, time:formatClock(state.minutesSinceMidnight)});
+      dom.composer.value = '';
+      dom.composer.style.height = 'auto';
+      state.lastUserMessageTime = Date.now();
+      if(!state.connected){
+        startConnectionFlow(lower);
+        return;
+      }
+      routeUserInput(lower);
+    }
+
+    function startConnectionFlow(input){
+      state.connected = true;
+      simulateAgentResponse({
+        reply:'Connecting you to Avery…\nI’m here. What’s your issue right now?'
+      }, {delay:650, advanceMinutes:0});
+      setTimeout(()=>routeUserInput(input), 900);
+    }
+
+    function routeUserInput(input){
+      const match = heuristics.find(rule => rule.test(input));
+      if(match){
+        const payload = typeof match.respond === 'function'
+          ? match.respond(input)
+          : match.respond;
+        simulateAgentResponse(payload);
+        return;
+      }
+      simulateAgentResponse({
+        reply:'Tell me exactly what you want done and I’ll run it.'
+      });
+    }
+
+    function autoResizeTextarea(){
+      dom.composer.style.height = 'auto';
+      dom.composer.style.height = Math.min(dom.composer.scrollHeight, 160) + 'px';
+    }
+
+    function registerEvents(){
+      dom.send.addEventListener('click', handleSend);
+      dom.composer.addEventListener('keydown', e=>{
+        if(e.key === 'Enter' && !e.shiftKey){
+          e.preventDefault();
+          handleSend();
+        }
+      });
+      dom.composer.addEventListener('input', autoResizeTextarea);
+      if(dom.replay){
+        dom.replay.addEventListener('click', loadReferenceTranscript);
+      }
+    }
+
+    (function init(){
+      initializeChips();
+      registerEvents();
+      renderWelcome();
+    })();
+  </script>
+</body>
+</html>
