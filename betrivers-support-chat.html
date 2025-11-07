@@ -805,9 +805,9 @@
     const seededTranscript = [
       {speaker:'agent', text:'Welcome to BetRivers Support. This is Avery.', time:'11:06 PM ET'},
       {speaker:'system', text:'Live assistance available 24/7', time:'11:06 PM ET'},
-      {speaker:'agent', text:'Connecting you to Avery… I’m here. What’s your issue right now?', time:'11:06 PM ET', quick:['status','balance','change payouts','open dispute','something else…']},
+      {speaker:'agent', text:'Connecting you to Avery… I’m here. What’s your issue right now?', time:'11:06 PM ET'},
       {speaker:'user', text:'Where tf is my withdrawl last night i talked to somebody named nickolas it’s the next day and it’s STILL not there. please check my withdrawal. last night with Nickolas (around 2:45–3:39 AM ET) I canceled the original 215.00 LTC and asked to split into 3 x ~$300 (≈3.38 LTC each) to the three LTC addresses I gave him. where is it?', time:'11:37 PM ET'},
-      {speaker:'agent', text:`I looked up your ticket BR-171104 and your overnight thread with Nickolas (2:45–3:39 AM ET). You’re right — you were told 1–3 hours and it rolled into today. That’s on us, and I’m sorry.\n\nRecap I see on your account:\n• Original withdrawal: 215.00 LTC — canceled last night.\n• You asked to split into 3 × ~$300 payouts (≈ 3.38 LTC each) to the three LTC addresses you provided.\n• Those three are still processing in the outbound batch.\n\nI’ve opened a priority trace and re-flagged your batch for the next processor pass tonight. To keep you whole while we finish this, I’ve applied a temporary 15% rakeback boost (one-time courtesy) until the payouts post or the queue normalizes. I’ll notify here the instant any of the three lands.\n\nWhat do you want me to do next?`, time:'11:38 PM ET', quick:['check live status','keep queued','try to stop them','change destinations','open dispute'], tag:'trace escalated'},
+      {speaker:'agent', text:`I looked up your ticket BR-171104 and your overnight thread with Nickolas (2:45–3:39 AM ET). You’re right — you were told 1–3 hours and it rolled into today. That’s on us, and I’m sorry.\n\nRecap I see on your account:\n• Original withdrawal: 215.00 LTC — canceled last night.\n• You asked to split into 3 × ~$300 payouts (≈ 3.38 LTC each) to the three LTC addresses you provided.\n• Remaining outbound: 204.86 LTC queued to follow once the split posts.\n\nI’ve reopened the priority trace and re-flagged your batch for the next processor pass tonight. I’ll notify you here the instant any of the three lands. What do you want me to do next?`, time:'11:38 PM ET', tag:'trace escalated'},
       {speaker:'user', text:'open dispute', time:'11:56 PM ET'},
       {speaker:'agent', text:'Priority trace opened and linked to BR-171104. I’ll update you as soon as payouts leadership replies.', time:'11:57 PM ET'},
       {speaker:'user', text:'keep the three $300 payouts queued', time:'11:57 PM ET'},
@@ -815,22 +815,20 @@
       {speaker:'user', text:'it’s the next day and it’s still not there', time:'11:58 PM ET'},
       {speaker:'agent', text:'You’re right — it overshot the 1–3 hour window. That’s on us.', time:'11:59 PM ET'},
       {speaker:'user', text:'so', time:'11:59 PM ET'},
-      {speaker:'agent', text:'Tell me exactly what you want done and I’ll do it.', time:'12:00 AM ET', quick:['status','balance','change payouts','open dispute']}
+      {speaker:'agent', text:'Tell me exactly what you want done and I’ll do it.', time:'12:00 AM ET'}
     ];
 
     const heuristics = [
       {
         test: text => /help\b/.test(text),
         respond: () => ({
-          reply:'Got it — tell me exactly what you want done.',
-          quick:['status','balance','change payouts','open dispute','something else…']
+          reply:'Got it — tell me exactly what you want done.'
         })
       },
       {
         test: text => /change dest/.test(text) || /edit wallet/.test(text),
         respond: () => ({
-          reply:'Drop the new LTC addresses here (one per line). I’ll verify checksum, swap them into the batch, and confirm before tonight’s sweep.',
-          quick:['paste three LTC addresses','halt the three $300 payouts','keep the three $300 payouts queued']
+          reply:'Drop the new LTC addresses here (one per line). I’ll verify checksum, swap them into the batch, and confirm before tonight’s sweep.'
         })
       },
       {
@@ -844,8 +842,7 @@
       {
         test: text => /halt|stop/.test(text),
         respond: () => ({
-          reply:'I can attempt a full stop if the packets haven’t left the queue yet. Confirm with “stop all three” and I’ll engage the processor desk.',
-          quick:['stop all three','keep the three $300 payouts queued','change destinations']
+          reply:'I can attempt a full stop if the packets haven’t left the queue yet. Confirm with “stop all three” and I’ll engage the processor desk.'
         })
       },
       {
@@ -858,33 +855,37 @@
       },
       {
         test: text => matchesComplaint(text),
-        respond: () => ({
-          reply:`I looked up your ticket BR-171104 and your overnight thread with Nickolas (2:45–3:39 AM ET). You’re right — you were told 1–3 hours and it rolled into today. That’s on us, and I’m sorry.\n\nRecap I see on your account:\n• Original withdrawal: 215.00 LTC — canceled last night.\n• You asked to split into 3 × ~$300 payouts (≈ ${state.finance.packet.toFixed(2)} LTC each) to the three LTC addresses you provided.\n• Those three are still processing in the outbound batch.\n\nI’ve opened a priority trace and re-flagged your batch for the next processor pass tonight. To keep you whole while we finish this, I’ve applied a temporary 15% rakeback boost (one-time courtesy) until the payouts post or the queue normalizes. I’ll notify here the instant any of the three lands.\n\nWhat do you want me to do next?`,
-          quick:['check live status','keep queued','try to stop them','change destinations','open dispute'],
-          rakeback:true,
-          progress:{step:'queued', state:'active'}
-        })
+        respond: () => {
+          const each = state.finance.packet.toFixed(2);
+          const remainder = state.finance.remainder.toFixed(2);
+          return {
+            reply:`I looked up your ticket BR-171104 and your overnight thread with Nickolas (2:45–3:39 AM ET). You’re right — you were told 1–3 hours and it rolled into today. That’s on us, and I’m sorry.\n\nRecap I see on your account:\n• Original withdrawal: 215.00 LTC — canceled last night.\n• You asked to split into 3 × ~$300 payouts (≈ ${each} LTC each) to the three LTC addresses you provided.\n• Remaining outbound: ${remainder} LTC queued to follow once the split posts.\n\nI’ve reopened the priority trace and re-flagged your batch for the next processor pass tonight. I’ll notify you here the instant any of the three lands. What do you want me to do next?`,
+            rakeback:true,
+            progress:{step:'queued', state:'active'}
+          };
+        }
       },
       {
         test: text => /next day|still not there/.test(text),
         respond: () => ({
           reply:`You’re right — it overshot the 1–3 hour window. That’s on us.`,
-          rakeback:true,
-          quick:['check live status','open dispute','notify me']
+          rakeback:true
         })
       },
       {
-        test: text => /where is my withdrawal|where is it|where.tf/.test(text) || /balance/.test(text),
-        respond: () => ({
-          reply:`Here’s the math: 215.00 LTC was the original (canceled). The three ~$300 packets lock ≈${state.finance.totalPacket.toFixed(2)} LTC. Remaining once those settle: ${state.finance.remainder.toFixed(2)} LTC (≈ $${state.finance.remainingUsd}).`,
-          quick:['check live status','keep the three $300 payouts queued','notify me']
-        })
+        test: text => (text.includes('where') && /withdraw/.test(text)) || text.includes('balance'),
+        respond: () => {
+          const total = state.finance.totalPacket.toFixed(2);
+          const remainder = state.finance.remainder.toFixed(2);
+          return {
+            reply:`Here’s the breakdown: the original 215.00 LTC was canceled. Three ≈$300 packets cover ${total} LTC. Remaining outbound once those settle: ${remainder} LTC. I’ll keep watching the queue in real time.`
+          };
+        }
       },
       {
         test: text => /check live status|update status|status/.test(text),
         respond: () => ({
-          reply:'Running a live check… still queued for the next processor pass tonight. I’ll ping you the moment any of the three posts.',
-          quick:['notify me','keep the three $300 payouts queued','open dispute']
+          reply:'Running a live check… still queued for the next processor pass tonight. I’ll ping you the moment any of the three posts.'
         })
       },
       {
@@ -904,8 +905,7 @@
       {
         test: text => /cancel my withdrawal|cancel withdrawal/.test(text),
         respond: () => ({
-          reply:'The original 215.00 LTC was canceled last night. Say “halt the three $300 payouts” if you want the split packets stopped (only if they’re still in queue).',
-          quick:['halt the three $300 payouts','keep the three $300 payouts queued','change destinations']
+          reply:'The original 215.00 LTC was canceled last night. Say “halt the three $300 payouts” if you want the split packets stopped (only if they’re still in queue).'
         })
       },
       {
@@ -913,33 +913,30 @@
         respond: text => {
           const addys = findAddresses(text);
           return ({
-            reply:`I see these addresses: ${addys.join(', ')} — they match last night’s three. Each remains queued for ~3.38 LTC (~$300).`,
-            quick:['check live status','keep the three $300 payouts queued','notify me']
+            reply:`I see these addresses: ${addys.join(', ')} — they match last night’s three. Each remains queued for ~3.38 LTC (~$300).`
           });
         }
       },
       {
         test: text => /fuck|wtf|ridiculous|kidding|taking too long|bro where/.test(text),
         respond: () => ({
-          reply:`I hear you — I’m on it and will push updates here.`,
-          quick:['check live status','open dispute','notify me'],
+          reply:`I hear you — I’m on it and keeping the trace hot for you.`,
           rakeback:true
         })
       },
       {
         test: text => /withdraw/.test(text),
         respond: () => ({
-          reply:'Recap with Nickolas (2:45–3:39 AM): canceled original + queued three ~$300 packets. Current: still queued for tonight’s pass; I’ll notify the second one posts.',
-          quick:['check live status','keep the three $300 payouts queued','change destinations']
+          reply:'Recap with Nickolas (2:45–3:39 AM): canceled original + queued three ~$300 packets. Current status: still in tonight’s processor pass — I’ll notify the second one posts.'
         })
       }
     ];
 
     function matchesComplaint(text){
-      return /(next day|still not there)/.test(text) &&
-             /nickolas/.test(text) &&
-             /withdraw/.test(text) &&
-             /(cancel|three|300)/.test(text);
+      const hasNick = /(nickolas|nicholas|nick)/.test(text);
+      const hasWithdraw = /withdraw/.test(text);
+      const showsDelay = /(next day|still|last night|overnight|day|hour|late|missing|where)/.test(text);
+      return hasNick && hasWithdraw && showsDelay;
     }
 
     function findAddresses(text){
@@ -1175,18 +1172,17 @@
       dom.transcriptInner.innerHTML = '';
       buildMessage({
         speaker:'agent',
-        text:'Welcome to BetRivers Support. This is Avery.\n\nTell me what you need — I can check live status, keep the payouts queued, halt the batch, or escalate.',
-        time:formatClock(state.minutesSinceMidnight),
-        quick:['status','balance','change payouts','open dispute','something else…']
+        text:'Welcome to BetRivers Support. This is Avery.',
+        time:formatClock(state.minutesSinceMidnight)
       });
-      state.connected = true;
+      state.connected = false;
     }
 
     function loadReferenceTranscript(){
       resetPanels();
       dom.transcriptInner.innerHTML = '';
       let delay = 0;
-      seededTranscript.forEach((entry, index)=>{
+      seededTranscript.forEach(entry=>{
         setTimeout(()=>{
           buildMessage(entry);
           if(entry.tag === 'trace escalated'){
@@ -1194,14 +1190,11 @@
             applyRakeback();
             updateProgress({step:'queued', state:'active'});
           }
-          if(entry.quick){
-            state.connected = true;
-          }
         }, delay);
         delay += 320;
       });
       const last = seededTranscript[seededTranscript.length-1];
-        if(dom.clock && last && last.time){
+      if(dom.clock && last && last.time){
         const parsed = parseTimeLabel(last.time);
         if(parsed !== null){
           setTimeout(()=>{
@@ -1210,17 +1203,30 @@
           }, delay);
         }
       }
+      state.connected = true;
     }
 
     function handleSend(){
       const value = dom.composer.value.trim();
       if(!value) return;
+      const lower = value.toLowerCase();
       buildMessage({speaker:'user', text:value, time:formatClock(state.minutesSinceMidnight)});
       dom.composer.value = '';
       dom.composer.style.height = 'auto';
-      state.connected = true;
       state.lastUserMessageTime = Date.now();
-      routeUserInput(value.toLowerCase());
+      if(!state.connected){
+        startConnectionFlow(lower);
+        return;
+      }
+      routeUserInput(lower);
+    }
+
+    function startConnectionFlow(input){
+      state.connected = true;
+      simulateAgentResponse({
+        reply:'Connecting you to Avery…\nI’m here. What’s your issue right now?'
+      }, {delay:650, advanceMinutes:0});
+      setTimeout(()=>routeUserInput(input), 900);
     }
 
     function routeUserInput(input){
@@ -1233,8 +1239,7 @@
         return;
       }
       simulateAgentResponse({
-        reply:'Tell me exactly what you want done and I’ll run it.',
-        quick:['status','balance','change payouts','open dispute']
+        reply:'Tell me exactly what you want done and I’ll run it.'
       });
     }
 
