@@ -1,0 +1,1367 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>BetRivers • Priority Payout Support Desk</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600&display=swap" rel="stylesheet">
+  <style>
+    :root{
+      color-scheme: dark;
+      --ink-0:#0c111a;
+      --ink-1:#111827;
+      --ink-2:#1f2937;
+      --ink-3:#334155;
+      --ink-4:#475569;
+      --ink-5:#94a3b8;
+      --ink-6:#e2e8f0;
+      --brand:#1a73e8;
+      --brand-soft:rgba(26,115,232,.14);
+      --brand-gradient:linear-gradient(120deg,#1a73e8,#4c8bff 55%,#80a9ff);
+      --accent:#0ea5e9;
+      --agent-bubble:rgba(26, 115, 232, 0.08);
+      --agent-border:rgba(26, 115, 232, 0.35);
+      --user-bubble:rgba(255, 255, 255, 0.05);
+      --surface:rgba(17, 24, 39, 0.72);
+      --surface-strong:rgba(15,23,42,0.9);
+      --surface-soft:rgba(255,255,255,0.03);
+      --shadow-lg:0 20px 48px rgba(8,15,35,0.45);
+      --shadow-sm:0 12px 24px rgba(8,15,35,0.26);
+      --radius-lg:22px;
+      --radius-md:18px;
+      --radius-sm:10px;
+      --warning:#facc15;
+      --error:#f97316;
+      --success:#22d3ee;
+      --success-soft:rgba(34,211,238,0.16);
+      --danger-soft:rgba(249,115,22,0.13);
+      --font-base:'Inter',system-ui,-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;
+      --font-display:'Space Grotesk',var(--font-base);
+      --delay-step:120ms;
+    }
+
+    *,*::before,*::after{box-sizing:border-box}
+    html,body{height:100%}
+
+    body{
+      margin:0;
+      font-family:var(--font-base);
+      background:
+        radial-gradient(1400px 640px at 10% -20%, rgba(38,101,255,0.22), transparent 60%),
+        radial-gradient(1200px 620px at 90% 0%, rgba(28,200,192,0.16), transparent 64%),
+        linear-gradient(180deg, #060a13 0%, #0b1220 32%, #09101e 100%);
+      color:var(--ink-6);
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      padding:32px;
+      overflow:hidden;
+    }
+
+    @media (max-width:1200px){
+      body{padding:24px}
+    }
+    @media (max-width:960px){
+      body{padding:18px}
+    }
+    @media (max-width:780px){
+      body{padding:12px}
+    }
+    @media (max-width:720px){
+      html,body{height:auto}
+      body{min-height:100%; padding:10px; align-items:stretch}
+    }
+
+    .app{
+      width:min(1220px,100%);
+      max-height:940px;
+      background:rgba(6,11,22,0.85);
+      backdrop-filter:blur(26px);
+      border:1px solid rgba(148,163,184,0.08);
+      border-radius:var(--radius-lg);
+      box-shadow:var(--shadow-lg);
+      display:grid;
+      grid-template-columns: minmax(0, 1.66fr) minmax(0, 1fr);
+      overflow:hidden;
+      position:relative;
+    }
+
+    @media (max-width:1080px){
+      .app{grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);}
+    }
+    @media (max-width:900px){
+      .app{grid-template-columns:1fr; max-height:none}
+    }
+
+    .conversation-pane{
+      position:relative;
+      display:flex;
+      flex-direction:column;
+      border-right:1px solid rgba(148,163,184,0.06);
+      background:linear-gradient(135deg, rgba(12,18,32,0.92) 0%, rgba(9,16,30,0.88) 100%);
+    }
+    @media (max-width:900px){
+      .conversation-pane{border-right:none; border-bottom:1px solid rgba(148,163,184,0.06)}
+    }
+
+    .summary-pane{
+      background:linear-gradient(160deg, rgba(14,21,38,0.94) 0%, rgba(10,19,38,0.88) 100%);
+      padding:28px 28px 32px;
+      overflow-y:auto;
+    }
+
+    .app-header{
+      padding:22px 26px 16px;
+      display:flex;
+      align-items:flex-start;
+      gap:18px;
+      position:relative;
+      z-index:2;
+    }
+    .logo{
+      width:54px;
+      height:54px;
+      border-radius:16px;
+      background:var(--brand-gradient);
+      display:grid;
+      place-items:center;
+      font-family:var(--font-display);
+      font-weight:700;
+      font-size:18px;
+      letter-spacing:.4px;
+      color:#fff;
+      box-shadow:0 14px 26px rgba(26,115,232,.38);
+    }
+    .header-meta{
+      display:flex;
+      flex-direction:column;
+      gap:6px;
+    }
+    .brand{
+      font-weight:700;
+      font-size:1.08rem;
+      letter-spacing:.02em;
+    }
+    .subtitle{
+      color:var(--ink-5);
+      font-size:.85rem;
+      line-height:1.3;
+    }
+    .status-cluster{
+      margin-left:auto;
+      display:flex;
+      gap:12px;
+      align-items:center;
+    }
+    .live-pill{
+      display:inline-flex;
+      align-items:center;
+      gap:8px;
+      padding:6px 12px;
+      border-radius:999px;
+      border:1px solid rgba(26,115,232,0.28);
+      background:rgba(26,115,232,0.18);
+      font-size:.75rem;
+      font-weight:600;
+      text-transform:uppercase;
+      letter-spacing:.06em;
+      color:#dbeafe;
+    }
+    .live-dot{
+      width:9px;
+      height:9px;
+      border-radius:50%;
+      background:#22d3ee;
+      position:relative;
+    }
+    .live-dot::after{
+      content:'';
+      position:absolute;
+      inset:-7px;
+      border-radius:inherit;
+      background:rgba(34,211,238,0.28);
+      filter:blur(4px);
+      animation:pulse 1.6s ease infinite;
+    }
+    @keyframes pulse{
+      0%,100%{transform:scale(.6); opacity:.55;}
+      45%{transform:scale(1); opacity:1;}
+    }
+    .clock{
+      font-size:.8rem;
+      padding:7px 14px;
+      border-radius:999px;
+      border:1px dashed rgba(148,163,184,0.32);
+      background:rgba(15,23,42,0.24);
+      color:var(--ink-5);
+      font-variant-numeric:tabular-nums;
+    }
+
+    .transcript{
+      flex:1;
+      overflow-y:auto;
+      padding:12px 26px 6px;
+      display:flex;
+      flex-direction:column;
+      gap:14px;
+      position:relative;
+    }
+    .transcript::before{
+      content:'';
+      position:absolute;
+      left:0;
+      right:0;
+      top:0;
+      height:72px;
+      pointer-events:none;
+      background:linear-gradient(180deg, rgba(12,18,32,.8), transparent 80%);
+      z-index:1;
+    }
+    .transcript::after{
+      content:'';
+      position:absolute;
+      left:0;
+      right:0;
+      bottom:0;
+      height:72px;
+      pointer-events:none;
+      background:linear-gradient(0deg, rgba(12,18,32,.8), transparent 80%);
+      z-index:1;
+    }
+    .transcript-inner{
+      display:flex;
+      flex-direction:column;
+      gap:14px;
+      position:relative;
+      z-index:2;
+    }
+
+    .message-row{
+      display:flex;
+      gap:12px;
+      align-items:flex-end;
+      max-width:92%;
+      animation:fadeInUp .38s ease both;
+    }
+    .message-row.agent{justify-content:flex-start}
+    .message-row.user{margin-left:auto; justify-content:flex-end}
+    .message-row.system{
+      justify-content:center;
+      margin:8px 0;
+    }
+    .message-row.system .message-bubble{
+      background:rgba(59,130,246,0.08);
+      border:1px solid rgba(59,130,246,0.18);
+      color:#bfdbfe;
+      font-size:.8rem;
+      text-transform:uppercase;
+      letter-spacing:.1em;
+      padding:7px 16px;
+    }
+    @keyframes fadeInUp{
+      from{transform:translateY(10px); opacity:0;}
+      to{transform:translateY(0); opacity:1;}
+    }
+
+    .avatar{
+      width:42px;
+      height:42px;
+      border-radius:14px;
+      background:rgba(15,23,42,0.85);
+      border:1px solid rgba(148,163,184,0.18);
+      display:grid;
+      place-items:center;
+      font-weight:700;
+      color:var(--ink-5);
+      text-transform:uppercase;
+      font-size:.75rem;
+    }
+    .message-wrap{
+      display:flex;
+      flex-direction:column;
+      gap:6px;
+      align-items:flex-start;
+      max-width:100%;
+    }
+    .message-row.user .message-wrap{align-items:flex-end}
+
+    .message-bubble{
+      padding:14px 16px;
+      border-radius:18px;
+      background:var(--agent-bubble);
+      border:1px solid var(--agent-border);
+      line-height:1.55;
+      font-size:.94rem;
+      color:var(--ink-6);
+      white-space:pre-wrap;
+    }
+    .message-row.user .message-bubble{
+      background:var(--user-bubble);
+      border-color:rgba(226,232,240,0.15);
+    }
+    .message-meta{
+      font-size:.72rem;
+      color:var(--ink-5);
+      display:flex;
+      align-items:center;
+      gap:10px;
+    }
+    .message-meta strong{color:#f8fafc; letter-spacing:.05em; font-weight:600; font-size:.68rem;}
+    .message-grid{
+      display:grid;
+      gap:4px;
+      font-size:.85rem;
+      margin-top:10px;
+    }
+    .message-grid span{
+      display:inline-flex;
+      align-items:center;
+      gap:6px;
+    }
+    .timestamp::before{
+      content:'';
+      display:inline-block;
+      width:4px;
+      height:4px;
+      border-radius:50%;
+      background:rgba(148,163,184,0.38);
+    }
+
+    .typing-indicator{
+      display:inline-flex;
+      align-items:center;
+      gap:6px;
+      padding:10px 14px;
+      border-radius:16px;
+      border:1px solid rgba(59,130,246,0.24);
+      background:rgba(26,115,232,0.12);
+      animation:fadeIn .25s ease both;
+    }
+    .typing-dot{
+      width:6px;
+      height:6px;
+      border-radius:99px;
+      background:#cbd5f5;
+      opacity:.4;
+      animation:blink 1.3s ease infinite;
+    }
+    .typing-dot:nth-child(2){animation-delay:.18s}
+    .typing-dot:nth-child(3){animation-delay:.34s}
+    @keyframes blink{
+      0%,60%,100%{opacity:.2}
+      30%{opacity:1}
+    }
+    @keyframes fadeIn{from{opacity:0}to{opacity:1}}
+
+    .context-bar{
+      padding:16px 26px 14px;
+      border-top:1px solid rgba(148,163,184,0.08);
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:16px;
+      background:rgba(10,17,30,0.78);
+    }
+    .context-bar .notice{
+      display:flex;
+      align-items:flex-start;
+      gap:12px;
+      font-size:.82rem;
+      color:var(--ink-5);
+      line-height:1.45;
+    }
+    .notice-icon{
+      width:32px;
+      height:32px;
+      border-radius:9px;
+      background:var(--surface-soft);
+      border:1px solid rgba(148,163,184,0.1);
+      display:grid;
+      place-items:center;
+      color:var(--success);
+    }
+    .badge{
+      padding:6px 10px;
+      border-radius:999px;
+      font-size:.7rem;
+      letter-spacing:.08em;
+      text-transform:uppercase;
+      background:var(--success-soft);
+      border:1px solid rgba(34,211,238,0.24);
+      color:#cffafe;
+      font-weight:600;
+    }
+
+    .chips-row{
+      padding:14px 26px 0;
+      display:flex;
+      flex-wrap:wrap;
+      gap:10px;
+      background:rgba(10,17,30,0.72);
+      border-top:1px solid rgba(148,163,184,0.06);
+    }
+    .chip{
+      padding:8px 14px;
+      border-radius:999px;
+      border:1px solid rgba(148,163,184,0.16);
+      background:rgba(255,255,255,0.03);
+      color:var(--ink-5);
+      font-size:.82rem;
+      font-weight:500;
+      cursor:pointer;
+      transition:all .22s ease;
+    }
+    .chip:hover{
+      border-color:rgba(148,163,184,0.38);
+      background:rgba(59,130,246,0.16);
+      color:#dbeafe;
+    }
+
+    .composer{
+      padding:14px 26px 26px;
+      border-top:1px solid rgba(148,163,184,0.06);
+      background:rgba(10,17,30,0.78);
+    }
+    .composer-shell{
+      display:flex;
+      gap:12px;
+      align-items:flex-end;
+      background:rgba(15,23,42,0.64);
+      border:1px solid rgba(148,163,184,0.12);
+      border-radius:18px;
+      padding:12px 12px 12px 18px;
+    }
+    .composer textarea{
+      flex:1;
+      resize:none;
+      border:0;
+      background:transparent;
+      color:var(--ink-6);
+      font-size:.93rem;
+      line-height:1.5;
+      min-height:42px;
+      max-height:140px;
+      overflow:auto;
+      outline:none;
+    }
+    .send-btn{
+      appearance:none;
+      border:0;
+      border-radius:14px;
+      padding:12px 20px;
+      font-weight:600;
+      font-size:.9rem;
+      background:var(--brand-gradient);
+      color:white;
+      display:inline-flex;
+      align-items:center;
+      gap:8px;
+      cursor:pointer;
+      box-shadow:0 12px 24px rgba(26,115,232,0.32);
+      transition:transform .18s ease, box-shadow .18s ease;
+    }
+    .send-btn:hover{
+      transform:translateY(-2px);
+      box-shadow:0 16px 32px rgba(26,115,232,0.38);
+    }
+    .send-btn:disabled{
+      opacity:.55;
+      cursor:default;
+      transform:none;
+      box-shadow:none;
+      background:rgba(148,163,184,0.24);
+      color:#111827;
+    }
+
+    .card{
+      background:rgba(13,19,33,0.88);
+      border:1px solid rgba(148,163,184,0.08);
+      border-radius:var(--radius-md);
+      padding:22px 22px 20px;
+      margin-bottom:18px;
+      box-shadow:var(--shadow-sm);
+      position:relative;
+      overflow:hidden;
+    }
+    .card::before{
+      content:'';
+      position:absolute;
+      inset:0;
+      background:linear-gradient(135deg, rgba(148,163,184,0.08), transparent 68%);
+      opacity:.65;
+      pointer-events:none;
+    }
+    .card > *{position:relative; z-index:2;}
+    .card h2{
+      margin:0;
+      font-family:var(--font-display);
+      font-size:1.05rem;
+      letter-spacing:.02em;
+      display:flex;
+      align-items:center;
+      gap:10px;
+    }
+    .card h2 span{
+      font-size:.78rem;
+      font-weight:600;
+      letter-spacing:.08em;
+      text-transform:uppercase;
+      color:var(--ink-5);
+    }
+    .card p{
+      margin:10px 0 0;
+      color:var(--ink-5);
+      font-size:.88rem;
+      line-height:1.6;
+    }
+
+    .ticket-grid{
+      margin-top:18px;
+      display:grid;
+      gap:12px;
+      font-size:.88rem;
+    }
+    .ticket-grid .label{
+      text-transform:uppercase;
+      font-size:.7rem;
+      letter-spacing:.12em;
+      color:var(--ink-5);
+    }
+    .ticket-grid .value{
+      font-weight:600;
+      color:var(--ink-6);
+      font-family:var(--font-display);
+      letter-spacing:.03em;
+    }
+
+    .priority-flag{
+      display:inline-flex;
+      align-items:center;
+      gap:8px;
+      padding:7px 12px;
+      border-radius:10px;
+      background:rgba(250,204,21,0.1);
+      border:1px solid rgba(250,204,21,0.24);
+      color:#fde68a;
+      font-weight:600;
+      font-size:.72rem;
+      letter-spacing:.08em;
+      text-transform:uppercase;
+      margin-top:16px;
+    }
+
+    .progress-track{
+      margin-top:20px;
+      display:grid;
+      gap:12px;
+    }
+    .progress-step{
+      display:flex;
+      gap:14px;
+      align-items:flex-start;
+      padding:12px 14px;
+      border-radius:12px;
+      background:rgba(148,163,184,0.06);
+      border:1px solid rgba(148,163,184,0.12);
+      position:relative;
+    }
+    .progress-step.active{
+      border-color:rgba(34,211,238,0.3);
+      background:rgba(34,211,238,0.08);
+      box-shadow:0 10px 18px rgba(34,211,238,0.12);
+    }
+    .progress-step.done{
+      border-color:rgba(74,222,128,0.28);
+      background:rgba(74,222,128,0.1);
+    }
+    .progress-step h3{
+      margin:0;
+      font-size:.92rem;
+      display:flex;
+      align-items:center;
+      gap:6px;
+      color:var(--ink-6);
+    }
+    .progress-step h3 span{
+      font-size:.72rem;
+      color:var(--ink-5);
+      font-weight:500;
+      letter-spacing:.06em;
+      text-transform:uppercase;
+    }
+    .progress-step p{
+      margin:4px 0 0;
+      color:var(--ink-5);
+      font-size:.8rem;
+    }
+    .step-icon{
+      width:34px;
+      height:34px;
+      border-radius:12px;
+      background:rgba(226,232,240,0.08);
+      border:1px solid rgba(148,163,184,0.1);
+      display:grid;
+      place-items:center;
+      font-size:.9rem;
+      color:#bae6fd;
+    }
+    .progress-step.active .step-icon{
+      background:rgba(14, 165, 233, 0.26);
+      border-color:rgba(14,165,233,0.48);
+      color:#e0f2fe;
+    }
+
+    .addresses{
+      display:grid;
+      gap:10px;
+      margin-top:16px;
+    }
+    .addr-pill{
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      padding:9px 12px;
+      border-radius:10px;
+      font-size:.8rem;
+      background:rgba(15,23,42,0.7);
+      border:1px solid rgba(148,163,184,0.12);
+      color:var(--ink-5);
+      font-family:'Space Grotesk',monospace;
+      letter-spacing:.04em;
+    }
+    .addr-pill strong{color:#f8fafc; font-size:.82rem;}
+    .addr-pill span{
+      display:inline-flex;
+      align-items:center;
+      gap:6px;
+      color:#cbd5f5;
+    }
+
+    .activity-log{
+      margin-top:18px;
+      display:grid;
+      gap:10px;
+      font-size:.82rem;
+    }
+    .activity-event{
+      border-left:2px solid rgba(26,115,232,0.4);
+      padding:6px 0 6px 12px;
+      color:var(--ink-5);
+      line-height:1.45;
+    }
+    .activity-event strong{
+      display:block;
+      color:#e0f2fe;
+      letter-spacing:.05em;
+      text-transform:uppercase;
+      font-size:.7rem;
+      margin-bottom:4px;
+    }
+
+    .action-grid{
+      margin-top:18px;
+      display:grid;
+      gap:10px;
+      grid-template-columns:repeat(auto-fit, minmax(160px,1fr));
+    }
+    .action-btn{
+      appearance:none;
+      border:0;
+      border-radius:12px;
+      padding:16px 16px;
+      background:rgba(26,115,232,0.14);
+      border:1px solid rgba(59,130,246,0.25);
+      color:#dbeafe;
+      font-weight:600;
+      font-size:.88rem;
+      letter-spacing:.02em;
+      cursor:pointer;
+      display:flex;
+      align-items:center;
+      gap:12px;
+      transition:transform .18s ease, box-shadow .18s ease, border-color .18s ease;
+    }
+    .action-btn span{
+      display:flex;
+      align-items:center;
+      gap:8px;
+      font-size:.78rem;
+      color:rgba(219,234,254,0.8);
+    }
+    .action-btn:hover{
+      transform:translateY(-2px);
+      border-color:rgba(59,130,246,0.55);
+      box-shadow:0 14px 28px rgba(26,115,232,0.18);
+    }
+    .action-btn.secondary{
+      background:rgba(255,255,255,0.04);
+      border:1px solid rgba(148,163,184,0.16);
+      color:var(--ink-6);
+    }
+    .action-btn.danger{
+      background:var(--danger-soft);
+      border:1px solid rgba(249,115,22,0.38);
+      color:#fed7aa;
+    }
+
+    .tag{
+      display:inline-flex;
+      align-items:center;
+      gap:6px;
+      font-size:.68rem;
+      letter-spacing:.08em;
+      text-transform:uppercase;
+      background:rgba(59,130,246,0.16);
+      border:1px solid rgba(59,130,246,0.28);
+      padding:5px 10px;
+      border-radius:999px;
+      color:#dbeafe;
+      font-weight:600;
+    }
+
+    .quick-replies{
+      display:flex;
+      flex-wrap:wrap;
+      gap:8px;
+      margin-top:8px;
+    }
+    .quick-replies button{
+      border:1px solid rgba(148,163,184,0.13);
+      background:rgba(148,163,184,0.07);
+      color:var(--ink-5);
+      border-radius:999px;
+      padding:6px 12px;
+      font-size:.76rem;
+      font-weight:500;
+      cursor:pointer;
+      transition:all .18s ease;
+    }
+    .quick-replies button:hover{
+      border-color:rgba(59,130,246,0.45);
+      color:#dbeafe;
+      background:rgba(59,130,246,0.22);
+    }
+
+    .fade-in{animation:fadeIn .28s ease both;}
+    .sr-only{
+      position:absolute;
+      width:1px;
+      height:1px;
+      padding:0;
+      margin:-1px;
+      overflow:hidden;
+      clip:rect(0,0,0,0);
+      white-space:nowrap;
+      border:0;
+    }
+  </style>
+</head>
+<body>
+  <main class="app" aria-label="BetRivers priority payout support">
+    <section class="conversation-pane">
+      <header class="app-header">
+        <div class="logo">BR</div>
+        <div class="header-meta">
+          <div class="brand">BetRivers — Priority Payout Desk</div>
+          <div class="subtitle">Ticket BR-171104 · Live assistance around the clock</div>
+        </div>
+        <div class="status-cluster">
+          <span class="live-pill"><span class="live-dot" aria-hidden="true"></span> Live</span>
+          <div class="clock" id="clock">11:06 PM ET</div>
+        </div>
+      </header>
+
+      <section class="transcript" id="transcript" aria-live="polite">
+        <div class="transcript-inner" id="transcriptInner"></div>
+      </section>
+
+      <div class="context-bar">
+        <div class="notice">
+          <div class="notice-icon" aria-hidden="true">⚡️</div>
+          <div>
+            <strong style="display:block; letter-spacing:.08em; text-transform:uppercase; font-size:.72rem; color:#cbd5f5;">Priority trace running</strong>
+            Batch flagged for the next LTC processor pass. Notifications enabled the moment a payout posts.
+          </div>
+        </div>
+        <span class="badge" id="rakebackBadge" hidden>15% rakeback active</span>
+      </div>
+
+      <div class="chips-row" id="chipsRow" aria-label="Quick insert phrases"></div>
+
+      <footer class="composer">
+        <div class="composer-shell">
+          <label class="sr-only" for="composerInput">Type a message to Avery</label>
+          <textarea id="composerInput" placeholder="Type here… (Shift+Enter for new line)" rows="1"></textarea>
+          <button id="sendBtn" class="send-btn">
+            <span>Send</span> ➤
+          </button>
+        </div>
+      </footer>
+    </section>
+
+    <aside class="summary-pane" aria-label="Ticket summary and actions">
+      <article class="card">
+        <h2>Ticket Snapshot <span>br-171104</span></h2>
+        <p>Trace opened on your LTC withdrawal split into three outbound batches. Below is everything tied to the overnight conversation with Nickolas and the current escalation led by Avery.</p>
+        <div class="ticket-grid">
+          <div>
+            <div class="label">Client</div>
+            <div class="value">Verified · LTC Wallet · VIP Lane</div>
+          </div>
+          <div>
+            <div class="label">Original request</div>
+            <div class="value">215.00 LTC (canceled ~03:10 AM ET)</div>
+          </div>
+          <div>
+            <div class="label">Current distribution</div>
+            <div class="value">3 × 3.38 LTC ≈ $300 each (<span style="color:#38bdf8;">Queued</span>)</div>
+          </div>
+          <div>
+            <div class="label">Trace status</div>
+            <div class="value" id="traceStatusValue">Expedited · Finance supervisor review</div>
+          </div>
+        </div>
+        <div class="priority-flag">
+          <span>⚠️</span> SLA breached (1–3 hour promise). Compensation boost applied.
+        </div>
+      </article>
+
+      <article class="card">
+        <h2>Batch Progress <span>ltc · overnight window</span></h2>
+        <div class="progress-track" id="progressTrack">
+          <div class="progress-step done" data-step="cancel-original">
+            <div class="step-icon">①</div>
+            <div>
+              <h3>Original 215.00 LTC cancellation <span>Complete</span></h3>
+              <p>Confirmed with Nickolas between 2:45–3:39 AM ET. Funds re-queued for manual split.</p>
+            </div>
+          </div>
+          <div class="progress-step active" data-step="queued">
+            <div class="step-icon">②</div>
+            <div>
+              <h3>3× outbound packets queued <span>In queue</span></h3>
+              <p>Three 3.38 LTC (≈$300) packets tagged for your supplied addresses.</p>
+            </div>
+          </div>
+          <div class="progress-step" data-step="processing">
+            <div class="step-icon">③</div>
+            <div>
+              <h3>Processor sweep <span>Pending</span></h3>
+              <p>Finance batch supervisor reruns tonight. Priority trace ensures first-pass review.</p>
+            </div>
+          </div>
+          <div class="progress-step" data-step="posted">
+            <div class="step-icon">④</div>
+            <div>
+              <h3>Payout posted <span>Awaiting completion</span></h3>
+              <p>As soon as one hits chain, Avery will ping you here and push final confirmation.</p>
+            </div>
+          </div>
+        </div>
+        <div class="addresses">
+          <div class="tag" style="margin-bottom:6px;">Destination wallets</div>
+          <div class="addr-pill"><strong>Packet A</strong> <span>LQaMp5D37MdqGASMPuRQ2T4k5ueydTUr9F</span></div>
+          <div class="addr-pill"><strong>Packet B</strong> <span>LR7qcDADQBReDqd5zpfZPKhTE3VQ7Nk2zu</span></div>
+          <div class="addr-pill"><strong>Packet C</strong> <span>LgdhigA3Zc8AAR61uAJcEfXVUcs5MzDpi</span></div>
+        </div>
+      </article>
+
+      <article class="card">
+        <h2>Escalation Activity <span>live log</span></h2>
+        <div class="activity-log" id="activityLog">
+          <div class="activity-event">
+            <strong>10:58 PM ET · Queue Bypass</strong>
+            Avery re-flagged split batch as priority for overnight processor sweep.
+          </div>
+          <div class="activity-event">
+            <strong>10:59 PM ET · Rakeback Credit</strong>
+            15% temporary rakeback boost enabled until payouts post or queue normalizes.
+          </div>
+          <div class="activity-event">
+            <strong>11:04 PM ET · Trace BR-171104</strong>
+            Supervisor notified with transcript + address verification &lt;Nickolas thread&gt;.
+          </div>
+        </div>
+      </article>
+
+      <article class="card">
+        <h2>Next Actions <span>you control</span></h2>
+        <p>Use quick actions or tell Avery exactly what you need. Everything routes through the live queue.</p>
+        <div class="action-grid">
+          <button class="action-btn" data-fill="check live status">
+            🔄 Check status <span>Run real-time queue check</span>
+          </button>
+          <button class="action-btn" data-fill="keep the three $300 payouts queued">
+            📦 Keep queued <span>Lock all three packets in the batch</span>
+          </button>
+          <button class="action-btn" data-fill="notify me">
+            🔔 Notify me <span>Stay alerted the moment one posts</span>
+          </button>
+          <button class="action-btn secondary" data-fill="change destinations">
+            ✏️ Edit wallets <span>Replace destination addresses</span>
+          </button>
+          <button class="action-btn secondary" data-fill="open dispute">
+            🛑 Open dispute <span>Escalate to formal complaint</span>
+          </button>
+          <button class="action-btn danger" data-fill="halt the three $300 payouts">
+            ⛔ Halt payouts <span>Attempt stop before batch runs</span>
+          </button>
+        </div>
+      </article>
+    </aside>
+  </main>
+
+  <script>
+    const state = {
+      connected:false,
+      minutesSinceMidnight:(23*60)+6,
+      rakeback:false,
+      notify:true,
+      lastUserMessageTime:null,
+      finance:{
+        original:215.00,
+        packet:3.38,
+        count:3,
+        remainingUsd:'18,201',
+        get totalPacket(){return +(this.packet*this.count).toFixed(2);},
+        get remainder(){return +(this.original - this.totalPacket).toFixed(2);}
+      }
+    };
+
+    const dom = {
+      transcript: document.getElementById('transcript'),
+      transcriptInner: document.getElementById('transcriptInner'),
+      clock: document.getElementById('clock'),
+      chipsRow: document.getElementById('chipsRow'),
+      composer: document.getElementById('composerInput'),
+      send: document.getElementById('sendBtn'),
+      rakebackBadge: document.getElementById('rakebackBadge'),
+      progressTrack: document.getElementById('progressTrack'),
+      traceStatus: document.getElementById('traceStatusValue'),
+      activityLog: document.getElementById('activityLog')
+    };
+
+    const quickPhrases = [
+      'help','check live status','keep the three $300 payouts queued','where is my withdrawal',
+      'notify me','open a dispute','halt the three $300 payouts','change destinations',
+      'it’s the next day and it’s still not there','paste three LTC addresses','cancel my withdrawal'
+    ];
+
+    const seededTranscript = [
+      {speaker:'agent', text:'Welcome to BetRivers Support. This is Avery.', time:'11:06 PM ET'},
+      {speaker:'system', text:'Live assistance available 24/7', time:'11:06 PM ET'},
+      {speaker:'agent', text:'Connecting you to Avery… I’m here. What’s your issue right now?', time:'11:06 PM ET', quick:['status','balance','change payouts','open dispute','something else…']},
+      {speaker:'user', text:'Where tf is my withdrawl last night i talked to somebody named nickolas it’s the next day and it’s STILL not there. please check my withdrawal. last night with Nickolas (around 2:45–3:39 AM ET) I canceled the original 215.00 LTC and asked to split into 3 x ~$300 (≈3.38 LTC each) to the three LTC addresses I gave him. where is it?', time:'11:37 PM ET'},
+      {speaker:'agent', text:`I looked up your ticket BR-171104 and your overnight thread with Nickolas (2:45–3:39 AM ET). You’re right — you were told 1–3 hours and it rolled into today. That’s on us, and I’m sorry.\n\nRecap I see on your account:\n• Original withdrawal: 215.00 LTC — canceled last night.\n• You asked to split into 3 × ~$300 payouts (≈ 3.38 LTC each) to the three LTC addresses you provided.\n• Those three are still processing in the outbound batch.\n\nI’ve opened a priority trace and re-flagged your batch for the next processor pass tonight. To keep you whole while we finish this, I’ve applied a temporary 15% rakeback boost (one-time courtesy) until the payouts post or the queue normalizes. I’ll notify here the instant any of the three lands.\n\nWhat do you want me to do next?`, time:'11:38 PM ET', quick:['check live status','keep queued','try to stop them','change destinations','open dispute'], tag:'trace escalated'},
+      {speaker:'user', text:'open dispute', time:'11:56 PM ET'},
+      {speaker:'agent', text:'Priority trace opened and linked to BR-171104. I’ll update you as soon as payouts leadership replies.', time:'11:57 PM ET'},
+      {speaker:'user', text:'keep the three $300 payouts queued', time:'11:57 PM ET'},
+      {speaker:'agent', text:'Keeping the three ~$300 payouts queued and re-flagging the batch.', time:'11:58 PM ET'},
+      {speaker:'user', text:'it’s the next day and it’s still not there', time:'11:58 PM ET'},
+      {speaker:'agent', text:'You’re right — it overshot the 1–3 hour window. That’s on us.', time:'11:59 PM ET'},
+      {speaker:'user', text:'so', time:'11:59 PM ET'},
+      {speaker:'agent', text:'Tell me exactly what you want done and I’ll do it.', time:'12:00 AM ET', quick:['status','balance','change payouts','open dispute']}
+    ];
+
+    const heuristics = [
+      {
+        test: text => /help\b/.test(text),
+        respond: () => ({
+          reply:'Got it — tell me exactly what you want done.',
+          quick:['status','balance','change payouts','open dispute','something else…']
+        })
+      },
+      {
+        test: text => /change dest/.test(text) || /edit wallet/.test(text),
+        respond: () => ({
+          reply:'Drop the new LTC addresses here (one per line). I’ll verify checksum, swap them into the batch, and confirm before tonight’s sweep.',
+          quick:['paste three LTC addresses','halt the three $300 payouts','keep the three $300 payouts queued']
+        })
+      },
+      {
+        test: text => /open a dispute|dispute/.test(text),
+        respond: () => ({
+          reply:`Priority trace opened and linked to BR-171104. Payouts leadership will reply inside the hour — I’ll surface updates here immediately.`,
+          activity:{title:'Dispute flag raised', desc:'Finance leadership looped with transcript + wallet verification.'},
+          progress:{step:'processing', state:'active'}
+        })
+      },
+      {
+        test: text => /halt|stop/.test(text),
+        respond: () => ({
+          reply:'I can attempt a full stop if the packets haven’t left the queue yet. Confirm with: “stop all three” and I’ll engage the processor desk.',
+          quick:['stop all three','keep the three $300 payouts queued','change destinations']
+        })
+      },
+      {
+        test: text => /stop all three/.test(text),
+        respond: () => ({
+          reply:'Working that now — I’ve pinged the processor desk to halt those packets. I’ll confirm once they respond.',
+          activity:{title:'Stop request submitted', desc:'Processor desk notified to intercept queued LTC packets.'},
+          progress:{step:'queued', state:'active'}
+        })
+      },
+      {
+        test: text => matchesComplaint(text),
+        respond: () => ({
+          reply:`I looked up your ticket BR-171104 and your overnight thread with Nickolas (2:45–3:39 AM ET). You’re right — you were told 1–3 hours and it rolled into today. That’s on us, and I’m sorry.\n\nRecap I see on your account:\n• Original withdrawal: 215.00 LTC — canceled last night.\n• You asked to split into 3 × ~$300 payouts (≈ ${state.finance.packet.toFixed(2)} LTC each) to the three LTC addresses you provided.\n• Those three are still processing in the outbound batch.\n\nI’ve opened a priority trace and re-flagged your batch for the next processor pass tonight. To keep you whole while we finish this, I’ve applied a temporary 15% rakeback boost (one-time courtesy) until the payouts post or the queue normalizes. I’ll notify here the instant any of the three lands.\n\nWhat do you want me to do next?`,
+          quick:['check live status','keep queued','try to stop them','change destinations','open dispute'],
+          rakeback:true,
+          progress:{step:'queued', state:'active'}
+        })
+      },
+      {
+        test: text => /next day|still not there/.test(text),
+        respond: () => ({
+          reply:`You’re right — it overshot the 1–3 hour window. That’s on us.`,
+          rakeback:true,
+          quick:['check live status','open dispute','notify me']
+        })
+      },
+      {
+        test: text => /where is my withdrawal|where is it|where.tf/.test(text) || /balance/.test(text),
+        respond: () => ({
+          reply:`Here’s the math: 215.00 LTC was the original (canceled). The three ~$300 packets lock ≈${state.finance.totalPacket.toFixed(2)} LTC. Remaining once those settle: ${state.finance.remainder.toFixed(2)} LTC (≈ $${state.finance.remainingUsd}).`,
+          quick:['check live status','keep the three $300 payouts queued','notify me']
+        })
+      },
+      {
+        test: text => /check live status|update status|status/.test(text),
+        respond: () => ({
+          reply:'Running a live check… still queued for the next processor pass tonight. I’ll ping you the moment any of the three posts.',
+          quick:['notify me','keep the three $300 payouts queued','open dispute']
+        })
+      },
+      {
+        test: text => /notify/.test(text),
+        respond: () => ({
+          reply:'Notifications toggled on. I’ll alert you instantly when any packet hits the chain.',
+          notify:true
+        })
+      },
+      {
+        test: text => /keep (the )?(three|3)/.test(text),
+        respond: () => ({
+          reply:'Keeping the three ~$300 payouts queued and re-flagging the batch.',
+          progress:{step:'queued', state:'active'}
+        })
+      },
+      {
+        test: text => /cancel my withdrawal|cancel withdrawal/.test(text),
+        respond: () => ({
+          reply:'The original 215.00 LTC was canceled last night. Say “halt the three $300 payouts” if you want the split packets stopped (only if they’re still in queue).',
+          quick:['halt the three $300 payouts','keep the three $300 payouts queued','change destinations']
+        })
+      },
+      {
+        test: text => findAddresses(text).length > 0,
+        respond: text => {
+          const addys = findAddresses(text);
+          return ({
+            reply:`I see these addresses: ${addys.join(', ')} — they match last night’s three. Each remains queued for ~3.38 LTC (~$300).`,
+            quick:['check live status','keep the three $300 payouts queued','notify me']
+          });
+        }
+      },
+      {
+        test: text => /fuck|wtf|ridiculous|kidding|taking too long|bro where/.test(text),
+        respond: () => ({
+          reply:`I hear you — I’m on it and will push updates here.`,
+          quick:['check live status','open dispute','notify me'],
+          rakeback:true
+        })
+      },
+      {
+        test: text => /withdraw/.test(text),
+        respond: () => ({
+          reply:'Recap with Nickolas (2:45–3:39 AM): canceled original + queued three ~$300 packets. Current: still queued for tonight’s pass; I’ll notify the second one posts.',
+          quick:['check live status','keep the three $300 payouts queued','change destinations']
+        })
+      }
+    ];
+
+    function matchesComplaint(text){
+      return /(next day|still not there)/.test(text) &&
+             /nickolas/.test(text) &&
+             /withdraw/.test(text) &&
+             /(cancel|three|300)/.test(text);
+    }
+
+    function findAddresses(text){
+      const hits = text.match(/\b[L3][A-Za-z0-9]{25,60}\b/g);
+      return hits ? Array.from(new Set(hits)) : [];
+    }
+
+    function pad2(n){return String(n).padStart(2,'0');}
+    function formatClock(minutes){
+      const total = ((minutes % (24*60)) + (24*60)) % (24*60);
+      const h = Math.floor(total/60);
+      const m = total % 60;
+      const isPM = h >= 12;
+      const hh12 = (h % 12) || 12;
+      return `${hh12}:${pad2(m)} ${isPM ? 'PM' : 'AM'} ET`;
+    }
+    function tick(minutes = 1){
+      state.minutesSinceMidnight += minutes;
+      dom.clock.textContent = formatClock(state.minutesSinceMidnight);
+    }
+
+    function buildMessage({speaker, text, time, quick, tag, meta}, options = {}){
+      const row = document.createElement('div');
+      row.className = `message-row ${speaker}`;
+
+      if(speaker === 'system'){
+        const bubble = document.createElement('div');
+        bubble.className = 'message-bubble';
+        bubble.textContent = text;
+        row.appendChild(bubble);
+        dom.transcriptInner.appendChild(row);
+        return row;
+      }
+
+      if(speaker === 'agent'){
+        const avatar = document.createElement('div');
+        avatar.className = 'avatar';
+        avatar.textContent = 'BR';
+        row.appendChild(avatar);
+      }
+
+      const wrap = document.createElement('div');
+      wrap.className = 'message-wrap';
+
+      if(tag){
+        const tagEl = document.createElement('span');
+        tagEl.className = 'tag fade-in';
+        tagEl.style.marginBottom = '4px';
+        tagEl.textContent = tag;
+        wrap.appendChild(tagEl);
+      }
+
+      const bubble = document.createElement('div');
+      bubble.className = 'message-bubble';
+      bubble.textContent = text;
+      wrap.appendChild(bubble);
+
+      const metaLine = document.createElement('div');
+      metaLine.className = 'message-meta';
+      metaLine.innerHTML = `<span>${time || formatClock(state.minutesSinceMidnight)}</span>`;
+      if(meta && meta.length){
+        meta.forEach(item=>{
+          const span = document.createElement('span');
+          span.className = 'timestamp';
+          span.textContent = item;
+          metaLine.appendChild(span);
+        });
+      }
+      wrap.appendChild(metaLine);
+
+      if(quick && quick.length){
+        const quickWrap = document.createElement('div');
+        quickWrap.className = 'quick-replies';
+        quick.forEach(label=>{
+          const btn = document.createElement('button');
+          btn.type = 'button';
+          btn.textContent = label;
+          btn.addEventListener('click', ()=>{
+            dom.composer.value = label.toLowerCase();
+            dom.composer.focus();
+          });
+          quickWrap.appendChild(btn);
+        });
+        wrap.appendChild(quickWrap);
+      }
+
+      row.appendChild(wrap);
+
+      if(speaker === 'user'){
+        const avatar = document.createElement('div');
+        avatar.className = 'avatar';
+        avatar.textContent = 'YOU';
+        row.appendChild(avatar);
+      }
+
+      dom.transcriptInner.appendChild(row);
+
+      if(options.scroll !== false){
+        requestAnimationFrame(()=> {
+          dom.transcript.scrollTop = dom.transcript.scrollHeight;
+        });
+      }
+
+      return row;
+    }
+
+    function showTyping(){
+      const row = document.createElement('div');
+      row.className = 'message-row agent';
+      const avatar = document.createElement('div');
+      avatar.className = 'avatar';
+      avatar.textContent = 'BR';
+      row.appendChild(avatar);
+      const wrap = document.createElement('div');
+      wrap.className = 'message-wrap';
+      const bubble = document.createElement('div');
+      bubble.className = 'typing-indicator';
+      bubble.innerHTML = '<span class="typing-dot"></span><span class="typing-dot"></span><span class="typing-dot"></span>';
+      wrap.appendChild(bubble);
+      row.appendChild(wrap);
+      dom.transcriptInner.appendChild(row);
+      dom.transcript.scrollTop = dom.transcript.scrollHeight;
+      return ()=>row.remove();
+    }
+
+    function simulateAgentResponse(payload, opts = {}){
+      const stopTyping = showTyping();
+      const delay = opts.delay ?? 900;
+      setTimeout(()=>{
+        stopTyping();
+        tick(opts.advanceMinutes ?? 1);
+        if(payload.rakeback){
+          applyRakeback();
+        }
+        if(payload.notify){
+          state.notify = true;
+        }
+        if(payload.progress){
+          updateProgress(payload.progress);
+        }
+        if(payload.activity){
+          appendActivity(payload.activity.title, payload.activity.desc);
+        }
+        buildMessage({
+          speaker:'agent',
+          text:payload.reply,
+          time:formatClock(state.minutesSinceMidnight),
+          quick:payload.quick,
+          tag:payload.tag
+        });
+      }, delay);
+    }
+
+    function applyRakeback(){
+      if(state.rakeback) return;
+      state.rakeback = true;
+      dom.rakebackBadge.hidden = false;
+      appendActivity('Rakeback extended', 'One-time 15% rakeback boost remains live until payouts land.');
+    }
+
+    function appendActivity(title, description){
+      const wrap = document.createElement('div');
+      wrap.className = 'activity-event fade-in';
+      wrap.innerHTML = `<strong>${formatClock(state.minutesSinceMidnight)} · ${title}</strong>${description}`;
+      dom.activityLog.prepend(wrap);
+    }
+
+    function updateProgress({step, state:progressState}){
+      const stepEl = dom.progressTrack.querySelector(`[data-step="${step}"]`);
+      if(!stepEl) return;
+      dom.progressTrack.querySelectorAll('.progress-step').forEach(el=>{
+        if(el.dataset.step === step){
+          el.classList.remove('done','active');
+          if(progressState === 'active'){ el.classList.add('active'); }
+          if(progressState === 'done'){ el.classList.add('done'); }
+        } else if(progressState === 'done' && el.compareDocumentPosition(stepEl) === Node.DOCUMENT_POSITION_FOLLOWING){
+          el.classList.remove('active');
+        }
+      });
+      if(step === 'processing' && progressState === 'active'){
+        dom.traceStatus.textContent = 'Processor desk running live sweep';
+      }
+      if(step === 'posted' && progressState === 'done'){
+        dom.traceStatus.textContent = 'Completed · Awaiting blockchain confirmations';
+      }
+    }
+
+    function initializeChips(){
+      quickPhrases.forEach(label=>{
+        const chip = document.createElement('button');
+        chip.type = 'button';
+        chip.className = 'chip';
+        chip.textContent = label;
+        chip.dataset.fill = label;
+        chip.addEventListener('click', ()=>{
+          dom.composer.value = label;
+          dom.composer.focus();
+        });
+        dom.chipsRow.appendChild(chip);
+      });
+      document.querySelectorAll('.action-btn[data-fill]').forEach(btn=>{
+        btn.addEventListener('click', ()=>{
+          dom.composer.value = btn.dataset.fill;
+          dom.composer.focus();
+        });
+      });
+    }
+
+    function playSeededTranscript(){
+      let delay = 450;
+      seededTranscript.forEach((entry, index)=>{
+        setTimeout(()=>{
+          tick(index === 0 ? 0 : 1);
+          buildMessage(entry, {scroll:index === seededTranscript.length - 1});
+          if(entry.tag){
+            appendActivity('Trace escalated', 'Ticket BR-171104 linked with overnight transcript; finance leadership looped.');
+            applyRakeback();
+            updateProgress({step:'queued', state:'active'});
+          }
+          if(entry.quick){
+            state.connected = true;
+          }
+        }, delay);
+        delay += 480;
+      });
+    }
+
+    function handleSend(){
+      const value = dom.composer.value.trim();
+      if(!value) return;
+      buildMessage({speaker:'user', text:value, time:formatClock(state.minutesSinceMidnight)});
+      dom.composer.value = '';
+      dom.composer.style.height = 'auto';
+      state.connected = true;
+      state.lastUserMessageTime = Date.now();
+      routeUserInput(value.toLowerCase());
+    }
+
+    function routeUserInput(input){
+      const match = heuristics.find(rule => rule.test(input));
+      if(match){
+        const payload = typeof match.respond === 'function'
+          ? match.respond(input)
+          : match.respond;
+        simulateAgentResponse(payload);
+        return;
+      }
+      simulateAgentResponse({
+        reply:'Tell me exactly what you want done and I’ll do it.',
+        quick:['status','balance','change payouts','open dispute']
+      });
+    }
+
+    function autoResizeTextarea(){
+      const el = dom.composer;
+      el.style.height = 'auto';
+      el.style.height = Math.min(el.scrollHeight, 140) + 'px';
+    }
+
+    function registerEvents(){
+      dom.send.addEventListener('click', handleSend);
+      dom.composer.addEventListener('keydown', e=>{
+        if(e.key === 'Enter' && !e.shiftKey){
+          e.preventDefault();
+          handleSend();
+        }
+      });
+      dom.composer.addEventListener('input', autoResizeTextarea);
+    }
+
+    (function init(){
+      initializeChips();
+      registerEvents();
+      playSeededTranscript();
+    })();
+  </script>
+</body>
+</html>
