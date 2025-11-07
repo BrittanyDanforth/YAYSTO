@@ -715,7 +715,7 @@
         </div>
         <div class="status-cluster">
           <span class="live-pill"><span class="live-dot" aria-hidden="true"></span> Live</span>
-          <div class="clock" id="clock">11:06 PM ET</div>
+          <div class="clock" id="clock">12:20 AM EST</div>
         </div>
       </header>
 
@@ -744,7 +744,7 @@
           </div>
           <div>
             <div class="label">Original withdrawal</div>
-            <div class="value">215.00 LTC — canceled ~03:10 AM ET</div>
+            <div class="value">215.00 LTC — canceled ~03:10 AM EST</div>
           </div>
           <div>
             <div class="label">Current payout split</div>
@@ -762,7 +762,7 @@
   <script>
     const state = {
       connected:false,
-      minutesSinceMidnight:(23*60)+6,
+      minutesSinceMidnight:20,
       rakeback:false,
       notify:true,
       lastUserMessageTime:null,
@@ -796,39 +796,41 @@
       traceText: dom.traceStatus ? dom.traceStatus.textContent : ''
     };
 
-    const quickPhrases = [
-      'help','check live status','keep the three $300 payouts queued','where is my withdrawal',
-      'notify me','open a dispute','halt the three $300 payouts','change destinations',
-      'it’s the next day and it’s still not there','paste three LTC addresses','cancel my withdrawal'
-    ];
+      const quickPhrases = [
+        'help','check live status','keep the three $300 payouts queued','where is my withdrawal',
+        'notify me','open a dispute','halt the three $300 payouts','change destinations',
+        'it’s the next day and it’s still not there','paste three LTC addresses','cancel my withdrawal'
+      ];
 
-    const seededTranscript = [
-      {speaker:'agent', text:'Welcome to BetRivers Support. This is Avery.', time:'11:06 PM ET'},
-      {speaker:'system', text:'Live assistance available 24/7', time:'11:06 PM ET'},
-      {speaker:'agent', text:'Connecting you to Avery… I’m here. What’s your issue right now?', time:'11:06 PM ET'},
-      {speaker:'user', text:'Where tf is my withdrawl last night i talked to somebody named nickolas it’s the next day and it’s STILL not there. please check my withdrawal. last night with Nickolas (around 2:45–3:39 AM ET) I canceled the original 215.00 LTC and asked to split into 3 x ~$300 (≈3.38 LTC each) to the three LTC addresses I gave him. where is it?', time:'11:37 PM ET'},
-      {speaker:'agent', text:`I looked up your ticket BR-171104 and your overnight thread with Nickolas (2:45–3:39 AM ET). You’re right — you were told 1–3 hours and it rolled into today. That’s on us, and I’m sorry.\n\nRecap I see on your account:\n• Original withdrawal: 215.00 LTC — canceled last night.\n• You asked to split into 3 × ~$300 payouts (≈ 3.38 LTC each) to the three LTC addresses you provided.\n• Remaining outbound: 204.86 LTC queued to follow once the split posts.\n\nI’ve reopened the priority trace and re-flagged your batch for the next processor pass tonight. I’ll notify you here the instant any of the three lands. What do you want me to do next?`, time:'11:38 PM ET', tag:'trace escalated'},
-      {speaker:'user', text:'open dispute', time:'11:56 PM ET'},
-      {speaker:'agent', text:'Priority trace opened and linked to BR-171104. I’ll update you as soon as payouts leadership replies.', time:'11:57 PM ET'},
-      {speaker:'user', text:'keep the three $300 payouts queued', time:'11:57 PM ET'},
-      {speaker:'agent', text:'Keeping the three ~$300 payouts queued and re-flagging the batch.', time:'11:58 PM ET'},
-      {speaker:'user', text:'it’s the next day and it’s still not there', time:'11:58 PM ET'},
-      {speaker:'agent', text:'You’re right — it overshot the 1–3 hour window. That’s on us.', time:'11:59 PM ET'},
-      {speaker:'user', text:'so', time:'11:59 PM ET'},
-      {speaker:'agent', text:'Tell me exactly what you want done and I’ll do it.', time:'12:00 AM ET'}
-    ];
+      const seededTranscript = [
+        {speaker:'agent', text:'Welcome to BetRivers Support. This is Avery.', time:'12:20 AM EST'},
+        {speaker:'system', text:'Live assistance available 24/7', time:'12:20 AM EST'},
+        {speaker:'agent', text:'Connecting you to Avery… I’m here. What’s your issue right now?', time:'12:20 AM EST'},
+        {speaker:'user', text:'Where tf is my withdrawl last night i talked to somebody named nickolas it’s the next day and it’s STILL not there. please check my withdrawal. last night with Nickolas (around 2:45–3:39 AM EST) I canceled the original 215.00 LTC and asked to split into 3 x ~$300 (≈3.38 LTC each) to the three LTC addresses I gave him. where is it?', time:'12:23 AM EST'},
+        {speaker:'agent', text:`I looked up your ticket BR-171104 and your overnight thread with Nickolas (2:45–3:39 AM EST). You’re right — you were told 1–3 hours and it rolled into today. That’s on us, and I’m sorry.\n\nRecap I see on your account:\n• Original withdrawal: 215.00 LTC — canceled last night.\n• You asked to split into 3 × ~$300 payouts (≈ 3.38 LTC each) to the three LTC addresses you provided.\n• Remaining outbound: 204.86 LTC queued to follow once the split posts.\n\nI’ve reopened the priority trace and re-flagged your batch for the next processor pass tonight. I’ll notify you here the instant any of the three lands. What do you want me to do next?`, time:'12:26 AM EST', tag:'trace escalated'},
+        {speaker:'user', text:'open dispute', time:'12:32 AM EST'},
+        {speaker:'agent', text:'Priority trace opened and linked to BR-171104. I’ll update you as soon as payouts leadership replies.', time:'12:33 AM EST'},
+        {speaker:'user', text:'keep the three $300 payouts queued', time:'12:33 AM EST'},
+        {speaker:'agent', text:'Keeping the three ~$300 payouts queued and re-flagging the batch.', time:'12:34 AM EST'},
+        {speaker:'user', text:'it’s the next day and it’s still not there', time:'12:34 AM EST'},
+        {speaker:'agent', text:'You’re right — it overshot the 1–3 hour window. That’s on us.', time:'12:34 AM EST'},
+        {speaker:'user', text:'so', time:'12:35 AM EST'},
+        {speaker:'agent', text:'Tell me exactly what you want done and I’ll do it.', time:'12:35 AM EST'}
+      ];
 
     const heuristics = [
       {
         test: text => /help\b/.test(text),
         respond: () => ({
-          reply:'Got it — tell me exactly what you want done.'
+          reply:'Got it — tell me exactly what you want done.',
+          advanceMinutes:0
         })
       },
       {
         test: text => /change dest/.test(text) || /edit wallet/.test(text),
         respond: () => ({
-          reply:'Drop the new LTC addresses here (one per line). I’ll verify checksum, swap them into the batch, and confirm before tonight’s sweep.'
+          reply:'Drop the new LTC addresses here (one per line). I’ll verify checksum, swap them into the batch, and confirm before tonight’s sweep.',
+          advanceMinutes:0
         })
       },
       {
@@ -859,10 +861,31 @@
           const each = state.finance.packet.toFixed(2);
           const remainder = state.finance.remainder.toFixed(2);
           return {
-            reply:`I looked up your ticket BR-171104 and your overnight thread with Nickolas (2:45–3:39 AM ET). You’re right — you were told 1–3 hours and it rolled into today. That’s on us, and I’m sorry.\n\nRecap I see on your account:\n• Original withdrawal: 215.00 LTC — canceled last night.\n• You asked to split into 3 × ~$300 payouts (≈ ${each} LTC each) to the three LTC addresses you provided.\n• Remaining outbound: ${remainder} LTC queued to follow once the split posts.\n\nI’ve reopened the priority trace and re-flagged your batch for the next processor pass tonight. I’ll notify you here the instant any of the three lands. What do you want me to do next?`,
+            reply:`I looked up your ticket BR-171104 and your overnight thread with Nickolas (2:45–3:39 AM EST). You’re right — you were told 1–3 hours and it rolled into today. That’s on us, and I’m sorry.\n\nRecap I see on your account:\n• Original withdrawal: 215.00 LTC — canceled last night.\n• You asked to split into 3 × ~$300 payouts (≈ ${each} LTC each) to the three LTC addresses you provided.\n• Remaining outbound: ${remainder} LTC queued to follow once the split posts.\n\nGive me one moment while I check the live queue and keep the trace hot. I’ll notify you here the instant any of the three lands. What do you want me to do next?`,
             rakeback:true,
-            progress:{step:'queued', state:'active'}
+            progress:{step:'queued', state:'active'},
+            advanceMinutes:3
           };
+        }
+      },
+      {
+        test: text => /(fast as fuck|fast af|one time|cant just|can't just|bro wdym|level ?4|400k|spent)/.test(text),
+        respond: () => {
+          simulateAgentResponse({
+            reply:'I get it — the payouts are usually fast. I’ve got your batch locked down again and I’m looping in payouts leadership right now.',
+            advanceMinutes:0
+          }, {delay:700, advanceMinutes:0});
+          simulateAgentResponse({
+            reply:'Hi, this is Dana Alvarez from payouts leadership. Give me one moment to review this chat so I can help you.',
+            advanceMinutes:0
+          }, {delay:1700, advanceMinutes:0});
+          const remainder = state.finance.remainder.toFixed(2);
+          simulateAgentResponse({
+            reply:`Thanks for waiting. I’m sorry for the delays — to keep you whole I’m stacking an additional 15% rakeback boost on top of the one already active. The three ~3.38 LTC packets stay prioritized and the remaining ${remainder} LTC fires right after they post.`,
+            advanceMinutes:2,
+            rakeback:true
+          }, {delay:3200});
+          return null;
         }
       },
       {
@@ -951,7 +974,7 @@
       const m = total % 60;
       const isPM = h >= 12;
       const hh12 = (h % 12) || 12;
-      return `${hh12}:${pad2(m)} ${isPM ? 'PM' : 'AM'} ET`;
+      return `${hh12}:${pad2(m)} ${isPM ? 'PM' : 'AM'} EST`;
     }
     function parseTimeLabel(label){
       const match = /^(\d{1,2}):(\d{2})\s+(AM|PM)/i.exec(label || '');
@@ -1086,7 +1109,8 @@
       const delay = opts.delay ?? 900;
       setTimeout(()=>{
         stopTyping();
-        tick(opts.advanceMinutes ?? 1);
+        const advance = payload.advanceMinutes ?? opts.advanceMinutes ?? 1;
+        tick(advance);
         if(payload.rakeback){
           applyRakeback();
         }
