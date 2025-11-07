@@ -750,7 +750,6 @@
     <aside class="summary-pane" aria-label="Ticket summary and actions">
       <article class="card">
         <h2>Ticket Snapshot <span>br-171104</span></h2>
-        <p>Priority trace is live on your split-out LTC withdrawal. Everything below mirrors the overnight notes with Nickolas and the updates Avery is running now.</p>
         <div class="ticket-grid">
           <div>
             <div class="label">Client</div>
@@ -758,114 +757,12 @@
           </div>
           <div>
             <div class="label">Original request</div>
-            <div class="value">215.00 LTC (canceled ~03:10 AM ET)</div>
+            <div class="value">215.00 LTC — canceled ~03:10 AM ET</div>
           </div>
           <div>
-            <div class="label">Current distribution</div>
-            <div class="value">3 × 3.38 LTC ≈ $300 each <span style="color:#1a7de5;">(Queued)</span></div>
+            <div class="label">Current payout split</div>
+            <div class="value">3 × 3.38 LTC (≈ $300) — queued</div>
           </div>
-          <div>
-            <div class="label">Trace status</div>
-            <div class="value" id="traceStatusValue">Expedited · Finance supervisor review</div>
-          </div>
-        </div>
-        <div class="priority-flag">
-          ⚠️ SLA breach (1–3 hour promise) · Courtesy boost applied
-        </div>
-        <div class="reference-controls">
-          <p class="helper-text">
-            Want to replay the overnight conversation? Load it on demand — it won’t auto-play.
-          </p>
-          <button type="button" id="replayTranscript" class="ghost-button">Play reference transcript</button>
-        </div>
-      </article>
-
-      <article class="card">
-        <h2>Batch Progress <span>ltc · overnight window</span></h2>
-        <div class="progress-track" id="progressTrack">
-          <div class="progress-step done" data-step="cancel-original">
-            <div class="step-icon">①</div>
-            <div>
-              <h3>Original 215.00 LTC cancellation <span>Complete</span></h3>
-              <p>Confirmed with Nickolas between 2:45–3:39 AM ET. Funds re-queued for manual split.</p>
-            </div>
-          </div>
-          <div class="progress-step active" data-step="queued">
-            <div class="step-icon">②</div>
-            <div>
-              <h3>3× outbound packets queued <span>In queue</span></h3>
-              <p>Three 3.38 LTC (≈$300) packets tagged for your supplied addresses.</p>
-            </div>
-          </div>
-          <div class="progress-step" data-step="processing">
-            <div class="step-icon">③</div>
-            <div>
-              <h3>Processor sweep <span>Pending</span></h3>
-              <p>Finance batch supervisor reruns tonight. Priority trace ensures first-pass review.</p>
-            </div>
-          </div>
-          <div class="progress-step" data-step="posted">
-            <div class="step-icon">④</div>
-            <div>
-              <h3>Payout posted <span>Awaiting confirmation</span></h3>
-              <p>Avery will ping you here the instant one hits chain, then close out with finance.</p>
-            </div>
-          </div>
-        </div>
-        <div class="addresses">
-          <div class="tag" style="margin-bottom:6px;">Destination wallets</div>
-          <div class="addr-pill"><strong>Packet A</strong> <span>LQaMp5D37MdqGASMPuRQ2T4k5ueydTUr9F</span></div>
-          <div class="addr-pill"><strong>Packet B</strong> <span>LR7qcDADQBReDqd5zpfZPKhTE3VQ7Nk2zu</span></div>
-          <div class="addr-pill"><strong>Packet C</strong> <span>LgdhigA3Zc8AAR61uAJcEfXVUcs5MzDpi</span></div>
-        </div>
-      </article>
-
-      <article class="card">
-        <h2>Escalation Activity <span>live log</span></h2>
-        <div class="activity-log" id="activityLog">
-          <div class="activity-event">
-            <strong>10:58 PM ET · Queue bypass</strong>
-            Avery re-flagged split batch as priority for the overnight processor sweep.
-          </div>
-          <div class="activity-event">
-            <strong>10:59 PM ET · Rakeback credit</strong>
-            15% courtesy rakeback boost live until payouts post or queue normalizes.
-          </div>
-          <div class="activity-event">
-            <strong>11:04 PM ET · Trace BR-171104</strong>
-            Supervisor looped with transcript + wallet verification (Nickolas overnight thread).
-          </div>
-        </div>
-      </article>
-
-      <article class="card">
-        <h2>Next Actions <span>you control</span></h2>
-        <p>Use a quick action or just tell Avery exactly what you need. Everything routes through the live queue.</p>
-        <div class="action-grid">
-          <button class="action-btn" data-fill="check live status">
-            🔄 Check status
-            <span>Run a real-time look at the processor queue.</span>
-          </button>
-          <button class="action-btn" data-fill="keep the three $300 payouts queued">
-            📦 Keep queued
-            <span>Lock all three packets until they post.</span>
-          </button>
-          <button class="action-btn" data-fill="notify me">
-            🔔 Notify me
-            <span>Keep alerts on the second one lands.</span>
-          </button>
-          <button class="action-btn secondary" data-fill="change destinations">
-            ✏️ Edit wallets
-            <span>Swap the LTC addresses before the sweep.</span>
-          </button>
-          <button class="action-btn secondary" data-fill="open dispute">
-            🛑 Open dispute
-            <span>Escalate to a formal payout complaint.</span>
-          </button>
-          <button class="action-btn danger" data-fill="halt the three $300 payouts">
-            ⛔ Halt payouts
-            <span>Attempt to stop the batch before it leaves.</span>
-          </button>
         </div>
       </article>
     </aside>
@@ -903,9 +800,9 @@
     };
 
     const defaults = {
-      activityHTML: dom.activityLog.innerHTML,
-      progressHTML: dom.progressTrack.innerHTML,
-      traceText: dom.traceStatus.textContent
+      activityHTML: dom.activityLog ? dom.activityLog.innerHTML : '',
+      progressHTML: dom.progressTrack ? dom.progressTrack.innerHTML : '',
+      traceText: dom.traceStatus ? dom.traceStatus.textContent : ''
     };
 
     const quickPhrases = [
@@ -1087,10 +984,10 @@
     }
 
     function resetPanels(){
-      dom.activityLog.innerHTML = defaults.activityHTML;
-      dom.progressTrack.innerHTML = defaults.progressHTML;
-      dom.traceStatus.textContent = defaults.traceText;
-      dom.rakebackBadge.hidden = true;
+      if(dom.activityLog) dom.activityLog.innerHTML = defaults.activityHTML;
+      if(dom.progressTrack) dom.progressTrack.innerHTML = defaults.progressHTML;
+      if(dom.traceStatus) dom.traceStatus.textContent = defaults.traceText;
+      if(dom.rakebackBadge) dom.rakebackBadge.hidden = true;
       state.rakeback = false;
     }
 
@@ -1211,7 +1108,7 @@
         if(payload.progress){
           updateProgress(payload.progress);
         }
-        if(payload.activity){
+        if(payload.activity && dom.activityLog){
           appendActivity(payload.activity.title, payload.activity.desc);
         }
         buildMessage({
@@ -1227,11 +1124,12 @@
     function applyRakeback(){
       if(state.rakeback) return;
       state.rakeback = true;
-      dom.rakebackBadge.hidden = false;
+      if(dom.rakebackBadge) dom.rakebackBadge.hidden = false;
       appendActivity('Rakeback extended', '15% courtesy rakeback stays active until the payouts settle.');
     }
 
     function appendActivity(title, description){
+      if(!dom.activityLog) return;
       const wrap = document.createElement('div');
       wrap.className = 'activity-event';
       wrap.innerHTML = `<strong>${formatClock(state.minutesSinceMidnight)} · ${title}</strong>${description}`;
@@ -1239,6 +1137,7 @@
     }
 
     function updateProgress({step, state:progressState}){
+      if(!dom.progressTrack) return;
       const stepEl = dom.progressTrack.querySelector(`[data-step="${step}"]`);
       if(!stepEl) return;
       dom.progressTrack.querySelectorAll('.progress-step').forEach(el=>{
@@ -1248,10 +1147,10 @@
           if(progressState === 'done') el.classList.add('done');
         }
       });
-      if(step === 'processing' && progressState === 'active'){
+      if(dom.traceStatus && step === 'processing' && progressState === 'active'){
         dom.traceStatus.textContent = 'Processor desk running live sweep';
       }
-      if(step === 'posted' && progressState === 'done'){
+      if(dom.traceStatus && step === 'posted' && progressState === 'done'){
         dom.traceStatus.textContent = 'Completed · Awaiting blockchain confirmations';
       }
     }
@@ -1310,7 +1209,7 @@
         delay += 320;
       });
       const last = seededTranscript[seededTranscript.length-1];
-      if(last && last.time){
+        if(dom.clock && last && last.time){
         const parsed = parseTimeLabel(last.time);
         if(parsed !== null){
           setTimeout(()=>{
