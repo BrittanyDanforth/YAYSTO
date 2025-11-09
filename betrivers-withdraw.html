@@ -24,7 +24,7 @@
   .tabs-bar{background:#1f2329;display:flex;align-items:flex-end;padding:8px 8px 0 8px;gap:2px;border-bottom:1px solid #111827}
   .tab{background:#2c323c;border:1px solid #111827;border-bottom:none;border-radius:8px 8px 0 0;padding:8px 12px 8px 12px;display:flex;align-items:center;gap:8px;min-width:200px;max-width:240px;cursor:pointer;position:relative;color:#9ca3af}
   .tab.active{background:#1f2329;color:#e2e8f0;border-color:#3c4450}
-  .tab-favicon{width:16px;height:16px;border-radius:4px;background:linear-gradient(135deg,#ffb81c,#0e3a6d);color:#0b2549;font-weight:800;font-size:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+  .tab-favicon{width:16px;height:16px;border-radius:4px;background:linear-gradient(135deg,#ffb81c,#0e3a6d);color:#0b2549;font-weight:800;font-size:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0;object-fit:contain}
   .tab-title{flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:12px}
   .tab-close{width:20px;height:20px;border-radius:4px;display:flex;align-items:center;justify-content:center;opacity:.6;transition:opacity .2s,background .2s;flex-shrink:0}
   .tab-close:hover{opacity:1;background:rgba(255,255,255,.1)}
@@ -112,7 +112,7 @@
   <!-- Browser tabs -->
   <div class="tabs-bar" role="presentation" aria-hidden="true">
     <div class="tab" style="opacity:.6">
-      <span class="tab-favicon" style="background:#4285f4;color:#fff">G</span>
+      <img class="tab-favicon" src="https://static.vecteezy.com/system/resources/previews/002/557/425/original/google-mail-icon-logo-isolated-on-transparent-background-free-vector.jpg" alt="">
       <span class="tab-title">Gmail - Inbox</span>
       <button class="tab-close" aria-label="Close tab">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -130,7 +130,7 @@
       </button>
     </div>
     <div class="tab" style="opacity:.6">
-      <span class="tab-favicon" style="background:#ff0000;color:#fff">Y</span>
+      <img class="tab-favicon" src="https://www.liblogo.com/img-logo/yo482y5ff-youtube-icon-logo-youtube-logo-free-icon-of-vector-logo.png" alt="">
       <span class="tab-title">YouTube</span>
       <button class="tab-close" aria-label="Close tab">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -174,7 +174,6 @@
       </button>
     </div>
     <div class="addr">
-      <span class="addr-favicon">B</span>
       <span class="addr-lock" aria-hidden="true">
         <svg viewBox="0 0 24 24" fill="none">
           <path d="M17 11h-1V8a4 4 0 1 0-8 0v3H7a1 1 0 0 0-1 1v7a1 1 0 0 0 1 1h10a1 1 0 0 0 1-1v-7a1 1 0 0 0-1-1zm-5 6a2 2 0 1 1 0-4 2 2 0 0 1 0 4zm2-6H10V8a2 2 0 1 1 4 0v3z" fill="currentColor"/>
