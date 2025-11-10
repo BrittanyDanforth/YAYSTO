@@ -516,7 +516,7 @@
     const asset=currentAsset;
     const usd=parseFloat($('#amtUsd').value.replace(/,/g,''))||0;
     if(asset==='ACH'){
-      $('#feeBox').innerHTML=`<span>ACH processing fee</span><span class="mono">$0.00</span>`;
+      $('#feeBox').innerHTML=`<span>Total fee</span><span class="mono" style="font-weight:700">$0.00</span>`;
       $('#amtCoin').value='—'; 
       $('#payoutEst').value=fmtUSD(usd); 
       $('#priceUsed').textContent='No conversion required'; 
@@ -533,7 +533,7 @@
     const coin=usd/p; 
     const f=feeModel(asset,usd); 
     const after=Math.max(0,usd-f.total);
-    $('#feeBox').innerHTML=`<span>Processing + Network</span><span class="mono">${fmtUSD(f.proc)} + ${fmtUSD(f.network)} = ${fmtUSD(f.total)}</span>`;
+    $('#feeBox').innerHTML=`<span>Total fee</span><span class="mono" style="font-weight:700">${fmtUSD(f.total)}</span>`;
     $('#amtCoin').value=fmtCoin(coin,asset); 
     $('#payoutEst').value=fmtUSD(after);
     $('#priceUsed').textContent=`Using ${asset} price: $${p.toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2})}`;
