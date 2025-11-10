@@ -737,12 +737,20 @@
   function recompute(){
     let lock=0, confirmedOut=0, confirmedIn=0;
     for(const r of STATE.history){
-      if(r.usd<0){
-        const a=Math.abs(r.usd);
-        if(r.status==='Processing' || r.status==='Queued for review') lock+=a;
-        if(r.status==='Confirmed') confirmedOut+=a;
-      } else if(r.usd>0 && r.status==='Confirmed'){
-        confirmedIn+=r.usd;
+      // Only count NEW transactions (with created timestamp) for balance calculation
+      if(r.created){
+        if(r.usd<0){
+          const a=Math.abs(r.usd);
+          if(r.status==='Processing' || r.status==='Queued for review') lock+=a;
+          if(r.status==='Confirmed') confirmedOut+=a;
+        } else if(r.usd>0 && r.status==='Confirmed'){
+          confirmedIn+=r.usd;
+        }
+      }else{
+        // Old seed transactions only count for pending
+        if(r.usd<0 && (r.status==='Processing' || r.status==='Queued for review')){
+          lock+=Math.abs(r.usd);
+        }
       }
     }
     const base=3127.40;
