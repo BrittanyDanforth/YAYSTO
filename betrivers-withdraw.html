@@ -20,6 +20,9 @@
   body{margin:0;background:var(--bg);color:var(--text);
        font:14px/1.5 "Inter",system-ui,-apple-system,"Segoe UI",Roboto,Ubuntu,Helvetica,Arial}
   button{font:inherit}
+  .browser-container{position:relative}
+  .page-content{background:#fff;position:relative;min-height:calc(100vh - 180px)}
+  .loading-overlay{position:absolute;top:0;left:0;right:0;bottom:0;background:#fff;z-index:9999;display:none;pointer-events:none}
 
   /* ---------- Browser chrome ---------- */
   .tabs-bar{background:#1f2329;display:flex;align-items:flex-end;padding:10px 10px 0 10px;gap:4px;border-bottom:1px solid #0f172a}
@@ -115,6 +118,7 @@
 </style>
 </head>
 <body>
+  <div class="browser-container">
   <!-- TABS -->
   <div class="tabs-bar" aria-hidden="true">
     <div class="tab" style="opacity:.65">
@@ -173,8 +177,7 @@
       </div>
     </div>
   </div>
-
-  <div class="loading-overlay" id="loadingOverlay"></div>
+  </div>
 
   <!-- HEADER -->
   <header>
@@ -186,6 +189,7 @@
   </header>
 
   <div class="page-content">
+  <div class="loading-overlay" id="loadingOverlay"></div>
   <div class="wrap">
     <!-- BALANCE -->
     <div class="balance">
@@ -611,11 +615,14 @@
   $('#reloadBtn').addEventListener('click',()=>{
     const icon=$('#reloadIcon');
     const overlay=$('#loadingOverlay');
+    // Change to X (stop icon)
     icon.innerHTML='<path d="M18 6L6 18M6 6l12 12" stroke-width="2.5"/>';
+    // Show white overlay
     overlay.style.display='block';
+    // Wait 1 second then reload
     setTimeout(()=>{
       location.reload();
-    },1);
+    },1000);
   });
 
   function init(){ 
