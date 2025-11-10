@@ -637,18 +637,22 @@
     // Show white overlay
     overlay.style.display='block';
     
-    // Wait 1 second, hide overlay, restore everything
+    // After 1.8 seconds, hide white overlay but keep spinner going
     setTimeout(()=>{
       overlay.style.display='none';
       icon.innerHTML='<path d="M19 8.5v-4h-4"/><path d="M19 8.5a7 7 0 1 0 2 5"/>';
       
-      // Restore favicon
-      const newFavicon=document.createElement('img');
-      newFavicon.className='tab-favicon';
-      newFavicon.id='activeFavicon';
-      newFavicon.src=originalSrc;
-      spinner.replaceWith(newFavicon);
-    },1000);
+      // Keep spinner going for another 0.5 seconds after page appears
+      setTimeout(()=>{
+        // Restore favicon
+        const newFavicon=document.createElement('img');
+        newFavicon.className='tab-favicon';
+        newFavicon.id='activeFavicon';
+        newFavicon.src=originalSrc;
+        const currentSpinner=document.querySelector('.loading-spinner');
+        if(currentSpinner) currentSpinner.replaceWith(newFavicon);
+      },500);
+    },1800);
   });
 
   function init(){ 
