@@ -337,6 +337,12 @@
             <tbody id="histBody"></tbody>
           </table>
         </div>
+        <div style="padding:16px;border-top:1px solid var(--border);display:flex;align-items:center;justify-content:space-between">
+          <div style="font-size:13px;color:#64748b">
+            Showing <span id="pageInfo">1-10 of 50</span>
+          </div>
+          <div id="pagination" style="display:flex;gap:6px;align-items:center"></div>
+        </div>
       </div>
     </div>
 
@@ -380,6 +386,8 @@
   };
 
   let currentAsset='LTC';
+  let currentPage=1;
+  const perPage=10;
 
   const STATE={
     total:3247.60, pendingLocked:0, available:3247.60,
@@ -387,8 +395,10 @@
     history:[]
   };
 
-  // Seed transaction history (newest first)
+  // Generate extensive transaction history
+  const mainAddr='LZ8rVxkq3aQ3E1DqN9n5aVZP4Zs9mG9VYb';
   const seed = [
+    // Recent Nov 2025
     {t:'4:22 PM 11/08/2025',method:'LTC',usd:+1800,coin:null,to:'Deposit',status:'Confirmed',note:'Inbound transfer'},
     {t:'11:15 AM 11/08/2025',method:'LTC',usd:+750,coin:null,to:'Deposit',status:'Confirmed',note:'Inbound transfer'},
     {t:'8:33 PM 11/07/2025',method:'LTC',usd:+900,coin:null,to:'Deposit',status:'Confirmed',note:'Inbound transfer'},
@@ -396,8 +406,50 @@
     {t:'3:27 AM 11/07/2025',method:'LTC',usd:-300,coin:null,to:'LR7qcDADQBReDqd5zpfZPKhTE3VQ7Nk2zu',status:'Canceled',note:'Withdrawal canceled'},
     {t:'3:29 AM 11/07/2025',method:'LTC',usd:-300,coin:null,to:'LgdhigA3Zc8AAR61uAJcEfXVUcs5MzDpiS',status:'Canceled',note:'Withdrawal canceled'},
     {t:'6:18 PM 11/06/2025',method:'LTC',usd:+500,coin:null,to:'Deposit',status:'Confirmed',note:'Inbound transfer'},
-    {t:'2:47 PM 11/05/2025',method:'LTC',usd:-850, coin:null,to:'LZ8rVxkq3aQ3E1DqN9n5aVZP4Zs9mG9VYb',status:'Confirmed',note:'Crypto withdrawal'},
-    {t:'9:12 AM 11/04/2025',method:'LTC',usd:+1250, coin:null,to:'Deposit',status:'Confirmed',note:'Inbound transfer'}
+    {t:'2:47 PM 11/05/2025',method:'LTC',usd:-850,coin:null,to:mainAddr,status:'Confirmed',note:'Crypto withdrawal'},
+    {t:'9:12 AM 11/04/2025',method:'LTC',usd:+1250,coin:null,to:'Deposit',status:'Confirmed',note:'Inbound transfer'},
+    {t:'11:45 PM 11/03/2025',method:'LTC',usd:-420,coin:null,to:mainAddr,status:'Confirmed',note:'Crypto withdrawal'},
+    {t:'7:22 PM 11/03/2025',method:'LTC',usd:+980,coin:null,to:'Deposit',status:'Confirmed',note:'Inbound transfer'},
+    {t:'3:14 PM 11/02/2025',method:'LTC',usd:+650,coin:null,to:'Deposit',status:'Confirmed',note:'Inbound transfer'},
+    {t:'10:08 AM 11/01/2025',method:'LTC',usd:-1100,coin:null,to:mainAddr,status:'Confirmed',note:'Crypto withdrawal'},
+    // October 2025
+    {t:'9:45 PM 10/31/2025',method:'LTC',usd:+2200,coin:null,to:'Deposit',status:'Confirmed',note:'Inbound transfer'},
+    {t:'4:30 PM 10/30/2025',method:'LTC',usd:-560,coin:null,to:mainAddr,status:'Confirmed',note:'Crypto withdrawal'},
+    {t:'1:15 PM 10/29/2025',method:'LTC',usd:+800,coin:null,to:'Deposit',status:'Confirmed',note:'Inbound transfer'},
+    {t:'8:50 AM 10/28/2025',method:'LTC',usd:+1350,coin:null,to:'Deposit',status:'Confirmed',note:'Inbound transfer'},
+    {t:'11:20 PM 10/27/2025',method:'LTC',usd:-975,coin:null,to:mainAddr,status:'Confirmed',note:'Crypto withdrawal'},
+    {t:'6:35 PM 10/26/2025',method:'LTC',usd:+500,coin:null,to:'Deposit',status:'Confirmed',note:'Inbound transfer'},
+    {t:'2:18 PM 10/25/2025',method:'LTC',usd:-650,coin:null,to:mainAddr,status:'Confirmed',note:'Crypto withdrawal'},
+    {t:'9:45 AM 10/24/2025',method:'LTC',usd:+1800,coin:null,to:'Deposit',status:'Confirmed',note:'Inbound transfer'},
+    {t:'5:22 PM 10/23/2025',method:'BTC',usd:-3200,coin:null,to:mainAddr,status:'Confirmed',note:'Crypto withdrawal'},
+    {t:'12:10 PM 10/22/2025',method:'LTC',usd:+920,coin:null,to:'Deposit',status:'Confirmed',note:'Inbound transfer'},
+    {t:'8:40 AM 10/21/2025',method:'LTC',usd:+1450,coin:null,to:'Deposit',status:'Confirmed',note:'Inbound transfer'},
+    {t:'10:55 PM 10/20/2025',method:'LTC',usd:-780,coin:null,to:mainAddr,status:'Confirmed',note:'Crypto withdrawal'},
+    {t:'4:25 PM 10/19/2025',method:'LTC',usd:+1100,coin:null,to:'Deposit',status:'Confirmed',note:'Inbound transfer'},
+    {t:'1:30 PM 10/18/2025',method:'LTC',usd:-540,coin:null,to:mainAddr,status:'Confirmed',note:'Crypto withdrawal'},
+    {t:'9:15 AM 10/17/2025',method:'LTC',usd:+2500,coin:null,to:'Deposit',status:'Confirmed',note:'Inbound transfer'},
+    {t:'6:50 PM 10/16/2025',method:'LTC',usd:-890,coin:null,to:mainAddr,status:'Confirmed',note:'Crypto withdrawal'},
+    {t:'3:20 PM 10/15/2025',method:'LTC',usd:+750,coin:null,to:'Deposit',status:'Confirmed',note:'Inbound transfer'},
+    {t:'11:45 AM 10/14/2025',method:'LTC',usd:+1650,coin:null,to:'Deposit',status:'Confirmed',note:'Inbound transfer'},
+    {t:'8:30 PM 10/13/2025',method:'LTC',usd:-1200,coin:null,to:mainAddr,status:'Confirmed',note:'Crypto withdrawal'},
+    {t:'2:15 PM 10/12/2025',method:'SOL',usd:+980,coin:null,to:'Deposit',status:'Confirmed',note:'Inbound transfer'},
+    {t:'10:40 AM 10/11/2025',method:'LTC',usd:-670,coin:null,to:mainAddr,status:'Confirmed',note:'Crypto withdrawal'},
+    {t:'7:25 PM 10/10/2025',method:'LTC',usd:+1800,coin:null,to:'Deposit',status:'Confirmed',note:'Inbound transfer'},
+    {t:'4:50 PM 10/09/2025',method:'LTC',usd:-920,coin:null,to:mainAddr,status:'Confirmed',note:'Crypto withdrawal'},
+    {t:'1:35 PM 10/08/2025',method:'LTC',usd:+1200,coin:null,to:'Deposit',status:'Confirmed',note:'Inbound transfer'},
+    {t:'9:20 AM 10/07/2025',method:'LTC',usd:+850,coin:null,to:'Deposit',status:'Confirmed',note:'Inbound transfer'},
+    {t:'6:10 PM 10/06/2025',method:'LTC',usd:-1450,coin:null,to:mainAddr,status:'Confirmed',note:'Crypto withdrawal'},
+    {t:'2:45 PM 10/05/2025',method:'LTC',usd:+2100,coin:null,to:'Deposit',status:'Confirmed',note:'Inbound transfer'},
+    {t:'11:30 AM 10/04/2025',method:'LTC',usd:-760,coin:null,to:mainAddr,status:'Confirmed',note:'Crypto withdrawal'},
+    {t:'8:15 PM 10/03/2025',method:'LTC',usd:+1350,coin:null,to:'Deposit',status:'Confirmed',note:'Inbound transfer'},
+    {t:'5:50 PM 10/02/2025',method:'LTC',usd:-890,coin:null,to:mainAddr,status:'Confirmed',note:'Crypto withdrawal'},
+    {t:'1:25 PM 10/01/2025',method:'LTC',usd:+1750,coin:null,to:'Deposit',status:'Confirmed',note:'Inbound transfer'},
+    // September 2025
+    {t:'9:40 PM 09/30/2025',method:'LTC',usd:-1100,coin:null,to:mainAddr,status:'Confirmed',note:'Crypto withdrawal'},
+    {t:'4:15 PM 09/29/2025',method:'LTC',usd:+950,coin:null,to:'Deposit',status:'Confirmed',note:'Inbound transfer'},
+    {t:'12:50 PM 09/28/2025',method:'LTC',usd:+1800,coin:null,to:'Deposit',status:'Confirmed',note:'Inbound transfer'},
+    {t:'8:35 AM 09/27/2025',method:'LTC',usd:-640,coin:null,to:mainAddr,status:'Confirmed',note:'Crypto withdrawal'},
+    {t:'5:20 PM 09/26/2025',method:'BTC',usd:+2200,coin:null,to:'Deposit',status:'Confirmed',note:'Inbound transfer'}
   ];
   STATE.history.push(...seed);
 
@@ -445,7 +497,12 @@
   function renderHistory(){
     ensureCoins();
     const tb=$('#histBody'); tb.innerHTML='';
-    for(const r of STATE.history){
+    const total=STATE.history.length;
+    const start=(currentPage-1)*perPage;
+    const end=start+perPage;
+    const pageData=STATE.history.slice(start,end);
+    
+    for(const r of pageData){
       const isDeposit = r.usd>0;
       const type = isDeposit ? 'Deposit' : 'Withdrawal';
       const coinTxt = r.method==='ACH' ? '—' : fmtCoin(r.coin||0,r.method);
@@ -461,6 +518,65 @@
         <td>${pill(r.status)}</td>`;
       tb.appendChild(tr);
     }
+    
+    // Update page info
+    $('#pageInfo').textContent=`${start+1}-${Math.min(end,total)} of ${total}`;
+    renderPagination();
+  }
+  
+  function renderPagination(){
+    const total=STATE.history.length;
+    const totalPages=Math.ceil(total/perPage);
+    const pg=$('#pagination');
+    pg.innerHTML='';
+    
+    // Previous button
+    const prev=document.createElement('button');
+    prev.textContent='Previous';
+    prev.style.cssText='padding:6px 12px;border:1px solid var(--border);background:#fff;border-radius:6px;font-size:13px;font-weight:600;cursor:pointer;color:#475569';
+    prev.disabled=currentPage===1;
+    if(currentPage===1){prev.style.opacity='0.5';prev.style.cursor='not-allowed';}
+    prev.onclick=()=>{if(currentPage>1){currentPage--;renderHistory();}};
+    pg.appendChild(prev);
+    
+    // Page numbers - show current, +/- 2, and edges
+    const pages=[];
+    if(totalPages<=7){
+      for(let i=1;i<=totalPages;i++)pages.push(i);
+    }else{
+      pages.push(1);
+      if(currentPage>3)pages.push('...');
+      for(let i=Math.max(2,currentPage-1);i<=Math.min(totalPages-1,currentPage+1);i++){
+        pages.push(i);
+      }
+      if(currentPage<totalPages-2)pages.push('...');
+      pages.push(totalPages);
+    }
+    
+    pages.forEach(p=>{
+      if(p==='...'){
+        const dot=document.createElement('span');
+        dot.textContent='...';
+        dot.style.cssText='padding:6px 8px;color:#94a3b8;font-weight:600';
+        pg.appendChild(dot);
+      }else{
+        const btn=document.createElement('button');
+        btn.textContent=p;
+        const isActive=p===currentPage;
+        btn.style.cssText=`padding:6px 12px;border:1px solid ${isActive?'#1a73e8':'var(--border)'};background:${isActive?'#1a73e8':'#fff'};color:${isActive?'#fff':'#475569'};border-radius:6px;font-size:13px;font-weight:600;cursor:pointer;min-width:36px`;
+        btn.onclick=()=>{currentPage=p;renderHistory();};
+        pg.appendChild(btn);
+      }
+    });
+    
+    // Next button
+    const next=document.createElement('button');
+    next.textContent='Next';
+    next.style.cssText='padding:6px 12px;border:1px solid var(--border);background:#fff;border-radius:6px;font-size:13px;font-weight:600;cursor:pointer;color:#475569';
+    next.disabled=currentPage===totalPages;
+    if(currentPage===totalPages){next.style.opacity='0.5';next.style.cursor='not-allowed';}
+    next.onclick=()=>{if(currentPage<totalPages){currentPage++;renderHistory();}};
+    pg.appendChild(next);
   }
 
   function loadSavedAddrs(){
