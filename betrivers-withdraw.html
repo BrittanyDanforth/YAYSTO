@@ -162,7 +162,10 @@
       </svg>
     </div>
     <div class="bbtn" id="reloadBtn" title="Reload">
-      <img id="reloadIcon" src="https://creazilla-store.fra1.digitaloceanspaces.com/icons/3247965/refresh-icon-md.png" alt="Reload" style="width:18px;height:18px;object-fit:contain">
+      <svg id="reloadIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <polyline points="23 4 23 10 17 10"></polyline>
+        <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
+      </svg>
     </div>
     <div class="bbtn" title="Home">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -971,11 +974,8 @@
     const overlay=$('#loadingOverlay');
     const favicon=$('#activeFavicon');
     
-    // Store original reload icon src
-    const originalReloadSrc=icon.src;
-    
-    // Change reload icon to X (stop icon) - using a simple X icon
-    icon.src='data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"%3E%3Cpath d="M18 6L6 18M6 6l12 12"/%3E%3C/svg%3E';
+    // Change reload icon to X (stop icon)
+    icon.innerHTML='<path d="M18 6L6 18M6 6l12 12" stroke-width="2.5"/>';
     
     // Change favicon to loading spinner
     const spinner=document.createElementNS('http://www.w3.org/2000/svg','svg');
@@ -994,7 +994,7 @@
     // After 1.8 seconds, hide white overlay but keep spinner going
     setTimeout(()=>{
       overlay.style.display='none';
-      icon.src=originalReloadSrc;
+      icon.innerHTML='<polyline points="23 4 23 10 17 10"></polyline><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>';
       
       // Keep spinner going for another 0.5 seconds after page appears
       setTimeout(()=>{
