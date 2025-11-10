@@ -324,7 +324,6 @@
 
           <div style="margin-top:20px;display:flex;gap:12px;align-items:center;flex-wrap:wrap">
             <button class="btn" id="submitBtn" style="padding:12px 20px">Submit withdrawal</button>
-            <button class="btn ghost" id="ratesBtn" style="padding:12px 20px">Refresh prices</button>
             <div style="flex:1;min-width:200px;text-align:right">
               <span style="font-size:11.5px;color:#94a3b8;font-weight:500">Large transactions (&gt;$1,000) may require additional verification.</span>
             </div>
@@ -388,6 +387,9 @@
   </div>
 
 <footer>
+  <div style="margin-bottom:12px;padding:12px;background:#fef3c7;border-left:3px solid #f59e0b;border-radius:6px">
+    <strong style="color:#b45309">New Payment Options:</strong> <span style="color:#78350f">Cryptocurrency withdrawals (BTC, LTC, SOL, USDT) are now available in your state due to recent regulatory updates. These methods are in addition to our standard ACH and bank transfer options.</span>
+  </div>
   Live cryptocurrency pricing provided by Coinbase and CoinGecko. All transactions are subject to verification and compliance review. Network fees vary based on blockchain conditions.
 </footer>
 
@@ -958,7 +960,6 @@
 
   $('#usdtNet').addEventListener('change',updateCalc);
   $('#amtUsd').addEventListener('input',updateCalc);
-  $('#ratesBtn').addEventListener('click',loadPrices);
   $('#submitBtn').addEventListener('click',submit);
   $('#modalConfirm').addEventListener('click',confirmWithdrawal);
   $('#modalCancel').addEventListener('click',()=>{$('#confirmModal').style.display='none';pendingWithdrawal=null;});
