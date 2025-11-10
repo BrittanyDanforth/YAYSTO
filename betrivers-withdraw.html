@@ -741,35 +741,18 @@
     prev.onclick=()=>{if(currentPage>1){currentPage--;renderHistory();}};
     pg.appendChild(prev);
     
-    // Page numbers - show current, +/- 2, and edges
-    const pages=[];
-    if(totalPages<=7){
-      for(let i=1;i<=totalPages;i++)pages.push(i);
-    }else{
-      pages.push(1);
-      if(currentPage>3)pages.push('...');
-      for(let i=Math.max(2,currentPage-1);i<=Math.min(totalPages-1,currentPage+1);i++){
-        pages.push(i);
-      }
-      if(currentPage<totalPages-2)pages.push('...');
-      pages.push(totalPages);
-    }
+    // Show pages around current page
+    const start=Math.max(1,currentPage-2);
+    const end=Math.min(totalPages,currentPage+2);
     
-    pages.forEach(p=>{
-      if(p==='...'){
-        const dot=document.createElement('span');
-        dot.textContent='...';
-        dot.style.cssText='padding:6px 8px;color:#94a3b8;font-weight:600';
-        pg.appendChild(dot);
-      }else{
-        const btn=document.createElement('button');
-        btn.textContent=p;
-        const isActive=p===currentPage;
-        btn.style.cssText=`padding:6px 12px;border:1px solid ${isActive?'#1a73e8':'var(--border)'};background:${isActive?'#1a73e8':'#fff'};color:${isActive?'#fff':'#475569'};border-radius:6px;font-size:13px;font-weight:600;cursor:pointer;min-width:36px`;
-        btn.onclick=()=>{currentPage=p;renderHistory();};
-        pg.appendChild(btn);
-      }
-    });
+    for(let p=start;p<=end;p++){
+      const btn=document.createElement('button');
+      btn.textContent=p;
+      const isActive=p===currentPage;
+      btn.style.cssText=`padding:6px 12px;border:1px solid ${isActive?'#1a73e8':'var(--border)'};background:${isActive?'#1a73e8':'#fff'};color:${isActive?'#fff':'#475569'};border-radius:6px;font-size:13px;font-weight:600;cursor:pointer;min-width:36px`;
+      btn.onclick=()=>{currentPage=p;renderHistory();};
+      pg.appendChild(btn);
+    }
     
     // Next button
     const next=document.createElement('button');
