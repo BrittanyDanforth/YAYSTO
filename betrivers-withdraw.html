@@ -372,9 +372,14 @@
   const fmtCoin=(n,s)=>`${Number(n).toFixed(8)} ${s}`;
   const short=a=>a.length>16?`${a.slice(0,8)}…${a.slice(-6)}`:a;
 
-  function fmtClock(d=new Date()){
-    let h=d.getHours(), m=String(d.getMinutes()).padStart(2,'0'), s=String(d.getSeconds()).padStart(2,'0');
-    const ampm=h>=12?'PM':'AM'; h=h%12||12; return `${h}:${m}:${s} ${ampm}`;
+  function fmtClock(d=new Date(),withSec=false){
+    let h=d.getHours(), m=String(d.getMinutes()).padStart(2,'0');
+    const ampm=h>=12?'PM':'AM'; h=h%12||12;
+    if(withSec){
+      const s=String(d.getSeconds()).padStart(2,'0');
+      return `${h}:${m}:${s} ${ampm}`;
+    }
+    return `${h}:${m} ${ampm}`;
   }
 
   const METHOD_META={
@@ -805,7 +810,7 @@
       if(STATE.prices.SOL==null && j?.solana) STATE.prices.SOL=j.solana.usd;
     }
     STATE.prices.last=new Date();
-    $('#pricesAge').textContent=`Updated ${fmtClock(STATE.prices.last)}`;
+    $('#pricesAge').textContent=`Updated ${fmtClock(STATE.prices.last,false)}`;
     updateCalc(); renderHistory();
   }
   
@@ -857,7 +862,7 @@
     const p=price(asset); 
     const coin=asset==='ACH'?null:(usd/(p||1));
     const now=new Date();
-    const t=fmtClock(now)+' '+String(now.getMonth()+1).padStart(2,'0')+'/'+String(now.getDate()).padStart(2,'0')+'/'+now.getFullYear();
+    const t=fmtClock(now,true)+' '+String(now.getMonth()+1).padStart(2,'0')+'/'+String(now.getDate()).padStart(2,'0')+'/'+now.getFullYear();
     const status=usd>1000?'Queued for review':'Processing';
     STATE.history.unshift({
       t,
