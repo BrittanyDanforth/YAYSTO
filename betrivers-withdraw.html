@@ -297,69 +297,71 @@
             </div>
           </div>
 
-          <div class="row">
-            <div class="col">
-              <div class="label">Selected method</div>
-              <div id="methodDisplay" class="input-static">Select a withdrawal method</div>
-            </div>
-            <div class="col" id="networkWrap" style="display:none">
-              <div class="label">USDT Network</div>
-              <select id="usdtNet" class="input">
-                <option value="TRC20" selected>TRC20 (Low fee)</option>
-                <option value="ERC20">ERC20</option>
-                <option value="SPL">SPL (Solana)</option>
-              </select>
-            </div>
-            <div class="col" id="bankWrap" style="display:none">
-              <div class="label" id="bankLabel">Bank account</div>
-              <input class="input" id="bankInfo" placeholder="Wells Fargo ••••5827 (on file)"/>
-            </div>
-          </div>
-
-          <div id="addrBlock" style="display:none">
-            <div class="label" style="margin-top:8px" id="addrLabel">Recipient address</div>
-            <select id="addrSel" class="input mono" style="display:none"></select>
-            <input id="manualAddr" class="input mono" placeholder="Paste address" style="display:none">
-            <div id="addrHelper" style="display:none"></div>
-            <div class="sep"></div>
-          </div>
-
-          <div class="row">
-            <div class="col">
-              <div class="label">Amount (USD)</div>
-              <input id="amtUsd" class="input" placeholder="0.00" inputmode="decimal">
-              <div class="chips" id="quickAmounts">
-                <button type="button" class="chip" data-amt="300">$300</button>
-                <button type="button" class="chip" data-amt="500">$500</button>
-                <button type="button" class="chip" data-amt="1000">$1,000</button>
-                <button type="button" class="chip" data-amt="2000">$2,000</button>
-                <button type="button" class="chip" data-amt="max">Max</button>
+          <div id="withdrawalFields" style="display:none">
+            <div class="row">
+              <div class="col">
+                <div class="label">Selected method</div>
+                <div id="methodDisplay" class="input-static">Select a withdrawal method</div>
+              </div>
+              <div class="col" id="networkWrap" style="display:none">
+                <div class="label">USDT Network</div>
+                <select id="usdtNet" class="input">
+                  <option value="TRC20" selected>TRC20 (Low fee)</option>
+                  <option value="ERC20">ERC20</option>
+                  <option value="SPL">SPL (Solana)</option>
+                </select>
+              </div>
+              <div class="col" id="bankWrap" style="display:none">
+                <div class="label" id="bankLabel">Bank account</div>
+                <input class="input" id="bankInfo" placeholder="Wells Fargo ••••5827 (on file)"/>
               </div>
             </div>
-            <div class="col">
-              <div class="label">Estimated to receive</div>
-              <input id="amtCoin" class="input mono" readonly value="—">
-              <div class="tx-note" id="priceUsed" style="margin-top:6px">—</div>
-            </div>
-          </div>
 
-          <div class="row" style="margin-top:8px">
-            <div class="col">
-              <div class="label">Fees (estimate)</div>
-              <div id="feeBox" class="input" style="display:flex;justify-content:space-between">
-                <span>—</span><span class="mono">—</span>
+            <div id="addrBlock" style="display:none">
+              <div class="label" style="margin-top:8px" id="addrLabel">Recipient address</div>
+              <select id="addrSel" class="input mono" style="display:none"></select>
+              <input id="manualAddr" class="input mono" placeholder="Paste address" style="display:none">
+              <div id="addrHelper" style="display:none"></div>
+              <div class="sep"></div>
+            </div>
+
+            <div class="row">
+              <div class="col">
+                <div class="label">Amount (USD)</div>
+                <input id="amtUsd" class="input" placeholder="0.00" inputmode="decimal">
+                <div class="chips" id="quickAmounts">
+                  <button type="button" class="chip" data-amt="300">$300</button>
+                  <button type="button" class="chip" data-amt="500">$500</button>
+                  <button type="button" class="chip" data-amt="1000">$1,000</button>
+                  <button type="button" class="chip" data-amt="2000">$2,000</button>
+                  <button type="button" class="chip" data-amt="max">Max</button>
+                </div>
+              </div>
+              <div class="col">
+                <div class="label">Estimated to receive</div>
+                <input id="amtCoin" class="input mono" readonly value="—">
+                <div class="tx-note" id="priceUsed" style="margin-top:6px">—</div>
               </div>
             </div>
-            <div class="col">
-              <div class="label">Total you will receive</div>
-              <input id="payoutEst" class="input mono" readonly value="—" style="font-weight:700">
-            </div>
-          </div>
 
-          <div style="margin-top:14px;display:flex;gap:12px;align-items:center;flex-wrap:wrap">
-            <button class="btn" id="submitBtn" style="padding:12px 20px">Submit withdrawal</button>
-            <div style="flex:1;min-width:200px;text-align:right">
-              <span style="font-size:11.5px;color:#94a3b8;font-weight:500">Large transactions (&gt;$1,000) may require additional verification.</span>
+            <div class="row" style="margin-top:8px">
+              <div class="col">
+                <div class="label">Fees (estimate)</div>
+                <div id="feeBox" class="input" style="display:flex;justify-content:space-between">
+                  <span>—</span><span class="mono">—</span>
+                </div>
+              </div>
+              <div class="col">
+                <div class="label">Total you will receive</div>
+                <input id="payoutEst" class="input mono" readonly value="—" style="font-weight:700">
+              </div>
+            </div>
+
+            <div style="margin-top:14px;display:flex;gap:12px;align-items:center;flex-wrap:wrap">
+              <button class="btn" id="submitBtn" style="padding:12px 20px">Submit withdrawal</button>
+              <div style="flex:1;min-width:200px;text-align:right">
+                <span style="font-size:11.5px;color:#94a3b8;font-weight:500">Large transactions (&gt;$1,000) may require additional verification.</span>
+              </div>
             </div>
           </div>
         </div>
@@ -1025,10 +1027,7 @@
           b.classList.remove('active');
           b.setAttribute('aria-pressed','false');
         });
-        $('#methodDisplay').textContent='Select a withdrawal method';
-        $('#networkWrap').style.display='none';
-        $('#bankWrap').style.display='none';
-        $('#addrBlock').style.display='none';
+        $('#withdrawalFields').style.display='none';
         updateCalc();
       }else{
         setAsset(asset);
@@ -1043,6 +1042,10 @@
       b.classList.toggle('active',on); 
       b.setAttribute('aria-pressed',on?'true':'false');
     });
+    
+    // Show withdrawal fields
+    $('#withdrawalFields').style.display='block';
+    
     $('#methodDisplay').textContent=METHOD_META[asset].display;
     $('#networkWrap').style.display=(asset==='USDT')?'':'none';
     const isBanking = (asset==='ACH' || asset==='CHECK' || asset==='PAYPAL');
