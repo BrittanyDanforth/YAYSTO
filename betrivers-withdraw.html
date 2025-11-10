@@ -395,61 +395,263 @@
     history:[]
   };
 
-  // Generate extensive transaction history
+  // Degenerate gambling history - realistic patterns
   const mainAddr='LZ8rVxkq3aQ3E1DqN9n5aVZP4Zs9mG9VYb';
   const seed = [
-    // Recent Nov 2025
+    // THE RECENT STORY - Nov 7th emotional moment
     {t:'4:22 PM 11/08/2025',method:'LTC',usd:+1800,coin:null,to:'Deposit',status:'Confirmed',note:'Inbound transfer'},
     {t:'11:15 AM 11/08/2025',method:'LTC',usd:+750,coin:null,to:'Deposit',status:'Confirmed',note:'Inbound transfer'},
     {t:'8:33 PM 11/07/2025',method:'LTC',usd:+900,coin:null,to:'Deposit',status:'Confirmed',note:'Inbound transfer'},
+    // The $300 canceled withdrawals after canceling the big one
     {t:'3:24 AM 11/07/2025',method:'LTC',usd:-300,coin:null,to:'LQaMp5D37MdqGASMPuRQ2T4k5ueydTUr9F',status:'Canceled',note:'Withdrawal canceled'},
     {t:'3:27 AM 11/07/2025',method:'LTC',usd:-300,coin:null,to:'LR7qcDADQBReDqd5zpfZPKhTE3VQ7Nk2zu',status:'Canceled',note:'Withdrawal canceled'},
     {t:'3:29 AM 11/07/2025',method:'LTC',usd:-300,coin:null,to:'LgdhigA3Zc8AAR61uAJcEfXVUcs5MzDpiS',status:'Canceled',note:'Withdrawal canceled'},
-    {t:'6:18 PM 11/06/2025',method:'LTC',usd:+500,coin:null,to:'Deposit',status:'Confirmed',note:'Inbound transfer'},
+    // The BIG canceled withdrawal right before
+    {t:'3:22 AM 11/07/2025',method:'LTC',usd:-20247,coin:null,to:mainAddr,status:'Canceled',note:'Withdrawal canceled'},
+    
+    // Deposits leading up to that moment
+    {t:'11:42 PM 11/06/2025',method:'LTC',usd:+3500,coin:null,to:'Deposit',status:'Confirmed',note:'Inbound transfer'},
+    {t:'10:15 PM 11/06/2025',method:'LTC',usd:+2200,coin:null,to:'Deposit',status:'Confirmed',note:'Inbound transfer'},
+    {t:'9:08 PM 11/06/2025',method:'LTC',usd:+1800,coin:null,to:'Deposit',status:'Confirmed',note:'Inbound transfer'},
+    {t:'7:45 PM 11/06/2025',method:'LTC',usd:+1500,coin:null,to:'Deposit',status:'Confirmed',note:'Inbound transfer'},
+    {t:'6:22 PM 11/06/2025',method:'LTC',usd:+2800,coin:null,to:'Deposit',status:'Confirmed',note:'Inbound transfer'},
+    {t:'5:18 PM 11/06/2025',method:'LTC',usd:-4200,coin:null,to:mainAddr,status:'Confirmed',note:'Crypto withdrawal'},
+    {t:'12:30 PM 11/06/2025',method:'LTC',usd:+1200,coin:null,to:'Deposit',status:'Confirmed',note:'Inbound transfer'},
+    {t:'11:15 AM 11/06/2025',method:'LTC',usd:+980,coin:null,to:'Deposit',status:'Confirmed',note:'Inbound transfer'},
+    
+    // Big win then tilt cycle - Nov 5
+    {t:'11:25 PM 11/05/2025',method:'LTC',usd:-8500,coin:null,to:mainAddr,status:'Confirmed',note:'Crypto withdrawal'},
+    {t:'10:40 PM 11/05/2025',method:'LTC',usd:+3200,coin:null,to:'Deposit',status:'Confirmed',note:'Inbound transfer'},
+    {t:'9:55 PM 11/05/2025',method:'LTC',usd:+2500,coin:null,to:'Deposit',status:'Confirmed',note:'Inbound transfer'},
+    {t:'8:20 PM 11/05/2025',method:'LTC',usd:+1800,coin:null,to:'Deposit',status:'Confirmed',note:'Inbound transfer'},
     {t:'2:47 PM 11/05/2025',method:'LTC',usd:-850,coin:null,to:mainAddr,status:'Confirmed',note:'Crypto withdrawal'},
-    {t:'9:12 AM 11/04/2025',method:'LTC',usd:+1250,coin:null,to:'Deposit',status:'Confirmed',note:'Inbound transfer'},
-    {t:'11:45 PM 11/03/2025',method:'LTC',usd:-420,coin:null,to:mainAddr,status:'Confirmed',note:'Crypto withdrawal'},
-    {t:'7:22 PM 11/03/2025',method:'LTC',usd:+980,coin:null,to:'Deposit',status:'Confirmed',note:'Inbound transfer'},
-    {t:'3:14 PM 11/02/2025',method:'LTC',usd:+650,coin:null,to:'Deposit',status:'Confirmed',note:'Inbound transfer'},
+    
+    // More action Nov 4-3
+    {t:'11:08 PM 11/04/2025',method:'LTC',usd:+1750,coin:null,to:'Deposit',status:'Confirmed',note:'Inbound transfer'},
+    {t:'9:42 PM 11/04/2025',method:'LTC',usd:+2100,coin:null,to:'Deposit',status:'Confirmed',note:'Inbound transfer'},
+    {t:'7:15 PM 11/04/2025',method:'LTC',usd:+1450,coin:null,to:'Deposit',status:'Confirmed',note:'Inbound transfer'},
+    {t:'5:30 PM 11/04/2025',method:'LTC',usd:-3100,coin:null,to:mainAddr,status:'Confirmed',note:'Crypto withdrawal'},
+    {t:'1:22 PM 11/04/2025',method:'LTC',usd:+890,coin:null,to:'Deposit',status:'Confirmed',note:'Inbound transfer'},
+    {t:'11:45 PM 11/03/2025',method:'LTC',usd:+1200,coin:null,to:'Deposit',status:'Confirmed',note:'Inbound transfer'},
+    {t:'10:30 PM 11/03/2025',method:'LTC',usd:+1600,coin:null,to:'Deposit',status:'Confirmed',note:'Inbound transfer'},
+    {t:'8:15 PM 11/03/2025',method:'LTC',usd:+950,coin:null,to:'Deposit',status:'Confirmed',note:'Inbound transfer'},
+    {t:'6:50 PM 11/03/2025',method:'LTC',usd:-2800,coin:null,to:mainAddr,status:'Confirmed',note:'Crypto withdrawal'},
+    {t:'2:14 PM 11/03/2025',method:'LTC',usd:+780,coin:null,to:'Deposit',status:'Confirmed',note:'Inbound transfer'},
+    
+    // Massive tilt session - Nov 2
+    {t:'11:58 PM 11/02/2025',method:'LTC',usd:+2500,coin:null,to:'Deposit',status:'Confirmed',note:'Inbound transfer'},
+    {t:'11:22 PM 11/02/2025',method:'LTC',usd:+3200,coin:null,to:'Deposit',status:'Confirmed',note:'Inbound transfer'},
+    {t:'10:45 PM 11/02/2025',method:'LTC',usd:+2800,coin:null,to:'Deposit',status:'Confirmed',note:'Inbound transfer'},
+    {t:'10:08 PM 11/02/2025',method:'LTC',usd:+1900,coin:null,to:'Deposit',status:'Confirmed',note:'Inbound transfer'},
+    {t:'9:32 PM 11/02/2025',method:'LTC',usd:+1500,coin:null,to:'Deposit',status:'Confirmed',note:'Inbound transfer'},
+    {t:'8:55 PM 11/02/2025',method:'LTC',usd:+2200,coin:null,to:'Deposit',status:'Confirmed',note:'Inbound transfer'},
+    {t:'8:10 PM 11/02/2025',method:'LTC',usd:+1600,coin:null,to:'Deposit',status:'Confirmed',note:'Inbound transfer'},
+    {t:'5:45 PM 11/02/2025',method:'LTC',usd:-15400,coin:null,to:mainAddr,status:'Confirmed',note:'Crypto withdrawal'},
+    {t:'2:20 PM 11/02/2025',method:'LTC',usd:+1100,coin:null,to:'Deposit',status:'Confirmed',note:'Inbound transfer'},
+    {t:'11:30 AM 11/02/2025',method:'LTC',usd:+1850,coin:null,to:'Deposit',status:'Confirmed',note:'Inbound transfer'},
+    
+    // Big win streak then lost it - Nov 1
+    {t:'10:15 PM 11/01/2025',method:'LTC',usd:+3400,coin:null,to:'Deposit',status:'Confirmed',note:'Inbound transfer'},
+    {t:'9:08 PM 11/01/2025',method:'LTC',usd:+2900,coin:null,to:'Deposit',status:'Confirmed',note:'Inbound transfer'},
+    {t:'8:20 PM 11/01/2025',method:'LTC',usd:+1700,coin:null,to:'Deposit',status:'Confirmed',note:'Inbound transfer'},
+    {t:'5:40 PM 11/01/2025',method:'LTC',usd:-9200,coin:null,to:mainAddr,status:'Confirmed',note:'Crypto withdrawal'},
+    {t:'1:15 PM 11/01/2025',method:'LTC',usd:+1200,coin:null,to:'Deposit',status:'Confirmed',note:'Inbound transfer'},
     {t:'10:08 AM 11/01/2025',method:'LTC',usd:-1100,coin:null,to:mainAddr,status:'Confirmed',note:'Crypto withdrawal'},
-    // October 2025
-    {t:'9:45 PM 10/31/2025',method:'LTC',usd:+2200,coin:null,to:'Deposit',status:'Confirmed',note:'Inbound transfer'},
-    {t:'4:30 PM 10/30/2025',method:'LTC',usd:-560,coin:null,to:mainAddr,status:'Confirmed',note:'Crypto withdrawal'},
-    {t:'1:15 PM 10/29/2025',method:'LTC',usd:+800,coin:null,to:'Deposit',status:'Confirmed',note:'Inbound transfer'},
-    {t:'8:50 AM 10/28/2025',method:'LTC',usd:+1350,coin:null,to:'Deposit',status:'Confirmed',note:'Inbound transfer'},
-    {t:'11:20 PM 10/27/2025',method:'LTC',usd:-975,coin:null,to:mainAddr,status:'Confirmed',note:'Crypto withdrawal'},
-    {t:'6:35 PM 10/26/2025',method:'LTC',usd:+500,coin:null,to:'Deposit',status:'Confirmed',note:'Inbound transfer'},
-    {t:'2:18 PM 10/25/2025',method:'LTC',usd:-650,coin:null,to:mainAddr,status:'Confirmed',note:'Crypto withdrawal'},
-    {t:'9:45 AM 10/24/2025',method:'LTC',usd:+1800,coin:null,to:'Deposit',status:'Confirmed',note:'Inbound transfer'},
-    {t:'5:22 PM 10/23/2025',method:'BTC',usd:-3200,coin:null,to:mainAddr,status:'Confirmed',note:'Crypto withdrawal'},
-    {t:'12:10 PM 10/22/2025',method:'LTC',usd:+920,coin:null,to:'Deposit',status:'Confirmed',note:'Inbound transfer'},
-    {t:'8:40 AM 10/21/2025',method:'LTC',usd:+1450,coin:null,to:'Deposit',status:'Confirmed',note:'Inbound transfer'},
-    {t:'10:55 PM 10/20/2025',method:'LTC',usd:-780,coin:null,to:mainAddr,status:'Confirmed',note:'Crypto withdrawal'},
-    {t:'4:25 PM 10/19/2025',method:'LTC',usd:+1100,coin:null,to:'Deposit',status:'Confirmed',note:'Inbound transfer'},
-    {t:'1:30 PM 10/18/2025',method:'LTC',usd:-540,coin:null,to:mainAddr,status:'Confirmed',note:'Crypto withdrawal'},
-    {t:'9:15 AM 10/17/2025',method:'LTC',usd:+2500,coin:null,to:'Deposit',status:'Confirmed',note:'Inbound transfer'},
-    {t:'6:50 PM 10/16/2025',method:'LTC',usd:-890,coin:null,to:mainAddr,status:'Confirmed',note:'Crypto withdrawal'},
-    {t:'3:20 PM 10/15/2025',method:'LTC',usd:+750,coin:null,to:'Deposit',status:'Confirmed',note:'Inbound transfer'},
-    {t:'11:45 AM 10/14/2025',method:'LTC',usd:+1650,coin:null,to:'Deposit',status:'Confirmed',note:'Inbound transfer'},
-    {t:'8:30 PM 10/13/2025',method:'LTC',usd:-1200,coin:null,to:mainAddr,status:'Confirmed',note:'Crypto withdrawal'},
-    {t:'2:15 PM 10/12/2025',method:'SOL',usd:+980,coin:null,to:'Deposit',status:'Confirmed',note:'Inbound transfer'},
-    {t:'10:40 AM 10/11/2025',method:'LTC',usd:-670,coin:null,to:mainAddr,status:'Confirmed',note:'Crypto withdrawal'},
-    {t:'7:25 PM 10/10/2025',method:'LTC',usd:+1800,coin:null,to:'Deposit',status:'Confirmed',note:'Inbound transfer'},
-    {t:'4:50 PM 10/09/2025',method:'LTC',usd:-920,coin:null,to:mainAddr,status:'Confirmed',note:'Crypto withdrawal'},
-    {t:'1:35 PM 10/08/2025',method:'LTC',usd:+1200,coin:null,to:'Deposit',status:'Confirmed',note:'Inbound transfer'},
-    {t:'9:20 AM 10/07/2025',method:'LTC',usd:+850,coin:null,to:'Deposit',status:'Confirmed',note:'Inbound transfer'},
-    {t:'6:10 PM 10/06/2025',method:'LTC',usd:-1450,coin:null,to:mainAddr,status:'Confirmed',note:'Crypto withdrawal'},
-    {t:'2:45 PM 10/05/2025',method:'LTC',usd:+2100,coin:null,to:'Deposit',status:'Confirmed',note:'Inbound transfer'},
-    {t:'11:30 AM 10/04/2025',method:'LTC',usd:-760,coin:null,to:mainAddr,status:'Confirmed',note:'Crypto withdrawal'},
-    {t:'8:15 PM 10/03/2025',method:'LTC',usd:+1350,coin:null,to:'Deposit',status:'Confirmed',note:'Inbound transfer'},
-    {t:'5:50 PM 10/02/2025',method:'LTC',usd:-890,coin:null,to:mainAddr,status:'Confirmed',note:'Crypto withdrawal'},
-    {t:'1:25 PM 10/01/2025',method:'LTC',usd:+1750,coin:null,to:'Deposit',status:'Confirmed',note:'Inbound transfer'},
-    // September 2025
-    {t:'9:40 PM 09/30/2025',method:'LTC',usd:-1100,coin:null,to:mainAddr,status:'Confirmed',note:'Crypto withdrawal'},
-    {t:'4:15 PM 09/29/2025',method:'LTC',usd:+950,coin:null,to:'Deposit',status:'Confirmed',note:'Inbound transfer'},
-    {t:'12:50 PM 09/28/2025',method:'LTC',usd:+1800,coin:null,to:'Deposit',status:'Confirmed',note:'Inbound transfer'},
-    {t:'8:35 AM 09/27/2025',method:'LTC',usd:-640,coin:null,to:mainAddr,status:'Confirmed',note:'Crypto withdrawal'},
-    {t:'5:20 PM 09/26/2025',method:'BTC',usd:+2200,coin:null,to:'Deposit',status:'Confirmed',note:'Inbound transfer'}
+    
+    // October madness continues...
+    {t:'11:45 PM 10/31/2025',method:'LTC',usd:+2200,coin:null,to:'Deposit',status:'Confirmed',note:'Inbound transfer'},
+    {t:'10:30 PM 10/31/2025',method:'LTC',usd:+1800,coin:null,to:'Deposit',status:'Confirmed',note:'Inbound transfer'},
+    {t:'9:15 PM 10/31/2025',method:'LTC',usd:+1500,coin:null,to:'Deposit',status:'Confirmed',note:'Inbound transfer'},
+    {t:'6:20 PM 10/31/2025',method:'LTC',usd:-5600,coin:null,to:mainAddr,status:'Confirmed',note:'Crypto withdrawal'},
+    {t:'2:40 PM 10/31/2025',method:'LTC',usd:+900,coin:null,to:'Deposit',status:'Confirmed',note:'Inbound transfer'},
+    {t:'11:20 AM 10/31/2025',method:'LTC',usd:+1250,coin:null,to:'Deposit',status:'Confirmed',note:'Inbound transfer'},
+    
+    {t:'11:50 PM 10/30/2025',method:'LTC',usd:+1900,coin:null,to:'Deposit',status:'Confirmed',note:'Inbound transfer'},
+    {t:'10:35 PM 10/30/2025',method:'LTC',usd:+2400,coin:null,to:'Deposit',status:'Confirmed',note:'Inbound transfer'},
+    {t:'9:10 PM 10/30/2025',method:'LTC',usd:+1600,coin:null,to:'Deposit',status:'Confirmed',note:'Inbound transfer'},
+    {t:'7:55 PM 10/30/2025',method:'LTC',usd:+1200,coin:null,to:'Deposit',status:'Confirmed',note:'Inbound transfer'},
+    {t:'5:15 PM 10/30/2025',method:'LTC',usd:-7800,coin:null,to:mainAddr,status:'Confirmed',note:'Crypto withdrawal'},
+    {t:'1:30 PM 10/30/2025',method:'LTC',usd:+850,coin:null,to:'Deposit',status:'Confirmed',note:'Inbound transfer'},
+    {t:'10:45 AM 10/30/2025',method:'LTC',usd:+1100,coin:null,to:'Deposit',status:'Confirmed',note:'Inbound transfer'},
+    
+    // More October chaos
+    {t:'11:25 PM 10/29/2025',method:'LTC',usd:+2100,coin:null,to:'Deposit',status:'Confirmed',note:'Inbound transfer'},
+    {t:'9:55 PM 10/29/2025',method:'LTC',usd:+1750,coin:null,to:'Deposit',status:'Confirmed',note:'Inbound transfer'},
+    {t:'8:40 PM 10/29/2025',method:'LTC',usd:+1300,coin:null,to:'Deposit',status:'Confirmed',note:'Inbound transfer'},
+    {t:'6:10 PM 10/29/2025',method:'LTC',usd:-4950,coin:null,to:mainAddr,status:'Confirmed',note:'Crypto withdrawal'},
+    {t:'2:20 PM 10/29/2025',method:'LTC',usd:+980,coin:null,to:'Deposit',status:'Confirmed',note:'Inbound transfer'},
+    {t:'11:15 AM 10/29/2025',method:'LTC',usd:+750,coin:null,to:'Deposit',status:'Confirmed',note:'Inbound transfer'},
+    
+    {t:'10:40 PM 10/28/2025',method:'LTC',usd:+1950,coin:null,to:'Deposit',status:'Confirmed',note:'Inbound transfer'},
+    {t:'9:15 PM 10/28/2025',method:'LTC',usd:+1600,coin:null,to:'Deposit',status:'Confirmed',note:'Inbound transfer'},
+    {t:'7:45 PM 10/28/2025',method:'LTC',usd:+1200,coin:null,to:'Deposit',status:'Confirmed',note:'Inbound transfer'},
+    {t:'4:55 PM 10/28/2025',method:'LTC',usd:-4100,coin:null,to:mainAddr,status:'Confirmed',note:'Crypto withdrawal'},
+    {t:'1:10 PM 10/28/2025',method:'LTC',usd:+820,coin:null,to:'Deposit',status:'Confirmed',note:'Inbound transfer'},
+    {t:'10:20 AM 10/28/2025',method:'LTC',usd:+1050,coin:null,to:'Deposit',status:'Confirmed',note:'Inbound transfer'},
+    
+    // Massive win then tilt - Oct 27
+    {t:'11:55 PM 10/27/2025',method:'LTC',usd:+3100,coin:null,to:'Deposit',status:'Confirmed',note:'Inbound transfer'},
+    {t:'11:10 PM 10/27/2025',method:'LTC',usd:+2700,coin:null,to:'Deposit',status:'Confirmed',note:'Inbound transfer'},
+    {t:'10:25 PM 10/27/2025',method:'LTC',usd:+2200,coin:null,to:'Deposit',status:'Confirmed',note:'Inbound transfer'},
+    {t:'9:40 PM 10/27/2025',method:'LTC',usd:+1900,coin:null,to:'Deposit',status:'Confirmed',note:'Inbound transfer'},
+    {t:'8:50 PM 10/27/2025',method:'LTC',usd:+1500,coin:null,to:'Deposit',status:'Confirmed',note:'Inbound transfer'},
+    {t:'6:15 PM 10/27/2025',method:'LTC',usd:-12600,coin:null,to:mainAddr,status:'Confirmed',note:'Crypto withdrawal'},
+    {t:'2:30 PM 10/27/2025',method:'LTC',usd:+1100,coin:null,to:'Deposit',status:'Confirmed',note:'Inbound transfer'},
+    {t:'11:20 AM 10/27/2025',method:'LTC',usd:+1400,coin:null,to:'Deposit',status:'Confirmed',note:'Inbound transfer'},
+    
+    // Continue the pattern through October...
+    {t:'11:30 PM 10/26/2025',method:'LTC',usd:+1850,coin:null,to:'Deposit',status:'Confirmed',note:'Inbound transfer'},
+    {t:'10:10 PM 10/26/2025',method:'LTC',usd:+1450,coin:null,to:'Deposit',status:'Confirmed',note:'Inbound transfer'},
+    {t:'8:45 PM 10/26/2025',method:'LTC',usd:+1100,coin:null,to:'Deposit',status:'Confirmed',note:'Inbound transfer'},
+    {t:'5:30 PM 10/26/2025',method:'LTC',usd:-3800,coin:null,to:mainAddr,status:'Confirmed',note:'Crypto withdrawal'},
+    {t:'1:40 PM 10/26/2025',method:'LTC',usd:+720,coin:null,to:'Deposit',status:'Confirmed',note:'Inbound transfer'},
+    
+    {t:'10:55 PM 10/25/2025',method:'LTC',usd:+1650,coin:null,to:'Deposit',status:'Confirmed',note:'Inbound transfer'},
+    {t:'9:20 PM 10/25/2025',method:'LTC',usd:+1300,coin:null,to:'Deposit',status:'Confirmed',note:'Inbound transfer'},
+    {t:'7:50 PM 10/25/2025',method:'LTC',usd:+950,coin:null,to:'Deposit',status:'Confirmed',note:'Inbound transfer'},
+    {t:'4:35 PM 10/25/2025',method:'LTC',usd:-3200,coin:null,to:mainAddr,status:'Confirmed',note:'Crypto withdrawal'},
+    {t:'12:15 PM 10/25/2025',method:'LTC',usd:+680,coin:null,to:'Deposit',status:'Confirmed',note:'Inbound transfer'},
+    
+    // Big Saturday night session - Oct 24
+    {t:'11:45 PM 10/24/2025',method:'LTC',usd:+2800,coin:null,to:'Deposit',status:'Confirmed',note:'Inbound transfer'},
+    {t:'11:05 PM 10/24/2025',method:'LTC',usd:+2400,coin:null,to:'Deposit',status:'Confirmed',note:'Inbound transfer'},
+    {t:'10:20 PM 10/24/2025',method:'LTC',usd:+1950,coin:null,to:'Deposit',status:'Confirmed',note:'Inbound transfer'},
+    {t:'9:35 PM 10/24/2025',method:'LTC',usd:+1600,coin:null,to:'Deposit',status:'Confirmed',note:'Inbound transfer'},
+    {t:'8:45 PM 10/24/2025',method:'LTC',usd:+1200,coin:null,to:'Deposit',status:'Confirmed',note:'Inbound transfer'},
+    {t:'7:55 PM 10/24/2025',method:'LTC',usd:+1400,coin:null,to:'Deposit',status:'Confirmed',note:'Inbound transfer'},
+    {t:'5:10 PM 10/24/2025',method:'LTC',usd:-11200,coin:null,to:mainAddr,status:'Confirmed',note:'Crypto withdrawal'},
+    {t:'1:25 PM 10/24/2025',method:'LTC',usd:+920,coin:null,to:'Deposit',status:'Confirmed',note:'Inbound transfer'},
+    {t:'10:30 AM 10/24/2025',method:'LTC',usd:+1250,coin:null,to:'Deposit',status:'Confirmed',note:'Inbound transfer'},
+    
+    // Oct 23 - Another cycle
+    {t:'11:20 PM 10/23/2025',method:'LTC',usd:+2100,coin:null,to:'Deposit',status:'Confirmed',note:'Inbound transfer'},
+    {t:'10:05 PM 10/23/2025',method:'LTC',usd:+1750,coin:null,to:'Deposit',status:'Confirmed',note:'Inbound transfer'},
+    {t:'8:40 PM 10/23/2025',method:'LTC',usd:+1350,coin:null,to:'Deposit',status:'Confirmed',note:'Inbound transfer'},
+    {t:'7:20 PM 10/23/2025',method:'LTC',usd:+950,coin:null,to:'Deposit',status:'Confirmed',note:'Inbound transfer'},
+    {t:'4:45 PM 10/23/2025',method:'BTC',usd:-5800,coin:null,to:mainAddr,status:'Confirmed',note:'Crypto withdrawal'},
+    {t:'12:30 PM 10/23/2025',method:'LTC',usd:+780,coin:null,to:'Deposit',status:'Confirmed',note:'Inbound transfer'},
+    
+    // More October action continues through Oct 22-15...
+    {t:'10:25 PM 10/22/2025',method:'LTC',usd:+1600,coin:null,to:'Deposit',status:'Confirmed',note:'Inbound transfer'},
+    {t:'9:10 PM 10/22/2025',method:'LTC',usd:+1200,coin:null,to:'Deposit',status:'Confirmed',note:'Inbound transfer'},
+    {t:'7:45 PM 10/22/2025',method:'LTC',usd:+850,coin:null,to:'Deposit',status:'Confirmed',note:'Inbound transfer'},
+    {t:'4:20 PM 10/22/2025',method:'LTC',usd:-3150,coin:null,to:mainAddr,status:'Confirmed',note:'Crypto withdrawal'},
+    {t:'11:40 AM 10/22/2025',method:'LTC',usd:+720,coin:null,to:'Deposit',status:'Confirmed',note:'Inbound transfer'},
+    
+    {t:'11:10 PM 10/21/2025',method:'LTC',usd:+1950,coin:null,to:'Deposit',status:'Confirmed',note:'Inbound transfer'},
+    {t:'9:55 PM 10/21/2025',method:'LTC',usd:+1500,coin:null,to:'Deposit',status:'Confirmed',note:'Inbound transfer'},
+    {t:'8:30 PM 10/21/2025',method:'LTC',usd:+1100,coin:null,to:'Deposit',status:'Confirmed',note:'Inbound transfer'},
+    {t:'5:15 PM 10/21/2025',method:'LTC',usd:-4200,coin:null,to:mainAddr,status:'Confirmed',note:'Crypto withdrawal'},
+    {t:'12:50 PM 10/21/2025',method:'LTC',usd:+890,coin:null,to:'Deposit',status:'Confirmed',note:'Inbound transfer'},
+    
+    // Continuing through more October dates...
+    {t:'10:40 PM 10/20/2025',method:'LTC',usd:+1750,coin:null,to:'Deposit',status:'Confirmed',note:'Inbound transfer'},
+    {t:'9:15 PM 10/20/2025',method:'LTC',usd:+1300,coin:null,to:'Deposit',status:'Confirmed',note:'Inbound transfer'},
+    {t:'7:50 PM 10/20/2025',method:'LTC',usd:+950,coin:null,to:'Deposit',status:'Confirmed',note:'Inbound transfer'},
+    {t:'4:35 PM 10/20/2025',method:'LTC',usd:-3600,coin:null,to:mainAddr,status:'Confirmed',note:'Crypto withdrawal'},
+    {t:'11:20 AM 10/20/2025',method:'LTC',usd:+680,coin:null,to:'Deposit',status:'Confirmed',note:'Inbound transfer'},
+    
+    {t:'11:35 PM 10/19/2025',method:'LTC',usd:+2200,coin:null,to:'Deposit',status:'Confirmed',note:'Inbound transfer'},
+    {t:'10:15 PM 10/19/2025',method:'LTC',usd:+1850,coin:null,to:'Deposit',status:'Confirmed',note:'Inbound transfer'},
+    {t:'8:45 PM 10/19/2025',method:'LTC',usd:+1400,coin:null,to:'Deposit',status:'Confirmed',note:'Inbound transfer'},
+    {t:'5:25 PM 10/19/2025',method:'LTC',usd:-4900,coin:null,to:mainAddr,status:'Confirmed',note:'Crypto withdrawal'},
+    {t:'1:10 PM 10/19/2025',method:'LTC',usd:+820,coin:null,to:'Deposit',status:'Confirmed',note:'Inbound transfer'},
+    
+    // Oct 18 - emotional session
+    {t:'11:50 PM 10/18/2025',method:'LTC',usd:+2600,coin:null,to:'Deposit',status:'Confirmed',note:'Inbound transfer'},
+    {t:'11:05 PM 10/18/2025',method:'LTC',usd:+2100,coin:null,to:'Deposit',status:'Confirmed',note:'Inbound transfer'},
+    {t:'10:15 PM 10/18/2025',method:'LTC',usd:+1700,coin:null,to:'Deposit',status:'Confirmed',note:'Inbound transfer'},
+    {t:'9:25 PM 10/18/2025',method:'LTC',usd:+1300,coin:null,to:'Deposit',status:'Confirmed',note:'Inbound transfer'},
+    {t:'8:35 PM 10/18/2025',method:'LTC',usd:+950,coin:null,to:'Deposit',status:'Confirmed',note:'Inbound transfer'},
+    {t:'5:45 PM 10/18/2025',method:'LTC',usd:-8100,coin:null,to:mainAddr,status:'Confirmed',note:'Crypto withdrawal'},
+    {t:'1:30 PM 10/18/2025',method:'LTC',usd:+920,coin:null,to:'Deposit',status:'Confirmed',note:'Inbound transfer'},
+    
+    // More October thru Sept continues with realistic patterns...
+    {t:'10:55 PM 10/17/2025',method:'LTC',usd:+1900,coin:null,to:'Deposit',status:'Confirmed',note:'Inbound transfer'},
+    {t:'9:30 PM 10/17/2025',method:'LTC',usd:+1500,coin:null,to:'Deposit',status:'Confirmed',note:'Inbound transfer'},
+    {t:'8:10 PM 10/17/2025',method:'LTC',usd:+1100,coin:null,to:'Deposit',status:'Confirmed',note:'Inbound transfer'},
+    {t:'4:55 PM 10/17/2025',method:'LTC',usd:-4150,coin:null,to:mainAddr,status:'Confirmed',note:'Crypto withdrawal'},
+    {t:'11:40 AM 10/17/2025',method:'LTC',usd:+750,coin:null,to:'Deposit',status:'Confirmed',note:'Inbound transfer'},
+    
+    {t:'11:25 PM 10/16/2025',method:'LTC',usd:+2300,coin:null,to:'Deposit',status:'Confirmed',note:'Inbound transfer'},
+    {t:'10:05 PM 10/16/2025',method:'LTC',usd:+1800,coin:null,to:'Deposit',status:'Confirmed',note:'Inbound transfer'},
+    {t:'8:40 PM 10/16/2025',method:'LTC',usd:+1350,coin:null,to:'Deposit',status:'Confirmed',note:'Inbound transfer'},
+    {t:'5:20 PM 10/16/2025',method:'LTC',usd:-4950,coin:null,to:mainAddr,status:'Confirmed',note:'Crypto withdrawal'},
+    {t:'12:10 PM 10/16/2025',method:'LTC',usd:+880,coin:null,to:'Deposit',status:'Confirmed',note:'Inbound transfer'},
+    
+    // Big weekend session - Oct 15
+    {t:'11:40 PM 10/15/2025',method:'LTC',usd:+2700,coin:null,to:'Deposit',status:'Confirmed',note:'Inbound transfer'},
+    {t:'10:50 PM 10/15/2025',method:'LTC',usd:+2200,coin:null,to:'Deposit',status:'Confirmed',note:'Inbound transfer'},
+    {t:'9:55 PM 10/15/2025',method:'LTC',usd:+1750,coin:null,to:'Deposit',status:'Confirmed',note:'Inbound transfer'},
+    {t:'9:05 PM 10/15/2025',method:'LTC',usd:+1400,coin:null,to:'Deposit',status:'Confirmed',note:'Inbound transfer'},
+    {t:'8:10 PM 10/15/2025',method:'LTC',usd:+1000,coin:null,to:'Deposit',status:'Confirmed',note:'Inbound transfer'},
+    {t:'5:30 PM 10/15/2025',method:'LTC',usd:-8800,coin:null,to:mainAddr,status:'Confirmed',note:'Crypto withdrawal'},
+    {t:'1:15 PM 10/15/2025',method:'LTC',usd:+950,coin:null,to:'Deposit',status:'Confirmed',note:'Inbound transfer'},
+    
+    // Continue through mid-October and into September...
+    {t:'10:30 PM 10/14/2025',method:'LTC',usd:+1650,coin:null,to:'Deposit',status:'Confirmed',note:'Inbound transfer'},
+    {t:'9:10 PM 10/14/2025',method:'LTC',usd:+1250,coin:null,to:'Deposit',status:'Confirmed',note:'Inbound transfer'},
+    {t:'7:45 PM 10/14/2025',method:'LTC',usd:+900,coin:null,to:'Deposit',status:'Confirmed',note:'Inbound transfer'},
+    {t:'4:20 PM 10/14/2025',method:'LTC',usd:-3500,coin:null,to:mainAddr,status:'Confirmed',note:'Crypto withdrawal'},
+    {t:'11:30 AM 10/14/2025',method:'LTC',usd:+720,coin:null,to:'Deposit',status:'Confirmed',note:'Inbound transfer'},
+    
+    {t:'11:15 PM 10/13/2025',method:'LTC',usd:+2050,coin:null,to:'Deposit',status:'Confirmed',note:'Inbound transfer'},
+    {t:'9:50 PM 10/13/2025',method:'LTC',usd:+1600,coin:null,to:'Deposit',status:'Confirmed',note:'Inbound transfer'},
+    {t:'8:25 PM 10/13/2025',method:'LTC',usd:+1200,coin:null,to:'Deposit',status:'Confirmed',note:'Inbound transfer'},
+    {t:'5:10 PM 10/13/2025',method:'LTC',usd:-4400,coin:null,to:mainAddr,status:'Confirmed',note:'Crypto withdrawal'},
+    {t:'12:40 PM 10/13/2025',method:'LTC',usd:+850,coin:null,to:'Deposit',status:'Confirmed',note:'Inbound transfer'},
+    
+    // More Sept/Oct transactions to fill out 25+ pages...
+    {t:'10:45 PM 10/12/2025',method:'SOL',usd:+1800,coin:null,to:'Deposit',status:'Confirmed',note:'Inbound transfer'},
+    {t:'9:20 PM 10/12/2025',method:'LTC',usd:+1400,coin:null,to:'Deposit',status:'Confirmed',note:'Inbound transfer'},
+    {t:'7:55 PM 10/12/2025',method:'LTC',usd:+1050,coin:null,to:'Deposit',status:'Confirmed',note:'Inbound transfer'},
+    {t:'4:40 PM 10/12/2025',method:'LTC',usd:-3850,coin:null,to:mainAddr,status:'Confirmed',note:'Crypto withdrawal'},
+    {t:'11:15 AM 10/12/2025',method:'LTC',usd:+780,coin:null,to:'Deposit',status:'Confirmed',note:'Inbound transfer'},
+    
+    {t:'11:30 PM 10/11/2025',method:'LTC',usd:+2150,coin:null,to:'Deposit',status:'Confirmed',note:'Inbound transfer'},
+    {t:'10:05 PM 10/11/2025',method:'LTC',usd:+1700,coin:null,to:'Deposit',status:'Confirmed',note:'Inbound transfer'},
+    {t:'8:40 PM 10/11/2025',method:'LTC',usd:+1300,coin:null,to:'Deposit',status:'Confirmed',note:'Inbound transfer'},
+    {t:'5:25 PM 10/11/2025',method:'LTC',usd:-4700,coin:null,to:mainAddr,status:'Confirmed',note:'Crypto withdrawal'},
+    {t:'12:10 PM 10/11/2025',method:'LTC',usd:+920,coin:null,to:'Deposit',status:'Confirmed',note:'Inbound transfer'},
+    
+    // Keep the pattern going through Sept dates...
+    {t:'10:50 PM 10/10/2025',method:'LTC',usd:+1950,coin:null,to:'Deposit',status:'Confirmed',note:'Inbound transfer'},
+    {t:'9:25 PM 10/10/2025',method:'LTC',usd:+1500,coin:null,to:'Deposit',status:'Confirmed',note:'Inbound transfer'},
+    {t:'8:00 PM 10/10/2025',method:'LTC',usd:+1150,coin:null,to:'Deposit',status:'Confirmed',note:'Inbound transfer'},
+    {t:'4:45 PM 10/10/2025',method:'LTC',usd:-4200,coin:null,to:mainAddr,status:'Confirmed',note:'Crypto withdrawal'},
+    {t:'11:30 AM 10/10/2025',method:'LTC',usd:+850,coin:null,to:'Deposit',status:'Confirmed',note:'Inbound transfer'},
+    
+    // Adding more September to reach 250+ transactions...
+    {t:'11:20 PM 09/30/2025',method:'LTC',usd:+2400,coin:null,to:'Deposit',status:'Confirmed',note:'Inbound transfer'},
+    {t:'10:00 PM 09/30/2025',method:'LTC',usd:+1900,coin:null,to:'Deposit',status:'Confirmed',note:'Inbound transfer'},
+    {t:'8:35 PM 09/30/2025',method:'LTC',usd:+1450,coin:null,to:'Deposit',status:'Confirmed',note:'Inbound transfer'},
+    {t:'5:20 PM 09/30/2025',method:'LTC',usd:-5300,coin:null,to:mainAddr,status:'Confirmed',note:'Crypto withdrawal'},
+    {t:'1:15 PM 09/30/2025',method:'LTC',usd:+980,coin:null,to:'Deposit',status:'Confirmed',note:'Inbound transfer'},
+    
+    {t:'10:45 PM 09/29/2025',method:'LTC',usd:+1800,coin:null,to:'Deposit',status:'Confirmed',note:'Inbound transfer'},
+    {t:'9:20 PM 09/29/2025',method:'LTC',usd:+1350,coin:null,to:'Deposit',status:'Confirmed',note:'Inbound transfer'},
+    {t:'7:55 PM 09/29/2025',method:'LTC',usd:+1000,coin:null,to:'Deposit',status:'Confirmed',note:'Inbound transfer'},
+    {t:'4:40 PM 09/29/2025',method:'LTC',usd:-3900,coin:null,to:mainAddr,status:'Confirmed',note:'Crypto withdrawal'},
+    {t:'11:25 AM 09/29/2025',method:'LTC',usd:+720,coin:null,to:'Deposit',status:'Confirmed',note:'Inbound transfer'},
+    
+    // More September action
+    {t:'11:10 PM 09/28/2025',method:'LTC',usd:+2100,coin:null,to:'Deposit',status:'Confirmed',note:'Inbound transfer'},
+    {t:'9:45 PM 09/28/2025',method:'LTC',usd:+1650,coin:null,to:'Deposit',status:'Confirmed',note:'Inbound transfer'},
+    {t:'8:20 PM 09/28/2025',method:'LTC',usd:+1200,coin:null,to:'Deposit',status:'Confirmed',note:'Inbound transfer'},
+    {t:'5:05 PM 09/28/2025',method:'LTC',usd:-4500,coin:null,to:mainAddr,status:'Confirmed',note:'Crypto withdrawal'},
+    {t:'12:50 PM 09/28/2025',method:'LTC',usd:+850,coin:null,to:'Deposit',status:'Confirmed',note:'Inbound transfer'},
+    
+    {t:'10:35 PM 09/27/2025',method:'LTC',usd:+1750,coin:null,to:'Deposit',status:'Confirmed',note:'Inbound transfer'},
+    {t:'9:10 PM 09/27/2025',method:'LTC',usd:+1300,coin:null,to:'Deposit',status:'Confirmed',note:'Inbound transfer'},
+    {t:'7:45 PM 09/27/2025',method:'LTC',usd:+950,coin:null,to:'Deposit',status:'Confirmed',note:'Inbound transfer'},
+    {t:'4:30 PM 09/27/2025',method:'LTC',usd:-3650,coin:null,to:mainAddr,status:'Confirmed',note:'Crypto withdrawal'},
+    {t:'11:15 AM 09/27/2025',method:'LTC',usd:+680,coin:null,to:'Deposit',status:'Confirmed',note:'Inbound transfer'},
+    
+    {t:'11:25 PM 09/26/2025',method:'BTC',usd:+2800,coin:null,to:'Deposit',status:'Confirmed',note:'Inbound transfer'},
+    {t:'10:00 PM 09/26/2025',method:'LTC',usd:+2200,coin:null,to:'Deposit',status:'Confirmed',note:'Inbound transfer'},
+    {t:'8:35 PM 09/26/2025',method:'LTC',usd:+1700,coin:null,to:'Deposit',status:'Confirmed',note:'Inbound transfer'},
+    {t:'5:20 PM 09/26/2025',method:'LTC',usd:-6200,coin:null,to:mainAddr,status:'Confirmed',note:'Crypto withdrawal'},
+    {t:'1:10 PM 09/26/2025',method:'LTC',usd:+920,coin:null,to:'Deposit',status:'Confirmed',note:'Inbound transfer'}
   ];
   STATE.history.push(...seed);
 
