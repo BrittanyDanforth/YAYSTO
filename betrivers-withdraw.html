@@ -746,7 +746,7 @@
       }
     }
     const base=3127.40;
-    STATE.total=+base.toFixed(2);
+    STATE.total=+(base + confirmedIn - confirmedOut).toFixed(2);
     STATE.pendingLocked=+lock.toFixed(2);
     STATE.available=+(STATE.total-STATE.pendingLocked).toFixed(2);
     $('#totalBal').textContent=fmtUSD(STATE.total);
