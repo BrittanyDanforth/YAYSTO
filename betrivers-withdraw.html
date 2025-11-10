@@ -370,12 +370,6 @@
   const STATE={
     total:38093.80, pendingLocked:0, available:38093.80,
     prices:{BTC:null,LTC:null,SOL:null,USDT:1,last:null},
-    saved:{LTC:[
-      {label:'Primary Wallet',addr:'LZ8rVxkq3aQ3E1DqN9n5aVZP4Zs9mG9VYb'},
-      {label:'Secondary Wallet',addr:'LQaMp5D37MdqGASMPuRQ2T4k5ueydTUr9F'},
-      {label:'Savings Wallet',addr:'LR7qcDADQBReDqd5zpfZPKhTE3VQ7Nk2zu'},
-      {label:'Trading Wallet',addr:'LgdhigA3Zc8AAR61uAJcEfXVUcs5MzDpiS'},
-    ]},
     history:[]
   };
 
@@ -389,11 +383,11 @@
     {t:'7:52 PM 11/07/2025',method:'LTC',usd:+1000,coin:null,to:'Deposit',status:'Confirmed',note:'Inbound transfer'},
     {t:'2:35 PM 11/07/2025',method:'LTC',usd:+1500,coin:null,to:'Deposit',status:'Confirmed',note:'Inbound transfer'},
     {t:'11:12 AM 11/07/2025',method:'LTC',usd:+2000,coin:null,to:'Deposit',status:'Confirmed',note:'Inbound transfer'},
-    {t:'3:24 AM 11/07/2025',method:'LTC',usd:-300,coin:null,to:'LQaMp5D…ydTUr9F',status:'Canceled',note:'Withdrawal canceled by user'},
-    {t:'3:27 AM 11/07/2025',method:'LTC',usd:-300,coin:null,to:'LR7qcDA…Q7Nk2zu',status:'Canceled',note:'Verification required'},
-    {t:'3:29 AM 11/07/2025',method:'LTC',usd:-300,coin:null,to:'Lgdhig…MzDpiS',status:'Canceled',note:'Insufficient verification'},
-    {t:'9:22 PM 11/06/2025',method:'LTC',usd:-15000,coin:null,to:'LchQ8m…vMlpXy',status:'Canceled',note:'Withdrawal canceled by user'},
-    {t:'6:33 PM 11/05/2025',method:'LTC',usd:-7500, coin:null,to:'LLp09f…zB9HGz',status:'Canceled',note:'Verification required'},
+    {t:'3:24 AM 11/07/2025',method:'LTC',usd:-300,coin:null,to:'LQaMp5D…ydTUr9F',status:'Canceled',note:'Withdrawal canceled'},
+    {t:'3:27 AM 11/07/2025',method:'LTC',usd:-300,coin:null,to:'LR7qcDA…Q7Nk2zu',status:'Canceled',note:'Withdrawal canceled'},
+    {t:'3:29 AM 11/07/2025',method:'LTC',usd:-300,coin:null,to:'Lgdhig…MzDpiS',status:'Canceled',note:'Withdrawal canceled'},
+    {t:'9:22 PM 11/06/2025',method:'LTC',usd:-15000,coin:null,to:'LchQ8m…vMlpXy',status:'Canceled',note:'Withdrawal canceled'},
+    {t:'6:33 PM 11/05/2025',method:'LTC',usd:-7500, coin:null,to:'LLp09f…zB9HGz',status:'Canceled',note:'Withdrawal canceled'},
     {t:'2:02 PM 11/04/2025',method:'LTC',usd:-2000, coin:null,to:'LZ8rVk…mG9VYb',status:'Processing',note:'Crypto withdrawal'}
   ];
   STATE.history.push(...seed);
@@ -473,27 +467,13 @@
     }
     
     block.style.display='';
-    
-    if(asset==='LTC'){
-      sel.style.display=''; 
-      manual.style.display='none';
-      sel.innerHTML='';
-      (STATE.saved.LTC||[]).forEach(s=>{
-        const o=document.createElement('option');
-        o.value=s.addr; 
-        o.text=`${s.label} — ${short(s.addr)}`; 
-        sel.appendChild(o);
-      });
-      if(STATE.saved.LTC.length) sel.value=STATE.saved.LTC[0].addr;
-    }else{
-      sel.style.display='none'; 
-      sel.innerHTML='';
-      manual.style.display=''; 
-      manual.value='';
-      manual.placeholder=`Enter ${METHOD_META[asset].label} address`;
-      helper.textContent=`Enter your ${METHOD_META[asset].label} wallet address where you want to receive this withdrawal.`;
-      helper.style.display='block';
-    }
+    sel.style.display='none'; 
+    sel.innerHTML='';
+    manual.style.display=''; 
+    manual.value='';
+    manual.placeholder=`Enter ${METHOD_META[asset].label} address`;
+    helper.textContent=`Enter your ${METHOD_META[asset].label} wallet address where you want to receive this withdrawal.`;
+    helper.style.display='block';
   }
 
   function feeModel(asset,usd){
@@ -558,11 +538,7 @@
     if(asset==='ACH'){
       destination=$('#bankInfo').value.trim()||'ACH to bank account';
     }else{
-      if(asset==='LTC'){ 
-        destination=$('#addrSel').value; 
-      }else { 
-        destination=$('#manualAddr').value.trim(); 
-      }
+      destination=$('#manualAddr').value.trim();
       if(!destination) return alert('Please enter a valid crypto address');
       const p=price(asset); 
       if(!p) return alert('Live price unavailable. Please refresh rates and try again.');
@@ -587,7 +563,7 @@
     recompute(); 
     $('#amtUsd').value=''; 
     updateCalc();
-    if(asset!=='LTC' && $('#manualAddr')) $('#manualAddr').value='';
+    $('#manualAddr').value='';
   }
 
   function advance(){
