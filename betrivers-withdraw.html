@@ -150,6 +150,27 @@
   @media(max-width:720px){
     .balance{grid-template-columns:1fr}
   }
+
+  /* === Compact spacing pass (shaves ~40–60px total) === */
+  .topbar{padding:12px 18px}                  /* header a bit tighter */
+  .wrap{margin:12px auto 10px}                /* less top/btm page margin */
+
+  .balance{gap:12px; margin-bottom:12px}
+  .metric{padding:12px 14px}
+
+  .cards{gap:14px; margin-top:-5px; align-items:start}  /* nudge up ~5px */
+
+  .card .hd{padding:10px 12px}
+  .card .bd{padding:10px 12px}
+
+  /* table: slightly tighter rows */
+  .table-wrap th, .table-wrap td{padding:10px 12px}
+
+  /* pagination bar under the table had inline padding; override it */
+  .card > .table-wrap + div{padding:12px !important}
+
+  /* footer tighter so the page doesn't need to scroll */
+  footer{margin:6px auto 20px}
 </style>
 </head>
 <body>
