@@ -60,10 +60,10 @@
   .cards{display:grid;grid-template-columns:1fr 1.5fr;gap:20px;align-items:start}
   .card{background:var(--surface);border:1px solid var(--border);border-radius:14px;box-shadow:var(--shadow)}
   .card .hd{padding:14px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px}
-  .card .bd{padding:16px}
+  .card .bd{padding:12px}
 
-  .label{font-size:11.5px;color:var(--muted);margin-bottom:7px;text-transform:uppercase;letter-spacing:.4px;font-weight:700}
-  .row{display:flex;gap:12px;flex-wrap:wrap}
+  .label{font-size:11.5px;color:var(--muted);margin-bottom:5px;text-transform:uppercase;letter-spacing:.4px;font-weight:700}
+  .row{display:flex;gap:8px;flex-wrap:wrap}
   .col{flex:1;min-width:240px}
   .input,select{width:100%;padding:11px 13px;border:1px solid var(--border);border-radius:10px;background:#fff;outline:0;font:14px/1.4 Inter;color:var(--text);transition:border-color .2s}
   .input:focus,select:focus{border-color:#93c5fd}
@@ -86,7 +86,7 @@
   .method.active{border-color:#1a73e8;box-shadow:0 8px 20px rgba(26,115,232,.15);background:#f0f7ff}
   #manualAddr{margin-top:10px}
   #addrHelper{margin-top:10px;font-size:12px;color:#475569;background:#f8fafc;border:1px solid var(--border);padding:10px 13px;border-radius:9px}
-  .sep{height:1px;background:var(--border);margin:14px 0}
+  .sep{height:1px;background:var(--border);margin:10px 0}
 
   /* ---------- Transactions table (FIXED widths/ellipsis) ---------- */
   .table-wrap{padding:0;overflow-x:auto}
@@ -129,7 +129,7 @@
   .tx-amount{font-weight:700;font-size:14px;color:#0f172a}
   .tx-details{color:#64748b;font-size:12px;margin-top:2px}
 
-  footer{max-width:1320px;margin:10px auto 50px;padding:0 18px;color:#94a3b8;font-size:12px;line-height:1.6}
+  footer{max-width:1320px;margin:10px auto 50px;padding:0 18px;color:#94a3b8;font-size:12px;line-height:1.3}
   
   /* Modal */
   .modal-overlay{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.5);z-index:10000;display:none;align-items:center;justify-content:center;backdrop-filter:blur(3px)}
@@ -253,9 +253,9 @@
           <div style="font-weight:800;font-size:15px">Withdraw funds</div>
         </div>
         <div class="bd">
-          <div style="margin-bottom:18px">
-            <div style="font-size:12px;font-weight:700;color:#64748b;margin-bottom:8px;text-transform:uppercase;letter-spacing:0.5px">Banking Methods</div>
-            <div class="methods" style="margin-bottom:16px">
+          <div style="margin-bottom:12px">
+            <div style="font-size:12px;font-weight:700;color:#64748b;margin-bottom:6px;text-transform:uppercase;letter-spacing:0.5px">Banking Methods</div>
+            <div class="methods" style="margin-bottom:10px">
               <!-- ACH -->
               <button type="button" class="method" data-asset="ACH" aria-pressed="false" title="Online Banking (ACH)">
                 <svg width="24" height="24" viewBox="0 0 24 24"><rect width="24" height="24" rx="12" fill="#0e3a6d"/><path d="M6 12h12v6H6z" fill="#fff"/><path d="M7 9h10v2H7z" fill="#ffb81c"/></svg>
@@ -272,7 +272,7 @@
                 <div class="t"><strong>PayPal</strong><span>PayPal</span></div>
               </button>
             </div>
-            <div style="font-size:12px;font-weight:700;color:#64748b;margin-bottom:8px;text-transform:uppercase;letter-spacing:0.5px">Crypto via Third-Party Provider</div>
+            <div style="font-size:12px;font-weight:700;color:#64748b;margin-bottom:6px;text-transform:uppercase;letter-spacing:0.5px">Crypto via Third-Party Provider</div>
             <div class="methods" id="methodButtons">
               <!-- LTC -->
               <button type="button" class="method" data-asset="LTC" aria-pressed="false" title="Litecoin">
@@ -317,7 +317,7 @@
           </div>
 
           <div id="addrBlock" style="display:none">
-            <div class="label" style="margin-top:12px" id="addrLabel">Recipient address</div>
+            <div class="label" style="margin-top:8px" id="addrLabel">Recipient address</div>
             <select id="addrSel" class="input mono" style="display:none"></select>
             <input id="manualAddr" class="input mono" placeholder="Paste address" style="display:none">
             <div id="addrHelper" style="display:none"></div>
@@ -343,7 +343,7 @@
             </div>
           </div>
 
-          <div class="row" style="margin-top:10px">
+          <div class="row" style="margin-top:8px">
             <div class="col">
               <div class="label">Fees (estimate)</div>
               <div id="feeBox" class="input" style="display:flex;justify-content:space-between">
@@ -356,7 +356,7 @@
             </div>
           </div>
 
-          <div style="margin-top:20px;display:flex;gap:12px;align-items:center;flex-wrap:wrap">
+          <div style="margin-top:14px;display:flex;gap:12px;align-items:center;flex-wrap:wrap">
             <button class="btn" id="submitBtn" style="padding:12px 20px">Submit withdrawal</button>
             <div style="flex:1;min-width:200px;text-align:right">
               <span style="font-size:11.5px;color:#94a3b8;font-weight:500">Large transactions (&gt;$1,000) may require additional verification.</span>
@@ -408,7 +408,7 @@
   </div>
 
 <footer>
-  <div style="margin-bottom:10px;font-size:12px;color:#94a3b8;line-height:1.6">
+  <div style="margin-bottom:8px;font-size:12px;color:#94a3b8;line-height:1.3">
     <strong>Third-Party Payment Processors:</strong> Cryptocurrency withdrawal options (BTC, LTC, SOL, USDT) are processed by licensed third-party providers in compliance with applicable state gaming regulations. These services operate independently and are subject to their own terms and network fees. Availability varies by jurisdiction. Exchange rates are provided by the processor and are not guaranteed until you confirm the withdrawal. All crypto transactions are final and irreversible once broadcast to the network. Additional KYC/AML review and limits may apply.
   </div>
   All transactions are subject to verification and compliance review. Network fees and processing times vary by payment method and provider.
