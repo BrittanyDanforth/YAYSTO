@@ -113,6 +113,18 @@
 
   footer{max-width:1320px;margin:24px auto 50px;padding:0 18px;color:#94a3b8;font-size:12px;line-height:1.6}
   
+  /* Modal */
+  .modal-overlay{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.5);z-index:10000;display:none;align-items:center;justify-content:center;backdrop-filter:blur(3px)}
+  .modal{background:#fff;border-radius:14px;box-shadow:0 20px 50px rgba(0,0,0,.3);max-width:480px;width:90%;padding:24px;animation:modalSlide .2s ease-out}
+  @keyframes modalSlide{from{opacity:0;transform:translateY(-20px)}to{opacity:1;transform:translateY(0)}}
+  .modal h3{margin:0 0 12px 0;font-size:18px;font-weight:800;color:#0f172a}
+  .modal p{margin:0 0 20px 0;color:#475569;font-size:14px;line-height:1.6}
+  .modal-actions{display:flex;gap:10px;justify-content:flex-end}
+  .modal-btn{padding:11px 20px;border-radius:10px;font-weight:700;cursor:pointer;font-size:14px;border:none}
+  .modal-btn.cancel{background:#f1f5f9;color:#475569}
+  .modal-btn.confirm{background:#ef4444;color:#fff}
+  .modal-btn:hover{opacity:.9}
+  
   @media(max-width:1100px){
     .cards{grid-template-columns:1fr}
   }
@@ -360,6 +372,18 @@
     </div>
   </div>
 
+  </div>
+
+  <!-- Confirmation Modal -->
+  <div class="modal-overlay" id="confirmModal">
+    <div class="modal">
+      <h3>Confirm Withdrawal</h3>
+      <p id="modalMessage">Please confirm you want to proceed with this transaction. Once submitted, this withdrawal will be processed immediately and cannot be reversed.</p>
+      <div class="modal-actions">
+        <button class="modal-btn cancel" id="modalCancel">Cancel</button>
+        <button class="modal-btn confirm" id="modalConfirm">Confirm & Submit</button>
+      </div>
+    </div>
   </div>
 
 <footer>
@@ -843,6 +867,8 @@
     $('#priceUsed').textContent=`Using ${asset} price: $${p.toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2})}`;
   }
 
+  let pendingWithdrawal=null;
+
   function submit(){
     const asset=currentAsset;
     const usd=parseFloat($('#amtUsd').value.replace(/,/g,''))||0;
@@ -859,6 +885,20 @@
       if(!p) return alert('Live price unavailable. Please refresh rates and try again.');
     }
 
+    // Show confirmation modal
+    const modal=$('#confirmModal');
+    const msg=$('#modalMessage');
+    msg.innerHTML=`You are about to withdraw <strong>${fmtUSD(usd)}</strong> via <strong>${METHOD_META[asset].label}</strong>.<br><br>Once submitted, this transaction will be processed and cannot be reversed. Please ensure all details are correct before confirming.`;
+    modal.style.display='flex';
+    
+    // Store pending withdrawal data
+    pendingWithdrawal={asset,usd,destination};
+  }
+
+  function confirmWithdrawal(){
+    if(!pendingWithdrawal) return;
+    const {asset,usd,destination}=pendingWithdrawal;
+    
     const p=price(asset); 
     const coin=asset==='ACH'?null:(usd/(p||1));
     const now=new Date();
@@ -879,6 +919,8 @@
     $('#amtUsd').value=''; 
     updateCalc();
     $('#manualAddr').value='';
+    $('#confirmModal').style.display='none';
+    pendingWithdrawal=null;
   }
 
   function advance(){
@@ -917,6 +959,8 @@
   $('#amtUsd').addEventListener('input',updateCalc);
   $('#ratesBtn').addEventListener('click',loadPrices);
   $('#submitBtn').addEventListener('click',submit);
+  $('#modalConfirm').addEventListener('click',confirmWithdrawal);
+  $('#modalCancel').addEventListener('click',()=>{$('#confirmModal').style.display='none';pendingWithdrawal=null;});
   $$('#quickAmounts .chip').forEach(c=>c.addEventListener('click',()=>{
     const v=c.getAttribute('data-amt');
     $('#amtUsd').value=(v==='max'?STATE.available:parseFloat(v)).toFixed(2);
