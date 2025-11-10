@@ -141,8 +141,8 @@
         <path d="M12.5 6.5l-5 5 5 5"/><path d="M7.5 11.5h9"/>
       </svg>
     </div>
-    <div class="bbtn" title="Reload">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <div class="bbtn" id="reloadBtn" title="Reload">
+      <svg id="reloadIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
         <path d="M19 8.5v-4h-4"/><path d="M19 8.5a7 7 0 1 0 2 5"/>
       </svg>
     </div>
@@ -187,11 +187,10 @@
     <!-- BALANCE -->
     <div class="balance">
       <div class="metric">
-        <div><div class="cap">TOTAL BALANCE</div><div class="big" id="totalBal">$38,093.80</div></div>
-        <button class="btn ghost" id="refreshBtn" style="font-size:13px">Refresh</button>
+        <div><div class="cap">TOTAL BALANCE</div><div class="big" id="totalBal">$3,247.60</div></div>
       </div>
       <div class="metric">
-        <div><div class="cap">AVAILABLE TO WITHDRAW</div><div class="big" id="availBal">$38,093.80</div></div>
+        <div><div class="cap">AVAILABLE TO WITHDRAW</div><div class="big" id="availBal">$3,247.60</div></div>
         <div style="margin-left:auto;font-size:11.5px;color:#94a3b8;font-weight:500" id="pricesAge">Live prices — updating…</div>
       </div>
       <div class="metric">
@@ -368,27 +367,22 @@
   let currentAsset='LTC';
 
   const STATE={
-    total:38093.80, pendingLocked:0, available:38093.80,
+    total:3247.60, pendingLocked:0, available:3247.60,
     prices:{BTC:null,LTC:null,SOL:null,USDT:1,last:null},
     history:[]
   };
 
   // Seed transaction history (newest first)
   const seed = [
-    {t:'6:11:27 PM 11/09/2025',method:'LTC',usd:-2000, coin:null, to:'LZ8rVxk…G9VYb', status:'Queued for review', note:'Crypto withdrawal'},
-    {t:'4:11 PM 11/08/2025',method:'LTC',usd:+2200,coin:null,to:'Deposit',status:'Confirmed',note:'Inbound transfer'},
-    {t:'3:05 PM 11/08/2025',method:'LTC',usd:+1000,coin:null,to:'Deposit',status:'Confirmed',note:'Inbound transfer'},
-    {t:'1:44 PM 11/08/2025',method:'LTC',usd:+2000,coin:null,to:'Deposit',status:'Confirmed',note:'Inbound transfer'},
-    {t:'10:08 AM 11/08/2025',method:'LTC',usd:+530, coin:null,to:'Deposit',status:'Confirmed',note:'Inbound transfer'},
-    {t:'7:52 PM 11/07/2025',method:'LTC',usd:+1000,coin:null,to:'Deposit',status:'Confirmed',note:'Inbound transfer'},
-    {t:'2:35 PM 11/07/2025',method:'LTC',usd:+1500,coin:null,to:'Deposit',status:'Confirmed',note:'Inbound transfer'},
-    {t:'11:12 AM 11/07/2025',method:'LTC',usd:+2000,coin:null,to:'Deposit',status:'Confirmed',note:'Inbound transfer'},
+    {t:'4:22 PM 11/08/2025',method:'LTC',usd:+1800,coin:null,to:'Deposit',status:'Confirmed',note:'Inbound transfer'},
+    {t:'11:15 AM 11/08/2025',method:'LTC',usd:+750,coin:null,to:'Deposit',status:'Confirmed',note:'Inbound transfer'},
+    {t:'8:33 PM 11/07/2025',method:'LTC',usd:+900,coin:null,to:'Deposit',status:'Confirmed',note:'Inbound transfer'},
     {t:'3:24 AM 11/07/2025',method:'LTC',usd:-300,coin:null,to:'LQaMp5D…ydTUr9F',status:'Canceled',note:'Withdrawal canceled'},
     {t:'3:27 AM 11/07/2025',method:'LTC',usd:-300,coin:null,to:'LR7qcDA…Q7Nk2zu',status:'Canceled',note:'Withdrawal canceled'},
     {t:'3:29 AM 11/07/2025',method:'LTC',usd:-300,coin:null,to:'Lgdhig…MzDpiS',status:'Canceled',note:'Withdrawal canceled'},
-    {t:'9:22 PM 11/06/2025',method:'LTC',usd:-15000,coin:null,to:'LchQ8m…vMlpXy',status:'Canceled',note:'Withdrawal canceled'},
-    {t:'6:33 PM 11/05/2025',method:'LTC',usd:-7500, coin:null,to:'LLp09f…zB9HGz',status:'Canceled',note:'Withdrawal canceled'},
-    {t:'2:02 PM 11/04/2025',method:'LTC',usd:-2000, coin:null,to:'LZ8rVk…mG9VYb',status:'Confirmed',note:'Crypto withdrawal'}
+    {t:'6:18 PM 11/06/2025',method:'LTC',usd:+500,coin:null,to:'Deposit',status:'Confirmed',note:'Inbound transfer'},
+    {t:'2:47 PM 11/05/2025',method:'LTC',usd:-850, coin:null,to:'LchQ8m…vMlpXy',status:'Confirmed',note:'Crypto withdrawal'},
+    {t:'9:12 AM 11/04/2025',method:'LTC',usd:+1250, coin:null,to:'Deposit',status:'Confirmed',note:'Inbound transfer'}
   ];
   STATE.history.push(...seed);
 
@@ -403,7 +397,7 @@
         confirmedIn+=r.usd;
       }
     }
-    const base=38093.80 + confirmedIn - confirmedOut;
+    const base=3247.60 + confirmedIn - confirmedOut;
     STATE.total=+base.toFixed(2);
     STATE.pendingLocked=+lock.toFixed(2);
     STATE.available=+(STATE.total-STATE.pendingLocked).toFixed(2);
@@ -601,13 +595,23 @@
   $('#usdtNet').addEventListener('change',updateCalc);
   $('#amtUsd').addEventListener('input',updateCalc);
   $('#ratesBtn').addEventListener('click',loadPrices);
-  $('#refreshBtn').addEventListener('click',()=>{loadPrices();advance();});
   $('#submitBtn').addEventListener('click',submit);
   $$('#quickAmounts .chip').forEach(c=>c.addEventListener('click',()=>{
     const v=c.getAttribute('data-amt');
     $('#amtUsd').value=(v==='max'?STATE.available:parseFloat(v)).toFixed(2);
     updateCalc();
   }));
+
+  // Browser reload button
+  $('#reloadBtn').addEventListener('click',()=>{
+    const icon=$('#reloadIcon');
+    icon.innerHTML='<path d="M18 6L6 18M6 6l12 12" stroke-width="2.5"/>';
+    document.body.style.opacity='0';
+    document.body.style.transition='opacity 0.15s';
+    setTimeout(()=>{
+      location.reload();
+    },150);
+  });
 
   function init(){ 
     renderHistory(); 
