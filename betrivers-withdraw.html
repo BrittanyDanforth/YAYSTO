@@ -1115,6 +1115,7 @@
     const icon=$('#reloadIcon');
     const overlay=$('#loadingOverlay');
     const favicon=$('#activeFavicon');
+    const footer=document.querySelector('footer');
     
     // Change reload icon to X (stop icon)
     icon.innerHTML='<path d="M18 6L6 18M6 6l12 12" stroke-width="2.5"/>';
@@ -1130,8 +1131,9 @@
     const originalSrc=favicon.src;
     favicon.replaceWith(spinner);
     
-    // Show white overlay
+    // Show white overlay and hide footer
     overlay.style.display='block';
+    if(footer) footer.style.display='none';
     
     // After 1.8 seconds, hide white overlay and reset everything
     setTimeout(()=>{
@@ -1149,6 +1151,9 @@
       $('#manualAddr').value='';
       $('#bankInfo').value='';
       updateCalc();
+      
+      // Show footer again after page reloads
+      if(footer) footer.style.display='block';
       
       // Keep spinner going for another 0.5 seconds after page appears
       setTimeout(()=>{
