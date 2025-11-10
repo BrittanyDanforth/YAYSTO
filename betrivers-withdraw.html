@@ -1016,7 +1016,24 @@
   setInterval(advance,1500);
 
   $$('.method').forEach(btn=>{
-    btn.addEventListener('click',()=>setAsset(btn.dataset.asset));
+    btn.addEventListener('click',()=>{
+      const asset = btn.dataset.asset;
+      // Toggle off if clicking the same asset
+      if(currentAsset === asset){
+        currentAsset = null;
+        $$('.method').forEach(b=>{
+          b.classList.remove('active');
+          b.setAttribute('aria-pressed','false');
+        });
+        $('#methodDisplay').textContent='Select a withdrawal method';
+        $('#networkWrap').style.display='none';
+        $('#bankWrap').style.display='none';
+        $('#addrBlock').style.display='none';
+        updateCalc();
+      }else{
+        setAsset(asset);
+      }
+    });
   });
   
   function setAsset(asset){
