@@ -373,7 +373,7 @@
     history:[]
   };
 
-  // Seed transaction history
+  // Seed transaction history (newest first)
   const seed = [
     {t:'6:11:27 PM 11/09/2025',method:'LTC',usd:-2000, coin:null, to:'LZ8rVxk…G9VYb', status:'Queued for review', note:'Crypto withdrawal'},
     {t:'4:11 PM 11/08/2025',method:'LTC',usd:+2200,coin:null,to:'Deposit',status:'Confirmed',note:'Inbound transfer'},
@@ -388,7 +388,7 @@
     {t:'3:29 AM 11/07/2025',method:'LTC',usd:-300,coin:null,to:'Lgdhig…MzDpiS',status:'Canceled',note:'Withdrawal canceled'},
     {t:'9:22 PM 11/06/2025',method:'LTC',usd:-15000,coin:null,to:'LchQ8m…vMlpXy',status:'Canceled',note:'Withdrawal canceled'},
     {t:'6:33 PM 11/05/2025',method:'LTC',usd:-7500, coin:null,to:'LLp09f…zB9HGz',status:'Canceled',note:'Withdrawal canceled'},
-    {t:'2:02 PM 11/04/2025',method:'LTC',usd:-2000, coin:null,to:'LZ8rVk…mG9VYb',status:'Processing',note:'Crypto withdrawal'}
+    {t:'2:02 PM 11/04/2025',method:'LTC',usd:-2000, coin:null,to:'LZ8rVk…mG9VYb',status:'Confirmed',note:'Crypto withdrawal'}
   ];
   STATE.history.push(...seed);
 
@@ -436,7 +436,7 @@
   function renderHistory(){
     ensureCoins();
     const tb=$('#histBody'); tb.innerHTML='';
-    for(const r of STATE.history.slice().reverse()){
+    for(const r of STATE.history){
       const det = (r.usd>0?'Deposit':`Withdrawal • ${r.to || ''}`);
       const coinTxt = r.method==='ACH' ? '—' : fmtCoin(r.coin||0,r.method);
       const tr=document.createElement('tr');
@@ -549,7 +549,7 @@
     const now=new Date();
     const t=fmtClock(now)+' '+String(now.getMonth()+1).padStart(2,'0')+'/'+String(now.getDate()).padStart(2,'0')+'/'+now.getFullYear();
     const status=usd>1000?'Queued for review':'Processing';
-    STATE.history.push({
+    STATE.history.unshift({
       t,
       method:asset,
       usd:-usd,
