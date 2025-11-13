@@ -407,22 +407,37 @@ body{
   color:#10b981;
 }
 .bj-table{
-  background:linear-gradient(135deg,#059669,#047857);
+  background:#1a4d2e;
   border-radius:12px;
   padding:2rem;
   min-height:500px;
   display:flex;
   flex-direction:column;
   justify-content:space-around;
+  position:relative;
+  box-shadow:inset 0 0 100px rgba(0,0,0,0.3);
+}
+.bj-table:before{
+  content:'';
+  position:absolute;
+  inset:0;
+  background:
+    radial-gradient(ellipse at center, transparent 0%, rgba(0,0,0,0.2) 100%);
+  border-radius:12px;
+  pointer-events:none;
 }
 .bj-hand{
   margin-bottom:2rem;
+  position:relative;
+  z-index:1;
 }
 .bj-hand-label{
   font-size:1rem;
   font-weight:700;
   margin-bottom:1rem;
   color:#fff;
+  text-transform:uppercase;
+  letter-spacing:0.05em;
 }
 .bj-cards{
   display:flex;
@@ -458,7 +473,12 @@ body{
   font-size:1.25rem;
   font-weight:700;
   color:#fff;
-  margin:1rem 0;
+  margin:1.5rem 0;
+  padding:1rem;
+  background:rgba(0,0,0,0.3);
+  border-radius:8px;
+  position:relative;
+  z-index:1;
 }
 .history{
   background:#13151f;
@@ -785,6 +805,7 @@ body{
             <input type="number" class="form-input" id="bj-bet" value="1.00" min="0.10" step="0.10">
           </div>
           <button class="btn" style="width:100%;margin-bottom:0.5rem" id="bj-deal">Deal</button>
+          <button class="btn btn-secondary" style="width:100%;margin-bottom:0.5rem;display:none" id="bj-insurance">Insurance</button>
           <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:0.5rem">
             <button class="btn btn-secondary" id="bj-hit" disabled>Hit</button>
             <button class="btn btn-secondary" id="bj-stand" disabled>Stand</button>
@@ -996,9 +1017,10 @@ function renderHistory(){
   historyBody.innerHTML='';
   STATE.history.forEach(h=>{
     const tr=document.createElement('tr');
+    const mult=h.bet!==0?(h.profit+h.bet)/h.bet:0;
     const badge=h.profit>0?
-      '<span class="badge badge-win">+'+fmtUsd(h.profit)+'</span>':
-      '<span class="badge badge-loss">'+fmtUsd(h.profit)+'</span>';
+      '<span class="badge badge-win">'+mult.toFixed(2)+'x · +'+fmtUsd(h.profit)+'</span>':
+      '<span class="badge badge-loss">LOSS · '+fmtUsd(h.profit)+'</span>';
     tr.innerHTML='<td>'+h.game+'</td><td>'+h.user+'</td><td>'+fmtUsd(Math.abs(h.bet))+'</td><td>'+badge+'</td>';
     historyBody.appendChild(tr);
   });
@@ -1343,11 +1365,12 @@ const bjDeal=document.getElementById('bj-deal');
 const bjHit=document.getElementById('bj-hit');
 const bjStand=document.getElementById('bj-stand');
 const bjDouble=document.getElementById('bj-double');
+const bjInsurance=document.getElementById('bj-insurance');
 
 const SUITS=['♠','♣','♥','♦'];
 const RANKS=['A','2','3','4','5','6','7','8','9','10','J','Q','K'];
 
-const bjState={deck:[],player:[],dealer:[],bet:0,inRound:false};
+const bjState={deck:[],player:[],dealer:[],bet:0,inRound:false,insurance:0};
 
 function newDeck(){
   const deck=[];
@@ -1407,11 +1430,13 @@ async function startBj(){
   bjState.dealer=[bjState.deck.pop(),bjState.deck.pop()];
   bjState.bet=bet;
   bjState.inRound=true;
+  bjState.insurance=0;
   
   bjDeal.disabled=true;
   bjHit.disabled=false;
   bjStand.disabled=false;
   bjDouble.disabled=false;
+  bjInsurance.style.display='none';
   
   await renderHand(bjPlayer,bjState.player,false);
   await renderHand(bjDealer,bjState.dealer,true);
@@ -1420,14 +1445,30 @@ async function startBj(){
   bjPlayerTotal.textContent='('+val+')';
   bjStatus.textContent='You have '+val;
   
+  // Check for insurance if dealer shows ace
+  if(bjState.dealer[0].r==='A'){
+    bjInsurance.style.display='block';
+    bjInsurance.disabled=false;
+    bjStatus.textContent='Dealer shows Ace - Insurance available';
+  }
+  
   if(val===21)setTimeout(()=>dealerFinish(true),600);
 }
 
 async function dealerFinish(autoBJ){
+  bjInsurance.style.display='none';
   await renderHand(bjDealer,bjState.dealer,false);
   
   let dVal=handVal(bjState.dealer);
   bjDealerTotal.textContent='('+dVal+')';
+  
+  // Check insurance payout
+  let insurancePayout=0;
+  if(bjState.insurance>0&&dVal===21&&bjState.dealer.length===2){
+    insurancePayout=bjState.insurance*2;
+    STATE.balanceUsd+=insurancePayout;
+    showToast('success','Insurance pays','2:1 on '+fmtUsd(bjState.insurance));
+  }
   
   while(dVal<17){
     const c=bjState.deck.pop();
@@ -1451,11 +1492,13 @@ async function dealerFinish(autoBJ){
   
   bjStatus.textContent=label;
   
-  let profit=payout-bjState.bet;
+  let profit=payout-bjState.bet+insurancePayout-bjState.insurance;
   if(payout>0){
     STATE.balanceUsd+=payout;
     STATE.netResult+=profit;
     if(profit>STATE.biggestWin)STATE.biggestWin=profit;
+  }else{
+    STATE.netResult+=profit;
   }
   
   addHistory('BJ','you',bjState.bet,profit);
@@ -1474,8 +1517,24 @@ async function dealerFinish(autoBJ){
 
 bjDeal.addEventListener('click',startBj);
 
+bjInsurance.addEventListener('click',()=>{
+  if(!bjState.inRound)return;
+  const insuranceAmt=bjState.bet/2;
+  if(STATE.balanceUsd<insuranceAmt){
+    showToast('error','Insufficient','Not enough for insurance');
+    return;
+  }
+  STATE.balanceUsd-=insuranceAmt;
+  STATE.netResult-=insuranceAmt;
+  bjState.insurance=insuranceAmt;
+  updateWallet();
+  bjInsurance.disabled=true;
+  showToast('info','Insurance placed',fmtUsd(insuranceAmt));
+});
+
 bjHit.addEventListener('click',async()=>{
   if(!bjState.inRound)return;
+  bjInsurance.style.display='none';
   const c=bjState.deck.pop();
   bjState.player.push(c);
   await renderHand(bjPlayer,bjState.player,false);
@@ -1497,6 +1556,7 @@ bjDouble.addEventListener('click',async()=>{
   STATE.netResult-=bjState.bet;
   bjState.bet*=2;
   updateWallet();
+  bjInsurance.style.display='none';
   
   const c=bjState.deck.pop();
   bjState.player.push(c);
