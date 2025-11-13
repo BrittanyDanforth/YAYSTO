@@ -880,22 +880,169 @@ tbody tr:last-child td{
   margin:1rem 0 1.5rem;
 }
 
+/* Case Opening Animation */
+.case-opening-container{
+  text-align:center;
+  padding:3rem 1rem;
+}
+
+.case-box{
+  width:200px;
+  height:200px;
+  margin:0 auto 2rem;
+  position:relative;
+  transform-style:preserve-3d;
+}
+
+.case-box.opening{
+  animation:caseShake 0.8s ease-in-out 3;
+}
+
+@keyframes caseShake{
+  0%,100%{transform:translateX(0) rotate(0deg)}
+  10%{transform:translateX(-10px) rotate(-2deg)}
+  20%{transform:translateX(10px) rotate(2deg)}
+  30%{transform:translateX(-10px) rotate(-1deg)}
+  40%{transform:translateX(10px) rotate(1deg)}
+  50%{transform:translateX(0) rotate(0deg)}
+}
+
+.case-box.exploding .case-lid{
+  animation:lidFly 0.6s ease-out forwards;
+}
+
+@keyframes lidFly{
+  0%{transform:translateY(0) rotate(0deg);opacity:1}
+  100%{transform:translateY(-200px) rotate(45deg);opacity:0}
+}
+
+.case-box-body{
+  width:200px;
+  height:200px;
+  background:linear-gradient(135deg,var(--bg-elevated),var(--bg-tertiary));
+  border-radius:12px;
+  border:3px solid var(--border);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-size:5rem;
+  position:relative;
+  overflow:hidden;
+}
+
+.case-lid{
+  position:absolute;
+  top:0;
+  left:0;
+  width:100%;
+  height:60px;
+  background:linear-gradient(135deg,var(--accent-primary),var(--accent-secondary));
+  border-radius:12px 12px 0 0;
+  border:3px solid var(--accent-dark);
+  border-bottom:none;
+  z-index:2;
+}
+
+.prize-reveal{
+  opacity:0;
+  transform:scale(0);
+}
+
+.case-box.revealing .prize-reveal{
+  animation:prizeReveal 0.6s ease-out 0.3s forwards;
+}
+
+@keyframes prizeReveal{
+  0%{opacity:0;transform:scale(0) rotate(0deg)}
+  50%{opacity:1;transform:scale(1.3) rotate(180deg)}
+  100%{opacity:1;transform:scale(1) rotate(360deg)}
+}
+
+.prize-details{
+  margin-top:2rem;
+  opacity:0;
+}
+
+.case-box.revealing .prize-details{
+  animation:fadeInUp 0.4s ease-out 0.8s forwards;
+}
+
+.prize-name{
+  font-size:1.75rem;
+  font-weight:800;
+  margin-bottom:1rem;
+  color:var(--text-primary);
+}
+
+.prize-value{
+  font-size:1.5rem;
+  font-weight:800;
+  color:var(--success);
+}
+
 /* Blackjack */
 .blackjack-table{
   background:linear-gradient(135deg,#16a34a,#15803d);
   padding:3rem 2rem;
   border-radius:12px;
   border:8px solid var(--bg-elevated);
-  min-height:450px;
+  min-height:550px;
   display:flex;
   flex-direction:column;
   justify-content:space-between;
   margin:2rem 0;
   box-shadow:inset 0 2px 10px rgba(0,0,0,0.3);
+  position:relative;
 }
+
+.deck-container{
+  position:absolute;
+  top:50%;
+  left:50%;
+  transform:translate(-50%,-50%);
+  z-index:10;
+  transition:opacity 0.3s;
+}
+
+.deck-container.hidden{
+  opacity:0;
+  pointer-events:none;
+}
+
+.deck{
+  width:85px;
+  height:120px;
+  position:relative;
+  cursor:pointer;
+  transition:transform 0.2s;
+}
+
+.deck:hover{
+  transform:translateY(-8px);
+}
+
+.deck-card-stack{
+  position:absolute;
+  width:85px;
+  height:120px;
+  background:linear-gradient(135deg,var(--accent-primary),var(--accent-secondary));
+  border-radius:10px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  color:white;
+  font-size:3rem;
+  box-shadow:0 6px 16px rgba(0,0,0,0.5);
+}
+
+.deck-card-stack:nth-child(1){top:0;left:0}
+.deck-card-stack:nth-child(2){top:3px;left:3px}
+.deck-card-stack:nth-child(3){top:6px;left:6px}
 
 .hand-section{
   margin-bottom:1.5rem;
+  position:relative;
+  z-index:5;
 }
 
 .hand-label{
@@ -911,27 +1058,42 @@ tbody tr:last-child td{
 
 .hand-cards{
   display:flex;
-  gap:0.5rem;
+  gap:0.75rem;
   flex-wrap:wrap;
+  min-height:120px;
 }
 
 .playing-card{
-  width:70px;
-  height:100px;
+  width:75px;
+  height:105px;
   background:white;
-  border-radius:8px;
+  border-radius:10px;
   display:flex;
   justify-content:center;
   align-items:center;
   font-size:1.5rem;
   font-weight:700;
-  box-shadow:0 4px 8px rgba(0,0,0,0.3);
-  animation:dealCard 0.3s ease-out;
+  box-shadow:0 4px 12px rgba(0,0,0,0.4);
+  position:relative;
+  transform-style:preserve-3d;
 }
 
-@keyframes dealCard{
-  0%{transform:translateY(-100px) rotate(-10deg);opacity:0}
-  100%{transform:translateY(0) rotate(0);opacity:1}
+.playing-card.dealing{
+  animation:cardDeal 0.5s ease-out;
+}
+
+@keyframes cardDeal{
+  0%{
+    transform:translateX(0) translateY(0) scale(1.2) rotateY(180deg);
+    opacity:0;
+  }
+  50%{
+    opacity:1;
+  }
+  100%{
+    transform:translateX(0) translateY(0) scale(1) rotateY(0deg);
+    opacity:1;
+  }
 }
 
 .playing-card.red{color:#dc2626}
@@ -940,7 +1102,7 @@ tbody tr:last-child td{
 .playing-card.card-back{
   background:linear-gradient(135deg,var(--accent-primary),var(--accent-secondary));
   color:white;
-  font-size:2rem;
+  font-size:2.5rem;
 }
 
 .game-status{
@@ -951,6 +1113,8 @@ tbody tr:last-child td{
   text-shadow:0 2px 4px rgba(0,0,0,0.5);
   min-height:2rem;
   margin:1rem 0;
+  position:relative;
+  z-index:5;
 }
 
 .game-actions{
@@ -994,6 +1158,16 @@ tbody tr:last-child td{
   
   .mines-stats{
     gap:2rem;
+  }
+  
+  .case-box{
+    width:150px;
+    height:150px;
+  }
+  
+  .case-box-body{
+    width:150px;
+    height:150px;
   }
 }
 </style>
@@ -1176,6 +1350,15 @@ tbody tr:last-child td{
       </h1>
       
       <div class="blackjack-table">
+        <!-- Card Deck in Center -->
+        <div class="deck-container" id="deck-container">
+          <div class="deck" id="card-deck">
+            <div class="deck-card-stack">🂠</div>
+            <div class="deck-card-stack">🂠</div>
+            <div class="deck-card-stack">🂠</div>
+          </div>
+        </div>
+        
         <div class="hand-section">
           <div class="hand-label">Dealer <span id="dealer-total"></span></div>
           <div class="hand-cards" id="dealer-hand"></div>
@@ -1358,13 +1541,23 @@ tbody tr:last-child td{
 <!-- Toast Container -->
 <div class="toast-container" id="toast-container"></div>
 
-<!-- Case Result Modal -->
+<!-- Case Opening Modal -->
 <div class="modal-overlay" id="case-modal">
   <div class="modal">
-    <h2 class="modal-title">Case Opened!</h2>
-    <div class="modal-body" id="case-result" style="text-align:center;font-size:3rem"></div>
+    <div class="case-opening-container">
+      <div class="case-box" id="case-animation-box">
+        <div class="case-lid"></div>
+        <div class="case-box-body">
+          <div class="prize-reveal" id="prize-icon">💎</div>
+        </div>
+      </div>
+      <div class="prize-details">
+        <div class="prize-name" id="prize-name">Diamond</div>
+        <div class="prize-value" id="prize-value">+0.50 LTC</div>
+      </div>
+    </div>
     <div class="modal-actions">
-      <button class="btn btn-primary" onclick="closeModal('case-modal')">Claim Prize</button>
+      <button class="btn btn-primary" onclick="closeModal('case-modal')" style="width:100%">Claim Prize</button>
     </div>
   </div>
 </div>
@@ -1817,7 +2010,7 @@ const casesData = {
 };
 
 document.querySelectorAll('.case-open-btn').forEach(btn => {
-  btn.addEventListener('click', () => {
+  btn.addEventListener('click', async () => {
     const caseType = btn.dataset.case;
     const caseData = casesData[caseType];
     
@@ -1829,6 +2022,7 @@ document.querySelectorAll('.case-open-btn').forEach(btn => {
     STATE.balance -= caseData.price;
     updateBalance();
     
+    // Calculate won item
     const r = getRandomFloat();
     let cumulative = 0;
     let won = null;
@@ -1841,13 +2035,34 @@ document.querySelectorAll('.case-open-btn').forEach(btn => {
     }
     if (!won) won = caseData.items[caseData.items.length - 1];
     
-    document.getElementById('case-result').innerHTML = `
-      <div style="font-size:5rem">${won.icon}</div>
-      <div style="font-size:1.5rem;margin:1rem 0;font-weight:700">${won.name}</div>
-      <div style="font-size:1.25rem;color:var(--success);font-weight:700">+${won.value.toFixed(8)} LTC</div>
-    `;
+    // Setup modal
+    const caseBox = document.getElementById('case-animation-box');
+    const prizeIcon = document.getElementById('prize-icon');
+    const prizeName = document.getElementById('prize-name');
+    const prizeValue = document.getElementById('prize-value');
+    
+    prizeIcon.textContent = won.icon;
+    prizeName.textContent = won.name;
+    prizeValue.textContent = `+${won.value.toFixed(8)} LTC`;
+    
+    // Reset animations
+    caseBox.classList.remove('opening', 'exploding', 'revealing');
+    
+    // Show modal
     document.getElementById('case-modal').classList.add('active');
     
+    // Start animation sequence
+    await new Promise(r => setTimeout(r, 300));
+    caseBox.classList.add('opening');
+    
+    await new Promise(r => setTimeout(r, 2400));
+    caseBox.classList.remove('opening');
+    caseBox.classList.add('exploding');
+    
+    await new Promise(r => setTimeout(r, 300));
+    caseBox.classList.add('revealing');
+    
+    // Add winnings
     STATE.balance += won.value;
     updateBalance();
     
@@ -1919,16 +2134,38 @@ function calcHandValue(hand) {
 function displayCard(card, hidden = false) {
   const isRed = ['♥', '♦'].includes(card.suit);
   if (hidden) {
-    return '<div class="playing-card card-back">🂠</div>';
+    return '<div class="playing-card card-back dealing">🂠</div>';
   }
-  return `<div class="playing-card ${isRed ? 'red' : 'black'}">${card.rank}${card.suit}</div>`;
+  return `<div class="playing-card ${isRed ? 'red' : 'black'} dealing">${card.rank}${card.suit}</div>`;
 }
 
-function updateBJDisplay() {
+async function dealCardWithAnimation(hand, handEl, hidden = false) {
+  const card = bjState.deck.pop();
+  hand.push(card);
+  
+  const cardHtml = displayCard(card, hidden);
+  handEl.innerHTML += cardHtml;
+  
+  await new Promise(r => setTimeout(r, 500));
+}
+
+async function updateBJDisplay(initial = false) {
   const playerHandEl = document.getElementById('player-hand');
   const dealerHandEl = document.getElementById('dealer-hand');
   
-  playerHandEl.innerHTML = bjState.playerHand.map(c => displayCard(c)).join('');
+  if (initial) {
+    playerHandEl.innerHTML = '';
+    dealerHandEl.innerHTML = '';
+    
+    // Deal sequence: player, dealer, player, dealer
+    await dealCardWithAnimation(bjState.playerHand, playerHandEl);
+    await dealCardWithAnimation(bjState.dealerHand, dealerHandEl);
+    await dealCardWithAnimation(bjState.playerHand, playerHandEl);
+    await dealCardWithAnimation(bjState.dealerHand, dealerHandEl, true);
+  } else {
+    playerHandEl.innerHTML = bjState.playerHand.map(c => displayCard(c)).join('');
+  }
+  
   const playerTotal = calcHandValue(bjState.playerHand);
   document.getElementById('player-total').textContent = `(${playerTotal})`;
   
@@ -1937,9 +2174,11 @@ function updateBJDisplay() {
     const dealerTotal = calcHandValue(bjState.dealerHand);
     document.getElementById('dealer-total').textContent = `(${dealerTotal})`;
   } else {
-    dealerHandEl.innerHTML = displayCard(bjState.dealerHand[0]);
-    if (bjState.dealerHand.length > 1) {
-      dealerHandEl.innerHTML += displayCard(bjState.dealerHand[1], true);
+    if (!initial) {
+      dealerHandEl.innerHTML = displayCard(bjState.dealerHand[0]);
+      if (bjState.dealerHand.length > 1) {
+        dealerHandEl.innerHTML += displayCard(bjState.dealerHand[1], true);
+      }
     }
     document.getElementById('dealer-total').textContent = '';
   }
@@ -1947,14 +2186,18 @@ function updateBJDisplay() {
 
 async function dealerPlay() {
   bjState.playerStood = true;
-  updateBJDisplay();
-  await new Promise(r => setTimeout(r, 500));
+  
+  const dealerHandEl = document.getElementById('dealer-hand');
+  dealerHandEl.innerHTML = bjState.dealerHand.map(c => displayCard(c)).join('');
+  const dealerTotal = calcHandValue(bjState.dealerHand);
+  document.getElementById('dealer-total').textContent = `(${dealerTotal})`;
+  
+  await new Promise(r => setTimeout(r, 800));
   
   while (calcHandValue(bjState.dealerHand) < 17) {
-    const card = bjState.deck.pop();
-    bjState.dealerHand.push(card);
-    updateBJDisplay();
-    await new Promise(r => setTimeout(r, 600));
+    await dealCardWithAnimation(bjState.dealerHand, dealerHandEl);
+    const total = calcHandValue(bjState.dealerHand);
+    document.getElementById('dealer-total').textContent = `(${total})`;
   }
   
   endBJRound();
@@ -2018,11 +2261,12 @@ function endBJRound() {
   document.getElementById('bj-deal').disabled = false;
   document.getElementById('bj-game-actions').classList.remove('active');
   document.getElementById('bj-bet-controls').style.display = 'block';
+  document.getElementById('deck-container').classList.remove('hidden');
   
   bjState.isPlaying = false;
 }
 
-document.getElementById('bj-deal').addEventListener('click', () => {
+document.getElementById('bj-deal').addEventListener('click', async () => {
   const bet = parseFloat(document.getElementById('bj-bet').value);
   
   if (bet > STATE.balance) {
@@ -2040,16 +2284,13 @@ document.getElementById('bj-deal').addEventListener('click', () => {
   bjState.playerHand = [];
   bjState.dealerHand = [];
   
-  bjState.playerHand.push(bjState.deck.pop());
-  bjState.dealerHand.push(bjState.deck.pop());
-  bjState.playerHand.push(bjState.deck.pop());
-  bjState.dealerHand.push(bjState.deck.pop());
-  
-  updateBJDisplay();
-  
   document.getElementById('bj-status').textContent = '';
   document.getElementById('bj-deal').disabled = true;
   document.getElementById('bj-bet-controls').style.display = 'none';
+  document.getElementById('deck-container').classList.add('hidden');
+  
+  await updateBJDisplay(true);
+  
   document.getElementById('bj-game-actions').classList.add('active');
   
   if (calcHandValue(bjState.playerHand) === 21) {
@@ -2057,14 +2298,14 @@ document.getElementById('bj-deal').addEventListener('click', () => {
   }
 });
 
-document.getElementById('bj-hit').addEventListener('click', () => {
+document.getElementById('bj-hit').addEventListener('click', async () => {
   if (!bjState.isPlaying) return;
   
-  const card = bjState.deck.pop();
-  bjState.playerHand.push(card);
-  updateBJDisplay();
+  const playerHandEl = document.getElementById('player-hand');
+  await dealCardWithAnimation(bjState.playerHand, playerHandEl);
   
   const playerTotal = calcHandValue(bjState.playerHand);
+  document.getElementById('player-total').textContent = `(${playerTotal})`;
   
   if (playerTotal >= 21) {
     setTimeout(() => dealerPlay(), 500);
@@ -2076,7 +2317,7 @@ document.getElementById('bj-stand').addEventListener('click', () => {
   dealerPlay();
 });
 
-document.getElementById('bj-double').addEventListener('click', () => {
+document.getElementById('bj-double').addEventListener('click', async () => {
   if (!bjState.isPlaying) return;
   
   if (STATE.balance < bjState.currentBet) {
@@ -2088,9 +2329,11 @@ document.getElementById('bj-double').addEventListener('click', () => {
   updateBalance();
   bjState.currentBet *= 2;
   
-  const card = bjState.deck.pop();
-  bjState.playerHand.push(card);
-  updateBJDisplay();
+  const playerHandEl = document.getElementById('player-hand');
+  await dealCardWithAnimation(bjState.playerHand, playerHandEl);
+  
+  const playerTotal = calcHandValue(bjState.playerHand);
+  document.getElementById('player-total').textContent = `(${playerTotal})`;
   
   setTimeout(() => dealerPlay(), 500);
 });
