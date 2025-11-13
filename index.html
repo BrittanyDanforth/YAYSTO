@@ -270,26 +270,25 @@ body{
   justify-content:center;
   font-size:2rem;
   cursor:pointer;
-  transition:all 0.2s;
+  transition:all 0.15s ease;
 }
 .mine-cell:hover:not(.revealed){
   border-color:#6366f1;
-  transform:scale(1.05);
+  background:#1a1d2e;
 }
 .mine-cell.gem{
-  background:linear-gradient(135deg,#10b981,#059669);
+  background:#10b981;
   border-color:#10b981;
-  animation:pop 0.3s;
+  animation:reveal 0.2s ease;
 }
 .mine-cell.mine{
-  background:linear-gradient(135deg,#ef4444,#dc2626);
+  background:#ef4444;
   border-color:#ef4444;
-  animation:pop 0.3s;
+  animation:reveal 0.2s ease;
 }
-@keyframes pop{
-  0%{transform:scale(0) rotate(0)}
-  50%{transform:scale(1.15) rotate(180deg)}
-  100%{transform:scale(1) rotate(360deg)}
+@keyframes reveal{
+  from{opacity:0;transform:scale(0.8)}
+  to{opacity:1;transform:scale(1)}
 }
 .stats-grid{
   display:grid;
