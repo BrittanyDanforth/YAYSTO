@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CryptoLux Casino - Premium Gaming Experience</title>
+    <link rel="stylesheet" href="casino.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="header-content">
+            <div class="logo">
+                <span class="logo-icon">💎</span>
+                <span class="logo-text">CryptoLux</span>
+            </div>
+            <div class="balance-display">
+                <span class="balance-label">Demo Balance</span>
+                <span class="balance-amount" id="balance">10,000.00</span>
+                <span class="balance-currency">coins</span>
+            </div>
+        </div>
+    </header>
+
+    <div class="main-container">
+        <!-- Sidebar Navigation -->
+        <aside class="sidebar">
+            <nav class="nav-menu">
+                <button class="nav-item active" data-game="limbo">
+                    <span class="nav-icon">🚀</span>
+                    <span class="nav-text">Limbo</span>
+                </button>
+                <button class="nav-item" data-game="mines">
+                    <span class="nav-icon">💣</span>
+                    <span class="nav-text">Mines</span>
+                </button>
+                <button class="nav-item" data-game="cases">
+                    <span class="nav-icon">📦</span>
+                    <span class="nav-text">Cases</span>
+                </button>
+                <button class="nav-item" data-game="blackjack">
+                    <span class="nav-icon">🃏</span>
+                    <span class="nav-text">Blackjack</span>
+                </button>
+            </nav>
+
+            <div class="sidebar-info">
+                <h3>Provably Fair</h3>
+                <p>All games use cryptographic RNG for guaranteed fairness.</p>
+                <div class="rtp-info">
+                    <span class="rtp-label">RTP:</span>
+                    <span class="rtp-value">98%</span>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Content Area -->
+        <main class="content">
+            <!-- LIMBO GAME -->
+            <section id="limbo-game" class="game-section active">
+                <div class="game-header">
+                    <h1 class="game-title">🚀 Limbo</h1>
+                    <p class="game-description">Pick your multiplier. Beat the crash point. Win big.</p>
+                </div>
+
+                <div class="game-layout">
+                    <div class="game-main">
+                        <div class="limbo-display">
+                            <div class="multiplier-display" id="limbo-multiplier">
+                                <span class="multiplier-value">1.00x</span>
+                                <div class="multiplier-status" id="limbo-status"></div>
+                            </div>
+                        </div>
+
+                        <div class="game-controls">
+                            <div class="control-group">
+                                <label>Bet Amount</label>
+                                <input type="number" id="limbo-bet" value="10" min="1" step="1">
+                            </div>
+                            <div class="control-group">
+                                <label>Target Multiplier</label>
+                                <input type="number" id="limbo-target" value="2.00" min="1.01" step="0.01">
+                            </div>
+                            <button class="btn-primary" id="limbo-play">Play Limbo</button>
+                        </div>
+
+                        <div class="game-info-box">
+                            <h3>How Limbo Works</h3>
+                            <p>Choose your bet and target multiplier. The system generates a random crash point using cryptographic RNG. If the crash point meets or exceeds your target, you win your bet × multiplier. Otherwise, you lose.</p>
+                            <p><strong>Under the Hood:</strong> We generate a random number R ∈ (0,1), then calculate: <code>crashPoint = RTP / R</code>. With 98% RTP, higher targets mean lower win probability but bigger payouts.</p>
+                        </div>
+                    </div>
+
+                    <div class="game-sidebar">
+                        <div class="history-panel">
+                            <h3>Recent Results</h3>
+                            <div class="history-list" id="limbo-history"></div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- MINES GAME -->
+            <section id="mines-game" class="game-section">
+                <div class="game-header">
+                    <h1 class="game-title">💣 Mines</h1>
+                    <p class="game-description">Uncover gems, avoid mines, cash out before it's too late.</p>
+                </div>
+
+                <div class="game-layout">
+                    <div class="game-main">
+                        <div class="mines-display">
+                            <div class="mines-stats">
+                                <div class="stat-item">
+                                    <span class="stat-label">Multiplier</span>
+                                    <span class="stat-value" id="mines-multiplier">1.00x</span>
+                                </div>
+                                <div class="stat-item">
+                                    <span class="stat-label">Profit</span>
+                                    <span class="stat-value" id="mines-profit">0.00</span>
+                                </div>
+                            </div>
+                            <div class="mines-grid" id="mines-grid"></div>
+                            <button class="btn-cashout" id="mines-cashout" disabled>Cash Out</button>
+                        </div>
+
+                        <div class="game-controls">
+                            <div class="control-group">
+                                <label>Bet Amount</label>
+                                <input type="number" id="mines-bet" value="10" min="1" step="1">
+                            </div>
+                            <div class="control-group">
+                                <label>Number of Mines</label>
+                                <input type="number" id="mines-count" value="3" min="1" max="24" step="1">
+                            </div>
+                            <button class="btn-primary" id="mines-start">Start Game</button>
+                        </div>
+
+                        <div class="game-info-box">
+                            <h3>How Mines Works</h3>
+                            <p>Choose your bet and number of mines (1-24) on a 5×5 grid. Click tiles to reveal gems. Each safe tile increases your multiplier based on survival probability. Hit a mine and lose everything – or cash out any time to secure your winnings.</p>
+                            <p><strong>Under the Hood:</strong> Mine positions are determined by RNG before your first click. Multipliers are calculated as: <code>RTP / P(survive k picks)</code> where probability decreases with each safe pick. More mines = higher risk = bigger multipliers.</p>
+                        </div>
+                    </div>
+
+                    <div class="game-sidebar">
+                        <div class="history-panel">
+                            <h3>Recent Games</h3>
+                            <div class="history-list" id="mines-history"></div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- CASES GAME -->
+            <section id="cases-game" class="game-section">
+                <div class="game-header">
+                    <h1 class="game-title">📦 Cases</h1>
+                    <p class="game-description">Open cases, win rare items, build your collection.</p>
+                </div>
+
+                <div class="game-layout">
+                    <div class="game-main">
+                        <div class="cases-container">
+                            <div class="case-card" data-case="bronze">
+                                <div class="case-image">🥉</div>
+                                <h3 class="case-name">Bronze Case</h3>
+                                <div class="case-price">50 coins</div>
+                                <button class="btn-primary case-open" data-case="bronze">Open Case</button>
+                            </div>
+                            <div class="case-card" data-case="silver">
+                                <div class="case-image">🥈</div>
+                                <h3 class="case-name">Silver Case</h3>
+                                <div class="case-price">150 coins</div>
+                                <button class="btn-primary case-open" data-case="silver">Open Case</button>
+                            </div>
+                            <div class="case-card" data-case="gold">
+                                <div class="case-image">🥇</div>
+                                <h3 class="case-name">Gold Case</h3>
+                                <div class="case-price">500 coins</div>
+                                <button class="btn-primary case-open" data-case="gold">Open Case</button>
+                            </div>
+                            <div class="case-card" data-case="diamond">
+                                <div class="case-image">💎</div>
+                                <h3 class="case-name">Diamond Case</h3>
+                                <div class="case-price">1500 coins</div>
+                                <button class="btn-primary case-open" data-case="diamond">Open Case</button>
+                            </div>
+                        </div>
+
+                        <div class="case-opening-modal" id="case-opening-modal">
+                            <div class="modal-content">
+                                <div class="case-spinner" id="case-spinner"></div>
+                                <div class="case-result" id="case-result"></div>
+                            </div>
+                        </div>
+
+                        <div class="game-info-box">
+                            <h3>How Cases Work</h3>
+                            <p>Each case contains a pool of items with different rarities and values. When you open a case, our cryptographic RNG selects one item based on predefined probabilities. The animation is just for show – your result is determined instantly.</p>
+                            <p><strong>Under the Hood:</strong> Each item has probability p<sub>i</sub> and value v<sub>i</sub>. Expected value: EV = Σ(p<sub>i</sub> × v<sub>i</sub>). Case prices are set so EV ≈ price × RTP (typically 85-92%), creating a house edge. Higher-tier cases have better items but similar return rates.</p>
+                        </div>
+                    </div>
+
+                    <div class="game-sidebar">
+                        <div class="history-panel">
+                            <h3>Recent Drops</h3>
+                            <div class="history-list" id="cases-history"></div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- BLACKJACK GAME -->
+            <section id="blackjack-game" class="game-section">
+                <div class="game-header">
+                    <h1 class="game-title">🃏 Blackjack</h1>
+                    <p class="game-description">Beat the dealer. Get as close to 21 as possible without busting.</p>
+                </div>
+
+                <div class="game-layout">
+                    <div class="game-main">
+                        <div class="blackjack-table">
+                            <div class="dealer-area">
+                                <div class="hand-label">Dealer <span id="dealer-total"></span></div>
+                                <div class="card-hand" id="dealer-hand"></div>
+                            </div>
+                            
+                            <div class="game-status" id="bj-status"></div>
+
+                            <div class="player-area">
+                                <div class="hand-label">Player <span id="player-total"></span></div>
+                                <div class="card-hand" id="player-hand"></div>
+                            </div>
+                        </div>
+
+                        <div class="game-controls">
+                            <div class="control-group" id="bj-bet-controls">
+                                <label>Bet Amount</label>
+                                <input type="number" id="bj-bet" value="10" min="1" step="1">
+                            </div>
+                            <div class="bj-actions" id="bj-game-actions" style="display: none;">
+                                <button class="btn-secondary" id="bj-hit">Hit</button>
+                                <button class="btn-secondary" id="bj-stand">Stand</button>
+                                <button class="btn-secondary" id="bj-double">Double</button>
+                            </div>
+                            <button class="btn-primary" id="bj-deal">Deal Cards</button>
+                        </div>
+
+                        <div class="game-info-box">
+                            <h3>How Blackjack Works</h3>
+                            <p>Classic 21 game. You and the dealer receive cards from a shuffled deck. Number cards = face value, face cards = 10, Aces = 1 or 11. Goal: get closer to 21 than the dealer without going over. Blackjack (Ace + 10-card) pays 3:2.</p>
+                            <p><strong>Rules:</strong> Hit = take card, Stand = stop, Double = double bet + one card. Dealer must hit until 17+. You bust = instant loss. Natural blackjack beats 21. Push on ties.</p>
+                            <p><strong>House Edge:</strong> ~0.5% with optimal play. This game uses 6 decks, reshuffled after each hand.</p>
+                        </div>
+                    </div>
+
+                    <div class="game-sidebar">
+                        <div class="history-panel">
+                            <h3>Recent Hands</h3>
+                            <div class="history-list" id="bj-history"></div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- Toast Notifications -->
+    <div id="toast-container"></div>
+
+    <script src="casino.js"></script>
+</body>
+</html>
