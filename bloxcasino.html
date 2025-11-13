@@ -1,0 +1,1121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>BloxLux Casino • Premium Crypto Gaming</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg-dark:#0a0e1a; --bg-darker:#060914; --bg-card:#131824; --bg-hover:#1a2332;
+  --accent:#6c5ce7; --accent-hover:#5849c7; --accent-light:#a29bfe;
+  --success:#00b894; --danger:#ff7675; --warning:#fdcb6e; --gold:#f39c12;
+  --text:#e5eefb; --text-dim:#9ca3af; --text-muted:#6b7280; --border:#1e2940;
+  --shadow:0 10px 30px rgba(0,0,0,.4);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Inter',system-ui,-apple-system,sans-serif;background:linear-gradient(135deg,var(--bg-darker) 0%,var(--bg-dark) 100%);color:var(--text);min-height:100vh;overflow-x:hidden}
+button{font:inherit;cursor:pointer}
+
+/* Browser Chrome */
+.browser-chrome{background:#1f2329;border-bottom:1px solid #0f172a}
+.tabs-bar{display:flex;align-items:flex-end;padding:12px 12px 0;gap:5px}
+.tab{background:#2c323c;border:1px solid #111827;border-bottom:none;border-radius:9px 9px 0 0;padding:11px 16px;display:flex;align-items:center;gap:11px;min-width:240px;cursor:pointer;color:#9ca3af;transition:all .2s}
+.tab.active{background:#1f2329;color:#e5eefb;border-color:#3a4350}
+.tab-favicon{width:18px;height:18px;border-radius:3px}
+.tab-title{flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:13.5px;font-weight:500}
+.browser-bar{background:#1f2329;padding:11px 15px;display:flex;align-items:center;gap:13px}
+.bbtn{width:38px;height:38px;border-radius:19px;background:#2c323c;border:1px solid #3b4350;display:flex;align-items:center;justify-content:center;transition:background .15s}
+.bbtn:hover{background:#343b47}
+.bbtn svg{width:19px;height:19px;stroke:currentColor;stroke-width:2}
+.addr-bar{flex:1;display:flex;align-items:center;gap:11px;height:40px;padding:0 18px;border-radius:20px;background:#2c323c;border:1px solid #3c4450}
+.addr-bar .lock svg{width:17px;height:17px;color:#a8c5ff}
+.addr-text{flex:1;color:#f1f5f9;font-size:13.5px;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+/* Header */
+.header{background:var(--bg-card);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:100;backdrop-filter:blur(10px)}
+.header-content{max-width:1400px;margin:0 auto;display:flex;align-items:center;gap:2rem;padding:1rem 1.5rem}
+.logo{display:flex;align-items:center;gap:.75rem;font-size:1.5rem;font-weight:900}
+.logo-icon{font-size:2rem;animation:pulse 2s ease-in-out infinite}
+@keyframes pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.1)}}
+.logo-text{background:linear-gradient(135deg,var(--accent),var(--accent-light));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.nav{display:flex;gap:.5rem;margin-left:auto}
+.nav-btn{background:transparent;border:1px solid transparent;color:var(--text-dim);padding:.75rem 1.5rem;border-radius:10px;font-weight:700;font-size:14px;transition:all .2s;text-transform:uppercase;letter-spacing:.5px}
+.nav-btn:hover{background:var(--bg-hover);color:var(--text);border-color:var(--border)}
+.nav-btn.active{background:linear-gradient(135deg,var(--accent),var(--accent-light));color:#fff;border-color:var(--accent)}
+.balance-display{background:var(--bg-hover);padding:.75rem 1.5rem;border-radius:12px;border:1px solid var(--border);display:flex;align-items:center;gap:.75rem}
+.balance-amount{font-size:1.25rem;font-weight:800;color:var(--success)}
+
+/* Layout */
+.container{max-width:1400px;margin:0 auto;padding:2rem 1.5rem}
+.page{display:none}
+.page.active{display:block;animation:fadeIn .3s}
+@keyframes fadeIn{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+
+/* Cards */
+.card{background:var(--bg-card);border:1px solid var(--border);border-radius:14px;padding:1.5rem;box-shadow:var(--shadow)}
+.card-header{font-size:1.5rem;font-weight:800;margin-bottom:1.5rem;display:flex;align-items:center;gap:1rem}
+.grid{display:grid;gap:1.5rem}
+.grid-2{grid-template-columns:1fr 1fr}
+.grid-3{grid-template-columns:repeat(3,1fr)}
+
+/* Stats */
+.stat-card{background:var(--bg-card);border:1px solid var(--border);border-radius:12px;padding:1.25rem;display:flex;justify-content:space-between;align-items:center}
+.stat-value{font-size:2rem;font-weight:900;background:linear-gradient(135deg,var(--accent),var(--accent-light));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.stat-label{font-size:.875rem;color:var(--text-dim);font-weight:600;text-transform:uppercase;letter-spacing:.5px;margin-top:.5rem}
+
+/* Buttons */
+.btn{border:none;padding:.875rem 1.75rem;border-radius:10px;font-weight:800;font-size:14px;transition:all .2s;text-transform:uppercase;letter-spacing:.5px}
+.btn-primary{background:linear-gradient(135deg,var(--accent),var(--accent-light));color:#fff;box-shadow:0 4px 12px rgba(108,92,231,.3)}
+.btn-primary:hover{transform:translateY(-2px);box-shadow:0 6px 20px rgba(108,92,231,.4)}
+.btn-success{background:linear-gradient(135deg,var(--success),#00cec9);color:#fff}
+.btn-danger{background:var(--danger);color:#fff}
+.btn-secondary{background:var(--bg-hover);color:var(--text);border:1px solid var(--border)}
+.btn-secondary:hover{background:var(--bg-card);border-color:var(--accent)}
+
+/* Forms */
+.form-group{margin-bottom:1.25rem}
+.form-label{display:block;font-size:.875rem;color:var(--text-dim);margin-bottom:.5rem;font-weight:700;text-transform:uppercase;letter-spacing:.5px}
+.form-input{width:100%;padding:.875rem 1rem;background:var(--bg-hover);border:1px solid var(--border);border-radius:10px;color:var(--text);font-size:14px;transition:all .2s}
+.form-input:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px rgba(108,92,231,.1)}
+.form-input:disabled{opacity:.5;cursor:not-allowed}
+
+/* Methods */
+.methods{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:1rem;margin:1rem 0}
+.method-btn{background:var(--bg-hover);border:2px solid var(--border);border-radius:12px;padding:1rem;display:flex;align-items:center;gap:1rem;transition:all .2s}
+.method-btn:hover{border-color:var(--accent);transform:translateY(-2px)}
+.method-btn.active{border-color:var(--accent);background:rgba(108,92,231,.1);box-shadow:0 0 20px rgba(108,92,231,.2)}
+.method-icon{width:40px;height:40px;flex-shrink:0}
+.method-name{font-weight:800;font-size:15px}
+.method-desc{font-size:12px;color:var(--text-dim);margin-top:2px}
+
+/* Games Grid */
+.games-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:1.5rem;margin:2rem 0}
+.game-card{background:var(--bg-card);border:1px solid var(--border);border-radius:14px;padding:2rem;text-align:center;transition:all .3s;cursor:pointer}
+.game-card:hover{transform:translateY(-4px);border-color:var(--accent);box-shadow:0 10px 30px rgba(108,92,231,.2)}
+.game-icon{font-size:4rem;margin-bottom:1rem;animation:float 3s ease-in-out infinite}
+@keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-10px)}}
+.game-name{font-size:1.5rem;font-weight:800;margin-bottom:.5rem}
+.game-desc{color:var(--text-dim);font-size:14px}
+
+/* Table */
+table{width:100%;border-collapse:separate;border-spacing:0}
+th,td{padding:1rem;text-align:left}
+th{font-size:11px;color:var(--text-dim);font-weight:700;letter-spacing:.5px;text-transform:uppercase;background:var(--bg-hover);border-bottom:2px solid var(--border)}
+td{border-bottom:1px solid var(--border);font-size:13px}
+tbody tr{transition:background .15s}
+tbody tr:hover{background:var(--bg-hover)}
+
+/* Status badges */
+.status{display:inline-flex;align-items:center;gap:6px;padding:4px 12px;border-radius:6px;font-weight:600;font-size:11px;text-transform:uppercase;letter-spacing:.5px}
+.status-dot{width:6px;height:6px;border-radius:50%}
+.status-confirmed{background:rgba(0,184,148,.15);color:var(--success)}.status-confirmed .status-dot{background:var(--success)}
+.status-pending{background:rgba(253,203,110,.15);color:var(--warning)}.status-pending .status-dot{background:var(--warning)}
+.status-failed{background:rgba(255,118,117,.15);color:var(--danger)}.status-failed .status-dot{background:var(--danger)}
+
+/* Toast */
+.toast-container{position:fixed;bottom:2rem;right:2rem;z-index:10000;display:flex;flex-direction:column;gap:1rem}
+.toast{background:var(--bg-card);border:1px solid var(--border);border-radius:12px;padding:1rem 1.5rem;min-width:300px;box-shadow:0 10px 30px rgba(0,0,0,.5);animation:slideIn .3s}
+@keyframes slideIn{from{transform:translateX(400px);opacity:0}to{transform:translateX(0);opacity:1}}
+.toast.success{border-left:4px solid var(--success)}
+.toast.error{border-left:4px solid var(--danger)}
+.toast.info{border-left:4px solid var(--accent)}
+
+/* Modal */
+.modal-overlay{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.8);z-index:9999;display:none;align-items:center;justify-content:center;backdrop-filter:blur(5px)}
+.modal-overlay.active{display:flex}
+.modal{background:var(--bg-card);border:1px solid var(--border);border-radius:16px;padding:2rem;max-width:500px;width:90%;box-shadow:0 20px 60px rgba(0,0,0,.6);animation:modalSlide .3s}
+@keyframes modalSlide{from{opacity:0;transform:scale(.9)}to{opacity:1;transform:scale(1)}}
+.modal-header{font-size:1.5rem;font-weight:800;margin-bottom:1rem}
+.modal-body{margin-bottom:1.5rem;color:var(--text-dim);line-height:1.6}
+.modal-actions{display:flex;gap:1rem;justify-content:flex-end}
+
+/* Game specific styles - from original casino.css */
+.limbo-display{background:linear-gradient(135deg,var(--bg-card),var(--bg-hover));padding:4rem 2rem;border-radius:16px;border:1px solid var(--border);min-height:300px;display:flex;justify-content:center;align-items:center;margin:2rem 0}
+.multiplier-value{font-size:5rem;font-weight:900;background:linear-gradient(135deg,var(--accent),var(--accent-light));-webkit-background-clip:text;-webkit-text-fill-color:transparent;text-shadow:0 0 30px rgba(108,92,231,.5)}
+.multiplier-value.winning{background:linear-gradient(135deg,var(--success),#00cec9);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.multiplier-value.losing{background:linear-gradient(135deg,var(--danger),#d63031);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.multiplier-status{margin-top:1rem;font-size:1.25rem;font-weight:700;text-align:center}
+
+.mines-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:.5rem;max-width:400px;margin:2rem auto}
+.mine-tile{aspect-ratio:1;background:var(--bg-hover);border:2px solid var(--border);border-radius:8px;display:flex;justify-content:center;align-items:center;font-size:2rem;cursor:pointer;transition:all .2s}
+.mine-tile:hover:not(.revealed){background:var(--bg-card);transform:translateY(-2px);border-color:var(--accent)}
+.mine-tile.gem{background:linear-gradient(135deg,var(--success),#00cec9);animation:revealGem .3s}
+.mine-tile.mine{background:linear-gradient(135deg,var(--danger),#d63031);animation:revealMine .3s}
+@keyframes revealGem{0%{transform:scale(0) rotate(0)}50%{transform:scale(1.2) rotate(180deg)}100%{transform:scale(1) rotate(360deg)}}
+@keyframes revealMine{0%{transform:scale(1)}25%{transform:scale(.9)}50%{transform:scale(1.1)}100%{transform:scale(1)}}
+
+.cases-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:1.5rem;margin:2rem 0}
+.case-card-item{background:var(--bg-card);border:1px solid var(--border);border-radius:14px;padding:2rem;text-align:center;transition:all .3s}
+.case-card-item:hover{transform:translateY(-4px);border-color:var(--accent);box-shadow:0 10px 30px rgba(108,92,231,.2)}
+.case-icon{font-size:5rem;margin-bottom:1rem;animation:float 3s ease-in-out infinite}
+.case-name{font-size:1.5rem;font-weight:800;margin-bottom:.5rem}
+.case-price{color:var(--gold);font-size:1.25rem;font-weight:800;margin:1rem 0}
+
+.blackjack-table{background:linear-gradient(135deg,#27ae60,#2ecc71);padding:3rem 2rem;border-radius:16px;border:8px solid #2c3e50;min-height:400px;display:flex;flex-direction:column;justify-content:space-between;margin:2rem 0}
+.hand-label{font-size:1.125rem;font-weight:700;color:#fff;text-shadow:0 2px 4px rgba(0,0,0,.5);margin-bottom:1rem}
+.card-hand{display:flex;gap:.5rem;flex-wrap:wrap}
+.card{width:70px;height:100px;background:#fff;border-radius:8px;display:flex;justify-content:center;align-items:center;font-size:1.5rem;font-weight:700;box-shadow:0 4px 8px rgba(0,0,0,.3);animation:dealCard .3s}
+@keyframes dealCard{0%{transform:translateY(-100px) rotate(-10deg);opacity:0}100%{transform:translateY(0) rotate(0);opacity:1}}
+.card.red{color:#e74c3c}
+.card.black{color:#2c3e50}
+.card.back{background:linear-gradient(135deg,var(--accent),var(--accent-light));color:#fff}
+.game-status-bj{text-align:center;font-size:1.5rem;font-weight:800;color:#fff;text-shadow:0 2px 4px rgba(0,0,0,.5);min-height:2rem;margin:1rem 0}
+
+@media(max-width:768px){
+  .grid-2,.grid-3{grid-template-columns:1fr}
+  .nav{flex-direction:column;width:100%}
+  .header-content{flex-wrap:wrap}
+  .multiplier-value{font-size:3rem}
+}
+</style>
+</head>
+<body>
+
+<!-- Browser Chrome -->
+<div class="browser-chrome">
+  <div class="tabs-bar">
+    <div class="tab" style="opacity:.6">
+      <img class="tab-favicon" src="https://www.gstatic.com/images/branding/product/1x/gmail_2020q4_48dp.png" alt="">
+      <span class="tab-title">Inbox (247) - crypto_king2025</span>
+    </div>
+    <div class="tab active">
+      <span class="tab-favicon" style="display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#6c5ce7,#a29bfe);border-radius:4px;font-size:12px">💎</span>
+      <span class="tab-title">BloxLux Casino • Premium Crypto Gaming</span>
+    </div>
+    <div class="tab" style="opacity:.6">
+      <img class="tab-favicon" src="https://www.youtube.com/favicon.ico" alt="">
+      <span class="tab-title">YouTube</span>
+    </div>
+  </div>
+  
+  <div class="browser-bar">
+    <div class="bbtn"><svg viewBox="0 0 24 24" fill="none"><path d="M12.5 6.5l-5 5 5 5" stroke="currentColor"/><path d="M7.5 11.5h9" stroke="currentColor"/></svg></div>
+    <div class="bbtn"><svg viewBox="0 0 24 24" fill="none"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg></div>
+    <div class="addr-bar">
+      <span class="lock"><svg viewBox="0 0 24 24"><path d="M17 11h-1V8a4 4 0 1 0-8 0v3H7a1 1 0 0 0-1 1v7a1 1 0 0 0 1 1h10a1 1 0 0 0 1-1v-7a1 1 0 0 0-1-1zm-5 6a2 2 0 1 1 0-4 2 2 0 0 1 0 4zm2-6H10V8a2 2 0 1 1 4 0v3z" fill="currentColor"/></svg></span>
+      <span class="addr-text">https://bloxlux.casino/play</span>
+    </div>
+  </div>
+</div>
+
+<!-- Header -->
+<header class="header">
+  <div class="header-content">
+    <div class="logo">
+      <span class="logo-icon">💎</span>
+      <span class="logo-text">BloxLux</span>
+    </div>
+    <nav class="nav">
+      <button class="nav-btn active" data-page="home">Games</button>
+      <button class="nav-btn" data-page="deposit">Deposit</button>
+      <button class="nav-btn" data-page="withdraw">Withdraw</button>
+      <button class="nav-btn" data-page="history">History</button>
+    </nav>
+    <div class="balance-display">
+      <span style="color:var(--text-dim);font-size:12px;font-weight:600">Balance</span>
+      <span class="balance-amount" id="balance">0.00</span>
+      <span style="color:var(--text-dim);font-size:12px">LTC</span>
+    </div>
+  </div>
+</header>
+
+<div class="container">
+  <!-- HOME PAGE - Games -->
+  <div class="page active" id="home">
+    <div class="card">
+      <div class="card-header">
+        <span>🎮</span>
+        <span>Casino Games</span>
+      </div>
+      <div class="games-grid">
+        <div class="game-card" data-game="limbo">
+          <div class="game-icon">🚀</div>
+          <div class="game-name">Limbo</div>
+          <div class="game-desc">Pick your multiplier, beat the crash</div>
+        </div>
+        <div class="game-card" data-game="mines">
+          <div class="game-icon">💣</div>
+          <div class="game-name">Mines</div>
+          <div class="game-desc">Click gems, avoid mines, cash out big</div>
+        </div>
+        <div class="game-card" data-game="cases">
+          <div class="game-icon">📦</div>
+          <div class="game-name">Cases</div>
+          <div class="game-desc">Open cases, win rare items</div>
+        </div>
+        <div class="game-card" data-game="blackjack">
+          <div class="game-icon">🃏</div>
+          <div class="game-name">Blackjack</div>
+          <div class="game-desc">Beat the dealer, hit 21</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- LIMBO GAME -->
+  <div class="page" id="limbo">
+    <button class="btn-secondary" onclick="showPage('home')" style="margin-bottom:1rem">← Back to Games</button>
+    <div class="card">
+      <div class="card-header">🚀 Limbo</div>
+      <div class="limbo-display">
+        <div style="text-align:center">
+          <div class="multiplier-value" id="limbo-multiplier">1.00x</div>
+          <div class="multiplier-status" id="limbo-status"></div>
+        </div>
+      </div>
+      <div class="grid grid-2" style="margin-bottom:1rem">
+        <div class="form-group">
+          <label class="form-label">Bet Amount (LTC)</label>
+          <input type="number" class="form-input" id="limbo-bet" value="0.01" min="0.001" step="0.001">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Target Multiplier</label>
+          <input type="number" class="form-input" id="limbo-target" value="2.00" min="1.01" step="0.01">
+        </div>
+      </div>
+      <button class="btn btn-primary" id="limbo-play" style="width:100%">Play Limbo</button>
+    </div>
+  </div>
+
+  <!-- MINES GAME -->
+  <div class="page" id="mines">
+    <button class="btn-secondary" onclick="showPage('home')" style="margin-bottom:1rem">← Back to Games</button>
+    <div class="card">
+      <div class="card-header">💣 Mines</div>
+      <div style="text-align:center;margin:2rem 0">
+        <div style="display:flex;justify-content:center;gap:3rem;margin-bottom:2rem">
+          <div><div class="form-label">Multiplier</div><div class="stat-value" style="font-size:2rem" id="mines-multiplier">1.00x</div></div>
+          <div><div class="form-label">Profit</div><div class="stat-value" style="font-size:2rem" id="mines-profit">0.00</div></div>
+        </div>
+        <div class="mines-grid" id="mines-grid"></div>
+        <button class="btn btn-success" id="mines-cashout" disabled style="margin-top:1.5rem;width:300px;max-width:100%">Cash Out</button>
+      </div>
+      <div class="grid grid-2">
+        <div class="form-group">
+          <label class="form-label">Bet Amount (LTC)</label>
+          <input type="number" class="form-input" id="mines-bet" value="0.01" min="0.001" step="0.001">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Number of Mines</label>
+          <input type="number" class="form-input" id="mines-count" value="3" min="1" max="24">
+        </div>
+      </div>
+      <button class="btn btn-primary" id="mines-start" style="width:100%">Start Game</button>
+    </div>
+  </div>
+
+  <!-- CASES GAME -->
+  <div class="page" id="cases">
+    <button class="btn-secondary" onclick="showPage('home')" style="margin-bottom:1rem">← Back to Games</button>
+    <div class="card">
+      <div class="card-header">📦 Cases</div>
+      <div class="cases-grid">
+        <div class="case-card-item" data-case="bronze">
+          <div class="case-icon">🥉</div>
+          <div class="case-name">Bronze Case</div>
+          <div class="case-price">0.05 LTC</div>
+          <button class="btn btn-primary case-open" data-case="bronze" style="width:100%">Open Case</button>
+        </div>
+        <div class="case-card-item" data-case="silver">
+          <div class="case-icon">🥈</div>
+          <div class="case-name">Silver Case</div>
+          <div class="case-price">0.15 LTC</div>
+          <button class="btn btn-primary case-open" data-case="silver" style="width:100%">Open Case</button>
+        </div>
+        <div class="case-card-item" data-case="gold">
+          <div class="case-icon">🥇</div>
+          <div class="case-name">Gold Case</div>
+          <div class="case-price">0.50 LTC</div>
+          <button class="btn btn-primary case-open" data-case="gold" style="width:100%">Open Case</button>
+        </div>
+        <div class="case-card-item" data-case="diamond">
+          <div class="case-icon">💎</div>
+          <div class="case-name">Diamond Case</div>
+          <div class="case-price">1.50 LTC</div>
+          <button class="btn btn-primary case-open" data-case="diamond" style="width:100%">Open Case</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- BLACKJACK GAME -->
+  <div class="page" id="blackjack">
+    <button class="btn-secondary" onclick="showPage('home')" style="margin-bottom:1rem">← Back to Games</button>
+    <div class="card">
+      <div class="card-header">🃏 Blackjack</div>
+      <div class="blackjack-table">
+        <div><div class="hand-label">Dealer <span id="dealer-total"></span></div><div class="card-hand" id="dealer-hand"></div></div>
+        <div class="game-status-bj" id="bj-status"></div>
+        <div><div class="hand-label">Player <span id="player-total"></span></div><div class="card-hand" id="player-hand"></div></div>
+      </div>
+      <div id="bj-bet-controls">
+        <div class="form-group">
+          <label class="form-label">Bet Amount (LTC)</label>
+          <input type="number" class="form-input" id="bj-bet" value="0.01" min="0.001" step="0.001">
+        </div>
+      </div>
+      <div id="bj-game-actions" style="display:none;gap:1rem;margin-bottom:1rem;display:none">
+        <button class="btn btn-secondary" id="bj-hit">Hit</button>
+        <button class="btn btn-secondary" id="bj-stand">Stand</button>
+        <button class="btn btn-secondary" id="bj-double">Double</button>
+      </div>
+      <button class="btn btn-primary" id="bj-deal" style="width:100%">Deal Cards</button>
+    </div>
+  </div>
+
+  <!-- DEPOSIT PAGE -->
+  <div class="page" id="deposit">
+    <div class="grid grid-3" style="margin-bottom:2rem">
+      <div class="stat-card">
+        <div><div class="stat-value" id="balance-ltc">0.00</div><div class="stat-label">Balance (LTC)</div></div>
+      </div>
+      <div class="stat-card">
+        <div><div class="stat-value" id="balance-usd">$0.00</div><div class="stat-label">Balance (USD)</div></div>
+      </div>
+      <div class="stat-card">
+        <div><div class="stat-value" id="pending-deposits">0</div><div class="stat-label">Pending Deposits</div></div>
+      </div>
+    </div>
+    
+    <div class="card">
+      <div class="card-header">💰 Deposit Crypto</div>
+      
+      <div class="methods">
+        <button class="method-btn active" data-crypto="ltc">
+          <svg class="method-icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="12" fill="#345c9c"/><path d="M13.6 6.2l-1.2 4.4 1.6-.5-.4 1.5-1.6.5-.9 3.3h6.1l-.5 2H7.4l1.2-4.4-1.4.4.4-1.5 1.4-.4 1.3-4.8h3.3z" fill="#fff"/></svg>
+          <div><div class="method-name">LTC</div><div class="method-desc">Litecoin</div></div>
+        </button>
+        <button class="method-btn" data-crypto="btc">
+          <img class="method-icon" src="https://cdn.pixabay.com/photo/2015/08/27/11/20/bitcoin-910307_1280.png">
+          <div><div class="method-name">BTC</div><div class="method-desc">Bitcoin</div></div>
+        </button>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Deposit Amount (USD)</label>
+        <input type="number" class="form-input" id="deposit-amount" placeholder="100.00" min="10">
+      </div>
+
+      <div id="deposit-address" style="display:none;margin:1.5rem 0;padding:1.5rem;background:var(--bg-hover);border:1px solid var(--border);border-radius:12px">
+        <div class="form-label" style="margin-bottom:1rem">Send to this address:</div>
+        <div style="background:var(--bg-dark);padding:1rem;border-radius:8px;font-family:monospace;word-break:break-all;font-size:14px;margin-bottom:1rem" id="deposit-addr"></div>
+        <div style="color:var(--text-dim);font-size:13px;line-height:1.6">
+          ⚠️ Send only <span id="deposit-crypto-name">LTC</span> to this address. Sending any other coin will result in permanent loss.
+        </div>
+      </div>
+
+      <button class="btn btn-primary" id="generate-deposit" style="width:100%">Generate Deposit Address</button>
+    </div>
+  </div>
+
+  <!-- WITHDRAW PAGE -->
+  <div class="page" id="withdraw">
+    <div class="grid grid-3" style="margin-bottom:2rem">
+      <div class="stat-card">
+        <div><div class="stat-value" id="withdraw-balance-ltc">0.00</div><div class="stat-label">Available (LTC)</div></div>
+      </div>
+      <div class="stat-card">
+        <div><div class="stat-value" id="withdraw-balance-usd">$0.00</div><div class="stat-label">Available (USD)</div></div>
+      </div>
+      <div class="stat-card">
+        <div><div class="stat-value" id="pending-withdrawals">0</div><div class="stat-label">Pending Withdrawals</div></div>
+      </div>
+    </div>
+    
+    <div class="card">
+      <div class="card-header">💸 Withdraw Crypto</div>
+      
+      <div class="methods">
+        <button class="method-btn active" data-crypto-withdraw="ltc">
+          <svg class="method-icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="12" fill="#345c9c"/><path d="M13.6 6.2l-1.2 4.4 1.6-.5-.4 1.5-1.6.5-.9 3.3h6.1l-.5 2H7.4l1.2-4.4-1.4.4.4-1.5 1.4-.4 1.3-4.8h3.3z" fill="#fff"/></svg>
+          <div><div class="method-name">LTC</div><div class="method-desc">Litecoin</div></div>
+        </button>
+        <button class="method-btn" data-crypto-withdraw="btc">
+          <img class="method-icon" src="https://cdn.pixabay.com/photo/2015/08/27/11/20/bitcoin-910307_1280.png">
+          <div><div class="method-name">BTC</div><div class="method-desc">Bitcoin</div></div>
+        </button>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Recipient Address</label>
+        <input type="text" class="form-input" id="withdraw-address" placeholder="Enter LTC address" style="font-family:monospace">
+      </div>
+
+      <div class="grid grid-2">
+        <div class="form-group">
+          <label class="form-label">Amount (LTC)</label>
+          <input type="number" class="form-input" id="withdraw-amount-ltc" placeholder="0.00" min="0.01" step="0.01">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Estimated Value (USD)</label>
+          <input type="text" class="form-input" id="withdraw-amount-usd" disabled value="$0.00">
+        </div>
+      </div>
+
+      <div style="background:var(--bg-hover);padding:1rem;border-radius:8px;margin-bottom:1.5rem;font-size:13px;color:var(--text-dim)">
+        <strong>Fee:</strong> 0.001 LTC network fee + 0.5% processing fee<br>
+        <strong>Processing time:</strong> 10-30 minutes
+      </div>
+
+      <button class="btn btn-primary" id="submit-withdraw" style="width:100%">Submit Withdrawal</button>
+    </div>
+  </div>
+
+  <!-- HISTORY PAGE -->
+  <div class="page" id="history">
+    <div class="card">
+      <div class="card-header">📊 Transaction History</div>
+      <table>
+        <thead>
+          <tr>
+            <th>Date</th>
+            <th>Type</th>
+            <th>Amount</th>
+            <th>Status</th>
+            <th>Details</th>
+          </tr>
+        </thead>
+        <tbody id="history-table"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- Toast Container -->
+<div class="toast-container" id="toast-container"></div>
+
+<!-- Modals -->
+<div class="modal-overlay" id="case-modal">
+  <div class="modal">
+    <div class="modal-header">Opening Case...</div>
+    <div class="modal-body" id="case-result" style="text-align:center;font-size:4rem"></div>
+    <div class="modal-actions">
+      <button class="btn btn-primary" onclick="closeModal('case-modal')">Claim Prize</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="confirm-modal">
+  <div class="modal">
+    <div class="modal-header">Confirm Withdrawal</div>
+    <div class="modal-body" id="confirm-text"></div>
+    <div class="modal-actions">
+      <button class="btn btn-secondary" onclick="closeModal('confirm-modal')">Cancel</button>
+      <button class="btn btn-danger" id="confirm-withdraw-btn">Confirm</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// State
+const STATE = {
+  balance: 0,
+  ltcPrice: 85,
+  btcPrice: 43000,
+  selectedDepositCrypto: 'ltc',
+  selectedWithdrawCrypto: 'ltc',
+  history: [],
+  gameState: {}
+};
+
+// Utils
+const RTP = 0.98;
+function getRandomFloat(){const a=new Uint32Array(1);crypto.getRandomValues(a);return a[0]/(0xFFFFFFFF+1)}
+function showToast(msg,type='info'){
+  const c=document.getElementById('toast-container');
+  const t=document.createElement('div');
+  t.className=`toast ${type}`;
+  t.textContent=msg;
+  c.appendChild(t);
+  setTimeout(()=>{t.style.opacity='0';setTimeout(()=>t.remove(),300)},3000);
+}
+function updateBalance(){
+  document.getElementById('balance').textContent=STATE.balance.toFixed(8);
+  document.getElementById('balance-ltc').textContent=STATE.balance.toFixed(8);
+  document.getElementById('withdraw-balance-ltc').textContent=STATE.balance.toFixed(8);
+  const usd=STATE.balance*STATE.ltcPrice;
+  document.getElementById('balance-usd').textContent='$'+usd.toFixed(2);
+  document.getElementById('withdraw-balance-usd').textContent='$'+usd.toFixed(2);
+}
+
+// Navigation
+function showPage(pageId){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.getElementById(pageId).classList.add('active');
+  document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
+  const btn=document.querySelector(`[data-page="${pageId}"]`);
+  if(btn) btn.classList.add('active');
+}
+
+document.querySelectorAll('.nav-btn').forEach(btn=>{
+  btn.addEventListener('click',()=>showPage(btn.dataset.page));
+});
+
+document.querySelectorAll('.game-card').forEach(card=>{
+  card.addEventListener('click',()=>showPage(card.dataset.game));
+});
+
+function closeModal(id){document.getElementById(id).classList.remove('active')}
+
+// Deposit
+document.querySelectorAll('[data-crypto]').forEach(btn=>{
+  btn.addEventListener('click',()=>{
+    document.querySelectorAll('[data-crypto]').forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');
+    STATE.selectedDepositCrypto=btn.dataset.crypto;
+    document.getElementById('deposit-address').style.display='none';
+  });
+});
+
+document.getElementById('generate-deposit').addEventListener('click',()=>{
+  const amount=parseFloat(document.getElementById('deposit-amount').value);
+  if(!amount||amount<10){showToast('Minimum deposit is $10','error');return}
+  
+  const crypto=STATE.selectedDepositCrypto.toUpperCase();
+  const addr=crypto==='LTC'?'LZ8rVxkq3aQ3E1DqN9n5aVZP4Zs9mG9VYb':'1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa';
+  
+  document.getElementById('deposit-addr').textContent=addr;
+  document.getElementById('deposit-crypto-name').textContent=crypto;
+  document.getElementById('deposit-address').style.display='block';
+  
+  // Simulate deposit after 3 seconds
+  setTimeout(()=>{
+    const ltcAmount=amount/STATE.ltcPrice;
+    STATE.balance+=ltcAmount;
+    updateBalance();
+    STATE.history.unshift({
+      date:new Date().toLocaleString(),
+      type:'Deposit',
+      amount:ltcAmount.toFixed(8)+' LTC',
+      status:'confirmed',
+      details:'Inbound transfer'
+    });
+    showToast(`Deposited ${ltcAmount.toFixed(8)} LTC`,'success');
+    updateHistory();
+    document.getElementById('deposit-address').style.display='none';
+    document.getElementById('deposit-amount').value='';
+  },3000);
+});
+
+// Withdraw
+document.querySelectorAll('[data-crypto-withdraw]').forEach(btn=>{
+  btn.addEventListener('click',()=>{
+    document.querySelectorAll('[data-crypto-withdraw]').forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');
+    STATE.selectedWithdrawCrypto=btn.dataset.cryptoWithdraw;
+  });
+});
+
+document.getElementById('withdraw-amount-ltc').addEventListener('input',e=>{
+  const ltc=parseFloat(e.target.value)||0;
+  document.getElementById('withdraw-amount-usd').value='$'+(ltc*STATE.ltcPrice).toFixed(2);
+});
+
+document.getElementById('submit-withdraw').addEventListener('click',()=>{
+  const addr=document.getElementById('withdraw-address').value.trim();
+  const amount=parseFloat(document.getElementById('withdraw-amount-ltc').value);
+  
+  if(!addr){showToast('Enter a valid address','error');return}
+  if(!amount||amount<=0){showToast('Enter a valid amount','error');return}
+  if(amount>STATE.balance){showToast('Insufficient balance','error');return}
+  
+  document.getElementById('confirm-text').innerHTML=`Withdraw <strong>${amount.toFixed(8)} LTC</strong> to:<br><code style="word-break:break-all;font-size:12px">${addr}</code>`;
+  document.getElementById('confirm-modal').classList.add('active');
+  
+  document.getElementById('confirm-withdraw-btn').onclick=()=>{
+    STATE.balance-=amount;
+    updateBalance();
+    STATE.history.unshift({
+      date:new Date().toLocaleString(),
+      type:'Withdrawal',
+      amount:amount.toFixed(8)+' LTC',
+      status:'pending',
+      details:addr.slice(0,8)+'...'+addr.slice(-6)
+    });
+    showToast('Withdrawal submitted','success');
+    updateHistory();
+    closeModal('confirm-modal');
+    document.getElementById('withdraw-address').value='';
+    document.getElementById('withdraw-amount-ltc').value='';
+    document.getElementById('withdraw-amount-usd').value='$0.00';
+  };
+});
+
+// History
+function updateHistory(){
+  const tbody=document.getElementById('history-table');
+  tbody.innerHTML='';
+  STATE.history.forEach(tx=>{
+    const tr=document.createElement('tr');
+    const statusClass=tx.status==='confirmed'?'status-confirmed':tx.status==='pending'?'status-pending':'status-failed';
+    tr.innerHTML=`
+      <td>${tx.date}</td>
+      <td><strong>${tx.type}</strong></td>
+      <td style="font-family:monospace">${tx.amount}</td>
+      <td><span class="status ${statusClass}"><span class="status-dot"></span>${tx.status}</span></td>
+      <td style="font-family:monospace;font-size:12px">${tx.details}</td>
+    `;
+    tbody.appendChild(tr);
+  });
+}
+
+// LIMBO GAME
+document.getElementById('limbo-play').addEventListener('click',async()=>{
+  const bet=parseFloat(document.getElementById('limbo-bet').value);
+  const target=parseFloat(document.getElementById('limbo-target').value);
+  
+  if(bet>STATE.balance){showToast('Insufficient balance','error');return}
+  if(target<1.01){showToast('Target must be at least 1.01x','error');return}
+  
+  STATE.balance-=bet;
+  updateBalance();
+  
+  const r=getRandomFloat();
+  const crash=Math.max(1,RTP/r);
+  
+  const valueEl=document.getElementById('limbo-multiplier');
+  const statusEl=document.getElementById('limbo-status');
+  valueEl.classList.remove('winning','losing');
+  statusEl.textContent='';
+  
+  let current=1;
+  const steps=50;
+  for(let i=0;i<=steps;i++){
+    await new Promise(r=>setTimeout(r,40));
+    current=1+(crash-1)*i/steps;
+    valueEl.textContent=current.toFixed(2)+'x';
+  }
+  
+  await new Promise(r=>setTimeout(r,500));
+  
+  if(crash>=target){
+    const win=bet*target;
+    STATE.balance+=win;
+    updateBalance();
+    valueEl.classList.add('winning');
+    statusEl.textContent=`🎉 WIN ${win.toFixed(8)} LTC!`;
+    statusEl.style.color='var(--success)';
+    showToast(`Won ${win.toFixed(8)} LTC!`,'success');
+    STATE.history.unshift({date:new Date().toLocaleString(),type:'Limbo Win',amount:'+'+win.toFixed(8)+' LTC',status:'confirmed',details:`${crash.toFixed(2)}x`});
+  }else{
+    valueEl.classList.add('losing');
+    statusEl.textContent=`💥 CRASH at ${crash.toFixed(2)}x`;
+    statusEl.style.color='var(--danger)';
+    showToast(`Lost ${bet.toFixed(8)} LTC`,'error');
+    STATE.history.unshift({date:new Date().toLocaleString(),type:'Limbo Loss',amount:'-'+bet.toFixed(8)+' LTC',status:'confirmed',details:`${crash.toFixed(2)}x`});
+  }
+  updateHistory();
+});
+
+// MINES GAME
+const minesState={isPlaying:false,minePositions:[],revealedTiles:0,currentBet:0,totalTiles:25,mineCount:3};
+
+function calcMinesMultiplier(revealed,mines){
+  const safe=minesState.totalTiles-mines;
+  if(revealed===0)return 1;
+  let p=1;
+  for(let i=0;i<revealed;i++)p*=(safe-i)/(minesState.totalTiles-i);
+  return RTP/p;
+}
+
+function createMinesGrid(){
+  const grid=document.getElementById('mines-grid');
+  grid.innerHTML='';
+  for(let i=0;i<25;i++){
+    const tile=document.createElement('div');
+    tile.className='mine-tile';
+    tile.dataset.index=i;
+    tile.onclick=()=>handleMineClick(i);
+    grid.appendChild(tile);
+  }
+}
+
+function handleMineClick(idx){
+  if(!minesState.isPlaying)return;
+  const tile=document.querySelector(`[data-index="${idx}"]`);
+  if(tile.classList.contains('revealed'))return;
+  
+  tile.classList.add('revealed');
+  
+  if(minesState.minePositions.includes(idx)){
+    tile.classList.add('mine');
+    tile.textContent='💣';
+    endMines(false);
+  }else{
+    tile.classList.add('gem');
+    tile.textContent='💎';
+    minesState.revealedTiles++;
+    const mult=calcMinesMultiplier(minesState.revealedTiles,minesState.mineCount);
+    document.getElementById('mines-multiplier').textContent=mult.toFixed(2)+'x';
+    const profit=minesState.currentBet*mult-minesState.currentBet;
+    document.getElementById('mines-profit').textContent=profit.toFixed(8);
+    document.getElementById('mines-cashout').disabled=false;
+  }
+}
+
+function endMines(cashedOut){
+  minesState.isPlaying=false;
+  minesState.minePositions.forEach(pos=>{
+    const tile=document.querySelector(`[data-index="${pos}"]`);
+    if(!tile.classList.contains('revealed')){
+      tile.classList.add('revealed','mine');
+      tile.textContent='💣';
+    }
+  });
+  
+  document.getElementById('mines-cashout').disabled=true;
+  document.getElementById('mines-start').disabled=false;
+  
+  if(cashedOut){
+    const mult=calcMinesMultiplier(minesState.revealedTiles,minesState.mineCount);
+    const win=minesState.currentBet*mult;
+    STATE.balance+=win;
+    updateBalance();
+    showToast(`Cashed out ${win.toFixed(8)} LTC!`,'success');
+    STATE.history.unshift({date:new Date().toLocaleString(),type:'Mines Win',amount:'+'+win.toFixed(8)+' LTC',status:'confirmed',details:`${minesState.revealedTiles} gems`});
+  }else{
+    showToast(`Hit a mine! Lost ${minesState.currentBet.toFixed(8)} LTC`,'error');
+    STATE.history.unshift({date:new Date().toLocaleString(),type:'Mines Loss',amount:'-'+minesState.currentBet.toFixed(8)+' LTC',status:'confirmed',details:`${minesState.revealedTiles} gems`});
+  }
+  updateHistory();
+  
+  setTimeout(()=>{
+    document.getElementById('mines-multiplier').textContent='1.00x';
+    document.getElementById('mines-profit').textContent='0.00';
+  },2000);
+}
+
+document.getElementById('mines-start').addEventListener('click',()=>{
+  const bet=parseFloat(document.getElementById('mines-bet').value);
+  const count=parseInt(document.getElementById('mines-count').value);
+  
+  if(bet>STATE.balance){showToast('Insufficient balance','error');return}
+  if(count<1||count>24){showToast('Mines must be 1-24','error');return}
+  
+  STATE.balance-=bet;
+  updateBalance();
+  
+  minesState.isPlaying=true;
+  minesState.currentBet=bet;
+  minesState.mineCount=count;
+  minesState.revealedTiles=0;
+  minesState.minePositions=[];
+  
+  while(minesState.minePositions.length<count){
+    const pos=Math.floor(getRandomFloat()*25);
+    if(!minesState.minePositions.includes(pos))minesState.minePositions.push(pos);
+  }
+  
+  createMinesGrid();
+  document.getElementById('mines-start').disabled=true;
+  document.getElementById('mines-multiplier').textContent='1.00x';
+  document.getElementById('mines-profit').textContent='0.00';
+});
+
+document.getElementById('mines-cashout').addEventListener('click',()=>{
+  if(minesState.isPlaying)endMines(true);
+});
+
+createMinesGrid();
+
+// CASES GAME
+const casesData={
+  bronze:{price:0.05,items:[
+    {name:'Common Coin',value:0.01,icon:'🪙',p:0.5},
+    {name:'Silver Coin',value:0.03,icon:'💿',p:0.3},
+    {name:'Gold Nugget',value:0.08,icon:'⚜️',p:0.15},
+    {name:'Ruby',value:0.2,icon:'💍',p:0.04},
+    {name:'Diamond',value:0.5,icon:'💎',p:0.01}
+  ]},
+  silver:{price:0.15,items:[
+    {name:'Bronze Bar',value:0.05,icon:'🥉',p:0.45},
+    {name:'Silver Bar',value:0.12,icon:'🥈',p:0.35},
+    {name:'Gold Bar',value:0.3,icon:'🥇',p:0.15},
+    {name:'Platinum',value:0.7,icon:'🏆',p:0.04},
+    {name:'Artifact',value:2,icon:'👑',p:0.01}
+  ]},
+  gold:{price:0.5,items:[
+    {name:'Emerald',value:0.2,icon:'🟢',p:0.4},
+    {name:'Sapphire',value:0.45,icon:'🔵',p:0.3},
+    {name:'Ruby',value:0.8,icon:'🔴',p:0.2},
+    {name:'Black Pearl',value:2,icon:'⚫',p:0.08},
+    {name:'Relic',value:5,icon:'🗿',p:0.02}
+  ]},
+  diamond:{price:1.5,items:[
+    {name:'Crystal',value:0.7,icon:'🔷',p:0.35},
+    {name:'Orb',value:1.4,icon:'🔮',p:0.3},
+    {name:'Dragon Egg',value:3,icon:'🥚',p:0.2},
+    {name:'Phoenix Feather',value:6,icon:'🪶',p:0.1},
+    {name:'Cosmic Gem',value:15,icon:'✨',p:0.05}
+  ]}
+};
+
+document.querySelectorAll('.case-open').forEach(btn=>{
+  btn.addEventListener('click',()=>{
+    const caseType=btn.dataset.case;
+    const caseData=casesData[caseType];
+    
+    if(STATE.balance<caseData.price){showToast('Insufficient balance','error');return}
+    
+    STATE.balance-=caseData.price;
+    updateBalance();
+    
+    const r=getRandomFloat();
+    let cum=0;
+    let won=null;
+    for(const item of caseData.items){
+      cum+=item.p;
+      if(r<=cum){won=item;break}
+    }
+    if(!won)won=caseData.items[caseData.items.length-1];
+    
+    document.getElementById('case-result').innerHTML=`
+      <div>${won.icon}</div>
+      <div style="font-size:1.5rem;margin:1rem 0">${won.name}</div>
+      <div style="font-size:1.25rem;color:var(--success)">+${won.value.toFixed(8)} LTC</div>
+    `;
+    document.getElementById('case-modal').classList.add('active');
+    
+    STATE.balance+=won.value;
+    updateBalance();
+    
+    const profit=won.value-caseData.price;
+    STATE.history.unshift({
+      date:new Date().toLocaleString(),
+      type:'Case Open',
+      amount:(profit>0?'+':'')+profit.toFixed(8)+' LTC',
+      status:'confirmed',
+      details:won.name
+    });
+    updateHistory();
+  });
+});
+
+// BLACKJACK GAME
+const bjState={deck:[],playerHand:[],dealerHand:[],currentBet:0,isPlaying:false,playerStood:false};
+const suits=['♠','♣','♥','♦'];
+const ranks=['A','2','3','4','5','6','7','8','9','10','J','Q','K'];
+
+function createDeck(){
+  const deck=[];
+  for(let d=0;d<6;d++){
+    for(const suit of suits){
+      for(const rank of ranks){
+        deck.push({rank,suit});
+      }
+    }
+  }
+  return deck;
+}
+
+function shuffleDeck(deck){
+  for(let i=deck.length-1;i>0;i--){
+    const j=Math.floor(getRandomFloat()*(i+1));
+    [deck[i],deck[j]]=[deck[j],deck[i]];
+  }
+  return deck;
+}
+
+function calcHandValue(hand){
+  let total=0,aces=0;
+  for(const card of hand){
+    if(card.rank==='A'){aces++;total+=11}
+    else if(['J','Q','K'].includes(card.rank))total+=10;
+    else total+=parseInt(card.rank);
+  }
+  while(total>21&&aces>0){total-=10;aces--}
+  return total;
+}
+
+function displayCard(card,hidden=false){
+  const isRed=['♥','♦'].includes(card.suit);
+  if(hidden)return`<div class="card back">🂠</div>`;
+  return`<div class="card ${isRed?'red':'black'}">${card.rank}${card.suit}</div>`;
+}
+
+function updateBJDisplay(){
+  const playerHandEl=document.getElementById('player-hand');
+  const dealerHandEl=document.getElementById('dealer-hand');
+  
+  playerHandEl.innerHTML=bjState.playerHand.map(c=>displayCard(c)).join('');
+  const playerTotal=calcHandValue(bjState.playerHand);
+  document.getElementById('player-total').textContent=`(${playerTotal})`;
+  
+  if(bjState.playerStood||playerTotal>21){
+    dealerHandEl.innerHTML=bjState.dealerHand.map(c=>displayCard(c)).join('');
+    const dealerTotal=calcHandValue(bjState.dealerHand);
+    document.getElementById('dealer-total').textContent=`(${dealerTotal})`;
+  }else{
+    dealerHandEl.innerHTML=displayCard(bjState.dealerHand[0]);
+    if(bjState.dealerHand.length>1)dealerHandEl.innerHTML+=displayCard(bjState.dealerHand[1],true);
+    document.getElementById('dealer-total').textContent='';
+  }
+}
+
+async function dealerPlay(){
+  bjState.playerStood=true;
+  updateBJDisplay();
+  await new Promise(r=>setTimeout(r,500));
+  
+  while(calcHandValue(bjState.dealerHand)<17){
+    const card=bjState.deck.pop();
+    bjState.dealerHand.push(card);
+    updateBJDisplay();
+    await new Promise(r=>setTimeout(r,600));
+  }
+  
+  endBJRound();
+}
+
+function endBJRound(){
+  const playerTotal=calcHandValue(bjState.playerHand);
+  const dealerTotal=calcHandValue(bjState.dealerHand);
+  const statusEl=document.getElementById('bj-status');
+  
+  let result='',win=0,isWin=false;
+  
+  if(playerTotal>21){
+    result='💥 BUST! Dealer wins.';
+    statusEl.style.color='var(--danger)';
+  }else if(dealerTotal>21){
+    result='🎉 Dealer busts! You win!';
+    win=bjState.currentBet*2;
+    isWin=true;
+    statusEl.style.color='var(--success)';
+  }else if(playerTotal>dealerTotal){
+    if(bjState.playerHand.length===2&&playerTotal===21){
+      result='🃏 BLACKJACK! 3:2 payout!';
+      win=bjState.currentBet*2.5;
+    }else{
+      result='🎉 You win!';
+      win=bjState.currentBet*2;
+    }
+    isWin=true;
+    statusEl.style.color='var(--success)';
+  }else if(playerTotal<dealerTotal){
+    result='😞 Dealer wins.';
+    statusEl.style.color='var(--danger)';
+  }else{
+    result='🤝 Push! Bet returned.';
+    win=bjState.currentBet;
+    statusEl.style.color='var(--warning)';
+  }
+  
+  statusEl.textContent=result;
+  
+  if(win>0){
+    STATE.balance+=win;
+    updateBalance();
+    showToast(result,isWin?'success':'info');
+  }else{
+    showToast(result,'error');
+  }
+  
+  STATE.history.unshift({
+    date:new Date().toLocaleString(),
+    type:'Blackjack',
+    amount:(win>0?'+':'-')+(win>0?win-bjState.currentBet:bjState.currentBet).toFixed(8)+' LTC',
+    status:'confirmed',
+    details:`P:${playerTotal} D:${dealerTotal}`
+  });
+  updateHistory();
+  
+  document.getElementById('bj-deal').disabled=false;
+  document.getElementById('bj-game-actions').style.display='none';
+  document.getElementById('bj-bet-controls').style.display='block';
+  
+  bjState.isPlaying=false;
+}
+
+document.getElementById('bj-deal').addEventListener('click',()=>{
+  const bet=parseFloat(document.getElementById('bj-bet').value);
+  
+  if(bet>STATE.balance){showToast('Insufficient balance','error');return}
+  
+  STATE.balance-=bet;
+  updateBalance();
+  
+  bjState.currentBet=bet;
+  bjState.isPlaying=true;
+  bjState.playerStood=false;
+  bjState.deck=shuffleDeck(createDeck());
+  bjState.playerHand=[];
+  bjState.dealerHand=[];
+  
+  bjState.playerHand.push(bjState.deck.pop());
+  bjState.dealerHand.push(bjState.deck.pop());
+  bjState.playerHand.push(bjState.deck.pop());
+  bjState.dealerHand.push(bjState.deck.pop());
+  
+  updateBJDisplay();
+  
+  document.getElementById('bj-status').textContent='';
+  document.getElementById('bj-deal').disabled=true;
+  document.getElementById('bj-bet-controls').style.display='none';
+  document.getElementById('bj-game-actions').style.display='flex';
+  
+  if(calcHandValue(bjState.playerHand)===21){
+    setTimeout(()=>dealerPlay(),500);
+  }
+});
+
+document.getElementById('bj-hit').addEventListener('click',()=>{
+  if(!bjState.isPlaying)return;
+  
+  const card=bjState.deck.pop();
+  bjState.playerHand.push(card);
+  updateBJDisplay();
+  
+  const playerTotal=calcHandValue(bjState.playerHand);
+  
+  if(playerTotal>=21){
+    setTimeout(()=>dealerPlay(),500);
+  }
+});
+
+document.getElementById('bj-stand').addEventListener('click',()=>{
+  if(!bjState.isPlaying)return;
+  dealerPlay();
+});
+
+document.getElementById('bj-double').addEventListener('click',()=>{
+  if(!bjState.isPlaying)return;
+  
+  if(STATE.balance<bjState.currentBet){
+    showToast('Insufficient balance to double!','error');
+    return;
+  }
+  
+  STATE.balance-=bjState.currentBet;
+  updateBalance();
+  bjState.currentBet*=2;
+  
+  const card=bjState.deck.pop();
+  bjState.playerHand.push(card);
+  updateBJDisplay();
+  
+  setTimeout(()=>dealerPlay(),500);
+});
+
+// Init
+updateBalance();
+updateHistory();
+
+// Add seed history
+STATE.history.push(
+  {date:'11/8/2025 4:22 PM',type:'Deposit',amount:'+1.50 LTC',status:'confirmed',details:'Inbound'},
+  {date:'11/7/2025 11:15 AM',type:'Limbo Win',amount:'+0.85 LTC',status:'confirmed',details:'3.42x'},
+  {date:'11/7/2025 8:33 PM',type:'Mines Loss',amount:'-0.25 LTC',status:'confirmed',details:'Hit mine'},
+  {date:'11/6/2025 10:15 PM',type:'Case Open',amount:'+0.12 LTC',status:'confirmed',details:'Gold Bar'}
+);
+updateHistory();
+
+// Set initial balance
+STATE.balance=2.5;
+updateBalance();
+</script>
+</body>
+</html>
