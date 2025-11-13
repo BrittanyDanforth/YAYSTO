@@ -64,6 +64,10 @@ body{
   font-size:1rem;
   font-weight:700;
 }
+.balance-sub{
+  font-size:0.75rem;
+  color:#6b7280;
+}
 .btn{
   background:#6366f1;
   color:#fff;
@@ -605,7 +609,8 @@ body{
   <div class="wallet">
     <div class="balance">
       <div class="balance-label">Balance</div>
-      <div class="balance-amount" id="wallet-ltc">0.00000000 LTC</div>
+      <div class="balance-amount" id="wallet-usd">$0.00</div>
+      <div class="balance-sub" id="wallet-ltc">0.00000000 LTC</div>
     </div>
     <button class="btn" id="btn-deposit">Deposit</button>
     <button class="btn btn-secondary" id="btn-withdraw">Withdraw</button>
@@ -659,8 +664,8 @@ body{
         </div>
         <div class="game-sidebar">
           <div class="form-group">
-            <label class="form-label">Bet Amount</label>
-            <input type="number" class="form-input" id="limbo-bet" value="0.01000000" min="0.0001" step="0.0001">
+            <label class="form-label">Bet Amount (USD)</label>
+            <input type="number" class="form-input" id="limbo-bet" value="1.00" min="0.10" step="0.10">
           </div>
           <div class="form-group">
             <label class="form-label">Target Multiplier</label>
@@ -679,7 +684,7 @@ body{
           <div class="stats-grid">
             <div class="stat-box">
               <div class="stat-label">Bet</div>
-              <div class="stat-value" id="mines-stat-bet">0.00</div>
+              <div class="stat-value" id="mines-stat-bet">$0.00</div>
             </div>
             <div class="stat-box">
               <div class="stat-label">Mult</div>
@@ -687,7 +692,7 @@ body{
             </div>
             <div class="stat-box">
               <div class="stat-label">Profit</div>
-              <div class="stat-value" id="mines-stat-profit">0.00</div>
+              <div class="stat-value" id="mines-stat-profit">$0.00</div>
             </div>
             <div class="stat-box">
               <div class="stat-label">Gems</div>
@@ -695,8 +700,8 @@ body{
             </div>
           </div>
           <div class="form-group">
-            <label class="form-label">Bet Amount</label>
-            <input type="number" class="form-input" id="mines-bet" value="0.01000000" min="0.0001" step="0.0001">
+            <label class="form-label">Bet Amount (USD)</label>
+            <input type="number" class="form-input" id="mines-bet" value="1.00" min="0.10" step="0.10">
           </div>
           <div class="form-group">
             <label class="form-label">Mines Count</label>
@@ -714,19 +719,19 @@ body{
         <div class="case-box" data-case="bronze">
           <div class="case-image">📦</div>
           <div class="case-name">Bronze Crate</div>
-          <div class="case-price">0.05000000 LTC</div>
+          <div class="case-price">$5.00</div>
           <div class="case-desc">Entry tier</div>
         </div>
         <div class="case-box" data-case="silver">
           <div class="case-image" style="background:linear-gradient(135deg,#3b82f6,#6366f1)">📦</div>
           <div class="case-name">Silver Vault</div>
-          <div class="case-price">0.15000000 LTC</div>
+          <div class="case-price">$15.00</div>
           <div class="case-desc">Medium risk</div>
         </div>
         <div class="case-box" data-case="gold">
           <div class="case-image" style="background:linear-gradient(135deg,#f59e0b,#f97316)">📦</div>
           <div class="case-name">Gold Arsenal</div>
-          <div class="case-price">0.50000000 LTC</div>
+          <div class="case-price">$50.00</div>
           <div class="case-desc">High stakes</div>
         </div>
       </div>
@@ -743,9 +748,9 @@ body{
         <div class="form-group" style="margin-bottom:0">
           <label class="form-label">Case</label>
           <select class="form-input" id="battle-case">
-            <option value="bronze">Bronze Crate</option>
-            <option value="silver">Silver Vault</option>
-            <option value="gold">Gold Arsenal</option>
+            <option value="bronze">Bronze Crate ($5)</option>
+            <option value="silver">Silver Vault ($15)</option>
+            <option value="gold">Gold Arsenal ($50)</option>
           </select>
         </div>
         <div class="form-group" style="margin-bottom:0">
@@ -777,8 +782,8 @@ body{
         </div>
         <div class="game-sidebar">
           <div class="form-group">
-            <label class="form-label">Bet Amount</label>
-            <input type="number" class="form-input" id="bj-bet" value="0.01000000" min="0.0001" step="0.0001">
+            <label class="form-label">Bet Amount (USD)</label>
+            <input type="number" class="form-input" id="bj-bet" value="1.00" min="0.10" step="0.10">
           </div>
           <button class="btn" style="width:100%;margin-bottom:0.5rem" id="bj-deal">Deal</button>
           <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:0.5rem">
@@ -795,8 +800,8 @@ body{
     <div class="history-header">
       <div class="history-title">Live Feed</div>
       <div class="history-stats">
-        Net: <span id="session-net">0.00000000 LTC</span> · 
-        Best: <span id="session-best">0.00000000 LTC</span>
+        Net: <span id="session-net">$0.00</span> · 
+        Best Win: <span id="session-best">$0.00</span>
       </div>
     </div>
     <table class="history-table">
@@ -832,12 +837,12 @@ body{
       </select>
     </div>
     <div class="form-group">
-      <label class="form-label">Address</label>
+      <label class="form-label">Deposit Address</label>
       <input type="text" class="form-input" id="deposit-addr" readonly value="Click generate">
     </div>
     <div class="modal-footer">
       <button class="btn btn-secondary" data-modal="modal-deposit">Cancel</button>
-      <button class="btn" id="deposit-generate">Generate</button>
+      <button class="btn" id="deposit-generate">Generate Address</button>
     </div>
   </div>
 </div>
@@ -849,12 +854,12 @@ body{
       <button class="modal-close" data-modal="modal-withdraw">✕</button>
     </div>
     <div class="form-group">
-      <label class="form-label">Address</label>
+      <label class="form-label">Withdrawal Address</label>
       <input type="text" class="form-input" id="withdraw-addr" placeholder="LTC address">
     </div>
     <div class="form-group">
-      <label class="form-label">Amount (LTC)</label>
-      <input type="number" class="form-input" id="withdraw-ltc" value="0.10000000" min="0.0001" step="0.0001">
+      <label class="form-label">Amount (USD)</label>
+      <input type="number" class="form-input" id="withdraw-usd" value="10.00" min="1" step="1">
     </div>
     <div class="modal-footer">
       <button class="btn btn-secondary" data-modal="modal-withdraw">Cancel</button>
@@ -867,7 +872,7 @@ body{
 
 <script>
 const STATE={
-  balanceLtc:2.49,
+  balanceUsd:200,
   ltcPrice:85,
   btcPrice:43000,
   netResult:0,
@@ -883,17 +888,19 @@ function rng(){
   return buf[0]/0xffffffff;
 }
 
+function fmtUsd(v){return '$'+v.toFixed(2)}
 function fmtLtc(v){return v.toFixed(8)+' LTC'}
-function fmtUsd(v){return '$'+(v*STATE.ltcPrice).toFixed(2)}
 
-const walletEl=document.getElementById('wallet-ltc');
+const walletUsdEl=document.getElementById('wallet-usd');
+const walletLtcEl=document.getElementById('wallet-ltc');
 const sessionNetEl=document.getElementById('session-net');
 const sessionBestEl=document.getElementById('session-best');
 
 function updateWallet(){
-  walletEl.textContent=fmtLtc(STATE.balanceLtc);
-  sessionNetEl.textContent=fmtLtc(STATE.netResult);
-  sessionBestEl.textContent=fmtLtc(STATE.biggestWin);
+  walletUsdEl.textContent=fmtUsd(STATE.balanceUsd);
+  walletLtcEl.textContent=fmtLtc(STATE.balanceUsd/STATE.ltcPrice);
+  sessionNetEl.textContent=fmtUsd(STATE.netResult);
+  sessionBestEl.textContent=fmtUsd(STATE.biggestWin);
 }
 
 function showToast(type,title,msg){
@@ -929,28 +936,27 @@ document.getElementById('deposit-generate').addEventListener('click',()=>{
   document.getElementById('deposit-addr').value=addr;
   showToast('info','Processing','Waiting for confirmations...');
   setTimeout(()=>{
-    let credited=asset==='ltc'?usd/STATE.ltcPrice:(usd/STATE.btcPrice)*(STATE.btcPrice/STATE.ltcPrice);
-    STATE.balanceLtc+=credited;
-    STATE.netResult+=credited;
-    if(credited>STATE.biggestWin)STATE.biggestWin=credited;
-    addHistory('Deposit','you',credited,credited);
+    STATE.balanceUsd+=usd;
+    STATE.netResult+=usd;
+    if(usd>STATE.biggestWin)STATE.biggestWin=usd;
+    addHistory('Deposit','you',usd,usd);
     updateWallet();
-    showToast('success','Deposited','+'+fmtLtc(credited));
+    showToast('success','Deposited',fmtUsd(usd)+' credited');
     closeModal('modal-deposit');
   },2500);
 });
 
 document.getElementById('withdraw-submit').addEventListener('click',()=>{
   const addr=document.getElementById('withdraw-addr').value.trim();
-  const amt=parseFloat(document.getElementById('withdraw-ltc').value||0);
+  const amt=parseFloat(document.getElementById('withdraw-usd').value||0);
   if(!addr||addr.length<8){showToast('error','Invalid','Enter valid address');return}
   if(amt<=0){showToast('error','Invalid','Enter positive amount');return}
-  if(amt>STATE.balanceLtc){showToast('error','Insufficient','Not enough balance');return}
-  STATE.balanceLtc-=amt;
+  if(amt>STATE.balanceUsd){showToast('error','Insufficient','Not enough balance');return}
+  STATE.balanceUsd-=amt;
   STATE.netResult-=amt;
   updateWallet();
   addHistory('Withdraw','you',-amt,-amt);
-  showToast('success','Withdrawn','Sent to '+addr.slice(0,8)+'...');
+  showToast('success','Withdrawn',fmtUsd(amt)+' sent to '+addr.slice(0,8)+'...');
   closeModal('modal-withdraw');
 });
 
@@ -992,9 +998,9 @@ function renderHistory(){
   STATE.history.forEach(h=>{
     const tr=document.createElement('tr');
     const badge=h.profit>0?
-      '<span class="badge badge-win">+'+h.profit.toFixed(2)+'x</span>':
-      '<span class="badge badge-loss">'+h.profit.toFixed(2)+'x</span>';
-    tr.innerHTML='<td>'+h.game+'</td><td>'+h.user+'</td><td>'+fmtLtc(Math.abs(h.bet))+'</td><td>'+badge+'</td>';
+      '<span class="badge badge-win">+'+fmtUsd(h.profit)+'</span>':
+      '<span class="badge badge-loss">'+fmtUsd(h.profit)+'</span>';
+    tr.innerHTML='<td>'+h.game+'</td><td>'+h.user+'</td><td>'+fmtUsd(Math.abs(h.bet))+'</td><td>'+badge+'</td>';
     historyBody.appendChild(tr);
   });
 }
@@ -1003,8 +1009,8 @@ setInterval(()=>{
   const games=['Limbo','Mines','Cases','BJ'];
   const g=games[Math.floor(rng()*games.length)];
   const user=names[Math.floor(rng()*names.length)];
-  const bet=0.01+rng()*0.09;
-  const prof=rng()>0.55?(1+rng()*5):-(rng()*1.2);
+  const bet=1+rng()*10;
+  const prof=rng()>0.55?(bet*rng()*3):-(bet*rng());
   addHistory(g,user,bet,prof);
 },3000);
 
@@ -1021,10 +1027,10 @@ limboPlay.addEventListener('click',async()=>{
   if(limboRunning)return;
   const bet=parseFloat(limboBet.value||0);
   const target=parseFloat(limboTarget.value||0);
-  if(bet<=0||bet>STATE.balanceLtc){showToast('error','Invalid','Check bet amount');return}
+  if(bet<=0||bet>STATE.balanceUsd){showToast('error','Invalid','Check bet amount');return}
   if(target<1.01){showToast('error','Invalid','Min target 1.01x');return}
   
-  STATE.balanceLtc-=bet;
+  STATE.balanceUsd-=bet;
   STATE.netResult-=bet;
   updateWallet();
   
@@ -1046,18 +1052,19 @@ limboPlay.addEventListener('click',async()=>{
   let win=0;
   if(crash>=target){
     win=bet*target;
-    STATE.balanceLtc+=win;
-    STATE.netResult+=win;
-    if(win>STATE.biggestWin)STATE.biggestWin=win;
+    STATE.balanceUsd+=win;
+    STATE.netResult+=win-bet;
+    const profit=win-bet;
+    if(profit>STATE.biggestWin)STATE.biggestWin=profit;
     limboMulti.classList.add('win');
     limboStatus.textContent='WIN at '+crash.toFixed(2)+'x';
-    showToast('success','Win','+'+fmtLtc(win-bet));
-    addHistory('Limbo','you',bet,win/bet);
+    showToast('success','Win','+'+fmtUsd(profit));
+    addHistory('Limbo','you',bet,profit);
   }else{
     limboMulti.classList.add('loss');
     limboStatus.textContent='CRASHED at '+crash.toFixed(2)+'x';
-    showToast('error','Lost','-'+fmtLtc(bet));
-    addHistory('Limbo','you',bet,-1);
+    showToast('error','Lost','-'+fmtUsd(bet));
+    addHistory('Limbo','you',bet,-bet);
   }
   
   limboRunning=false;
@@ -1100,9 +1107,9 @@ function minesMult(revealed,mines){
 minesStart.addEventListener('click',()=>{
   const bet=parseFloat(minesBet.value||0);
   const mines=parseInt(minesCount.value||0);
-  if(bet<=0||bet>STATE.balanceLtc||mines<1||mines>24){showToast('error','Invalid','Check settings');return}
+  if(bet<=0||bet>STATE.balanceUsd||mines<1||mines>24){showToast('error','Invalid','Check settings');return}
   
-  STATE.balanceLtc-=bet;
+  STATE.balanceUsd-=bet;
   STATE.netResult-=bet;
   updateWallet();
   
@@ -1114,9 +1121,9 @@ minesStart.addEventListener('click',()=>{
   
   while(minesState.positions.size<mines)minesState.positions.add(Math.floor(rng()*25));
   
-  minesStatBet.textContent=bet.toFixed(2);
+  minesStatBet.textContent=fmtUsd(bet);
   minesStatMult.textContent='1.00x';
-  minesStatProfit.textContent='0.00';
+  minesStatProfit.textContent='$0.00';
   minesStatGems.textContent='0';
   minesStart.disabled=true;
   minesCashout.disabled=true;
@@ -1137,14 +1144,15 @@ function endMines(win){
   minesCashout.disabled=true;
   
   if(win>0){
-    STATE.balanceLtc+=win;
-    STATE.netResult+=win;
-    if(win>STATE.biggestWin)STATE.biggestWin=win;
-    showToast('success','Cashout','+'+fmtLtc(win-minesState.bet));
-    addHistory('Mines','you',minesState.bet,win/minesState.bet);
+    STATE.balanceUsd+=win;
+    const profit=win-minesState.bet;
+    STATE.netResult+=profit;
+    if(profit>STATE.biggestWin)STATE.biggestWin=profit;
+    showToast('success','Cashout','+'+fmtUsd(profit));
+    addHistory('Mines','you',minesState.bet,profit);
   }else{
-    showToast('error','Mine hit','-'+fmtLtc(minesState.bet));
-    addHistory('Mines','you',minesState.bet,-1);
+    showToast('error','Mine hit','-'+fmtUsd(minesState.bet));
+    addHistory('Mines','you',minesState.bet,-minesState.bet);
   }
   updateWallet();
 }
@@ -1169,7 +1177,7 @@ function clickMine(i,cell){
   
   minesStatGems.textContent=minesState.revealed;
   minesStatMult.textContent=mult.toFixed(2)+'x';
-  minesStatProfit.textContent=profit.toFixed(2);
+  minesStatProfit.textContent=fmtUsd(profit);
   minesCashout.disabled=false;
 }
 
@@ -1181,26 +1189,26 @@ minesCashout.addEventListener('click',()=>{
 
 // CASES
 const CASES={
-  bronze:{price:0.05,items:[
-    {name:'Common Chip',value:0.01,weight:55},
-    {name:'Rare Chip',value:0.04,weight:30},
-    {name:'Epic Gem',value:0.08,weight:10},
-    {name:'Legendary',value:0.2,weight:4},
-    {name:'Mythic',value:0.5,weight:1}
+  bronze:{price:5,items:[
+    {name:'Common Chip',value:1,weight:55},
+    {name:'Rare Chip',value:4,weight:30},
+    {name:'Epic Gem',value:8,weight:10},
+    {name:'Legendary',value:20,weight:4},
+    {name:'Mythic',value:50,weight:1}
   ]},
-  silver:{price:0.15,items:[
-    {name:'Bronze Bar',value:0.06,weight:40},
-    {name:'Silver Bar',value:0.14,weight:32},
-    {name:'Gold Bar',value:0.35,weight:18},
-    {name:'Platinum',value:0.9,weight:7},
-    {name:'Crown',value:2.2,weight:3}
+  silver:{price:15,items:[
+    {name:'Bronze Bar',value:6,weight:40},
+    {name:'Silver Bar',value:14,weight:32},
+    {name:'Gold Bar',value:35,weight:18},
+    {name:'Platinum',value:90,weight:7},
+    {name:'Crown',value:220,weight:3}
   ]},
-  gold:{price:0.5,items:[
-    {name:'Emerald',value:0.25,weight:40},
-    {name:'Sapphire',value:0.5,weight:26},
-    {name:'Ruby',value:0.95,weight:18},
-    {name:'Pearl',value:2.5,weight:10},
-    {name:'Cosmic',value:6,weight:6}
+  gold:{price:50,items:[
+    {name:'Emerald',value:25,weight:40},
+    {name:'Sapphire',value:50,weight:26},
+    {name:'Ruby',value:95,weight:18},
+    {name:'Pearl',value:250,weight:10},
+    {name:'Cosmic',value:600,weight:6}
   ]}
 };
 
@@ -1216,7 +1224,7 @@ document.querySelectorAll('.case-box').forEach(box=>{
     selectedCase=box.dataset.case;
     const info=CASES[selectedCase];
     caseTitle.textContent='Selected: '+box.querySelector('.case-name').textContent;
-    caseDesc.textContent='Cost: '+fmtLtc(info.price);
+    caseDesc.textContent='Cost: '+fmtUsd(info.price);
     caseOpenBtn.style.display='inline-block';
   });
 });
@@ -1224,9 +1232,9 @@ document.querySelectorAll('.case-box').forEach(box=>{
 caseOpenBtn.addEventListener('click',()=>{
   if(!selectedCase)return;
   const info=CASES[selectedCase];
-  if(info.price>STATE.balanceLtc){showToast('error','Insufficient','Not enough balance');return}
+  if(info.price>STATE.balanceUsd){showToast('error','Insufficient','Not enough balance');return}
   
-  STATE.balanceLtc-=info.price;
+  STATE.balanceUsd-=info.price;
   STATE.netResult-=info.price;
   updateWallet();
   
@@ -1239,19 +1247,19 @@ caseOpenBtn.addEventListener('click',()=>{
   }
   
   const profit=choice.value-info.price;
-  STATE.balanceLtc+=choice.value;
-  STATE.netResult+=choice.value;
-  if(choice.value>STATE.biggestWin)STATE.biggestWin=choice.value;
+  STATE.balanceUsd+=choice.value;
+  STATE.netResult+=profit;
+  if(profit>0&&profit>STATE.biggestWin)STATE.biggestWin=profit;
   
-  caseTitle.textContent=choice.name+' · '+fmtLtc(choice.value);
-  caseDesc.textContent=profit>=0?'Profit: +'+fmtLtc(profit):'Loss: '+fmtLtc(profit);
+  caseTitle.textContent=choice.name+' · '+fmtUsd(choice.value);
+  caseDesc.textContent=profit>=0?'Profit: +'+fmtUsd(profit):'Loss: '+fmtUsd(profit);
   
   if(profit>=0){
-    showToast('success','Win','+'+fmtLtc(profit));
-    addHistory('Cases','you',info.price,choice.value/info.price);
+    showToast('success','Win','+'+fmtUsd(profit));
+    addHistory('Cases','you',info.price,profit);
   }else{
-    showToast('error','Loss',fmtLtc(profit));
-    addHistory('Cases','you',info.price,choice.value/info.price);
+    showToast('error','Loss',fmtUsd(profit));
+    addHistory('Cases','you',info.price,profit);
   }
   updateWallet();
 });
@@ -1285,9 +1293,9 @@ battleStart.addEventListener('click',()=>{
   for(let i=0;i<bots;i++)players.push(BOT_NAMES[Math.floor(rng()*BOT_NAMES.length)]);
   
   const total=info.price*players.length;
-  if(total>STATE.balanceLtc){showToast('error','Insufficient','Need '+fmtLtc(total));return}
+  if(total>STATE.balanceUsd){showToast('error','Insufficient','Need '+fmtUsd(total));return}
   
-  STATE.balanceLtc-=info.price;
+  STATE.balanceUsd-=info.price;
   STATE.netResult-=info.price;
   updateWallet();
   
@@ -1301,7 +1309,7 @@ battleStart.addEventListener('click',()=>{
     div.innerHTML=
       '<div class="player-name">'+name+'</div>'+
       '<div class="player-item">'+pull.name+'</div>'+
-      '<div class="player-value">'+fmtLtc(pull.value)+'</div>';
+      '<div class="player-value">'+fmtUsd(pull.value)+'</div>';
     battleGrid.appendChild(div);
     entries.push({name,value:pull.value,el:div});
   });
@@ -1312,14 +1320,15 @@ battleStart.addEventListener('click',()=>{
   
   const pot=info.price*players.length;
   if(winner.name==='You'){
-    STATE.balanceLtc+=pot;
-    STATE.netResult+=pot;
-    if(pot>STATE.biggestWin)STATE.biggestWin=pot;
-    showToast('success','Won','Pot: '+fmtLtc(pot));
-    addHistory('Battle','you',info.price,pot/info.price);
+    STATE.balanceUsd+=pot;
+    const profit=pot-info.price;
+    STATE.netResult+=profit;
+    if(profit>STATE.biggestWin)STATE.biggestWin=profit;
+    showToast('success','Won','Pot: '+fmtUsd(pot)+' (+'+fmtUsd(profit)+')');
+    addHistory('Battle','you',info.price,profit);
   }else{
     showToast('error','Lost',winner.name+' won');
-    addHistory('Battle','you',info.price,-1);
+    addHistory('Battle','you',info.price,-info.price);
   }
   updateWallet();
 });
@@ -1388,9 +1397,9 @@ async function renderHand(el,hand,hideHole){
 async function startBj(){
   if(bjState.inRound)return;
   const bet=parseFloat(bjBet.value||0);
-  if(bet<=0||bet>STATE.balanceLtc){showToast('error','Invalid','Check bet');return}
+  if(bet<=0||bet>STATE.balanceUsd){showToast('error','Invalid','Check bet');return}
   
-  STATE.balanceLtc-=bet;
+  STATE.balanceUsd-=bet;
   STATE.netResult-=bet;
   updateWallet();
   
@@ -1445,16 +1454,15 @@ async function dealerFinish(autoBJ){
   
   let profit=payout-bjState.bet;
   if(payout>0){
-    STATE.balanceLtc+=payout;
-    STATE.netResult+=payout;
-    if(payout>STATE.biggestWin)STATE.biggestWin=payout;
+    STATE.balanceUsd+=payout;
+    STATE.netResult+=profit;
+    if(profit>STATE.biggestWin)STATE.biggestWin=profit;
   }
   
-  const mult=profit>=0?(payout/bjState.bet):-1;
-  addHistory('BJ','you',bjState.bet,mult);
+  addHistory('BJ','you',bjState.bet,profit);
   
-  if(profit>0)showToast('success','Win','+'+fmtLtc(profit));
-  else if(profit<0)showToast('error','Lost','-'+fmtLtc(Math.abs(profit)));
+  if(profit>0)showToast('success','Win','+'+fmtUsd(profit));
+  else if(profit<0)showToast('error','Lost','-'+fmtUsd(Math.abs(profit)));
   else showToast('info','Push','Returned');
   
   bjState.inRound=false;
@@ -1485,8 +1493,8 @@ bjStand.addEventListener('click',()=>{
 
 bjDouble.addEventListener('click',async()=>{
   if(!bjState.inRound)return;
-  if(STATE.balanceLtc<bjState.bet){showToast('error','Insufficient','Not enough');return}
-  STATE.balanceLtc-=bjState.bet;
+  if(STATE.balanceUsd<bjState.bet){showToast('error','Insufficient','Not enough');return}
+  STATE.balanceUsd-=bjState.bet;
   STATE.netResult-=bjState.bet;
   bjState.bet*=2;
   updateWallet();
