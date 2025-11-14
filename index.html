@@ -1,0 +1,1573 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>BloxLux</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;font-family:'Inter',sans-serif}
+body{
+  background:#0d0f16;
+  color:#fff;
+}
+.header{
+  background:#13151f;
+  border-bottom:1px solid #1a1d2e;
+  padding:0 2rem;
+  height:70px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+}
+.logo{
+  display:flex;
+  align-items:center;
+  gap:0.75rem;
+  font-size:1.5rem;
+  font-weight:800;
+}
+.logo-icon{
+  width:40px;
+  height:40px;
+  background:linear-gradient(135deg,#6366f1,#8b5cf6);
+  border-radius:8px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-size:1.25rem;
+}
+.wallet{
+  display:flex;
+  align-items:center;
+  gap:1rem;
+}
+.balance{
+  background:#1a1d2e;
+  border:1px solid #252836;
+  border-radius:8px;
+  padding:0.5rem 1rem;
+  display:flex;
+  flex-direction:column;
+  gap:0.1rem;
+}
+.balance-label{
+  font-size:0.7rem;
+  color:#6b7280;
+  text-transform:uppercase;
+  letter-spacing:0.05em;
+}
+.balance-amount{
+  font-size:1rem;
+  font-weight:700;
+}
+.balance-sub{
+  font-size:0.75rem;
+  color:#6b7280;
+}
+.btn{
+  background:#6366f1;
+  color:#fff;
+  border:none;
+  border-radius:8px;
+  padding:0.6rem 1.25rem;
+  font-size:0.9rem;
+  font-weight:600;
+  cursor:pointer;
+  transition:all 0.2s;
+}
+.btn:hover{
+  background:#7c3aed;
+  transform:translateY(-1px);
+}
+.btn-secondary{
+  background:#1a1d2e;
+  border:1px solid #252836;
+}
+.btn-secondary:hover{
+  background:#252836;
+}
+.container{
+  max-width:1400px;
+  margin:0 auto;
+  padding:2rem;
+}
+.games-grid{
+  display:grid;
+  grid-template-columns:repeat(5,1fr);
+  gap:1rem;
+  margin-bottom:2rem;
+}
+.game-card{
+  background:#13151f;
+  border:2px solid #1a1d2e;
+  border-radius:12px;
+  padding:1.25rem;
+  cursor:pointer;
+  transition:all 0.3s;
+  position:relative;
+  overflow:hidden;
+}
+.game-card:before{
+  content:'';
+  position:absolute;
+  top:0;
+  left:0;
+  right:0;
+  height:4px;
+  background:linear-gradient(90deg,#6366f1,#8b5cf6);
+  opacity:0;
+  transition:opacity 0.3s;
+}
+.game-card:hover,.game-card.active{
+  border-color:#6366f1;
+  transform:translateY(-4px);
+}
+.game-card.active:before{
+  opacity:1;
+}
+.game-icon{
+  width:60px;
+  height:60px;
+  background:#1a1d2e;
+  border-radius:12px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-size:2rem;
+  margin-bottom:1rem;
+}
+.game-name{
+  font-size:1.1rem;
+  font-weight:700;
+  margin-bottom:0.25rem;
+}
+.game-desc{
+  font-size:0.85rem;
+  color:#6b7280;
+}
+.game-section{
+  background:#13151f;
+  border:1px solid #1a1d2e;
+  border-radius:12px;
+  padding:2rem;
+  margin-bottom:2rem;
+}
+.game-header{
+  margin-bottom:2rem;
+}
+.game-title{
+  font-size:1.75rem;
+  font-weight:800;
+  margin-bottom:0.5rem;
+}
+.game-subtitle{
+  font-size:1rem;
+  color:#6b7280;
+}
+.game-content{
+  display:none;
+}
+.game-content.active{
+  display:block;
+}
+.game-layout{
+  display:grid;
+  grid-template-columns:2fr 1fr;
+  gap:1.5rem;
+}
+.game-display{
+  background:#0d0f16;
+  border:1px solid #1a1d2e;
+  border-radius:12px;
+  padding:3rem;
+  min-height:400px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  position:relative;
+}
+.game-sidebar{
+  background:#0d0f16;
+  border:1px solid #1a1d2e;
+  border-radius:12px;
+  padding:1.5rem;
+}
+.multiplier{
+  text-align:center;
+}
+.multiplier-label{
+  font-size:0.85rem;
+  color:#6b7280;
+  text-transform:uppercase;
+  letter-spacing:0.05em;
+  margin-bottom:0.5rem;
+}
+.multiplier-value{
+  font-size:5rem;
+  font-weight:900;
+  line-height:1;
+}
+.multiplier-value.win{color:#10b981}
+.multiplier-value.loss{color:#ef4444}
+.multiplier-status{
+  font-size:1rem;
+  color:#9ca3af;
+  margin-top:1rem;
+}
+.form-group{
+  margin-bottom:1.25rem;
+}
+.form-label{
+  font-size:0.85rem;
+  color:#9ca3af;
+  margin-bottom:0.5rem;
+  display:block;
+  font-weight:600;
+  text-transform:uppercase;
+  letter-spacing:0.05em;
+}
+.form-input{
+  width:100%;
+  background:#13151f;
+  border:1px solid #1a1d2e;
+  border-radius:8px;
+  padding:0.85rem 1rem;
+  color:#fff;
+  font-size:1rem;
+  font-family:inherit;
+  outline:none;
+  transition:all 0.2s;
+}
+.form-input:focus{
+  border-color:#6366f1;
+  box-shadow:0 0 0 3px rgba(99,102,241,0.1);
+}
+.form-row{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:1rem;
+}
+.mines-grid{
+  display:grid;
+  grid-template-columns:repeat(5,1fr);
+  gap:0.75rem;
+  padding:1.5rem;
+  background:#0d0f16;
+  border:1px solid #1a1d2e;
+  border-radius:12px;
+}
+.mine-cell{
+  aspect-ratio:1;
+  background:#13151f;
+  border:2px solid #1a1d2e;
+  border-radius:8px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-size:2rem;
+  cursor:pointer;
+  transition:all 0.15s ease;
+}
+.mine-cell:hover:not(.revealed){
+  border-color:#6366f1;
+  background:#1a1d2e;
+}
+.mine-cell.gem{
+  background:#10b981;
+  border-color:#10b981;
+  animation:reveal 0.2s ease;
+}
+.mine-cell.mine{
+  background:#ef4444;
+  border-color:#ef4444;
+  animation:reveal 0.2s ease;
+}
+@keyframes reveal{
+  from{opacity:0;transform:scale(0.8)}
+  to{opacity:1;transform:scale(1)}
+}
+.stats-grid{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:1rem;
+  margin-bottom:1.5rem;
+}
+.stat-box{
+  background:#13151f;
+  border:1px solid #1a1d2e;
+  border-radius:8px;
+  padding:1rem;
+}
+.stat-label{
+  font-size:0.75rem;
+  color:#6b7280;
+  text-transform:uppercase;
+  letter-spacing:0.05em;
+  margin-bottom:0.25rem;
+}
+.stat-value{
+  font-size:1.5rem;
+  font-weight:700;
+}
+.cases-grid{
+  display:grid;
+  grid-template-columns:repeat(3,1fr);
+  gap:1.5rem;
+  margin-bottom:2rem;
+}
+.case-box{
+  background:#0d0f16;
+  border:2px solid #1a1d2e;
+  border-radius:12px;
+  padding:1.5rem;
+  cursor:pointer;
+  transition:all 0.3s;
+  text-align:center;
+}
+.case-box:hover,.case-box.selected{
+  border-color:#6366f1;
+  transform:translateY(-4px);
+}
+.case-image{
+  width:100%;
+  height:120px;
+  background:linear-gradient(135deg,#6366f1,#8b5cf6);
+  border-radius:8px;
+  margin-bottom:1rem;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-size:3rem;
+}
+.case-name{
+  font-size:1.25rem;
+  font-weight:700;
+  margin-bottom:0.5rem;
+}
+.case-price{
+  font-size:1rem;
+  color:#f59e0b;
+  font-weight:700;
+  margin-bottom:0.25rem;
+}
+.case-desc{
+  font-size:0.85rem;
+  color:#6b7280;
+}
+.case-result{
+  background:#0d0f16;
+  border:1px solid #1a1d2e;
+  border-radius:12px;
+  padding:3rem;
+  text-align:center;
+}
+.result-title{
+  font-size:1.5rem;
+  font-weight:700;
+  margin-bottom:0.5rem;
+}
+.result-desc{
+  font-size:1rem;
+  color:#6b7280;
+}
+.battle-grid{
+  display:grid;
+  grid-template-columns:repeat(4,1fr);
+  gap:1rem;
+  margin-top:1.5rem;
+}
+.battle-player{
+  background:#0d0f16;
+  border:2px solid #1a1d2e;
+  border-radius:12px;
+  padding:1.5rem;
+  text-align:center;
+}
+.battle-player.winner{
+  border-color:#10b981;
+  box-shadow:0 0 20px rgba(16,185,129,0.3);
+}
+.player-name{
+  font-size:1rem;
+  font-weight:700;
+  margin-bottom:1rem;
+}
+.player-item{
+  font-size:0.9rem;
+  color:#9ca3af;
+  margin-bottom:0.5rem;
+}
+.player-value{
+  font-size:1.25rem;
+  font-weight:700;
+  color:#10b981;
+}
+.bj-table{
+  background:#1a4d2e;
+  border-radius:12px;
+  padding:2rem;
+  min-height:500px;
+  display:flex;
+  flex-direction:column;
+  justify-content:space-around;
+  position:relative;
+  box-shadow:inset 0 0 100px rgba(0,0,0,0.3);
+}
+.bj-table:before{
+  content:'';
+  position:absolute;
+  inset:0;
+  background:
+    radial-gradient(ellipse at center, transparent 0%, rgba(0,0,0,0.2) 100%);
+  border-radius:12px;
+  pointer-events:none;
+}
+.bj-hand{
+  margin-bottom:2rem;
+  position:relative;
+  z-index:1;
+}
+.bj-hand-label{
+  font-size:1rem;
+  font-weight:700;
+  margin-bottom:1rem;
+  color:#fff;
+  text-transform:uppercase;
+  letter-spacing:0.05em;
+}
+.bj-cards{
+  display:flex;
+  gap:0.75rem;
+  flex-wrap:wrap;
+}
+.bj-card{
+  width:70px;
+  height:100px;
+  background:#fff;
+  border-radius:8px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-size:1.5rem;
+  font-weight:700;
+  box-shadow:0 4px 12px rgba(0,0,0,0.5);
+  animation:cardDeal 0.4s ease-out;
+}
+@keyframes cardDeal{
+  from{transform:translateY(-100px) rotateY(180deg);opacity:0}
+  to{transform:translateY(0) rotateY(0);opacity:1}
+}
+.bj-card.red{color:#dc2626}
+.bj-card.black{color:#1f2937}
+.bj-card.back{
+  background:linear-gradient(135deg,#6366f1,#8b5cf6);
+  color:#fff;
+  font-size:2rem;
+}
+.bj-status{
+  text-align:center;
+  font-size:1.25rem;
+  font-weight:700;
+  color:#fff;
+  margin:1.5rem 0;
+  padding:1rem;
+  background:rgba(0,0,0,0.3);
+  border-radius:8px;
+  position:relative;
+  z-index:1;
+}
+.history{
+  background:#13151f;
+  border:1px solid #1a1d2e;
+  border-radius:12px;
+  padding:2rem;
+}
+.history-header{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  margin-bottom:1.5rem;
+}
+.history-title{
+  font-size:1.25rem;
+  font-weight:700;
+}
+.history-stats{
+  font-size:0.9rem;
+  color:#6b7280;
+}
+.history-table{
+  width:100%;
+  border-collapse:collapse;
+}
+.history-table thead{
+  border-bottom:1px solid #1a1d2e;
+}
+.history-table th{
+  text-align:left;
+  padding:0.75rem;
+  font-size:0.85rem;
+  color:#6b7280;
+  text-transform:uppercase;
+  letter-spacing:0.05em;
+  font-weight:600;
+}
+.history-table td{
+  padding:1rem 0.75rem;
+  border-bottom:1px solid #1a1d2e;
+}
+.history-table tr:hover{
+  background:#0d0f16;
+}
+.badge{
+  display:inline-block;
+  padding:0.25rem 0.75rem;
+  border-radius:6px;
+  font-size:0.85rem;
+  font-weight:700;
+}
+.badge-win{
+  background:rgba(16,185,129,0.15);
+  color:#10b981;
+}
+.badge-loss{
+  background:rgba(239,68,68,0.15);
+  color:#ef4444;
+}
+.modal{
+  display:none;
+  position:fixed;
+  inset:0;
+  background:rgba(0,0,0,0.85);
+  backdrop-filter:blur(8px);
+  align-items:center;
+  justify-content:center;
+  z-index:9999;
+}
+.modal.active{
+  display:flex;
+}
+.modal-content{
+  background:#13151f;
+  border:1px solid #1a1d2e;
+  border-radius:12px;
+  padding:2rem;
+  max-width:450px;
+  width:90%;
+}
+.modal-header{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  margin-bottom:1.5rem;
+}
+.modal-title{
+  font-size:1.5rem;
+  font-weight:700;
+}
+.modal-close{
+  background:none;
+  border:none;
+  color:#6b7280;
+  font-size:1.5rem;
+  cursor:pointer;
+  padding:0;
+}
+.modal-footer{
+  display:flex;
+  gap:1rem;
+  margin-top:1.5rem;
+}
+.toast{
+  position:fixed;
+  bottom:2rem;
+  right:2rem;
+  background:#13151f;
+  border:1px solid #1a1d2e;
+  border-radius:8px;
+  padding:1rem 1.25rem;
+  min-width:300px;
+  box-shadow:0 10px 30px rgba(0,0,0,0.5);
+  animation:slideIn 0.3s;
+  z-index:10000;
+}
+@keyframes slideIn{
+  from{transform:translateX(400px);opacity:0}
+  to{transform:translateX(0);opacity:1}
+}
+.toast.success{border-left:4px solid #10b981}
+.toast.error{border-left:4px solid #ef4444}
+.toast.info{border-left:4px solid #6366f1}
+.toast-title{
+  font-weight:700;
+  margin-bottom:0.25rem;
+}
+.toast-message{
+  color:#9ca3af;
+  font-size:0.9rem;
+}
+@media(max-width:1200px){
+  .games-grid{grid-template-columns:repeat(3,1fr)}
+  .game-layout{grid-template-columns:1fr}
+  .cases-grid{grid-template-columns:1fr}
+  .battle-grid{grid-template-columns:repeat(2,1fr)}
+}
+</style>
+</head>
+<body>
+
+<header class="header">
+  <div class="logo">
+    <div class="logo-icon">BL</div>
+    <div>BloxLux</div>
+  </div>
+  <div class="wallet">
+    <div class="balance">
+      <div class="balance-label">Balance</div>
+      <div class="balance-amount" id="wallet-usd">$0.00</div>
+      <div class="balance-sub" id="wallet-ltc">0.00000000 LTC</div>
+    </div>
+    <button class="btn" id="btn-deposit">Deposit</button>
+    <button class="btn btn-secondary" id="btn-withdraw">Withdraw</button>
+  </div>
+</header>
+
+<div class="container">
+  <div class="games-grid">
+    <div class="game-card active" data-game="limbo">
+      <div class="game-icon">🚀</div>
+      <div class="game-name">Limbo</div>
+      <div class="game-desc">Beat the crash</div>
+    </div>
+    <div class="game-card" data-game="mines">
+      <div class="game-icon">💎</div>
+      <div class="game-name">Mines</div>
+      <div class="game-desc">Find the gems</div>
+    </div>
+    <div class="game-card" data-game="cases">
+      <div class="game-icon">📦</div>
+      <div class="game-name">Cases</div>
+      <div class="game-desc">Open crates</div>
+    </div>
+    <div class="game-card" data-game="battle">
+      <div class="game-icon">⚔️</div>
+      <div class="game-name">Battles</div>
+      <div class="game-desc">1v3 mode</div>
+    </div>
+    <div class="game-card" data-game="blackjack">
+      <div class="game-icon">🂡</div>
+      <div class="game-name">Blackjack</div>
+      <div class="game-desc">Hit or stand</div>
+    </div>
+  </div>
+
+  <div class="game-section">
+    <div class="game-header">
+      <div class="game-title" id="game-title">Limbo</div>
+      <div class="game-subtitle" id="game-subtitle">Set your target and beat the crash</div>
+    </div>
+
+    <!-- LIMBO -->
+    <div class="game-content active" id="content-limbo">
+      <div class="game-layout">
+        <div class="game-display">
+          <div class="multiplier">
+            <div class="multiplier-label">Multiplier</div>
+            <div class="multiplier-value" id="limbo-multi">1.00x</div>
+            <div class="multiplier-status" id="limbo-status">Ready to play</div>
+          </div>
+        </div>
+        <div class="game-sidebar">
+          <div class="form-group">
+            <label class="form-label">Bet Amount (USD)</label>
+            <input type="number" class="form-input" id="limbo-bet" value="1.00" min="0.10" step="0.10">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Target Multiplier</label>
+            <input type="number" class="form-input" id="limbo-target" value="2.00" min="1.01" step="0.01">
+          </div>
+          <button class="btn" style="width:100%" id="limbo-play">Play Limbo</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- MINES -->
+    <div class="game-content" id="content-mines">
+      <div class="game-layout">
+        <div class="mines-grid" id="mines-board"></div>
+        <div class="game-sidebar">
+          <div class="stats-grid">
+            <div class="stat-box">
+              <div class="stat-label">Bet</div>
+              <div class="stat-value" id="mines-stat-bet">$0.00</div>
+            </div>
+            <div class="stat-box">
+              <div class="stat-label">Mult</div>
+              <div class="stat-value" id="mines-stat-mult">1.00x</div>
+            </div>
+            <div class="stat-box">
+              <div class="stat-label">Profit</div>
+              <div class="stat-value" id="mines-stat-profit">$0.00</div>
+            </div>
+            <div class="stat-box">
+              <div class="stat-label">Gems</div>
+              <div class="stat-value" id="mines-stat-gems">0</div>
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Bet Amount (USD)</label>
+            <input type="number" class="form-input" id="mines-bet" value="1.00" min="0.10" step="0.10">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Mines Count</label>
+            <input type="number" class="form-input" id="mines-count" value="3" min="1" max="24">
+          </div>
+          <button class="btn" style="width:100%;margin-bottom:0.5rem" id="mines-start">Start Round</button>
+          <button class="btn btn-secondary" style="width:100%" id="mines-cashout" disabled>Cash Out</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- CASES -->
+    <div class="game-content" id="content-cases">
+      <div class="cases-grid">
+        <div class="case-box" data-case="bronze">
+          <div class="case-image">📦</div>
+          <div class="case-name">Bronze Crate</div>
+          <div class="case-price">$5.00</div>
+          <div class="case-desc">Entry tier</div>
+        </div>
+        <div class="case-box" data-case="silver">
+          <div class="case-image" style="background:linear-gradient(135deg,#3b82f6,#6366f1)">📦</div>
+          <div class="case-name">Silver Vault</div>
+          <div class="case-price">$15.00</div>
+          <div class="case-desc">Medium risk</div>
+        </div>
+        <div class="case-box" data-case="gold">
+          <div class="case-image" style="background:linear-gradient(135deg,#f59e0b,#f97316)">📦</div>
+          <div class="case-name">Gold Arsenal</div>
+          <div class="case-price">$50.00</div>
+          <div class="case-desc">High stakes</div>
+        </div>
+      </div>
+      <div class="case-result">
+        <div class="result-title" id="case-result-title">Select a case to open</div>
+        <div class="result-desc" id="case-result-desc">Click any case above</div>
+        <button class="btn" style="margin-top:1.5rem;display:none" id="case-open-btn">Open Case</button>
+      </div>
+    </div>
+
+    <!-- BATTLE -->
+    <div class="game-content" id="content-battle">
+      <div class="form-row" style="margin-bottom:1.5rem">
+        <div class="form-group" style="margin-bottom:0">
+          <label class="form-label">Case</label>
+          <select class="form-input" id="battle-case">
+            <option value="bronze">Bronze Crate ($5)</option>
+            <option value="silver">Silver Vault ($15)</option>
+            <option value="gold">Gold Arsenal ($50)</option>
+          </select>
+        </div>
+        <div class="form-group" style="margin-bottom:0">
+          <label class="form-label">Bots</label>
+          <select class="form-input" id="battle-bots">
+            <option value="1">1 bot</option>
+            <option value="2">2 bots</option>
+            <option value="3">3 bots</option>
+          </select>
+        </div>
+      </div>
+      <button class="btn" style="width:100%;margin-bottom:1.5rem" id="battle-start">Start Battle</button>
+      <div class="battle-grid" id="battle-grid"></div>
+    </div>
+
+    <!-- BLACKJACK -->
+    <div class="game-content" id="content-blackjack">
+      <div class="game-layout">
+        <div class="bj-table">
+          <div class="bj-hand">
+            <div class="bj-hand-label">Dealer <span id="bj-dealer-total"></span></div>
+            <div class="bj-cards" id="bj-dealer"></div>
+          </div>
+          <div class="bj-status" id="bj-status">Place bet and deal</div>
+          <div class="bj-hand">
+            <div class="bj-hand-label">Player <span id="bj-player-total"></span></div>
+            <div class="bj-cards" id="bj-player"></div>
+          </div>
+        </div>
+        <div class="game-sidebar">
+          <div class="form-group">
+            <label class="form-label">Bet Amount (USD)</label>
+            <input type="number" class="form-input" id="bj-bet" value="1.00" min="0.10" step="0.10">
+          </div>
+          <button class="btn" style="width:100%;margin-bottom:0.5rem" id="bj-deal">Deal</button>
+          <button class="btn btn-secondary" style="width:100%;margin-bottom:0.5rem;display:none" id="bj-insurance">Insurance</button>
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:0.5rem">
+            <button class="btn btn-secondary" id="bj-hit" disabled>Hit</button>
+            <button class="btn btn-secondary" id="bj-stand" disabled>Stand</button>
+            <button class="btn btn-secondary" id="bj-double" disabled>Double</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="history">
+    <div class="history-header">
+      <div class="history-title">Live Feed</div>
+      <div class="history-stats">
+        Net: <span id="session-net">$0.00</span> · 
+        Best Win: <span id="session-best">$0.00</span>
+      </div>
+    </div>
+    <table class="history-table">
+      <thead>
+        <tr>
+          <th>Game</th>
+          <th>User</th>
+          <th>Bet</th>
+          <th>Result</th>
+        </tr>
+      </thead>
+      <tbody id="history-body"></tbody>
+    </table>
+  </div>
+</div>
+
+<!-- MODALS -->
+<div class="modal" id="modal-deposit">
+  <div class="modal-content">
+    <div class="modal-header">
+      <div class="modal-title">Deposit</div>
+      <button class="modal-close" data-modal="modal-deposit">✕</button>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Amount (USD)</label>
+      <input type="number" class="form-input" id="deposit-usd" value="100" min="10">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Asset</label>
+      <select class="form-input" id="deposit-asset">
+        <option value="ltc">Litecoin (LTC)</option>
+        <option value="btc">Bitcoin (BTC)</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Deposit Address</label>
+      <input type="text" class="form-input" id="deposit-addr" readonly value="Click generate">
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" data-modal="modal-deposit">Cancel</button>
+      <button class="btn" id="deposit-generate">Generate Address</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal" id="modal-withdraw">
+  <div class="modal-content">
+    <div class="modal-header">
+      <div class="modal-title">Withdraw</div>
+      <button class="modal-close" data-modal="modal-withdraw">✕</button>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Withdrawal Address</label>
+      <input type="text" class="form-input" id="withdraw-addr" placeholder="LTC address">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Amount (USD)</label>
+      <input type="number" class="form-input" id="withdraw-usd" value="10.00" min="1" step="1">
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" data-modal="modal-withdraw">Cancel</button>
+      <button class="btn" id="withdraw-submit">Withdraw</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast-container"></div>
+
+<script>
+const STATE={
+  balanceUsd:200,
+  ltcPrice:85,
+  btcPrice:43000,
+  netResult:0,
+  biggestWin:0,
+  history:[]
+};
+
+const RTP_LIMBO=0.98,RTP_MINES=0.96;
+
+function rng(){
+  const buf=new Uint32Array(1);
+  crypto.getRandomValues(buf);
+  return buf[0]/0xffffffff;
+}
+
+function fmtUsd(v){return '$'+v.toFixed(2)}
+function fmtLtc(v){return v.toFixed(8)+' LTC'}
+
+const walletUsdEl=document.getElementById('wallet-usd');
+const walletLtcEl=document.getElementById('wallet-ltc');
+const sessionNetEl=document.getElementById('session-net');
+const sessionBestEl=document.getElementById('session-best');
+
+function updateWallet(){
+  walletUsdEl.textContent=fmtUsd(STATE.balanceUsd);
+  walletLtcEl.textContent=fmtLtc(STATE.balanceUsd/STATE.ltcPrice);
+  sessionNetEl.textContent=fmtUsd(STATE.netResult);
+  sessionBestEl.textContent=fmtUsd(STATE.biggestWin);
+}
+
+function showToast(type,title,msg){
+  const toast=document.createElement('div');
+  toast.className='toast '+type;
+  toast.innerHTML='<div class="toast-title">'+title+'</div><div class="toast-message">'+msg+'</div>';
+  document.getElementById('toast-container').appendChild(toast);
+  setTimeout(()=>{toast.style.opacity='0'},2800);
+  setTimeout(()=>toast.remove(),3200);
+}
+
+function openModal(id){
+  document.getElementById(id).classList.add('active');
+}
+
+function closeModal(id){
+  document.getElementById(id).classList.remove('active');
+}
+
+document.querySelectorAll('[data-modal]').forEach(btn=>{
+  btn.addEventListener('click',()=>closeModal(btn.dataset.modal));
+});
+
+document.getElementById('btn-deposit').addEventListener('click',()=>openModal('modal-deposit'));
+document.getElementById('btn-withdraw').addEventListener('click',()=>openModal('modal-withdraw'));
+
+document.getElementById('deposit-generate').addEventListener('click',()=>{
+  const usd=parseFloat(document.getElementById('deposit-usd').value||0);
+  if(usd<10){showToast('error','Too small','Min deposit $10');return}
+  const asset=document.getElementById('deposit-asset').value;
+  const rand=Math.floor(rng()*1e12).toString(16).toUpperCase();
+  const addr=asset==='ltc'?'LZ8rVx'+rand:'bc1q'+rand;
+  document.getElementById('deposit-addr').value=addr;
+  showToast('info','Processing','Waiting for confirmations...');
+  setTimeout(()=>{
+    STATE.balanceUsd+=usd;
+    STATE.netResult+=usd;
+    if(usd>STATE.biggestWin)STATE.biggestWin=usd;
+    addHistory('Deposit','you',usd,usd);
+    updateWallet();
+    showToast('success','Deposited',fmtUsd(usd)+' credited');
+    closeModal('modal-deposit');
+  },2500);
+});
+
+document.getElementById('withdraw-submit').addEventListener('click',()=>{
+  const addr=document.getElementById('withdraw-addr').value.trim();
+  const amt=parseFloat(document.getElementById('withdraw-usd').value||0);
+  if(!addr||addr.length<8){showToast('error','Invalid','Enter valid address');return}
+  if(amt<=0){showToast('error','Invalid','Enter positive amount');return}
+  if(amt>STATE.balanceUsd){showToast('error','Insufficient','Not enough balance');return}
+  STATE.balanceUsd-=amt;
+  STATE.netResult-=amt;
+  updateWallet();
+  addHistory('Withdraw','you',-amt,-amt);
+  showToast('success','Withdrawn',fmtUsd(amt)+' sent to '+addr.slice(0,8)+'...');
+  closeModal('modal-withdraw');
+});
+
+const gameTitles={
+  limbo:{title:'Limbo',sub:'Set your target and beat the crash'},
+  mines:{title:'Mines',sub:'Click tiles to find gems and avoid mines'},
+  cases:{title:'Cases',sub:'Open crates for instant rewards'},
+  battle:{title:'Case Battles',sub:'Compete with bots for the biggest pull'},
+  blackjack:{title:'Blackjack',sub:'Classic 21 with 3:2 payouts'}
+};
+
+const titleEl=document.getElementById('game-title');
+const subtitleEl=document.getElementById('game-subtitle');
+
+function switchGame(key){
+  document.querySelectorAll('.game-card').forEach(c=>c.classList.toggle('active',c.dataset.game===key));
+  document.querySelectorAll('.game-content').forEach(c=>c.classList.remove('active'));
+  document.getElementById('content-'+key).classList.add('active');
+  const meta=gameTitles[key]||gameTitles.limbo;
+  titleEl.textContent=meta.title;
+  subtitleEl.textContent=meta.sub;
+}
+
+document.querySelectorAll('.game-card').forEach(card=>{
+  card.addEventListener('click',()=>switchGame(card.dataset.game));
+});
+
+const historyBody=document.getElementById('history-body');
+const names=['crypt0king','dogeminer','highroller','minesfan','limboLad'];
+
+function addHistory(game,user,bet,profit){
+  STATE.history.unshift({game,user,bet,profit});
+  if(STATE.history.length>10)STATE.history.pop();
+  renderHistory();
+}
+
+function renderHistory(){
+  historyBody.innerHTML='';
+  STATE.history.forEach(h=>{
+    const tr=document.createElement('tr');
+    const mult=h.bet!==0?(h.profit+h.bet)/h.bet:0;
+    const badge=h.profit>0?
+      '<span class="badge badge-win">'+mult.toFixed(2)+'x · +'+fmtUsd(h.profit)+'</span>':
+      '<span class="badge badge-loss">LOSS · '+fmtUsd(h.profit)+'</span>';
+    tr.innerHTML='<td>'+h.game+'</td><td>'+h.user+'</td><td>'+fmtUsd(Math.abs(h.bet))+'</td><td>'+badge+'</td>';
+    historyBody.appendChild(tr);
+  });
+}
+
+setInterval(()=>{
+  const games=['Limbo','Mines','Cases','BJ'];
+  const g=games[Math.floor(rng()*games.length)];
+  const user=names[Math.floor(rng()*names.length)];
+  const bet=1+rng()*10;
+  const prof=rng()>0.55?(bet*rng()*3):-(bet*rng());
+  addHistory(g,user,bet,prof);
+},3000);
+
+// LIMBO
+const limboBet=document.getElementById('limbo-bet');
+const limboTarget=document.getElementById('limbo-target');
+const limboMulti=document.getElementById('limbo-multi');
+const limboStatus=document.getElementById('limbo-status');
+const limboPlay=document.getElementById('limbo-play');
+
+let limboRunning=false;
+
+limboPlay.addEventListener('click',async()=>{
+  if(limboRunning)return;
+  const bet=parseFloat(limboBet.value||0);
+  const target=parseFloat(limboTarget.value||0);
+  if(bet<=0||bet>STATE.balanceUsd){showToast('error','Invalid','Check bet amount');return}
+  if(target<1.01){showToast('error','Invalid','Min target 1.01x');return}
+  
+  STATE.balanceUsd-=bet;
+  STATE.netResult-=bet;
+  updateWallet();
+  
+  limboRunning=true;
+  limboPlay.disabled=true;
+  limboMulti.classList.remove('win','loss');
+  limboStatus.textContent='Rolling...';
+  
+  const r=Math.max(rng(),0.000001);
+  const crash=Math.max(1.01,RTP_LIMBO/r);
+  
+  for(let i=0;i<=70;i++){
+    const t=i/70;
+    const m=1+(crash-1)*t;
+    limboMulti.textContent=m.toFixed(2)+'x';
+    await new Promise(res=>setTimeout(res,30));
+  }
+  
+  let win=0;
+  if(crash>=target){
+    win=bet*target;
+    STATE.balanceUsd+=win;
+    STATE.netResult+=win-bet;
+    const profit=win-bet;
+    if(profit>STATE.biggestWin)STATE.biggestWin=profit;
+    limboMulti.classList.add('win');
+    limboStatus.textContent='WIN at '+crash.toFixed(2)+'x';
+    showToast('success','Win','+'+fmtUsd(profit));
+    addHistory('Limbo','you',bet,profit);
+  }else{
+    limboMulti.classList.add('loss');
+    limboStatus.textContent='CRASHED at '+crash.toFixed(2)+'x';
+    showToast('error','Lost','-'+fmtUsd(bet));
+    addHistory('Limbo','you',bet,-bet);
+  }
+  
+  limboRunning=false;
+  limboPlay.disabled=false;
+  updateWallet();
+});
+
+// MINES
+const minesBoard=document.getElementById('mines-board');
+const minesBet=document.getElementById('mines-bet');
+const minesCount=document.getElementById('mines-count');
+const minesStart=document.getElementById('mines-start');
+const minesCashout=document.getElementById('mines-cashout');
+const minesStatBet=document.getElementById('mines-stat-bet');
+const minesStatMult=document.getElementById('mines-stat-mult');
+const minesStatProfit=document.getElementById('mines-stat-profit');
+const minesStatGems=document.getElementById('mines-stat-gems');
+
+const minesState={active:false,bet:0,mines:3,revealed:0,positions:new Set()};
+
+function buildMines(){
+  minesBoard.innerHTML='';
+  for(let i=0;i<25;i++){
+    const cell=document.createElement('div');
+    cell.className='mine-cell';
+    cell.dataset.index=i;
+    cell.addEventListener('click',()=>clickMine(i,cell));
+    minesBoard.appendChild(cell);
+  }
+}
+
+function minesMult(revealed,mines){
+  if(revealed===0)return 1;
+  const safe=25-mines;
+  let prob=1;
+  for(let i=0;i<revealed;i++)prob*=(safe-i)/(25-i);
+  return RTP_MINES/prob;
+}
+
+minesStart.addEventListener('click',()=>{
+  const bet=parseFloat(minesBet.value||0);
+  const mines=parseInt(minesCount.value||0);
+  if(bet<=0||bet>STATE.balanceUsd||mines<1||mines>24){showToast('error','Invalid','Check settings');return}
+  
+  STATE.balanceUsd-=bet;
+  STATE.netResult-=bet;
+  updateWallet();
+  
+  minesState.active=true;
+  minesState.bet=bet;
+  minesState.mines=mines;
+  minesState.revealed=0;
+  minesState.positions.clear();
+  
+  while(minesState.positions.size<mines)minesState.positions.add(Math.floor(rng()*25));
+  
+  minesStatBet.textContent=fmtUsd(bet);
+  minesStatMult.textContent='1.00x';
+  minesStatProfit.textContent='$0.00';
+  minesStatGems.textContent='0';
+  minesStart.disabled=true;
+  minesCashout.disabled=true;
+  buildMines();
+});
+
+function endMines(win){
+  minesState.active=false;
+  minesBoard.querySelectorAll('.mine-cell').forEach(cell=>{
+    const idx=parseInt(cell.dataset.index);
+    if(minesState.positions.has(idx)){
+      cell.classList.add('mine','revealed');
+      cell.textContent='✖';
+    }
+  });
+  
+  minesStart.disabled=false;
+  minesCashout.disabled=true;
+  
+  if(win>0){
+    STATE.balanceUsd+=win;
+    const profit=win-minesState.bet;
+    STATE.netResult+=profit;
+    if(profit>STATE.biggestWin)STATE.biggestWin=profit;
+    showToast('success','Cashout','+'+fmtUsd(profit));
+    addHistory('Mines','you',minesState.bet,profit);
+  }else{
+    showToast('error','Mine hit','-'+fmtUsd(minesState.bet));
+    addHistory('Mines','you',minesState.bet,-minesState.bet);
+  }
+  updateWallet();
+}
+
+function clickMine(i,cell){
+  if(!minesState.active||cell.classList.contains('revealed'))return;
+  cell.classList.add('revealed');
+  
+  if(minesState.positions.has(i)){
+    cell.classList.add('mine');
+    cell.textContent='✖';
+    endMines(0);
+    return;
+  }
+  
+  cell.classList.add('gem');
+  cell.textContent='◆';
+  minesState.revealed++;
+  const mult=minesMult(minesState.revealed,minesState.mines);
+  const win=minesState.bet*mult;
+  const profit=win-minesState.bet;
+  
+  minesStatGems.textContent=minesState.revealed;
+  minesStatMult.textContent=mult.toFixed(2)+'x';
+  minesStatProfit.textContent=fmtUsd(profit);
+  minesCashout.disabled=false;
+}
+
+minesCashout.addEventListener('click',()=>{
+  if(!minesState.active)return;
+  const mult=minesMult(minesState.revealed,minesState.mines);
+  endMines(minesState.bet*mult);
+});
+
+// CASES
+const CASES={
+  bronze:{price:5,items:[
+    {name:'Common Chip',value:1,weight:55},
+    {name:'Rare Chip',value:4,weight:30},
+    {name:'Epic Gem',value:8,weight:10},
+    {name:'Legendary',value:20,weight:4},
+    {name:'Mythic',value:50,weight:1}
+  ]},
+  silver:{price:15,items:[
+    {name:'Bronze Bar',value:6,weight:40},
+    {name:'Silver Bar',value:14,weight:32},
+    {name:'Gold Bar',value:35,weight:18},
+    {name:'Platinum',value:90,weight:7},
+    {name:'Crown',value:220,weight:3}
+  ]},
+  gold:{price:50,items:[
+    {name:'Emerald',value:25,weight:40},
+    {name:'Sapphire',value:50,weight:26},
+    {name:'Ruby',value:95,weight:18},
+    {name:'Pearl',value:250,weight:10},
+    {name:'Cosmic',value:600,weight:6}
+  ]}
+};
+
+let selectedCase=null;
+const caseTitle=document.getElementById('case-result-title');
+const caseDesc=document.getElementById('case-result-desc');
+const caseOpenBtn=document.getElementById('case-open-btn');
+
+document.querySelectorAll('.case-box').forEach(box=>{
+  box.addEventListener('click',()=>{
+    document.querySelectorAll('.case-box').forEach(b=>b.classList.remove('selected'));
+    box.classList.add('selected');
+    selectedCase=box.dataset.case;
+    const info=CASES[selectedCase];
+    caseTitle.textContent='Selected: '+box.querySelector('.case-name').textContent;
+    caseDesc.textContent='Cost: '+fmtUsd(info.price);
+    caseOpenBtn.style.display='inline-block';
+  });
+});
+
+caseOpenBtn.addEventListener('click',()=>{
+  if(!selectedCase)return;
+  const info=CASES[selectedCase];
+  if(info.price>STATE.balanceUsd){showToast('error','Insufficient','Not enough balance');return}
+  
+  STATE.balanceUsd-=info.price;
+  STATE.netResult-=info.price;
+  updateWallet();
+  
+  const totalW=info.items.reduce((a,b)=>a+b.weight,0);
+  let r=rng()*totalW;
+  let choice=info.items[0];
+  for(const item of info.items){
+    if(r<item.weight){choice=item;break}
+    r-=item.weight;
+  }
+  
+  const profit=choice.value-info.price;
+  STATE.balanceUsd+=choice.value;
+  STATE.netResult+=profit;
+  if(profit>0&&profit>STATE.biggestWin)STATE.biggestWin=profit;
+  
+  caseTitle.textContent=choice.name+' · '+fmtUsd(choice.value);
+  caseDesc.textContent=profit>=0?'Profit: +'+fmtUsd(profit):'Loss: '+fmtUsd(profit);
+  
+  if(profit>=0){
+    showToast('success','Win','+'+fmtUsd(profit));
+    addHistory('Cases','you',info.price,profit);
+  }else{
+    showToast('error','Loss',fmtUsd(profit));
+    addHistory('Cases','you',info.price,profit);
+  }
+  updateWallet();
+});
+
+// BATTLE
+const battleGrid=document.getElementById('battle-grid');
+const battleCase=document.getElementById('battle-case');
+const battleBots=document.getElementById('battle-bots');
+const battleStart=document.getElementById('battle-start');
+
+const BOT_NAMES=['Bot Vega','Bot Neon','Bot Hydra','Bot Flux','Bot Nova'];
+
+function simCase(key){
+  const info=CASES[key];
+  const totalW=info.items.reduce((a,b)=>a+b.weight,0);
+  let r=rng()*totalW;
+  let choice=info.items[0];
+  for(const item of info.items){
+    if(r<item.weight){choice=item;break}
+    r-=item.weight;
+  }
+  return choice;
+}
+
+battleStart.addEventListener('click',()=>{
+  const key=battleCase.value;
+  const bots=parseInt(battleBots.value);
+  const info=CASES[key];
+  const players=['You'];
+  
+  for(let i=0;i<bots;i++)players.push(BOT_NAMES[Math.floor(rng()*BOT_NAMES.length)]);
+  
+  const total=info.price*players.length;
+  if(total>STATE.balanceUsd){showToast('error','Insufficient','Need '+fmtUsd(total));return}
+  
+  STATE.balanceUsd-=info.price;
+  STATE.netResult-=info.price;
+  updateWallet();
+  
+  battleGrid.innerHTML='';
+  const entries=[];
+  
+  players.forEach(name=>{
+    const pull=simCase(key);
+    const div=document.createElement('div');
+    div.className='battle-player';
+    div.innerHTML=
+      '<div class="player-name">'+name+'</div>'+
+      '<div class="player-item">'+pull.name+'</div>'+
+      '<div class="player-value">'+fmtUsd(pull.value)+'</div>';
+    battleGrid.appendChild(div);
+    entries.push({name,value:pull.value,el:div});
+  });
+  
+  let winner=entries[0];
+  entries.forEach(e=>{if(e.value>winner.value)winner=e});
+  winner.el.classList.add('winner');
+  
+  const pot=info.price*players.length;
+  if(winner.name==='You'){
+    STATE.balanceUsd+=pot;
+    const profit=pot-info.price;
+    STATE.netResult+=profit;
+    if(profit>STATE.biggestWin)STATE.biggestWin=profit;
+    showToast('success','Won','Pot: '+fmtUsd(pot)+' (+'+fmtUsd(profit)+')');
+    addHistory('Battle','you',info.price,profit);
+  }else{
+    showToast('error','Lost',winner.name+' won');
+    addHistory('Battle','you',info.price,-info.price);
+  }
+  updateWallet();
+});
+
+// BLACKJACK
+const bjDealer=document.getElementById('bj-dealer');
+const bjPlayer=document.getElementById('bj-player');
+const bjStatus=document.getElementById('bj-status');
+const bjDealerTotal=document.getElementById('bj-dealer-total');
+const bjPlayerTotal=document.getElementById('bj-player-total');
+const bjBet=document.getElementById('bj-bet');
+const bjDeal=document.getElementById('bj-deal');
+const bjHit=document.getElementById('bj-hit');
+const bjStand=document.getElementById('bj-stand');
+const bjDouble=document.getElementById('bj-double');
+const bjInsurance=document.getElementById('bj-insurance');
+
+const SUITS=['♠','♣','♥','♦'];
+const RANKS=['A','2','3','4','5','6','7','8','9','10','J','Q','K'];
+
+const bjState={deck:[],player:[],dealer:[],bet:0,inRound:false,insurance:0};
+
+function newDeck(){
+  const deck=[];
+  for(let d=0;d<6;d++)
+    for(const s of SUITS)
+      for(const r of RANKS)
+        deck.push({s,r});
+  for(let i=deck.length-1;i>0;i--){
+    const j=Math.floor(rng()*(i+1));
+    [deck[i],deck[j]]=[deck[j],deck[i]];
+  }
+  return deck;
+}
+
+function cardVal(card){
+  if(card.r==='A')return 11;
+  if(['J','Q','K'].includes(card.r))return 10;
+  return parseInt(card.r);
+}
+
+function handVal(hand){
+  let total=0,aces=0;
+  hand.forEach(c=>{const v=cardVal(c);total+=v;if(c.r==='A')aces++});
+  while(total>21&&aces>0){total-=10;aces--}
+  return total;
+}
+
+async function renderHand(el,hand,hideHole){
+  el.innerHTML='';
+  for(let i=0;i<hand.length;i++){
+    const c=hand[i];
+    const div=document.createElement('div');
+    const red=(c.s==='♥'||c.s==='♦');
+    if(hideHole&&i===1){
+      div.className='bj-card back';
+      div.textContent='◆';
+    }else{
+      div.className='bj-card '+(red?'red':'black');
+      div.textContent=c.r+c.s;
+    }
+    el.appendChild(div);
+    await new Promise(r=>setTimeout(r,400));
+  }
+}
+
+async function startBj(){
+  if(bjState.inRound)return;
+  const bet=parseFloat(bjBet.value||0);
+  if(bet<=0||bet>STATE.balanceUsd){showToast('error','Invalid','Check bet');return}
+  
+  STATE.balanceUsd-=bet;
+  STATE.netResult-=bet;
+  updateWallet();
+  
+  bjState.deck=newDeck();
+  bjState.player=[bjState.deck.pop(),bjState.deck.pop()];
+  bjState.dealer=[bjState.deck.pop(),bjState.deck.pop()];
+  bjState.bet=bet;
+  bjState.inRound=true;
+  bjState.insurance=0;
+  
+  bjDeal.disabled=true;
+  bjHit.disabled=false;
+  bjStand.disabled=false;
+  bjDouble.disabled=false;
+  bjInsurance.style.display='none';
+  
+  await renderHand(bjPlayer,bjState.player,false);
+  await renderHand(bjDealer,bjState.dealer,true);
+  
+  const val=handVal(bjState.player);
+  bjPlayerTotal.textContent='('+val+')';
+  bjStatus.textContent='You have '+val;
+  
+  // Check for insurance if dealer shows ace
+  if(bjState.dealer[0].r==='A'){
+    bjInsurance.style.display='block';
+    bjInsurance.disabled=false;
+    bjStatus.textContent='Dealer shows Ace - Insurance available';
+  }
+  
+  if(val===21)setTimeout(()=>dealerFinish(true),600);
+}
+
+async function dealerFinish(autoBJ){
+  bjInsurance.style.display='none';
+  await renderHand(bjDealer,bjState.dealer,false);
+  
+  let dVal=handVal(bjState.dealer);
+  bjDealerTotal.textContent='('+dVal+')';
+  
+  // Check insurance payout
+  let insurancePayout=0;
+  if(bjState.insurance>0&&dVal===21&&bjState.dealer.length===2){
+    insurancePayout=bjState.insurance*2;
+    STATE.balanceUsd+=insurancePayout;
+    showToast('success','Insurance pays','2:1 on '+fmtUsd(bjState.insurance));
+  }
+  
+  while(dVal<17){
+    const c=bjState.deck.pop();
+    bjState.dealer.push(c);
+    await renderHand(bjDealer,bjState.dealer,false);
+    dVal=handVal(bjState.dealer);
+    bjDealerTotal.textContent='('+dVal+')';
+    await new Promise(r=>setTimeout(r,600));
+  }
+  
+  const p=handVal(bjState.player);
+  const d=dVal;
+  let payout=0,label;
+  
+  if(p>21){label='Bust';payout=0}
+  else if(d>21){label='Dealer bust - You win';payout=bjState.bet*2}
+  else if(autoBJ&&p===21&&d!==21){label='BLACKJACK 3:2';payout=bjState.bet*2.5}
+  else if(p>d){label='Win';payout=bjState.bet*2}
+  else if(p<d){label='Dealer wins';payout=0}
+  else{label='Push';payout=bjState.bet}
+  
+  bjStatus.textContent=label;
+  
+  let profit=payout-bjState.bet+insurancePayout-bjState.insurance;
+  if(payout>0){
+    STATE.balanceUsd+=payout;
+    STATE.netResult+=profit;
+    if(profit>STATE.biggestWin)STATE.biggestWin=profit;
+  }else{
+    STATE.netResult+=profit;
+  }
+  
+  addHistory('BJ','you',bjState.bet,profit);
+  
+  if(profit>0)showToast('success','Win','+'+fmtUsd(profit));
+  else if(profit<0)showToast('error','Lost','-'+fmtUsd(Math.abs(profit)));
+  else showToast('info','Push','Returned');
+  
+  bjState.inRound=false;
+  bjDeal.disabled=false;
+  bjHit.disabled=true;
+  bjStand.disabled=true;
+  bjDouble.disabled=true;
+  updateWallet();
+}
+
+bjDeal.addEventListener('click',startBj);
+
+bjInsurance.addEventListener('click',()=>{
+  if(!bjState.inRound)return;
+  const insuranceAmt=bjState.bet/2;
+  if(STATE.balanceUsd<insuranceAmt){
+    showToast('error','Insufficient','Not enough for insurance');
+    return;
+  }
+  STATE.balanceUsd-=insuranceAmt;
+  STATE.netResult-=insuranceAmt;
+  bjState.insurance=insuranceAmt;
+  updateWallet();
+  bjInsurance.disabled=true;
+  showToast('info','Insurance placed',fmtUsd(insuranceAmt));
+});
+
+bjHit.addEventListener('click',async()=>{
+  if(!bjState.inRound)return;
+  bjInsurance.style.display='none';
+  const c=bjState.deck.pop();
+  bjState.player.push(c);
+  await renderHand(bjPlayer,bjState.player,false);
+  const v=handVal(bjState.player);
+  bjPlayerTotal.textContent='('+v+')';
+  if(v>21){bjStatus.textContent='Bust';dealerFinish(false)}
+  else bjStatus.textContent='You have '+v;
+});
+
+bjStand.addEventListener('click',()=>{
+  if(!bjState.inRound)return;
+  dealerFinish(false);
+});
+
+bjDouble.addEventListener('click',async()=>{
+  if(!bjState.inRound)return;
+  if(STATE.balanceUsd<bjState.bet){showToast('error','Insufficient','Not enough');return}
+  STATE.balanceUsd-=bjState.bet;
+  STATE.netResult-=bjState.bet;
+  bjState.bet*=2;
+  updateWallet();
+  bjInsurance.style.display='none';
+  
+  const c=bjState.deck.pop();
+  bjState.player.push(c);
+  await renderHand(bjPlayer,bjState.player,false);
+  const v=handVal(bjState.player);
+  bjPlayerTotal.textContent='('+v+')';
+  dealerFinish(false);
+});
+
+buildMines();
+updateWallet();
+</script>
+</body>
+</html>
