@@ -2,11 +2,11 @@
 
 ---
 
-## 🎆 EPIC ROBLOX VFX SYSTEM!
+## 🎆 TRIPLE AAA ROBLOX VFX SYSTEM!
 
 ### 🎮 FOR ROBLOX STUDIO
 
-An **ABSOLUTELY INSANE** VFX system for Roblox! Press E on interactive objects for Hollywood-level effects!
+An **ABSOLUTELY INSANE TRIPLE AAA** VFX system for Roblox! Press E on interactive objects for **cinematic Hollywood-level effects** with buildup animation!
 
 ### ⚡ QUICK START (3 STEPS):
 
@@ -18,18 +18,29 @@ An **ABSOLUTELY INSANE** VFX system for Roblox! Press E on interactive objects f
 
 ---
 
-### ✨ EFFECTS INCLUDED:
+### ✨ EFFECTS INCLUDED (TRIPLE AAA QUALITY):
 
-- 💥 Particle explosions (100+ particles)
-- ⚡ Energy beams (12 laser rays)
-- 📳 Screen shake (camera shake)
-- 🌈 Color flash (full screen)
-- 🌊 Shockwave ring
-- 💬 Text popup ("EPIC!", "LEGENDARY!")
-- 🌀 Circular waves (3x GUI rings)
-- ✨ Radial blur effect
-- 🔊 Sound effect (impact sound)
-- ⭐ Sparkles & glow effects
+**BUILDUP PHASE (1.5s):**
+- 🔮 Glowing sphere (pulsing around part)
+- ⚡ Energy rings (3 expanding rings)
+- 💡 Pulsing light (intensifies)
+- 🌀 Suction particles (pulled into part)
+- 🎵 Charge-up sound
+
+**EXPLOSION PHASE:**
+- 💥 Triple-layer particles (450 total! White/Cyan/Purple)
+- ⚡ Energy beams (24 laser rays in all directions)
+- 📳 Screen shake (2s decaying intensity)
+- 🌈 Color flash (gradient overlay, 1.5s)
+- 🌊 Shockwaves (3 expanding rings)
+- 💬 Epic text popup ("LEGENDARY!", etc.)
+- 🌀 Circular waves (5x GUI rings)
+- ✨ Radial blur (dramatic 40px blur)
+- 💥 Ground cracks (8 radiating cracks)
+- 🔊 Explosion sound (cinematic impact)
+- ⭐ Massive glow effects
+
+**TOTAL DURATION: ~5 seconds of pure epicness!**
 
 ---
 
