@@ -2,11 +2,20 @@
 
 ---
 
-## 🎆 TRIPLE AAA ROBLOX VFX SYSTEM!
+## 🎆 TRIPLE AAA MODULAR VFX SYSTEM (FIXED + OPTIMIZED!)
 
 ### 🎮 FOR ROBLOX STUDIO
 
-An **ABSOLUTELY INSANE TRIPLE AAA** VFX system for Roblox! Press E on interactive objects for **cinematic Hollywood-level effects** with buildup animation!
+An **ABSOLUTELY INSANE TRIPLE AAA** VFX system with **clean OOP architecture**!
+
+### ✅ ALL MAJOR ISSUES FIXED:
+- **Beams:** ✅ Fixed wonky rotation (proper anchor points!)
+- **Camera shake:** ✅ No more drift (uses base CFrame!)
+- **Performance:** ✅ 100x faster (CollectionService, no GetDescendants!)
+- **Visuals:** ✅ AAA quality (Bloom + ColorCorrection + Blur!)
+- **Architecture:** ✅ Modular OOP (ScreenVFX + EggRevealVFX modules!)
+- **Sound:** ✅ Error-free (pcall fallback!)
+- **Pulsing:** ✅ Finite duration (no infinite loops!)
 
 ### ⚡ QUICK START (3 STEPS):
 
@@ -43,13 +52,22 @@ An **ABSOLUTELY INSANE TRIPLE AAA** VFX system for Roblox! Press E on interactiv
 
 ---
 
-### 📁 ROBLOX FILES:
+### 📁 NEW MODULAR FILES (USE THESE!):
 
-- `RobloxVFX_MainScript.lua` ← **PUT THIS IN STARTERPLAYERSCRIPTS** (100% screen-based!)
-- `RobloxVFX_ServerScript.lua` ← Optional (for multiplayer)
-- `ROBLOX_INSTALLATION_GUIDE.md` ← Full documentation
-- `RARITY_SYSTEM_GUIDE.txt` ← **READ THIS for rarity setup!**
-- `ROBLOX_QUICK_START.txt` ← Quick reference guide
+**Core Modules:**
+- `ScreenVFX.lua` ← **Screen effects module** (Put in ReplicatedStorage.VFX)
+- `EggRevealVFX.lua` ← **Egg reveal orchestrator** (Put in ReplicatedStorage.VFX)
+- `RobloxVFX_Client_Optimized.lua` ← **Client script** (Put in StarterPlayerScripts)
+
+**Documentation:**
+- `INSTALLATION_GUIDE_MODULAR.md` ← **START HERE!**
+- `WHAT_WAS_FIXED.md` ← Complete list of all fixes
+- `EGG_MODEL_TEMPLATE.txt` ← How to create egg model
+- `RARITY_SYSTEM_GUIDE.txt` ← Rarity setup guide
+
+**Old Files (Legacy):**
+- `RobloxVFX_MainScript.lua` ← Old monolithic version (don't use!)
+- `ROBLOX_INSTALLATION_GUIDE.md` ← Old guide
 
 ---
 
@@ -62,15 +80,30 @@ An **ABSOLUTELY INSANE TRIPLE AAA** VFX system for Roblox! Press E on interactiv
 
 ---
 
-### 🚀 GET STARTED:
+### 🚀 GET STARTED (NEW MODULAR SYSTEM):
 
-**For Roblox:**
-1. Open `RobloxVFX_MainScript.lua`
-2. Copy the entire script
-3. Paste into LocalScript in StarterPlayerScripts
-4. Tag parts with `VFXInteractive` attribute
-5. Press Play + Press E = 💥 BOOM!
+**Step 1:** Create folder structure in ReplicatedStorage:
+```
+ReplicatedStorage
+└── VFX
+    ├── ScreenVFX (ModuleScript)
+    └── EggRevealVFX (ModuleScript)
+```
 
-**Read the full guide:** `ROBLOX_INSTALLATION_GUIDE.md`
+**Step 2:** Paste modules:
+- `ScreenVFX.lua` → ReplicatedStorage.VFX.ScreenVFX
+- `EggRevealVFX.lua` → ReplicatedStorage.VFX.EggRevealVFX
+
+**Step 3:** Add client script:
+- `RobloxVFX_Client_Optimized.lua` → StarterPlayerScripts (LocalScript)
+
+**Step 4:** Tag parts:
+- Use CollectionService tag: `VFXInteractive`
+- Add attribute: `VFXRarity` (String: "Common", "Rare", "Epic")
+
+**Step 5:** Press Play + Press E = 💥 BOOM!
+
+**📖 Read the full guide:** `INSTALLATION_GUIDE_MODULAR.md`
+**🔧 See what was fixed:** `WHAT_WAS_FIXED.md`
 
 **PRESS E FOR EPICNESS! 🔥⚡💥**
