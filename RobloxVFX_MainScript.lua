@@ -1,14 +1,20 @@
 --[[
-    TRIPLE AAA EPIC ROBLOX VFX SYSTEM
-    Press E on interactive objects for INSANE cinematic effects!
+    TRIPLE AAA SCREEN-BASED VFX SYSTEM
+    Press E on interactive objects for INSANE screen effects!
+    
+    RARITY TIERS:
+    - Common: Basic effects
+    - Rare: Medium effects
+    - Epic: INSANE effects
     
     INSTALLATION:
     1. Put this in StarterPlayer > StarterPlayerScripts as a LocalScript
-    2. Add "VFXInteractive" attribute (Boolean = true) to any parts
+    2. Add attributes to parts:
+       - VFXInteractive (Boolean = true)
+       - VFXRarity (String = "Common", "Rare", or "Epic")
 --]]
 
 local Players = game:GetService("Players")
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local TweenService = game:GetService("TweenService")
 local UserInputService = game:GetService("UserInputService")
 local RunService = game:GetService("RunService")
@@ -25,8 +31,8 @@ VFXSystem.__index = VFXSystem
 
 function VFXSystem.new()
     local self = setmetatable({}, VFXSystem)
-    self.activeEffects = {}
     self.screenGui = self:CreateScreenGui()
+    self.isTriggering = false
     return self
 end
 
@@ -35,108 +41,53 @@ function VFXSystem:CreateScreenGui()
     screenGui.Name = "EpicVFXGui"
     screenGui.ResetOnSpawn = false
     screenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+    screenGui.IgnoreGuiInset = true
     screenGui.Parent = player.PlayerGui
     return screenGui
 end
 
--- BUILDUP ANIMATION (AAA Quality - shows before explosion)
-function VFXSystem:BuildupAnimation(part, duration)
-    local duration = duration or 1.5
-    
-    -- Create glow sphere around the part
-    local glowSphere = Instance.new("Part")
-    glowSphere.Name = "BuildupGlow"
-    glowSphere.Size = part.Size * 1.2
-    glowSphere.Position = part.Position
-    glowSphere.Anchored = true
-    glowSphere.CanCollide = false
-    glowSphere.Material = Enum.Material.Neon
-    glowSphere.Color = Color3.fromRGB(0, 255, 255)
-    glowSphere.Transparency = 0.7
-    glowSphere.Shape = Enum.PartType.Ball
-    glowSphere.Parent = workspace
-    
-    -- Pulsing light
-    local light = Instance.new("PointLight")
-    light.Color = Color3.fromRGB(0, 255, 255)
-    light.Brightness = 1
-    light.Range = 10
-    light.Parent = glowSphere
-    
-    -- Energy rings expanding
-    for i = 1, 3 do
-        task.wait(0.3)
-        local ring = Instance.new("Part")
-        ring.Name = "EnergyRing"
-        ring.Size = Vector3.new(1, 0.2, 1)
-        ring.Position = part.Position
-        ring.Anchored = true
-        ring.CanCollide = false
-        ring.Material = Enum.Material.Neon
-        ring.Color = Color3.fromRGB(0, 255, 255)
-        ring.Transparency = 0.3
-        ring.Shape = Enum.PartType.Cylinder
-        ring.Orientation = Vector3.new(0, 0, 90)
-        ring.Parent = workspace
-        
-        -- Expand ring
-        TweenService:Create(ring, TweenInfo.new(0.8), {
-            Size = Vector3.new(1, part.Size.X * 4, part.Size.Z * 4),
-            Transparency = 1
-        }):Play()
-        
-        Debris:AddItem(ring, 0.8)
-    end
-    
-    -- Pulse the glow sphere
-    local pulseTween = TweenService:Create(glowSphere, TweenInfo.new(0.3, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut, -1, true), {
-        Size = part.Size * 1.5,
-        Transparency = 0.4
-    })
-    pulseTween:Play()
-    
-    -- Pulse the light
-    local lightTween = TweenService:Create(light, TweenInfo.new(0.3, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut, -1, true), {
-        Brightness = 5,
-        Range = 30
-    })
-    lightTween:Play()
-    
-    -- Particle buildup
-    local buildupParticles = Instance.new("ParticleEmitter")
-    buildupParticles.Enabled = true
-    buildupParticles.Lifetime = NumberRange.new(0.5, 1)
-    buildupParticles.Rate = 50
-    buildupParticles.SpreadAngle = Vector2.new(0, 0)
-    buildupParticles.Speed = NumberRange.new(-5, -10)
-    buildupParticles.Acceleration = Vector3.new(0, 5, 0)
-    buildupParticles.Color = ColorSequence.new(Color3.fromRGB(0, 255, 255))
-    buildupParticles.Size = NumberSequence.new(0.5, 0)
-    buildupParticles.Transparency = NumberSequence.new(0, 1)
-    buildupParticles.LightEmission = 1
-    buildupParticles.Parent = glowSphere
-    
-    -- Cleanup after duration
-    task.wait(duration)
-    pulseTween:Cancel()
-    lightTween:Cancel()
-    buildupParticles.Enabled = false
-    
-    -- Final flash before explosion
-    TweenService:Create(glowSphere, TweenInfo.new(0.2), {
-        Size = part.Size * 2,
-        Transparency = 0
-    }):Play()
-    
-    task.wait(0.2)
-    glowSphere:Destroy()
-end
+-- RARITY CONFIGS
+local RarityConfig = {
+    Common = {
+        color = Color3.fromRGB(200, 200, 200), -- Gray
+        particleCount = 30,
+        ringCount = 2,
+        beamCount = 8,
+        shakeIntensity = 0.5,
+        flashIntensity = 0.3,
+        blurSize = 15,
+        duration = 1.5,
+        text = "NICE!",
+        buildupTime = 0.5
+    },
+    Rare = {
+        color = Color3.fromRGB(0, 150, 255), -- Blue
+        particleCount = 80,
+        ringCount = 4,
+        beamCount = 16,
+        shakeIntensity = 1.5,
+        flashIntensity = 0.5,
+        blurSize = 30,
+        duration = 2.5,
+        text = "RARE!",
+        buildupTime = 1.0
+    },
+    Epic = {
+        color = Color3.fromRGB(255, 0, 255), -- Purple/Magenta
+        particleCount = 150,
+        ringCount = 6,
+        beamCount = 32,
+        shakeIntensity = 3,
+        flashIntensity = 0.7,
+        blurSize = 50,
+        duration = 3.5,
+        text = "LEGENDARY!",
+        buildupTime = 1.5
+    }
+}
 
--- SCREEN SHAKE (Longer and more cinematic)
+-- SCREEN SHAKE
 function VFXSystem:ScreenShake(intensity, duration)
-    local intensity = intensity or 1.5
-    local duration = duration or 1.5
-    
     spawn(function()
         local elapsed = 0
         local connection
@@ -147,7 +98,6 @@ function VFXSystem:ScreenShake(intensity, duration)
                 return
             end
             
-            -- Decay shake over time
             local progress = elapsed / duration
             local currentIntensity = intensity * (1 - progress)
             
@@ -155,10 +105,6 @@ function VFXSystem:ScreenShake(intensity, duration)
                 math.random(-100, 100) / 100 * currentIntensity,
                 math.random(-100, 100) / 100 * currentIntensity,
                 math.random(-100, 100) / 100 * currentIntensity
-            ) * CFrame.Angles(
-                math.rad(math.random(-100, 100) / 100 * currentIntensity),
-                math.rad(math.random(-100, 100) / 100 * currentIntensity),
-                math.rad(math.random(-100, 100) / 100 * currentIntensity)
             )
             
             camera.CFrame = camera.CFrame * shake
@@ -166,43 +112,42 @@ function VFXSystem:ScreenShake(intensity, duration)
     end)
 end
 
--- COLOR FLASH (More intense and longer)
+-- COLOR FLASH (SCREEN SPACE)
 function VFXSystem:ColorFlash(color, duration, intensity)
     local flash = Instance.new("Frame")
     flash.Name = "ColorFlash"
     flash.Size = UDim2.new(1, 0, 1, 0)
     flash.Position = UDim2.new(0, 0, 0, 0)
-    flash.BackgroundColor3 = color or Color3.fromRGB(0, 255, 255)
-    flash.BackgroundTransparency = 1 - (intensity or 0.5)
+    flash.BackgroundColor3 = color
+    flash.BackgroundTransparency = 1 - intensity
     flash.BorderSizePixel = 0
     flash.ZIndex = 10000
     flash.Parent = self.screenGui
     
-    -- Add gradient for cooler effect
     local gradient = Instance.new("UIGradient")
     gradient.Color = ColorSequence.new({
-        ColorSequenceKeypoint.new(0, Color3.fromRGB(0, 255, 255)),
-        ColorSequenceKeypoint.new(0.5, Color3.fromRGB(255, 255, 255)),
-        ColorSequenceKeypoint.new(1, Color3.fromRGB(255, 0, 255))
+        ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 255, 255)),
+        ColorSequenceKeypoint.new(0.5, color),
+        ColorSequenceKeypoint.new(1, Color3.fromRGB(255, 255, 255))
     })
     gradient.Rotation = 45
     gradient.Parent = flash
     
-    TweenService:Create(flash, TweenInfo.new(duration or 1), {
+    TweenService:Create(flash, TweenInfo.new(duration, Enum.EasingStyle.Exponential), {
         BackgroundTransparency = 1
     }):Play()
     
-    Debris:AddItem(flash, duration or 1)
+    Debris:AddItem(flash, duration + 0.1)
 end
 
--- RADIAL BLUR (More dramatic)
-function VFXSystem:RadialBlur(duration)
+-- RADIAL BLUR
+function VFXSystem:RadialBlur(maxSize, duration)
     local blur = Instance.new("BlurEffect")
     blur.Size = 0
     blur.Parent = camera
     
-    local tweenIn = TweenService:Create(blur, TweenInfo.new(0.2), {Size = 40})
-    local tweenOut = TweenService:Create(blur, TweenInfo.new(duration or 1.5), {Size = 0})
+    local tweenIn = TweenService:Create(blur, TweenInfo.new(0.1), {Size = maxSize})
+    local tweenOut = TweenService:Create(blur, TweenInfo.new(duration), {Size = 0})
     
     tweenIn:Play()
     tweenIn.Completed:Connect(function()
@@ -214,81 +159,117 @@ function VFXSystem:RadialBlur(duration)
     end)
 end
 
--- TEXT POPUP (More dramatic with better animation)
-function VFXSystem:TextPopup(text, position)
-    local texts = {"EPIC!", "LEGENDARY!", "INSANE!", "AMAZING!", "SPECTACULAR!", "PHENOMENAL!"}
-    local displayText = text or texts[math.random(1, #texts)]
+-- SCREEN PARTICLES (GUI-based)
+function VFXSystem:ScreenParticles(color, count, duration)
+    local centerX = 0.5
+    local centerY = 0.5
     
-    local textLabel = Instance.new("TextLabel")
-    textLabel.Name = "TextPopup"
-    textLabel.Text = displayText
-    textLabel.Font = Enum.Font.GothamBold
-    textLabel.TextSize = 100
-    textLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-    textLabel.TextStrokeTransparency = 0
-    textLabel.TextStrokeColor3 = Color3.fromRGB(0, 0, 0)
-    textLabel.BackgroundTransparency = 1
-    textLabel.Size = UDim2.new(0, 600, 0, 150)
-    textLabel.Position = UDim2.new(0.5, -300, 0.5, -75)
-    textLabel.TextTransparency = 1
-    textLabel.TextStrokeTransparency = 1
-    textLabel.ZIndex = 10001
-    textLabel.Parent = self.screenGui
-    
-    -- Epic stroke effect
-    local uiStroke = Instance.new("UIStroke")
-    uiStroke.Color = Color3.fromRGB(0, 255, 255)
-    uiStroke.Thickness = 6
-    uiStroke.Transparency = 1
-    uiStroke.Parent = textLabel
-    
-    -- Gradient
-    local gradient = Instance.new("UIGradient")
-    gradient.Color = ColorSequence.new({
-        ColorSequenceKeypoint.new(0, Color3.fromRGB(0, 255, 255)),
-        ColorSequenceKeypoint.new(0.5, Color3.fromRGB(255, 255, 255)),
-        ColorSequenceKeypoint.new(1, Color3.fromRGB(255, 0, 255))
-    })
-    gradient.Rotation = 45
-    gradient.Parent = textLabel
-    
-    -- Fade in
-    TweenService:Create(textLabel, TweenInfo.new(0.3, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {
-        TextTransparency = 0,
-        TextStrokeTransparency = 0
-    }):Play()
-    
-    TweenService:Create(uiStroke, TweenInfo.new(0.3), {
-        Transparency = 0
-    }):Play()
-    
-    -- Hold
-    task.wait(0.5)
-    
-    -- Fade out and move up
-    TweenService:Create(textLabel, TweenInfo.new(1.5, Enum.EasingStyle.Exponential), {
-        Position = UDim2.new(0.5, -300, 0.1, -75),
-        TextTransparency = 1,
-        TextStrokeTransparency = 1,
-        TextSize = 120
-    }):Play()
-    
-    TweenService:Create(uiStroke, TweenInfo.new(1.5), {
-        Transparency = 1
-    }):Play()
-    
-    Debris:AddItem(textLabel, 2)
+    for i = 1, count do
+        local particle = Instance.new("Frame")
+        particle.Name = "Particle"
+        particle.Size = UDim2.new(0, math.random(3, 10), 0, math.random(3, 10))
+        particle.Position = UDim2.new(centerX, 0, centerY, 0)
+        particle.BackgroundColor3 = color
+        particle.BorderSizePixel = 0
+        particle.ZIndex = 9900 + i
+        particle.Parent = self.screenGui
+        
+        -- Glow effect
+        local glow = Instance.new("UIStroke")
+        glow.Color = color
+        glow.Thickness = 2
+        glow.Transparency = 0
+        glow.Parent = particle
+        
+        local corner = Instance.new("UICorner")
+        corner.CornerRadius = UDim.new(1, 0)
+        corner.Parent = particle
+        
+        -- Random direction
+        local angle = math.rad(math.random(0, 360))
+        local distance = math.random(200, 600)
+        local targetX = centerX + (math.cos(angle) * distance) / (camera.ViewportSize.X)
+        local targetY = centerY + (math.sin(angle) * distance) / (camera.ViewportSize.Y)
+        
+        -- Gravity effect
+        targetY = targetY + math.random(100, 300) / camera.ViewportSize.Y
+        
+        -- Animate
+        task.wait(math.random() * 0.3)
+        
+        TweenService:Create(particle, TweenInfo.new(duration, Enum.EasingStyle.Exponential), {
+            Position = UDim2.new(targetX, 0, targetY, 0),
+            Size = UDim2.new(0, 0, 0, 0),
+            BackgroundTransparency = 1
+        }):Play()
+        
+        TweenService:Create(glow, TweenInfo.new(duration), {
+            Transparency = 1
+        }):Play()
+        
+        Debris:AddItem(particle, duration + 0.5)
+    end
 end
 
--- CIRCULAR WAVES (More and longer lasting)
-function VFXSystem:CircularWaves(count)
-    for i = 1, count or 5 do
-        task.wait(0.3)
+-- SCREEN BEAMS (Radiating lines from center)
+function VFXSystem:ScreenBeams(color, count, duration)
+    for i = 1, count do
+        local angle = (360 / count) * i
+        
+        local beam = Instance.new("Frame")
+        beam.Name = "Beam"
+        beam.Size = UDim2.new(0, 0, 0, 3)
+        beam.Position = UDim2.new(0.5, 0, 0.5, 0)
+        beam.AnchorPoint = Vector2.new(0, 0.5)
+        beam.BackgroundColor3 = color
+        beam.BorderSizePixel = 0
+        beam.ZIndex = 9800
+        beam.Rotation = angle
+        beam.Parent = self.screenGui
+        
+        local glow = Instance.new("UIStroke")
+        glow.Color = color
+        glow.Thickness = 3
+        glow.Transparency = 0
+        glow.Parent = beam
+        
+        local gradient = Instance.new("UIGradient")
+        gradient.Transparency = NumberSequence.new({
+            NumberSequenceKeypoint.new(0, 0),
+            NumberSequenceKeypoint.new(1, 1)
+        })
+        gradient.Parent = beam
+        
+        -- Animate
+        task.wait(math.random() * 0.2)
+        
+        TweenService:Create(beam, TweenInfo.new(0.5), {
+            Size = UDim2.new(0.7, 0, 0, 3)
+        }):Play()
+        
+        task.wait(0.5)
+        
+        TweenService:Create(beam, TweenInfo.new(duration - 0.5), {
+            BackgroundTransparency = 1
+        }):Play()
+        
+        TweenService:Create(glow, TweenInfo.new(duration - 0.5), {
+            Transparency = 1
+        }):Play()
+        
+        Debris:AddItem(beam, duration + 0.1)
+    end
+end
+
+-- CIRCULAR WAVES (Screen space)
+function VFXSystem:CircularWaves(color, count, duration)
+    for i = 1, count do
+        task.wait(0.2)
         
         local wave = Instance.new("Frame")
         wave.Name = "CircularWave"
-        wave.Size = UDim2.new(0, 100, 0, 100)
-        wave.Position = UDim2.new(0.5, -50, 0.5, -50)
+        wave.Size = UDim2.new(0, 50, 0, 50)
+        wave.Position = UDim2.new(0.5, -25, 0.5, -25)
         wave.BackgroundTransparency = 1
         wave.ZIndex = 9990 + i
         wave.Parent = self.screenGui
@@ -297,293 +278,229 @@ function VFXSystem:CircularWaves(count)
         corner.CornerRadius = UDim.new(1, 0)
         corner.Parent = wave
         
-        local colors = {
-            Color3.fromRGB(0, 255, 255),
-            Color3.fromRGB(255, 0, 255),
-            Color3.fromRGB(138, 43, 226),
-            Color3.fromRGB(0, 200, 255),
-            Color3.fromRGB(255, 100, 255)
-        }
-        
         local stroke = Instance.new("UIStroke")
-        stroke.Color = colors[i] or colors[1]
-        stroke.Thickness = 6
+        stroke.Color = color
+        stroke.Thickness = 4 + (i * 2)
         stroke.Transparency = 0
         stroke.Parent = wave
         
-        TweenService:Create(wave, TweenInfo.new(2, Enum.EasingStyle.Exponential), {
-            Size = UDim2.new(0, 1200, 0, 1200),
-            Position = UDim2.new(0.5, -600, 0.5, -600)
+        TweenService:Create(wave, TweenInfo.new(duration, Enum.EasingStyle.Exponential), {
+            Size = UDim2.new(0, 1500, 0, 1500),
+            Position = UDim2.new(0.5, -750, 0.5, -750)
         }):Play()
         
-        TweenService:Create(stroke, TweenInfo.new(2), {
-            Transparency = 1,
-            Thickness = 2
-        }):Play()
-        
-        Debris:AddItem(wave, 2)
-    end
-end
-
--- PARTICLE EXPLOSION (TRIPLE AAA - NO UGLY SPARKLES!)
-function VFXSystem:ParticleExplosion(position)
-    local part = Instance.new("Part")
-    part.Name = "VFXEmitter"
-    part.Size = Vector3.new(1, 1, 1)
-    part.Position = position
-    part.Anchored = true
-    part.CanCollide = false
-    part.Transparency = 1
-    part.Parent = workspace
-    
-    -- Main explosion particles (cyan/white)
-    local mainParticles = Instance.new("ParticleEmitter")
-    mainParticles.Enabled = false
-    mainParticles.Lifetime = NumberRange.new(2, 3.5)
-    mainParticles.Rate = 100
-    mainParticles.SpreadAngle = Vector2.new(180, 180)
-    mainParticles.Speed = NumberRange.new(25, 50)
-    mainParticles.Acceleration = Vector3.new(0, -15, 0)
-    mainParticles.Drag = 2
-    mainParticles.Color = ColorSequence.new({
-        ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 255, 255)),
-        ColorSequenceKeypoint.new(0.3, Color3.fromRGB(0, 255, 255)),
-        ColorSequenceKeypoint.new(1, Color3.fromRGB(0, 150, 255))
-    })
-    mainParticles.Size = NumberSequence.new({
-        NumberSequenceKeypoint.new(0, 3),
-        NumberSequenceKeypoint.new(0.5, 2),
-        NumberSequenceKeypoint.new(1, 0)
-    })
-    mainParticles.Transparency = NumberSequence.new({
-        NumberSequenceKeypoint.new(0, 0),
-        NumberSequenceKeypoint.new(0.8, 0.5),
-        NumberSequenceKeypoint.new(1, 1)
-    })
-    mainParticles.LightEmission = 1
-    mainParticles.LightInfluence = 0
-    mainParticles.Parent = part
-    
-    -- Secondary smoke particles (purple/magenta)
-    local smokeParticles = Instance.new("ParticleEmitter")
-    smokeParticles.Enabled = false
-    smokeParticles.Lifetime = NumberRange.new(2.5, 4)
-    smokeParticles.Rate = 80
-    smokeParticles.SpreadAngle = Vector2.new(180, 180)
-    smokeParticles.Speed = NumberRange.new(15, 30)
-    smokeParticles.Acceleration = Vector3.new(0, 5, 0)
-    smokeParticles.Drag = 5
-    smokeParticles.Color = ColorSequence.new({
-        ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 0, 255)),
-        ColorSequenceKeypoint.new(0.5, Color3.fromRGB(138, 43, 226)),
-        ColorSequenceKeypoint.new(1, Color3.fromRGB(50, 20, 100))
-    })
-    smokeParticles.Size = NumberSequence.new({
-        NumberSequenceKeypoint.new(0, 1),
-        NumberSequenceKeypoint.new(0.5, 4),
-        NumberSequenceKeypoint.new(1, 6)
-    })
-    smokeParticles.Transparency = NumberSequence.new({
-        NumberSequenceKeypoint.new(0, 0.3),
-        NumberSequenceKeypoint.new(0.5, 0.6),
-        NumberSequenceKeypoint.new(1, 1)
-    })
-    smokeParticles.LightEmission = 0.5
-    smokeParticles.Parent = part
-    
-    -- Glow particles (fast and bright)
-    local glowParticles = Instance.new("ParticleEmitter")
-    glowParticles.Enabled = false
-    glowParticles.Lifetime = NumberRange.new(0.5, 1)
-    glowParticles.Rate = 100
-    glowParticles.SpreadAngle = Vector2.new(180, 180)
-    glowParticles.Speed = NumberRange.new(40, 70)
-    glowParticles.Drag = 10
-    glowParticles.Color = ColorSequence.new(Color3.fromRGB(255, 255, 255))
-    glowParticles.Size = NumberSequence.new(1.5, 0)
-    glowParticles.Transparency = NumberSequence.new(0, 1)
-    glowParticles.LightEmission = 1
-    glowParticles.Parent = part
-    
-    -- Massive bright light
-    local light = Instance.new("PointLight")
-    light.Color = Color3.fromRGB(0, 255, 255)
-    light.Brightness = 10
-    light.Range = 60
-    light.Parent = part
-    
-    -- Emit all particles
-    mainParticles:Emit(200)
-    smokeParticles:Emit(150)
-    glowParticles:Emit(100)
-    
-    -- Fade light dramatically
-    TweenService:Create(light, TweenInfo.new(2.5, Enum.EasingStyle.Exponential), {
-        Brightness = 0,
-        Range = 10
-    }):Play()
-    
-    Debris:AddItem(part, 5)
-end
-
--- ENERGY BEAMS (More beams, longer lasting)
-function VFXSystem:EnergyBeams(position, count)
-    for i = 1, count or 24 do
-        local angle = (math.pi * 2 * i) / (count or 24)
-        local direction = Vector3.new(math.cos(angle), math.random(-20, 20) / 100, math.sin(angle))
-        
-        local attachment0 = Instance.new("Attachment")
-        local attachment1 = Instance.new("Attachment")
-        
-        local startPart = Instance.new("Part")
-        startPart.Size = Vector3.new(0.5, 0.5, 0.5)
-        startPart.Position = position
-        startPart.Anchored = true
-        startPart.CanCollide = false
-        startPart.Transparency = 1
-        startPart.Parent = workspace
-        
-        local distance = 40 + math.random(0, 20)
-        
-        local endPart = Instance.new("Part")
-        endPart.Size = Vector3.new(0.5, 0.5, 0.5)
-        endPart.Position = position + (direction * distance)
-        endPart.Anchored = true
-        endPart.CanCollide = false
-        endPart.Transparency = 1
-        endPart.Parent = workspace
-        
-        attachment0.Parent = startPart
-        attachment1.Parent = endPart
-        
-        local colors = {
-            Color3.fromRGB(0, 255, 255),
-            Color3.fromRGB(255, 0, 255),
-            Color3.fromRGB(255, 255, 255)
-        }
-        
-        local beam = Instance.new("Beam")
-        beam.Attachment0 = attachment0
-        beam.Attachment1 = attachment1
-        beam.Width0 = 3
-        beam.Width1 = 0.5
-        beam.Color = ColorSequence.new(colors[math.random(1, #colors)])
-        beam.LightEmission = 1
-        beam.LightInfluence = 0
-        beam.FaceCamera = true
-        beam.Transparency = NumberSequence.new(0, 1)
-        beam.Parent = startPart
-        
-        -- Fade out beam
-        task.wait(math.random() * 0.3)
-        TweenService:Create(beam, TweenInfo.new(1.2), {
-            Transparency = NumberSequence.new(1)
-        }):Play()
-        
-        Debris:AddItem(startPart, 1.5)
-        Debris:AddItem(endPart, 1.5)
-    end
-end
-
--- SHOCKWAVE (Multiple waves, more dramatic)
-function VFXSystem:Shockwave(position)
-    for wave = 1, 3 do
-        task.wait(0.2)
-        
-        local part = Instance.new("Part")
-        part.Name = "Shockwave"
-        part.Size = Vector3.new(1, 0.5, 1)
-        part.Position = position
-        part.Anchored = true
-        part.CanCollide = false
-        part.Material = Enum.Material.Neon
-        part.Color = wave == 1 and Color3.fromRGB(255, 255, 255) or Color3.fromRGB(0, 255, 255)
-        part.Transparency = 0.3
-        part.Shape = Enum.PartType.Cylinder
-        part.Orientation = Vector3.new(0, 0, 90)
-        part.Parent = workspace
-        
-        TweenService:Create(part, TweenInfo.new(1.5, Enum.EasingStyle.Exponential), {
-            Size = Vector3.new(1, 60, 60),
+        TweenService:Create(stroke, TweenInfo.new(duration), {
             Transparency = 1
         }):Play()
         
-        Debris:AddItem(part, 1.5)
+        Debris:AddItem(wave, duration + 0.1)
     end
 end
 
--- GROUND CRACK EFFECT (AAA Quality addition)
-function VFXSystem:GroundCrack(position)
-    local numCracks = 8
-    for i = 1, numCracks do
-        local angle = (math.pi * 2 * i) / numCracks
-        local direction = Vector3.new(math.cos(angle), 0, math.sin(angle))
-        
-        local crack = Instance.new("Part")
-        crack.Name = "GroundCrack"
-        crack.Size = Vector3.new(2, 0.1, 15)
-        crack.Position = position + Vector3.new(0, -0.5, 0)
-        crack.CFrame = CFrame.new(position + Vector3.new(0, -0.5, 0), position + direction)
-        crack.Anchored = true
-        crack.CanCollide = false
-        crack.Material = Enum.Material.Neon
-        crack.Color = Color3.fromRGB(0, 255, 255)
-        crack.Transparency = 0
-        crack.Parent = workspace
-        
-        TweenService:Create(crack, TweenInfo.new(2), {
-            Transparency = 1,
-            Size = Vector3.new(2, 0.1, 20)
+-- TEXT POPUP (Screen space)
+function VFXSystem:TextPopup(text, color, duration)
+    local textLabel = Instance.new("TextLabel")
+    textLabel.Name = "TextPopup"
+    textLabel.Text = text
+    textLabel.Font = Enum.Font.GothamBold
+    textLabel.TextSize = 120
+    textLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+    textLabel.TextStrokeTransparency = 0
+    textLabel.TextStrokeColor3 = Color3.fromRGB(0, 0, 0)
+    textLabel.BackgroundTransparency = 1
+    textLabel.Size = UDim2.new(0, 800, 0, 200)
+    textLabel.Position = UDim2.new(0.5, -400, 0.5, -100)
+    textLabel.TextTransparency = 1
+    textLabel.TextStrokeTransparency = 1
+    textLabel.ZIndex = 10001
+    textLabel.Parent = self.screenGui
+    
+    local uiStroke = Instance.new("UIStroke")
+    uiStroke.Color = color
+    uiStroke.Thickness = 8
+    uiStroke.Transparency = 1
+    uiStroke.Parent = textLabel
+    
+    local gradient = Instance.new("UIGradient")
+    gradient.Color = ColorSequence.new({
+        ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 255, 255)),
+        ColorSequenceKeypoint.new(0.5, color),
+        ColorSequenceKeypoint.new(1, Color3.fromRGB(255, 255, 255))
+    })
+    gradient.Rotation = 45
+    gradient.Parent = textLabel
+    
+    -- Pop in
+    TweenService:Create(textLabel, TweenInfo.new(0.3, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {
+        TextTransparency = 0,
+        TextStrokeTransparency = 0,
+        TextSize = 140
+    }):Play()
+    
+    TweenService:Create(uiStroke, TweenInfo.new(0.3), {
+        Transparency = 0
+    }):Play()
+    
+    task.wait(0.5)
+    
+    -- Float up and fade
+    TweenService:Create(textLabel, TweenInfo.new(duration - 0.8, Enum.EasingStyle.Exponential), {
+        Position = UDim2.new(0.5, -400, 0.1, -100),
+        TextTransparency = 1,
+        TextStrokeTransparency = 1
+    }):Play()
+    
+    TweenService:Create(uiStroke, TweenInfo.new(duration - 0.8), {
+        Transparency = 1
+    }):Play()
+    
+    Debris:AddItem(textLabel, duration + 0.1)
+end
+
+-- VIGNETTE PULSE
+function VFXSystem:VignettePulse(color, duration)
+    local vignette = Instance.new("Frame")
+    vignette.Name = "Vignette"
+    vignette.Size = UDim2.new(1, 0, 1, 0)
+    vignette.Position = UDim2.new(0, 0, 0, 0)
+    vignette.BackgroundTransparency = 1
+    vignette.BorderSizePixel = 0
+    vignette.ZIndex = 9700
+    vignette.Parent = self.screenGui
+    
+    local gradient = Instance.new("UIGradient")
+    gradient.Color = ColorSequence.new(color)
+    gradient.Transparency = NumberSequence.new({
+        NumberSequenceKeypoint.new(0, 1),
+        NumberSequenceKeypoint.new(0.7, 0.5),
+        NumberSequenceKeypoint.new(1, 0)
+    })
+    gradient.Rotation = 90
+    gradient.Parent = vignette
+    
+    vignette.BackgroundColor3 = color
+    vignette.BackgroundTransparency = 1
+    
+    -- Pulse in and out
+    local tween = TweenService:Create(vignette, TweenInfo.new(duration, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut), {
+        BackgroundTransparency = 0.3
+    })
+    tween:Play()
+    
+    tween.Completed:Connect(function()
+        TweenService:Create(vignette, TweenInfo.new(duration * 0.5), {
+            BackgroundTransparency = 1
         }):Play()
-        
-        Debris:AddItem(crack, 2)
-    end
-end
-
--- MAIN TRIGGER FUNCTION (AAA QUALITY WITH BUILDUP)
-function VFXSystem:TriggerAllEffects(targetPart)
-    print("🔥 TRIPLE AAA VFX TRIGGERED!")
-    
-    local position = targetPart.Position
-    
-    -- PHASE 1: BUILDUP (1.5 seconds)
-    spawn(function()
-        self:BuildupAnimation(targetPart, 1.5)
     end)
     
-    -- Anticipation sound
-    self:PlaySound("rbxassetid://9113880795", 0.4) -- Charge up sound
+    Debris:AddItem(vignette, duration * 1.5 + 0.1)
+end
+
+-- BUILDUP ANIMATION (Screen space)
+function VFXSystem:BuildupAnimation(color, duration)
+    -- Pulsing circle at center
+    local buildupCircle = Instance.new("Frame")
+    buildupCircle.Name = "BuildupCircle"
+    buildupCircle.Size = UDim2.new(0, 100, 0, 100)
+    buildupCircle.Position = UDim2.new(0.5, -50, 0.5, -50)
+    buildupCircle.BackgroundTransparency = 0.5
+    buildupCircle.BackgroundColor3 = color
+    buildupCircle.BorderSizePixel = 0
+    buildupCircle.ZIndex = 10002
+    buildupCircle.Parent = self.screenGui
     
-    -- Wait for buildup
-    task.wait(1.5)
+    local corner = Instance.new("UICorner")
+    corner.CornerRadius = UDim.new(1, 0)
+    corner.Parent = buildupCircle
     
-    -- PHASE 2: EXPLOSION
+    local stroke = Instance.new("UIStroke")
+    stroke.Color = color
+    stroke.Thickness = 4
+    stroke.Transparency = 0
+    stroke.Parent = buildupCircle
+    
+    -- Pulse animation
+    local pulseTween = TweenService:Create(buildupCircle, TweenInfo.new(0.3, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut), {
+        Size = UDim2.new(0, 150, 0, 150),
+        Position = UDim2.new(0.5, -75, 0.5, -75),
+        BackgroundTransparency = 0.2
+    })
+    
+    local shrinkTween = TweenService:Create(buildupCircle, TweenInfo.new(0.3, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut), {
+        Size = UDim2.new(0, 100, 0, 100),
+        Position = UDim2.new(0.5, -50, 0.5, -50),
+        BackgroundTransparency = 0.5
+    })
+    
+    -- Loop pulse
+    local pulseCount = 0
+    local maxPulses = math.floor(duration / 0.6)
+    
+    pulseTween.Completed:Connect(function()
+        pulseCount = pulseCount + 1
+        if pulseCount < maxPulses then
+            shrinkTween:Play()
+        end
+    end)
+    
+    shrinkTween.Completed:Connect(function()
+        if pulseCount < maxPulses then
+            pulseTween:Play()
+        end
+    end)
+    
+    pulseTween:Play()
+    
+    -- Cleanup
+    task.wait(duration)
+    buildupCircle:Destroy()
+end
+
+-- MAIN TRIGGER FUNCTION
+function VFXSystem:TriggerVFX(rarity)
+    if self.isTriggering then return end
+    self.isTriggering = true
+    
+    local config = RarityConfig[rarity] or RarityConfig.Common
+    print("🔥 VFX TRIGGERED - RARITY:", rarity)
+    
+    -- PHASE 1: BUILDUP
+    spawn(function()
+        self:BuildupAnimation(config.color, config.buildupTime)
+    end)
+    
+    self:PlaySound("rbxassetid://9113880795", 0.3)
+    
+    task.wait(config.buildupTime)
+    
+    -- PHASE 2: EXPLOSION (ALL SCREEN BASED!)
     print("💥 EXPLOSION!")
     
     -- Screen effects
-    self:ScreenShake(2, 2)
-    self:ColorFlash(Color3.fromRGB(255, 255, 255), 1.5, 0.7)
-    self:RadialBlur(2)
+    self:ScreenShake(config.shakeIntensity, config.duration)
+    self:ColorFlash(config.color, config.duration * 0.6, config.flashIntensity)
+    self:RadialBlur(config.blurSize, config.duration)
+    self:VignettePulse(config.color, config.duration * 0.4)
     
-    -- GUI effects
-    self:TextPopup()
-    self:CircularWaves(5)
-    
-    -- World space effects
-    spawn(function() self:ParticleExplosion(position) end)
-    spawn(function() self:EnergyBeams(position, 24) end)
-    spawn(function() self:Shockwave(position) end)
-    spawn(function() self:GroundCrack(position) end)
+    -- Visual effects
+    spawn(function() self:ScreenParticles(config.color, config.particleCount, config.duration) end)
+    spawn(function() self:ScreenBeams(config.color, config.beamCount, config.duration * 0.8) end)
+    spawn(function() self:CircularWaves(config.color, config.ringCount, config.duration) end)
+    spawn(function() self:TextPopup(config.text, config.color, config.duration) end)
     
     -- Explosion sound
-    self:PlaySound("rbxassetid://9114221327", 0.6) -- Massive explosion
+    self:PlaySound("rbxassetid://9114221327", 0.5)
+    
+    -- Reset after total duration
+    task.wait(config.buildupTime + config.duration + 0.5)
+    self.isTriggering = false
 end
 
 -- SOUND EFFECT
 function VFXSystem:PlaySound(soundId, volume)
     local sound = Instance.new("Sound")
-    sound.SoundId = soundId or "rbxassetid://9125402735"
-    sound.Volume = volume or 0.5
+    sound.SoundId = soundId
+    sound.Volume = volume
     sound.Parent = camera
     sound:Play()
     Debris:AddItem(sound, 3)
@@ -595,7 +512,6 @@ local vfxSystem = VFXSystem.new()
 -- INTERACTION HANDLER
 local currentInteractable = nil
 local interactionRange = 10
-local isTriggering = false
 
 -- Create interaction UI
 local function createInteractionPrompt()
@@ -628,12 +544,6 @@ local function createInteractionPrompt()
     textLabel.TextColor3 = Color3.fromRGB(0, 255, 255)
     textLabel.Parent = frame
     
-    -- Pulse animation
-    local pulseTween = TweenService:Create(stroke, TweenInfo.new(0.8, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut, -1, true), {
-        Thickness = 5
-    })
-    pulseTween:Play()
-    
     return frame
 end
 
@@ -641,7 +551,7 @@ local interactionPrompt = createInteractionPrompt()
 
 -- Find nearby interactables
 RunService.RenderStepped:Connect(function()
-    if not character or not humanoidRootPart or isTriggering then return end
+    if not character or not humanoidRootPart or vfxSystem.isTriggering then return end
     
     local closestPart = nil
     local closestDistance = interactionRange
@@ -658,35 +568,39 @@ RunService.RenderStepped:Connect(function()
     
     currentInteractable = closestPart
     interactionPrompt.Visible = currentInteractable ~= nil
+    
+    -- Update prompt color based on rarity
+    if currentInteractable then
+        local rarity = currentInteractable:GetAttribute("VFXRarity") or "Common"
+        local config = RarityConfig[rarity] or RarityConfig.Common
+        interactionPrompt:FindFirstChildOfClass("UIStroke").Color = config.color
+        interactionPrompt:FindFirstChildOfClass("TextLabel").TextColor3 = config.color
+    end
 end)
 
 -- Handle E key press
 UserInputService.InputBegan:Connect(function(input, gameProcessed)
-    if gameProcessed or isTriggering then return end
+    if gameProcessed or vfxSystem.isTriggering then return end
     
     if input.KeyCode == Enum.KeyCode.E then
         if currentInteractable then
-            isTriggering = true
             interactionPrompt.Visible = false
             
-            -- Trigger VFX at the part's position
-            vfxSystem:TriggerAllEffects(currentInteractable)
+            -- Get rarity from attribute
+            local rarity = currentInteractable:GetAttribute("VFXRarity") or "Common"
             
-            -- Cooldown
-            task.wait(3)
-            isTriggering = false
+            -- Trigger VFX
+            vfxSystem:TriggerVFX(rarity)
         end
     end
 end)
 
-print("✨ TRIPLE AAA Epic VFX System Loaded!")
-print("💡 Press E near objects with 'VFXInteractive' attribute")
+print("✨ TRIPLE AAA Screen VFX System Loaded!")
+print("💡 Add attributes to parts:")
+print("   - VFXInteractive (Boolean = true)")
+print("   - VFXRarity (String = 'Common', 'Rare', or 'Epic')")
 
 -- Expose to global for testing
-_G.TriggerVFX = function(part)
-    if part then
-        vfxSystem:TriggerAllEffects(part)
-    else
-        print("❌ Please provide a part to trigger VFX on")
-    end
+_G.TriggerVFX = function(rarity)
+    vfxSystem:TriggerVFX(rarity or "Epic")
 end

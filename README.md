@@ -12,43 +12,43 @@ An **ABSOLUTELY INSANE TRIPLE AAA** VFX system for Roblox! Press E on interactiv
 
 1. **Open Roblox Studio**
 2. **Add Script**: Go to `StarterPlayer` → `StarterPlayerScripts` → Insert LocalScript → Paste `RobloxVFX_MainScript.lua`
-3. **Tag Objects**: Select any Part → Add Attribute → Name: `VFXInteractive`, Type: Boolean, Value: ✓
+3. **Tag Objects**: Select any Part → Add TWO Attributes:
+   - Name: `VFXInteractive`, Type: Boolean, Value: ✓
+   - Name: `VFXRarity`, Type: String, Value: "Common", "Rare", or "Epic"
 
-**DONE! Press Play and press E near tagged objects!**
+**DONE! Press Play and press E near tagged objects! Effects appear ON YOUR SCREEN!**
 
 ---
 
-### ✨ EFFECTS INCLUDED (TRIPLE AAA QUALITY):
+### ✨ SCREEN-BASED VFX WITH RARITY SYSTEM:
 
-**BUILDUP PHASE (1.5s):**
-- 🔮 Glowing sphere (pulsing around part)
-- ⚡ Energy rings (3 expanding rings)
-- 💡 Pulsing light (intensifies)
-- 🌀 Suction particles (pulled into part)
-- 🎵 Charge-up sound
+**🎯 RARITY TIERS:**
+- **COMMON** (Gray): 30 particles, 8 beams, 2 rings, "NICE!" - 1.5s
+- **RARE** (Blue): 80 particles, 16 beams, 4 rings, "RARE!" - 2.5s
+- **EPIC** (Purple): 150 particles, 32 beams, 6 rings, "LEGENDARY!" - 3.5s
 
-**EXPLOSION PHASE:**
-- 💥 Triple-layer particles (450 total! White/Cyan/Purple)
-- ⚡ Energy beams (24 laser rays in all directions)
-- 📳 Screen shake (2s decaying intensity)
-- 🌈 Color flash (gradient overlay, 1.5s)
-- 🌊 Shockwaves (3 expanding rings)
-- 💬 Epic text popup ("LEGENDARY!", etc.)
-- 🌀 Circular waves (5x GUI rings)
-- ✨ Radial blur (dramatic 40px blur)
-- 💥 Ground cracks (8 radiating cracks)
-- 🔊 Explosion sound (cinematic impact)
-- ⭐ Massive glow effects
+**📺 ALL EFFECTS ON YOUR SCREEN (not in world):**
+- 💥 Screen particles (explode from center)
+- ⚡ Screen beams (laser lines radiating out)
+- 🌀 Circular waves (expanding rings)
+- 💬 Text popup (rarity name)
+- 🌈 Color flash (full-screen overlay)
+- ✨ Radial blur effect
+- 📳 Screen shake (camera shake)
+- 🌫️ Vignette pulse
+- 🎵 Buildup animation (pulsing circle)
+- 🔊 Sound effects (charge + explosion)
 
-**TOTAL DURATION: ~5 seconds of pure epicness!**
+**Different intensity for each rarity!** Higher rarity = MORE particles, beams, shake, blur, duration!
 
 ---
 
 ### 📁 ROBLOX FILES:
 
-- `RobloxVFX_MainScript.lua` ← **PUT THIS IN STARTERPLAYERSCRIPTS**
+- `RobloxVFX_MainScript.lua` ← **PUT THIS IN STARTERPLAYERSCRIPTS** (100% screen-based!)
 - `RobloxVFX_ServerScript.lua` ← Optional (for multiplayer)
 - `ROBLOX_INSTALLATION_GUIDE.md` ← Full documentation
+- `RARITY_SYSTEM_GUIDE.txt` ← **READ THIS for rarity setup!**
 - `ROBLOX_QUICK_START.txt` ← Quick reference guide
 
 ---
