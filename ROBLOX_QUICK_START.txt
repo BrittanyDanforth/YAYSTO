@@ -1,0 +1,129 @@
+═══════════════════════════════════════════════════════════
+    🎆 EPIC ROBLOX VFX SYSTEM - QUICK START 🎆
+═══════════════════════════════════════════════════════════
+
+⚡ 3 EASY STEPS TO GET STARTED:
+
+┌─────────────────────────────────────────────────────────┐
+│ STEP 1: ADD THE SCRIPT                                  │
+└─────────────────────────────────────────────────────────┘
+1. Open Roblox Studio
+2. Go to: StarterPlayer → StarterPlayerScripts
+3. Insert a LocalScript
+4. Paste contents of "RobloxVFX_MainScript.lua"
+5. Save!
+
+┌─────────────────────────────────────────────────────────┐
+│ STEP 2: MAKE OBJECTS INTERACTIVE                        │
+└─────────────────────────────────────────────────────────┘
+1. Select ANY part in Workspace
+2. In Properties, find "Attributes"
+3. Click + button
+4. Add attribute:
+   Name: VFXInteractive
+   Type: Boolean
+   Value: ✓ (checked)
+
+┌─────────────────────────────────────────────────────────┐
+│ STEP 3: PLAY AND TEST!                                  │
+└─────────────────────────────────────────────────────────┘
+1. Press Play (F5)
+2. Walk near your interactive object
+3. Press E
+4. BOOM! 💥 EPIC VFX!
+
+
+═══════════════════════════════════════════════════════════
+    ✨ EFFECTS YOU GET:
+═══════════════════════════════════════════════════════════
+
+✅ Screen Shake           ✅ Energy Beams (12x)
+✅ Color Flash            ✅ Particle Explosion (100+)
+✅ Radial Blur            ✅ Shockwave Ring
+✅ Text Popup             ✅ Circular Waves (3x)
+✅ Sound Effect           ✅ Sparkles & Glow
+
+
+═══════════════════════════════════════════════════════════
+    🎮 CONTROLS:
+═══════════════════════════════════════════════════════════
+
+[E] = Trigger VFX when near interactive objects
+
+Walk within 10 studs of tagged objects to see:
+    "[E] Interact" prompt
+
+
+═══════════════════════════════════════════════════════════
+    🔧 QUICK CUSTOMIZATION:
+═══════════════════════════════════════════════════════════
+
+Change Range:
+    local interactionRange = 10  -- Change this number
+
+Change Colors:
+    Color3.fromRGB(0, 255, 255)  -- Cyan (default)
+    Color3.fromRGB(255, 0, 255)  -- Magenta
+    Color3.fromRGB(255, 255, 0)  -- Yellow
+
+Change Text:
+    local texts = {"EPIC!", "LEGENDARY!", "BOOM!"}
+    -- Add your own!
+
+More Particles:
+    particleEmitter:Emit(100)  -- Try 200 or 500!
+
+More Shake:
+    self:ScreenShake(1, 0.5)  -- Try (3, 1) for INTENSE!
+
+
+═══════════════════════════════════════════════════════════
+    💡 PRO TIPS:
+═══════════════════════════════════════════════════════════
+
+• Tag multiple objects to make your whole map interactive
+• Use different colors for different object types
+• Add RemoteEvents for custom interactions
+• Test with F9 console open to see debug messages
+• Try: _G.TriggerVFX() in command bar for instant test!
+
+
+═══════════════════════════════════════════════════════════
+    🚨 TROUBLESHOOTING:
+═══════════════════════════════════════════════════════════
+
+Not working?
+  ➜ Check script is in StarterPlayerScripts
+  ➜ Verify object has VFXInteractive attribute
+  ➜ Make sure you're close enough (10 studs)
+
+No prompt showing?
+  ➜ Double-check attribute spelling
+  ➜ Attribute must be type: Boolean
+  ➜ Value must be checked (true)
+
+Too laggy?
+  ➜ Reduce particle count
+  ➜ Lower beam count
+  ➜ Don't spam E too fast!
+
+
+═══════════════════════════════════════════════════════════
+    📁 FILES:
+═══════════════════════════════════════════════════════════
+
+RobloxVFX_MainScript.lua      ← Main VFX script (CLIENT)
+RobloxVFX_ServerScript.lua    ← Optional server script
+ROBLOX_INSTALLATION_GUIDE.md  ← Full documentation
+ROBLOX_QUICK_START.txt        ← This file!
+
+
+═══════════════════════════════════════════════════════════
+    🎉 YOU'RE READY!
+═══════════════════════════════════════════════════════════
+
+Open Roblox Studio → Add Script → Tag Objects → Press E!
+
+Questions? Read the full guide: ROBLOX_INSTALLATION_GUIDE.md
+
+ENJOY THE EPIC VFX! 🔥⚡💥✨

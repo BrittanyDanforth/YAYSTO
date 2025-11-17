@@ -2,53 +2,64 @@
 
 ---
 
-## 🎆 EPIC VFX SYSTEM INSTALLED!
+## 🎆 EPIC ROBLOX VFX SYSTEM!
 
-### What's New?
+### 🎮 FOR ROBLOX STUDIO
 
-An **ABSOLUTELY INSANE** visual effects system has been added! Now when you interact with GUI elements in the game, you get Hollywood-level special effects!
+An **ABSOLUTELY INSANE** VFX system for Roblox! Press E on interactive objects for Hollywood-level effects!
 
-### 🎮 How to Use
+### ⚡ QUICK START (3 STEPS):
 
-1. **Open the game**: `mystory.html`
-2. **Hover** over any button or choice
-3. **Press E** or **Click** to trigger EPIC VFX!
+1. **Open Roblox Studio**
+2. **Add Script**: Go to `StarterPlayer` → `StarterPlayerScripts` → Insert LocalScript → Paste `RobloxVFX_MainScript.lua`
+3. **Tag Objects**: Select any Part → Add Attribute → Name: `VFXInteractive`, Type: Boolean, Value: ✓
 
-### 🎪 Demo Page
+**DONE! Press Play and press E near tagged objects!**
 
-Want to see all the effects? Open `vfx-demo.html` for a full showcase!
+---
 
-### ✨ Effects Included
+### ✨ EFFECTS INCLUDED:
 
-- 💥 Radial burst explosions
-- ⭐ Star sparkles (20+)
-- ⚡ Energy rays (12)
-- 🔷 Rotating hexagons
-- 🌈 Color flashes
-- 🌊 Circular waves
-- 💬 Epic text popups
-- ⚡ Lightning effects
-- 🌀 Vortex spirals
-- 🎨 150+ particles with physics
-- 📳 Screen shake
-- 👾 Chromatic aberration
-- 🔊 Sound effects
+- 💥 Particle explosions (100+ particles)
+- ⚡ Energy beams (12 laser rays)
+- 📳 Screen shake (camera shake)
+- 🌈 Color flash (full screen)
+- 🌊 Shockwave ring
+- 💬 Text popup ("EPIC!", "LEGENDARY!")
+- 🌀 Circular waves (3x GUI rings)
+- ✨ Radial blur effect
+- 🔊 Sound effect (impact sound)
+- ⭐ Sparkles & glow effects
 
-### 📁 Files
+---
 
-- `mystory.html` - Main game with VFX
+### 📁 ROBLOX FILES:
+
+- `RobloxVFX_MainScript.lua` ← **PUT THIS IN STARTERPLAYERSCRIPTS**
+- `RobloxVFX_ServerScript.lua` ← Optional (for multiplayer)
+- `ROBLOX_INSTALLATION_GUIDE.md` ← Full documentation
+- `ROBLOX_QUICK_START.txt` ← Quick reference guide
+
+---
+
+### 🎪 ALSO INCLUDED (HTML/Web Version):
+
+- `mystory.html` - Web game with VFX
 - `vfx-demo.html` - VFX showcase page
-- `MYSTORY.CSS` - All animations and styles
-- `epic-vfx-system.js` - VFX engine
-- `VFX-README.md` - Detailed documentation
+- `MYSTORY.CSS` - Web animations
+- `epic-vfx-system.js` - Web VFX engine
 
-### 🚀 Try It Now!
+---
 
-```bash
-# Just open in your browser!
-open mystory.html
-# or
-open vfx-demo.html
-```
+### 🚀 GET STARTED:
 
-**Press E for EPICNESS! ⚡**
+**For Roblox:**
+1. Open `RobloxVFX_MainScript.lua`
+2. Copy the entire script
+3. Paste into LocalScript in StarterPlayerScripts
+4. Tag parts with `VFXInteractive` attribute
+5. Press Play + Press E = 💥 BOOM!
+
+**Read the full guide:** `ROBLOX_INSTALLATION_GUIDE.md`
+
+**PRESS E FOR EPICNESS! 🔥⚡💥**
