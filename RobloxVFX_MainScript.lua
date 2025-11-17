@@ -211,53 +211,66 @@ function VFXSystem:ScreenParticles(color, count, duration)
     end
 end
 
--- SCREEN BEAMS (Radiating lines from center)
+-- SCREEN BEAMS (Radiating lines from center - FIXED!)
 function VFXSystem:ScreenBeams(color, count, duration)
     for i = 1, count do
-        local angle = (360 / count) * i
-        
-        local beam = Instance.new("Frame")
-        beam.Name = "Beam"
-        beam.Size = UDim2.new(0, 0, 0, 3)
-        beam.Position = UDim2.new(0.5, 0, 0.5, 0)
-        beam.AnchorPoint = Vector2.new(0, 0.5)
-        beam.BackgroundColor3 = color
-        beam.BorderSizePixel = 0
-        beam.ZIndex = 9800
-        beam.Rotation = angle
-        beam.Parent = self.screenGui
-        
-        local glow = Instance.new("UIStroke")
-        glow.Color = color
-        glow.Thickness = 3
-        glow.Transparency = 0
-        glow.Parent = beam
-        
-        local gradient = Instance.new("UIGradient")
-        gradient.Transparency = NumberSequence.new({
-            NumberSequenceKeypoint.new(0, 0),
-            NumberSequenceKeypoint.new(1, 1)
-        })
-        gradient.Parent = beam
-        
-        -- Animate
-        task.wait(math.random() * 0.2)
-        
-        TweenService:Create(beam, TweenInfo.new(0.5), {
-            Size = UDim2.new(0.7, 0, 0, 3)
-        }):Play()
-        
-        task.wait(0.5)
-        
-        TweenService:Create(beam, TweenInfo.new(duration - 0.5), {
-            BackgroundTransparency = 1
-        }):Play()
-        
-        TweenService:Create(glow, TweenInfo.new(duration - 0.5), {
-            Transparency = 1
-        }):Play()
-        
-        Debris:AddItem(beam, duration + 0.1)
+        spawn(function()
+            local angle = math.rad((360 / count) * i)
+            
+            -- Calculate endpoint in pixels
+            local maxDist = math.max(camera.ViewportSize.X, camera.ViewportSize.Y) * 0.6
+            local endX = math.cos(angle) * maxDist
+            local endY = math.sin(angle) * maxDist
+            
+            -- Create beam as a thin line
+            local beam = Instance.new("Frame")
+            beam.Name = "Beam"
+            beam.Size = UDim2.new(0, 4, 0, 0) -- Start at 0 length
+            beam.Position = UDim2.new(0.5, 0, 0.5, 0)
+            beam.AnchorPoint = Vector2.new(0.5, 0)
+            beam.BackgroundColor3 = color
+            beam.BorderSizePixel = 0
+            beam.ZIndex = 9800
+            beam.Rotation = math.deg(angle) + 90 -- Rotate to point outward
+            beam.Parent = self.screenGui
+            
+            -- Add glow
+            local glow = Instance.new("UIStroke")
+            glow.Color = Color3.fromRGB(255, 255, 255)
+            glow.Thickness = 2
+            glow.Transparency = 0
+            glow.Parent = beam
+            
+            -- Add gradient fade
+            local gradient = Instance.new("UIGradient")
+            gradient.Rotation = 90
+            gradient.Transparency = NumberSequence.new({
+                NumberSequenceKeypoint.new(0, 0),
+                NumberSequenceKeypoint.new(0.8, 0),
+                NumberSequenceKeypoint.new(1, 1)
+            })
+            gradient.Parent = beam
+            
+            -- Extend beam outward
+            task.wait(math.random() * 0.1)
+            
+            TweenService:Create(beam, TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+                Size = UDim2.new(0, 4, 0, maxDist)
+            }):Play()
+            
+            task.wait(0.3)
+            
+            -- Fade out
+            TweenService:Create(beam, TweenInfo.new(duration - 0.3), {
+                BackgroundTransparency = 1
+            }):Play()
+            
+            TweenService:Create(glow, TweenInfo.new(duration - 0.3), {
+                Transparency = 1
+            }):Play()
+            
+            Debris:AddItem(beam, duration + 0.1)
+        end)
     end
 end
 
@@ -496,14 +509,24 @@ function VFXSystem:TriggerVFX(rarity)
     self.isTriggering = false
 end
 
--- SOUND EFFECT
+-- SOUND EFFECT (with error handling)
 function VFXSystem:PlaySound(soundId, volume)
-    local sound = Instance.new("Sound")
-    sound.SoundId = soundId
-    sound.Volume = volume
-    sound.Parent = camera
-    sound:Play()
-    Debris:AddItem(sound, 3)
+    pcall(function()
+        local sound = Instance.new("Sound")
+        sound.SoundId = soundId or "rbxassetid://9125402735"
+        sound.Volume = volume or 0.5
+        sound.Parent = camera
+        
+        local success = pcall(function()
+            sound:Play()
+        end)
+        
+        if not success then
+            sound:Destroy()
+        else
+            Debris:AddItem(sound, 3)
+        end
+    end)
 end
 
 -- Initialize VFX System
