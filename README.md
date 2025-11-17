@@ -62,7 +62,7 @@ An **ABSOLUTELY INSANE TRIPLE AAA** VFX system with **clean OOP architecture**!
 **Documentation:**
 - `INSTALLATION_GUIDE_MODULAR.md` ← **START HERE!**
 - `WHAT_WAS_FIXED.md` ← Complete list of all fixes
-- `EGG_MODEL_TEMPLATE.txt` ← How to create egg model
+- `EGG_MODEL_SPEC.md` ← **Official egg model structure** (NO RingBurst!)
 - `RARITY_SYSTEM_GUIDE.txt` ← Rarity setup guide
 
 **Old Files (Legacy):**

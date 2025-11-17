@@ -81,37 +81,53 @@ eggVFX:Play(ReplicatedStorage.Assets.EggModel, {
 
 ## 🥚 EGG MODEL SETUP
 
-Your egg model needs these parts:
+**Your egg model structure (NO RingBurst!):**
 
 ```
 EggModel (Model)
-├── EggBase (Part) ← The actual egg mesh
-├── Aura (Part) ← Neon sphere for glow
+├── Aura (Part) ← Creates "cracked" glow by intersecting shell!
 │   └── PointLight
-├── RingBurst (Part) ← Neon cylinder for ring
-└── Attachment (Attachment)
-    └── ParticleEmitter
+└── EggBase (Part) ← The egg shell (PrimaryPart)
+    └── Mesh (SpecialMesh)
+        └── Optional: SparkleAttachment
+            └── ParticleEmitter
 ```
 
 ### **Quick Setup:**
 
 1. Create a Model called "EggModel"
-2. Add a Part for the egg (mesh/union)
-3. Add "Aura" Part:
+2. Add "EggBase" Part:
+   - Shape: Ball (or use SpecialMesh)
+   - MeshId: `rbxassetid://1527559` (egg mesh)
+   - Size: Vector3.new(3, 4, 3)
+   - Anchored: true
+   - CanCollide: false
+   
+3. Add "Aura" Part (THE CRACK GLOW!):
    - Shape: Ball
    - Material: Neon
-   - Size: Vector3.new(2, 2, 2)
-   - Transparency: 1
+   - Size: **EggBase.Size * 0.9** (smaller to intersect!)
+   - Transparency: 0.3 (adjust for crack visibility)
+   - Position: **Centered on EggBase!**
    - Anchored: true
    - CanCollide: false
-4. Add "RingBurst" Part:
-   - Shape: Cylinder
-   - Material: Neon
-   - Transparency: 1
-   - Anchored: true
-   - CanCollide: false
-5. Add ParticleEmitters (optional sparkles)
-6. Put model in: `ReplicatedStorage.Assets.EggModel`
+   
+4. Add PointLight to Aura:
+   - Brightness: 2
+   - Range: 15
+   
+5. **Center Aura on EggBase:**
+   ```lua
+   -- In Command Bar:
+   Aura.CFrame = EggBase.CFrame
+   ```
+   
+6. **Set PrimaryPart:**
+   - Right-click EggModel → Set PrimaryPart → EggBase
+   
+7. Put model in: `ReplicatedStorage.Assets.EggModel`
+
+**See:** `EGG_MODEL_SPEC.md` for detailed specification!
 
 ---
 

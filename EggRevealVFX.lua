@@ -55,27 +55,34 @@ end
 
 -- EGG BUILDUP (World-space glow/particles)
 function EggRevealVFX:_eggBuildup(eggModel, color)
-    -- Find Aura part (you'll create this)
+    -- Find Aura part (creates the cracked glow!)
     local aura = eggModel:FindFirstChild("Aura")
     if aura and aura:IsA("BasePart") then
+        local originalSize = aura.Size
+        local originalTransparency = aura.Transparency
+        
+        -- Set color
         aura.Material = Enum.Material.Neon
         aura.Color = color
-        aura.Transparency = 0.7
-        aura.Size = Vector3.new(0.5, 0.5, 0.5)
         aura.CanCollide = false
         aura.Anchored = true
         
-        -- Add light
-        local light = Instance.new("PointLight")
-        light.Color = color
-        light.Brightness = 2
-        light.Range = 10
-        light.Parent = aura
+        -- Get or create light
+        local light = aura:FindFirstChild("PointLight")
+        if not light then
+            light = Instance.new("PointLight")
+            light.Color = color
+            light.Brightness = 2
+            light.Range = 10
+            light.Parent = aura
+        else
+            light.Color = color
+        end
         
-        -- Scale up aura
+        -- Pulse the aura (makes crack glow intensify!)
         TweenService:Create(aura, TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
-            Size = Vector3.new(3, 3, 3),
-            Transparency = 0.3
+            Transparency = math.max(0.1, originalTransparency - 0.3),  -- More visible
+            Size = originalSize * 1.1  -- Slightly bigger
         }):Play()
         
         TweenService:Create(light, TweenInfo.new(0.5), {
@@ -84,55 +91,66 @@ function EggRevealVFX:_eggBuildup(eggModel, color)
         }):Play()
     end
     
-    -- Start particle emitters if they exist
-    for _, desc in ipairs(eggModel:GetDescendants()) do
-        if desc:IsA("ParticleEmitter") then
-            desc.Enabled = true
-            desc.Rate = 50
+    -- Start particle emitters if they exist (optional)
+    local eggBase = eggModel:FindFirstChild("EggBase")
+    if eggBase then
+        local sparkleAttachment = eggBase:FindFirstChild("SparkleAttachment")
+        if sparkleAttachment then
+            for _, emitter in ipairs(sparkleAttachment:GetChildren()) do
+                if emitter:IsA("ParticleEmitter") then
+                    emitter.Enabled = true
+                    emitter.Rate = 50
+                end
+            end
         end
     end
 end
 
--- EGG EXPLOSION (World-space burst)
+-- EGG EXPLOSION (World-space burst - NO RingBurst part!)
 function EggRevealVFX:_eggExplosion(eggModel, color)
-    -- Ring burst effect
-    local ring = eggModel:FindFirstChild("RingBurst")
-    if ring and ring:IsA("BasePart") then
-        ring.Material = Enum.Material.Neon
-        ring.Color = color
-        ring.Transparency = 0.2
-        ring.Size = Vector3.new(1, 0.2, 1)
-        ring.Shape = Enum.PartType.Cylinder
-        ring.Orientation = Vector3.new(0, 0, 90)
-        ring.CanCollide = false
-        ring.Anchored = true
-        
-        TweenService:Create(ring, TweenInfo.new(0.5, Enum.EasingStyle.Quint, Enum.EasingDirection.Out), {
-            Size = Vector3.new(1, 12, 12),
-            Transparency = 1
-        }):Play()
-    end
-    
-    -- Particle burst
-    for _, desc in ipairs(eggModel:GetDescendants()) do
-        if desc:IsA("ParticleEmitter") then
-            desc:Emit(100)
+    -- Particle burst (if SparkleAttachment exists)
+    local eggBase = eggModel:FindFirstChild("EggBase")
+    if eggBase then
+        local sparkleAttachment = eggBase:FindFirstChild("SparkleAttachment")
+        if sparkleAttachment then
+            local emitter = sparkleAttachment:FindFirstChildWhichIsA("ParticleEmitter")
+            if emitter then
+                emitter:Emit(100)
+            end
         end
     end
     
-    -- Flash the aura
+    -- Flash the Aura (creates intense crack glow!)
     local aura = eggModel:FindFirstChild("Aura")
     if aura then
-        TweenService:Create(aura, TweenInfo.new(0.2), {
-            Size = Vector3.new(5, 5, 5),
-            Transparency = 0
+        local light = aura:FindFirstChild("PointLight")
+        
+        -- INTENSE FLASH for crack effect
+        TweenService:Create(aura, TweenInfo.new(0.15), {
+            Transparency = 0,  -- Fully visible!
+            Size = aura.Size * 1.2  -- Expand slightly
         }):Play()
         
-        task.wait(0.2)
+        if light then
+            TweenService:Create(light, TweenInfo.new(0.15), {
+                Brightness = 8,
+                Range = 30
+            }):Play()
+        end
         
+        task.wait(0.15)
+        
+        -- Fade out
         TweenService:Create(aura, TweenInfo.new(1), {
             Transparency = 1
         }):Play()
+        
+        if light then
+            TweenService:Create(light, TweenInfo.new(1), {
+                Brightness = 0,
+                Range = 5
+            }):Play()
+        end
     end
 end
 
