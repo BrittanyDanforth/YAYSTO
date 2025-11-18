@@ -2,6 +2,18 @@
 
 **COMPLETELY POLISHED & PRODUCTION-READY!** 🔥
 
+---
+
+## 🚨 CONFUSED? START HERE! 🚨
+
+### **👉 READ: `START_HERE.md` 👈**
+
+### **👉 THEN: `EVERYTHING_YOU_NEED.md` 👈**
+
+**Those two files have EVERYTHING you need - all the code, all the instructions, NO CONFUSION!**
+
+---
+
 Two powerful VFX systems in one package:
 1. **🥚 Egg Reveal System** - Cinematic egg hatching with camera control (Pet Sim X style!)
 2. **⚡ Standalone Screen VFX** - Screen-space effects for any interactive object
