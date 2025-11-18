@@ -4,13 +4,28 @@
 
 ---
 
-## 🚨 CONFUSED? START HERE! 🚨
+## 🚨 GOT ERRORS? START HERE! 🚨
 
-### **👉 READ: `START_HERE.md` 👈**
+### **👉👉👉 READ: `READ_ME_FIRST.md` 👈👈👈**
 
-### **👉 THEN: `EVERYTHING_YOU_NEED.md` 👈**
+### **👉 THEN: `FIXED_INSTALLATION_GUIDE.md` 👈**
 
-**Those two files have EVERYTHING you need - all the code, all the instructions, NO CONFUSION!**
+**THE ERROR IS FIXED! Just copy 2 files and you're done!**
+
+---
+
+## 🔥 QUICK FIX:
+
+**Got this error?**
+```
+_G.TriggerVFX("Epic"):1: attempt to call a nil value
+```
+
+**Solution:**
+1. Delete your old VFX scripts
+2. Copy `UNIFIED_VFX_CLIENT.lua` → StarterPlayerScripts (LocalScript)
+3. Copy `VFX_ServerScript_FIXED.lua` → ServerScriptService (Script)
+4. Done! Both `_G.TriggerVFX()` and `_G.TestEggReveal()` work now!
 
 ---
 
