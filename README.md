@@ -1,17 +1,17 @@
 # 🎮 Roblox VFX System - Works with YOUR Egg! 🥚
 
-## 🥚 **JUST FIXED: Works with ANY Egg Model!**
+## 🥚 **JUST FIXED: Eggs Now Use YOUR EggModel!**
 
-### **👉 [`FIXED_FOR_YOUR_EGG.md`](./FIXED_FOR_YOUR_EGG.md) 👈**
-**No more "Aura" errors! Use your own egg model as-is!**
+### **👉 [`FINAL_FIX_FOR_YOUR_EGGS.md`](./FINAL_FIX_FOR_YOUR_EGGS.md) 👈**
+**Eggs in the world now spawn as YOUR EggModel! No more spheres!**
 
-### **Latest Update (v2.4 - YOUR EGG FIX!):**
-✅ **Works with ANY egg model!** - No "Aura" or special parts required!  
+### **Latest Update (v2.5 - SERVER FIX!):**
+✅ **Server spawns YOUR eggs!** - Clones your EggModel with mesh + Aura!  
 ✅ **All crystals working!** - Rare, Epic, Legendary confirmed!  
-✅ **Graceful fallbacks!** - Module handles missing parts automatically!  
+✅ **Aura is now optional!** - Module handles missing parts gracefully!  
 ✅ **E key never gets stuck!** - Proper error handling everywhere!  
 
-**→ Copy the updated code from [`COPY_THIS_TO_YOUR_CLIENT_SCRIPT.lua`](./COPY_THIS_TO_YOUR_CLIENT_SCRIPT.lua) and [`EggRevealVFX.lua`](./EggRevealVFX.lua)!**
+**→ Copy 2 files:** [`VFX_ServerScript_FIXED.lua`](./VFX_ServerScript_FIXED.lua) (SERVER) and [`COPY_THIS_TO_YOUR_CLIENT_SCRIPT.lua`](./COPY_THIS_TO_YOUR_CLIENT_SCRIPT.lua) (CLIENT)!
 
 ---
 
@@ -31,9 +31,9 @@
 
 | File | What It Does | Priority |
 |------|--------------|----------|
-| **[`FIXED_FOR_YOUR_EGG.md`](./FIXED_FOR_YOUR_EGG.md)** | **🥚 Works with YOUR egg now! No Aura required!** | **🔥 READ THIS NOW** |
-| **[`COPY_THIS_TO_YOUR_CLIENT_SCRIPT.lua`](./COPY_THIS_TO_YOUR_CLIENT_SCRIPT.lua)** | **The actual client code (v2.4 - YOUR EGG FIX!)** | **🔥 COPY THIS** |
-| **[`EggRevealVFX.lua`](./EggRevealVFX.lua)** | **Updated module - works with ANY egg!** | **🥚 COPY THIS TOO** |
+| **[`FINAL_FIX_FOR_YOUR_EGGS.md`](./FINAL_FIX_FOR_YOUR_EGGS.md)** | **🥚 Eggs spawn as YOUR model now!** | **🔥 READ THIS NOW** |
+| **[`VFX_ServerScript_FIXED.lua`](./VFX_ServerScript_FIXED.lua)** | **Server script - spawns YOUR eggs!** | **🔥 COPY THIS (SERVER)** |
+| **[`COPY_THIS_TO_YOUR_CLIENT_SCRIPT.lua`](./COPY_THIS_TO_YOUR_CLIENT_SCRIPT.lua)** | **Client code (v2.5 - SERVER FIX!)** | **🔥 COPY THIS (CLIENT)** |
 | **[`WHERE_TO_PUT_SCRIPTS.md`](./WHERE_TO_PUT_SCRIPTS.md)** | **Where each script goes (CLIENT vs SERVER)** | **📍 No confusion!** |
 | [`QUICK_START_FIXED.md`](./QUICK_START_FIXED.md) | Quick setup guide | ⚡ Setup |
 | [`ALL_FIXES_APPLIED.md`](./ALL_FIXES_APPLIED.md) | What changed & why (v2.1 fixes) | ✅ Changelog |
