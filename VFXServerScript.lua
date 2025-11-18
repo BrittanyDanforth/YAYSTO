@@ -1,140 +1,162 @@
 --[[
-    VFX SERVER SCRIPT - FIXED & UPDATED
-    
-    Creates interactive objects that work with the Unified VFX Client!
-    
-    INSTALLATION:
-    Put this in ServerScriptService as a Script
+    VFX SERVER SCRIPT – PET EGG VERSION (POLISHED)
+
+    • Works with your UNIFIED PET + VFX client (eggvfxstarterplayer).
+    • Spawns 3D egg models that:
+        - Glow, float, and spin
+        - Are tagged "VFXInteractive"
+        - Have attributes the client expects:
+              VFXRarity = "Common" | "Rare" | "Epic" | "Legendary"
+              VFXType   = "Screen"       (client treats as screen VFX)
+              PetName   = "Axolotl"      (so it shows preview + spawns pet)
+
+    • TEST OBJECTS:
+        - Only eggs are auto-spawned at GROUND LEVEL (Y=5, reachable!)
+        - NO MagicOrb / PowerCrystal / GodCrystal are auto-created anymore.
+
+    Put this script in ServerScriptService.
 ]]
 
 local CollectionService = game:GetService("CollectionService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local RunService = game:GetService("RunService")
 
-print("🖥️ VFX Server Script Starting...")
+print("🖥️ VFX Server Script (Pet Eggs - POLISHED) Starting...")
 
--- Wait for assets
+--// Assets -------------------------------------------------------------------
+
 local Assets = ReplicatedStorage:WaitForChild("Assets", 10)
-local EggTemplate = Assets:WaitForChild("EggModel", 10)
+local EggTemplate = Assets and Assets:FindFirstChild("EggModel")
 
-if not EggTemplate then
-	warn("⚠️ WARNING: EggModel not found in ReplicatedStorage.Assets!")
-	warn("   Interactive eggs will not work until EggModel is added!")
+if not Assets or not EggTemplate then
+	warn("⚠️ EggModel not found in ReplicatedStorage.Assets! No eggs will spawn.")
 end
 
--- Helper: Create interactive egg (for Egg Reveal VFX) - NOW USES ACTUAL EGG MODEL!
-local function createInteractiveEgg(position, rarity, petName)
+-- Rarity → color (for lights)
+local RARITY_COLORS: { [string]: Color3 } = {
+	Common    = Color3.fromRGB(200, 200, 200),
+	Rare      = Color3.fromRGB(0, 150, 255),
+	Epic      = Color3.fromRGB(138, 43, 226),
+	Legendary = Color3.fromRGB(255, 215, 0),
+}
+
+--// Helpers ------------------------------------------------------------------
+
+local function getRarityColor(rarity: string): Color3
+	return RARITY_COLORS[rarity] or RARITY_COLORS.Common
+end
+
+-- Creates a floating, spinning, glowing interactive egg that the **client**
+-- will treat as a PET HATCH (preview + Axolotl follower).
+local function createInteractiveEgg(position: Vector3, rarity: string?, petName: string?)
 	if not EggTemplate then
-		warn("❌ Cannot create egg - EggModel not found!")
+		warn("❌ Cannot create egg – EggModel missing.")
 		return nil
 	end
 
-	-- Clone the actual EggModel!
+	rarity = rarity or "Epic"
+	petName = petName or "Axolotl"
+
+	-- Clone the template model
 	local egg = EggTemplate:Clone()
-	egg.Name = rarity .. "Egg"
+	egg.Name = string.format("%sEgg", rarity)
 	egg.Parent = workspace
 
-	-- Find the root part (PrimaryPart, EggBase, or first BasePart)
-	local root = egg.PrimaryPart or egg:FindFirstChild("EggBase") or egg:FindFirstChildWhichIsA("BasePart")
+	-- Find / set root part
+	local root =
+		egg.PrimaryPart
+		or egg:FindFirstChild("EggBase")
+		or egg:FindFirstChildWhichIsA("BasePart")
+
 	if not root then
-		warn("❌ EggModel has no parts! Cannot create interactive egg.")
+		warn("❌ EggModel has no root part (EggBase / BasePart).")
 		egg:Destroy()
 		return nil
 	end
 
-	-- Set PrimaryPart if not already set
-	if not egg.PrimaryPart then
-		egg:SetPrimaryPartCFrame(CFrame.new(position))
-	else
-		egg:SetPrimaryPartCFrame(CFrame.new(position))
-	end
+	egg.PrimaryPart = root
 
-	-- Disable collisions on all parts, but DON'T anchor root (needed for BodyPosition!)
+	-- Place the egg
+	egg:PivotTo(CFrame.new(position))
+
+	-- Make all parts non-collide; only root is unanchored so physics controllers work
 	for _, inst in ipairs(egg:GetDescendants()) do
 		if inst:IsA("BasePart") then
 			inst.CanCollide = false
-			-- Only anchor non-root parts
+			inst.Massless = true
 			if inst ~= root then
 				inst.Anchored = true
 			end
 		end
 	end
 
-	-- Root part must be UNANCHORED for BodyPosition to work!
 	root.Anchored = false
 	root.CanCollide = false
 
-	-- Weld all direct child parts to root so model stays together when root moves
-	for _, child in ipairs(egg:GetChildren()) do
-		if child:IsA("BasePart") and child ~= root then
-			local weld = Instance.new("WeldConstraint")
-			weld.Part0 = root
-			weld.Part1 = child
-			weld.Parent = root
-		end
-	end
+	-- Name the root in a neutral way (no random "MagicOrb"/"Crystal" parts)
+	-- The client only cares that it's tagged + has attributes.
+	root.Name = "EggBase"
 
-	-- Set attributes on the root part (this is what the client looks for!)
+	-- Attributes the **client** uses
 	root:SetAttribute("VFXInteractive", true)
 	root:SetAttribute("VFXRarity", rarity)
-	root:SetAttribute("VFXType", "Screen") -- USE SCREEN VFX (no pet reveal, just effects!)
-	root:SetAttribute("PetName", petName or "Mystery Pet")
+	root:SetAttribute("VFXType", "Screen") -- client is using screen VFX path
+	-- IMPORTANT: keep PetName = "Axolotl" so it behaves like MagicOrb did
+	root:SetAttribute("PetName", petName)
 
-	-- Tag the root part for CollectionService (client looks for tagged BaseParts)
+	-- Tag for CollectionService so the client can discover it
 	CollectionService:AddTag(root, "VFXInteractive")
 
-	-- Add or update PointLight on root part
+	-- Light / glow
 	local pointLight = root:FindFirstChildWhichIsA("PointLight")
 	if not pointLight then
 		pointLight = Instance.new("PointLight")
 		pointLight.Parent = root
 	end
 
-	-- Rarity colors
-	local rarityColors = {
-		Common = Color3.fromRGB(200, 200, 200),
-		Rare = Color3.fromRGB(0, 150, 255),
-		Epic = Color3.fromRGB(138, 43, 226),
-		Legendary = Color3.fromRGB(255, 215, 0)
-	}
+	pointLight.Color = getRarityColor(rarity)
+	pointLight.Brightness = 3
+	pointLight.Range = 25
 
-	local eggColor = rarityColors[rarity] or rarityColors.Common
-	pointLight.Color = eggColor
-	pointLight.Brightness = 2
-	pointLight.Range = 20
-
-	-- Add floating animation (BodyPosition on root - REQUIRES UNANCHORED!)
+	-- Floating (BodyPosition on root)
 	local bodyPosition = Instance.new("BodyPosition")
+	bodyPosition.Name = "FloatPosition"
 	bodyPosition.MaxForce = Vector3.new(0, math.huge, 0)
+	bodyPosition.D = 300
+	bodyPosition.P = 6000
 	bodyPosition.Position = position
-	bodyPosition.D = 200
-	bodyPosition.P = 5000
 	bodyPosition.Parent = root
 
-	-- Add spinning (BodyAngularVelocity on root - REQUIRES UNANCHORED!)
+	-- Spinning (BodyAngularVelocity on root)
 	local bodyAngularVelocity = Instance.new("BodyAngularVelocity")
-	bodyAngularVelocity.AngularVelocity = Vector3.new(0, 1, 0)
+	bodyAngularVelocity.Name = "Spin"
+	bodyAngularVelocity.AngularVelocity = Vector3.new(0, 1.5, 0)
 	bodyAngularVelocity.MaxTorque = Vector3.new(0, math.huge, 0)
-	bodyAngularVelocity.P = 1000
+	bodyAngularVelocity.P = 2000
 	bodyAngularVelocity.Parent = root
 
-	-- Bobbing animation
+	-- Bobbing task (smooth floating animation)
 	task.spawn(function()
-		local startY = position.Y
-		local time = 0
+		local baseY = position.Y
+		local t = 0
 		while egg.Parent and root.Parent do
-			time += 0.05
-			local offset = math.sin(time * 2) * 0.5
-			bodyPosition.Position = Vector3.new(position.X, startY + offset, position.Z)
-			task.wait(0.05)
+			t += RunService.Heartbeat:Wait()
+			local offset = math.sin(t * 2) * 0.6
+			bodyPosition.Position = Vector3.new(position.X, baseY + offset, position.Z)
 		end
 	end)
 
-	print("✨ Created", rarity, "egg model at", position)
+	print(string.format("✨ Created %s pet egg at (%.1f, %.1f, %.1f) for pet '%s'",
+		rarity, position.X, position.Y, position.Z, petName))
+
 	return egg
 end
 
--- Helper: Create interactive crystal (for Screen VFX only)
-local function createInteractiveCrystal(position, rarity, name)
+-- Optional: simple crystal helper if you ever want screen-VFX only orbs again.
+-- NOTE: this function does NOT auto-spawn anything by itself.
+local function createInteractiveCrystal(position: Vector3, rarity: string?, name: string?)
+	rarity = rarity or "Rare"
+
 	local crystal = Instance.new("Part")
 	crystal.Name = name or (rarity .. "Crystal")
 	crystal.Size = Vector3.new(4, 4, 4)
@@ -142,74 +164,51 @@ local function createInteractiveCrystal(position, rarity, name)
 	crystal.Anchored = true
 	crystal.Material = Enum.Material.Neon
 	crystal.Shape = Enum.PartType.Ball
+	crystal.Color = getRarityColor(rarity)
 	crystal.Parent = workspace
 
-	local rarityColors = {
-		Common = Color3.fromRGB(200, 200, 200),
-		Rare = Color3.fromRGB(0, 150, 255),
-		Epic = Color3.fromRGB(138, 43, 226),
-		Legendary = Color3.fromRGB(255, 215, 0)
-	}
-
-	crystal.Color = rarityColors[rarity] or rarityColors.Common
-
-	-- Set attributes
 	crystal:SetAttribute("VFXInteractive", true)
 	crystal:SetAttribute("VFXRarity", rarity)
-	crystal:SetAttribute("VFXType", "Screen") -- THIS MAKES IT USE SCREEN VFX!
+	crystal:SetAttribute("VFXType", "Screen") -- SCREEN VFX ONLY (no pet)
 
-	-- Tag for CollectionService
 	CollectionService:AddTag(crystal, "VFXInteractive")
 
-	-- Add glow
 	local pointLight = Instance.new("PointLight")
 	pointLight.Color = crystal.Color
 	pointLight.Brightness = 3
 	pointLight.Range = 25
 	pointLight.Parent = crystal
 
-	-- Add spinning
-	local bodyAngularVelocity = Instance.new("BodyAngularVelocity")
-	bodyAngularVelocity.AngularVelocity = Vector3.new(0, 2, 0)
-	bodyAngularVelocity.MaxTorque = Vector3.new(0, math.huge, 0)
-	bodyAngularVelocity.Parent = crystal
+	print(string.format("💎 Created %s screen-VFX crystal '%s' at (%.1f, %.1f, %.1f)",
+		rarity, crystal.Name, position.X, position.Y, position.Z))
 
-	print("💎 Created", rarity, "crystal at", position)
 	return crystal
 end
 
--- Expose helper functions globally
+-- Expose helpers globally so you can spawn from other scripts if you want
 _G.CreateInteractiveEgg = createInteractiveEgg
 _G.CreateInteractiveCrystal = createInteractiveCrystal
 
--- Auto-spawn test objects after 2 seconds
-task.wait(2)
+--// Auto test spawn (EGGS ONLY - AT GROUND LEVEL!) --------------------------
 
-print("🎮 Spawning test objects...")
+task.delay(2, function()
+	if not EggTemplate then
+		warn("⚠️ Skipping egg test spawns – EggModel missing.")
+		return
+	end
 
--- Spawn eggs (use Egg Reveal VFX - cinematic!) - NOW USING ACTUAL EGG MODEL!
-if EggTemplate then
-	createInteractiveEgg(Vector3.new(0, 10, 0), "Common", "Doggo")
-	createInteractiveEgg(Vector3.new(10, 10, 0), "Rare", "Shadow Wolf")
-	createInteractiveEgg(Vector3.new(20, 10, 0), "Epic", "Cerberage")
-	createInteractiveEgg(Vector3.new(30, 10, 0), "Legendary", "Phoenix")
-else
-	warn("⚠️ Skipping egg spawns - EggModel not found!")
-end
+	print("🎮 Spawning test PET eggs at GROUND LEVEL (reachable!)...")
 
--- Spawn crystals (use Screen VFX - no camera!)
-createInteractiveCrystal(Vector3.new(0, 10, -20), "Rare", "PowerCrystal")
-createInteractiveCrystal(Vector3.new(10, 10, -20), "Epic", "MagicOrb")
-createInteractiveCrystal(Vector3.new(20, 10, -20), "Legendary", "GodCrystal")
+	-- SPAWN AT GROUND LEVEL (Y=5 instead of Y=10 - 50% lower!)
+	-- These positions are reachable by players!
+	createInteractiveEgg(Vector3.new(0, 5, 0),   "Common",    "Axolotl")
+	createInteractiveEgg(Vector3.new(10, 5, 0),  "Rare",      "Axolotl")
+	createInteractiveEgg(Vector3.new(20, 5, 0),  "Epic",      "Axolotl")
+	createInteractiveEgg(Vector3.new(30, 5, 0),  "Legendary", "Axolotl")
 
-print("✅ VFX Server Script Loaded!")
-print("💡 Global functions available:")
-print("   _G.CreateInteractiveEgg(position, rarity, petName)")
-print("   _G.CreateInteractiveCrystal(position, rarity, name)")
-print("🎮 Test objects spawned!")
-if EggTemplate then
-	print("   - Eggs (front row) = Screen VFX (using actual EggModel, NO pet reveal!)")
-else
-	print("   - Eggs (front row) = SKIPPED (EggModel not found)")
-end
-print("   - Crystals (back row) = Screen VFX")
+	print("✅ VFX Server Script Loaded!")
+	print("💡 Global functions available:")
+	print("   _G.CreateInteractiveEgg(Vector3.new(x,y,z), 'Epic', 'Axolotl')")
+	print("   _G.CreateInteractiveCrystal(Vector3.new(x,y,z), 'Epic', 'SomeName')  -- only if you WANT orbs again")
+	print("📍 Eggs spawned at Y=5 (ground level, reachable!)")
+end)
