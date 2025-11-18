@@ -109,7 +109,11 @@ function ScreenVFXSystem:CreateScreenGui()
 	screenGui.ResetOnSpawn = false
 	screenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 	screenGui.IgnoreGuiInset = true
-	screenGui.Parent = player.PlayerGui
+	
+	-- FIX: Wait for PlayerGui to exist before parenting!
+	local playerGui = player:WaitForChild("PlayerGui")
+	screenGui.Parent = playerGui
+	
 	return screenGui
 end
 
@@ -560,6 +564,7 @@ end
 CollectionService:GetInstanceAddedSignal("VFXInteractive"):Connect(function(inst)
 	if inst:IsA("BasePart") then
 		table.insert(interactiveParts, inst)
+		print("✨ Found interactive part:", inst.Name, "- Total:", #interactiveParts)
 	end
 end)
 
@@ -578,7 +583,10 @@ local function createInteractionPrompt()
 	local screenGui = Instance.new("ScreenGui")
 	screenGui.Name = "InteractionPrompt"
 	screenGui.ResetOnSpawn = false
-	screenGui.Parent = player.PlayerGui
+	
+	-- FIX: Wait for PlayerGui to exist!
+	local playerGui = player:WaitForChild("PlayerGui")
+	screenGui.Parent = playerGui
 
 	local frame = Instance.new("Frame")
 	frame.Name = "PromptFrame"
@@ -615,6 +623,9 @@ local function createInteractionPrompt()
 end
 
 local interactionPrompt = createInteractionPrompt()
+
+print("✅ Interaction system ready! Looking for parts tagged 'VFXInteractive'...")
+print("📍 Current interactive parts:", #interactiveParts)
 
 -- Find nearby interactables
 RunService.Heartbeat:Connect(function()
@@ -659,9 +670,13 @@ end)
 
 -- Handle E key
 UserInputService.InputBegan:Connect(function(input, gameProcessed)
+	-- DEBUG: Uncomment this line to see what's blocking E key
+	-- print("🔍 Key:", input.KeyCode, "Processed:", gameProcessed, "Triggering:", isTriggering, "Interactable:", currentInteractable)
+	
 	if gameProcessed or isTriggering or screenVfxSystem.IsTriggering then return end
 
 	if input.KeyCode == Enum.KeyCode.E and currentInteractable then
+		print("🎮 E PRESSED! Interacting with:", currentInteractable.Name)
 		local frame = interactionPrompt:FindFirstChild("PromptFrame")
 		if frame then frame.Visible = false end
 
