@@ -1,13 +1,43 @@
 # ‼️ READ THIS FIRST ‼️
 
-## 🔥 YOUR PROBLEM WAS FIXED! 🔥
+## 🎮 YOUR VFX IS WORKING! 🎮
 
-The error you got:
+Look at your console:
 ```
-_G.TriggerVFX("Epic"):1: attempt to call a nil value
+✅ Egg Reveal System Loaded!
+✅ Screen VFX System Loaded!
+✅ UNIFIED VFX SYSTEM LOADED!
 ```
 
-**Was because you were mixing two different systems!**
+**The server spawned test objects for you!** They're floating in your game!
+
+---
+
+## 🚀 HOW TO USE:
+
+### JUST WALK UP AND PRESS E!
+
+1. **Look around** - You'll see floating eggs and crystals
+2. **Walk close** to one
+3. **Press E**
+4. **BOOM! VFX!** 💥
+
+**That's it!** It's already working!
+
+---
+
+## ❌ COMMON MISTAKES:
+
+### Error: "attempt to call a nil value"
+
+**You tried:**
+```lua
+_G.CreateInteractiveEgg(Vector3.new(0, 10, 0), "Epic", "Cerberage")
+```
+
+**From CLIENT console!** That's a SERVER function!
+
+**Fix:** Switch to SERVER console (Output dropdown) or just use the test objects already spawned!
 
 ---
 
