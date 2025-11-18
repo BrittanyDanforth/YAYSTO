@@ -684,16 +684,29 @@ UserInputService.InputBegan:Connect(function(input, gameProcessed)
 		local vfxType = currentInteractable:GetAttribute("VFXType") or "Screen"
 
 		if vfxType == "Egg" and eggRevealLoaded then
-			-- Egg Reveal
+			-- Egg Reveal (with error protection!)
 			isTriggering = true
-			local petName = currentInteractable:GetAttribute("PetName") or "Mystery Pet"
-			local config = EggRarityConfigs[rarity] or EggRarityConfigs.Common
-			config.petName = petName
 			
-			local eggTemplate = RS.Assets:WaitForChild("EggModel")
-			eggVfx:Play(eggTemplate, config)
+			local success, err = pcall(function()
+				local petName = currentInteractable:GetAttribute("PetName") or "Mystery Pet"
+				local config = EggRarityConfigs[rarity] or EggRarityConfigs.Common
+				config.petName = petName
+				
+				local eggTemplate = RS.Assets:WaitForChild("EggModel", 2)
+				if not eggTemplate then
+					error("EggModel not found!")
+				end
+				
+				eggVfx:Play(eggTemplate, config)
+				task.wait(config.duration + 1)
+			end)
 			
-			task.wait(config.duration + 1)
+			if not success then
+				warn("❌ Egg reveal failed:", err)
+				warn("💡 TIP: Test the CRYSTALS instead! They don't need the EggModel!")
+			end
+			
+			-- ALWAYS reset the flag, even if it failed!
 			isTriggering = false
 		else
 			-- Screen VFX
@@ -714,21 +727,38 @@ _G.TestEggReveal = function(rarity, petName)
 		return
 	end
 	
-	if isTriggering then return end
+	if isTriggering then 
+		warn("⚠️ VFX already playing! Wait for it to finish!")
+		return 
+	end
+	
 	isTriggering = true
 	
-	rarity = rarity or "Epic"
-	petName = petName or "Cerberage"
+	local success, err = pcall(function()
+		rarity = rarity or "Epic"
+		petName = petName or "Cerberage"
+		
+		local config = EggRarityConfigs[rarity] or EggRarityConfigs.Common
+		config.petName = petName
+		
+		print("🥚 Hatching egg:", rarity, "-", petName)
+		
+		local eggTemplate = RS.Assets:WaitForChild("EggModel", 2)
+		if not eggTemplate then
+			error("EggModel not found in ReplicatedStorage.Assets!")
+		end
+		
+		eggVfx:Play(eggTemplate, config)
+		task.wait(config.duration + 1)
+	end)
 	
-	local config = EggRarityConfigs[rarity] or EggRarityConfigs.Common
-	config.petName = petName
+	if not success then
+		warn("❌ Egg reveal failed:", err)
+		warn("💡 TIP: Create the EggModel asset in ReplicatedStorage.Assets!")
+		warn("   Or test Screen VFX with: _G.TriggerVFX('Epic')")
+	end
 	
-	print("🥚 Hatching egg:", rarity, "-", petName)
-	
-	local eggTemplate = RS.Assets:WaitForChild("EggModel")
-	eggVfx:Play(eggTemplate, config)
-	
-	task.wait(config.duration + 1)
+	-- ALWAYS reset the flag!
 	isTriggering = false
 end
 
