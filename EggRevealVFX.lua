@@ -1,274 +1,238 @@
+--!strict
 --[[
-    EGG REVEAL VFX MODULE (Orchestrator for World + Screen VFX)
+    EGG REVEAL VFX MODULE
     
-    Usage:
-        local EggRevealVFX = require(ReplicatedStorage.VFX.EggRevealVFX)
-        local vfx = EggRevealVFX.new(player)
-        
-        vfx:Play(ReplicatedStorage.Assets.EggModel, {
-            color = Color3.fromRGB(255, 230, 75),
-            text = "Epic",
-            tier = "Epic",
-            petName = "Cerberage"
-        })
+    Handles world-space egg VFX with:
+    - Camera control (cinematic view)
+    - Aura crack glow (buildup + flash)
+    - PointLight effects
+    - Optional particle bursts
+    - Screen VFX integration
+    
+    LOCATION: ReplicatedStorage.VFX.EggRevealVFX
+    
+    REQUIRES: EggModel with structure:
+        EggModel
+        ├─ Aura (Part, Neon Ball)
+        │   └─ PointLight
+        └─ EggBase (Part, PrimaryPart)
+            └─ Optional: SparkleAttachment
+                └─ ParticleEmitter
 ]]
 
 local TweenService = game:GetService("TweenService")
-local Debris = game:GetService("Debris")
+local RS = game:GetService("ReplicatedStorage")
+local Workspace = game:GetService("Workspace")
+
+export type EggRevealConfig = {
+	color: Color3?,
+	text: string?,          -- e.g. "Epic"
+	tier: string?,          -- "Epic"
+	petName: string?,       -- "Cerberage"
+	duration: number?,      -- total time before cleanup
+	cameraDistance: number? -- distance from player
+}
+
+export type ScreenVFXLike = {
+	Show: (self: any, config: EggRevealConfig) -> (),
+	Pulse: (self: any, color: Color3?) -> (),
+	Hide: (self: any) -> ()
+}
+
+export type EggRevealVFX = {
+	Player: Player,
+	ScreenVFX: ScreenVFXLike?,
+
+	Play: (self: EggRevealVFX, eggTemplate: Model, config: EggRevealConfig?) -> ()
+}
 
 local EggRevealVFX = {}
 EggRevealVFX.__index = EggRevealVFX
 
-function EggRevealVFX.new(player)
-    local self = setmetatable({}, EggRevealVFX)
-    
-    self.Player = player
-    self.Camera = workspace.CurrentCamera
-    self._busy = false
-    
-    -- Create GUI for text overlays
-    self.Gui = Instance.new("ScreenGui")
-    self.Gui.Name = "EggRevealVFX"
-    self.Gui.ResetOnSpawn = false
-    self.Gui.IgnoreGuiInset = true
-    self.Gui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
-    self.Gui.Parent = player:WaitForChild("PlayerGui")
-    
-    -- ScreenVFX will be set externally
-    self.ScreenVFX = nil
-    
-    return self
+-- Constructor --------------------------------------------------------------
+
+function EggRevealVFX.new(player: Player): EggRevealVFX
+	local self = setmetatable({}, EggRevealVFX)
+	self.Player = player
+	self.ScreenVFX = nil
+	return self
 end
 
--- SPAWN EGG IN WORLD
-function EggRevealVFX:_spawnEgg(eggTemplate)
-    local clone = eggTemplate:Clone()
-    clone.Parent = workspace
-    
-    -- Position in front of camera
-    local cam = self.Camera
-    local origin = cam.CFrame.Position + cam.CFrame.LookVector * 8
-    clone:PivotTo(CFrame.new(origin))
-    
-    return clone
+-- Utility: get character + root --------------------------------------------
+
+local function getRoot(participant: Player): BasePart?
+	local char = participant.Character or participant.CharacterAdded:Wait()
+	local root = char:FindFirstChild("HumanoidRootPart")
+	if root and root:IsA("BasePart") then
+		return root
+	end
+	return nil
 end
 
--- EGG BUILDUP (World-space glow/particles)
-function EggRevealVFX:_eggBuildup(eggModel, color)
-    -- Find Aura part (creates the cracked glow!)
-    local aura = eggModel:FindFirstChild("Aura")
-    if aura and aura:IsA("BasePart") then
-        local originalSize = aura.Size
-        local originalTransparency = aura.Transparency
-        
-        -- Set color
-        aura.Material = Enum.Material.Neon
-        aura.Color = color
-        aura.CanCollide = false
-        aura.Anchored = true
-        
-        -- Get or create light
-        local light = aura:FindFirstChild("PointLight")
-        if not light then
-            light = Instance.new("PointLight")
-            light.Color = color
-            light.Brightness = 2
-            light.Range = 10
-            light.Parent = aura
-        else
-            light.Color = color
-        end
-        
-        -- Pulse the aura (makes crack glow intensify!)
-        TweenService:Create(aura, TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
-            Transparency = math.max(0.1, originalTransparency - 0.3),  -- More visible
-            Size = originalSize * 1.1  -- Slightly bigger
-        }):Play()
-        
-        TweenService:Create(light, TweenInfo.new(0.5), {
-            Brightness = 5,
-            Range = 20
-        }):Play()
-    end
-    
-    -- Start particle emitters if they exist (optional)
-    local eggBase = eggModel:FindFirstChild("EggBase")
-    if eggBase then
-        local sparkleAttachment = eggBase:FindFirstChild("SparkleAttachment")
-        if sparkleAttachment then
-            for _, emitter in ipairs(sparkleAttachment:GetChildren()) do
-                if emitter:IsA("ParticleEmitter") then
-                    emitter.Enabled = true
-                    emitter.Rate = 50
-                end
-            end
-        end
-    end
+-- Utility: safe wait -------------------------------------------------------
+
+local function safeWait(t: number)
+	if t > 0 then
+		task.wait(t)
+	end
 end
 
--- EGG EXPLOSION (World-space burst - NO RingBurst part!)
-function EggRevealVFX:_eggExplosion(eggModel, color)
-    -- Particle burst (if SparkleAttachment exists)
-    local eggBase = eggModel:FindFirstChild("EggBase")
-    if eggBase then
-        local sparkleAttachment = eggBase:FindFirstChild("SparkleAttachment")
-        if sparkleAttachment then
-            local emitter = sparkleAttachment:FindFirstChildWhichIsA("ParticleEmitter")
-            if emitter then
-                emitter:Emit(100)
-            end
-        end
-    end
-    
-    -- Flash the Aura (creates intense crack glow!)
-    local aura = eggModel:FindFirstChild("Aura")
-    if aura then
-        local light = aura:FindFirstChild("PointLight")
-        
-        -- INTENSE FLASH for crack effect
-        TweenService:Create(aura, TweenInfo.new(0.15), {
-            Transparency = 0,  -- Fully visible!
-            Size = aura.Size * 1.2  -- Expand slightly
-        }):Play()
-        
-        if light then
-            TweenService:Create(light, TweenInfo.new(0.15), {
-                Brightness = 8,
-                Range = 30
-            }):Play()
-        end
-        
-        task.wait(0.15)
-        
-        -- Fade out
-        TweenService:Create(aura, TweenInfo.new(1), {
-            Transparency = 1
-        }):Play()
-        
-        if light then
-            TweenService:Create(light, TweenInfo.new(1), {
-                Brightness = 0,
-                Range = 5
-            }):Play()
-        end
-    end
-end
+-- Main Play sequence -------------------------------------------------------
 
--- SCREEN BURST (Calls ScreenVFX)
-function EggRevealVFX:_screenBurst(rarityConfig)
-    if self.ScreenVFX then
-        self.ScreenVFX:TriggerVFX(rarityConfig.tier or "Epic")
-    end
-end
+function EggRevealVFX:Play(eggTemplate: Model, config: EggRevealConfig?)
+	config = config or {}
+	local color = config.color or Color3.fromRGB(255, 255, 255)
+	local duration = config.duration or 2.5
+	local camDistance = config.cameraDistance or 10
 
--- SHOW NAME/RARITY TEXT
-function EggRevealVFX:_showNameLabel(rarityConfig)
-    -- Pet name
-    local nameLabel = Instance.new("TextLabel")
-    nameLabel.Size = UDim2.new(0, 600, 0, 120)
-    nameLabel.Position = UDim2.new(0.5, -300, 0.7, -60)
-    nameLabel.AnchorPoint = Vector2.new(0, 0)
-    nameLabel.BackgroundTransparency = 1
-    nameLabel.ZIndex = 10005
-    nameLabel.Font = Enum.Font.FredokaOne
-    nameLabel.TextSize = 64
-    nameLabel.Text = rarityConfig.petName or "Epic Pet"
-    nameLabel.TextColor3 = Color3.new(1, 1, 1)
-    nameLabel.TextStrokeTransparency = 0
-    nameLabel.TextStrokeColor3 = Color3.fromRGB(0, 0, 0)
-    nameLabel.TextTransparency = 1
-    nameLabel.TextStrokeTransparency = 1
-    nameLabel.Parent = self.Gui
-    
-    -- Rarity text
-    local rarityLabel = Instance.new("TextLabel")
-    rarityLabel.Size = UDim2.new(0, 600, 0, 60)
-    rarityLabel.Position = UDim2.new(0.5, -300, 0.7, 60)
-    rarityLabel.BackgroundTransparency = 1
-    rarityLabel.ZIndex = 10005
-    rarityLabel.Font = Enum.Font.FredokaOne
-    rarityLabel.TextSize = 40
-    rarityLabel.Text = rarityConfig.text or "Epic"
-    rarityLabel.TextColor3 = rarityConfig.color
-    rarityLabel.TextStrokeTransparency = 0
-    rarityLabel.TextStrokeColor3 = Color3.fromRGB(0, 0, 0)
-    rarityLabel.TextTransparency = 1
-    rarityLabel.TextStrokeTransparency = 1
-    rarityLabel.Parent = self.Gui
-    
-    -- Fade in
-    TweenService:Create(nameLabel, TweenInfo.new(0.35, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {
-        TextTransparency = 0,
-        TextStrokeTransparency = 0
-    }):Play()
-    
-    TweenService:Create(rarityLabel, TweenInfo.new(0.35, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {
-        TextTransparency = 0,
-        TextStrokeTransparency = 0
-    }):Play()
-    
-    -- Fade out
-    task.delay(2.5, function()
-        TweenService:Create(nameLabel, TweenInfo.new(0.4), {
-            TextTransparency = 1,
-            TextStrokeTransparency = 1
-        }):Play()
-        
-        TweenService:Create(rarityLabel, TweenInfo.new(0.4), {
-            TextTransparency = 1,
-            TextStrokeTransparency = 1
-        }):Play()
-        
-        Debris:AddItem(nameLabel, 1)
-        Debris:AddItem(rarityLabel, 1)
-    end)
-end
+	-- Clone model
+	local eggModel: Model = eggTemplate:Clone()
+	eggModel.Name = "EggRevealModel"
+	eggModel.Parent = Workspace
 
--- FULL SEQUENCE
-function EggRevealVFX:_playSequence(eggTemplate, rarityConfig)
-    local egg = self:_spawnEgg(eggTemplate)
-    
-    -- BUILDUP (0.6s)
-    self:_eggBuildup(egg, rarityConfig.color)
-    if self.ScreenVFX then
-        task.spawn(function()
-            self.ScreenVFX:BuildupAnimation(rarityConfig.color, 0.6)
-        end)
-    end
-    task.wait(0.6)
-    
-    -- EXPLOSION (world + screen)
-    self:_eggExplosion(egg, rarityConfig.color)
-    self:_screenBurst(rarityConfig)
-    
-    -- Show name/rarity
-    self:_showNameLabel(rarityConfig)
-    
-    -- Hold then cleanup
-    task.wait(3)
-    egg:Destroy()
-end
+	-- Grab parts the model guarantees
+	local eggBase = eggModel:WaitForChild("EggBase") :: BasePart
+	local aura = eggModel:WaitForChild("Aura") :: BasePart
+	local light = aura:WaitForChild("PointLight") :: PointLight
 
--- PUBLIC API
-function EggRevealVFX:Play(eggTemplate, rarityConfig)
-    if self._busy then
-        warn("EggRevealVFX is busy!")
-        return
-    end
-    
-    self._busy = true
-    
-    rarityConfig = rarityConfig or {
-        color = Color3.fromRGB(0, 255, 255),
-        text = "Epic",
-        tier = "Epic",
-        petName = "Mystery Pet"
-    }
-    
-    task.spawn(function()
-        self:_playSequence(eggTemplate, rarityConfig)
-        self._busy = false
-    end)
+	local sparkleAttachment = eggBase:FindFirstChild("SparkleAttachment")
+	local sparkleEmitter = sparkleAttachment and sparkleAttachment:FindFirstChildWhichIsA("ParticleEmitter")
+
+	-- Ensure primary part
+	if eggModel.PrimaryPart == nil then
+		eggModel.PrimaryPart = eggBase
+	end
+
+	-- Position model in front of player
+	local root = getRoot(self.Player)
+	if root then
+		local rootCF = root.CFrame
+		local eggCF = rootCF * CFrame.new(0, 2, -camDistance)
+		eggModel:SetPrimaryPartCFrame(eggCF)
+		aura.CFrame = eggBase.CFrame
+	end
+
+	-- Setup camera
+	local camera = Workspace.CurrentCamera
+	assert(camera, "No CurrentCamera")
+
+	local oldCamType = camera.CameraType
+	local oldCamCF = camera.CFrame
+
+	local targetPos = eggBase.Position
+	local camOffset = Vector3.new(0, 2, camDistance * 0.6)
+	local camPos = targetPos + (eggBase.CFrame.LookVector * camDistance * 0.4) + camOffset
+
+	camera.CameraType = Enum.CameraType.Scriptable
+	camera.CFrame = CFrame.new(camPos, targetPos)
+
+	-- Initial visual state -------------------------------------------------
+	local auraBaseSize = aura.Size
+	local auraBuildSize = auraBaseSize * 1.05
+	local auraFlashSize = auraBaseSize * 1.2
+
+	aura.Color = color
+	aura.Size = auraBaseSize
+	aura.Transparency = 1
+	aura.Material = Enum.Material.Neon
+	aura.CanCollide = false
+	aura.Anchored = true
+
+	light.Color = color
+	light.Brightness = 0
+	light.Range = 0
+
+	if sparkleEmitter then
+		sparkleEmitter.Enabled = false
+	end
+
+	-- Inform ScreenVFX (UI) ------------------------------------------------
+	if self.ScreenVFX then
+		self.ScreenVFX:Show({
+			color = color,
+			text = config.text,
+			tier = config.tier,
+			petName = config.petName
+		})
+	end
+
+	-- Tweens ---------------------------------------------------------------
+
+	local buildInfo = TweenInfo.new(0.45, Enum.EasingStyle.Sine, Enum.EasingDirection.Out)
+	local flashInfo = TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+	local fadeInfo = TweenInfo.new(0.5, Enum.EasingStyle.Sine, Enum.EasingDirection.In)
+
+	local buildAura = TweenService:Create(aura, buildInfo, {
+		Transparency = 0.3,
+		Size = auraBuildSize
+	})
+
+	local buildLight = TweenService:Create(light, buildInfo, {
+		Brightness = 4,
+		Range = 16
+	})
+
+	local flashAura = TweenService:Create(aura, flashInfo, {
+		Transparency = 0.15,
+		Size = auraFlashSize
+	})
+
+	local flashLight = TweenService:Create(light, flashInfo, {
+		Brightness = 8,
+		Range = 24
+	})
+
+	local fadeAura = TweenService:Create(aura, fadeInfo, {
+		Transparency = 1,
+		Size = auraBaseSize
+	})
+
+	local fadeLight = TweenService:Create(light, fadeInfo, {
+		Brightness = 0,
+		Range = 0
+	})
+
+	-- Sequence -------------------------------------------------------------
+
+	-- Small lead-in for dramatization
+	safeWait(0.1)
+
+	-- BUILDUP (crack glow intensifies!)
+	buildAura:Play()
+	buildLight:Play()
+	buildAura.Completed:Wait()
+
+	-- FLASH (intense crack burst!)
+	if sparkleEmitter then
+		sparkleEmitter:Emit(80)
+	end
+	if self.ScreenVFX then
+		self.ScreenVFX:Pulse(color)
+	end
+
+	flashAura:Play()
+	flashLight:Play()
+	flashAura.Completed:Wait()
+
+	-- Hold moment on screen
+	safeWait(duration * 0.3)
+
+	-- FADE OUT
+	fadeAura:Play()
+	fadeLight:Play()
+	fadeAura.Completed:Wait()
+
+	-- UI fade-out
+	if self.ScreenVFX then
+		self.ScreenVFX:Hide()
+	end
+
+	-- Cleanup
+	eggModel:Destroy()
+
+	-- Restore camera
+	camera.CameraType = oldCamType
+	camera.CFrame = oldCamCF
 end
 
 return EggRevealVFX
