@@ -90,10 +90,21 @@ function EggRevealVFX:Play(eggTemplate: Model, config: EggRevealConfig?)
 	eggModel.Name = "EggRevealModel"
 	eggModel.Parent = Workspace
 
-	-- Grab parts the model guarantees
-	local eggBase = eggModel:WaitForChild("EggBase") :: BasePart
-	local aura = eggModel:WaitForChild("Aura") :: BasePart
-	local light = aura:WaitForChild("PointLight") :: PointLight
+	-- Grab parts the model guarantees (with timeout to prevent infinite yields!)
+	local eggBase = eggModel:WaitForChild("EggBase", 2) :: BasePart
+	if not eggBase then
+		error("EggModel is missing EggBase part!")
+	end
+	
+	local aura = eggModel:WaitForChild("Aura", 2) :: BasePart
+	if not aura then
+		error("EggModel is missing Aura part!")
+	end
+	
+	local light = aura:WaitForChild("PointLight", 2) :: PointLight
+	if not light then
+		error("Aura is missing PointLight!")
+	end
 
 	local sparkleAttachment = eggBase:FindFirstChild("SparkleAttachment")
 	local sparkleEmitter = sparkleAttachment and sparkleAttachment:FindFirstChildWhichIsA("ParticleEmitter")

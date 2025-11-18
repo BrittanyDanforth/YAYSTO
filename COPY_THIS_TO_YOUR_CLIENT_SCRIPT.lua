@@ -684,30 +684,50 @@ UserInputService.InputBegan:Connect(function(input, gameProcessed)
 		local vfxType = currentInteractable:GetAttribute("VFXType") or "Screen"
 
 		if vfxType == "Egg" and eggRevealLoaded then
-			-- Egg Reveal (with error protection!)
+			-- Egg Reveal (with error protection AND timeout!)
 			isTriggering = true
 			
-			local success, err = pcall(function()
-				local petName = currentInteractable:GetAttribute("PetName") or "Mystery Pet"
-				local config = EggRarityConfigs[rarity] or EggRarityConfigs.Common
-				config.petName = petName
+			-- Use task.spawn with a timeout to prevent infinite yields!
+			task.spawn(function()
+				local success, err = pcall(function()
+					local petName = currentInteractable:GetAttribute("PetName") or "Mystery Pet"
+					local config = EggRarityConfigs[rarity] or EggRarityConfigs.Common
+					config.petName = petName
+					
+					local eggTemplate = RS.Assets:WaitForChild("EggModel", 2)
+					if not eggTemplate then
+						error("EggModel not found in ReplicatedStorage.Assets!")
+					end
+					
+					-- Check if EggModel has required parts before playing!
+					if not eggTemplate:FindFirstChild("EggBase") then
+						error("EggModel is missing EggBase part!")
+					end
+					if not eggTemplate:FindFirstChild("Aura") then
+						error("EggModel is missing Aura part!")
+					end
+					
+					eggVfx:Play(eggTemplate, config)
+					task.wait(config.duration + 1)
+				end)
 				
-				local eggTemplate = RS.Assets:WaitForChild("EggModel", 2)
-				if not eggTemplate then
-					error("EggModel not found!")
+				if not success then
+					warn("❌ Egg reveal failed:", err)
+					warn("💡 TIP: Test the CRYSTALS instead! They don't need the EggModel!")
+					warn("   Or create the EggModel properly with EggBase and Aura parts!")
 				end
 				
-				eggVfx:Play(eggTemplate, config)
-				task.wait(config.duration + 1)
+				-- ALWAYS reset the flag, even if it failed!
+				isTriggering = false
 			end)
 			
-			if not success then
-				warn("❌ Egg reveal failed:", err)
-				warn("💡 TIP: Test the CRYSTALS instead! They don't need the EggModel!")
-			end
-			
-			-- ALWAYS reset the flag, even if it failed!
-			isTriggering = false
+			-- Also set a safety timeout in case something goes wrong!
+			task.delay(10, function()
+				if isTriggering then
+					warn("⚠️ VFX timeout! Resetting...")
+					isTriggering = false
+				end
+			end)
 		else
 			-- Screen VFX
 			screenVfxSystem:TriggerVFX(rarity)
