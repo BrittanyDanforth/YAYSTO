@@ -48,21 +48,38 @@ local function createInteractiveEgg(position, rarity, petName)
 		egg:SetPrimaryPartCFrame(CFrame.new(position))
 	end
 
-	-- Anchor and disable collisions on all parts
+	-- Disable collisions on all parts, but DON'T anchor root (needed for BodyPosition!)
 	for _, inst in ipairs(egg:GetDescendants()) do
 		if inst:IsA("BasePart") then
-			inst.Anchored = true
 			inst.CanCollide = false
+			-- Only anchor non-root parts
+			if inst ~= root then
+				inst.Anchored = true
+			end
+		end
+	end
+
+	-- Root part must be UNANCHORED for BodyPosition to work!
+	root.Anchored = false
+	root.CanCollide = false
+
+	-- Weld all direct child parts to root so model stays together when root moves
+	for _, child in ipairs(egg:GetChildren()) do
+		if child:IsA("BasePart") and child ~= root then
+			local weld = Instance.new("WeldConstraint")
+			weld.Part0 = root
+			weld.Part1 = child
+			weld.Parent = root
 		end
 	end
 
 	-- Set attributes on the root part (this is what the client looks for!)
 	root:SetAttribute("VFXInteractive", true)
 	root:SetAttribute("VFXRarity", rarity)
-	root:SetAttribute("VFXType", "Egg") -- THIS MAKES IT USE EGG REVEAL!
+	root:SetAttribute("VFXType", "Screen") -- USE SCREEN VFX (no pet reveal, just effects!)
 	root:SetAttribute("PetName", petName or "Mystery Pet")
 
-	-- Tag the root part for CollectionService
+	-- Tag the root part for CollectionService (client looks for tagged BaseParts)
 	CollectionService:AddTag(root, "VFXInteractive")
 
 	-- Add or update PointLight on root part
@@ -85,7 +102,7 @@ local function createInteractiveEgg(position, rarity, petName)
 	pointLight.Brightness = 2
 	pointLight.Range = 20
 
-	-- Add floating animation (BodyPosition on root)
+	-- Add floating animation (BodyPosition on root - REQUIRES UNANCHORED!)
 	local bodyPosition = Instance.new("BodyPosition")
 	bodyPosition.MaxForce = Vector3.new(0, math.huge, 0)
 	bodyPosition.Position = position
@@ -93,7 +110,7 @@ local function createInteractiveEgg(position, rarity, petName)
 	bodyPosition.P = 5000
 	bodyPosition.Parent = root
 
-	-- Add spinning (BodyAngularVelocity on root)
+	-- Add spinning (BodyAngularVelocity on root - REQUIRES UNANCHORED!)
 	local bodyAngularVelocity = Instance.new("BodyAngularVelocity")
 	bodyAngularVelocity.AngularVelocity = Vector3.new(0, 1, 0)
 	bodyAngularVelocity.MaxTorque = Vector3.new(0, math.huge, 0)
@@ -191,7 +208,7 @@ print("   _G.CreateInteractiveEgg(position, rarity, petName)")
 print("   _G.CreateInteractiveCrystal(position, rarity, name)")
 print("🎮 Test objects spawned!")
 if EggTemplate then
-	print("   - Eggs (front row) = Egg Reveal VFX (using actual EggModel!)")
+	print("   - Eggs (front row) = Screen VFX (using actual EggModel, NO pet reveal!)")
 else
 	print("   - Eggs (front row) = SKIPPED (EggModel not found)")
 end
