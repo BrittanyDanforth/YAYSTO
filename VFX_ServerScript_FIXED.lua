@@ -8,6 +8,7 @@
 ]]
 
 local CollectionService = game:GetService("CollectionService")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 print("🖥️ VFX Server Script Starting...")
 
