@@ -90,29 +90,24 @@ function EggRevealVFX:Play(eggTemplate: Model, config: EggRevealConfig?)
 	eggModel.Name = "EggRevealModel"
 	eggModel.Parent = Workspace
 
-	-- Grab parts the model guarantees (with timeout to prevent infinite yields!)
-	local eggBase = eggModel:WaitForChild("EggBase", 2) :: BasePart
+	-- Find the main egg part (try PrimaryPart, EggBase, or any Part)
+	local eggBase = eggModel.PrimaryPart or eggModel:FindFirstChild("EggBase") or eggModel:FindFirstChildWhichIsA("BasePart")
 	if not eggBase then
-		error("EggModel is missing EggBase part!")
+		error("EggModel has no parts!")
 	end
 	
-	local aura = eggModel:WaitForChild("Aura", 2) :: BasePart
-	if not aura then
-		error("EggModel is missing Aura part!")
-	end
-	
-	local light = aura:WaitForChild("PointLight", 2) :: PointLight
-	if not light then
-		error("Aura is missing PointLight!")
-	end
-
-	local sparkleAttachment = eggBase:FindFirstChild("SparkleAttachment")
-	local sparkleEmitter = sparkleAttachment and sparkleAttachment:FindFirstChildWhichIsA("ParticleEmitter")
-
-	-- Ensure primary part
+	-- Set PrimaryPart if not set
 	if eggModel.PrimaryPart == nil then
 		eggModel.PrimaryPart = eggBase
 	end
+	
+	-- Aura and light are OPTIONAL (user's egg might not have them!)
+	local aura = eggModel:FindFirstChild("Aura")
+	local light = aura and aura:FindFirstChildWhichIsA("PointLight")
+	
+	-- Sparkles are also optional
+	local sparkleAttachment = eggBase:FindFirstChild("SparkleAttachment")
+	local sparkleEmitter = sparkleAttachment and sparkleAttachment:FindFirstChildWhichIsA("ParticleEmitter")
 
 	-- Position model in front of player
 	local root = getRoot(self.Player)
@@ -120,7 +115,6 @@ function EggRevealVFX:Play(eggTemplate: Model, config: EggRevealConfig?)
 		local rootCF = root.CFrame
 		local eggCF = rootCF * CFrame.new(0, 2, -camDistance)
 		eggModel:SetPrimaryPartCFrame(eggCF)
-		aura.CFrame = eggBase.CFrame
 	end
 
 	-- Setup camera
@@ -137,21 +131,30 @@ function EggRevealVFX:Play(eggTemplate: Model, config: EggRevealConfig?)
 	camera.CameraType = Enum.CameraType.Scriptable
 	camera.CFrame = CFrame.new(camPos, targetPos)
 
-	-- Initial visual state -------------------------------------------------
-	local auraBaseSize = aura.Size
-	local auraBuildSize = auraBaseSize * 1.05
-	local auraFlashSize = auraBaseSize * 1.2
+	-- Initial visual state (only if aura exists) ---------------------------
+	local auraBaseSize, auraBuildSize, auraFlashSize
+	
+	if aura then
+		auraBaseSize = aura.Size
+		auraBuildSize = auraBaseSize * 1.05
+		auraFlashSize = auraBaseSize * 1.2
+		
+		aura.Color = color
+		aura.Size = auraBaseSize
+		aura.Transparency = 1
+		aura.Material = Enum.Material.Neon
+		aura.CanCollide = false
+		aura.Anchored = true
+		
+		-- Position aura with the egg
+		aura.CFrame = eggBase.CFrame
+	end
 
-	aura.Color = color
-	aura.Size = auraBaseSize
-	aura.Transparency = 1
-	aura.Material = Enum.Material.Neon
-	aura.CanCollide = false
-	aura.Anchored = true
-
-	light.Color = color
-	light.Brightness = 0
-	light.Range = 0
+	if light then
+		light.Color = color
+		light.Brightness = 0
+		light.Range = 0
+	end
 
 	if sparkleEmitter then
 		sparkleEmitter.Enabled = false
@@ -167,53 +170,60 @@ function EggRevealVFX:Play(eggTemplate: Model, config: EggRevealConfig?)
 		})
 	end
 
-	-- Tweens ---------------------------------------------------------------
+	-- Tweens (only create if aura/light exist) ------------------------------
 
 	local buildInfo = TweenInfo.new(0.45, Enum.EasingStyle.Sine, Enum.EasingDirection.Out)
 	local flashInfo = TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
 	local fadeInfo = TweenInfo.new(0.5, Enum.EasingStyle.Sine, Enum.EasingDirection.In)
 
-	local buildAura = TweenService:Create(aura, buildInfo, {
-		Transparency = 0.3,
-		Size = auraBuildSize
-	})
-
-	local buildLight = TweenService:Create(light, buildInfo, {
-		Brightness = 4,
-		Range = 16
-	})
-
-	local flashAura = TweenService:Create(aura, flashInfo, {
-		Transparency = 0.15,
-		Size = auraFlashSize
-	})
-
-	local flashLight = TweenService:Create(light, flashInfo, {
-		Brightness = 8,
-		Range = 24
-	})
-
-	local fadeAura = TweenService:Create(aura, fadeInfo, {
-		Transparency = 1,
-		Size = auraBaseSize
-	})
-
-	local fadeLight = TweenService:Create(light, fadeInfo, {
-		Brightness = 0,
-		Range = 0
-	})
+	local buildAura, flashAura, fadeAura
+	local buildLight, flashLight, fadeLight
+	
+	if aura then
+		buildAura = TweenService:Create(aura, buildInfo, {
+			Transparency = 0.3,
+			Size = auraBuildSize
+		})
+		flashAura = TweenService:Create(aura, flashInfo, {
+			Transparency = 0.15,
+			Size = auraFlashSize
+		})
+		fadeAura = TweenService:Create(aura, fadeInfo, {
+			Transparency = 1,
+			Size = auraBaseSize
+		})
+	end
+	
+	if light then
+		buildLight = TweenService:Create(light, buildInfo, {
+			Brightness = 4,
+			Range = 16
+		})
+		flashLight = TweenService:Create(light, flashInfo, {
+			Brightness = 8,
+			Range = 24
+		})
+		fadeLight = TweenService:Create(light, fadeInfo, {
+			Brightness = 0,
+			Range = 0
+		})
+	end
 
 	-- Sequence -------------------------------------------------------------
 
 	-- Small lead-in for dramatization
 	safeWait(0.1)
 
-	-- BUILDUP (crack glow intensifies!)
-	buildAura:Play()
-	buildLight:Play()
-	buildAura.Completed:Wait()
+	-- BUILDUP (only if aura exists)
+	if buildAura then buildAura:Play() end
+	if buildLight then buildLight:Play() end
+	if buildAura then
+		buildAura.Completed:Wait()
+	else
+		safeWait(0.45)  -- Wait same time even without aura
+	end
 
-	-- FLASH (intense crack burst!)
+	-- FLASH
 	if sparkleEmitter then
 		sparkleEmitter:Emit(80)
 	end
@@ -221,17 +231,25 @@ function EggRevealVFX:Play(eggTemplate: Model, config: EggRevealConfig?)
 		self.ScreenVFX:Pulse(color)
 	end
 
-	flashAura:Play()
-	flashLight:Play()
-	flashAura.Completed:Wait()
+	if flashAura then flashAura:Play() end
+	if flashLight then flashLight:Play() end
+	if flashAura then
+		flashAura.Completed:Wait()
+	else
+		safeWait(0.2)  -- Wait same time even without aura
+	end
 
 	-- Hold moment on screen
 	safeWait(duration * 0.3)
 
 	-- FADE OUT
-	fadeAura:Play()
-	fadeLight:Play()
-	fadeAura.Completed:Wait()
+	if fadeAura then fadeAura:Play() end
+	if fadeLight then fadeLight:Play() end
+	if fadeAura then
+		fadeAura.Completed:Wait()
+	else
+		safeWait(0.5)  -- Wait same time even without aura
+	end
 
 	-- UI fade-out
 	if self.ScreenVFX then

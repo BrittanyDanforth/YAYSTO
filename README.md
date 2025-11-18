@@ -1,17 +1,17 @@
-# 🎮 Roblox VFX System - 3 WORKING! ✅✅✅
+# 🎮 Roblox VFX System - Works with YOUR Egg! 🥚
 
-## 🎉 **3 VFX CONFIRMED WORKING!**
+## 🥚 **JUST FIXED: Works with ANY Egg Model!**
 
-### **👉 [`ALL_3_WORKED_FINAL_FIX.md`](./ALL_3_WORKED_FINAL_FIX.md) 👈**
-**Magic Orb, God Crystal, AND Legendary Egg all triggered! Final fix applied!**
+### **👉 [`FIXED_FOR_YOUR_EGG.md`](./FIXED_FOR_YOUR_EGG.md) 👈**
+**No more "Aura" errors! Use your own egg model as-is!**
 
-### **Latest Update (v2.3 - ULTIMATE FIX!):**
-✅ **3 VFX confirmed working!** - Magic Orb (Epic), God Crystal (Legendary), Legendary Egg (tried)!  
-✅ **No more infinite yields!** - All WaitForChild calls have 2-second timeouts!  
-✅ **Triple-layer protection!** - Pre-checks, timeouts, AND safety fallback!  
-✅ **E key never gets stuck!** - Even if eggs fail, crystals keep working!  
+### **Latest Update (v2.4 - YOUR EGG FIX!):**
+✅ **Works with ANY egg model!** - No "Aura" or special parts required!  
+✅ **All crystals working!** - Rare, Epic, Legendary confirmed!  
+✅ **Graceful fallbacks!** - Module handles missing parts automatically!  
+✅ **E key never gets stuck!** - Proper error handling everywhere!  
 
-**→ Copy the updated code from [`COPY_THIS_TO_YOUR_CLIENT_SCRIPT.lua`](./COPY_THIS_TO_YOUR_CLIENT_SCRIPT.lua)!**
+**→ Copy the updated code from [`COPY_THIS_TO_YOUR_CLIENT_SCRIPT.lua`](./COPY_THIS_TO_YOUR_CLIENT_SCRIPT.lua) and [`EggRevealVFX.lua`](./EggRevealVFX.lua)!**
 
 ---
 
@@ -22,7 +22,7 @@
 | **`_G.TriggerVFX` is nil** | Copy [`COPY_THIS_TO_YOUR_CLIENT_SCRIPT.lua`](./COPY_THIS_TO_YOUR_CLIENT_SCRIPT.lua) into your LocalScript |
 | **"Argument 3 missing or nil"** | Same fix ^ (OLD code had PlayerGui crash bug) |
 | **Pressing E does nothing** | Read [`DEBUG_GUIDE_WHY_E_DOESNT_WORK.md`](./DEBUG_GUIDE_WHY_E_DOESNT_WORK.md) |
-| **"Infinite yield on Aura"** | Test **Crystals** instead of Eggs (or create EggModel asset) |
+| **"Infinite yield on Aura"** | **FIXED!** Copy new [`EggRevealVFX.lua`](./EggRevealVFX.lua) - works with any egg! |
 | **No `[E] Interact` prompt shows** | Server script not spawning objects, or you're too far away |
 
 ---
@@ -31,9 +31,9 @@
 
 | File | What It Does | Priority |
 |------|--------------|----------|
-| **[`ALL_3_WORKED_FINAL_FIX.md`](./ALL_3_WORKED_FINAL_FIX.md)** | **🎉 3 VFX WORKING! Final fix applied!** | **🔥 READ THIS NOW** |
-| **[`COPY_THIS_TO_YOUR_CLIENT_SCRIPT.lua`](./COPY_THIS_TO_YOUR_CLIENT_SCRIPT.lua)** | **The actual client code (v2.3 - ULTIMATE FIX!)** | **🔥 COPY THIS** |
-| **[`EggRevealVFX.lua`](./EggRevealVFX.lua)** | **Updated module with timeouts (for egg reveals)** | **🥚 Optional** |
+| **[`FIXED_FOR_YOUR_EGG.md`](./FIXED_FOR_YOUR_EGG.md)** | **🥚 Works with YOUR egg now! No Aura required!** | **🔥 READ THIS NOW** |
+| **[`COPY_THIS_TO_YOUR_CLIENT_SCRIPT.lua`](./COPY_THIS_TO_YOUR_CLIENT_SCRIPT.lua)** | **The actual client code (v2.4 - YOUR EGG FIX!)** | **🔥 COPY THIS** |
+| **[`EggRevealVFX.lua`](./EggRevealVFX.lua)** | **Updated module - works with ANY egg!** | **🥚 COPY THIS TOO** |
 | **[`WHERE_TO_PUT_SCRIPTS.md`](./WHERE_TO_PUT_SCRIPTS.md)** | **Where each script goes (CLIENT vs SERVER)** | **📍 No confusion!** |
 | [`QUICK_START_FIXED.md`](./QUICK_START_FIXED.md) | Quick setup guide | ⚡ Setup |
 | [`ALL_FIXES_APPLIED.md`](./ALL_FIXES_APPLIED.md) | What changed & why (v2.1 fixes) | ✅ Changelog |

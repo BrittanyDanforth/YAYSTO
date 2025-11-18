@@ -699,22 +699,14 @@ UserInputService.InputBegan:Connect(function(input, gameProcessed)
 						error("EggModel not found in ReplicatedStorage.Assets!")
 					end
 					
-					-- Check if EggModel has required parts before playing!
-					if not eggTemplate:FindFirstChild("EggBase") then
-						error("EggModel is missing EggBase part!")
-					end
-					if not eggTemplate:FindFirstChild("Aura") then
-						error("EggModel is missing Aura part!")
-					end
-					
+					-- The module will handle any missing parts gracefully!
 					eggVfx:Play(eggTemplate, config)
 					task.wait(config.duration + 1)
 				end)
 				
 				if not success then
 					warn("❌ Egg reveal failed:", err)
-					warn("💡 TIP: Test the CRYSTALS instead! They don't need the EggModel!")
-					warn("   Or create the EggModel properly with EggBase and Aura parts!")
+					warn("💡 TIP: Make sure your EggModel has at least one part/mesh!")
 				end
 				
 				-- ALWAYS reset the flag, even if it failed!
