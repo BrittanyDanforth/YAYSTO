@@ -32,7 +32,9 @@ local EXPRESSIONS = {
 	determined = { ChinRaiser = 10, LeftCheekPuff = 0, RightCheekPuff = 0, JawDrop = 0, MouthLeft = 0, MouthRight = 0 },
 }
 
--- Function to apply facial expression on server (has Plugin capability)
+-- Function to apply facial expression on server
+-- NOTE: FaceControls requires Plugin capability which server scripts don't have
+-- This will fail, but we try anyway in case the head is a DynamicHead
 local function applyFacialExpressionServer(mood, characterModel)
 	if not characterModel then return end
 	
@@ -41,23 +43,30 @@ local function applyFacialExpressionServer(mood, characterModel)
 	
 	local faceControls = head:FindFirstChildOfClass("FaceControls")
 	if not faceControls then
-		warn("⚠️ [Server] No FaceControls found on " .. characterModel.Name)
+		-- Silently fail - FaceControls might not exist
 		return
 	end
 	
 	local preset = EXPRESSIONS[string.lower(mood or "neutral")] or EXPRESSIONS.neutral
 	if not preset then return end
 	
-	-- Server has Plugin capability, can modify FaceControls directly
+	-- Try to modify FaceControls (will fail if not DynamicHead or lacks Plugin capability)
+	local anySuccess = false
 	for propertyName, targetValue in pairs(preset) do
 		local success, errorMsg = pcall(function()
 			faceControls[propertyName] = targetValue
 		end)
 		if success then
+			anySuccess = true
 			print("  ✓ [Server] Applied " .. propertyName .. " = " .. tostring(targetValue))
-		else
-			warn("  ✗ [Server] Failed to set " .. propertyName .. ": " .. tostring(errorMsg))
 		end
+		-- Don't warn on failure - this is expected for non-DynamicHead FaceControls
+	end
+	
+	if not anySuccess then
+		-- FaceControls can't be modified - this is a Roblox API limitation
+		-- Only works with DynamicHead or Plugin scripts
+		-- Silently continue - dialogue system works fine without facial expressions
 	end
 end
 
@@ -70,13 +79,14 @@ ChoiceMade.OnServerEvent:Connect(function(player, choiceData)
 		local mood = choiceData.mood
 		print("🎭 [Server] Firing facial expression event: " .. tostring(mood))
 		
-		-- Try to apply on server-side (has Plugin capability)
+		-- Try to apply on server-side (may fail due to Plugin capability requirement)
+		-- This only works if the head is a DynamicHead
 		local character = player.Character
 		if character then
 			applyFacialExpressionServer(mood, character)
 		end
 		
-		-- Also try workspace rigs
+		-- Also try workspace rigs (this is the one we're targeting)
 		local rig = workspace:FindFirstChild("Rig")
 		if rig then
 			applyFacialExpressionServer(mood, rig)
