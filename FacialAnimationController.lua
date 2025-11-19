@@ -89,13 +89,14 @@ end)
 ---------------------------------------------------------------------
 -- EXPRESSION PRESETS
 ---------------------------------------------------------------------
+-- FaceControls property names (corrected - some don't exist)
+-- Valid properties: ChinRaiser, LeftCheekPuff, RightCheekPuff, JawDrop, MouthLeft, MouthRight
+-- Invalid: LipCornerPuller, LipStretcher (these don't exist in FaceControls API)
 local EXPRESSIONS = {
 	neutral = {
 		ChinRaiser      = 0,
-		LipCornerPuller = 0,
 		LeftCheekPuff   = 0,
 		RightCheekPuff  = 0,
-		LipStretcher    = 0,
 		JawDrop         = 0,
 		MouthLeft       = 0,
 		MouthRight      = 0,
@@ -103,10 +104,8 @@ local EXPRESSIONS = {
 
 	happy = {
 		ChinRaiser      = 8,
-		LipCornerPuller = 20,
 		LeftCheekPuff   = 0,
 		RightCheekPuff  = 0,
-		LipStretcher    = 10,
 		JawDrop         = 4,
 		MouthLeft       = 0,
 		MouthRight      = 0,
@@ -114,10 +113,8 @@ local EXPRESSIONS = {
 
 	sad = {
 		ChinRaiser      = -4,
-		LipCornerPuller = -15,
 		LeftCheekPuff   = 5,
 		RightCheekPuff  = 5,
-		LipStretcher    = -8,
 		JawDrop         = 0,
 		MouthLeft       = 0,
 		MouthRight      = 0,
@@ -125,10 +122,8 @@ local EXPRESSIONS = {
 
 	angry = {
 		ChinRaiser      = 6,
-		LipCornerPuller = -18,
 		LeftCheekPuff   = 15,
 		RightCheekPuff  = 15,
-		LipStretcher    = 15,
 		JawDrop         = 0,
 		MouthLeft       = 0,
 		MouthRight      = 0,
@@ -136,10 +131,8 @@ local EXPRESSIONS = {
 
 	fear = {
 		ChinRaiser      = 0,
-		LipCornerPuller = -10,
 		LeftCheekPuff   = 5,
 		RightCheekPuff  = 5,
-		LipStretcher    = -10,
 		JawDrop         = 10,
 		MouthLeft       = 0,
 		MouthRight      = 0,
@@ -147,10 +140,8 @@ local EXPRESSIONS = {
 
 	guilt = {
 		ChinRaiser      = -6,
-		LipCornerPuller = -8,
 		LeftCheekPuff   = 8,
 		RightCheekPuff  = 8,
-		LipStretcher    = -4,
 		JawDrop         = 0,
 		MouthLeft       = 0,
 		MouthRight      = 0,
@@ -158,10 +149,8 @@ local EXPRESSIONS = {
 
 	determined = {
 		ChinRaiser      = 10,
-		LipCornerPuller = 8,
 		LeftCheekPuff   = 0,
 		RightCheekPuff  = 0,
-		LipStretcher    = 8,
 		JawDrop         = 0,
 		MouthLeft       = 0,
 		MouthRight      = 0,
@@ -194,10 +183,10 @@ local function applyExpression(mood: string)
 	print("  - Parent: " .. tostring(faceControls.Parent and faceControls.Parent.Name or "nil"))
 	print("  - Full Path: " .. tostring(faceControls:GetFullName()))
 	
-	-- Check all properties
+	-- Check all properties (only valid FaceControls properties)
 	print("🔍 [FACIAL DEBUG] Checking all FaceControls properties:")
-	local propsToCheck = {"ChinRaiser", "LipCornerPuller", "LeftCheekPuff", "RightCheekPuff", 
-	                     "LipStretcher", "JawDrop", "MouthLeft", "MouthRight"}
+	local propsToCheck = {"ChinRaiser", "LeftCheekPuff", "RightCheekPuff", 
+	                     "JawDrop", "MouthLeft", "MouthRight"}
 	for _, propName in ipairs(propsToCheck) do
 		local success, value, errorMsg = pcall(function()
 			return faceControls[propName]
@@ -453,8 +442,8 @@ local function applyExpression(mood: string)
 		end
 		
 		-- Also try direct property access for known FaceControls properties
-		local knownProps = {"ChinRaiser", "LipCornerPuller", "LeftCheekPuff", "RightCheekPuff", 
-		                   "LipStretcher", "JawDrop", "MouthLeft", "MouthRight"}
+		local knownProps = {"ChinRaiser", "LeftCheekPuff", "RightCheekPuff", 
+		                   "JawDrop", "MouthLeft", "MouthRight"}
 		for _, propName in ipairs(knownProps) do
 			local success, value = pcall(function()
 				return faceControls[propName]
