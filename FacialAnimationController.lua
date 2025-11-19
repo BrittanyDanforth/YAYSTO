@@ -185,6 +185,125 @@ local function applyExpression(mood: string)
 		end
 	end
 
+	-- 🔍 EXTENSIVE DEBUG LOGGING
+	print("=" .. string.rep("=", 80))
+	print("🔍 [FACIAL DEBUG] Starting expression application for mood: " .. mood)
+	print("🔍 [FACIAL DEBUG] FaceControls object details:")
+	print("  - ClassName: " .. tostring(faceControls.ClassName))
+	print("  - Name: " .. tostring(faceControls.Name))
+	print("  - Parent: " .. tostring(faceControls.Parent and faceControls.Parent.Name or "nil"))
+	print("  - Full Path: " .. tostring(faceControls:GetFullName()))
+	
+	-- Check all properties
+	print("🔍 [FACIAL DEBUG] Checking all FaceControls properties:")
+	local propsToCheck = {"ChinRaiser", "LipCornerPuller", "LeftCheekPuff", "RightCheekPuff", 
+	                     "LipStretcher", "JawDrop", "MouthLeft", "MouthRight"}
+	for _, propName in ipairs(propsToCheck) do
+		local success, value, errorMsg = pcall(function()
+			return faceControls[propName]
+		end)
+		if success then
+			print("  ✓ " .. propName .. " = " .. tostring(value) .. " (type: " .. typeof(value) .. ")")
+		else
+			print("  ✗ " .. propName .. " - ERROR: " .. tostring(errorMsg))
+		end
+	end
+	
+	-- Check children
+	print("🔍 [FACIAL DEBUG] FaceControls children:")
+	local children = faceControls:GetChildren()
+	if #children == 0 then
+		print("  (No children)")
+	else
+		for _, child in ipairs(children) do
+			print("  - " .. child.Name .. " (" .. child.ClassName .. ")")
+			if child:IsA("NumberValue") then
+				print("      Value: " .. tostring(child.Value))
+			end
+		end
+	end
+	
+	-- Check descendants
+	print("🔍 [FACIAL DEBUG] FaceControls descendants:")
+	local descendants = faceControls:GetDescendants()
+	if #descendants == 0 then
+		print("  (No descendants)")
+	else
+		for _, desc in ipairs(descendants) do
+			print("  - " .. desc:GetFullName() .. " (" .. desc.ClassName .. ")")
+			if desc:IsA("NumberValue") then
+				print("      Value: " .. tostring(desc.Value))
+			end
+		end
+	end
+	
+	-- Try to get properties via reflection
+	print("🔍 [FACIAL DEBUG] Attempting property reflection:")
+	local mt = getmetatable(faceControls)
+	if mt then
+		print("  ✓ Metatable exists")
+		if mt.__index then
+			print("  ✓ __index exists (type: " .. typeof(mt.__index) .. ")")
+			if typeof(mt.__index) == "table" then
+				local count = 0
+				for k, v in pairs(mt.__index) do
+					if type(k) == "string" and (type(v) == "number" or typeof(v) == "number") then
+						count = count + 1
+						if count <= 20 then  -- Limit output
+							print("    - " .. tostring(k) .. " = " .. tostring(v) .. " (type: " .. typeof(v) .. ")")
+						end
+					end
+				end
+				if count > 20 then
+					print("    ... and " .. (count - 20) .. " more")
+				end
+			elseif typeof(mt.__index) == "function" then
+				print("  - __index is a function (cannot enumerate)")
+			end
+		else
+			print("  ✗ __index is nil")
+		end
+	else
+		print("  ✗ No metatable")
+	end
+	
+	-- Try GetPropertyChangedSignal to see if properties exist
+	print("🔍 [FACIAL DEBUG] Testing property change signals:")
+	for _, propName in ipairs(propsToCheck) do
+		local success, signal = pcall(function()
+			return faceControls:GetPropertyChangedSignal(propName)
+		end)
+		if success and signal then
+			print("  ✓ " .. propName .. " - PropertyChangedSignal exists")
+		else
+			print("  ✗ " .. propName .. " - No PropertyChangedSignal")
+		end
+	end
+	
+	-- Try GetAttributes
+	print("🔍 [FACIAL DEBUG] FaceControls attributes:")
+	local attrs = faceControls:GetAttributes()
+	if next(attrs) then
+		for attrName, attrValue in pairs(attrs) do
+			print("  - " .. tostring(attrName) .. " = " .. tostring(attrValue) .. " (type: " .. typeof(attrValue) .. ")")
+		end
+	else
+		print("  (No attributes)")
+	end
+	
+	-- Check if it's a DynamicHead FaceControls
+	local head = faceControls.Parent
+	if head then
+		print("🔍 [FACIAL DEBUG] Head object details:")
+		print("  - ClassName: " .. tostring(head.ClassName))
+		print("  - Name: " .. tostring(head.Name))
+		if head:IsA("BasePart") then
+			print("  - Is DynamicHead: " .. tostring(head:IsA("MeshPart") and head.MeshId == "" or false))
+		end
+	end
+	
+	print("=" .. string.rep("=", 80))
+
 	local preset = EXPRESSIONS[mood] or EXPRESSIONS.neutral
 	if not preset then
 		warn("⚠️ [FacialAnimationController] Unknown mood: " .. tostring(mood))
@@ -249,9 +368,24 @@ local function applyExpression(mood: string)
 		else
 			-- Property doesn't exist or isn't a number
 			if not readSuccess then
-				print("  ⚠ Cannot read " .. propertyName .. " property")
+				local errMsg = tostring(currentValue)  -- pcall returns error as second value
+				print("  ⚠ Cannot read " .. propertyName .. " property - Error: " .. errMsg)
+				-- Try alternative access methods
+				print("    🔍 Trying alternative access methods for " .. propertyName .. ":")
+				-- Try with GetAttribute
+				local attrSuccess, attrValue = pcall(function()
+					return faceControls:GetAttribute(propertyName)
+				end)
+				if attrSuccess and attrValue then
+					print("      ✓ Found as attribute: " .. tostring(attrValue))
+				end
+				-- Try FindFirstChild
+				local child = faceControls:FindFirstChild(propertyName, true)
+				if child then
+					print("      ✓ Found as descendant: " .. child:GetFullName() .. " (" .. child.ClassName .. ")")
+				end
 			else
-				print("  ⚠ " .. propertyName .. " is not a number (type: " .. typeof(currentValue) .. ")")
+				print("  ⚠ " .. propertyName .. " is not a number (type: " .. typeof(currentValue) .. ", value: " .. tostring(currentValue) .. ")")
 			end
 		end
 		
@@ -284,19 +418,14 @@ local function applyExpression(mood: string)
 
 	if not anyApplied then
 		warn("⚠️ [FacialAnimationController] No valid FaceControls properties for expression: " .. mood)
-		-- Debug: List available properties
-		print("  [Debug] FaceControls type: " .. tostring(faceControls.ClassName))
-		print("  [Debug] Available children:")
-		local hasChildren = false
-		for _, child in ipairs(faceControls:GetChildren()) do
-			if child:IsA("NumberValue") then
-				print("    - " .. child.Name .. " (NumberValue) = " .. tostring(child.Value))
-				hasChildren = true
-			end
+		print("🔍 [FACIAL DEBUG] SUMMARY - No properties were applied!")
+		print("  Attempted to apply " .. mood .. " expression with these target values:")
+		for propName, targetValue in pairs(preset) do
+			print("    - " .. propName .. " → " .. tostring(targetValue))
 		end
-		if not hasChildren then
-			print("    (No NumberValue children found)")
-		end
+		print("  But none of the properties could be accessed or modified.")
+		print("  This suggests FaceControls may need to be configured differently.")
+		print("  Check the debug output above for available properties and access methods.")
 		
 		-- Try to list properties safely
 		local props = {}
