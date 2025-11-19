@@ -197,25 +197,26 @@ local function applyExpression(mood: string)
 	for propertyName, targetValue in pairs(preset) do
 		local applied = false
 		
-		-- 1) Try direct property access and tween (most common for FaceControls)
+		-- 1) Try direct property access (FaceControls properties should be directly accessible)
 		local readSuccess, currentValue = pcall(function()
 			return faceControls[propertyName]
 		end)
 
 		if readSuccess and typeof(currentValue) == "number" then
-			-- Try to set it directly (FaceControls properties are usually writable)
-			local setSuccess = pcall(function()
-				faceControls[propertyName] = targetValue  -- Try direct set first
+			-- Property exists and is a number! Try to set it
+			local setSuccess, setError = pcall(function()
+				faceControls[propertyName] = targetValue
 			end)
 			
 			if setSuccess then
-				-- Direct set worked! Now create a smooth tween
+				-- Direct set worked! Now create a smooth tween from current to target
 				anyApplied = true
 				applied = true
 				
-				-- Reset to current value, then tween to target
+				-- Reset to current value first
 				faceControls[propertyName] = currentValue
 				
+				-- Create tween using NumberValue as intermediary
 				local animValue = Instance.new("NumberValue")
 				animValue.Value = currentValue
 
@@ -233,8 +234,24 @@ local function applyExpression(mood: string)
 				
 				print("  ✓ Applied " .. propertyName .. ": " .. tostring(currentValue) .. " → " .. tostring(targetValue))
 			else
-				-- Can read but not write - might be read-only, try NumberValue child approach
-				print("  ⚠ " .. propertyName .. " is readable but not writable, trying NumberValue child...")
+				-- Can read but not write - try setting without tween
+				print("  ⚠ " .. propertyName .. " set failed: " .. tostring(setError))
+				-- Try direct assignment without tween as fallback
+				local directSet = pcall(function()
+					faceControls[propertyName] = targetValue
+				end)
+				if directSet then
+					anyApplied = true
+					applied = true
+					print("  ✓ Applied " .. propertyName .. " (direct): " .. tostring(currentValue) .. " → " .. tostring(targetValue))
+				end
+			end
+		else
+			-- Property doesn't exist or isn't a number
+			if not readSuccess then
+				print("  ⚠ Cannot read " .. propertyName .. " property")
+			else
+				print("  ⚠ " .. propertyName .. " is not a number (type: " .. typeof(currentValue) .. ")")
 			end
 		end
 		

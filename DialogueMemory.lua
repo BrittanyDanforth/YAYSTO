@@ -82,9 +82,14 @@ local DialogueMemory = {
 		table.insert(self.choicesMade, choice.text)
 		
 		-- Advance step
-		if choice.impact.nextStep then
+		if choice.impact.nextStep == nil then
+			-- Explicitly nil means end dialogue - don't advance
+			return
+		elseif type(choice.impact.nextStep) == "number" then
+			-- Explicit nextStep number provided
 			self.currentStep = choice.impact.nextStep
 		else
+			-- No nextStep specified, auto-increment
 			self.currentStep = self.currentStep + 1
 		end
 	end,

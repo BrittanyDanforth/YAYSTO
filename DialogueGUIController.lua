@@ -139,8 +139,8 @@ local function updateDialogue()
 	local entry = dialogueState.memory.dialogue[step]
 
 	if not entry then
-		warn("Dialogue entry is nil for step " .. tostring(step))
-		dialogueLabel.Text = "The story continues..."
+		warn("Dialogue entry is nil for step " .. tostring(step) .. " - ending dialogue")
+		displaySummary()
 		return
 	end
 
@@ -186,54 +186,6 @@ local function updateDialogue()
 			displaySummary()
 		end
 	end
-end
-
--- Function to start countdown timer
-local function startCountdown(entry)
-	timerLabel.Visible = true
-	timeBar.Visible = true
-	timeBar.Size = UDim2.new(1, 0, timeBar.Size.Y.Scale, 0)
-
-	local timeLimit = entry.timer or 15
-	dialogueState.choiceMade = false
-
-	-- Animate timer bar
-	local tweenInfo = TweenInfo.new(timeLimit, Enum.EasingStyle.Linear, Enum.EasingDirection.Out)
-	local tween = TweenService:Create(timeBar, tweenInfo, {
-		Size = UDim2.new(0, 0, timeBar.Size.Y.Scale, 0)
-	})
-	tween:Play()
-
-	-- Update timer text
-	local elapsedTime = 0
-	local connection
-	connection = game:GetService("RunService").Heartbeat:Connect(function()
-		elapsedTime = elapsedTime + game:GetService("RunService").Heartbeat:Wait()
-
-		if elapsedTime >= timeLimit or dialogueState.choiceMade then
-			connection:Disconnect()
-			return
-		end
-
-		local remaining = math.ceil(timeLimit - elapsedTime)
-		timerLabel.Text = remaining .. " seconds"
-
-		-- Color coding
-		if remaining <= 2 then
-			timerLabel.TextColor3 = Color3.fromRGB(255, 0, 0)
-		elseif remaining <= 5 then
-			timerLabel.TextColor3 = Color3.fromRGB(255, 255, 0)
-		else
-			timerLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-		end
-	end)
-
-	-- Auto-select default if time runs out
-	task.delay(timeLimit, function()
-		if not dialogueState.choiceMade then
-			makeChoice(entry.defaultOption or 1)
-		end
-	end)
 end
 
 -- Function to handle player choice
@@ -288,9 +240,16 @@ makeChoice = function(optionIndex)
 	-- Fade out choices
 	fadeOutChoices()
 
-	-- Advance dialogue
-	wait(0.3)
-	updateDialogue()
+	-- Advance dialogue - check if nextStep is nil (end of dialogue)
+	if choice.impact and choice.impact.nextStep == nil then
+		-- End of dialogue reached
+		wait(0.3)
+		displaySummary()
+	else
+		-- Continue to next step
+		wait(0.3)
+		updateDialogue()
+	end
 end
 
 -- Function to display summary
