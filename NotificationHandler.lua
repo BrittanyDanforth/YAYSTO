@@ -20,6 +20,10 @@ end
 local notificationFrame = script.Parent
 local notificationLabel = notificationFrame:WaitForChild("NotificationLabel")
 
+-- Notification queue to handle multiple notifications
+local notificationQueue = {}
+local isShowingNotification = false
+
 local function showNotification(payload)
 	-- payload might be a table OR a plain string
 	local message
@@ -30,6 +34,14 @@ local function showNotification(payload)
 		message = tostring(payload)
 	end
 
+	-- Add to queue if already showing a notification
+	if isShowingNotification then
+		table.insert(notificationQueue, message)
+		return
+	end
+
+	-- Show the notification
+	isShowingNotification = true
 	notificationLabel.Text = message
 	notificationFrame.Visible = true
 	notificationFrame.BackgroundTransparency = 0
@@ -48,6 +60,15 @@ local function showNotification(payload)
 	notificationFrame.Visible = false
 	notificationFrame.BackgroundTransparency = 0
 	notificationLabel.TextTransparency = 0
+	
+	isShowingNotification = false
+
+	-- Show next notification in queue if any
+	if #notificationQueue > 0 then
+		local nextMessage = table.remove(notificationQueue, 1)
+		task.wait(0.2) -- Small delay between notifications
+		showNotification(nextMessage)
+	end
 end
 
 local NotificationEvent = ReplicatedStorage:WaitForChild("NotificationEvent")
