@@ -16,7 +16,12 @@ local NotificationEvent = ReplicatedStorage:WaitForChild("NotificationEvent")
 local ChoiceMade = ReplicatedStorage:WaitForChild("ChoiceMade")
 
 -- Reference GUI elements
+-- Script should be in: StarterGui > DialogueGUI > ScreenGui > LocalScript
 local screenGui = script.Parent
+if not screenGui:IsA("ScreenGui") then
+	warn("⚠️ Script parent is not a ScreenGui! Expected: StarterGui > DialogueGUI > ScreenGui")
+	warn("   Current parent: " .. tostring(screenGui))
+end
 local dialogueFrame = screenGui:WaitForChild("DialogueFrame")
 local dialogueLabel = dialogueFrame:WaitForChild("DialogueLabel")
 local choice1 = dialogueFrame:WaitForChild("Choice1")
