@@ -75,6 +75,64 @@ local function triggerFacialExpression(mood)
 	end
 end
 
+-- Forward declarations (will be defined later)
+local startCountdown, makeChoice, fadeOutChoices, displaySummary
+
+-- Function to start countdown timer
+startCountdown = function(entry)
+	timerLabel.Visible = true
+	timeBar.Visible = true
+	timeBar.Size = UDim2.new(1, 0, timeBar.Size.Y.Scale, 0)
+
+	local timeLimit = entry.timer or 15
+	dialogueState.choiceMade = false
+
+	-- Animate timer bar
+	local tweenInfo = TweenInfo.new(timeLimit, Enum.EasingStyle.Linear, Enum.EasingDirection.Out)
+	local tween = TweenService:Create(timeBar, tweenInfo, {
+		Size = UDim2.new(0, 0, timeBar.Size.Y.Scale, 0)
+	})
+	tween:Play()
+
+	-- Update timer text
+	local elapsedTime = 0
+	local connection
+	connection = game:GetService("RunService").Heartbeat:Connect(function()
+		elapsedTime = elapsedTime + game:GetService("RunService").Heartbeat:Wait()
+
+		if elapsedTime >= timeLimit or dialogueState.choiceMade then
+			connection:Disconnect()
+			return
+		end
+
+		local remaining = math.ceil(timeLimit - elapsedTime)
+		timerLabel.Text = remaining .. " seconds"
+
+		-- Color coding
+		if remaining <= 2 then
+			timerLabel.TextColor3 = Color3.fromRGB(255, 0, 0)
+		elseif remaining <= 5 then
+			timerLabel.TextColor3 = Color3.fromRGB(255, 255, 0)
+		else
+			timerLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+		end
+	end)
+
+	-- Auto-select default if time runs out
+	task.delay(timeLimit, function()
+		if not dialogueState.choiceMade then
+			makeChoice(entry.defaultOption or 1)
+		end
+	end)
+end
+
+-- Function to fade out choices
+fadeOutChoices = function()
+	local fadeInfo = TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+	TweenService:Create(choice1, fadeInfo, {BackgroundTransparency = 1, TextTransparency = 1}):Play()
+	TweenService:Create(choice2, fadeInfo, {BackgroundTransparency = 1, TextTransparency = 1}):Play()
+end
+
 -- Function to update dialogue display
 local function updateDialogue()
 	local step = dialogueState.memory.currentStep
@@ -179,7 +237,7 @@ local function startCountdown(entry)
 end
 
 -- Function to handle player choice
-local function makeChoice(optionIndex)
+makeChoice = function(optionIndex)
 	if dialogueState.choiceMade then return end
 	dialogueState.choiceMade = true
 
@@ -235,15 +293,8 @@ local function makeChoice(optionIndex)
 	updateDialogue()
 end
 
--- Function to fade out choices
-local function fadeOutChoices()
-	local fadeInfo = TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
-	TweenService:Create(choice1, fadeInfo, {BackgroundTransparency = 1, TextTransparency = 1}):Play()
-	TweenService:Create(choice2, fadeInfo, {BackgroundTransparency = 1, TextTransparency = 1}):Play()
-end
-
 -- Function to display summary
-local function displaySummary()
+displaySummary = function()
 	local summaryText = "=== STORY SUMMARY ===\n\n"
 
 	-- Choices made

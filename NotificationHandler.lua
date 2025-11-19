@@ -1,7 +1,21 @@
--- LocalScript under NotificationsGUI.NotificationFrame
+--[[
+	NOTIFICATION HANDLER - LOCALSCRIPT
+	
+	⚠️ IMPORTANT: This script MUST be placed in:
+	StarterGui > NotificationsGUI > NotificationFrame > LocalScript
+	NOT in ServerScriptService!
+	
+	The script.Parent should be the NotificationFrame GUI element.
+]]
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local TweenService      = game:GetService("TweenService")
+
+-- Verify script location
+if not script.Parent:IsA("Frame") and not script.Parent:IsA("GuiObject") then
+	warn("⚠️ NotificationHandler: Script parent is not a GUI Frame! Expected: StarterGui > NotificationsGUI > NotificationFrame")
+	warn("   Current parent: " .. tostring(script.Parent))
+end
 
 local notificationFrame = script.Parent
 local notificationLabel = notificationFrame:WaitForChild("NotificationLabel")

@@ -195,41 +195,92 @@ local function applyExpression(mood: string)
 	local anyApplied = false
 
 	for propertyName, targetValue in pairs(preset) do
+		local applied = false
+		
 		-- 1) Try as direct numeric property on FaceControls (dynamic head)
-		local ok, propValue = pcall(function()
+		local success, currentValue = pcall(function()
 			return faceControls[propertyName]
 		end)
 
-		if ok and typeof(propValue) == "number" then
-			anyApplied = true
+		if success then
+			-- Check if it's a number property we can set
+			local setSuccess = pcall(function()
+				faceControls[propertyName] = currentValue  -- Test if we can set it
+			end)
+			
+			if setSuccess and typeof(currentValue) == "number" then
+				anyApplied = true
+				applied = true
+				
+				-- Direct property tween approach
+				local startValue = currentValue
+				local animValue = Instance.new("NumberValue")
+				animValue.Value = startValue
 
-			local animValue = Instance.new("NumberValue")
-			animValue.Value = faceControls[propertyName]  -- Start from current value
-
-			animValue.Changed:Connect(function()
-				pcall(function()
-					faceControls[propertyName] = animValue.Value
+				animValue.Changed:Connect(function()
+					pcall(function()
+						faceControls[propertyName] = animValue.Value
+					end)
 				end)
-			end)
 
-			local tween = TweenService:Create(animValue, tweenInfo, {Value = targetValue})
-			tween.Completed:Connect(function()
-				animValue:Destroy()
-			end)
-			tween:Play()
-		else
-			-- 2) Try as NumberValue child under FaceControls
+				local tween = TweenService:Create(animValue, tweenInfo, {Value = targetValue})
+				tween.Completed:Connect(function()
+					animValue:Destroy()
+				end)
+				tween:Play()
+				
+				print("  ✓ Applied " .. propertyName .. ": " .. tostring(startValue) .. " → " .. tostring(targetValue))
+			end
+		end
+		
+		-- 2) Try as NumberValue child under FaceControls (if direct property didn't work)
+		if not applied then
 			local child = faceControls:FindFirstChild(propertyName)
 			if child and child:IsA("NumberValue") then
 				anyApplied = true
+				applied = true
 				local tween = TweenService:Create(child, tweenInfo, {Value = targetValue})
 				tween:Play()
+				print("  ✓ Applied " .. propertyName .. " (NumberValue): " .. tostring(child.Value) .. " → " .. tostring(targetValue))
+			end
+		end
+		
+		-- 3) Debug: List all children if property not found
+		if not applied then
+			-- Try to find similar property names (case-insensitive)
+			for _, child in ipairs(faceControls:GetChildren()) do
+				if string.lower(child.Name) == string.lower(propertyName) and child:IsA("NumberValue") then
+					anyApplied = true
+					applied = true
+					local tween = TweenService:Create(child, tweenInfo, {Value = targetValue})
+					tween:Play()
+					print("  ✓ Applied " .. child.Name .. " (found by name match): " .. tostring(child.Value) .. " → " .. tostring(targetValue))
+					break
+				end
 			end
 		end
 	end
 
 	if not anyApplied then
 		warn("⚠️ [FacialAnimationController] No valid FaceControls properties for expression: " .. mood)
+		-- Debug: List available properties
+		print("  [Debug] FaceControls type: " .. tostring(faceControls.ClassName))
+		print("  [Debug] Available children:")
+		for _, child in ipairs(faceControls:GetChildren()) do
+			if child:IsA("NumberValue") then
+				print("    - " .. child.Name .. " (NumberValue) = " .. tostring(child.Value))
+			end
+		end
+		-- Try to list properties
+		local props = {}
+		for propName, _ in pairs(getmetatable(faceControls).__index) do
+			if type(faceControls[propName]) == "number" then
+				table.insert(props, propName)
+			end
+		end
+		if #props > 0 then
+			print("  [Debug] Numeric properties found: " .. table.concat(props, ", "))
+		end
 	else
 		print("😊 [FacialAnimationController] Facial expression set to: " .. mood)
 	end
