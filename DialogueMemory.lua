@@ -48,6 +48,22 @@ local DialogueMemory = {
 			condition = function() return true end,
 		},
 
+		[2] = {
+			text = "The journey continues...",
+			options = {
+				{
+					text = "Continue",
+					impact = {
+						mood = "neutral",
+						nextStep = nil,  -- End of dialogue
+					}
+				},
+			},
+			timer = 10,
+			defaultOption = 1,
+			condition = function() return true end,
+		},
+
 		-- add more steps here...
 	},
 

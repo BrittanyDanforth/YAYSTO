@@ -197,25 +197,27 @@ local function applyExpression(mood: string)
 	for propertyName, targetValue in pairs(preset) do
 		local applied = false
 		
-		-- 1) Try as direct numeric property on FaceControls (dynamic head)
-		local success, currentValue = pcall(function()
+		-- 1) Try direct property access and tween (most common for FaceControls)
+		local readSuccess, currentValue = pcall(function()
 			return faceControls[propertyName]
 		end)
 
-		if success then
-			-- Check if it's a number property we can set
+		if readSuccess and typeof(currentValue) == "number" then
+			-- Try to set it directly (FaceControls properties are usually writable)
 			local setSuccess = pcall(function()
-				faceControls[propertyName] = currentValue  -- Test if we can set it
+				faceControls[propertyName] = targetValue  -- Try direct set first
 			end)
 			
-			if setSuccess and typeof(currentValue) == "number" then
+			if setSuccess then
+				-- Direct set worked! Now create a smooth tween
 				anyApplied = true
 				applied = true
 				
-				-- Direct property tween approach
-				local startValue = currentValue
+				-- Reset to current value, then tween to target
+				faceControls[propertyName] = currentValue
+				
 				local animValue = Instance.new("NumberValue")
-				animValue.Value = startValue
+				animValue.Value = currentValue
 
 				animValue.Changed:Connect(function()
 					pcall(function()
@@ -229,11 +231,14 @@ local function applyExpression(mood: string)
 				end)
 				tween:Play()
 				
-				print("  ✓ Applied " .. propertyName .. ": " .. tostring(startValue) .. " → " .. tostring(targetValue))
+				print("  ✓ Applied " .. propertyName .. ": " .. tostring(currentValue) .. " → " .. tostring(targetValue))
+			else
+				-- Can read but not write - might be read-only, try NumberValue child approach
+				print("  ⚠ " .. propertyName .. " is readable but not writable, trying NumberValue child...")
 			end
 		end
 		
-		-- 2) Try as NumberValue child under FaceControls (if direct property didn't work)
+		-- 2) Try as NumberValue child under FaceControls
 		if not applied then
 			local child = faceControls:FindFirstChild(propertyName)
 			if child and child:IsA("NumberValue") then
@@ -245,16 +250,15 @@ local function applyExpression(mood: string)
 			end
 		end
 		
-		-- 3) Debug: List all children if property not found
+		-- 3) Try case-insensitive match for NumberValue children
 		if not applied then
-			-- Try to find similar property names (case-insensitive)
 			for _, child in ipairs(faceControls:GetChildren()) do
 				if string.lower(child.Name) == string.lower(propertyName) and child:IsA("NumberValue") then
 					anyApplied = true
 					applied = true
 					local tween = TweenService:Create(child, tweenInfo, {Value = targetValue})
 					tween:Play()
-					print("  ✓ Applied " .. child.Name .. " (found by name match): " .. tostring(child.Value) .. " → " .. tostring(targetValue))
+					print("  ✓ Applied " .. child.Name .. " (case-insensitive match): " .. tostring(child.Value) .. " → " .. tostring(targetValue))
 					break
 				end
 			end
@@ -266,20 +270,58 @@ local function applyExpression(mood: string)
 		-- Debug: List available properties
 		print("  [Debug] FaceControls type: " .. tostring(faceControls.ClassName))
 		print("  [Debug] Available children:")
+		local hasChildren = false
 		for _, child in ipairs(faceControls:GetChildren()) do
 			if child:IsA("NumberValue") then
 				print("    - " .. child.Name .. " (NumberValue) = " .. tostring(child.Value))
+				hasChildren = true
 			end
 		end
-		-- Try to list properties
+		if not hasChildren then
+			print("    (No NumberValue children found)")
+		end
+		
+		-- Try to list properties safely
 		local props = {}
-		for propName, _ in pairs(getmetatable(faceControls).__index) do
-			if type(faceControls[propName]) == "number" then
-				table.insert(props, propName)
+		local mt = getmetatable(faceControls)
+		if mt and mt.__index then
+			-- Try to get properties from the metatable
+			local success, result = pcall(function()
+				local propList = {}
+				if typeof(mt.__index) == "table" then
+					for propName, _ in pairs(mt.__index) do
+						if type(propName) == "string" then
+							local propValue = faceControls[propName]
+							if typeof(propValue) == "number" then
+								table.insert(propList, propName)
+							end
+						end
+					end
+				end
+				return propList
+			end)
+			
+			if success and result then
+				props = result
 			end
 		end
+		
+		-- Also try direct property access for known FaceControls properties
+		local knownProps = {"ChinRaiser", "LipCornerPuller", "LeftCheekPuff", "RightCheekPuff", 
+		                   "LipStretcher", "JawDrop", "MouthLeft", "MouthRight"}
+		for _, propName in ipairs(knownProps) do
+			local success, value = pcall(function()
+				return faceControls[propName]
+			end)
+			if success and typeof(value) == "number" then
+				table.insert(props, propName .. "=" .. tostring(value))
+			end
+		end
+		
 		if #props > 0 then
 			print("  [Debug] Numeric properties found: " .. table.concat(props, ", "))
+		else
+			print("  [Debug] No numeric properties detected. FaceControls may need to be configured differently.")
 		end
 	else
 		print("😊 [FacialAnimationController] Facial expression set to: " .. mood)
