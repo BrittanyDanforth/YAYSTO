@@ -70,8 +70,8 @@ local DialogueMemory = {
 				{ 
 					text = "Remember what you had", 
 					impact = { 
-						relationship = {["Memories"] = +5},
-						stats = {guilt = +10},
+						relationship = {["Memories"] = 5},
+						stats = {guilt = 10},
 						nextStep = 2,
 						branch = "memory"
 					}
@@ -79,8 +79,8 @@ local DialogueMemory = {
 				{ 
 					text = "Focus on survival", 
 					impact = { 
-						relationship = {["The Gambler"] = +5},
-						stats = {survival = +5, guilt = -5},
+						relationship = {["The Gambler"] = 5},
+						stats = {survival = 5, guilt = -5},
 						nextStep = 3,
 						branch = "survival"
 					}
@@ -100,7 +100,7 @@ local DialogueMemory = {
 					text = "Blame yourself",
 					impact = {
 						relationship = {["The Casino"] = -10, ["The Gambler"] = -5},
-						stats = {guilt = +15, hope = -5},
+						stats = {guilt = 15, hope = -5},
 						nextStep = 4,
 						branch = "guilt"
 					}
@@ -108,8 +108,8 @@ local DialogueMemory = {
 				{
 					text = "Blame the casino",
 					impact = {
-						relationship = {["The Casino"] = -15, ["The Gambler"] = +5},
-						stats = {courage = +5, guilt = -5},
+						relationship = {["The Casino"] = -15, ["The Gambler"] = 5},
+						stats = {courage = 5, guilt = -5},
 						nextStep = 5,
 						branch = "anger"
 					}
@@ -128,7 +128,7 @@ local DialogueMemory = {
 				{
 					text = "Hide immediately",
 					impact = {
-						stats = {survival = +10, courage = -5},
+						stats = {survival = 10, courage = -5},
 						nextStep = 6,
 						branch = "stealth"
 					}
@@ -136,7 +136,7 @@ local DialogueMemory = {
 				{
 					text = "Stand your ground",
 					impact = {
-						stats = {courage = +10, survival = -5},
+						stats = {courage = 10, survival = -5},
 						nextStep = 7,
 						branch = "confrontation"
 					}
@@ -155,7 +155,7 @@ local DialogueMemory = {
 				{
 					text = "Accept the guilt",
 					impact = {
-						stats = {guilt = +20, empathy = +5},
+						stats = {guilt = 20, empathy = 5},
 						nextStep = 8,
 						branch = "redemption_seek"
 					}
@@ -163,7 +163,7 @@ local DialogueMemory = {
 				{
 					text = "Try to move past it",
 					impact = {
-						stats = {guilt = -10, hope = +5},
+						stats = {guilt = -10, hope = 5},
 						nextStep = 9,
 						branch = "recovery"
 					}
@@ -183,7 +183,7 @@ local DialogueMemory = {
 					text = "Plan revenge",
 					impact = {
 						relationship = {["The Casino"] = -20},
-						stats = {cunning = +10, empathy = -5},
+						stats = {cunning = 10, empathy = -5},
 						nextStep = 10,
 						branch = "revenge"
 					}
@@ -192,7 +192,7 @@ local DialogueMemory = {
 					text = "Let it go",
 					impact = {
 						relationship = {["The Casino"] = -5},
-						stats = {hope = +10, guilt = -5},
+						stats = {hope = 10, guilt = -5},
 						nextStep = 11,
 						branch = "forgiveness"
 					}
@@ -211,7 +211,7 @@ local DialogueMemory = {
 				{
 					text = "Stay hidden",
 					impact = {
-						stats = {survival = +15},
+						stats = {survival = 15},
 						nextStep = 12,
 						branch = "safe_passage"
 					}
@@ -219,7 +219,7 @@ local DialogueMemory = {
 				{
 					text = "Look for a weapon",
 					impact = {
-						stats = {courage = +5, survival = +5},
+						stats = {courage = 5, survival = 5},
 						storyFlags = {foundWeapon = true},
 						nextStep = 13,
 						branch = "weapon_found"
@@ -239,7 +239,7 @@ local DialogueMemory = {
 				{
 					text = "Fight with courage",
 					impact = {
-						stats = {courage = +15, survival = +10},
+						stats = {courage = 15, survival = 10},
 						storyFlags = {foundWeapon = true},
 						nextStep = 14,
 						branch = "victory"
@@ -248,7 +248,7 @@ local DialogueMemory = {
 				{
 					text = "Fight desperately",
 					impact = {
-						stats = {courage = +5, survival = -5, guilt = +5},
+						stats = {courage = 5, survival = -5, guilt = 5},
 						nextStep = 15,
 						branch = "narrow_escape"
 					}
@@ -267,7 +267,7 @@ local DialogueMemory = {
 				{
 					text = "Search for survivors to help",
 					impact = {
-						stats = {empathy = +15, hope = +10},
+						stats = {empathy = 15, hope = 10},
 						nextStep = 16,
 						branch = "helper"
 					}
@@ -275,7 +275,7 @@ local DialogueMemory = {
 				{
 					text = "Focus on your own survival",
 					impact = {
-						stats = {survival = +10, empathy = -5},
+						stats = {survival = 10, empathy = -5},
 						nextStep = 17,
 						branch = "selfish"
 					}
@@ -294,8 +294,8 @@ local DialogueMemory = {
 				{
 					text = "Find supplies",
 					impact = {
-						stats = {survival = +15},
-						currency = {itemsFound = +3},
+						stats = {survival = 15},
+						currency = {itemsFound = 3},
 						nextStep = 18,
 						branch = "scavenging"
 					}
@@ -303,7 +303,7 @@ local DialogueMemory = {
 				{
 					text = "Find other survivors",
 					impact = {
-						stats = {empathy = +10},
+						stats = {empathy = 10},
 						storyFlags = {metSurvivors = true},
 						nextStep = 19,
 						branch = "community"
@@ -324,7 +324,7 @@ local DialogueMemory = {
 					text = "Return to the casino",
 					impact = {
 						relationship = {["The Casino"] = -25},
-						stats = {cunning = +15, courage = +10},
+						stats = {cunning = 15, courage = 10},
 						nextStep = 20,
 						branch = "casino_return"
 					}
@@ -333,7 +333,7 @@ local DialogueMemory = {
 					text = "Realize revenge is pointless",
 					impact = {
 						relationship = {["The Casino"] = -10},
-						stats = {hope = +15, empathy = +5},
+						stats = {hope = 15, empathy = 5},
 						nextStep = 21,
 						branch = "wisdom"
 					}
@@ -352,7 +352,7 @@ local DialogueMemory = {
 				{
 					text = "Fully let go",
 					impact = {
-						stats = {hope = +20, guilt = -10},
+						stats = {hope = 20, guilt = -10},
 						storyFlags = {redeemed = true},
 						nextStep = 22,
 						branch = "peace"
@@ -361,7 +361,7 @@ local DialogueMemory = {
 				{
 					text = "Still feel the sting",
 					impact = {
-						stats = {hope = +5, guilt = +5},
+						stats = {hope = 5, guilt = 5},
 						nextStep = 23,
 						branch = "conflicted"
 					}
@@ -392,8 +392,8 @@ local DialogueMemory = {
 			branch = "weapon_found",
 			text = "The Gambler: *holding a crowbar* This... this feels right. Better than cards.",
 			options = {
-				{text = "Feel empowered", impact = {stats = {courage = +10}, nextStep = 25, branch = "empowerment"}},
-				{text = "Feel burdened", impact = {stats = {guilt = +5}, nextStep = 26, branch = "burden"}}
+				{text = "Feel empowered", impact = {stats = {courage = 10}, nextStep = 25, branch = "empowerment"}},
+				{text = "Feel burdened", impact = {stats = {guilt = 5}, nextStep = 26, branch = "burden"}}
 			},
 			timer = 10,
 			defaultOption = 1,
@@ -405,7 +405,7 @@ local DialogueMemory = {
 			branch = "reflection",
 			text = "The Gambler: *sitting alone* 10,000 shekels. Gone. But I'm still here. That has to mean something.",
 			options = {
-				{text = "Find meaning in survival", impact = {stats = {hope = +15}, nextStep = 27, branch = "meaning"}},
+				{text = "Find meaning in survival", impact = {stats = {hope = 15}, nextStep = 27, branch = "meaning"}},
 				{text = "Accept the meaninglessness", impact = {stats = {hope = -10}, nextStep = 28, branch = "nihilism"}}
 			},
 			timer = 15,
