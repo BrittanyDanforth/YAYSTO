@@ -14,14 +14,14 @@
 local DialogueMemory = {
 	-- Current story state
 	currentStep = 1,
-	currentBranch = "main", -- Tracks which story branch we're on
+	currentBranch = "main",
 	currentDialogue = nil,
 	
 	-- Story progression tracking
 	storyFlags = {
 		metGambler = false,
 		foundShelter = false,
-		lostEverything = true, -- Starting state: gambler lost it all
+		lostEverything = true,
 		encounteredZombies = false,
 		foundWeapon = false,
 		metSurvivors = false,
@@ -32,29 +32,29 @@ local DialogueMemory = {
 	
 	-- Currency system (Shekels - the currency that became worthless)
 	currency = {
-		shekels = 0, -- Start with nothing (lost it all)
-		maxShekels = 10000, -- What they had before
-		itemsFound = 0, -- Items that could be traded
+		shekels = 0,
+		maxShekels = 10000,
+		itemsFound = 0,
 	},
 	
 	-- Character relationships (multiple characters in the story)
 	characterRelationships = {
-		["The Gambler"] = 0, -- Main character (self-reflection)
-		["Old Man"] = 0, -- Survivor met later
-		["Scavenger"] = 0, -- Opportunistic survivor
-		["Child"] = 0, -- Lost child found
-		["Memories"] = 0, -- Relationship with past self
-		["The Casino"] = 0, -- Hatred/love for the place that took everything
+		["The Gambler"] = 0,
+		["Old Man"] = 0,
+		["Scavenger"] = 0,
+		["Child"] = 0,
+		["Memories"] = 0,
+		["The Casino"] = 0,
 	},
 	
 	-- Player stats that affect dialogue options
 	playerStats = {
-		courage = 50, -- Affects combat/confrontation choices
-		empathy = 50, -- Affects helping others choices
-		survival = 50, -- Affects resource management choices
-		cunning = 50, -- Affects negotiation/deception choices
-		guilt = 0, -- Tracks guilt over losses
-		hope = 50, -- Tracks hope for redemption
+		courage = 50,
+		empathy = 50,
+		survival = 50,
+		cunning = 50,
+		guilt = 0,
+		hope = 50,
 	},
 	
 	-- Choices made throughout the story (for replay/analysis)
@@ -372,10 +372,7 @@ local DialogueMemory = {
 			condition = function(self) return self.playerStats.hope > 50 end
 		},
 		
-		-- Continue with more branches... (I'll add key ones)
-		-- SAFE PASSAGE, WEAPON FOUND, VICTORY, NARROW ESCAPE, HELPER, SELFISH, SCAVENGING, COMMUNITY, CASINO RETURN, WISDOM, PEACE, CONFLICTED
-		
-		-- Additional key story moments (condensed for space but fully functional)
+		-- Additional key story moments
 		[12] = {
 			branch = "safe_passage",
 			text = "The Gambler: They passed. I'm safe. For now.",
@@ -400,7 +397,6 @@ local DialogueMemory = {
 			condition = function(self) return self.storyFlags.foundWeapon == true end
 		},
 		
-		-- Final reflection point
 		[24] = {
 			branch = "reflection",
 			text = "The Gambler: *sitting alone* 10,000 shekels. Gone. But I'm still here. That has to mean something.",
