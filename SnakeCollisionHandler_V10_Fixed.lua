@@ -178,18 +178,23 @@ local function disconnectPlayerCamera(player)
 	end
 end
 
--- === FIXED: Reset player collision state ===
+-- === FIXED: Reset player collision state (DOES NOT clear _G.PlayerSnakes - let CharacterSetup handle that) ===
 local function resetPlayerCollisionState(player)
 	print("🔄 Resetting collision state for", player.Name)
 
+	-- CRITICAL: Clear ALL death-related state
 	deadPlayers[player] = nil
 	deathTimestamps[player] = nil
-	reviveSessions[player] = nil -- Clear revive sessions
+	reviveSessions[player] = nil
+	invinciblePlayers[player] = nil -- Clear invincibility too
 
 	-- Clear death attributes
 	player:SetAttribute("CameraLocked", false)
 	player:SetAttribute("DeathCameraFreeze", false)
 	player:SetAttribute("IsDead", false)
+	player:SetAttribute("RevivingNow", false)
+	player:SetAttribute("JustRevived", false)
+	player:SetAttribute("NoReviveEffects", false)
 
 	if player.Character then
 		local root = player.Character:FindFirstChild("HumanoidRootPart")
@@ -218,39 +223,102 @@ local function resetPlayerCollisionState(player)
 		end
 	end
 
-	if _G and _G.PlayerSnakes then
-		_G.PlayerSnakes[player] = nil
-	end
-
+	-- CRITICAL FIX: DO NOT clear _G.PlayerSnakes here - CharacterSetup will recreate it
+	-- Only clear collision cache so it rebuilds with new snake
 	if CollisionCache then
 		CollisionCache.playerSegments[player] = nil
-		CollisionCache.spatialGrid:clear()
+		-- Don't clear entire spatial grid, just this player's data
 		CollisionCache.frameCache = {}
 	end
 
+	-- Force head cache to refresh
 	if headCache then
 		headCache.lastUpdate = 0
-		headCache.players = {}
-		headCache.ai = {}
+		-- Don't clear the arrays, just force refresh
 	end
 
 	print("✅ Collision state reset complete for", player.Name)
 end
 
--- Player spawn handling
+-- Player spawn handling - CRITICAL FIX: Proper cleanup and re-initialization
 Players.PlayerAdded:Connect(function(player)
-	player.CharacterAdded:Connect(function()
+	-- Handle character spawning/respawning
+	player.CharacterAdded:Connect(function(character)
+		print("🔄 CharacterAdded event for", player.Name)
+		
+		-- CRITICAL: Immediately clear ALL death state (before any waits)
+		deadPlayers[player] = nil
+		deathTimestamps[player] = nil
+		invinciblePlayers[player] = nil
+		
+		-- Clear revive session if exists
+		if reviveSessions[player] then
+			if reviveSessions[player].connection then
+				reviveSessions[player].connection:Disconnect()
+			end
+			reviveSessions[player] = nil
+		end
+		
+		-- Wait a moment for character to fully load
+		task.wait(0.1)
+		
+		-- CRITICAL: Reset ALL collision state immediately
 		resetPlayerCollisionState(player)
+		
+		-- Set invincibility for spawn protection
 		setPlayerInvincible(player)
+		print("🛡️ Set spawn invincibility for", player.Name)
+		
+		-- Clear invincibility after duration
 		task.spawn(function()
 			local expire = invinciblePlayers[player]
 			if expire then
 				local waitTime = expire - os.clock()
 				if waitTime > 0 then task.wait(waitTime) end
 				clearPlayerInvincibility(player)
+				print("🛡️ Invincibility expired for", player.Name)
+			end
+		end)
+		
+		-- CRITICAL: Wait for snake to be created by CharacterSetup, then verify it's registered
+		task.spawn(function()
+			local maxWait = 5
+			local waitTime = 0
+			while waitTime < maxWait do
+				task.wait(0.2)
+				waitTime = waitTime + 0.2
+				
+				-- Check if snake exists in workspace (both naming conventions)
+				local snakeModel = workspace:FindFirstChild("Snake_" .. player.Name)
+				if not snakeModel then
+					snakeModel = workspace:FindFirstChild("SnakeModel_" .. player.UserId)
+				end
+				
+				-- Check if snake is in _G.PlayerSnakes
+				local snakeInGlobal = _G.PlayerSnakes and _G.PlayerSnakes[player]
+				
+				if snakeModel or snakeInGlobal then
+					print("✅ Snake found for", player.Name, "- Model:", snakeModel ~= nil, "Global:", snakeInGlobal ~= nil)
+					-- Force cache refresh
+					if headCache then
+						headCache.lastUpdate = 0
+					end
+					if CollisionCache then
+						CollisionCache.playerSegments[player] = nil
+					end
+					-- Ensure player is NOT marked as dead
+					deadPlayers[player] = nil
+					break
+				end
+			end
+			
+			if waitTime >= maxWait then
+				warn("⚠️ Snake not found for", player.Name, "after respawn - collision may not work!")
 			end
 		end)
 	end)
+	
+	-- Handle player leaving
 	player.AncestryChanged:Connect(function()
 		if not player.Parent then
 			clearPlayerInvincibility(player)
@@ -258,9 +326,30 @@ Players.PlayerAdded:Connect(function(player)
 			deathTimestamps[player] = nil
 			reviveSessions[player] = nil
 			disconnectPlayerCamera(player)
+			
+			-- Clean up collision cache
+			if CollisionCache then
+				CollisionCache.playerSegments[player] = nil
+			end
 		end
 	end)
 end)
+
+-- CRITICAL FIX: Also handle existing players who might have respawned
+for _, player in pairs(Players:GetPlayers()) do
+	if player.Character then
+		task.spawn(function()
+			task.wait(0.1)
+			resetPlayerCollisionState(player)
+			setPlayerInvincible(player)
+		end)
+	end
+	player.CharacterAdded:Connect(function()
+		task.wait(0.1)
+		resetPlayerCollisionState(player)
+		setPlayerInvincible(player)
+	end)
+end
 
 -- === SPATIAL GRID (keeping existing implementation) ===
 local SpatialGrid = {}
@@ -495,8 +584,13 @@ local function getPlayerHeads()
 
 	local heads = {}
 	for _, player in Players:GetPlayers() do
-		if player.Character and not deadPlayers[player] then
-			-- CRITICAL: Check BOTH naming conventions (OLD CharacterSetup support)
+		-- CRITICAL: Skip dead players and invincible players (spawn protection)
+		if deadPlayers[player] or isPlayerInvincible(player) then
+			continue
+		end
+		
+		if player.Character and player.Character.Parent then
+			-- CRITICAL: Always check workspace FIRST (most reliable after respawn)
 			-- Try new format first (Snake_PlayerName)
 			local snakeModel = workspace:FindFirstChild("Snake_" .. player.Name)
 			if not snakeModel then
@@ -504,7 +598,7 @@ local function getPlayerHeads()
 				snakeModel = workspace:FindFirstChild("SnakeModel_" .. player.UserId)
 			end
 			
-			if snakeModel then
+			if snakeModel and snakeModel.Parent then
 				-- Try new format head name first (Segment0_Head)
 				local snakeHead = snakeModel:FindFirstChild("Segment0_Head")
 				if not snakeHead then
@@ -512,15 +606,18 @@ local function getPlayerHeads()
 					snakeHead = snakeModel:FindFirstChild("SnakeHead")
 				end
 				
-				if snakeHead and snakeHead.Parent and snakeHead.Anchored then
+				-- CRITICAL FIX: Check that head is valid, NOT anchored (alive), and not dead
+				if snakeHead and snakeHead:IsA("BasePart") and snakeHead.Parent and 
+				   not snakeHead.Anchored and not snakeHead:GetAttribute("Dead") then
 					heads[#heads + 1] = {player = player, part = snakeHead}
 					continue
 				end
 			end
 
-			-- Fallback to character root
+			-- Fallback to character root (only if snake not found)
 			local root = player.Character:FindFirstChild("HumanoidRootPart")
-			if root and root.Parent and not root:GetAttribute("Dead") then
+			if root and root:IsA("BasePart") and root.Parent and 
+			   not root:GetAttribute("Dead") and not root.Anchored then
 				heads[#heads + 1] = {player = player, part = root}
 			end
 		end
@@ -544,8 +641,14 @@ local function getAISnakeHeads()
 	return heads
 end
 
--- === CRITICAL FIX: Get actual snake segments (works with BOTH naming conventions) ===
+-- === CRITICAL FIX: Get actual snake segments (works with BOTH naming conventions, ALWAYS checks workspace first) ===
 local function getActualSnakeSegments(player)
+	-- CRITICAL: Skip if player is dead or invincible (prevents errors during respawn)
+	if deadPlayers[player] or isPlayerInvincible(player) then
+		return {}
+	end
+	
+	-- CRITICAL: Always check workspace FIRST (most reliable after respawn)
 	-- Try new format first (Snake_PlayerName)
 	local snakeModel = workspace:FindFirstChild("Snake_" .. player.Name)
 	
@@ -554,29 +657,30 @@ local function getActualSnakeSegments(player)
 		snakeModel = workspace:FindFirstChild("SnakeModel_" .. player.UserId)
 	end
 	
-	if snakeModel then
+	if snakeModel and snakeModel.Parent then
 		local segments = {}
 		
 		-- Try new format: Segment0_Head, Segment1, Segment2, etc.
 		local head = snakeModel:FindFirstChild("Segment0_Head")
-		if head and head:IsA("BasePart") then
+		if head and head:IsA("BasePart") and head.Parent and not head:GetAttribute("Dead") then
 			segments[#segments + 1] = head
 		end
 		
 		-- Try old format: SnakeHead - OLD CharacterSetup uses this
 		if #segments == 0 then
 			head = snakeModel:FindFirstChild("SnakeHead")
-			if head and head:IsA("BasePart") then
+			if head and head:IsA("BasePart") and head.Parent and not head:GetAttribute("Dead") then
 				segments[#segments + 1] = head
 			end
 		end
 		
 		-- Get body segments (both formats use Segment1, Segment2, etc.)
 		local i = 1
-		while true do
+		local maxSegments = 2000 -- Safety limit
+		while i <= maxSegments do
 			local segmentName = "Segment" .. i
 			local segment = snakeModel:FindFirstChild(segmentName)
-			if segment and segment:IsA("BasePart") then
+			if segment and segment:IsA("BasePart") and segment.Parent and not segment:GetAttribute("Dead") then
 				segments[#segments + 1] = segment
 				i = i + 1
 			else
@@ -585,31 +689,25 @@ local function getActualSnakeSegments(player)
 		end
 		
 		if #segments > 0 then
-			if DEBUG_COLLISIONS then
-				print(string.format("[SEGMENTS] Found %d segments in model for %s", #segments, player.Name))
-			end
 			return segments
 		end
 	end
 
-	-- Fallback: Check _G.PlayerSnakes
+	-- Fallback: Check _G.PlayerSnakes (may not exist immediately after respawn)
 	local snakeInstance = _G.PlayerSnakes and _G.PlayerSnakes[player]
 	if snakeInstance and snakeInstance.segments then
 		local segments = {}
 		for _, seg in ipairs(snakeInstance.segments) do
-			if seg and seg:IsA("BasePart") and seg.Parent then
+			if seg and seg:IsA("BasePart") and seg.Parent and not seg:GetAttribute("Dead") then
 				segments[#segments + 1] = seg
 			end
 		end
 		if #segments > 0 then
-			if DEBUG_COLLISIONS then
-				print(string.format("[SEGMENTS] Found %d segments in _G.PlayerSnakes for %s", #segments, player.Name))
-			end
 			return segments
 		end
 	end
 
-	return nil
+	return {} -- CRITICAL FIX: Return empty table, not nil
 end
 
 -- === NUCLEAR DEATH HANDLERS ===
@@ -960,6 +1058,7 @@ task.spawn(function()
 									visualSnakeModel:Destroy()
 								end
 
+								-- CRITICAL: Mark as dead but allow respawn
 								deadPlayers[player] = true
 
 								if CollisionCache and CollisionCache.playerSegments then
@@ -971,9 +1070,13 @@ task.spawn(function()
 									deathEvent:Fire(player)
 								end
 
+								-- CRITICAL: Clear dead state after short delay to allow respawn
 								task.spawn(function()
-									task.wait(5)
+									task.wait(3)
+									-- CharacterAdded will handle full cleanup
 									deadPlayers[player] = nil
+									deathTimestamps[player] = nil
+									print("🧹 Cleared death state for", player.Name, "after decline")
 								end)
 							end
 
@@ -1219,11 +1322,24 @@ end
 
 -- === SEGMENT RETRIEVAL ===
 local function getPlayerSegments(player)
+	-- CRITICAL: Skip dead or invincible players
+	if deadPlayers[player] or isPlayerInvincible(player) then
+		return nil
+	end
+	
 	local cache = CollisionCache.playerSegments[player]
 	local currentTime = os.clock()
 
 	if cache and (currentTime - cache.lastUpdate) < CACHE_EXPIRY then
-		return cache
+		-- Validate cache is still valid (segments still exist)
+		if cache.segments and #cache.segments > 0 then
+			local firstSeg = cache.segments[1]
+			if firstSeg and firstSeg.Parent and firstSeg.Parent.Parent then
+				return cache
+			end
+		end
+		-- Cache invalid, clear it
+		CollisionCache.playerSegments[player] = nil
 	end
 
 	local segmentParts = getActualSnakeSegments(player) or {}
@@ -1236,7 +1352,10 @@ local function getPlayerSegments(player)
 		end
 	end
 
-	if #segmentParts == 0 then return nil end
+	-- CRITICAL: Return nil if no segments (snake not created yet after respawn)
+	if #segmentParts == 0 then 
+		return nil 
+	end
 
 	local interpolatedSegments
 	if snakeLength > ULTRA_LENGTH_THRESHOLD then
