@@ -577,6 +577,30 @@ local function queuePlayerDeath(player)
 	print("💀 Queuing death for", player.Name)
 	deathTimestamps[player] = os.clock()
 
+	-- CRITICAL FIX: Capture segment positions IMMEDIATELY before anything else
+	local segments = getActualSnakeSegments(player)
+	local segmentPositions = {}
+	if segments and #segments > 0 then
+		print("🔍 [IMMEDIATE] Found", #segments, "segments to store positions from")
+		for i, seg in ipairs(segments) do
+			if seg and seg:IsA("BasePart") and seg.Parent and seg.Position then
+				segmentPositions[#segmentPositions + 1] = seg.Position
+			end
+		end
+		print("📍 [IMMEDIATE] Stored", #segmentPositions, "segment positions for orb spawning")
+	else
+		print("⚠️ [IMMEDIATE] No segments found for", player.Name, "- will use fallback")
+	end
+
+	-- Get snake length immediately
+	local snakeLength = 55
+	if player:FindFirstChild("leaderstats") then
+		local lengthValue = player.leaderstats:FindFirstChild("Length")
+		if lengthValue then
+			snakeLength = lengthValue.Value or 55
+		end
+	end
+
 	-- IMMEDIATE NUCLEAR CAMERA FREEZE
 	task.spawn(function()
 		freezeCameraRemote:FireClient(player, true)
@@ -626,11 +650,14 @@ local function queuePlayerDeath(player)
 	-- Mark as dead IMMEDIATELY to prevent duplicate collisions
 	deadPlayers[player] = true
 
+	-- Store segment positions and length in death queue entry
 	table.insert(deathQueue, {
 		type = "player",
 		target = player,
 		timestamp = os.clock(),
-		checkRevive = true
+		checkRevive = true,
+		segmentPositions = segmentPositions, -- CRITICAL: Store positions immediately
+		snakeLength = snakeLength -- CRITICAL: Store length immediately
 	})
 end
 
@@ -676,27 +703,32 @@ task.spawn(function()
 					local humanoid = character:FindFirstChild("Humanoid")
 					print("🔍 Processing death for", player.Name, "- Health:", humanoid and humanoid.Health or "nil")
 
-					-- Get snake length
-					local snakeLength = 55
-					if player:FindFirstChild("leaderstats") then
-						local lengthValue = player.leaderstats:FindFirstChild("Length")
-						if lengthValue then
-							snakeLength = lengthValue.Value or 55
+					-- CRITICAL FIX: Use segment positions captured IMMEDIATELY in queuePlayerDeath
+					local segmentPositions = death.segmentPositions or {}
+					local snakeLength = death.snakeLength or 55
+
+					-- Fallback: Try to get segments if not captured (shouldn't happen, but safety)
+					if #segmentPositions == 0 then
+						print("⚠️ No segment positions in death queue, attempting fallback capture")
+						local segments = getActualSnakeSegments(player)
+						if segments and #segments > 0 then
+							for i, seg in ipairs(segments) do
+								if seg and seg:IsA("BasePart") and seg.Parent and seg.Position then
+									segmentPositions[#segmentPositions + 1] = seg.Position
+								end
+							end
+						end
+						
+						-- Get length if not stored
+						if snakeLength == 55 and player:FindFirstChild("leaderstats") then
+							local lengthValue = player.leaderstats:FindFirstChild("Length")
+							if lengthValue then
+								snakeLength = lengthValue.Value or 55
+							end
 						end
 					end
 
-					-- FIX: Store segment positions BEFORE any destruction
-					local segments = getActualSnakeSegments(player)
-					local segmentPositions = {}
-					if segments and #segments > 0 then
-						print("🔍 Found", #segments, "segments to store positions from")
-						for i, seg in ipairs(segments) do
-							if seg and seg:IsA("BasePart") and seg.Parent and seg.Position then
-								segmentPositions[#segmentPositions + 1] = seg.Position
-							end
-						end
-						print("📍 Stored", #segmentPositions, "segment positions for orb spawning")
-					end
+					print("📍 Using", #segmentPositions, "segment positions for orb spawning (snake length:", snakeLength, ")")
 
 					-- Clear magnet effect immediately
 					player:SetAttribute("MagnetRange", 1)
@@ -785,136 +817,88 @@ task.spawn(function()
 						end
 					end)
 
-					-- === FIX 6: PROPERLY HANDLE REVIVE UI ===
+					-- === FIX 6: PROPERLY HANDLE REVIVE UI (ALWAYS SHOW, REGARDLESS OF DEATH TYPE) ===
 					local hasRevive = player:GetAttribute("HasRevive")
 					local revivesAvailable = player:GetAttribute("RevivesAvailable") or 0
-					print("🔍 Revive check - HasRevive:", hasRevive, "RevivesAvailable:", revivesAvailable)
+					print("🔍 Revive check for", player.Name, "- HasRevive:", hasRevive, "RevivesAvailable:", revivesAvailable)
 
-					if hasRevive or revivesAvailable > 0 then
-						-- Clear any existing revive session
-						if reviveSessions[player] then
-							if reviveSessions[player].connection then
-								reviveSessions[player].connection:Disconnect()
-							end
-							reviveSessions[player] = nil
+					-- CRITICAL FIX: ALWAYS show revive UI (client will show buy button if no revives)
+					-- This ensures revive UI works for BOTH AI deaths and PVP deaths
+					
+					-- Clear any existing revive session
+					if reviveSessions[player] then
+						if reviveSessions[player].connection then
+							reviveSessions[player].connection:Disconnect()
 						end
+						reviveSessions[player] = nil
+					end
 
-						-- Fire the ReviveUI prompt
-						print("🚀 Sending revive prompt to", player.Name)
-						promptReviveRemote:FireClient(player)
+					-- Set up response listener BEFORE firing prompt (prevents race condition)
+					local responseConnection
+					local responseReceived = false
 
-						-- Set up response listener
-						local responseConnection
-						local responseReceived = false
+					responseConnection = reviveResponseRemote.OnServerEvent:Connect(function(plr, response)
+						if plr == player and not responseReceived then
+							responseReceived = true
+							print("📨 Received revive response from", player.Name, ":", response)
 
-						responseConnection = reviveResponseRemote.OnServerEvent:Connect(function(plr, response)
-							if plr == player and not responseReceived then
-								responseReceived = true
-								print("📨 Received revive response from", player.Name, ":", response)
-
-								if responseConnection then
-									responseConnection:Disconnect()
-								end
-
-								-- Clear session
-								if reviveSessions[player] then
-									reviveSessions[player] = nil
-								end
-
-								if response == "revive" or response == true then
-									-- Handle revive
-									print("✅ Player chose to revive!")
-
-									-- Set reviving flags
-									player:SetAttribute("RevivingNow", true)
-									player:SetAttribute("JustRevived", true)
-									player:SetAttribute("NoReviveEffects", true)
-
-									-- Deduct revive
-									if revivesAvailable > 0 then
-										player:SetAttribute("RevivesAvailable", revivesAvailable - 1)
-									end
-
-									-- Store revival data
-									local deathPosition = rootPart and rootPart.Position or Vector3.new(0, 10, 0)
-									if deathPosition.Y < 5 then
-										deathPosition = Vector3.new(deathPosition.X, 5, deathPosition.Z)
-									end
-
-									player:SetAttribute("RevivePosition", tostring(deathPosition))
-									player:SetAttribute("ReviveSnakeLength", snakeLength)
-
-									-- Clear dead state
-									resetPlayerCollisionState(player)
-
-									-- Set invincibility
-									setPlayerInvincible(player)
-
-									-- Destroy old snake model (check BOTH naming conventions)
-									if visualSnakeModel then
-										visualSnakeModel:Destroy()
-									end
-
-									-- Respawn the player
-									player:LoadCharacter()
-
-									-- Clear reviving flags after load
-									task.spawn(function()
-										task.wait(0.1)
-										player:SetAttribute("CameraLocked", false)
-										task.wait(1.9)
-										player:SetAttribute("RevivingNow", false)
-										player:SetAttribute("NoReviveEffects", false)
-									end)
-								else
-									-- Player declined revive
-									print("❌ Player declined revive")
-
-									-- Proceed with normal death
-									if visualSnakeModel then
-										visualSnakeModel:Destroy()
-									end
-
-									deadPlayers[player] = true
-
-									if CollisionCache and CollisionCache.playerSegments then
-										CollisionCache.playerSegments[player] = nil
-									end
-
-									local deathEvent = ReplicatedStorage:FindFirstChild("PlayerDied")
-									if deathEvent then
-										deathEvent:Fire(player)
-									end
-
-									task.spawn(function()
-										task.wait(5)
-										deadPlayers[player] = nil
-									end)
-								end
-
-								-- CRITICAL: Reset processing flag
-								resetProcessing()
+							if responseConnection then
+								responseConnection:Disconnect()
 							end
-						end)
 
-						-- Store session
-						reviveSessions[player] = {
-							connection = responseConnection,
-							startTime = os.clock()
-						}
+							-- Clear session
+							if reviveSessions[player] then
+								reviveSessions[player] = nil
+							end
 
-						-- Set up timeout with proper cleanup
-						task.spawn(function()
-							task.wait(60) -- 60 second timeout
+							if response == "revive" or response == true then
+								-- Handle revive
+								print("✅ Player chose to revive!")
 
-							if reviveSessions[player] and not responseReceived then
-								print("⏰ Revive timeout for", player.Name)
+								-- Set reviving flags
+								player:SetAttribute("RevivingNow", true)
+								player:SetAttribute("JustRevived", true)
+								player:SetAttribute("NoReviveEffects", true)
 
-								if responseConnection then
-									responseConnection:Disconnect()
+								-- Deduct revive
+								if revivesAvailable > 0 then
+									player:SetAttribute("RevivesAvailable", revivesAvailable - 1)
 								end
 
-								reviveSessions[player] = nil
+								-- Store revival data
+								local deathPosition = rootPart and rootPart.Position or Vector3.new(0, 10, 0)
+								if deathPosition.Y < 5 then
+									deathPosition = Vector3.new(deathPosition.X, 5, deathPosition.Z)
+								end
+
+								player:SetAttribute("RevivePosition", tostring(deathPosition))
+								player:SetAttribute("ReviveSnakeLength", snakeLength)
+
+								-- Clear dead state
+								resetPlayerCollisionState(player)
+
+								-- Set invincibility
+								setPlayerInvincible(player)
+
+								-- Destroy old snake model (check BOTH naming conventions)
+								if visualSnakeModel then
+									visualSnakeModel:Destroy()
+								end
+
+								-- Respawn the player
+								player:LoadCharacter()
+
+								-- Clear reviving flags after load
+								task.spawn(function()
+									task.wait(0.1)
+									player:SetAttribute("CameraLocked", false)
+									task.wait(1.9)
+									player:SetAttribute("RevivingNow", false)
+									player:SetAttribute("NoReviveEffects", false)
+								end)
+							else
+								-- Player declined revive
+								print("❌ Player declined revive")
 
 								-- Proceed with normal death
 								if visualSnakeModel then
@@ -936,40 +920,63 @@ task.spawn(function()
 									task.wait(5)
 									deadPlayers[player] = nil
 								end)
-
-								-- CRITICAL: Reset processing flag
-								resetProcessing()
 							end
-						end)
 
-						-- DON'T reset isProcessingDeaths here - wait for response or timeout
-					else
-						-- No revive available - proceed with normal death
-						print("❌ No revive available for", player.Name)
-
-						if visualSnakeModel then
-							visualSnakeModel:Destroy()
+							-- CRITICAL: Reset processing flag
+							resetProcessing()
 						end
+					end)
 
-						deadPlayers[player] = true
+					-- Store session
+					reviveSessions[player] = {
+						connection = responseConnection,
+						startTime = os.clock()
+					}
 
-						if CollisionCache and CollisionCache.playerSegments then
-							CollisionCache.playerSegments[player] = nil
+					-- Fire the ReviveUI prompt (ALWAYS, regardless of revive availability)
+					print("🚀 Sending revive prompt to", player.Name, "(always show, client handles buttons)")
+					promptReviveRemote:FireClient(player)
+
+					-- Set up timeout with proper cleanup
+					task.spawn(function()
+						task.wait(60) -- 60 second timeout
+
+						if reviveSessions[player] and not responseReceived then
+							print("⏰ Revive timeout for", player.Name)
+
+							if responseConnection then
+								responseConnection:Disconnect()
+							end
+
+							reviveSessions[player] = nil
+
+							-- Proceed with normal death
+							if visualSnakeModel then
+								visualSnakeModel:Destroy()
+							end
+
+							deadPlayers[player] = true
+
+							if CollisionCache and CollisionCache.playerSegments then
+								CollisionCache.playerSegments[player] = nil
+							end
+
+							local deathEvent = ReplicatedStorage:FindFirstChild("PlayerDied")
+							if deathEvent then
+								deathEvent:Fire(player)
+							end
+
+							task.spawn(function()
+								task.wait(5)
+								deadPlayers[player] = nil
+							end)
+
+							-- CRITICAL: Reset processing flag
+							resetProcessing()
 						end
+					end)
 
-						local deathEvent = ReplicatedStorage:FindFirstChild("PlayerDied")
-						if deathEvent then
-							deathEvent:Fire(player)
-						end
-
-						task.spawn(function()
-							task.wait(5)
-							deadPlayers[player] = nil
-						end)
-
-						-- CRITICAL: Reset processing flag
-						resetProcessing()
-					end
+					-- DON'T reset isProcessingDeaths here - wait for response or timeout
 				else
 					-- No character, reset processing
 					resetProcessing()
@@ -1926,11 +1933,10 @@ debugCommand.Changed:Connect(function()
 end)
 
 print("⚡ SnakeCollisionHandler V10 FIXED")
-print("✅ FIXED: Death orbs now spawn properly using task.defer")
-print("✅ FIXED: ReviveUI uses separate ReviveResponse remote")
-print("✅ FIXED: Proper revive session management")
-print("✅ FIXED: Timeout handling for revive prompts")
-print("✅ FIXED: Segment positions captured before destruction")
+print("✅ FIXED: Death orbs now spawn on PVP deaths (captured immediately)")
+print("✅ FIXED: ReviveUI always shows for both AI and PVP deaths")
+print("✅ FIXED: Segment positions captured IMMEDIATELY in queuePlayerDeath")
+print("✅ FIXED: Revive response listener set up before prompt (no race condition)")
 print("✅ FIXED: Works with OLD CharacterSetup (SnakeModel_UserId + SnakeHead)")
 print("✅ FIXED: PVP collision detection with proper self-collision prevention")
 print("✅ All V8.2 optimizations preserved")
