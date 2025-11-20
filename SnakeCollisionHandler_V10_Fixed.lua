@@ -182,14 +182,20 @@ end
 local function resetPlayerCollisionState(player)
 	print("🔄 Resetting collision state for", player.Name)
 
+	-- CRITICAL: Clear ALL death state immediately
 	deadPlayers[player] = nil
 	deathTimestamps[player] = nil
-	reviveSessions[player] = nil -- Clear revive sessions
+	reviveSessions[player] = nil
+	invinciblePlayers[player] = nil -- Also clear invincibility to prevent stuck state
 
 	-- Clear death attributes
 	player:SetAttribute("CameraLocked", false)
 	player:SetAttribute("DeathCameraFreeze", false)
 	player:SetAttribute("IsDead", false)
+	player:SetAttribute("RevivingNow", false)
+	player:SetAttribute("JustRevived", false)
+	player:SetAttribute("NoReviveEffects", false)
+	player:SetAttribute("RevivePromptActive", false)
 
 	if player.Character then
 		local root = player.Character:FindFirstChild("HumanoidRootPart")
@@ -237,17 +243,42 @@ local function resetPlayerCollisionState(player)
 	print("✅ Collision state reset complete for", player.Name)
 end
 
--- Player spawn handling
+-- Player spawn handling - CRITICAL FIX: Proper respawn cleanup
 Players.PlayerAdded:Connect(function(player)
-	player.CharacterAdded:Connect(function()
+	player.CharacterAdded:Connect(function(character)
+		print("🔄 CharacterAdded for", player.Name, "- Resetting collision state")
+		
+		-- CRITICAL: Immediately clear ALL death state (before any waits)
+		deadPlayers[player] = nil
+		deathTimestamps[player] = nil
+		invinciblePlayers[player] = nil
+		
+		-- Clear revive session if exists
+		if reviveSessions[player] then
+			if reviveSessions[player].connection then
+				reviveSessions[player].connection:Disconnect()
+			end
+			reviveSessions[player] = nil
+		end
+		
+		-- Wait a moment for character to fully load
+		task.wait(0.1)
+		
+		-- Reset collision state
 		resetPlayerCollisionState(player)
+		
+		-- Set invincibility for spawn protection
 		setPlayerInvincible(player)
+		print("🛡️ Set spawn invincibility for", player.Name)
+		
+		-- Clear invincibility after duration
 		task.spawn(function()
 			local expire = invinciblePlayers[player]
 			if expire then
 				local waitTime = expire - os.clock()
 				if waitTime > 0 then task.wait(waitTime) end
 				clearPlayerInvincibility(player)
+				print("🛡️ Invincibility expired for", player.Name)
 			end
 		end)
 	end)
@@ -905,28 +936,33 @@ task.spawn(function()
 									player:SetAttribute("NoReviveEffects", false)
 								end)
 							else
-								-- Player declined revive
-								print("❌ Player declined revive")
+								-- Player declined revive (clicked RESPAWN)
+								print("❌ Player declined revive - respawning normally")
 
-								-- Proceed with normal death
+								-- CRITICAL: Clear ALL death state before respawn
+								resetPlayerCollisionState(player)
+
+								-- Destroy old snake model
 								if visualSnakeModel then
 									visualSnakeModel:Destroy()
 								end
 
-								deadPlayers[player] = true
-
-								if CollisionCache and CollisionCache.playerSegments then
-									CollisionCache.playerSegments[player] = nil
-								end
-
+								-- Fire death event for cleanup
 								local deathEvent = ReplicatedStorage:FindFirstChild("PlayerDied")
 								if deathEvent then
 									deathEvent:Fire(player)
 								end
 
+								-- CRITICAL: Actually respawn the player (not just mark as dead)
+								player:LoadCharacter()
+
+								-- Ensure state is cleared after respawn
 								task.spawn(function()
-									task.wait(5)
+									task.wait(0.5)
 									deadPlayers[player] = nil
+									deathTimestamps[player] = nil
+									-- Set invincibility for spawn protection
+									setPlayerInvincible(player)
 								end)
 							end
 
@@ -958,25 +994,30 @@ task.spawn(function()
 
 							reviveSessions[player] = nil
 
-							-- Proceed with normal death
+							-- CRITICAL: Clear death state and respawn (same as decline)
+							resetPlayerCollisionState(player)
+
+							-- Destroy old snake model
 							if visualSnakeModel then
 								visualSnakeModel:Destroy()
 							end
 
-							deadPlayers[player] = true
-
-							if CollisionCache and CollisionCache.playerSegments then
-								CollisionCache.playerSegments[player] = nil
-							end
-
+							-- Fire death event for cleanup
 							local deathEvent = ReplicatedStorage:FindFirstChild("PlayerDied")
 							if deathEvent then
 								deathEvent:Fire(player)
 							end
 
+							-- CRITICAL: Actually respawn the player
+							player:LoadCharacter()
+
+							-- Ensure state is cleared after respawn
 							task.spawn(function()
-								task.wait(5)
+								task.wait(0.5)
 								deadPlayers[player] = nil
+								deathTimestamps[player] = nil
+								-- Set invincibility for spawn protection
+								setPlayerInvincible(player)
 							end)
 
 							-- CRITICAL: Reset processing flag
