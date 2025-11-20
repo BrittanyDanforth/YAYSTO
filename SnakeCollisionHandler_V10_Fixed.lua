@@ -348,19 +348,74 @@ CollisionCache = {
 local function spawnDeathOrb(position, value)
 	local spawnPos = Vector3.new(position.X, ORB_SPAWN_HEIGHT, position.Z)
 
-	local success, orb = pcall(function()
-		return OrbUtils.spawnOrbAt(spawnPos, value)
-	end)
+	-- CRITICAL FIX: Use OrbSpawner's createSafeOrb to create proper DeathOrbs
+	local OrbSpawner = _G.OrbSpawner
+	if not OrbSpawner then
+		-- Try to require it
+		local success, result = pcall(function()
+			return require(game.ServerScriptService:FindFirstChild("OrbSpawner"))
+		end)
+		if success and result then
+			OrbSpawner = result
+			_G.OrbSpawner = OrbSpawner
+		end
+	end
 
-	if success and orb then
-		orb.Name = "DeathOrb"
+	local orb = nil
+	if OrbSpawner and OrbSpawner.createSafeOrb then
+		-- Use OrbSpawner's function to create death orb
+		orb = OrbSpawner.createSafeOrb(spawnPos, value, "DeathOrb", Color3.fromRGB(255, 100, 100), Enum.Material.Neon)
+		
+		-- Make death orbs bigger and immediately visible
+		if orb then
+			orb.Size = Vector3.new(2.5, 2.5, 2.5)
+			orb.Transparency = 0
+			orb.Name = "DeathOrb"
+			
+			-- Enable light immediately
+			local light = orb:FindFirstChild("PointLight")
+			if light then
+				light.Enabled = true
+				light.Brightness = 2
+				light.Range = 8
+			end
+			
+			-- Register with OrbSpawner
+			if OrbSpawner.registerExternalOrb then
+				OrbSpawner.registerExternalOrb(orb)
+			end
+		end
+	else
+		-- Fallback: Use OrbUtils directly
+		local success, createdOrb = pcall(function()
+			return OrbUtils.spawnOrbAt(spawnPos, value)
+		end)
+		
+		if success and createdOrb then
+			orb = createdOrb
+			orb.Name = "DeathOrb"
+			orb.Size = Vector3.new(2.5, 2.5, 2.5)
+			orb.Color = Color3.fromRGB(255, 100, 100)
+			orb.Transparency = 0
+			
+			-- Enable light
+			local light = orb:FindFirstChild("PointLight")
+			if light then
+				light.Enabled = true
+				light.Brightness = 2
+				light.Range = 8
+			end
+		end
+	end
+
+	if orb then
 		performanceStats.orbsSpawned = performanceStats.orbsSpawned + 1
 		if DEBUG_COLLISIONS then
 			print(string.format("[ORB] Spawned death orb at %s with value %d", tostring(spawnPos), value))
 		end
 		return orb
 	else
-		warn("[ORB] Failed to spawn orb:", orb)
+		warn("[ORB] Failed to spawn death orb at", spawnPos)
 		return nil
 	end
 end
