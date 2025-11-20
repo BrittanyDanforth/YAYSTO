@@ -178,23 +178,18 @@ local function disconnectPlayerCamera(player)
 	end
 end
 
--- === FIXED: Reset player collision state (DOES NOT clear _G.PlayerSnakes - let CharacterSetup handle that) ===
+-- === FIXED: Reset player collision state ===
 local function resetPlayerCollisionState(player)
 	print("🔄 Resetting collision state for", player.Name)
 
-	-- CRITICAL: Clear ALL death-related state
 	deadPlayers[player] = nil
 	deathTimestamps[player] = nil
-	reviveSessions[player] = nil
-	invinciblePlayers[player] = nil -- Clear invincibility too
+	reviveSessions[player] = nil -- Clear revive sessions
 
 	-- Clear death attributes
 	player:SetAttribute("CameraLocked", false)
 	player:SetAttribute("DeathCameraFreeze", false)
 	player:SetAttribute("IsDead", false)
-	player:SetAttribute("RevivingNow", false)
-	player:SetAttribute("JustRevived", false)
-	player:SetAttribute("NoReviveEffects", false)
 
 	if player.Character then
 		local root = player.Character:FindFirstChild("HumanoidRootPart")
@@ -223,102 +218,39 @@ local function resetPlayerCollisionState(player)
 		end
 	end
 
-	-- CRITICAL FIX: DO NOT clear _G.PlayerSnakes here - CharacterSetup will recreate it
-	-- Only clear collision cache so it rebuilds with new snake
+	if _G and _G.PlayerSnakes then
+		_G.PlayerSnakes[player] = nil
+	end
+
 	if CollisionCache then
 		CollisionCache.playerSegments[player] = nil
-		-- Don't clear entire spatial grid, just this player's data
+		CollisionCache.spatialGrid:clear()
 		CollisionCache.frameCache = {}
 	end
 
-	-- Force head cache to refresh
 	if headCache then
 		headCache.lastUpdate = 0
-		-- Don't clear the arrays, just force refresh
+		headCache.players = {}
+		headCache.ai = {}
 	end
 
 	print("✅ Collision state reset complete for", player.Name)
 end
 
--- Player spawn handling - CRITICAL FIX: Proper cleanup and re-initialization
+-- Player spawn handling
 Players.PlayerAdded:Connect(function(player)
-	-- Handle character spawning/respawning
-	player.CharacterAdded:Connect(function(character)
-		print("🔄 CharacterAdded event for", player.Name)
-		
-		-- CRITICAL: Immediately clear ALL death state (before any waits)
-		deadPlayers[player] = nil
-		deathTimestamps[player] = nil
-		invinciblePlayers[player] = nil
-		
-		-- Clear revive session if exists
-		if reviveSessions[player] then
-			if reviveSessions[player].connection then
-				reviveSessions[player].connection:Disconnect()
-			end
-			reviveSessions[player] = nil
-		end
-		
-		-- Wait a moment for character to fully load
-		task.wait(0.1)
-		
-		-- CRITICAL: Reset ALL collision state immediately
+	player.CharacterAdded:Connect(function()
 		resetPlayerCollisionState(player)
-		
-		-- Set invincibility for spawn protection
 		setPlayerInvincible(player)
-		print("🛡️ Set spawn invincibility for", player.Name)
-		
-		-- Clear invincibility after duration
 		task.spawn(function()
 			local expire = invinciblePlayers[player]
 			if expire then
 				local waitTime = expire - os.clock()
 				if waitTime > 0 then task.wait(waitTime) end
 				clearPlayerInvincibility(player)
-				print("🛡️ Invincibility expired for", player.Name)
-			end
-		end)
-		
-		-- CRITICAL: Wait for snake to be created by CharacterSetup, then verify it's registered
-		task.spawn(function()
-			local maxWait = 5
-			local waitTime = 0
-			while waitTime < maxWait do
-				task.wait(0.2)
-				waitTime = waitTime + 0.2
-				
-				-- Check if snake exists in workspace (both naming conventions)
-				local snakeModel = workspace:FindFirstChild("Snake_" .. player.Name)
-				if not snakeModel then
-					snakeModel = workspace:FindFirstChild("SnakeModel_" .. player.UserId)
-				end
-				
-				-- Check if snake is in _G.PlayerSnakes
-				local snakeInGlobal = _G.PlayerSnakes and _G.PlayerSnakes[player]
-				
-				if snakeModel or snakeInGlobal then
-					print("✅ Snake found for", player.Name, "- Model:", snakeModel ~= nil, "Global:", snakeInGlobal ~= nil)
-					-- Force cache refresh
-					if headCache then
-						headCache.lastUpdate = 0
-					end
-					if CollisionCache then
-						CollisionCache.playerSegments[player] = nil
-					end
-					-- Ensure player is NOT marked as dead
-					deadPlayers[player] = nil
-					break
-				end
-			end
-			
-			if waitTime >= maxWait then
-				warn("⚠️ Snake not found for", player.Name, "after respawn - collision may not work!")
 			end
 		end)
 	end)
-	
-	-- Handle player leaving
 	player.AncestryChanged:Connect(function()
 		if not player.Parent then
 			clearPlayerInvincibility(player)
@@ -326,30 +258,9 @@ Players.PlayerAdded:Connect(function(player)
 			deathTimestamps[player] = nil
 			reviveSessions[player] = nil
 			disconnectPlayerCamera(player)
-			
-			-- Clean up collision cache
-			if CollisionCache then
-				CollisionCache.playerSegments[player] = nil
-			end
 		end
 	end)
 end)
-
--- CRITICAL FIX: Also handle existing players who might have respawned
-for _, player in pairs(Players:GetPlayers()) do
-	if player.Character then
-		task.spawn(function()
-			task.wait(0.1)
-			resetPlayerCollisionState(player)
-			setPlayerInvincible(player)
-		end)
-	end
-	player.CharacterAdded:Connect(function()
-		task.wait(0.1)
-		resetPlayerCollisionState(player)
-		setPlayerInvincible(player)
-	end)
-end
 
 -- === SPATIAL GRID (keeping existing implementation) ===
 local SpatialGrid = {}
@@ -433,78 +344,23 @@ CollisionCache = {
 	frameCache = {}
 }
 
--- === IMPROVED ORB SPAWNING (FIXED) ===
+-- === IMPROVED ORB SPAWNING (FIXED - NO COLOR CHANGES) ===
 local function spawnDeathOrb(position, value)
 	local spawnPos = Vector3.new(position.X, ORB_SPAWN_HEIGHT, position.Z)
 
-	-- CRITICAL FIX: Use OrbSpawner's createSafeOrb to create proper DeathOrbs
-	local OrbSpawner = _G.OrbSpawner
-	if not OrbSpawner then
-		-- Try to require it
-		local success, result = pcall(function()
-			return require(game.ServerScriptService:FindFirstChild("OrbSpawner"))
-		end)
-		if success and result then
-			OrbSpawner = result
-			_G.OrbSpawner = OrbSpawner
-		end
-	end
+	local success, orb = pcall(function()
+		return OrbUtils.spawnOrbAt(spawnPos, value)
+	end)
 
-	local orb = nil
-	if OrbSpawner and OrbSpawner.createSafeOrb then
-		-- Use OrbSpawner's function to create death orb
-		orb = OrbSpawner.createSafeOrb(spawnPos, value, "DeathOrb", Color3.fromRGB(255, 100, 100), Enum.Material.Neon)
-		
-		-- Make death orbs bigger and immediately visible
-		if orb then
-			orb.Size = Vector3.new(2.5, 2.5, 2.5)
-			orb.Transparency = 0
-			orb.Name = "DeathOrb"
-			
-			-- Enable light immediately
-			local light = orb:FindFirstChild("PointLight")
-			if light then
-				light.Enabled = true
-				light.Brightness = 2
-				light.Range = 8
-			end
-			
-			-- Register with OrbSpawner
-			if OrbSpawner.registerExternalOrb then
-				OrbSpawner.registerExternalOrb(orb)
-			end
-		end
-	else
-		-- Fallback: Use OrbUtils directly
-		local success, createdOrb = pcall(function()
-			return OrbUtils.spawnOrbAt(spawnPos, value)
-		end)
-		
-		if success and createdOrb then
-			orb = createdOrb
-			orb.Name = "DeathOrb"
-			orb.Size = Vector3.new(2.5, 2.5, 2.5)
-			orb.Color = Color3.fromRGB(255, 100, 100)
-			orb.Transparency = 0
-			
-			-- Enable light
-			local light = orb:FindFirstChild("PointLight")
-			if light then
-				light.Enabled = true
-				light.Brightness = 2
-				light.Range = 8
-			end
-		end
-	end
-
-	if orb then
+	if success and orb then
+		orb.Name = "DeathOrb"
 		performanceStats.orbsSpawned = performanceStats.orbsSpawned + 1
 		if DEBUG_COLLISIONS then
 			print(string.format("[ORB] Spawned death orb at %s with value %d", tostring(spawnPos), value))
 		end
 		return orb
 	else
-		warn("[ORB] Failed to spawn death orb at", spawnPos)
+		warn("[ORB] Failed to spawn orb:", orb)
 		return nil
 	end
 end
@@ -584,40 +440,34 @@ local function getPlayerHeads()
 
 	local heads = {}
 	for _, player in Players:GetPlayers() do
-		-- CRITICAL: Skip dead players and invincible players (spawn protection)
-		if deadPlayers[player] or isPlayerInvincible(player) then
-			continue
-		end
-		
-		if player.Character and player.Character.Parent then
-			-- CRITICAL: Always check workspace FIRST (most reliable after respawn)
+		-- CRITICAL PVP FIX: Only skip if actually dead, not invincible (invincible players can still collide)
+		if player.Character and not deadPlayers[player] then
+			-- CRITICAL: Check BOTH naming conventions (OLD CharacterSetup support)
 			-- Try new format first (Snake_PlayerName)
 			local snakeModel = workspace:FindFirstChild("Snake_" .. player.Name)
 			if not snakeModel then
 				-- Try old format (SnakeModel_UserId) - OLD CharacterSetup uses this
 				snakeModel = workspace:FindFirstChild("SnakeModel_" .. player.UserId)
 			end
-			
-			if snakeModel and snakeModel.Parent then
+
+			if snakeModel then
 				-- Try new format head name first (Segment0_Head)
 				local snakeHead = snakeModel:FindFirstChild("Segment0_Head")
 				if not snakeHead then
 					-- Try old format head name (SnakeHead) - OLD CharacterSetup uses this
 					snakeHead = snakeModel:FindFirstChild("SnakeHead")
 				end
-				
-				-- CRITICAL FIX: Check that head is valid, NOT anchored (alive), and not dead
-				if snakeHead and snakeHead:IsA("BasePart") and snakeHead.Parent and 
-				   not snakeHead.Anchored and not snakeHead:GetAttribute("Dead") then
+
+				-- CRITICAL: In this system, heads ARE anchored when alive (opposite of what I thought)
+				if snakeHead and snakeHead.Parent and snakeHead.Anchored then
 					heads[#heads + 1] = {player = player, part = snakeHead}
 					continue
 				end
 			end
 
-			-- Fallback to character root (only if snake not found)
+			-- Fallback to character root
 			local root = player.Character:FindFirstChild("HumanoidRootPart")
-			if root and root:IsA("BasePart") and root.Parent and 
-			   not root:GetAttribute("Dead") and not root.Anchored then
+			if root and root.Parent and not root:GetAttribute("Dead") then
 				heads[#heads + 1] = {player = player, part = root}
 			end
 		end
@@ -641,73 +491,78 @@ local function getAISnakeHeads()
 	return heads
 end
 
--- === CRITICAL FIX: Get actual snake segments (works with BOTH naming conventions, ALWAYS checks workspace first) ===
+-- === CRITICAL FIX: Get actual snake segments (works with BOTH naming conventions) ===
 local function getActualSnakeSegments(player)
-	-- CRITICAL: Skip if player is dead or invincible (prevents errors during respawn)
-	if deadPlayers[player] or isPlayerInvincible(player) then
-		return {}
+	-- CRITICAL PVP FIX: Don't skip invincible players - they can still be hit by others
+	-- Only skip if actually dead
+	if deadPlayers[player] then
+		return nil
 	end
 	
-	-- CRITICAL: Always check workspace FIRST (most reliable after respawn)
 	-- Try new format first (Snake_PlayerName)
 	local snakeModel = workspace:FindFirstChild("Snake_" .. player.Name)
-	
+
 	-- Try old format (SnakeModel_UserId) - OLD CharacterSetup uses this
 	if not snakeModel then
 		snakeModel = workspace:FindFirstChild("SnakeModel_" .. player.UserId)
 	end
-	
-	if snakeModel and snakeModel.Parent then
+
+	if snakeModel then
 		local segments = {}
-		
+
 		-- Try new format: Segment0_Head, Segment1, Segment2, etc.
 		local head = snakeModel:FindFirstChild("Segment0_Head")
-		if head and head:IsA("BasePart") and head.Parent and not head:GetAttribute("Dead") then
+		if head and head:IsA("BasePart") then
 			segments[#segments + 1] = head
 		end
-		
+
 		-- Try old format: SnakeHead - OLD CharacterSetup uses this
 		if #segments == 0 then
 			head = snakeModel:FindFirstChild("SnakeHead")
-			if head and head:IsA("BasePart") and head.Parent and not head:GetAttribute("Dead") then
+			if head and head:IsA("BasePart") then
 				segments[#segments + 1] = head
 			end
 		end
-		
+
 		-- Get body segments (both formats use Segment1, Segment2, etc.)
 		local i = 1
-		local maxSegments = 2000 -- Safety limit
-		while i <= maxSegments do
+		while true do
 			local segmentName = "Segment" .. i
 			local segment = snakeModel:FindFirstChild(segmentName)
-			if segment and segment:IsA("BasePart") and segment.Parent and not segment:GetAttribute("Dead") then
+			if segment and segment:IsA("BasePart") then
 				segments[#segments + 1] = segment
 				i = i + 1
 			else
 				break
 			end
 		end
-		
+
 		if #segments > 0 then
+			if DEBUG_COLLISIONS then
+				print(string.format("[SEGMENTS] Found %d segments in model for %s", #segments, player.Name))
+			end
 			return segments
 		end
 	end
 
-	-- Fallback: Check _G.PlayerSnakes (may not exist immediately after respawn)
+	-- Fallback: Check _G.PlayerSnakes
 	local snakeInstance = _G.PlayerSnakes and _G.PlayerSnakes[player]
 	if snakeInstance and snakeInstance.segments then
 		local segments = {}
 		for _, seg in ipairs(snakeInstance.segments) do
-			if seg and seg:IsA("BasePart") and seg.Parent and not seg:GetAttribute("Dead") then
+			if seg and seg:IsA("BasePart") and seg.Parent then
 				segments[#segments + 1] = seg
 			end
 		end
 		if #segments > 0 then
+			if DEBUG_COLLISIONS then
+				print(string.format("[SEGMENTS] Found %d segments in _G.PlayerSnakes for %s", #segments, player.Name))
+			end
 			return segments
 		end
 	end
 
-	return {} -- CRITICAL FIX: Return empty table, not nil
+	return nil
 end
 
 -- === NUCLEAR DEATH HANDLERS ===
@@ -871,7 +726,7 @@ task.spawn(function()
 								end
 							end
 						end
-						
+
 						-- Get length if not stored
 						if snakeLength == 55 and player:FindFirstChild("leaderstats") then
 							local lengthValue = player.leaderstats:FindFirstChild("Length")
@@ -977,7 +832,7 @@ task.spawn(function()
 
 					-- CRITICAL FIX: ALWAYS show revive UI (client will show buy button if no revives)
 					-- This ensures revive UI works for BOTH AI deaths and PVP deaths
-					
+
 					-- Clear any existing revive session
 					if reviveSessions[player] then
 						if reviveSessions[player].connection then
@@ -1058,7 +913,6 @@ task.spawn(function()
 									visualSnakeModel:Destroy()
 								end
 
-								-- CRITICAL: Mark as dead but allow respawn
 								deadPlayers[player] = true
 
 								if CollisionCache and CollisionCache.playerSegments then
@@ -1070,13 +924,9 @@ task.spawn(function()
 									deathEvent:Fire(player)
 								end
 
-								-- CRITICAL: Clear dead state after short delay to allow respawn
 								task.spawn(function()
-									task.wait(3)
-									-- CharacterAdded will handle full cleanup
+									task.wait(5)
 									deadPlayers[player] = nil
-									deathTimestamps[player] = nil
-									print("🧹 Cleared death state for", player.Name, "after decline")
 								end)
 							end
 
@@ -1322,8 +1172,9 @@ end
 
 -- === SEGMENT RETRIEVAL ===
 local function getPlayerSegments(player)
-	-- CRITICAL: Skip dead or invincible players
-	if deadPlayers[player] or isPlayerInvincible(player) then
+	-- CRITICAL PVP FIX: Don't skip invincible players in segment retrieval
+	-- Invincibility only prevents death, not collision detection
+	if deadPlayers[player] then
 		return nil
 	end
 	
@@ -1331,15 +1182,7 @@ local function getPlayerSegments(player)
 	local currentTime = os.clock()
 
 	if cache and (currentTime - cache.lastUpdate) < CACHE_EXPIRY then
-		-- Validate cache is still valid (segments still exist)
-		if cache.segments and #cache.segments > 0 then
-			local firstSeg = cache.segments[1]
-			if firstSeg and firstSeg.Parent and firstSeg.Parent.Parent then
-				return cache
-			end
-		end
-		-- Cache invalid, clear it
-		CollisionCache.playerSegments[player] = nil
+		return cache
 	end
 
 	local segmentParts = getActualSnakeSegments(player) or {}
@@ -1352,10 +1195,7 @@ local function getPlayerSegments(player)
 		end
 	end
 
-	-- CRITICAL: Return nil if no segments (snake not created yet after respawn)
-	if #segmentParts == 0 then 
-		return nil 
-	end
+	if #segmentParts == 0 then return nil end
 
 	local interpolatedSegments
 	if snakeLength > ULTRA_LENGTH_THRESHOLD then
@@ -1624,6 +1464,8 @@ RunService.Stepped:Connect(function(_, deltaTime)
 		local player = headData.player
 		local head = headData.part
 
+		-- CRITICAL PVP FIX: Only check invincibility for death, not collision detection
+		-- Invincible players can still be detected for collisions, they just won't die
 		if isPlayerInvincible(player) then
 			continue
 		end
@@ -1692,9 +1534,14 @@ RunService.Stepped:Connect(function(_, deltaTime)
 		local playerA = headDataA.player
 		local headA = headDataA.part
 
-		if isPlayerInvincible(playerA) or deadPlayers[playerA] then
+		-- CRITICAL PVP FIX: Only skip if actually dead, not invincible
+		-- Invincible players can still collide (they just won't die)
+		if deadPlayers[playerA] then
 			continue
 		end
+
+		-- Check invincibility for death prevention, not collision detection
+		local playerAInvincible = isPlayerInvincible(playerA)
 
 		if headA and headA.Parent then
 			if headA:GetAttribute("Dead") then
@@ -1708,11 +1555,12 @@ RunService.Stepped:Connect(function(_, deltaTime)
 					local headDataB = playerHeads[j]
 					local playerB = headDataB.player
 
-					-- CRITICAL: Check if playerB is dead or invincible
-					if deadPlayers[playerB] or isPlayerInvincible(playerB) then
+					-- CRITICAL: Check if playerB is dead
+					if deadPlayers[playerB] then
 						continue
 					end
 
+					-- Get segments for playerB (even if invincible - for collision detection)
 					local segmentData = getPlayerSegments(playerB)
 					if segmentData and segmentData.segments then
 						if segmentData.bounds and not checkBoundsOverlap(
@@ -1743,14 +1591,18 @@ RunService.Stepped:Connect(function(_, deltaTime)
 							if DEBUG_COLLISIONS then
 								print(string.format("[COLLISION] %s hit %s's body (Self: %s)", playerA.Name, playerB.Name, tostring(isSelfCollision)))
 							end
-							-- Only die if NOT self-collision
-							if not isSelfCollision then
+							-- Only die if NOT self-collision AND not invincible
+							if not isSelfCollision and not playerAInvincible then
 								print(string.format("💥 [PVP] Player %s hit Player %s's body - %s dies!", playerA.Name, playerB.Name, playerA.Name))
 								queuePlayerDeath(playerA)
 								break
 							else
 								if DEBUG_COLLISIONS then
-									print(string.format("[SELF-COLLISION] %s hit own body - ignored", playerA.Name))
+									if isSelfCollision then
+										print(string.format("[SELF-COLLISION] %s hit own body - ignored", playerA.Name))
+									else
+										print(string.format("[INVINCIBLE] %s hit %s's body but is invincible - no death", playerA.Name, playerB.Name))
+									end
 								end
 							end
 						end
@@ -1778,6 +1630,7 @@ RunService.Stepped:Connect(function(_, deltaTime)
 			for _, headData in ipairs(playerHeads) do
 				local player = headData.player
 
+				-- CRITICAL: Only skip invincible players for death, not collision detection
 				if not isPlayerInvincible(player) then
 					local segmentData = getPlayerSegments(player)
 					if segmentData and segmentData.segments then
@@ -2113,5 +1966,7 @@ print("✅ FIXED: Segment positions captured IMMEDIATELY in queuePlayerDeath")
 print("✅ FIXED: Revive response listener set up before prompt (no race condition)")
 print("✅ FIXED: Works with OLD CharacterSetup (SnakeModel_UserId + SnakeHead)")
 print("✅ FIXED: PVP collision detection with proper self-collision prevention")
+print("✅ FIXED: Invincible players can collide but won't die (PVP works correctly)")
+print("✅ FIXED: No orb color changes (uses OrbUtils default)")
 print("✅ All V8.2 optimizations preserved")
 print("🔧 Ready for production use!")
