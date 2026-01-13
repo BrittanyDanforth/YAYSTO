@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>CONSEQUENCE - A Post-Apocalyptic Text Adventure</title>
-    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="MYSTORY.CSS">
     <style>
         /* Additional epic styles */
         @import url('https://fonts.googleapis.com/css2?family=Creepster&family=Special+Elite&display=swap');
@@ -139,8 +139,17 @@
 
     <div id="game-container">
         <header>
-            <h1>CONSEQUENCE</h1>
+            <h1 class="interactive-element">CONSEQUENCE</h1>
             <div id="stats" class="stats-bar"></div>
+            
+            <!-- VFX Demo Panel -->
+            <div style="text-align: center; margin: 20px 0; padding: 15px; background: rgba(0, 255, 255, 0.1); border: 2px solid #00ffff; border-radius: 10px;">
+                <p style="color: #00ffff; font-weight: 600; margin-bottom: 10px;">🎆 EPIC VFX SYSTEM ACTIVE! 🎆</p>
+                <p style="color: #b0b0b0; font-size: 0.9rem;">Hover over any button or choice and press <kbd style="background: #000; padding: 3px 8px; border-radius: 4px; border: 2px solid #00ffff;">E</kbd> for INSANE effects!</p>
+                <button class="primary-button interactive-element" style="margin-top: 10px;" onclick="window.triggerEpicVFX()">
+                    ⚡ CLICK ME OR PRESS E! ⚡
+                </button>
+            </div>
         </header>
 
         <main id="main-content">
@@ -176,6 +185,7 @@
     </audio>
 
     <script src="script_5MB_FIXED.js"></script>
+    <script src="epic-vfx-system.js"></script>
     <script>
         // Epic initialization
         document.addEventListener('DOMContentLoaded', () => {

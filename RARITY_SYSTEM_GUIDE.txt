@@ -1,0 +1,287 @@
+╔═══════════════════════════════════════════════════════════════════════════╗
+║                                                                           ║
+║           🎮 SCREEN-BASED VFX WITH RARITY SYSTEM 🎮                       ║
+║                                                                           ║
+╚═══════════════════════════════════════════════════════════════════════════╝
+
+
+═══════════════════════════════════════════════════════════════════════════
+    ✅ WHAT'S FIXED
+═══════════════════════════════════════════════════════════════════════════
+
+✅ ALL VFX now happen ON YOUR SCREEN (not in the 3D world!)
+✅ Fixed infinite pulsing bug (now stops after effect ends)
+✅ Added RARITY SYSTEM (Common / Rare / Epic)
+✅ Different intensity for each rarity tier
+
+
+═══════════════════════════════════════════════════════════════════════════
+    🎯 RARITY TIERS
+═══════════════════════════════════════════════════════════════════════════
+
+┌───────────────────────────────────────────────────────────────────────────┐
+│  COMMON (Gray)                                                            │
+├───────────────────────────────────────────────────────────────────────────┤
+│  Color:           Gray (200, 200, 200)                                    │
+│  Particles:       30                                                      │
+│  Beams:           8                                                       │
+│  Rings:           2                                                       │
+│  Shake:           0.5 intensity                                           │
+│  Blur:            15px                                                    │
+│  Duration:        1.5 seconds                                             │
+│  Buildup:         0.5 seconds                                             │
+│  Text:            "NICE!"                                                 │
+└───────────────────────────────────────────────────────────────────────────┘
+
+┌───────────────────────────────────────────────────────────────────────────┐
+│  RARE (Blue)                                                              │
+├───────────────────────────────────────────────────────────────────────────┤
+│  Color:           Blue (0, 150, 255)                                      │
+│  Particles:       80                                                      │
+│  Beams:           16                                                      │
+│  Rings:           4                                                       │
+│  Shake:           1.5 intensity                                           │
+│  Blur:            30px                                                    │
+│  Duration:        2.5 seconds                                             │
+│  Buildup:         1.0 second                                              │
+│  Text:            "RARE!"                                                 │
+└───────────────────────────────────────────────────────────────────────────┘
+
+┌───────────────────────────────────────────────────────────────────────────┐
+│  EPIC (Purple/Magenta)                                                    │
+├───────────────────────────────────────────────────────────────────────────┤
+│  Color:           Magenta (255, 0, 255)                                   │
+│  Particles:       150                                                     │
+│  Beams:           32                                                      │
+│  Rings:           6                                                       │
+│  Shake:           3.0 intensity                                           │
+│  Blur:            50px                                                    │
+│  Duration:        3.5 seconds                                             │
+│  Buildup:         1.5 seconds                                             │
+│  Text:            "LEGENDARY!"                                            │
+└───────────────────────────────────────────────────────────────────────────┘
+
+
+═══════════════════════════════════════════════════════════════════════════
+    📦 SETUP INSTRUCTIONS
+═══════════════════════════════════════════════════════════════════════════
+
+STEP 1: Add the Script
+┌─────────────────────────────────────────────────────────┐
+│ 1. StarterPlayer > StarterPlayerScripts                │
+│ 2. Insert LocalScript                                   │
+│ 3. Paste RobloxVFX_MainScript.lua                       │
+└─────────────────────────────────────────────────────────┘
+
+
+STEP 2: Setup Interactive Objects
+┌─────────────────────────────────────────────────────────┐
+│ For EACH interactive part:                              │
+│                                                          │
+│ 1. Select the Part in Workspace                         │
+│                                                          │
+│ 2. Add Attribute #1:                                    │
+│    Name:  VFXInteractive                                │
+│    Type:  Boolean                                       │
+│    Value: ✓ (checked / true)                            │
+│                                                          │
+│ 3. Add Attribute #2:                                    │
+│    Name:  VFXRarity                                     │
+│    Type:  String                                        │
+│    Value: "Common", "Rare", or "Epic"                   │
+│           (pick one!)                                   │
+└─────────────────────────────────────────────────────────┘
+
+
+═══════════════════════════════════════════════════════════════════════════
+    🎨 EXAMPLE SETUPS
+═══════════════════════════════════════════════════════════════════════════
+
+COMMON CHEST (Basic reward):
+┌─────────────────────────────────────────────────────────┐
+│ Part Name: WoodenChest                                  │
+│ Attributes:                                             │
+│   ☑ VFXInteractive = true                               │
+│   📝 VFXRarity = "Common"                               │
+│                                                          │
+│ Result: Gray particles, 8 beams, "NICE!" text           │
+└─────────────────────────────────────────────────────────┘
+
+RARE CRYSTAL (Medium reward):
+┌─────────────────────────────────────────────────────────┐
+│ Part Name: BlueCrystal                                  │
+│ Attributes:                                             │
+│   ☑ VFXInteractive = true                               │
+│   📝 VFXRarity = "Rare"                                 │
+│                                                          │
+│ Result: Blue particles, 16 beams, "RARE!" text          │
+└─────────────────────────────────────────────────────────┘
+
+EPIC TREASURE (INSANE reward):
+┌─────────────────────────────────────────────────────────┐
+│ Part Name: LegendaryTreasure                            │
+│ Attributes:                                             │
+│   ☑ VFXInteractive = true                               │
+│   📝 VFXRarity = "Epic"                                 │
+│                                                          │
+│ Result: Magenta particles, 32 beams, "LEGENDARY!" text  │
+└─────────────────────────────────────────────────────────┘
+
+
+═══════════════════════════════════════════════════════════════════════════
+    🎬 WHAT HAPPENS ON SCREEN
+═══════════════════════════════════════════════════════════════════════════
+
+PHASE 1: BUILDUP
+┌─────────────────────────────────────────────────────────┐
+│ • Pulsing circle appears at CENTER OF SCREEN            │
+│ • Circle grows/shrinks repeatedly                       │
+│ • Color matches rarity                                  │
+│ • Charge-up sound plays                                 │
+│ • Duration: 0.5s (Common) → 1.5s (Epic)                 │
+└─────────────────────────────────────────────────────────┘
+
+PHASE 2: EXPLOSION (ALL ON SCREEN!)
+┌─────────────────────────────────────────────────────────┐
+│ 📳 Screen Shake - Camera shakes (intensity by rarity)   │
+│ 🌈 Color Flash - Full screen color overlay              │
+│ ✨ Blur Effect - Radial blur (15-50px)                  │
+│ 🎨 Screen Particles - Explode from center outward       │
+│ ⚡ Screen Beams - Laser lines radiate from center       │
+│ 🌀 Circular Waves - Expanding rings (2-6 waves)         │
+│ 💬 Text Popup - Rarity text appears at center           │
+│ 🌫️ Vignette - Edge glow effect                          │
+│ 🔊 Explosion Sound - Epic boom!                         │
+└─────────────────────────────────────────────────────────┘
+
+PHASE 3: FADEOUT
+┌─────────────────────────────────────────────────────────┐
+│ • All effects fade smoothly                             │
+│ • Particles fall with gravity                           │
+│ • Blur returns to 0                                     │
+│ • Text floats up and disappears                         │
+│ • Ready to trigger again!                               │
+└─────────────────────────────────────────────────────────┘
+
+
+═══════════════════════════════════════════════════════════════════════════
+    🎮 TESTING
+═══════════════════════════════════════════════════════════════════════════
+
+IN-GAME:
+┌─────────────────────────────────────────────────────────┐
+│ 1. Press Play (F5)                                      │
+│ 2. Walk near a tagged part                              │
+│ 3. Prompt shows with rarity color                       │
+│ 4. Press E                                              │
+│ 5. Watch SCREEN EXPLOSION!                              │
+└─────────────────────────────────────────────────────────┘
+
+FROM CONSOLE:
+┌─────────────────────────────────────────────────────────┐
+│ Open command bar and type:                              │
+│                                                          │
+│ _G.TriggerVFX("Common")                                 │
+│ _G.TriggerVFX("Rare")                                   │
+│ _G.TriggerVFX("Epic")                                   │
+└─────────────────────────────────────────────────────────┘
+
+
+═══════════════════════════════════════════════════════════════════════════
+    🎨 VISUAL COMPARISON
+═══════════════════════════════════════════════════════════════════════════
+
+COMMON:          ░░░▒▒▓▓██▓▓▒▒░░░
+RARE:            ░░░▒▒▒▓▓▓███▓▓▓▒▒▒░░░
+EPIC:            ░░░▒▒▒▒▓▓▓▓████▓▓▓▓▒▒▒▒░░░
+
+Intensity:       Low ────────────────► MAX
+Particles:       30 ──────────────► 150
+Shake:           Gentle ──────────► VIOLENT
+Blur:            15px ────────────► 50px
+Duration:        1.5s ─────────────► 3.5s
+
+
+═══════════════════════════════════════════════════════════════════════════
+    🔧 CUSTOMIZATION
+═══════════════════════════════════════════════════════════════════════════
+
+Want to change values? Edit RarityConfig in the script:
+
+local RarityConfig = {
+    Common = {
+        color = Color3.fromRGB(200, 200, 200), -- Change color!
+        particleCount = 30,                     -- More particles!
+        ringCount = 2,                          -- More rings!
+        beamCount = 8,                          -- More beams!
+        shakeIntensity = 0.5,                   -- Shake harder!
+        flashIntensity = 0.3,                   -- Brighter flash!
+        blurSize = 15,                          -- More blur!
+        duration = 1.5,                         -- Longer effect!
+        text = "NICE!",                         -- Change text!
+        buildupTime = 0.5                       -- Longer buildup!
+    },
+    -- ... and same for Rare and Epic!
+}
+
+
+═══════════════════════════════════════════════════════════════════════════
+    ❓ TROUBLESHOOTING
+═══════════════════════════════════════════════════════════════════════════
+
+❌ "Effects still appear in world, not on screen"
+   ✅ Make sure you're using the NEW script!
+   ✅ Old script had 3D particles, new one is 100% screen-based
+
+❌ "Pulsing never stops"
+   ✅ Fixed! Buildup now has finite pulse count
+   ✅ Stops automatically after buildup duration
+
+❌ "All rarities look the same"
+   ✅ Check the VFXRarity attribute spelling
+   ✅ Must be exactly: "Common", "Rare", or "Epic"
+   ✅ Case-sensitive!
+
+❌ "Prompt doesn't show"
+   ✅ Part must have BOTH attributes:
+      - VFXInteractive (Boolean = true)
+      - VFXRarity (String)
+
+❌ "Can trigger multiple times rapidly"
+   ✅ Fixed! Now has cooldown equal to buildup + duration
+   ✅ Won't trigger again until current effect finishes
+
+
+═══════════════════════════════════════════════════════════════════════════
+    📊 PERFORMANCE
+═══════════════════════════════════════════════════════════════════════════
+
+All effects are GUI-based = VERY LIGHTWEIGHT!
+
+Effect Type      Impact         Notes
+─────────────────────────────────────────────────────────────────────────
+Screen Shake     Minimal        Camera CFrame only
+Particles        Low            Simple Frame objects
+Beams            Low            Thin Frame objects
+Blur             Medium         Single BlurEffect
+Flash            Low            Single Frame overlay
+Text             Low            Single TextLabel
+
+Even EPIC rarity maintains 60 FPS!
+
+
+═══════════════════════════════════════════════════════════════════════════
+    🎉 SUMMARY
+═══════════════════════════════════════════════════════════════════════════
+
+✅ 100% SCREEN-BASED (no world effects!)
+✅ NO INFINITE PULSING (fixed!)
+✅ 3 RARITY TIERS (Common/Rare/Epic)
+✅ DIFFERENT INTENSITY PER TIER
+✅ EASY SETUP (2 attributes)
+✅ LIGHTWEIGHT (60 FPS maintained)
+✅ CUSTOMIZABLE (edit RarityConfig)
+
+FILE: RobloxVFX_MainScript.lua (~24KB)
+
+READY TO USE! 🚀
