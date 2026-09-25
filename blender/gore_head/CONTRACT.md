@@ -39,12 +39,18 @@ at the same time.
 | Back of head | (0, 0.100, 0.030) |
 | Glabella (between brows) | (0, −0.093, 0.035) |
 | Eyeball centers | (±0.032, −0.070, 0.022), radius 0.012 |
-| Nose tip | (0, −0.112, −0.012) |
-| Mouth center (between lips) | (0, −0.094, −0.055), mouth width ≈ 0.050 |
-| Chin bottom | (0, −0.082, −0.108) |
+| Nose tip | (0, −0.111, −0.014) |
+| Mouth center (between lips) | (0, −0.094, −0.055), lips parted 6.9 mm, mouth width ≈ 0.048 (corners ±0.024, y −0.085) |
+| Chin bottom | (0, −0.080, −0.103) (pogonion, most forward chin point: (0, −0.094, −0.092)) |
 | Ear canals | (±0.072, 0, 0) |
 | Head half-width | ≈ 0.074 |
 | Neck | ≈ radius 0.055, center y ≈ +0.015, cut flat at z = −0.20 |
+| Nasion / subnasale | (0, −0.089, 0.023) / (0, −0.097, −0.030) |
+| Upper / lower incisal edge | z = −0.0544 / −0.0569 (upper incisor labial face y ≈ −0.088) |
+
+`anatomy.ANATOMY_LANDMARKS` holds the values measured on the built geometry
+(chin and nose base were moved by 3-4 mm from the first draft of this table
+to get realistic facial thirds).
 
 ## Objects (all in collection `GoreHead`)
 

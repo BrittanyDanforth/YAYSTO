@@ -6,18 +6,38 @@ lining.  No downloaded data of any kind is used.
 
 Technique
 ---------
-Every organic shape is written as a signed distance function (SDF) in numpy
+Every organic shape is a signed distance function (SDF) written in numpy
 (negative inside), in the spirit of Inigo Quilez' SDF modelling: ellipsoids,
-tapered capsules and swept tubes combined with smooth unions/subtractions.
-An SDF is polygonised with a sparse two-level grid and a vectorised
-*surface nets* mesher, cleaned with Blender's voxel remesher and finally every
-vertex is projected back onto the exact iso-surface with a few Newton steps,
-so features smaller than the voxel size (lid margins, lip borders, ear folds)
-survive.  Teeth are small deformed quad spheres instead, one closed island per
-tooth.
+tapered capsules and swept tubes combined with C2 smooth unions/subtractions.
+The face itself is a frontal height field (profile splines + bumps) carved
+out of a head volume.  An SDF is polygonised with a sparse two-level grid and
+a vectorised *surface nets* mesher, cleaned with Blender's voxel remesher,
+and every vertex is then Newton-projected back onto the exact iso-surface,
+so features smaller than the voxel size (lid margins, lip borders, ear folds,
+brain sulci) survive.  Inner layers are derived from the skin SDF by offsets
+and clamps, which makes the nesting (skin > muscle > skull > brain) hold by
+construction; ``check_report`` verifies it on the meshes.
 
 Space: metres, Z up, the face looks toward -Y, origin between the ear canals
 (see CONTRACT.md).  Character's left is +X.
+
+Notes for the other modules
+---------------------------
+* Eyes: object origin = eyeball centre, local -Y = gaze, sclera radius
+  EYE_R = 0.012.  The cornea bulges ~1.3 mm (apex at local y = -0.0133); the
+  limbus (iris edge) is at |local xz| = LIMBUS_R = 0.0059, i.e. 29.4 deg from
+  -Y.  Iris/pupil are for the shader to paint from object coordinates.
+* GH_MouthCavity is a separate object (the lining of the oral cavity).  It
+  shares its border vertices with GH_Skin just inside the lips, so GH_Skin is
+  a manifold with one boundary loop there; skin + lining together are closed.
+* Point attributes: GH_Skin ``gh_lip`` (0..1 vermilion mask), GH_Brain
+  ``gh_sulcus`` (0..1, 1 deep in a sulcus), GH_Teeth_* ``tooth_id`` (int, FDI
+  number; each tooth is its own closed island).
+* GH_Muscle is the whole soft-tissue volume: its outer surface is 3.5 mm
+  under the skin, its inner surface ~1.2 mm off bone, eyes, gums and jaw.
+  Where there is no bone (neck, lips, nose, cheeks, orbits) it is solid.
+* Teeth roots sit inside GH_Gums; the gums' root side is embedded in the
+  tissue behind the mouth lining.  Those are the only intended overlaps.
 
 Run ``python3 anatomy.py`` for test renders and an interpenetration report.
 """
@@ -29,6 +49,7 @@ import time
 import numpy as np
 
 import bpy
+import bmesh  # noqa: E402  (bmesh is only importable once bpy is loaded)
 from mathutils import Matrix, Vector
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
@@ -42,7 +63,20 @@ COLLECTION = "GoreHead"
 EYE_C = np.array([0.032, -0.070, 0.022])
 EYE_R = 0.012
 
-ANATOMY_LANDMARKS = {}  # filled in by _collect_landmarks() after building
+# Design values; build_anatomy() replaces them with values measured on the meshes.
+ANATOMY_LANDMARKS = {
+    "vertex_top": (0.0, 0.005, 0.125), "back_of_head": (0.0, 0.100, 0.030),
+    "glabella": (0.0, -0.093, 0.035), "nasion": (0.0, -0.089, 0.023),
+    "nose_tip": (0.0, -0.111, -0.014), "subnasale": (0.0, -0.097, -0.031),
+    "mouth_center": (0.0, -0.094, -0.055), "lip_gap": 0.0069,
+    "mouth_corner_L": (0.0238, -0.0848, -0.0552), "mouth_width": 0.0476,
+    "pogonion": (0.0, -0.094, -0.092), "chin_bottom": (0.0, -0.080, -0.103),
+    "eye_L": (0.032, -0.070, 0.022), "eye_R": (-0.032, -0.070, 0.022), "eye_radius": 0.012,
+    "ear_canal_L": (0.072, 0.0, 0.0), "ear_canal_R": (-0.072, 0.0, 0.0),
+    "head_half_width": 0.074, "neck_radius": 0.055, "neck_center_y": 0.015,
+    "neck_cut_z": -0.20, "gonion_L": (0.050, -0.004, -0.075),
+    "upper_incisal_edge_z": -0.0544, "lower_incisal_edge_z": -0.0569,
+}
 
 
 # ---------------------------------------------------------------------------
@@ -54,6 +88,12 @@ def smin(a, b, k):
         return np.minimum(a, b)
     h = np.maximum(k - np.abs(a - b), 0.0) / k
     return np.minimum(a, b) - h * h * h * k * (1.0 / 6.0)
+
+
+def smax_k(a, b, k):
+    """Smooth maximum with a per-point blend radius array k (> 0)."""
+    h = np.maximum(k - np.abs(a - b), 0.0) / k
+    return np.maximum(a, b) + h * h * h * k * (1.0 / 6.0)
 
 
 def smax(a, b, k):
@@ -164,6 +204,7 @@ def catmull(points, n=8):
 
 
 def smoothstep(e0, e1, x):
+    """Hermite step from 0 at e0 to 1 at e1 (e0 > e1 gives a falling step)."""
     t = np.clip((x - e0) / (e1 - e0), 0.0, 1.0)
     return t * t * (3.0 - 2.0 * t)
 
@@ -176,6 +217,7 @@ class Region:
         self.hi = np.asarray(hi, float)
 
     def mask(self, x, y, z):
+        """Boolean array: which points lie inside the box."""
         return ((x >= self.lo[0]) & (x <= self.hi[0]) & (y >= self.lo[1]) & (y <= self.hi[1])
                 & (z >= self.lo[2]) & (z <= self.hi[2]))
 
@@ -318,12 +360,14 @@ def mesh_from_arrays(name, verts, faces):
 
 
 def get_verts(me):
+    """Vertex positions of a mesh as an (N, 3) float64 array."""
     v = np.empty(len(me.vertices) * 3, np.float32)
     me.vertices.foreach_get('co', v)
     return v.reshape(-1, 3).astype(np.float64)
 
 
 def set_verts(me, v):
+    """Write (N, 3) vertex positions back into a mesh."""
     me.vertices.foreach_set('co', np.asarray(v, np.float32).ravel())
     me.update()
 
@@ -395,14 +439,7 @@ def laplacian(v, edges, n=None):
 def remove_small_islands(me, keep_frac=0.02):
     """Delete connected pieces with fewer than keep_frac of the largest piece's vertices."""
     v, f = mesh_arrays(me)
-    parent = np.arange(len(v))
-
-    def find(a):
-        while parent[a] != a:
-            parent[a] = parent[parent[a]]
-            a = parent[a]
-        return a
-    # union-find over face corners, vectorised in rounds
+    # connected components by repeated min-label propagation over face edges
     e = np.concatenate([f[:, [i, (i + 1) % f.shape[1]]] for i in range(f.shape[1])])
     lab = np.arange(len(v))
     for _ in range(200):
@@ -415,7 +452,6 @@ def remove_small_islands(me, keep_frac=0.02):
         if np.array_equal(new, lab):
             break
         lab = new
-    del parent, find
     ids, counts = np.unique(lab, return_counts=True)
     keep_ids = ids[counts >= keep_frac * counts.max()]
     keep_v = np.isin(lab, keep_ids)
@@ -539,38 +575,42 @@ def dist2_polyline(a, b, pts):
 FACE_PROFILE = Curve1D([
     (0.130, -0.020), (0.118, -0.050), (0.106, -0.0655), (0.094, -0.0760), (0.082, -0.0835),
     (0.070, -0.0880), (0.058, -0.0908), (0.047, -0.0925), (0.039, -0.0930), (0.032, -0.0919),
-    (0.025, -0.0893), (0.018, -0.0874), (0.008, -0.0868), (-0.004, -0.0875), (-0.014, -0.0895),
-    (-0.024, -0.0932), (-0.032, -0.0956), (-0.042, -0.0960), (-0.052, -0.0950), (-0.062, -0.0938),
-    (-0.070, -0.0922), (-0.077, -0.0897), (-0.084, -0.0904), (-0.092, -0.0933),
-    (-0.099, -0.0918), (-0.105, -0.0872), (-0.111, -0.0780), (-0.118, -0.0640),
-    (-0.128, -0.080), (-0.140, -0.150), (-0.160, -0.260)])
+    (0.025, -0.0893), (0.018, -0.0874), (0.008, -0.0868), (-0.004, -0.0875), (-0.014, -0.0890),
+    (-0.026, -0.0925), (-0.034, -0.0952), (-0.043, -0.0960), (-0.052, -0.0950), (-0.062, -0.0938),
+    (-0.069, -0.0920), (-0.075, -0.0895), (-0.081, -0.0902), (-0.088, -0.0930),
+    (-0.095, -0.0915), (-0.101, -0.0868), (-0.107, -0.0775), (-0.114, -0.0640),
+    (-0.124, -0.080), (-0.136, -0.150), (-0.156, -0.260)])
 # how fast the face recedes sideways: Y += C2 x^2 + C4 x^4
 FACE_C2 = Curve1D([(0.13, 7.5), (0.09, 6.5), (0.06, 5.0), (0.04, 4.2), (0.02, 4.4), (0.00, 5.0),
-                   (-0.02, 6.5), (-0.04, 9.0), (-0.055, 10.5), (-0.07, 11.5), (-0.085, 14.0),
-                   (-0.10, 17.0), (-0.13, 20.0)])
-FACE_C4 = Curve1D([(0.13, 0.0), (0.09, 300.0), (0.06, 900.0), (0.04, 1500.0), (0.02, 1800.0),
-                   (0.0, 1700.0), (-0.02, 1500.0), (-0.05, 1400.0), (-0.08, 1800.0),
-                   (-0.10, 2500.0), (-0.13, 3000.0)])
+                   (-0.02, 6.5), (-0.04, 9.0), (-0.055, 10.5), (-0.068, 11.5), (-0.081, 14.0),
+                   (-0.096, 17.0), (-0.126, 20.0)])
+FACE_C4 = Curve1D([(0.13, 0.0), (0.09, 300.0), (0.06, 800.0), (0.04, 1250.0), (0.02, 1700.0),
+                   (0.0, 1900.0), (-0.02, 1800.0), (-0.05, 1700.0), (-0.076, 1900.0),
+                   (-0.096, 2500.0), (-0.126, 3000.0)])
 # nose ridge: protrusion over the base profile, half width, cross-section exponent
 NOSE_PROJ = Curve1D([(0.030, 0.0), (0.022, 0.0012), (0.014, 0.0050), (0.006, 0.0092),
-                     (-0.002, 0.0138), (-0.007, 0.0172), (-0.011, 0.0190), (-0.014, 0.0188),
-                     (-0.018, 0.0160), (-0.022, 0.0105), (-0.026, 0.0040), (-0.031, 0.0)])
-NOSE_W = Curve1D([(0.030, 0.0085), (0.014, 0.0095), (0.000, 0.0110), (-0.010, 0.0130),
-                  (-0.018, 0.0150), (-0.031, 0.0150)])
-NOSE_P = Curve1D([(0.030, 1.5), (0.012, 1.2), (0.000, 1.0), (-0.012, 0.8), (-0.031, 0.8)])
+                     (-0.002, 0.0138), (-0.008, 0.0175), (-0.012, 0.0192), (-0.015, 0.0190),
+                     (-0.019, 0.0162), (-0.023, 0.0108), (-0.028, 0.0040), (-0.034, 0.0)])
+NOSE_W = Curve1D([(0.030, 0.0085), (0.014, 0.0095), (0.000, 0.0110), (-0.011, 0.0125),
+                  (-0.020, 0.0140), (-0.034, 0.0140)])
+NOSE_P = Curve1D([(0.030, 1.5), (0.012, 1.2), (0.000, 1.0), (-0.013, 0.85), (-0.034, 0.85)])
 # brow ridge height and the height of its crest, along x
-BROW_H = Curve1D([(0.0, 0.0008), (0.012, 0.0020), (0.025, 0.0036), (0.040, 0.0036),
-                  (0.050, 0.0015), (0.060, 0.0)])
+BROW_H = Curve1D([(0.0, 0.0010), (0.012, 0.0026), (0.025, 0.0044), (0.040, 0.0042),
+                  (0.050, 0.0020), (0.060, 0.0)])
 BROW_Z = Curve1D([(0.0, 0.036), (0.030, 0.0390), (0.050, 0.0355), (0.060, 0.034)])
 # face block half width and the jaw's lower border
 FACE_W = Curve1D([(0.115, 0.045), (0.09, 0.058), (0.07, 0.0625), (0.05, 0.0635), (0.03, 0.0630),
-                  (0.015, 0.0625), (0.0, 0.0625), (-0.015, 0.0625), (-0.03, 0.0615),
-                  (-0.05, 0.0590), (-0.07, 0.0545), (-0.085, 0.0470), (-0.10, 0.0370),
-                  (-0.115, 0.028)])
-JAW_Z = Curve1D([(-0.095, -0.1085), (-0.075, -0.1080), (-0.06, -0.1055), (-0.045, -0.1010),
-                 (-0.03, -0.0950), (-0.015, -0.0870), (0.0, -0.0780), (0.012, -0.0700)])
-NASOLABIAL = [(0.0190, -0.0195), (0.0240, -0.0320), (0.0283, -0.0450), (0.0312, -0.0570),
-              (0.0325, -0.0680)]
+                  (0.015, 0.0635), (0.0, 0.0640), (-0.015, 0.0632), (-0.03, 0.0615),
+                  (-0.05, 0.0590), (-0.068, 0.0545), (-0.082, 0.0470), (-0.096, 0.0370),
+                  (-0.111, 0.028)])
+JAW_Z = Curve1D([(-0.095, -0.1045), (-0.075, -0.1040), (-0.06, -0.1015), (-0.045, -0.0970),
+                 (-0.03, -0.0910), (-0.015, -0.0835), (0.0, -0.0760), (0.012, -0.0690)])
+NASOLABIAL = [(0.0185, -0.0225), (0.0235, -0.0340), (0.0280, -0.0460), (0.0310, -0.0575),
+              (0.0322, -0.0680)]
+# alar rim: a tube wrapping the nostril from the tip round to the nostril sill
+ALA_PATH = [(0.0065, -0.1008, -0.0225), (0.0105, -0.0990, -0.0200), (0.0132, -0.0955, -0.0195),
+            (0.0142, -0.0918, -0.0215), (0.0132, -0.0893, -0.0250), (0.0098, -0.0905, -0.0278)]
+ALA_R = [0.0024, 0.0038, 0.0046, 0.0044, 0.0034, 0.0024]
 
 
 def face_height(ax, z, nose=True):
@@ -584,11 +624,14 @@ def face_height(ax, z, nose=True):
     # brow ridge
     Y = Y - BROW_H(ax) * np.exp(-((z - BROW_Z(ax)) / 0.0080) ** 2)
     # orbital hollow, deepest under the brow and beside the nose
-    ex, ez = (ax - 0.0300) / 0.0170, (z - 0.0235) / 0.0125
-    Y = Y + 0.0075 * np.exp(-(ex * ex + ez * ez) ** 1.2)
+    ex, ez = (ax - 0.0300) / 0.0170, (z - 0.0255) / 0.0120
+    Y = Y + 0.0062 * np.exp(-(ex * ex + ez * ez) ** 1.2)
     # malar fullness under the eye and cheek lateral of the nasolabial fold
-    cx, cz = (ax - 0.0380) / 0.0160, (z + 0.0040) / 0.0130
-    Y = Y - 0.0028 * np.exp(-(cx * cx + cz * cz))
+    cx, cz = (ax - 0.0420) / 0.0150, (z + 0.0010) / 0.0120
+    Y = Y - 0.0040 * np.exp(-(cx * cx + cz * cz))
+    # soft hollow under the cheekbone, in front of the masseter
+    cx, cz = (ax - 0.0450) / 0.0110, (z + 0.0380) / 0.0150
+    Y = Y + 0.0016 * np.exp(-(cx * cx + cz * cz))
     cx, cz = (ax - 0.0385) / 0.0120, (z + 0.0330) / 0.0190
     Y = Y - 0.0028 * np.exp(-(cx * cx + cz * cz))
     # soft nasolabial fold
@@ -650,20 +693,21 @@ def head_volume(ax, y, z):
     # face block: rounded box in plan, width varying with height, jaw floor below
     blk = box2(ax, y + 0.055, FACE_W(z), 0.064, 0.030)
     blk = smax(blk, z - 0.115, 0.03)
-    blk = smax(blk, JAW_Z(y) - z, 0.016)
+    blk = smax(blk, JAW_Z(y) - z, 0.019)
     d = smin(d, blk, 0.020)
     # cheekbone (zygomatic body) and arch running back to the ear
-    zyg = sd_ellipsoid(ax, y, z, (0.0500, -0.0560, 0.0020), (0.0120, 0.0190, 0.0110),
+    zyg = sd_ellipsoid(ax, y, z, (0.0525, -0.0555, 0.0025), (0.0130, 0.0200, 0.0120),
                        rot=rot_xyz(0, 0, -38))
-    arch = sd_capsule(ax, y, z, (0.0560, -0.0440, 0.0030), (0.0610, -0.0120, 0.0020), 0.0058, 0.0050)
+    arch = sd_capsule(ax, y, z, (0.0585, -0.0440, 0.0030), (0.0625, -0.0150, 0.0020), 0.0060, 0.0052)
     d = smin(d, smin(zyg, arch, 0.01), 0.012)
     # temple and buccal hollows
     d = smax(d, -sd_ellipsoid(ax, y, z, (0.0720, -0.0480, 0.0400), (0.0090, 0.0220, 0.0200)), 0.016)
     d = smax(d, -sd_ellipsoid(ax, y, z, (0.0660, -0.0440, -0.0380), (0.0080, 0.0180, 0.0150)), 0.020)
     # neck (capped just under the skull so it only shows below the jaw)
     neck = smax(_neck(ax, y, z), z + 0.030, 0.02)
-    d = smin(d, neck, 0.030)
-    scm = sd_capsule(ax, y, z, (0.050, 0.024, -0.040), (0.013, -0.026, -0.195), 0.0075, 0.0070)
+    d = smin(d, neck, 0.036)
+    d = smin(d, sd_ellipsoid(ax, y, z, (0.0500, 0.0180, -0.0400), (0.0120, 0.0220, 0.0260)), 0.020)
+    scm = sd_capsule(ax, y, z, (0.050, 0.024, -0.040), (0.013, -0.026, -0.195), 0.0068, 0.0064)
     d = smin(d, scm, 0.014)
     d = smin(d, sd_ellipsoid(ax, y, z, (0.0, -0.0300, -0.130), (0.0090, 0.0060, 0.0120)), 0.010)
     return d
@@ -671,10 +715,10 @@ def head_volume(ax, y, z):
 
 # Eye opening, in angles around the eyeball centre: u = horizontal angle
 # (positive = lateral), v = elevation.  M = medial canthus, L = lateral canthus.
-LID_UM, LID_VM = -1.12, -0.05
-LID_UL, LID_VL = 1.22, 0.07
+LID_UM, LID_VM = -1.22, -0.05
+LID_UL, LID_VL = 1.18, 0.08
 LID_UP, LID_LO = 0.40, 0.54          # lid arc heights (rad) above/below the canthal line
-LID_R = 0.0147                        # outer radius of the eyelid shell
+LID_R = 0.0151                        # outer radius of the eyelid shell
 CORNEA_R = 0.0075                     # cornea sphere radius
 CORNEA_OFF = 0.00582                  # cornea sphere centre, in front of eye centre
 EYE_GAP = 0.0005                      # clearance between eyeball and lids
@@ -715,37 +759,38 @@ def _eye_region(d, ax, y, z):
     v = np.arctan2(qz, np.sqrt(qx * qx + qy * qy))
     t, st, up, lo = _lid_curves(u)
     rr = np.maximum(r, EYE_R)
-    crease_v = up + 0.36 * st ** 0.6
-    g = np.exp(-(((v - crease_v) * rr) / 0.0009) ** 2) * smoothstep(0.1, 0.45, st)
+    crease_v = up + 0.32 * st ** 0.6
+    g = np.exp(-(((v - crease_v) * rr) / 0.0011) ** 2) * smoothstep(0.1, 0.45, st)
     g2 = np.exp(-(((v - (lo - 0.30 * st ** 0.7)) * rr) / 0.0013) ** 2) * smoothstep(0.2, 0.6, st)
     band = smoothstep(0.024, 0.016, r)
-    d = d + (0.00055 * g + 0.00025 * g2) * band
+    d = d + (0.00085 * g + 0.00030 * g2) * band
     dopen = np.maximum(np.maximum(v - up, lo - v),
                        (np.abs(t - 0.5) - 0.5) * (LID_UL - LID_UM)) * rr
     cut = np.maximum(dopen, r - 0.0195)
-    d = smax(d, -cut, 0.0010)
+    d = smax(d, -cut, 0.0014)
     cav = np.minimum(r - (EYE_R + EYE_GAP),
                      np.sqrt(qx * qx + (qy + CORNEA_OFF) ** 2 + qz * qz) - (CORNEA_R + EYE_GAP))
     return np.maximum(d, -cav)
 
 
 def _nose(d, ax, y, z):
-    """Tip lobule, alae, columella and nostrils on top of the nose ridge."""
-    tip = sd_ellipsoid(ax, y, z, (0.0, -0.1022, -0.0125), (0.0080, 0.0098, 0.0082))
-    colu = sd_capsule(ax, y, z, (0.0, -0.1035, -0.0195), (0.0, -0.0965, -0.0268), 0.0031, 0.0034)
-    ala = sd_ellipsoid(ax, y, z, (0.0125, -0.0925, -0.0180), (0.0056, 0.0090, 0.0065),
-                       rot=rot_xyz(0, 0, 25))
-    d = smin(d, tip, 0.006)
+    """Tip lobule, columella, alar rims and teardrop nostrils on top of the nose ridge."""
+    tip = sd_ellipsoid(ax, y, z, (0.0, -0.1025, -0.0140), (0.0074, 0.0088, 0.0078))
+    colu = sd_capsule(ax, y, z, (0.0, -0.1030, -0.0215), (0.0, -0.0962, -0.0296), 0.0030, 0.0036)
+    d = smin(d, tip, 0.005)
     d = smin(d, colu, 0.004)
-    d = smin(d, ala, 0.0035)
-    nos = sd_ellipsoid(ax, y, z, (0.0060, -0.1000, -0.0208), (0.0024, 0.0050, 0.0032),
-                       rot=rot_xyz(0, 0, -30))
-    nos = smin(nos, sd_capsule(ax, y, z, (0.0062, -0.0995, -0.0200), (0.0075, -0.0940, -0.0120),
-                               0.0020, 0.0016), 0.002)
-    return smax(d, -nos, 0.0012)
+    pts = catmull(ALA_PATH, 4)
+    rad = np.interp(np.linspace(0, 1, len(pts)), np.linspace(0, 1, len(ALA_R)), ALA_R)
+    ala, _ = sd_polyline(ax, y, z, pts, rad)
+    d = smin(d, ala, 0.0028)
+    nos = sd_ellipsoid(ax, y, z, (0.0060, -0.0978, -0.0258), (0.0028, 0.0052, 0.0034),
+                       rot=rot_xyz(10, 0, -25))
+    nos = smin(nos, sd_capsule(ax, y, z, (0.0064, -0.0968, -0.0245), (0.0080, -0.0930, -0.0150),
+                               0.0022, 0.0018), 0.002)
+    return smax(d, -nos, 0.0018)
 
 
-def _lip(ax, y, z, yc0, yc2, zc0, zc2, ra, rb, tilt, half_w=0.0255, taper=2.2, bow=0.0):
+def _lip(ax, y, z, yc0, yc2, zc0, zc2, ra, rb, tilt, half_w=0.0255, taper=1.8, bow=0.0):
     """Lip body: an elliptic cross-section swept along the mouth arc.
 
     The section (radii ra along the tilted axis, rb across it) shrinks to the
@@ -766,24 +811,27 @@ def _lip(ax, y, z, yc0, yc2, zc0, zc2, ra, rb, tilt, half_w=0.0255, taper=2.2, b
 
 def lips_sdf(ax, y, z):
     """Upper and lower lip bodies (vermilion), as two distance fields."""
-    upper = _lip(ax, y, z, -0.0955, 0.0125, -0.0470, -0.0048, 0.0055, 0.0042,
-                 math.radians(30), bow=0.0009)
-    lower = _lip(ax, y, z, -0.0905, 0.0095, -0.0645, 0.0078, 0.0060, 0.0054,
-                 math.radians(-20))
+    upper = _lip(ax, y, z, -0.0951, 0.0125, -0.0470, -0.0048, 0.0050, 0.0039,
+                 math.radians(30), bow=0.0013)
+    lower = _lip(ax, y, z, -0.0899, 0.0092, -0.0643, 0.0078, 0.0058, 0.0046,
+                 math.radians(-32))
     return upper, lower
 
 
 def _mouth(d, ax, y, z):
     """Lips, philtrum, mouth opening and labiomental fold."""
-    col = sd_capsule(ax, y, z, (0.0045, -0.0945, -0.0425), (0.0036, -0.0935, -0.0290), 0.0020)
+    col = sd_capsule(ax, y, z, (0.0046, -0.0945, -0.0425), (0.0036, -0.0935, -0.0315), 0.0020)
     d = smin(d, col, 0.0030)
-    grv = sd_capsule(ax, y, z, (0.0, -0.0995, -0.0420), (0.0, -0.0985, -0.0310), 0.0014)
+    grv = sd_capsule(ax, y, z, (0.0, -0.0995, -0.0420), (0.0, -0.0985, -0.0330), 0.0014)
     d = smax(d, -grv, 0.0025)
     upper, lower = lips_sdf(ax, y, z)
     d = smin(d, upper, 0.0020)
     d = smin(d, lower, 0.0024)
-    lm = sd_capsule(ax, y, z, (0.0, -0.0905, -0.0772), (0.010, -0.0885, -0.0758), 0.0016)
+    lm = sd_capsule(ax, y, z, (0.0, -0.0898, -0.0752), (0.011, -0.0878, -0.0738), 0.0016)
     d = smax(d, -lm, 0.0060)
+    # chin (mental protuberance) as its own soft mound
+    chin = sd_ellipsoid(ax, y, z, (0.0, -0.0820, -0.0895), (0.0165, 0.0110, 0.0125))
+    d = smin(d, chin, 0.008)
     xs = np.clip(ax / 0.0235, 0.0, 1.5)
     zhi = -0.0516 - 0.0032 * xs ** 2
     zlo = -0.0584 + 0.0030 * xs ** 2
@@ -801,34 +849,46 @@ def oral_void(ax, y, z):
     back = sd_box(ax, y, z, (0.0, -0.0500, -0.0565), (0.0315, 0.0240, 0.0170), round_=0.0080)
     v = smin(front, back, 0.010)
     vault = sd_ellipsoid(ax, y, z, (0.0, -0.0520, -0.0440), (0.0160, 0.0280, 0.0085))
-    return smin(v, vault, 0.008)
+    v = smin(v, vault, 0.008)
+    # keep at least 4.5 mm of tissue between the cavity and the facial surface
+    return smax(v, face_sdf(ax, y, z) + 0.0045, 0.002)
+
+
+def _ear_region(d, ax, y, z):
+    """Blend the auricle onto the head, then hollow the concha and the ear canal
+    out of the union (so the head's own surface cannot bulge into the bowl)."""
+    e, hollow = _ear(ax, y, z)
+    d = smin(d, e, 0.0022)
+    return smax(d, -hollow, 0.0015)
 
 
 def _ear(ax, y, z):
-    """Auricle: helix, antihelix with crura, concha, tragus, antitragus, lobe."""
+    """Auricle: helix, antihelix with crura, tragus, antitragus, lobe.
+
+    Returns (ear solid, hollow) where hollow is the concha bowl + ear canal."""
     px, py, pz = ax - EAR_O[0], y - EAR_O[1], z - EAR_O[2]
     s = px * EAR_U[0] + py * EAR_U[1] + pz * EAR_U[2]
     t = px * EAR_V[0] + py * EAR_V[1] + pz * EAR_V[2]
     n = px * EAR_W[0] + py * EAR_W[1] + pz * EAR_W[2]
     outline = smin(ellipse2(s - 0.0115, t - 0.0045, 0.0142, 0.0262),
                    ellipse2(s - 0.0088, t + 0.0200, 0.0085, 0.0095), 0.006)
-    nm = 0.0008 * (s / 0.02)
+    nm = 0.0022 * np.clip(s / 0.024, 0.0, 1.2) ** 2      # plate cups outward toward the rim
     plate = np.maximum(outline + 0.0012, np.abs(n - nm) - 0.0016)
     block = sd_ellipsoid(s, t, n, (0.0065, 0.0005, -0.0045), (0.0100, 0.0125, 0.0070))
     e = smin(plate, block, 0.004)
-    bowl = sd_ellipsoid(s, t, n, (0.0068, 0.0012, 0.0050), (0.0072, 0.0095, 0.0078))
-    e = smax(e, -bowl, 0.0015)
-    hel = catmull([(0.0060, 0.0072), (0.0010, 0.0112), (-0.0022, 0.0185), (0.0012, 0.0268),
+    bowl = sd_ellipsoid(s, t, n, (0.0066, 0.0010, 0.0035), (0.0070, 0.0092, 0.0078))
+    hel = catmull([(0.0085, 0.0062), (0.0030, 0.0098), (-0.0022, 0.0185), (0.0012, 0.0268),
                    (0.0082, 0.0312), (0.0168, 0.0306), (0.0232, 0.0238), (0.0264, 0.0128),
                    (0.0258, 0.0008), (0.0224, -0.0090), (0.0172, -0.0158)], 3)
     k = np.linspace(0, 1, len(hel))
-    hrad = 0.0014 + 0.0014 * smoothstep(0.0, 0.25, k) - 0.0008 * smoothstep(0.75, 1.0, k)
-    hn = 0.0006 + 0.0006 * smoothstep(0.0, 0.3, k)
+    hrad = 0.0008 + 0.0020 * smoothstep(0.0, 0.30, k) - 0.0008 * smoothstep(0.75, 1.0, k)
+    hn = -0.0006 + 0.0012 * smoothstep(0.0, 0.3, k) + 0.0022 * smoothstep(0.35, 0.6, k)
     h, _ = sd_polyline(s, t, n, np.column_stack([hel, hn]), hrad)
     e = smin(e, h, 0.0012)
     ah = catmull([(0.0122, -0.0082), (0.0158, -0.0010), (0.0168, 0.0068), (0.0148, 0.0138),
                   (0.0134, 0.0198), (0.0142, 0.0248)], 4)
-    a1, _ = sd_polyline(s, t, n, np.column_stack([ah, np.full(len(ah), 0.0012)]),
+    ah_n = 0.0014 + 0.0022 * np.clip(ah[:, 0] / 0.024, 0, 1.2) ** 2      # follows the cupped plate
+    a1, _ = sd_polyline(s, t, n, np.column_stack([ah, ah_n]),
                         np.linspace(0.0021, 0.0013, len(ah)))
     ic = catmull([(0.0150, 0.0135), (0.0095, 0.0162), (0.0040, 0.0168)], 4)
     a2, _ = sd_polyline(s, t, n, np.column_stack([ic, np.full(len(ic), 0.0010)]),
@@ -840,10 +900,14 @@ def _ear(ax, y, z):
     e = smin(e, trag, 0.0015)
     e = smin(e, anti, 0.0015)
     e = smin(e, lobe, 0.004)
-    tri = sd_ellipsoid(s, t, n, (0.0092, 0.0205, 0.0030), (0.0030, 0.0035, 0.0022))
-    e = smax(e, -tri, 0.001)
-    canal = sd_capsule(s, t, n, (0.0012, -0.0006, 0.0010), (0.0010, -0.0010, -0.0120), 0.0032, 0.0026)
-    return smax(e, -canal, 0.0012)
+    tri = sd_ellipsoid(s, t, n, (0.0095, 0.0205, 0.0032), (0.0042, 0.0026, 0.0016),
+                       rot=rot_xyz(0, 0, 0))
+    e = smax(e, -tri, 0.0015)
+    canal = sd_capsule(s, t, n, (0.0015, -0.0006, -0.0015), (0.0012, -0.0010, -0.0085), 0.0030, 0.0024)
+    # the crus of the helix must survive the bowl: carve the bowl around it
+    hollow = smax(smin(bowl, canal, 0.002), -(h - 0.0004), 0.001)
+    hollow = smax(hollow, -(trag - 0.0004), 0.001)
+    return e, hollow
 
 
 def skin_sdf(x, y, z, mouth_cavity=True):
@@ -852,15 +916,17 @@ def skin_sdf(x, y, z, mouth_cavity=True):
     With mouth_cavity=False the oral cavity is left filled (used to tell the
     mouth lining apart from the outer skin)."""
     ax = np.abs(x)
-    d = smax(head_volume(ax, y, z), face_sdf(ax, y, z), 0.012)
+    # wider blend at temple height where the face turns into the side of the skull
+    k = 0.020 + 0.016 * smoothstep(-0.010, 0.035, z) * smoothstep(0.100, 0.070, z)
+    d = smax_k(head_volume(ax, y, z), face_sdf(ax, y, z), k)
     d = apply_local(d, ax, y, z, Region((0.0, -0.13, -0.045), (0.035, -0.07, 0.01)),
                     lambda dd, a, b, c: _nose(dd, a, b, c))
-    d = apply_local(d, ax, y, z, Region((0.0, -0.13, -0.090), (0.040, -0.06, -0.022)),
+    d = apply_local(d, ax, y, z, Region((0.0, -0.13, -0.115), (0.045, -0.055, -0.022)),
                     lambda dd, a, b, c: _mouth(dd, a, b, c))
     d = apply_local(d, ax, y, z, Region((0.004, -0.105, -0.010), (0.062, -0.045, 0.055)),
                     lambda dd, a, b, c: _eye_region(dd, a, b, c))
     d = apply_local(d, ax, y, z, Region((0.050, -0.025, -0.045), (0.105, 0.050, 0.050)),
-                    lambda dd, a, b, c: smin(dd, _ear(a, b, c), 0.0022))
+                    lambda dd, a, b, c: _ear_region(dd, a, b, c))
     if mouth_cavity:
         d = apply_local(d, ax, y, z, Region((0.0, -0.10, -0.085), (0.048, -0.015, -0.025)),
                         lambda dd, a, b, c: np.maximum(dd, -oral_void(a, b, c)))
@@ -882,7 +948,6 @@ def build_eye(name, center, collection):
     Rings are concentric around the visual axis (denser toward the cornea) so
     the limbus and the bulge stay round; iris/pupil are left to the shader.
     """
-    import bmesh
     bm = bmesh.new()
     bmesh.ops.create_uvsphere(bm, u_segments=72, v_segments=48, radius=1.0)
     bmesh.ops.rotate(bm, verts=bm.verts, cent=(0, 0, 0), matrix=Matrix.Rotation(math.radians(90), 3, 'X'))
@@ -978,8 +1043,6 @@ class Arch:
             s_out = np.where(m, self.s[i] + h * np.sqrt(L2), s_out)
             n = np.array([d[1], -d[0]]) / np.sqrt(L2)
             q_out = np.where(m, ea * n[0] + eb * n[1], q_out)
-        # beyond the front end (x < 0 is mirrored away) nothing to do; beyond the back
-        # end the offset keeps growing along the tangent, which is what we want
         return s_out, q_out
 
 
@@ -1141,14 +1204,9 @@ class CervicalArch:
         zc = np.interp(s, self.s_c, self.zc)
         D = np.interp(s, self.s_c, self.D)
         # papilla: 0 at each tooth centre, 1 at the contact points
-        edges = np.concatenate([[self.s_c[0] - 0.5 * self.W[0]], self.s_c + 0.5 * self.W])
-        k = np.clip(np.searchsorted(self.s_c, s), 0, len(self.s_c) - 1)
         pap = np.zeros_like(s)
-        for i in range(len(self.s_c)):
-            c, w = self.s_c[i], 0.5 * self.W[i]
-            m = np.abs(s - c) <= w
-            pap = np.where(m, (np.abs(s - c) / w) ** 2.5, pap)
-        del edges, k
+        for c, w in zip(self.s_c, 0.5 * self.W):
+            pap = np.where(np.abs(s - c) <= w, (np.abs(s - c) / w) ** 2.5, pap)
         return zc, D, pap
 
 
@@ -1188,7 +1246,8 @@ def tongue_sdf(x, y, z):
     tip = sd_ellipsoid(ax, y, z, (0.0, -0.0730, -0.0612), (0.0135, 0.0078, 0.0048))
     d = smin(body, tip, 0.008)
     # median sulcus along the dorsum
-    d = d + 0.0007 * np.exp(-(ax / 0.0022) ** 2) * smoothstep(-0.080, -0.068, y) * smoothstep(-0.064, -0.058, z)
+    dorsum = smoothstep(-0.080, -0.068, y) * smoothstep(-0.064, -0.058, z)
+    d = d + 0.0007 * np.exp(-(ax / 0.0022) ** 2) * dorsum
     # stay behind the lower teeth and gums and inside the mouth cavity
     ca = _cerv(False)
     s, q = ca.arch.project(ax, y)
@@ -1204,7 +1263,8 @@ CRANIUM_C = np.array([0.0, 0.001, 0.025])
 CRANIUM_R = np.array([0.0740, 0.0990, 0.1000])   # the skin's cranium ellipsoid
 SCALP = 0.0060         # skin surface -> outer table of the vault
 BONE_T = 0.0065        # vault thickness (outer + inner table)
-BRAIN_GAP = 0.0025     # inner table -> brain surface
+BRAIN_ENV_GAP = 0.0020  # inner table -> gyri crests (the sulci are carved deeper)
+BRAIN_GAP = 0.0019      # safety clamp: nothing of the brain closer than this
 
 
 def _vault(ax, y, z, inset):
@@ -1262,7 +1322,7 @@ STEM_PTS = [(0.0, 0.002, 0.016), (0.0, 0.012, -0.010), (0.0, 0.021, -0.034), (0.
 
 
 def _stem(ax, y, z, grow=0.0):
-    d, _ = sd_polyline(ax, y, z, STEM_PTS, np.array([0.0085, 0.0120, 0.0090, 0.0075]) + grow)
+    d, _ = sd_polyline(ax, y, z, STEM_PTS, np.array([0.0085, 0.0135, 0.0095, 0.0075]) + grow)
     return d
 
 
@@ -1270,7 +1330,10 @@ def cranial_cavity(ax, y, z):
     """The space inside the skull that holds the brain (+ gap), negative inside."""
     c = smax(_vault(ax, y, z, SCALP + BONE_T), bone_face_sdf(ax, y, z) + BONE_T, 0.004)
     c = smax(c, cranial_floor(ax, y, z), 0.012)
-    return smin(c, _stem(ax, y, z, BRAIN_GAP + 0.0005), 0.004)
+    # where the skin dips in (temples) keep 4 mm tissue + 3.5 mm bone above the cavity
+    c = apply_local(c, ax, y, z, Region((0.045, -0.075, -0.02), (0.08, 0.02, 0.075)),
+                    lambda cc, a, b, zz: smax(cc, skin_sdf(a, b, zz) + 0.0080, 0.003))
+    return smin(c, _stem(ax, y, z, BRAIN_GAP + 0.0012), 0.004)
 
 
 def _orbit(ax, y, z):
@@ -1314,8 +1377,11 @@ def skull_envelope(ax, y, z):
     env = smin(env, mast, 0.006)
     nb = sd_capsule(ax, y, z, (0.0, -0.0835, 0.0215), (0.0, -0.0935, 0.0030), 0.0040, 0.0055)
     env = smin(env, nb, 0.004)
-    # whatever was carved above, keep at least 3.5 mm of bone around the brain case
-    return smin(env, cranial_cavity(ax, y, z) - 0.0035, 0.002)
+    # whatever was carved above, keep at least 3.5 mm of bone around the brain case;
+    # not below the skull base, so the foramen magnum stays open (a sealed cavity
+    # would be filled in by the voxel remesher)
+    shell = np.maximum(cranial_cavity(ax, y, z) - 0.0035, -0.033 - z)
+    return smin(env, shell, 0.002)
 
 
 def skull_sdf(x, y, z):
@@ -1326,7 +1392,9 @@ def skull_sdf(x, y, z):
     d = smax(env, -cav, 0.002)
     # openings and air spaces, never closer than 2.5 mm to the brain case
     holes = smin(_orbit(ax, y, z), _nasal(ax, y, z), 0.002)
-    holes = np.minimum(holes, sd_ellipsoid(ax, y, z, (0.0250, -0.0590, -0.0100), (0.0120, 0.0160, 0.0125)))
+    # maxillary sinus: an internal air space kept 2 mm inside the bone surface
+    sinus = sd_ellipsoid(ax, y, z, (0.0250, -0.0580, -0.0100), (0.0115, 0.0150, 0.0120))
+    holes = np.minimum(holes, smax(sinus, env + 0.002, 0.002))
     holes = np.minimum(holes, sd_capsule(ax, y, z, (0.0720, 0.0, 0.0), (0.0540, 0.0, 0.0), 0.0040))
     holes = np.minimum(holes, sd_sphere(ax, y, z, (0.0500, -0.0120, -0.0010), 0.0068))
     holes = smax(holes, -(cav - 0.0025), 0.002)
@@ -1373,7 +1441,7 @@ def jaw_raw(ax, y, z):
     s, q = _JAW_ARCH.project(ax, y)
     s = s - _JAW_ARCH.project(np.array([0.0]), np.array([-0.0835]))[0][0]
     sn = np.clip(s / 0.090, 0.0, 1.0)
-    zbot = -0.1025 + 0.0120 * sn ** 1.4 + 0.0170 * smoothstep(0.70, 1.0, sn)
+    zbot = -0.0985 + 0.0110 * sn ** 1.4 + 0.0150 * smoothstep(0.70, 1.0, sn)
     ztop = -0.0735 - 0.0030 * smoothstep(0.75, 1.0, sn)
     zm, hh = 0.5 * (zbot + ztop), 0.5 * (ztop - zbot)
     th = 0.0060 + 0.0012 * smoothstep(0.3, 0.7, sn) - 0.0020 * smoothstep(0.85, 1.0, sn)
@@ -1391,7 +1459,7 @@ def jaw_raw(ax, y, z):
     ram = smin(smin(plate, cond, 0.004), cor, 0.004)
     d = smin(body, ram, 0.008)
     # chin: mental protuberance
-    return smin(d, sd_ellipsoid(ax, y, z, (0.0, -0.0842, -0.0930), (0.0120, 0.0045, 0.0085)), 0.006)
+    return smin(d, sd_ellipsoid(ax, y, z, (0.0, -0.0835, -0.0890), (0.0120, 0.0045, 0.0085)), 0.006)
 
 
 JAW_BOX = ((-0.065, -0.100, -0.112), (0.065, 0.012, 0.012))
@@ -1473,8 +1541,9 @@ def brain_sdf(x, y, z):
     """Cerebrum (two gyrified hemispheres), cerebellum with folia, brain stem."""
     ax = np.abs(x)
     cav = cranial_cavity(ax, y, z)
-    env = smax(_vault(ax, y, z, SCALP + BONE_T + BRAIN_GAP), bone_face_sdf(ax, y, z) + BONE_T + BRAIN_GAP, 0.004)
-    env = smax(env, cranial_floor(ax, y, z) + BRAIN_GAP, 0.012)
+    env = smax(_vault(ax, y, z, SCALP + BONE_T + BRAIN_ENV_GAP),
+               bone_face_sdf(ax, y, z) + BONE_T + BRAIN_ENV_GAP, 0.004)
+    env = smax(env, cranial_floor(ax, y, z) + BRAIN_ENV_GAP, 0.012)
     # tentorium: cerebrum above, cerebellum below (behind the temporal lobes)
     zt = 0.010 - 0.010 * smoothstep(0.02, 0.09, y)
     behind = smoothstep(TENTORIUM_Y0, TENTORIUM_Y0 + 0.012, y)
@@ -1487,7 +1556,8 @@ def brain_sdf(x, y, z):
     cerebrum = smax(cerebrum, -fis, 0.0030)
     # sylvian fissure (separates the temporal lobe) and central sulcus
     lf, _ = sd_polyline(ax, y, z, LATERAL_FISSURE, [0.0012] * 5)
-    lf2, _ = sd_polyline(ax, y, z, [(p[0] - 0.008, p[1] + 0.001, p[2] + 0.002) for p in LATERAL_FISSURE], [0.0010] * 5)
+    deep = [(p[0] - 0.008, p[1] + 0.001, p[2] + 0.002) for p in LATERAL_FISSURE]   # 8 mm deeper
+    lf2, _ = sd_polyline(ax, y, z, deep, [0.0010] * 5)
     cerebrum = smax(cerebrum, -smin(lf, lf2, 0.004), 0.0022)
     cs, _ = sd_polyline(ax, y, z, CENTRAL_SULCUS, [0.0009] * 5)
     cerebrum = smax(cerebrum, -cs, 0.0022)
@@ -1506,8 +1576,8 @@ def brain_sdf(x, y, z):
     stem = _stem(ax, y, z)
     pons = sd_ellipsoid(ax, y, z, (0.0, 0.004, -0.010), (0.0135, 0.0100, 0.0120))
     d = smin(d, smin(stem, pons, 0.006), 0.005)
-    # always inside the cranial cavity with the full gap
-    return np.maximum(d, cav + BRAIN_GAP)
+    # always inside the cranial cavity with at least the minimum gap
+    return smax(d, cav + BRAIN_GAP, 0.001)
 
 
 BRAIN_BOX = ((-0.070, -0.090, -0.065), (0.070, 0.100, 0.115))
@@ -1527,7 +1597,7 @@ def muscle_sdf(x, y, z):
     env = skull_envelope(ax, y, z)
     orbit = smax(_orbit(ax, y, z), -(cranial_cavity(ax, y, z) - 0.0025), 0.002)
     env = smax(env, -orbit, 0.003)                  # orbital fat fills the orbits
-    hard = np.minimum(env, jaw_raw(ax, y, z))
+    hard = np.minimum(env, jaw_raw(ax, y, z) - 0.0008)
     hard = np.minimum(hard, sd_sphere(ax, y, z, EYE_C, EYE_R + 0.0003))
     hard = np.minimum(hard, _stem(ax, y, z, BRAIN_GAP + 0.0005))
     d = np.maximum(d, -(hard - 0.0012))
@@ -1543,7 +1613,7 @@ MUSCLE_BOX = ((-0.105, -0.125, -0.205), (0.105, 0.115, 0.135))
 # ---------------------------------------------------------------------------
 # grid spacing / voxel size per layer (metres).  Finer = slower.
 RES = {
-    "skin": 0.0012, "muscle": 0.0019, "skull": 0.0013, "jaw": 0.0010,
+    "skin": 0.0012, "muscle": 0.0019, "skull": 0.0014, "jaw": 0.0010,
     "brain": 0.00095, "gums": 0.0007, "tongue": 0.0007,
 }
 
@@ -1601,10 +1671,10 @@ def _collect_landmarks(objs):
     front = v[np.abs(v[:, 0]) < 0.004]
     tip = front[np.argmin(front[:, 1])]
     L["nose_tip"] = tuple(round(float(c), 4) for c in tip)
-    L["subnasale"] = _ray_hit(skin_sdf, (0.0, -0.20, -0.027), (0.0, 0.0, -0.027))
-    up = _ray_hit(skin_sdf, (0.0, -0.093, -0.056), (0.0, -0.093, -0.030))
-    lo = _ray_hit(skin_sdf, (0.0, -0.093, -0.056), (0.0, -0.093, -0.080))
-    L["mouth_center"] = (0.0, -0.093, round(0.5 * (up[2] + lo[2]), 4))
+    L["subnasale"] = _ray_hit(skin_sdf, (0.0, -0.20, -0.031), (0.0, 0.0, -0.031))
+    up = _ray_hit(skin_sdf, (0.0, -0.094, -0.056), (0.0, -0.094, -0.030))
+    lo = _ray_hit(skin_sdf, (0.0, -0.094, -0.056), (0.0, -0.094, -0.080))
+    L["mouth_center"] = (0.0, -0.094, round(0.5 * (up[2] + lo[2]), 4))
     L["lip_gap"] = round(up[2] - lo[2], 4)
     L["mouth_corner_L"] = (0.0238, -0.0848, -0.0552)
     L["mouth_width"] = 2 * 0.0238
@@ -1616,7 +1686,7 @@ def _collect_landmarks(objs):
     L["eye_radius"] = EYE_R
     L["ear_canal_L"] = (0.072, 0.0, 0.0)
     L["ear_canal_R"] = (-0.072, 0.0, 0.0)
-    side = v[(np.abs(v[:, 1]) < 0.06) & (v[:, 2] > 0.035) & (v[:, 2] < 0.10)]
+    side = v[(np.abs(v[:, 1]) < 0.06) & (v[:, 2] > 0.045) & (v[:, 2] < 0.10)]   # above the ears
     L["head_half_width"] = round(float(np.abs(side[:, 0]).max()), 4)
     L["neck_radius"] = 0.055
     L["neck_center_y"] = 0.015
@@ -1650,7 +1720,8 @@ def build_anatomy():
                                              voxel=RES["skin"], project=2, collection=col))
     c = _face_centres(skin.data)
     closed = skin_sdf(c[:, 0], c[:, 1], c[:, 2], mouth_cavity=False)
-    objs["GH_MouthCavity"] = _split_faces(skin, closed < -0.0006, "GH_MouthCavity", col)
+    in_mouth = Region((-0.05, -0.105, -0.09), (0.05, -0.01, -0.02)).mask(c[:, 0], c[:, 1], c[:, 2])
+    objs["GH_MouthCavity"] = _split_faces(skin, (closed < -0.0006) & in_mouth, "GH_MouthCavity", col)
     v = get_verts(skin.data)
     up, lo = lips_sdf(np.abs(v[:, 0]), v[:, 1], v[:, 2])
     _point_attr(skin, "gh_lip", smoothstep(0.0016, 0.0003, np.minimum(up, lo)))
@@ -1691,7 +1762,8 @@ def build_anatomy():
 # ---------------------------------------------------------------------------
 def _principled(name, color, rough=0.5, sss=0.0, sss_radius=(0.004, 0.0015, 0.001), coat=0.0):
     m = bpy.data.materials.get(name) or bpy.data.materials.new(name)
-    m.use_nodes = True
+    if not m.use_nodes:
+        m.use_nodes = True
     b = m.node_tree.nodes.get("Principled BSDF")
     b.inputs["Base Color"].default_value = (*color, 1.0)
     b.inputs["Roughness"].default_value = rough
@@ -1723,22 +1795,35 @@ def _eye_lookdev():
     el[1].position, el[1].color = 0.872, (0.16, 0.11, 0.07, 1)
     el.new(0.960).color = (0.22, 0.15, 0.09, 1)
     el.new(0.975).color = (0.005, 0.005, 0.005, 1)
+    # inside the globe (only seen on cut faces): milky vitreous instead of the iris
+    ln = nt.nodes.new("ShaderNodeVectorMath")
+    ln.operation = 'LENGTH'
+    inner = nt.nodes.new("ShaderNodeMath")
+    inner.operation = 'LESS_THAN'
+    inner.inputs[1].default_value = EYE_R * 0.97
+    mix = nt.nodes.new("ShaderNodeMix")
+    mix.data_type = 'RGBA'
+    mix.inputs["B"].default_value = (0.75, 0.72, 0.70, 1)
     nt.links.new(tc.outputs["Object"], nm.inputs[0])
+    nt.links.new(tc.outputs["Object"], ln.inputs[0])
+    nt.links.new(ln.outputs["Value"], inner.inputs[0])
     nt.links.new(nm.outputs[0], sp.inputs[0])
     nt.links.new(sp.outputs["Y"], neg.inputs[0])
     nt.links.new(neg.outputs[0], ramp.inputs[0])
-    nt.links.new(ramp.outputs[0], b.inputs["Base Color"])
+    nt.links.new(ramp.outputs[0], mix.inputs["A"])
+    nt.links.new(inner.outputs[0], mix.inputs["Factor"])
+    nt.links.new(mix.outputs["Result"], b.inputs["Base Color"])
     return m
 
 
 def lookdev_materials(objs):
     """Simple temporary materials so the test renders read clearly."""
     mats = {
-        "GH_Skin": _principled("LD_Skin", (0.62, 0.42, 0.34), 0.45, sss=0.15),
+        "GH_Skin": _principled("LD_Skin", (0.50, 0.31, 0.23), 0.42, sss=0.15),
         "GH_Muscle": _principled("LD_Muscle", (0.45, 0.07, 0.06), 0.4),
-        "GH_Skull": _principled("LD_Bone", (0.78, 0.72, 0.60), 0.55),
-        "GH_Jaw": _principled("LD_Bone", (0.78, 0.72, 0.60), 0.55),
-        "GH_Brain": _principled("LD_Brain", (0.80, 0.52, 0.52), 0.35, sss=0.2),
+        "GH_Skull": _principled("LD_Bone", (0.80, 0.72, 0.52), 0.55),
+        "GH_Jaw": _principled("LD_Bone", (0.80, 0.72, 0.52), 0.55),
+        "GH_Brain": _principled("LD_Brain", (0.74, 0.42, 0.44), 0.35, sss=0.2),
         "GH_Eye_L": _eye_lookdev(), "GH_Eye_R": _eye_lookdev(),
         "GH_Teeth_Upper": _principled("LD_Teeth", (0.86, 0.82, 0.70), 0.25),
         "GH_Teeth_Lower": _principled("LD_Teeth", (0.86, 0.82, 0.70), 0.25),
@@ -1752,8 +1837,8 @@ def lookdev_materials(objs):
     attr.attribute_name = "gh_lip"
     mix = nt.nodes.new("ShaderNodeMix")
     mix.data_type = 'RGBA'
-    mix.inputs["A"].default_value = (0.62, 0.42, 0.34, 1)
-    mix.inputs["B"].default_value = (0.55, 0.25, 0.24, 1)
+    mix.inputs["A"].default_value = (0.50, 0.31, 0.23, 1)
+    mix.inputs["B"].default_value = (0.42, 0.17, 0.16, 1)
     nt.links.new(attr.outputs["Fac"], mix.inputs["Factor"])
     nt.links.new(mix.outputs["Result"], nt.nodes["Principled BSDF"].inputs["Base Color"])
     for name, o in objs.items():
@@ -1790,8 +1875,27 @@ def _min_gap(src, dst_bvh, stride=1):
     return best, where
 
 
+def mesh_quality(obj):
+    """(verts, faces, boundary edges, non-manifold edges) of an object's mesh."""
+    me = obj.data
+    e = np.empty(len(me.loops), np.int32)
+    me.loops.foreach_get("edge_index", e)
+    per_edge = np.bincount(e, minlength=len(me.edges))
+    return len(me.vertices), len(me.polygons), int((per_edge == 1).sum()), int((per_edge > 2).sum())
+
+
 def check_report(objs):
-    """Interpenetration tests between layers: triangle overlaps and minimum gaps."""
+    """Mesh quality plus interpenetration tests between layers (overlaps, minimum gaps)."""
+    print("\nMesh quality (boundary edges are expected only where skin and mouth lining meet)")
+    for k, o in objs.items():
+        nv, nf, nb, nm = mesh_quality(o)
+        print(f"  {k:15s} verts={nv:7d} faces={nf:7d} boundary={nb:5d} non-manifold={nm}")
+    sv = get_verts(objs["GH_Skull"].data)
+    inner = int((np.abs(cranial_cavity(np.abs(sv[:, 0]), sv[:, 1], sv[:, 2])) < 0.001).sum())
+    print(f"  GH_Skull inner table (cranial cavity wall) vertices: {inner}  {'OK' if inner else 'MISSING'}")
+    mv = get_verts(objs["GH_Muscle"].data)
+    under = int((np.abs(skull_envelope(np.abs(mv[:, 0]), mv[:, 1], mv[:, 2])) < 0.0025).sum())
+    print(f"  GH_Muscle inner surface (lying on the bone) vertices: {under}  {'OK' if under else 'MISSING'}")
     trees = {k: _bvh(o) for k, o in objs.items()}
     pairs = [
         ("GH_Brain", "GH_Skull"), ("GH_Skull", "GH_Muscle"), ("GH_Muscle", "GH_Skin"),
@@ -1813,9 +1917,14 @@ def check_report(objs):
         ok = n == 0
         ok_all &= ok
         w = "" if where is None else f"  at ({where.x:+.3f},{where.y:+.3f},{where.z:+.3f})"
-        print(f"  {'OK  ' if ok else 'FAIL'} {a:15s} vs {b:15s} overlaps={n:6d}  min gap={gap * 1000:6.2f} mm{w}")
-    # brain sits inside the skull cavity with the intended gap
-    print(f"  brain -> skull gap (all verts): {_min_gap(objs['GH_Brain'], trees['GH_Skull'])[0] * 1000:.2f} mm")
+        tag = "OK  " if ok else "FAIL"
+        print(f"  {tag} {a:15s} vs {b:15s} overlaps={n:6d}  min gap={gap * 1000:6.2f} mm{w}")
+    # brain sits inside the skull cavity with the intended gap (gyri crests are the
+    # closest points; sulci and the medial surfaces are naturally further away)
+    t = trees["GH_Skull"]
+    d = np.array([t.find_nearest(v.co)[3] for v in objs["GH_Brain"].data.vertices]) * 1000
+    p = np.percentile(d, [0, 1, 5])
+    print(f"  brain -> skull gap: min {p[0]:.2f} mm, 1% {p[1]:.2f} mm, 5% {p[2]:.2f} mm")
     # teeth crowns behind the lips: the most anterior upper tooth point vs skin front
     tv = np.array([objs["GH_Teeth_Upper"].matrix_world @ v.co for v in objs["GH_Teeth_Upper"].data.vertices])
     print(f"  most anterior tooth point y = {tv[:, 1].min():.4f} (upper lip front ≈ -0.101)")
@@ -1825,7 +1934,6 @@ def check_report(objs):
 
 def _cutaway(objs, x_hi=0.030, x_lo=0.004, z_step=-0.035):
     """Cut away x > x_hi (and x > x_lo below z_step) with staggered caps per layer."""
-    import bmesh
     # the skin is open at the mouth; rejoin it with the lining so it is closed
     skin, cav = objs["GH_Skin"], objs["GH_MouthCavity"]
     bm = bmesh.new()
@@ -1845,20 +1953,23 @@ def _cutaway(objs, x_hi=0.030, x_lo=0.004, z_step=-0.035):
     obs = dict(objs)
     obs["GH_Skin_cut"] = joined
     for name, lvl in layers.items():
+        # an L-shaped prism (profile in x/z, extruded along y): removes x > x_hi
+        # everywhere and x > x_lo below z_step; inner layers are cut slightly
+        # further out so their caps sit in front of the outer layers' caps
         off = 0.0006 * lvl
-        verts = []
-        faces = []
-        for (xa, za, zb) in ((x_hi + off, -1.0, 1.0), (x_lo + off, -1.0, z_step)):
-            base = len(verts)
-            verts += [(xa, -1, za), (1, -1, za), (1, 1, za), (xa, 1, za),
-                      (xa, -1, zb), (1, -1, zb), (1, 1, zb), (xa, 1, zb)]
-            faces += [tuple(base + i for i in f) for f in
-                      ((0, 3, 2, 1), (4, 5, 6, 7), (0, 1, 5, 4), (1, 2, 6, 5), (2, 3, 7, 6), (3, 0, 4, 7))]
+        prof = [(x_lo + off, -1.0), (1.0, -1.0), (1.0, 1.0), (x_hi + off, 1.0),
+                (x_hi + off, z_step), (x_lo + off, z_step)]
+        n = len(prof)
+        verts = [(px, -1.0, pz) for px, pz in prof] + [(px, 1.0, pz) for px, pz in prof]
+        faces = [tuple(range(n)), tuple(range(2 * n - 1, n - 1, -1))]
+        faces += [(i, (i + 1) % n, n + (i + 1) % n, n + i)[::-1] for i in range(n)]
         cm = bpy.data.meshes.new(f"cut_{name}")
         cm.from_pydata(verts, [], faces)
+        cm.validate()
         cutter = bpy.data.objects.new(f"cut_{name}", cm)
         ghc.get_collection("Stage").objects.link(cutter)
         cutter.hide_render = True
+        cutter.hide_viewport = True
         mod = obs[name].modifiers.new("cutaway", 'BOOLEAN')
         mod.operation = 'DIFFERENCE'
         mod.solver = 'MANIFOLD'
@@ -1867,6 +1978,7 @@ def _cutaway(objs, x_hi=0.030, x_lo=0.004, z_step=-0.035):
 
 def _render_tests(objs):
     out = ghc.RENDER_DIR
+    bpy.context.scene.view_settings.exposure = -0.4
     ghc.render_views("anatomy", ("front", "three_q", "side"), out, samples=40, res=(640, 640))
     _cutaway(objs)
     cam = ghc.add_camera("GH_Cam_cutaway", (0.60, -0.42, 0.06), (0.0, -0.025, -0.01), 85.0)
