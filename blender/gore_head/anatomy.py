@@ -408,3 +408,279 @@ def mesh_sdf(name, fn, lo, hi, h, voxel=None, project=2, relax=0, collection=Non
     me.shade_smooth()
     obj["gh_build_seconds"] = round(time.time() - t0, 2)
     return obj
+
+
+def ellipse2(a, b, ra, rb):
+    """2D ellipse distance approximation (IQ bound) for arrays a, b."""
+    k0 = np.sqrt((a / ra) ** 2 + (b / rb) ** 2)
+    k1 = np.sqrt((a / ra ** 2) ** 2 + (b / rb ** 2) ** 2) + 1e-12
+    return k0 * (k0 - 1.0) / k1
+
+
+def extrude(d2, dz, half, rnd=0.0):
+    """Extrude a 2D distance d2 along an axis with half height `half` and rounding."""
+    wx = d2 + rnd
+    wy = np.abs(dz) - half + rnd
+    return (np.minimum(np.maximum(wx, wy), 0.0)
+            + np.sqrt(np.maximum(wx, 0) ** 2 + np.maximum(wy, 0) ** 2) - rnd)
+
+
+# ---------------------------------------------------------------------------
+# Skin
+# ---------------------------------------------------------------------------
+# Eye opening, in angles around the eyeball centre: u = horizontal angle
+# (positive = lateral), v = elevation.  M = medial canthus, L = lateral canthus.
+LID_UM, LID_VM = -1.12, -0.05
+LID_UL, LID_VL = 1.22, 0.07
+LID_UP, LID_LO = 0.47, 0.54          # lid arc heights (rad) above/below the canthal line
+LID_R = 0.0148                        # outer radius of the eyelid shell
+CORNEA_R = 0.0075                     # cornea sphere radius
+CORNEA_OFF = 0.00582                  # cornea sphere centre, in front of eye centre
+EYE_GAP = 0.0005                      # clearance between eyeball and lids
+
+# Ear frame: origin near the concha, u = backward along the ear, v = up, w = out
+EAR_O = np.array([0.0725, 0.0015, 0.0010])
+
+
+def _ear_frame(protrude=24.0, tilt=12.0):
+    ph, ta = math.radians(protrude), math.radians(tilt)
+    u = np.array([math.sin(ph), math.cos(ph), 0.0])
+    v0 = np.array([0.0, math.sin(ta), math.cos(ta)])
+    v = v0 - (v0 @ u) * u
+    v /= np.linalg.norm(v)
+    w = np.cross(u, v)
+    return u, v, w
+
+
+EAR_U, EAR_V, EAR_W = _ear_frame()
+
+
+def _lid_curves(u):
+    """Upper and lower lid margin elevations for horizontal eye angle u."""
+    t = (u - LID_UM) / (LID_UL - LID_UM)
+    base = LID_VM + (LID_VL - LID_VM) * t
+    st = np.sin(np.pi * np.clip(t, 0.0, 1.0))
+    # upper lid peaks slightly medial, lower lid slightly lateral
+    up = base + LID_UP * np.clip(st, 0, 1) ** 0.75 * (1.0 + 0.10 * (0.5 - t))
+    lo = base - LID_LO * np.clip(st, 0, 1) ** 1.05 * (1.0 - 0.12 * (0.5 - t))
+    return t, st, up, lo
+
+
+def _eye_region(d, ax, y, z):
+    """Orbit, eyelids, lid opening, lid crease and eyeball cavity."""
+    qx, qy, qz = ax - EYE_C[0], y - EYE_C[1], z - EYE_C[2]
+    r = np.sqrt(qx * qx + qy * qy + qz * qz)
+    # eyelid shell hugging the globe
+    d = smin(d, r - LID_R, 0.0045)
+    u = np.arctan2(qx, -qy)
+    v = np.arctan2(qz, np.sqrt(qx * qx + qy * qy))
+    t, st, up, lo = _lid_curves(u)
+    rr = np.maximum(r, EYE_R)
+    # upper lid crease (supratarsal fold) and a faint lower lid fold
+    crease_v = up + 0.36 * st ** 0.6
+    g = np.exp(-(((v - crease_v) * rr) / 0.0009) ** 2) * smoothstep(0.1, 0.45, st)
+    g2 = np.exp(-(((v - (lo - 0.30 * st ** 0.7)) * rr) / 0.0013) ** 2) * smoothstep(0.2, 0.6, st)
+    band = smoothstep(0.024, 0.016, r)
+    d = d + (0.00055 * g + 0.00025 * g2) * band
+    # palpebral opening: a cone around the eye centre, limited in radius
+    dopen = np.maximum(np.maximum(v - up, lo - v),
+                       (np.abs(t - 0.5) - 0.5) * (LID_UL - LID_UM)) * rr
+    cut = np.maximum(dopen, r - 0.0195)
+    d = smax(d, -cut, 0.0010)
+    # eyeball + cornea cavity (keeps the lids EYE_GAP off the eye)
+    cav = np.minimum(r - (EYE_R + EYE_GAP),
+                     np.sqrt(qx * qx + (qy + CORNEA_OFF) ** 2 + qz * qz) - (CORNEA_R + EYE_GAP))
+    d = np.maximum(d, -cav)
+    return d
+
+
+def _nose(d, ax, y, z):
+    """Nasal dorsum, tip, alae, columella and nostrils."""
+    body = sd_ellipsoid(ax, y, z, (0.0, -0.0905, -0.002), (0.0095, 0.0115, 0.026),
+                        rot=rot_xyz(-24, 0, 0))
+    dors = sd_capsule(ax, y, z, (0.0, -0.0858, 0.021), (0.0, -0.1047, -0.0045), 0.0046, 0.0058)
+    tip = sd_ellipsoid(ax, y, z, (0.0, -0.1035, -0.0125), (0.0090, 0.0085, 0.0082))
+    dome = sd_sphere(ax, y, z, (0.0036, -0.1063, -0.0112), 0.0050)
+    colu = sd_capsule(ax, y, z, (0.0, -0.1040, -0.0195), (0.0, -0.0968, -0.0262), 0.0030, 0.0034)
+    ala = sd_ellipsoid(ax, y, z, (0.0138, -0.0922, -0.0183), (0.0072, 0.0092, 0.0066),
+                       rot=rot_xyz(0, 0, 22))
+    n = smin(body, dors, 0.006)
+    n = smin(n, tip, 0.006)
+    n = smin(n, dome, 0.003)
+    n = smin(n, colu, 0.003)
+    n = smin(n, ala, 0.0025)
+    d = smin(d, n, 0.0035)
+    # nostrils: oval openings on the underside running up into the nose
+    nos = sd_ellipsoid(ax, y, z, (0.0063, -0.0990, -0.0228), (0.0031, 0.0058, 0.0040),
+                       rot=rot_xyz(12, 0, -20))
+    nos = smin(nos, sd_capsule(ax, y, z, (0.0065, -0.0985, -0.021), (0.0085, -0.0915, -0.009),
+                               0.0027, 0.0020), 0.002)
+    d = smax(d, -nos, 0.0012)
+    return d
+
+
+def _lip_tube(ax, y, z, yc0, yc2, zc0, zc2, r0, rexp=0.7, half_w=0.0255, n=15):
+    """Lip as a tube along the mouth arc; radius tapers to the corners."""
+    s = np.linspace(0.0, 1.0, n)
+    pts = np.stack([half_w * s, yc0 + yc2 * s ** 2, zc0 + zc2 * s ** 2], 1)
+    rad = 0.0010 + r0 * (1.0 - s ** 2) ** rexp
+    d, _ = sd_polyline(ax, y, z, pts, rad)
+    return d
+
+
+def _mouth(d, ax, y, z):
+    """Lips, philtrum, mouth opening, nasolabial and labiomental folds."""
+    mound = sd_ellipsoid(ax, y, z, (0.0, -0.0790, -0.0505), (0.030, 0.0185, 0.026))
+    d = smin(d, mound, 0.012)
+    # cheek fat lateral of the nasolabial fold
+    cheek = sd_ellipsoid(ax, y, z, (0.037, -0.0735, -0.029), (0.013, 0.0120, 0.021),
+                         rot=rot_xyz(0, 0, 20))
+    d = smin(d, cheek, 0.009)
+    fold, _ = sd_polyline(ax, y, z, [(0.0195, -0.0890, -0.0205), (0.0245, -0.0878, -0.0330),
+                                     (0.0285, -0.0850, -0.0460), (0.0312, -0.0808, -0.0580),
+                                     (0.0322, -0.0765, -0.0680)],
+                          [0.0010, 0.0013, 0.0013, 0.0011, 0.0006])
+    d = smax(d, -fold, 0.0035)
+    # philtral columns and groove
+    col = sd_capsule(ax, y, z, (0.0043, -0.0985, -0.0433), (0.0034, -0.0968, -0.0290), 0.0013)
+    d = smin(d, col, 0.0022)
+    grv = sd_capsule(ax, y, z, (0.0, -0.0998, -0.0425), (0.0, -0.0985, -0.0305), 0.0016)
+    d = smax(d, -grv, 0.0018)
+    upper = _lip_tube(ax, y, z, -0.0962, 0.0122, -0.0467, -0.0045, 0.0038)
+    lower = _lip_tube(ax, y, z, -0.0914, 0.0096, -0.0645, 0.0075, 0.0048)
+    d = smin(d, upper, 0.0028)
+    d = smin(d, lower, 0.0030)
+    # labiomental fold under the lower lip
+    lm = sd_capsule(ax, y, z, (0.0, -0.0905, -0.0765), (0.013, -0.0870, -0.0740), 0.0012)
+    d = smax(d, -lm, 0.0045)
+    # mouth slit between the lips (lens shaped, closing at the corners)
+    xs = np.clip(ax / 0.0250, 0.0, 1.5)
+    zhi = -0.0516 - 0.0030 * xs ** 2
+    zlo = -0.0584 + 0.0028 * xs ** 2
+    slot = np.maximum(np.maximum(z - zhi, zlo - z), np.maximum(ax - 0.0250, y + 0.070))
+    slot = np.maximum(slot, -0.12 - y)
+    d = smax(d, -slot, 0.0014)
+    return d
+
+
+def oral_void(ax, y, z):
+    """The mouth cavity (vestibule + oral cavity proper), negative inside."""
+    front = extrude(ellipse2(ax, y + 0.0700, 0.0265, 0.0205), z + 0.0565, 0.0150, 0.0060)
+    back = sd_box(ax, y, z, (0.0, -0.0500, -0.0565), (0.0315, 0.0240, 0.0150), round_=0.0080)
+    v = smin(front, back, 0.010)
+    vault = sd_ellipsoid(ax, y, z, (0.0, -0.0520, -0.0440), (0.0160, 0.0280, 0.0085))
+    return smin(v, vault, 0.008)
+
+
+def _ear(ax, y, z):
+    """Auricle: helix, antihelix with crura, concha, tragus, antitragus, lobe."""
+    px, py, pz = ax - EAR_O[0], y - EAR_O[1], z - EAR_O[2]
+    s = px * EAR_U[0] + py * EAR_U[1] + pz * EAR_U[2]
+    t = px * EAR_V[0] + py * EAR_V[1] + pz * EAR_V[2]
+    n = px * EAR_W[0] + py * EAR_W[1] + pz * EAR_W[2]
+    zero = np.zeros_like(s)
+
+    def P(pts, nz):
+        return [(a, b, nz) for a, b in pts]
+
+    # cartilage plate following the ear outline
+    outline = smin(ellipse2(s - 0.0115, t - 0.0045, 0.0142, 0.0262),
+                   ellipse2(s - 0.0088, t + 0.0200, 0.0085, 0.0095), 0.006)
+    nm = 0.0008 * (s / 0.02)  # plate slightly cupped outward toward the back
+    plate = np.maximum(outline + 0.0012, np.abs(n - nm) - 0.0016)
+    block = sd_ellipsoid(s, t, n, (0.0065, 0.0005, -0.0045), (0.0100, 0.0125, 0.0070))
+    e = smin(plate, block, 0.004)
+    # concha bowl
+    bowl = sd_ellipsoid(s, t, n, (0.0068, 0.0012, 0.0050), (0.0072, 0.0095, 0.0078))
+    e = smax(e, -bowl, 0.0015)
+    # helix rim (starts as the crus inside the concha)
+    hel = catmull([(0.0060, 0.0072), (0.0010, 0.0112), (-0.0022, 0.0185), (0.0012, 0.0268),
+                   (0.0082, 0.0312), (0.0168, 0.0306), (0.0232, 0.0238), (0.0264, 0.0128),
+                   (0.0258, 0.0008), (0.0224, -0.0090), (0.0172, -0.0158)], 5)
+    k = np.linspace(0, 1, len(hel))
+    hrad = 0.0014 + 0.0014 * smoothstep(0.0, 0.25, k) - 0.0008 * smoothstep(0.75, 1.0, k)
+    hn = 0.0006 + 0.0006 * smoothstep(0.0, 0.3, k)
+    hel3 = np.column_stack([hel, hn])
+    h, _ = sd_polyline(s, t, n, hel3, hrad)
+    e = smin(e, h, 0.0012)
+    # antihelix with superior and inferior crura
+    ah = catmull([(0.0122, -0.0082), (0.0158, -0.0010), (0.0168, 0.0068), (0.0148, 0.0138),
+                  (0.0134, 0.0198), (0.0142, 0.0248)], 4)
+    ah3 = np.column_stack([ah, np.full(len(ah), 0.0012)])
+    a1, _ = sd_polyline(s, t, n, ah3, np.linspace(0.0021, 0.0013, len(ah)))
+    ic = catmull([(0.0150, 0.0135), (0.0095, 0.0162), (0.0040, 0.0168)], 4)
+    ic3 = np.column_stack([ic, np.full(len(ic), 0.0010)])
+    a2, _ = sd_polyline(s, t, n, ic3, np.linspace(0.0016, 0.0010, len(ic)))
+    e = smin(e, smin(a1, a2, 0.001), 0.0014)
+    # tragus, antitragus, lobe
+    trag = sd_ellipsoid(s, t, n, (-0.0030, -0.0012, 0.0006), (0.0036, 0.0048, 0.0034))
+    anti = sd_ellipsoid(s, t, n, (0.0108, -0.0092, 0.0010), (0.0034, 0.0027, 0.0026))
+    lobe = sd_ellipsoid(s, t, n, (0.0088, -0.0205, 0.0002), (0.0082, 0.0090, 0.0030))
+    e = smin(e, trag, 0.0015)
+    e = smin(e, anti, 0.0015)
+    e = smin(e, lobe, 0.004)
+    # triangular fossa and scapha get a touch deeper
+    tri = sd_ellipsoid(s, t, n, (0.0092, 0.0205, 0.0030), (0.0030, 0.0035, 0.0022))
+    e = smax(e, -tri, 0.001)
+    # ear canal
+    canal = sd_capsule(s, t, n, (0.0012, -0.0006, 0.0010), (0.0010, -0.0010, -0.0120), 0.0032, 0.0026)
+    e = smax(e, -canal, 0.0012)
+    del zero
+    return e
+
+
+def skin_sdf(x, y, z):
+    """Signed distance to the outer skin (head + neck), negative inside."""
+    ax = np.abs(x)
+    # cranium + fuller, upright forehead
+    d = sd_ellipsoid(ax, y, z, (0.0, 0.004, 0.030), (0.0740, 0.0970, 0.0950))
+    d = smin(d, sd_ellipsoid(ax, y, z, (0.0, -0.040, 0.060), (0.0570, 0.0500, 0.0530)), 0.02)
+    # temples: slight hollow in front of the temporalis
+    d = smax(d, -sd_ellipsoid(ax, y, z, (0.0700, -0.058, 0.030), (0.0100, 0.0180, 0.0180)), 0.012)
+    # midface, cheekbones, jaw, chin
+    face = sd_ellipsoid(ax, y, z, (0.0, -0.050, -0.018), (0.0540, 0.0440, 0.0460))
+    d = smin(d, face, 0.025)
+    cb = sd_ellipsoid(ax, y, z, (0.0470, -0.0620, 0.0000), (0.0200, 0.0180, 0.0135),
+                      rot=rot_xyz(0, 0, -25))
+    d = smin(d, cb, 0.012)
+    jfill = sd_ellipsoid(ax, y, z, (0.0, -0.040, -0.062), (0.0470, 0.0480, 0.0400))
+    d = smin(d, jfill, 0.02)
+    jaw, _ = sd_polyline(ax, y, z, [(0.012, -0.0780, -0.0970), (0.030, -0.0600, -0.0920),
+                                    (0.046, -0.0300, -0.0830), (0.0520, -0.0080, -0.0700),
+                                    (0.0560, -0.0040, -0.0450), (0.0600, -0.0040, -0.0200)],
+                         [0.011, 0.011, 0.011, 0.010, 0.011, 0.011])
+    d = smin(d, jaw, 0.012)
+    chin = sd_ellipsoid(ax, y, z, (0.0, -0.0790, -0.0930), (0.0190, 0.0135, 0.0150))
+    d = smin(d, chin, 0.012)
+    # neck, sternocleidomastoids, larynx
+    ny = (y - 0.016) * (0.055 / 0.050)
+    neck = sd_capsule(ax, ny, z, (0.0, 0.004, -0.26), (0.0, -0.004, -0.060), 0.055)
+    d = smin(d, neck, 0.02)
+    scm = sd_capsule(ax, y, z, (0.052, 0.022, -0.035), (0.012, -0.030, -0.195), 0.0090, 0.0085)
+    d = smin(d, scm, 0.012)
+    d = smin(d, sd_ellipsoid(ax, y, z, (0.0, -0.036, -0.135), (0.0085, 0.0080, 0.0120)), 0.010)
+    # brow ridge
+    brow, _ = sd_polyline(ax, y, z, [(0.000, -0.0865, 0.0355), (0.014, -0.0858, 0.0375),
+                                     (0.028, -0.0830, 0.0385), (0.041, -0.0775, 0.0370),
+                                     (0.052, -0.0670, 0.0320)],
+                          [0.0065, 0.0065, 0.0060, 0.0055, 0.0050])
+    d = smin(d, brow, 0.010)
+    # orbital hollow
+    d = smax(d, -sd_ellipsoid(ax, y, z, (0.0320, -0.0880, 0.0200), (0.0180, 0.0130, 0.0130)), 0.008)
+    # local detail regions
+    d = apply_local(d, ax, y, z, Region((0.0, -0.13, -0.045), (0.035, -0.07, 0.035)),
+                    lambda dd, a, b, c: _nose(dd, a, b, c))
+    d = apply_local(d, ax, y, z, Region((0.0, -0.13, -0.095), (0.050, -0.055, -0.010)),
+                    lambda dd, a, b, c: _mouth(dd, a, b, c))
+    d = apply_local(d, ax, y, z, Region((0.004, -0.105, -0.010), (0.062, -0.045, 0.055)),
+                    lambda dd, a, b, c: _eye_region(dd, a, b, c))
+    d = apply_local(d, ax, y, z, Region((0.050, -0.025, -0.045), (0.105, 0.050, 0.050)),
+                    lambda dd, a, b, c: smin(dd, _ear(a, b, c), 0.0022))
+    # mouth cavity
+    d = apply_local(d, ax, y, z, Region((0.0, -0.10, -0.085), (0.048, -0.015, -0.025)),
+                    lambda dd, a, b, c: np.maximum(dd, -oral_void(a, b, c)))
+    # flat cut at the bottom of the neck
+    return np.maximum(d, -0.20 - z)
+
+
+SKIN_BOX = ((-0.105, -0.125, -0.205), (0.105, 0.115, 0.135))
