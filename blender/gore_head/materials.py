@@ -514,11 +514,12 @@ def _group_blood_film():
     spk = (1.0 - sd.smooth(0.05, 0.17)) * t.sep(scol)[0].smooth(0.55, 0.6)
     spk = spk * blood.smooth(0.02, 0.12) * (1.0 - blood.smooth(0.3, 0.5))
     mask = film.max(spk)
+    thick = thick.max(spk * 0.8)
     # thin films dry first, and drying is patchy
     a = (age + (1.0 - thick) * 0.35 * age + (n_mid - 0.5) * 0.5 * age * (1.0 - age)).clamp()
 
-    fresh = t.mix(thick, base * (0.95, 0.13, 0.09), t.mix(n_mid, (0.12, 0.004, 0.004), (0.22, 0.009, 0.007)))
-    old = t.mix(thick, base * (0.40, 0.19, 0.13), (0.028, 0.009, 0.006))
+    fresh = t.mix(thick, base * (0.70, 0.055, 0.06), t.mix(n_mid, (0.07, 0.0022, 0.0028), (0.13, 0.0045, 0.005)))
+    old = t.mix(thick, base * (0.36, 0.16, 0.11), (0.026, 0.0085, 0.006))
     col = t.mix(a, fresh, old)
     # dried pools crack into flakes that show the surface underneath
     cd, _, _ = t.voronoi(t.warp(p, 250.0, 0.0008), 650.0, 'DISTANCE_TO_EDGE')
@@ -542,58 +543,69 @@ def _group_blood_film():
 def _group_muscle():
     """GHS_Muscle: dark red skeletal muscle.
 
-    Fibres run along object Z (stretched noise); fascicles are separated by
-    thin dark perimysium seams; patches of whitish fascia and fat marbling.
+    Fibres run along object Z.  Everything fibrous is noise stretched along Z
+    (smooth isosurfaces stay long, wavy lines on curved surfaces, unlike
+    Voronoi cells): fine myofibre streaks, fascicle tone, and thin dark
+    perimysium seams where a stretched noise crosses 0.5.  Whitish fascia and a
+    little fat marbling on top.
     """
     ng, t = _new_group("GHS_Muscle", [("Vector", 'VECTOR', None), ("Wetness", 'VALUE', 0.8)],
                        [("Color", 'RGBA'), ("Roughness", 'VALUE'), ("Coat", 'VALUE'), ("Height", 'VALUE')],
                        "Striated muscle: colour, gloss and height (fibres along Z)")
     p, wet = t.inp("Vector"), t.inp("Wetness")
-    pw = t.warp(p, 35.0, 0.007)
-    pf = pw * (1.0, 1.0, 0.07)                       # stretch along Z -> fibres
+    pw = t.warp(p, 30.0, 0.006)
+    pf = pw * (1.0, 1.0, 0.05)                       # stretch along Z -> fibres
     fib = t.noise(pf, 2600.0, 3.0, 0.55)
-    fine = t.noise(pf, 7000.0, 1.0, 0.5)
-    bund = t.noise(pf, 520.0, 2.0, 0.5)
-    sd, scol, _ = t.voronoi(pf, 380.0, 'DISTANCE_TO_EDGE')
-    seam = 1.0 - sd.smooth(0.0, 0.08)
-    v = fib * 0.45 + bund * 0.4 + fine * 0.15
-    col = v.ramp([(0.2, (0.13, 0.011, 0.011)), (0.5, (0.29, 0.030, 0.027)), (0.8, (0.50, 0.080, 0.066))])
-    col = t.mix(seam * 0.85, col, (0.07, 0.006, 0.006))
-    fascia = t.noise(p, 55.0, 5.0, 0.6).smooth(0.58, 0.74) * 0.6
-    col = t.mix(fascia * (0.4 + 0.6 * fib), col, (0.66, 0.50, 0.46))
-    marb = t.noise(pf, 110.0, 3.0).smooth(0.70, 0.80) * 0.5
-    col = t.mix(marb, col, (0.74, 0.58, 0.33))
+    fine = t.noise(pf, 7500.0, 1.0, 0.5)
+    bund = t.noise(pf, 450.0, 2.0, 0.45)
+    seam = t.ridge(t.noise(pf + (3.3, 1.7, 0.0), 300.0, 2.0, 0.4), 0.035) \
+        * t.noise(pf, 120.0).smooth(0.3, 0.55)
+    v = fib * 0.5 + fine * 0.15 + bund * 0.35
+    col = v.ramp([(0.2, (0.055, 0.005, 0.007)), (0.5, (0.13, 0.013, 0.016)), (0.8, (0.22, 0.028, 0.030))])
+    col = t.mix(seam * 0.75, col, (0.05, 0.004, 0.004))
+    # translucent whitish fascia sheets and a little fat along some seams
+    fascia = t.noise(p, 45.0, 5.0, 0.6).smooth(0.64, 0.80) * 0.4
+    col = t.mix(fascia * (0.5 + 0.5 * fib), col, (0.40, 0.29, 0.26))
+    marb = seam * t.noise(pf, 140.0, 3.0).smooth(0.62, 0.72) * 0.8
+    col = t.mix(marb, col, (0.50, 0.36, 0.16))
     t.result("Color", col)
-    t.result("Roughness", t.mix(wet, 0.55, 0.14) + (fib - 0.5) * 0.12 + fascia * 0.1)
-    t.result("Coat", wet * 0.65)
-    t.result("Height", (bund * 0.6 + fib * 0.5 + fine * 0.2 - seam * 0.8) * (1.0 - fascia * 0.5))
+    t.result("Roughness", t.mix(wet, 0.5, 0.2) + (fib - 0.5) * 0.12 + fascia * 0.1)
+    t.result("Coat", wet * 0.3 * (1.0 - seam * 0.5))
+    t.result("Height", (fib * 0.6 + fine * 0.25 + bund * 0.4 - seam * 1.0) * (1.0 - fascia * 0.5))
     t.layout()
     return ng
 
 
 def _group_fat():
-    """GHS_Fat: yellow subcutaneous fat, round lobules with red septa."""
+    """GHS_Fat: yellow subcutaneous fat, glossy rounded lobules with thin red septa.
+
+    Two lobule sizes (~4 mm and ~1.4 mm) are blended so the pattern never
+    reads as a regular honeycomb.
+    """
     ng, t = _new_group("GHS_Fat", [("Vector", 'VECTOR', None), ("Wetness", 'VALUE', 0.8)],
                        [("Color", 'RGBA'), ("Roughness", 'VALUE'), ("Coat", 'VALUE'), ("Height", 'VALUE')],
                        "Lobular fat: colour, gloss and height")
     p, wet = t.inp("Vector"), t.inp("Wetness")
-    pw = t.warp(p, 40.0, 0.004)
-    d, cell, _ = t.voronoi(pw, 650.0, 'F1')
-    ed, _, _ = t.voronoi(pw, 650.0, 'DISTANCE_TO_EDGE')
-    lob = 1.0 - d.smooth(0.0, 0.8)
-    sept = 1.0 - ed.smooth(0.0, 0.07)
-    rnd = t.sep(cell)[0]
-    n = t.noise(p, 1800.0, 3.0)
-    col = (lob * 0.65 + n * 0.35).ramp([(0.15, (0.52, 0.32, 0.07)), (0.55, (0.78, 0.55, 0.16)),
-                                        (0.95, (0.92, 0.75, 0.36))])
-    col = col * (0.85 + 0.3 * rnd)
-    cap = t.ridge(t.noise(p, 220.0, 3.0), 0.016) * t.noise(p, 45.0).smooth(0.4, 0.6)
-    col = t.mix(sept * 0.9, col, (0.60, 0.22, 0.13))
-    col = t.mix(cap * 0.7, col, (0.45, 0.05, 0.035))
+    pw = t.warp(p, 40.0, 0.005)
+    d1, c1, _ = t.voronoi(pw, 240.0, 'F1', rand=0.9)
+    e1, _, _ = t.voronoi(pw, 240.0, 'DISTANCE_TO_EDGE', rand=0.9)
+    d2, c2, _ = t.voronoi(t.warp(pw, 300.0, 0.0008), 700.0, 'F1', rand=1.0)
+    e2, _, _ = t.voronoi(t.warp(pw, 300.0, 0.0008), 700.0, 'DISTANCE_TO_EDGE', rand=1.0)
+    lob = (1.0 - d1.smooth(0.1, 0.85)) * 0.6 + (1.0 - d2.smooth(0.05, 0.8)) * 0.4
+    sept = (1.0 - e1.smooth(0.0, 0.035)).max((1.0 - e2.smooth(0.0, 0.05)) * 0.45)
+    tone = t.sep(c1)[0] * 0.6 + t.sep(c2)[1] * 0.4
+    n = t.noise(p, 1400.0, 2.0)
+    col = (lob * 0.45 + tone * 0.4 + n * 0.15).ramp([(0.15, (0.40, 0.21, 0.035)), (0.5, (0.57, 0.37, 0.085)),
+                                                     (0.85, (0.66, 0.50, 0.17))])
+    cap = t.ridge(t.noise(t.warp(p, 120.0, 0.002), 160.0, 3.0), 0.012) * t.noise(p, 45.0).smooth(0.4, 0.6)
+    col = t.mix(sept * 0.6, col, (0.48, 0.17, 0.08))
+    col = t.mix(cap * 0.75, col, (0.30, 0.025, 0.018))
+    blush = t.noise(p, 60.0, 3.0).smooth(0.55, 0.75) * 0.35    # blood-tinged patches
+    col = t.mix(blush, col, col * (0.9, 0.45, 0.35))
     t.result("Color", col)
-    t.result("Roughness", t.mix(wet, 0.5, 0.13) + sept * 0.1)
-    t.result("Coat", wet * 0.5)
-    t.result("Height", lob * 0.8 - sept * 0.6 + n * 0.2)
+    t.result("Roughness", t.mix(wet, 0.45, 0.2) + sept * 0.1)
+    t.result("Coat", wet * 0.4)
+    t.result("Height", lob * 1.2 - sept * 0.4 + n * 0.1)
     t.layout()
     return ng
 
@@ -607,25 +619,30 @@ def _group_bone():
     p, wet = t.inp("Vector"), t.inp("Wetness")
     n1 = t.noise(p, 90.0, 4.0, 0.55)
     n2 = t.noise(p, 700.0, 3.0, 0.5)
-    col = (n1 * 0.7 + n2 * 0.3).ramp([(0.3, (0.60, 0.52, 0.40)), (0.55, (0.78, 0.71, 0.57)),
-                                      (0.8, (0.87, 0.82, 0.70))])
+    col = (n1 * 0.7 + n2 * 0.3).ramp([(0.3, (0.42, 0.35, 0.25)), (0.55, (0.58, 0.51, 0.39)),
+                                      (0.8, (0.66, 0.60, 0.48))])
     pd, _, _ = t.voronoi(p, 2400.0)
     pit = 1.0 - pd.smooth(0.0, 0.22)
-    col = t.mix(pit * 0.5, col, (0.40, 0.30, 0.22))
+    col = t.mix(pit * 0.6, col, (0.26, 0.18, 0.12))
     fd, fcol, _ = t.voronoi(p, 260.0)
     dot = (1.0 - fd.smooth(0.0, 0.07)) * t.sep(fcol)[0].smooth(0.8, 0.82)
     col = t.mix(dot * 0.85, col, (0.20, 0.09, 0.07))
-    vessel = t.ridge(t.noise(t.warp(p, 60.0, 0.004), 110.0, 3.0), 0.012) * t.noise(p, 25.0).smooth(0.45, 0.65)
-    col = t.mix(vessel * 0.4, col, (0.62, 0.22, 0.18))
-    stain = t.noise(p, 30.0, 3.0).smooth(0.6, 0.8) * 0.3
-    col = t.mix(stain, col, (0.55, 0.40, 0.27))
+    vessel = t.ridge(t.noise(t.warp(p, 60.0, 0.004), 110.0, 3.0), 0.008) * t.noise(p, 40.0).smooth(0.55, 0.7)
+    col = t.mix(vessel * 0.3, col, (0.45, 0.16, 0.12))
+    grain = t.noise(p * (1.0, 1.0, 0.35), 350.0, 4.0, 0.6)    # lamellar grain
+    col = col * (0.88 + 0.24 * grain)
+    md, _, _ = t.voronoi(p, 900.0)
+    mpit = (1.0 - md.smooth(0.0, 0.18)) * t.noise(p, 80.0).smooth(0.45, 0.6)
+    col = t.mix(mpit * 0.6, col, (0.30, 0.20, 0.13))
+    stain = t.noise(p, 30.0, 3.0).smooth(0.6, 0.8) * 0.4
+    col = t.mix(stain, col, (0.40, 0.27, 0.16))
     t.result("Color", col)
-    t.result("Roughness", t.mix(wet * 0.45, 0.5 + (n1 - 0.5) * 0.2, 0.2))
-    t.result("Height", n1 * 0.5 + n2 * 0.35 - pit * 0.6 - dot)
+    t.result("Roughness", t.mix(wet * 0.35, 0.58 + (n1 - 0.5) * 0.2 + pit * 0.1, 0.25))
+    t.result("Height", n1 * 0.5 + n2 * 0.35 + grain * 0.3 - pit * 0.6 - mpit * 0.8 - dot)
     # spongy bone between the tables: marrow-filled cavities
     sd, scol, _ = t.voronoi(p, 950.0, 'F1')
     holes = 1.0 - sd.smooth(0.12, 0.42)
-    dcol = t.mix(holes, (0.74, 0.58, 0.45), t.mix(t.sep(scol)[1], (0.20, 0.035, 0.025), (0.36, 0.09, 0.06)))
+    dcol = t.mix(holes, (0.55, 0.40, 0.29), t.mix(t.sep(scol)[1], (0.13, 0.02, 0.015), (0.26, 0.06, 0.04)))
     t.result("Diploe Color", dcol)
     t.result("Diploe Height", -holes * 1.5 + n2 * 0.3)
     t.layout()
@@ -652,6 +669,10 @@ def _skin_material(g, name="GH_Skin", lips=False):
 
     Reads gh_lip (vermilion), gore_wound + gore_depth (rings dermis -> fat ->
     muscle -> bone), gore_edge (abrasion), gore_bruise, gore_burn, gore_blood.
+
+    Two BSDFs are mixed by "any gore here": Cycles skips a Mix Shader branch
+    (and every node only it uses) when the factor is 0, so intact skin never
+    pays for the wound / burn / blood layers.
     """
     mat, t = _new_material(name)
     p = t.coord()
@@ -662,10 +683,10 @@ def _skin_material(g, name="GH_Skin", lips=False):
     lip = t.value("lip_force", 1.0) if lips else t.attr("gh_lip")
 
     # ---- healthy skin albedo ------------------------------------------------
-    base = tone.ramp([(0.0, (0.80, 0.56, 0.45)), (0.25, (0.64, 0.39, 0.28)), (0.5, (0.42, 0.22, 0.13)),
-                      (0.75, (0.19, 0.085, 0.048)), (1.0, (0.075, 0.036, 0.022))])
+    base = tone.ramp([(0.0, (0.60, 0.40, 0.31)), (0.25, (0.47, 0.28, 0.19)), (0.5, (0.30, 0.155, 0.09)),
+                      (0.75, (0.13, 0.06, 0.034)), (1.0, (0.05, 0.025, 0.016))])
     pm = t.vec(p.x.abs(), p.y, p.z)                  # mirrored for symmetric face regions
-    red_reg, dark_reg, oily = 0.0, 0.0, 0.0
+    red_reg, dark_reg = 0.0, 0.0
     for c, r, (red, dark) in FACE_REGIONS.values():
         gz = t.gauss(pm, c, r)
         if red:
@@ -677,14 +698,14 @@ def _skin_material(g, name="GH_Skin", lips=False):
     m_low = t.noise(p, 22.0, 4.0, 0.55)
     m_red = t.noise(p + (7.3, 1.1, 3.7), 55.0, 3.0, 0.6)
     m_fine = t.noise(p, 190.0, 3.0, 0.6)
-    redness = (m_red.smooth(0.48, 0.78) * 0.45 + red_reg + (m_fine - 0.5) * 0.25).clamp()
+    redness = (m_red.smooth(0.45, 0.75) * 0.55 + red_reg + (m_fine - 0.5) * 0.35).clamp()
     redness = redness * (1.0 - pallor)
-    col = t.mix(redness, base, base * (1.05, 0.60, 0.56))
-    col = col * (0.88 + 0.24 * m_low)
+    col = t.mix(redness, base, base * (1.06, 0.58, 0.55))
+    col = col * (0.84 + 0.30 * m_low)
     # melanin freckles / spots in a fraction of cells
     fd, fcol, _ = t.voronoi(t.warp(p, 300.0, 0.0006), 380.0)
-    frk = (1.0 - fd.smooth(0.0, 0.3)) * t.sep(fcol)[0].smooth(0.72, 0.9) * 0.35
-    col = t.mix(frk, col, col * (0.72, 0.60, 0.50))
+    frk = (1.0 - fd.smooth(0.0, 0.3)) * t.sep(fcol)[0].smooth(0.72, 0.9) * 0.4
+    col = t.mix(frk, col, col * (0.70, 0.57, 0.47))
     # periorbital darkening, a little purple
     col = t.mix(dark_reg.clamp(), col, col * (0.72, 0.62, 0.70))
     # superficial veins, much more visible when pale
@@ -693,43 +714,50 @@ def _skin_material(g, name="GH_Skin", lips=False):
     # lips: redder, darker vermilion (bluish-grey when pale)
     lip_col = t.mix(pallor, col * (0.92, 0.50, 0.50), col * (0.72, 0.66, 0.80))
     col = t.mix(lip, col, lip_col)
-    # pallor: desaturate toward a cool grey
-    lum = t.luminance(col)
-    col = t.mix(pallor * 0.72, col, t.vec(lum, lum, lum) * (0.97, 1.0, 1.06) * 1.08)
-    skin_col = col
 
-    # ---- micro relief -----------------------------------------------------
+    # ---- micro relief -------------------------------------------------------
     pd, _, _ = t.voronoi(p, 2200.0)
     pore = 1.0 - pd.smooth(0.0, 0.26)
     gd, _, _ = t.voronoi(t.warp(p, 400.0, 0.0006), 380.0, 'DISTANCE_TO_EDGE')
-    groove = 1.0 - gd.smooth(0.0, 0.05)
+    groove = 1.0 - gd.smooth(0.0, 0.06)
     fine = t.noise(p, 6000.0, 2.0)
     lip_lines = t.noise(p * (1.0, 1.0, 0.12), 1500.0, 2.0) * lip
-    h_skin = -pore * 0.35 - groove * 0.25 + fine * 0.15 - lip_lines * 0.5
-    h_skin = h_skin * (1.0 - lip * 0.6) + t.noise(p, 160.0, 3.0) * 0.4
-    rough = 0.44 + (m_fine - 0.5) * 0.14 - oily * 0.1 - lip * 0.12 - wet * 0.04 + pore * 0.05
+    col = col * (1.0 - pore * 0.07 - groove * 0.04)
+    # pallor: desaturate toward a cool grey
+    lum = t.luminance(col)
+    skin_col = t.mix(pallor * 0.72, col, t.vec(lum, lum, lum) * (0.97, 1.0, 1.06) * 1.08)
+    h_skin = (-pore * 0.6 - groove * 0.4 + fine * 0.2 - lip_lines * 0.6) * (1.0 - lip * 0.5) \
+        + t.noise(p, 160.0, 3.0) * 0.5
+    rough = 0.44 + (m_fine - 0.5) * 0.14 - oily * 0.1 - lip * 0.12 - wet * 0.04 + pore * 0.06
 
+    skin_sss = {'IOR': 1.4, 'Specular IOR Level': 0.5, 'Subsurface Radius': (1.0, 0.40, 0.22),
+                'Subsurface Scale': 0.0035, 'Subsurface IOR': 1.4, 'Subsurface Anisotropy': 0.8,
+                'Sheen Roughness': 0.35}
+    healthy = t.principled(dict(skin_sss, **{
+        'Base Color': skin_col, 'Roughness': rough, 'Subsurface Weight': 1.0,
+        'Coat Weight': 0.12 + oily * 0.1 + lip * 0.15, 'Coat Roughness': 0.3 - lip * 0.1, 'Coat IOR': 1.45,
+        'Sheen Weight': 0.06, 'Normal': t.bump(h_skin, 0.0001)}), sss_method='RANDOM_WALK_SKIN')
+
+    # ==== damage (only evaluated where some gore attribute is non-zero) =======
     # ---- open wound: layered tissue by depth ---------------------------
     fat = t.group(g["fat"], {"Vector": p, "Wetness": wet})
     mus = t.group(g["muscle"], {"Vector": p, "Wetness": wet})
     bone = t.group(g["bone"], {"Vector": p, "Wetness": wet})
-    dn = depth + (t.noise(p, 300.0, 3.0) - 0.5) * 0.12 + (t.noise(p, 1500.0) - 0.5) * 0.05
-    f_fat, f_mus, f_bone = dn.smooth(0.10, 0.17), dn.smooth(0.50, 0.58), dn.smooth(0.92, 0.98)
-    dermis = t.mix(t.noise(p, 900.0, 2.0), (0.62, 0.28, 0.22), (0.76, 0.50, 0.42))
+    dn = depth + (t.noise(p, 170.0, 3.0) - 0.5) * 0.22 + (t.noise(p, 900.0) - 0.5) * 0.06
+    f_fat, f_mus, f_bone = dn.smooth(0.10, 0.16), dn.smooth(0.50, 0.57), dn.smooth(0.92, 0.98)
+    dermis = t.mix(t.noise(p, 900.0, 2.0), (0.46, 0.18, 0.14), (0.60, 0.36, 0.30))
     tis = t.mix(f_fat, dermis, fat["Color"])
     tis = t.mix(f_mus, tis, mus["Color"])
-    tis = t.mix(f_bone, tis, bone["Color"])
-    # exposed tissue is always blood-soaked a little
-    soak = t.noise(p, 140.0, 3.0).smooth(0.35, 0.7) * 0.45 + 0.15
-    tis = t.mix(soak * (1.0 - f_bone * 0.5), tis, tis * (0.62, 0.18, 0.14))
+    tis = t.mix(f_bone, tis, t.mix(t.noise(p, 250.0).smooth(0.4, 0.6), bone["Color"], bone["Diploe Color"]))
+    # exposed tissue is always a little blood-soaked
+    soak = t.noise(p, 140.0, 3.0).smooth(0.4, 0.75) * 0.35
+    tis = t.mix(soak * (1.0 - f_bone * 0.5), tis, tis * (0.62, 0.20, 0.17))
     h_tis = t.mix(f_fat, t.noise(p, 900.0) * 0.6, fat["Height"])
     h_tis = t.mix(f_mus, h_tis, mus["Height"])
     h_tis = t.mix(f_bone, h_tis, bone["Height"])
-    r_tis = t.mix(wet, 0.45, 0.12)
     wm = (wound + (t.noise(p, 400.0) - 0.5) * 0.3).smooth(0.35, 0.65)
-
     col = t.mix(wm, skin_col, tis)
-    rough = t.mix(wm, rough, r_tis)
+    rgh = t.mix(wm, rough, t.mix(wet, 0.45, 0.14))
     height = t.mix(wm, h_skin, h_tis * 1.5)
 
     # ---- abraded / torn rim ----------------------------------------------
@@ -737,77 +765,90 @@ def _skin_material(g, name="GH_Skin", lips=False):
     em = (edge * (0.55 + 0.9 * en)).clamp().smooth(0.15, 0.6) * (1.0 - wm)
     scr = t.noise(p * (1.0, 1.0, 0.18), 1400.0, 3.0)         # drag scratches
     ab = (t.noise(p, 900.0, 4.0) * 0.7 + scr * 0.3).ramp(
-        [(0.25, (0.38, 0.08, 0.05)), (0.5, (0.20, 0.040, 0.025)), (0.75, (0.085, 0.022, 0.014))])
-    ab = t.mix(edge.smooth(0.2, 0.9) * 0.5, ab * (1.2, 1.0, 1.0), (0.10, 0.025, 0.016))
+        [(0.25, (0.36, 0.07, 0.05)), (0.5, (0.19, 0.035, 0.025)), (0.75, (0.08, 0.02, 0.014))])
+    ab = t.mix(edge.smooth(0.2, 0.9) * 0.5, ab, (0.09, 0.02, 0.015))
     col = t.mix(em, col, ab)
-    rough = t.mix(em, rough, t.mix(wet, 0.62, 0.3))
+    rgh = t.mix(em, rgh, t.mix(wet, 0.62, 0.3))
     height = t.mix(em, height, scr * 0.8 - 0.4 + en * 0.6)
 
     # ---- bruise (under the skin: multiplies the colour) ---------------------
-    bz = (bruise * (0.65 + 0.7 * t.noise(p, 70.0, 4.0))).clamp()
-    tint = bz.ramp([(0.0, (1.0, 1.0, 1.0)), (0.1, (0.97, 0.95, 0.76)), (0.25, (0.86, 0.72, 0.56)),
-                    (0.45, (0.66, 0.40, 0.46)), (0.7, (0.42, 0.24, 0.42)), (1.0, (0.24, 0.13, 0.30))])
+    bz = (bruise * (0.5 + 1.0 * t.noise(p, 60.0, 5.0, 0.65))).clamp()
+    tint = bz.ramp([(0.0, (1.0, 1.0, 1.0)), (0.1, (0.96, 0.95, 0.76)), (0.25, (0.84, 0.74, 0.56)),
+                    (0.45, (0.64, 0.40, 0.45)), (0.7, (0.42, 0.24, 0.42)), (1.0, (0.24, 0.13, 0.30))])
     col = col * t.mix(wm, tint, (1.0, 1.0, 1.0))
     ptd, ptc, _ = t.voronoi(p, 1100.0)
     pete = (1.0 - ptd.smooth(0.05, 0.18)) * t.sep(ptc)[0].smooth(0.55, 0.6) * bz.smooth(0.35, 0.8)
-    col = t.mix(pete * 0.8, col, col * (0.55, 0.12, 0.12))
-    rough = rough - bz * 0.08
+    col = t.mix(pete * 0.8, col, col * (0.55, 0.12, 0.14))
+    rgh = rgh - bz * 0.08
 
     # ---- burn: erythema -> blisters/raw -> leathery -> char ---------------
-    bn = (burn + (t.noise(p, 120.0, 4.0) - 0.5) * 0.35 * burn.smooth(0.0, 0.25)).clamp()
-    ery = bn.smooth(0.03, 0.22)
-    raw = bn.smooth(0.24, 0.38)
-    leather = bn.smooth(0.52, 0.66)
-    char = bn.smooth(0.72, 0.86)
-    col = t.mix(ery * 0.85, col, col * (1.12, 0.52, 0.46))
-    raw_col = t.mix(t.noise(p, 400.0, 3.0), (0.50, 0.08, 0.055), (0.66, 0.18, 0.12))
+    bno = t.noise(p, 90.0, 4.0, 0.6)
+    bn = (burn + (bno - 0.5) * 0.6 * burn.smooth(0.0, 0.3) * (1.0 - burn.smooth(0.9, 1.0) * 0.6)).clamp()
+    ery = bn.smooth(0.02, 0.2)
+    raw = bn.smooth(0.26, 0.40)
+    leather = bn.smooth(0.55, 0.68)
+    char = bn.smooth(0.72, 0.84)
+    col = t.mix(ery * 0.85, col, col * (1.10, 0.52, 0.47))
+    raw_col = t.mix(t.noise(p, 400.0, 3.0), (0.36, 0.05, 0.04), (0.50, 0.12, 0.09))
     col = t.mix(raw, col, raw_col)
-    bd, bcol, _ = t.voronoi(t.warp(p, 200.0, 0.001), 260.0, 'F1')
-    blister = (1.0 - bd.smooth(0.0, 0.42)) * t.sep(bcol)[0].smooth(0.35, 0.45)
-    blister = blister * bn.smooth(0.2, 0.3) * (1.0 - bn.smooth(0.48, 0.58))
-    col = t.mix(blister.smooth(0.05, 0.3) * 0.8, col, (0.80, 0.62, 0.44))
-    pe = t.noise(t.warp(p, 90.0, 0.003), 160.0, 4.0)
-    peel = pe.smooth(0.56, 0.60) * bn.smooth(0.28, 0.38) * (1.0 - bn.smooth(0.6, 0.7))
-    peel_col = t.mix(pe.smooth(0.6, 0.7), (0.60, 0.52, 0.45), (0.78, 0.72, 0.64))
-    col = t.mix(peel, col, peel_col)
-    lcol = t.noise(p, 250.0, 4.0).ramp([(0.3, (0.18, 0.09, 0.05)), (0.6, (0.36, 0.22, 0.12)),
-                                        (0.85, (0.55, 0.42, 0.28))])
+    # fluid blisters: translucent domes over reddened skin
+    bd, bcol, _ = t.voronoi(t.warp(p, 200.0, 0.0012), 190.0, 'F1')
+    blister = (1.0 - bd.smooth(0.0, 0.40)) * t.sep(bcol)[0].smooth(0.55, 0.62)
+    blister = blister * bn.smooth(0.18, 0.28) * (1.0 - bn.smooth(0.46, 0.56))
+    bm = blister.smooth(0.02, 0.2)
+    col = t.mix(bm * 0.75, col, col * (1.25, 1.1, 0.85) + (0.08, 0.06, 0.03))
+    # sheets of dead epidermis peeling off the raw dermis
+    pe = t.noise(t.warp(p, 90.0, 0.003), 150.0, 4.0)
+    band = bn.smooth(0.26, 0.36) * (1.0 - bn.smooth(0.58, 0.68))
+    peel = pe.smooth(0.55, 0.585) * band
+    peel_edge = (1.0 - (pe - 0.567).abs().smooth(0.0, 0.012)) * band
+    col = t.mix(peel, col, t.mix(pe.smooth(0.6, 0.7), (0.50, 0.44, 0.38), (0.66, 0.60, 0.53)))
+    col = t.mix(peel_edge * 0.8, col, (0.16, 0.10, 0.08))
+    lcol = t.noise(p, 250.0, 4.0).ramp([(0.3, (0.16, 0.085, 0.045)), (0.6, (0.28, 0.17, 0.09)),
+                                        (0.85, (0.42, 0.36, 0.28))])
     col = t.mix(leather, col, lcol)
-    kd, _, _ = t.voronoi(t.warp(p, 120.0, 0.002), 170.0, 'DISTANCE_TO_EDGE')
-    crack = (1.0 - kd.smooth(0.0, 0.05)) * char
-    ccol = t.mix(t.noise(p, 800.0, 3.0), (0.012, 0.010, 0.009), (0.06, 0.035, 0.022))
+    # char: black, ashy, broken crack network with raw red at the bottom
+    kd, _, _ = t.voronoi(t.warp(p, 90.0, 0.0035), 140.0, 'DISTANCE_TO_EDGE')
+    kw = 0.02 + 0.04 * t.noise(p, 300.0)
+    crack = (1.0 - kd.smooth(0.0, kw)) * char * t.noise(p, 180.0, 2.0).smooth(0.35, 0.55)
+    ccol = t.noise(p, 700.0, 4.0).ramp([(0.3, (0.008, 0.007, 0.006)), (0.6, (0.035, 0.024, 0.018)),
+                                        (0.8, (0.07, 0.055, 0.045)), (0.95, (0.16, 0.15, 0.14))])
     col = t.mix(char, col, ccol)
-    col = t.mix(crack, col, (0.30, 0.035, 0.018))
-    rough = t.mix(ery, rough, rough - 0.05)
-    rough = t.mix(raw, rough, t.mix(wet, 0.35, 0.12))
-    rough = t.mix(blister, rough, 0.08)
-    rough = t.mix(peel, rough, 0.6)
-    rough = t.mix(leather, rough, 0.62)
-    rough = t.mix(char, rough, 0.55 + t.noise(p, 1200.0) * 0.35)
+    col = t.mix(crack, col, t.mix(kd.smooth(0.0, 0.02), (0.07, 0.008, 0.005), (0.24, 0.03, 0.015)))
+    rgh = t.mix(ery, rgh, rgh - 0.05)
+    rgh = t.mix(raw, rgh, t.mix(wet, 0.35, 0.12))
+    rgh = t.mix(bm, rgh, 0.05)
+    rgh = t.mix(peel, rgh, 0.55)
+    rgh = t.mix(leather, rgh, 0.42)
+    rgh = t.mix(char, rgh, 0.5 + t.noise(p, 1200.0) * 0.4)
     height = t.mix(raw, height, height * 0.3 + t.noise(p, 1400.0) * 0.4)
-    height = height + blister.smooth(0.0, 0.5) * 4.0 + peel * 1.5
+    height = height + blister.smooth(0.0, 0.6) * 5.0 + peel * 1.5 - peel_edge * 0.5
     height = t.mix(char, height, t.noise(p, 600.0, 4.0) * 2.0 - crack * 4.0)
 
     # ---- blood on top -----------------------------------------------------
-    bl = _blood_layer(t, g, col, rough.clamp(), blood.max(wm * 0.3), p)
-    col = bl["Color"]
+    bl = _blood_layer(t, g, col, rgh.clamp(), blood, p)
     height = t.mix(bl["Mask"], height, bl["Height"] * 3.0)
-
-    sss = (1.0 - wm * 0.75) * (1.0 - leather) * bl["SSS"]
+    sss = (1.0 - wm * 0.75) * (1.0 - leather) * bl["SSS"] + bm * 0.5
     n_fine = t.bump(height, 0.0001)
     n_coat = t.bump(t.mix(wm.max(bn.smooth(0.2, 0.4)), 0.0, height) + bl["Height"] * 3.0, 0.0001)
-    bsdf = t.principled({
-        'Base Color': col, 'Roughness': bl["Roughness"], 'IOR': 1.4, 'Specular IOR Level': 0.5,
-        'Subsurface Weight': sss, 'Subsurface Radius': (1.0, 0.40, 0.22), 'Subsurface Scale': 0.0035,
-        'Subsurface IOR': 1.4, 'Subsurface Anisotropy': 0.8,
+    damaged = t.principled(dict(skin_sss, **{
+        'Base Color': bl["Color"], 'Roughness': bl["Roughness"], 'Subsurface Weight': sss.clamp(),
         'Coat Weight': (bl["Coat"] + (0.12 + oily * 0.1 + lip * 0.15) * (1.0 - bl["Mask"])
-                        + wm * wet * 0.5).clamp(),
+                        + (wm + raw + bm) * wet * 0.5).clamp(),
         'Coat Roughness': t.mix(bl["Mask"], 0.3 - lip * 0.1, bl["Coat Roughness"]),
         'Coat IOR': 1.45, 'Coat Tint': bl["Coat Tint"], 'Coat Normal': n_coat,
-        'Sheen Weight': 0.06 * (1.0 - bl["Mask"]), 'Sheen Roughness': 0.35,
-        'Normal': n_fine}, sss_method='RANDOM_WALK_SKIN')
-    t.output(bsdf)
-    return _finish(mat, t, (0.64, 0.39, 0.28), 0.45)
+        'Sheen Weight': 0.06 * (1.0 - bl["Mask"]), 'Normal': n_fine}), sss_method='RANDOM_WALK_SKIN')
+
+    any_gore = wound.max(edge).max(blood).max(bruise).max(burn).smooth(0.0, 0.01)
+    mixn = t.node('ShaderNodeMixShader', {0: any_gore, 1: healthy.outputs[0], 2: damaged.outputs[0]})
+    t.output(mixn)
+    return _finish(mat, t, (0.47, 0.28, 0.19), 0.45)
+
+
+def _fibre_tangent(t):
+    """World-space tangent along the object's Z axis (muscle fibre direction)."""
+    return t.o(t.node('ShaderNodeVectorTransform', {'Vector': (0.0, 0.0, 1.0)}, vector_type='VECTOR',
+                      convert_from='OBJECT', convert_to='WORLD'))
 
 
 def _muscle_material(g):
@@ -829,13 +870,14 @@ def _muscle_material(g):
     rough = t.mix(bn.smooth(0.3, 0.8), rough, 0.7)
     bl = _blood_layer(t, g, col, rough, t.attr("gore_blood").max(0.12), p)
     h = t.mix(bl["Mask"], m["Height"], bl["Height"] * 2.0)
+    nrm = t.bump(h, 0.00015)
     bsdf = t.principled({
         'Base Color': bl["Color"], 'Roughness': bl["Roughness"], 'IOR': 1.4,
+        'Anisotropic': 0.55 * (1.0 - bl["Mask"]), 'Tangent': _fibre_tangent(t),
         'Subsurface Weight': 0.35 * bl["SSS"], 'Subsurface Radius': (1.0, 0.25, 0.15),
         'Subsurface Scale': 0.002, 'Coat Weight': (m["Coat"] + bl["Coat"]).clamp(),
-        'Coat Roughness': t.mix(bl["Mask"], 0.08 + (1.0 - wet) * 0.2, bl["Coat Roughness"]),
-        'Coat Tint': bl["Coat Tint"], 'Coat Normal': t.bump(h, 0.0001, 0.4),
-        'Normal': t.bump(h, 0.00015)})
+        'Coat Roughness': t.mix(bl["Mask"], 0.06 + (1.0 - wet) * 0.2, bl["Coat Roughness"]),
+        'Coat Tint': bl["Coat Tint"], 'Coat Normal': nrm, 'Normal': nrm})
     t.output(bsdf)
     return _finish(mat, t, (0.30, 0.03, 0.03), 0.3)
 
@@ -846,8 +888,9 @@ def _fat_material(g):
     p, wet = t.coord(), t.control("wetness")
     f = t.group(g["fat"], {"Vector": p, "Wetness": wet})
     # the top of the wall is the dermis: dense, pale pink-white
-    dm = 1.0 - (t.attr("gore_depth") + (t.noise(p, 500.0) - 0.5) * 0.05).smooth(0.10, 0.16)
-    col = t.mix(dm, f["Color"], t.mix(t.noise(p, 900.0), (0.66, 0.36, 0.30), (0.80, 0.58, 0.50)))
+    d = t.attr("gore_depth")
+    dm = (1.0 - (d + (t.noise(p, 500.0) - 0.5) * 0.05).smooth(0.10, 0.16)) * d.smooth(0.0, 0.02)
+    col = t.mix(dm, f["Color"], t.mix(t.noise(p, 900.0), (0.48, 0.22, 0.18), (0.60, 0.38, 0.32)))
     bl = _blood_layer(t, g, col, f["Roughness"], t.attr("gore_blood").max(0.1), p)
     h = t.mix(bl["Mask"], f["Height"], bl["Height"] * 2.0)
     bsdf = t.principled({
@@ -888,7 +931,7 @@ def _bone_material(g):
         'Subsurface Weight': 0.2 * bl["SSS"], 'Subsurface Radius': (1.0, 0.75, 0.5),
         'Subsurface Scale': 0.0012, 'Coat Weight': (bl["Coat"] + wet * 0.15).clamp(),
         'Coat Roughness': t.mix(bl["Mask"], 0.25, bl["Coat Roughness"]), 'Coat Tint': bl["Coat Tint"],
-        'Normal': t.bump(h, 0.0001)})
+        'Normal': t.bump(h, 0.00016)})
     t.output(bsdf)
     return _finish(mat, t, (0.78, 0.71, 0.57), 0.5)
 
@@ -899,26 +942,31 @@ def _brain_material(g):
     p, wet = t.coord(), t.control("wetness")
     sul = t.attr("gh_sulcus")
     n1 = t.noise(p, 80.0, 4.0, 0.55)
-    col = n1.ramp([(0.3, (0.54, 0.36, 0.34)), (0.6, (0.68, 0.49, 0.46)), (0.85, (0.74, 0.57, 0.52))])
-    col = t.mix(sul * 0.8, col, col * (0.55, 0.32, 0.30))
-    # pial vessels: large veins, finer arteries, capillary blush
+    col = n1.ramp([(0.3, (0.36, 0.235, 0.215)), (0.6, (0.45, 0.31, 0.28)), (0.85, (0.52, 0.38, 0.34))])
+    blush = t.noise(p, 220.0, 3.0).smooth(0.5, 0.75)
+    col = t.mix(blush * 0.4, col, col * (1.0, 0.62, 0.6))
+    col = t.mix(sul * 0.85, col, col * (0.42, 0.18, 0.17))
+    # pial vessels: big dark veins (mostly along the sulci), fine red arteries
     pv = t.warp(p, 40.0, 0.006)
-    veins = t.ridge(t.noise(pv, 95.0, 3.0), 0.016) * t.noise(p, 30.0).smooth(0.35, 0.6)
-    arts = t.ridge(t.noise(pv + (3.1, 7.7, 1.3), 330.0, 3.0), 0.02) * (0.35 + 0.65 * sul)
-    col = t.mix(veins * 0.85, col, (0.24, 0.035, 0.05))
-    col = t.mix(arts * 0.55, col, (0.52, 0.10, 0.09))
-    col = t.mix(t.noise(p, 400.0, 3.0).smooth(0.55, 0.75) * 0.25, col, (0.62, 0.30, 0.28))
+    vmask = t.noise(p, 30.0).smooth(0.3, 0.55)
+    veins = t.ridge(t.noise(pv, 70.0, 3.0), 0.022) * vmask
+    veins = veins.max(sul.smooth(0.55, 0.9) * t.noise(pv, 150.0).smooth(0.4, 0.5) * 0.85)
+    arts = t.ridge(t.noise(pv + (3.1, 7.7, 1.3), 260.0, 3.0), 0.025) * (0.4 + 0.6 * sul)
+    caps = t.ridge(t.noise(pv + (1.3, 2.1, 5.3), 800.0, 2.0), 0.03) * 0.5
+    col = t.mix(veins * 0.9, col, (0.10, 0.012, 0.028))
+    col = t.mix(arts * 0.75, col, (0.34, 0.035, 0.035))
+    col = t.mix(caps * 0.5, col, (0.42, 0.10, 0.09))
     # contused, pulped tissue in a wound
     wm = (t.attr("gore_wound") + (t.noise(p, 350.0) - 0.5) * 0.4).smooth(0.3, 0.7)
     pulp = t.mix(t.noise(p, 600.0, 4.0), (0.22, 0.04, 0.035), (0.55, 0.30, 0.28))
     col = t.mix(wm, col, pulp)
-    h = veins * 0.8 + arts * 0.3 + t.noise(p, 900.0) * 0.3 + wm * t.noise(p, 500.0, 4.0) * 2.0
-    rough = t.mix(wet, 0.4, 0.12) + wm * 0.1
+    h = veins * 1.2 + arts * 0.5 + t.noise(p, 900.0) * 0.3 + wm * t.noise(p, 500.0, 4.0) * 2.0
+    rough = t.mix(wet, 0.45, 0.2) + wm * 0.1
     bl = _blood_layer(t, g, col, rough, t.attr("gore_blood"), p)
     bsdf = t.principled({
         'Base Color': bl["Color"], 'Roughness': bl["Roughness"], 'IOR': 1.4,
         'Subsurface Weight': 0.7 * bl["SSS"], 'Subsurface Radius': (1.0, 0.45, 0.35),
-        'Subsurface Scale': 0.003, 'Coat Weight': (wet * 0.8 + bl["Coat"]).clamp(),
+        'Subsurface Scale': 0.003, 'Coat Weight': (wet * 0.55 + bl["Coat"]).clamp(),
         'Coat Roughness': t.mix(bl["Mask"], 0.04 + (1.0 - wet) * 0.2, bl["Coat Roughness"]),
         'Coat Tint': bl["Coat Tint"], 'Normal': t.bump(t.mix(bl["Mask"], h, bl["Height"]), 0.0001)})
     t.output(bsdf)
@@ -937,7 +985,7 @@ def _blood_material(g):
     n = t.noise(p, 300.0, 3.0)
     a = (age + (n - 0.5) * 0.4 * age * (1.0 - age)).clamp()
     clot = t.noise(p, 900.0, 4.0).smooth(0.5, 0.7) * (a * (1.0 - a) * 4.0).clamp()
-    fresh = t.mix(n, (0.30, 0.006, 0.005), (0.42, 0.012, 0.009))
+    fresh = t.mix(n, (0.13, 0.0035, 0.003), (0.21, 0.007, 0.005))
     old = t.mix(n, (0.022, 0.008, 0.006), (0.045, 0.014, 0.009))
     col = t.mix(a, fresh, old)
     col = t.mix(clot * 0.7, col, (0.07, 0.008, 0.006))
@@ -1015,8 +1063,8 @@ def _eye_material(g):
     # ---- sclera -------------------------------------------------------------
     pn = p.normalize()
     back = t.sep(pn)[1].smooth(-0.55, 0.3)
-    scl = t.mix(t.noise(p, 400.0, 3.0), (0.74, 0.66, 0.60), (0.84, 0.78, 0.72))
-    scl = t.mix(back, scl, (0.70, 0.50, 0.46))
+    scl = t.mix(t.noise(p, 400.0, 3.0), (0.58, 0.51, 0.45), (0.68, 0.62, 0.56))
+    scl = t.mix(back, scl, (0.52, 0.34, 0.30))
     scl = t.mix((1.0 - rs.smooth(LIMBUS_R, LIMBUS_R + 0.0012)) * front * 0.55, scl, (0.52, 0.53, 0.56))
     shot = (blood * 1.5).clamp()
     vp = t.warp(p, 250.0, 0.0012)
@@ -1055,12 +1103,12 @@ def _teeth_material(g):
     z_occ = t.value("occlusal_z", OCCLUSAL_Z) + (py - OCCLUSAL_Y) * OCCLUSAL_SLOPE
     h = ((pz - z_occ).abs() - 0.0007) / 0.0085            # 0 biting edge .. 1 gum line
     rnd = t.white(t.vec(t.attr("tooth_id"), 0.37, 0.0))
-    body = t.mix(h.smooth(0.15, 1.0), (0.86, 0.82, 0.71), (0.74, 0.61, 0.38))
+    body = t.mix(h.smooth(0.15, 1.0), (0.68, 0.63, 0.51), (0.56, 0.44, 0.25))
     body = body * (0.92 + 0.12 * rnd)
     front = 1.0 - py.smooth(-0.075, -0.068)               # incisors and canines
     edge = (1.0 - h.smooth(0.0, 0.2)) * front
-    col = t.mix(edge * 0.75, body, (0.58, 0.62, 0.66))
-    col = t.mix(h.smooth(0.85, 1.1) * 0.6, col, (0.55, 0.40, 0.22))
+    col = t.mix(edge * 0.75, body, (0.42, 0.45, 0.48))
+    col = t.mix(h.smooth(0.85, 1.1) * 0.6, col, (0.42, 0.29, 0.14))
     craze = t.ridge(t.noise(p * (1.0, 1.0, 0.08), 900.0, 2.0), 0.015) * 0.25
     col = t.mix(craze, col, col * 0.8)
     ao = t.o(t.node('ShaderNodeAmbientOcclusion', {'Distance': 0.0012}, only_local=True, samples=8), 'AO')
@@ -1122,8 +1170,8 @@ def _tongue_extra(t, p, col, h):
     nz = t.sep(t.coord('Normal'))[2]
     top = nz.smooth(0.0, 0.5)
     coat = t.noise(p, 140.0, 3.0).smooth(0.45, 0.75) * py.smooth(-0.07, -0.04) * top * 0.45
-    col = t.mix(coat, col, (0.78, 0.64, 0.60))
-    col = t.mix(fung * top * 0.8, col, (0.62, 0.10, 0.11))
+    col = t.mix(coat, col, (0.58, 0.46, 0.42))
+    col = t.mix(fung * top * 0.8, col, (0.46, 0.06, 0.07))
     col = t.mix(sulcus * top * 0.3, col, col * 0.7)
     col = t.mix(1.0 - top, col, col * (0.8, 0.62, 0.78))      # purplish, veiny underside
     h = h + (filiform * 0.8 + fung * 1.2) * top - sulcus * 3.0 * top
@@ -1158,11 +1206,11 @@ def build_materials():
         "GH_Blood": _blood_material(g),
         "GH_Eye": _eye_material(g),
         "GH_Teeth": _teeth_material(g),
-        "GH_Gums": _wet_mucosa(g, "GH_Gums", (0.50, 0.14, 0.15), (0.68, 0.30, 0.29), _gums_extra, 0.8,
+        "GH_Gums": _wet_mucosa(g, "GH_Gums", (0.36, 0.07, 0.08), (0.52, 0.17, 0.17), _gums_extra, 0.8,
                                (0.62, 0.24, 0.24)),
-        "GH_Tongue": _wet_mucosa(g, "GH_Tongue", (0.50, 0.17, 0.17), (0.66, 0.28, 0.27), _tongue_extra, 0.7,
+        "GH_Tongue": _wet_mucosa(g, "GH_Tongue", (0.38, 0.10, 0.10), (0.52, 0.19, 0.18), _tongue_extra, 0.7,
                                  (0.58, 0.22, 0.22)),
-        "GH_MouthInterior": _wet_mucosa(g, "GH_MouthInterior", (0.30, 0.05, 0.05), (0.46, 0.12, 0.11),
+        "GH_MouthInterior": _wet_mucosa(g, "GH_MouthInterior", (0.20, 0.03, 0.03), (0.33, 0.07, 0.07),
                                         _mouth_extra, 0.6, (0.35, 0.07, 0.07)),
     }
     return mats
@@ -1314,8 +1362,30 @@ def _label(text, loc, size=0.0075):
 
 
 def _brain_sample(name, radius, loc, mat):
-    """Sphere folded into gyri, with the gh_sulcus attribute anatomy.py writes."""
+    """The anatomy brain (scaled to the slot) or, without anatomy.py, a folded sphere.
+
+    Both carry the gh_sulcus attribute that anatomy.py writes.
+    """
     np = _np()
+    try:
+        import anatomy
+        ob = anatomy.mesh_sdf(name, anatomy.brain_sdf, *anatomy.BRAIN_BOX, 0.0011, voxel=0.0011, project=1,
+                              collection=ghc.get_collection("MatTest"))
+        v = _verts(ob)
+        s = anatomy.gyri_field(np.abs(v[:, 0]), v[:, 1], v[:, 2])
+        _point_attr(ob, "gh_sulcus", np.exp(-(s / 0.0016) ** 2))
+        ob.data.shade_smooth()
+        ob.data.materials.append(mat)
+        pivot = bpy.data.objects.new(name + "_Pivot", None)
+        pivot.location = loc
+        ghc.get_collection("MatTest").objects.link(pivot)
+        ob.parent = pivot
+        ob.location = (0.0, -0.005, -0.03)
+        pivot.scale = (0.33, 0.33, 0.33)
+        pivot.rotation_euler = (math.radians(20), 0.0, math.radians(-50))
+        return ob
+    except Exception as exc:  # noqa: BLE001
+        print("brain sample fallback:", exc)
     ob = _sphere(name, radius, loc, 7, mat)
     v = _verts(ob)
     n = v / np.linalg.norm(v, axis=1, keepdims=True)
@@ -1331,7 +1401,13 @@ def _clear_test_scene():
     ghc.ensure_controls()
 
 
+# setup_stage() is about 1.5 stops hot: an 18% grey card in the key light
+# renders at sRGB ~199.  -1.5 puts it at ~146 (a normal photographic exposure).
+STAGE_EXPOSURE = -1.5
+
+
 def _render(path, cam, samples=48, res=(640, 640)):
+    bpy.context.scene.view_settings.exposure = STAGE_EXPOSURE
     bpy.context.view_layer.update()
     return ghc.render(path, cam, samples, res)
 
@@ -1394,13 +1470,19 @@ def _teeth_sample(loc, mat, r):
         for ob in (up, lo):
             ob.parent = pivot
             ob.location = -centre
-        pivot.scale = (1.55, 1.55, 1.55)
+        pivot.scale = (1.15, 1.15, 1.15)
         pivot.rotation_euler = (math.radians(12), 0.0, math.radians(-25))
     except Exception as exc:  # noqa: BLE001
         print("teeth sample fallback:", exc)
         for i in range(4):
             _sphere(f"S_Tooth{i}", r * 0.28, (loc[0] - r * 0.9 + i * r * 0.6, loc[1], loc[2]), 5, mat,
                     offset=(0.0, -0.087, -0.051), squash=(0.9, 0.7, 1.9))
+
+
+def _streak_wiggle(along, k):
+    """Sideways wander (m) of blood run k after running ``along`` metres down."""
+    np = _np()
+    return 0.0006 * np.sin(along * 110.0 + k * 1.7) + 0.00025 * np.sin(along * 330.0 + k * 2.9)
 
 
 def _gore_head(mat, R=0.07, subdiv=7):
@@ -1420,19 +1502,22 @@ def _gore_head(mat, R=0.07, subdiv=7):
     cw = np.array((-0.20, -1.0, 0.16))
     cw /= np.linalg.norm(cw)
     sw = geo(cw)
-    rw = 0.0105 * (1.0 + 0.16 * _wave_noise(n, 9.0, 1, 3))
+    rw = 0.0105 * (1.0 + 0.14 * _wave_noise(n, 9.0, 1, 2) + 0.06 * _wave_noise(n, 40.0, 9, 2))
     wound = _smoothstep(rw * 1.03, rw * 0.97, sw)
     q = np.clip(1.0 - sw / rw, 0.0, 1.0)
-    depth = np.clip(q * 1.35, 0.0, 1.0) ** 0.85 * (sw < rw)
-    disp = 0.0105 * _smoothstep(0.0, 0.75, q)
+    depth = np.clip(q * 1.35 + 0.1 * _wave_noise(v, 300.0, 6), 0.0, 1.0) ** 0.85 * (sw < rw)
+    disp = 0.0105 * _smoothstep(0.0, 0.75, q) * (1.0 + 0.2 * _wave_noise(v, 250.0, 8))
     rim = (sw - rw) / 0.0045
     edge = np.exp(-np.clip(rim, 0, None) ** 2) * (sw > rw * 0.92) * (0.65 + 0.35 * _wave_noise(v, 300.0, 2))
     lift = 0.0006 * np.exp(-(rim / 0.4) ** 2)                 # torn rim rolls up slightly
-    blood = np.maximum(0.9 * np.exp(-((sw - rw) / 0.0032) ** 2), 0.35 * wound)
-    # --- blood runs straight down from the lower rim (meridians of the sphere)
     el = np.arcsin(np.clip(n[:, 2], -1, 1))
     az = np.arctan2(n[:, 1], n[:, 0])
     el_w, az_w = math.asin(cw[2]), math.atan2(cw[1], cw[0])
+    # blood welling over the lower rim and pooling in the lower half of the crater
+    low = _smoothstep(0.2 * 0.0105, -0.5 * 0.0105, (el - el_w) * R)
+    rim_pool = np.exp(-((sw - rw) / 0.0032) ** 2) * (0.35 + 0.6 * low)
+    blood = np.maximum(rim_pool, wound * (0.08 + 0.75 * low * _smoothstep(0.3, 0.7, q)))
+    # --- blood runs straight down from the lower rim (meridians of the sphere)
     rng = np.random.default_rng(7)
     streaks = []
     for k, off in enumerate((-0.75, -0.42, -0.1, 0.22, 0.55, 0.8)):
@@ -1442,8 +1527,7 @@ def _gore_head(mat, R=0.07, subdiv=7):
         streaks.append((x, el0, length, k))
         along = (el0 - el) * R
         tt = along / length
-        wig = 0.0007 * np.sin(along * 260.0 + k * 1.7) + 0.0004 * np.sin(along * 700.0 + k)
-        lat = (az - az_w) * R * np.cos(el) - x - wig
+        lat = (az - az_w) * R * np.cos(el) - x - _streak_wiggle(along, k)
         width = 0.00115 * (1.0 - 0.45 * np.clip(tt, 0, 1)) + 0.0011 * np.exp(-((tt - 1.0) / 0.05) ** 2)
         m = _smoothstep(width, width * 0.45, np.abs(lat)) * (along > -0.002) * (tt < 1.04)
         blood = np.maximum(blood, m * (1.0 - 0.25 * np.clip(tt, 0, 1)))
@@ -1482,9 +1566,8 @@ def _drip_tubes(info, mat, which=(1, 3)):
         for j in range(npt):
             tt = j / (npt - 1)
             along = tt * L
-            wig = 0.0007 * math.sin(along * 260.0 + k * 1.7) + 0.0004 * math.sin(along * 700.0 + k)
             el = el0 - along / R
-            az = az_w + (x + wig) / (R * math.cos(el))
+            az = az_w + (x + float(_streak_wiggle(along, k))) / (R * math.cos(el))
             rad = 0.00042 * (1.0 - 0.35 * tt) + 0.00075 * math.exp(-((tt - 1.0) / 0.07) ** 2)
             rr = R + rad * 0.55
             sp.points[j].co = (rr * math.cos(el) * math.cos(az), rr * math.cos(el) * math.sin(az),

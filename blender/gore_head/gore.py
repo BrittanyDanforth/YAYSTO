@@ -791,7 +791,7 @@ def _build_exit():
     frac = frac.max(t.smooth(s * 0.004, 0.0, d_out) * is_bone * opened)
     bleed = t.inp("Bleed")
     pool = c.pool(c.L, s * 0.014 * (0.5 + bleed), bleed * opened)
-    flap_blood = flap * (0.4 + 0.5 * bleed) * t.smooth(-0.45, 0.35, t.noise(c.np * 330.0))
+    flap_blood = flap * flap * (0.3 + 0.45 * bleed) * t.smooth(-0.3, 0.45, t.noise(c.np * 330.0))
     blood = (pool * is_skin).max(flap_blood).max(exposed).max(brain_w)
     tw = c.lc(LAYER_WALL)
     # a lifted flap is only skin-thick: its wall does not reach back down to the muscle
@@ -1777,7 +1777,7 @@ def build_gore_node_group():
                            "Bleed": bleed, "Drip Time": t.inp("Drip Time"), "Material": t.inp("Blood Material")})
     prox = t.node('GeometryNodeProximity', {'Target': t.out(bn, 'Trail')}, target_element='EDGES')
     # (an empty trail reports distance 0 everywhere, hence Is Valid)
-    trail_cov = t.smooth(0.0016, 0.0004, t.out(prox, 'Distance')) * t.out(prox, 'Is Valid') * 0.6 * bleed.gt(0.02)
+    trail_cov = t.smooth(0.0014, 0.0003, t.out(prox, 'Distance')) * t.out(prox, 'Is Valid') * 0.45 * bleed.gt(0.02)
     a = t.attr("g_a", 'FLOAT_VECTOR')
     g_sk = t.store(g, "g_a", t.vec(a.x, a.y, a.z.max(trail_cov)), 'FLOAT_VECTOR', sel=near_hits)
     g = t.switch(is_skin, g, g_sk, 'GEOMETRY')
@@ -2500,10 +2500,13 @@ def main():
     print(f"[gore] node groups built in {time.time() - t0:.1f} s")
     verify_gore(objs)
     if "--no-render" not in sys.argv:
-        if not real_mats:
-            # the preview shaders are calibrated for a slightly darker exposure
-            bpy.context.scene.view_settings.exposure = -1.0
-        _test_renders()
+        # setup_stage() is hot; use the exposure materials.py is calibrated for
+        exposure = -1.0
+        if real_mats:
+            import materials
+            exposure = getattr(materials, "STAGE_EXPOSURE", -1.5)
+        bpy.context.scene.view_settings.exposure = exposure
+        _test_renders(samples=28)
 
 
 if __name__ == "__main__":
