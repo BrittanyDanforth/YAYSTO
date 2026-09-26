@@ -3,7 +3,7 @@
  "frame": "body_zup_m",
  "godot_mapping": "(x, z, -y)",
  "generator": "blender/gore_body/build.py",
- "build_id": "gb-4dae8b538130",
+ "build_id": "gb-f941df51dc85",
  "data": {
   "sets": {
    "head": {
@@ -1417,10 +1417,10 @@
    "tile_m": "physical size of one tileable repeat in metres (triplanar / metre UV scale)"
   },
   "timings_s": {
-   "uvs": 0.1,
+   "uvs": 0.0,
    "sets": 311.0,
    "tileables": 80.8,
-   "painter": 36.6
+   "painter": 37.1
   },
   "files": {
    "body_albedo.png": {
@@ -1428,8 +1428,8 @@
     "sha256": "87cb8fc7e49095db"
    },
    "body_bone.png": {
-    "bytes": 93944,
-    "sha256": "661ba5de51f9cf6a"
+    "bytes": 95368,
+    "sha256": "e0415ac5320cf8e5"
    },
    "body_normal.png": {
     "bytes": 1693871,

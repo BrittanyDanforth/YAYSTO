@@ -582,16 +582,56 @@ def round_trip(glb, mesh_names=None):
 # ===========================================================================
 _GODOT_CHECK_GD = r'''extends SceneTree
 # B6 export check: load the imported subject, report skeleton / meshes / skins / blend shapes /
-# animations, and test CUSTOM0 injection (plan §3.3.1, FB-11 precursor) on one skinned surface.
-func _init() -> void:
-	var out := {}
+# animations, test CUSTOM0 injection (plan §3.3.1, FB-11 precursor) on one skinned surface, then pose
+# the skeleton with rig.json's world axes (poses.json) and write GB_Body skinned by Godot
+# (bake_mesh_from_current_skeleton_pose) so Blender can compare it with its own skinning.
+var subj: Node
+var frame := 0
+
+func _initialize() -> void:
 	var ps: PackedScene = load("res://GB_Subject.glb")
 	if ps == null:
 		print("GODOTCHECK " + JSON.stringify({"error": "load failed"}))
 		quit(1)
 		return
-	var root := ps.instantiate()
-	var skels := root.find_children("*", "Skeleton3D", true, false)
+	subj = ps.instantiate()
+	get_root().add_child(subj)
+
+var result := {}
+var pose_names := []
+var pose_data := {}
+var pose_i := -1
+var wait := 0
+
+func _process(_delta: float) -> bool:
+	# frame-stepped: inspect, then for every pose: set it, let the skeleton update for 2 frames, bake
+	frame += 1
+	if frame < 2:
+		return false
+	if frame == 2:
+		result = _inspect()
+		result["poses"] = {}
+		if FileAccess.file_exists("res://poses.json"):
+			pose_data = JSON.parse_string(FileAccess.get_file_as_string("res://poses.json"))
+			pose_names = pose_data.keys()
+		return false
+	if wait > 0:
+		wait -= 1
+		return false
+	if pose_i >= 0:
+		result["poses"][pose_names[pose_i]] = _bake(pose_names[pose_i])
+	pose_i += 1
+	if pose_i >= pose_names.size():
+		print("GODOTCHECK " + JSON.stringify(result))
+		quit(0)
+		return true
+	_set_pose(pose_names[pose_i])
+	wait = 2
+	return false
+
+func _inspect() -> Dictionary:
+	var out := {}
+	var skels := subj.find_children("*", "Skeleton3D", true, false)
 	out["skeletons"] = skels.size()
 	if skels.size() > 0:
 		var sk: Skeleton3D = skels[0]
@@ -599,16 +639,14 @@ func _init() -> void:
 		for i in sk.get_bone_count():
 			names.append(sk.get_bone_name(i))
 		out["bones"] = names
-		out["skeleton_name"] = String(sk.name)
 	var meshes := {}
-	for n in root.find_children("*", "MeshInstance3D", true, false):
+	for n in subj.find_children("*", "MeshInstance3D", true, false):
 		var mi := n as MeshInstance3D
 		var m := mi.mesh
 		if m == null:
 			continue
 		var info := {"surfaces": m.get_surface_count(), "blend_shapes": 0, "skin": mi.skin != null,
-			"skeleton_path": String(mi.skeleton), "materials": [], "uv2": true, "bones_per_vertex": 0,
-			"compressed": false}
+			"materials": [], "uv2": true, "bones_per_vertex": 0, "compressed": false}
 		if m is ArrayMesh:
 			var am := m as ArrayMesh
 			info["blend_shapes"] = am.get_blend_shape_count()
@@ -627,13 +665,12 @@ func _init() -> void:
 		meshes[String(mi.name)] = info
 	out["meshes"] = meshes
 	var anims := []
-	for n in root.find_children("*", "AnimationPlayer", true, false):
+	for n in subj.find_children("*", "AnimationPlayer", true, false):
 		var ap := n as AnimationPlayer
 		for a in ap.get_animation_list():
 			anims.append(String(a))
 	out["animations"] = anims
-	# CUSTOM0 injection test on GB_Body surface 0: rest position + segment as RGBA32F
-	var body := root.find_child("GB_Body", true, false) as MeshInstance3D
+	var body := subj.find_child("GB_Body", true, false) as MeshInstance3D
 	if body != null and body.mesh is ArrayMesh:
 		var am := body.mesh as ArrayMesh
 		var arrays := am.surface_get_arrays(0)
@@ -653,15 +690,89 @@ func _init() -> void:
 		out["custom0"] = {"vertices": verts.size(), "has_custom0": (f2 & Mesh.ARRAY_FORMAT_CUSTOM0) != 0,
 			"rgba_float": ((f2 >> Mesh.ARRAY_FORMAT_CUSTOM0_SHIFT) & Mesh.ARRAY_FORMAT_CUSTOM_MASK) == Mesh.ARRAY_CUSTOM_RGBA_FLOAT,
 			"bones_kept": (f2 & Mesh.ARRAY_FORMAT_BONES) != 0}
-		# rest vertex positions: Godot (x, y, z) must equal Blender (x, z, -y)
-		var bb := AABB()
-		for i in verts.size():
-			bb = bb.expand(verts[i]) if i > 0 else AABB(verts[i], Vector3.ZERO)
-		out["body_aabb"] = [bb.position.x, bb.position.y, bb.position.z, bb.end.x, bb.end.y, bb.end.z]
-	print("GODOTCHECK " + JSON.stringify(out))
-	root.free()
-	quit(0)
+	return out
+
+func _set_pose(pname: String) -> void:
+	var sk: Skeleton3D = subj.find_children("*", "Skeleton3D", true, false)[0]
+	for b in sk.get_bone_count():
+		sk.reset_bone_pose(b)
+	for item in pose_data[pname]:
+		var bi := sk.find_bone(item[0])
+		var grest: Transform3D = sk.get_bone_global_rest(bi)
+		var ax := Vector3(item[1][0], item[1][1], item[1][2])
+		var ax_local := (grest.basis.inverse() * ax).normalized()
+		sk.set_bone_pose_rotation(bi, sk.get_bone_pose_rotation(bi) * Quaternion(ax_local, deg_to_rad(item[2])))
+
+func _bake(pname: String) -> Dictionary:
+	var info := {}
+	for mn in ["GB_Body", "GB_MuscleShell", "GB_Skeleton"]:
+		var mi := subj.find_child(mn, true, false) as MeshInstance3D
+		if mi == null:
+			continue
+		var baked := mi.bake_mesh_from_current_skeleton_pose()
+		if baked == null:
+			continue
+		var flat := PackedFloat32Array()
+		for s in baked.get_surface_count():
+			var v: PackedVector3Array = baked.surface_get_arrays(s)[Mesh.ARRAY_VERTEX]
+			for p in v:
+				flat.append(p.x)
+				flat.append(p.y)
+				flat.append(p.z)
+		var f := FileAccess.open("res://baked_%s_%s.bin" % [pname, mn], FileAccess.WRITE)
+		f.store_buffer(flat.to_byte_array())
+		f.close()
+		info[mn] = flat.size() / 3
+	return info
 '''
+
+
+# poses Godot applies with rig.json world axes (converted to Godot axes) and bakes; Blender compares
+GODOT_POSES = {"elbow_90": {"forearm_L": [("flex", 90.0)]}, "knee_110": {"shin_R": [("flex", 110.0)]},
+               "shoulder_abd_60": {"upper_arm_L": [("abd", 60.0)]}, "hip_flex_90": {"thigh_R": [("flex", 90.0)]},
+               "neck_rot_30": {"neck": [("twist", 30.0)]}, "jaw_open_15": {"jaw": [("open", 15.0)]}}
+
+
+def _godot_poses():
+    import rig
+    axes = rig.world_axes()
+    out = {}
+    for name, pose in GODOT_POSES.items():
+        out[name] = [[b, [float(c) for c in gbc.b2g(np.asarray(axes[b][ax]))], float(deg)]
+                     for b, rots in pose.items() for ax, deg in rots]
+    return out
+
+
+def _compare_godot_poses(tmp, info):
+    """Max / mean distance (mm) from every Godot-skinned vertex to the nearest Blender-skinned vertex."""
+    import rig
+    from mathutils.kdtree import KDTree
+    res = {}
+    arm = bpy.data.objects[gbc.ARMATURE]
+    for pname, meshes in info.items():
+        mats = rig.pose_matrices(arm, GODOT_POSES[pname])
+        worst, mean_all, n_all = 0.0, 0.0, 0
+        for mn, count in meshes.items():
+            path = os.path.join(tmp, f"baked_{pname}_{mn}.bin")
+            if not os.path.exists(path):
+                continue
+            G = np.fromfile(path, dtype=np.float32).reshape(-1, 3).astype(float)
+            o = bpy.data.objects[mn]
+            idx, w = rig.read_weights(o)
+            P = rig.lbs(gbc.get_verts(o.data), idx, w, mats)
+            B = np.stack([P[:, 0], P[:, 2], -P[:, 1]], 1)
+            kd = KDTree(len(B))
+            for i, p in enumerate(B):
+                kd.insert(p.tolist(), i)
+            kd.balance()
+            d = np.array([kd.find(p.tolist())[2] for p in G])
+            worst = max(worst, float(d.max()))
+            mean_all += float(d.sum())
+            n_all += len(d)
+        rig.reset_pose(arm)
+        res[pname] = {"max_mm": round(worst * 1000, 4), "mean_mm": round(mean_all / max(n_all, 1) * 1000, 5),
+                      "vertices": n_all}
+    return res
 
 
 def godot_import_check(glb, godot=GODOT_BIN, timeout=900):
@@ -676,16 +787,26 @@ def godot_import_check(glb, godot=GODOT_BIN, timeout=900):
         shutil.copy(glb, os.path.join(tmp, "GB_Subject.glb"))
         with open(os.path.join(tmp, "check.gd"), "w") as fh:
             fh.write(_GODOT_CHECK_GD)
+        with open(os.path.join(tmp, "poses.json"), "w") as fh:
+            json.dump(_godot_poses(), fh)
         env = dict(os.environ)
         imp = subprocess.run([godot, "--headless", "--path", tmp, "--import"], capture_output=True, text=True,
                              timeout=timeout, env=env)
-        run = subprocess.run([godot, "--headless", "--path", tmp, "--script", "res://check.gd"], capture_output=True,
-                             text=True, timeout=timeout, env=env)
+        # skins register with the skeleton only with a real renderer: run the check under a virtual X
+        # display with the OpenGL (Mesa llvmpipe) driver when xvfb-run exists, else headless (no pose bakes)
+        xvfb = shutil.which("xvfb-run")
+        if xvfb:
+            cmd = [xvfb, "-a", godot, "--path", tmp, "--rendering-driver", "opengl3", "--audio-driver", "Dummy",
+                   "--script", "res://check.gd"]
+        else:
+            cmd = [godot, "--headless", "--path", tmp, "--audio-driver", "Dummy", "--script", "res://check.gd"]
+        run = subprocess.run(cmd, capture_output=True, text=True, timeout=timeout, env=env)
         line = next((l for l in run.stdout.splitlines() if l.startswith("GODOTCHECK ")), None)
         if line is None:
             return False, {"error": "no output", "import_rc": imp.returncode, "rc": run.returncode,
                            "stderr": (imp.stderr + run.stderr)[-3000:]}
         got = json.loads(line[len("GODOTCHECK "):])
+        pose_cmp = _compare_godot_poses(tmp, got.get("poses", {}))
     finally:
         shutil.rmtree(tmp, ignore_errors=True)
     import rig
@@ -720,6 +841,9 @@ def godot_import_check(glb, godot=GODOT_BIN, timeout=900):
     missing_anims = [a for a in gbc.POSE_ACTIONS if a not in got.get("animations", [])]
     if missing_anims:
         probs.append(f"animations missing {missing_anims}")
+    for pn, r in pose_cmp.items():
+        if r.get("max_mm", 1e9) > 0.2:
+            probs.append(f"pose {pn}: Godot vs Blender skinning differ by {r.get('max_mm')} mm")
     c0 = got.get("custom0", {})
     if not (c0.get("has_custom0") and c0.get("rgba_float") and c0.get("bones_kept")):
         probs.append(f"CUSTOM0 injection failed: {c0}")
@@ -727,8 +851,9 @@ def godot_import_check(glb, godot=GODOT_BIN, timeout=900):
               "bone_order": "same as rig.json" if order_same else "differs from rig.json: map bones by NAME "
                                                                  "(Skeleton3D.find_bone), never by index",
               "godot_bone_order": got.get("bones", []),
-              "custom0": c0, "body_aabb_godot": [round(x, 4) for x in got.get("body_aabb", [])],
+              "custom0": c0,
               "compressed_meshes": sorted(n for n, m in meshes.items() if m.get("compressed")),
+              "skinning_vs_blender": pose_cmp,
               "problems": probs}
     return not probs, detail
 

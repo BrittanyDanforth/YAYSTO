@@ -359,9 +359,12 @@ def _gates():
     # the skin lies on: the spine gate sits above the iliac crest / ASIS / sacrum (pelvis skin stays
     # with the hips), the chest gate below the costal margin (skin over costal cartilages 8-10 and
     # ribs 11-12 moves with the chest), the upper_chest gate between ribs 7 and 8 (T7/T8 at the back).
+    # (the front widths are larger: forward bending folds the belly there, a wide blend folds it softly)
     trunk = {"spine": ((0.040, 0.070, 0.095, 0.080, 0.050, 0.080, 0.095, 0.070), (0.040,) * 8),
-             "chest": ((-0.020, -0.060, -0.105, -0.075, -0.010, -0.075, -0.105, -0.060), (0.035,) * 8),
-             "upper_chest": ((-0.118, -0.098, -0.078, -0.053, -0.013, -0.053, -0.078, -0.098), (0.018,) * 8)}
+             "chest": ((-0.020, -0.060, -0.105, -0.075, -0.010, -0.075, -0.105, -0.060),
+                       (0.060, 0.050, 0.035, 0.035, 0.035, 0.035, 0.035, 0.050)),
+             "upper_chest": ((-0.118, -0.098, -0.078, -0.053, -0.013, -0.053, -0.078, -0.098),
+                             (0.035, 0.030, 0.018, 0.018, 0.018, 0.018, 0.018, 0.030))}
     for name, (o, w) in trunk.items():
         b = bm[name]
         g[name] = Gate(b["head"], UP, ANT, LEFT, o=o, w=w, o_axis=float(o[4]), w_axis=float(w[4]),
@@ -382,7 +385,7 @@ def _girdle(p):
     d, _t = _polyline_param(p, [(0.040, -0.046, 1.452), (0.125, -0.024, 1.462), (0.205, 0.016, 1.458)])
     clav = _sstep(0.058, 0.025, d) * _sstep(0.035, 0.080, x)
     d, _t = _polyline_param(p, [(0.075, 0.098, 1.432), (0.140, 0.076, 1.446), (0.205, 0.022, 1.455)])
-    spine = _sstep(0.068, 0.035, d) * _sstep(0.040, 0.075, x)
+    spine = _sstep(0.068, 0.035, d) * _sstep(0.030, 0.062, x)
     q = np.sqrt(((x - 0.140) / 0.080) ** 2 + ((y - 0.090) / 0.075) ** 2 + ((z - 1.385) / 0.090) ** 2)
     body = _sstep(1.15, 0.65, q) * _sstep(0.020, 0.060, y)
     a = np.linalg.norm(p - np.array([0.195, 0.018, 1.447]), axis=1)
@@ -569,8 +572,22 @@ def _face(p, idx, w):
     return idx, w
 
 
+def _merge_duplicates(idx, w):
+    """Sum the weights of a bone that appears in two slots of a row (keeps the first slot)."""
+    idx = np.array(idx, np.int32, copy=True)
+    w = np.array(w, float, copy=True)
+    for a in range(idx.shape[1]):
+        for b in range(a + 1, idx.shape[1]):
+            dup = (idx[:, a] == idx[:, b]) & (w[:, b] > 0)
+            if dup.any():
+                w[dup, a] += w[dup, b]
+                w[dup, b] = 0.0
+    return idx, w
+
+
 def _quantise(idx, w):
     """Snap weights to a 1/QUANT grid; the largest absorbs the remainder so rows sum exactly to 1."""
+    idx, w = _merge_duplicates(idx, w)
     w = np.clip(w, 0.0, None)
     w = w / np.maximum(w.sum(axis=1, keepdims=True), 1e-12)
     q = np.floor(w * QUANT + 0.5)
@@ -704,9 +721,10 @@ def object_weights(obj, layer="skin"):
     """(idx, w) for a mesh: rigid parts (``gb_rigid_bone``), followers (skin anchors) or analytic."""
     n = len(obj.data.vertices)
     if obj.name in FOLLOWERS and _has_anchors(obj):
-        import head_integration as hi
-        idx, w = hi.follower_weights(obj)
-        return _quantise(np.asarray(idx, np.int32), np.asarray(w, float))
+        # B2 followers: the weights of the skin at each vertex's anchor (weights_at includes the lid regions,
+        # so this is head_integration.follower_weights without blending the lids in twice)
+        a = np.stack([gbc.read_point_attr(obj, "gb_anchor_" + c, 'FLOAT') for c in "xyz"], 1).astype(float)
+        return weights_at(a)
     rigid = gbc.read_point_attr(obj, "gb_rigid_bone", 'INT')
     if rigid is not None and np.all(rigid >= 0):
         idx = np.repeat(rigid.astype(np.int32)[:, None], 4, axis=1)
@@ -731,9 +749,6 @@ def _has_anchors(obj):
 def skin_object(obj, arm, layer="skin"):
     """Parent to the armature (OBJECT), weight every vertex, add the single ARMATURE modifier."""
     idx, w = object_weights(obj, layer)
-    if obj.name in FOLLOWERS and _has_anchors(obj):
-        # the rigid fallback tags of B2's followers no longer apply: mark them analytic (-1)
-        gbc.point_attr(obj, "gb_rigid_bone", np.full(len(obj.data.vertices), -1, np.int32), 'INT')
     assign_weights(obj, arm, idx, w)
     _LAST[obj.name] = (idx, w)
     for mod in list(obj.modifiers):
@@ -1007,11 +1022,12 @@ def build_poses(arm):
 # rig.json payload (plan §5.8)
 # ===========================================================================
 # directional torque caps: strongest anatomical direction at the top of the plan's range, weakest at
-# the bottom (K: isometric peak-torque ratios of adult males; magnitudes stay in the plan §3.1.2 range)
+# the bottom (K: isometric peak-torque ratios of adult males; magnitudes stay in the plan §3.1.2 range;
+# where the plan gives one E value (chest 150, upper_chest 100) the split stays within +-7 % of it)
 CAP_SPLIT = {
     "spine": {"flex": 230, "ext": 300, "lat_L": 220, "lat_R": 220, "rot_L": 200, "rot_R": 200},
-    "chest": {"flex": 130, "ext": 170, "lat_L": 150, "lat_R": 150, "rot_L": 140, "rot_R": 140},
-    "upper_chest": {"flex": 90, "ext": 110, "lat_L": 100, "lat_R": 100, "rot_L": 95, "rot_R": 95},
+    "chest": {"flex": 140, "ext": 160, "lat_L": 150, "lat_R": 150, "rot_L": 150, "rot_R": 150},
+    "upper_chest": {"flex": 95, "ext": 105, "lat_L": 100, "lat_R": 100, "rot_L": 100, "rot_R": 100},
     "neck": {"flex": 25, "ext": 40, "lat_L": 28, "lat_R": 28, "rot_L": 20, "rot_R": 20},
     "head": {"flex": 20, "ext": 34, "lat_L": 22, "lat_R": 22, "rot_L": 20, "rot_R": 20},
     "clavicle": {"elev": 40, "depr": 40, "protr": 40, "retr": 40, "roll_fwd": 40, "roll_back": 40},

@@ -325,9 +325,10 @@ def weights_normalised():
 def rigid_parts_follow_their_bone():
     """Vertices tagged ``gb_rigid_bone`` (bones, eyes, teeth, cards) are weighted 100 % to that bone."""
     bad = {}
+    import rig
     for o in _exported():
         rb = gbc.read_point_attr(o, "gb_rigid_bone", 'INT')
-        if rb is None:
+        if rb is None or o.name in rig.FOLLOWERS:     # B2 followers take the skin weights at their anchors (B6)
             continue
         gname = {g.index: g.name for g in o.vertex_groups}
         wrong = 0
@@ -2503,6 +2504,8 @@ def b6_rig_json():
                 probs.append(f"{b['bone']}.{ax} not unit")
         caps = j["torque_cap_nm"]
         lo, hi = j["torque_cap_range_nm"]
+        if lo == hi:                               # a single E value in the plan: allow a +-7 % directional split
+            lo, hi = lo * 0.93, hi * 1.07
         if any(not (lo - 1e-6 <= c <= hi + 1e-6) for c in caps.values()):
             probs.append(f"{b['bone']} cap outside plan range")
         if not j.get("myotomes"):

@@ -54,6 +54,8 @@ TESTS = {
                         "swing 100 (anatomical 120)", "fb2"),
     "hip_flex_108": ({"thigh_L": [("flex", 108.0)]}, "thigh_L", 0.20, "90 % of live 120", "fb2"),
     "hip_flex_110": ({"thigh_L": [("flex", 110.0)]}, "thigh_L", 0.20, "FB-2 max", "max"),
+    "hip_flex_90": ({"thigh_L": [("flex", 90.0)]}, "thigh_L", 0.20, "B1 shorts clearance pose (sitting)",
+                    "quality"),
     "shoulder_flex_90": ({"upper_arm_L": [("flex", 90.0)]}, "upper_arm_L", 0.15, "90 % of swing 100", "quality"),
     "shoulder_rhythm_90": ({"upper_arm_L": [("abd", 60.0)], "clavicle_L": [("elev", 27.0)]}, "upper_arm_L", 0.15,
                            "2:1 scapulohumeral rhythm, 90 % of clavicle elevation", "quality"),
@@ -156,6 +158,37 @@ def _cone_volume(V, T, c):
     return np.einsum("ij,ij->i", a, np.cross(b, d)) / 6.0
 
 
+_REGION_VOL = {}
+
+
+def region_volume(V, T, centre, radius, step=0.006):
+    """Rest volume (m^3) of the body inside a sphere: grid points inside the closed rest skin (ray parity)."""
+    key = (tuple(np.round(centre, 5)), round(radius, 4), len(V))
+    if key in _REGION_VOL:
+        return _REGION_VOL[key]
+    from mathutils import Vector
+    bvh = _bvh(V, T)
+    g = np.arange(-radius, radius + 1e-9, step)
+    X, Y, Z = np.meshgrid(g, g, g, indexing="ij")
+    P = np.stack([X.ravel(), Y.ravel(), Z.ravel()], 1)
+    P = P[np.linalg.norm(P, axis=1) <= radius] + centre
+    d = Vector((0.2672612, 0.5345225, 0.8017837))
+    inside = 0
+    for p in P:
+        o = Vector(p)
+        n = 0
+        for _ in range(64):
+            loc, _nrm, _i, _dist = bvh.ray_cast(o, d)
+            if loc is None:
+                break
+            n += 1
+            o = loc + d * 1e-6
+        inside += n & 1
+    vol = inside * step ** 3
+    _REGION_VOL[key] = vol
+    return vol
+
+
 def _axis_dist(p, a, b):
     ab = b - a
     t = np.clip(((p - a) @ ab) / (ab @ ab), -0.5, 1.5)
@@ -181,8 +214,8 @@ def run_test(md, arm, name, spec, rest=None):
     reg_t = np.linalg.norm(cen - J, axis=1) < radius
     # joint-region volume change: the whole skin is closed, so the global signed volume change is
     # exactly the change of the deforming region (everything else moves rigidly); normalised by the
-    # rest volume of the region (cone volume of its skin patch seen from the joint centre)
-    vol0 = _cone_volume(V0, T[reg_t], J).sum()
+    # rest volume of body tissue inside the region sphere (grid count, inside = ray parity at rest)
+    vol0 = region_volume(V0, T, J, radius)
     c = V0.mean(0)
     dvol = _cone_volume(V1, T, c).sum() - _cone_volume(V0, T, c).sum()
     vol1 = vol0 + dvol
