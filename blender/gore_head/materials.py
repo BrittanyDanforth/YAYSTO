@@ -1098,7 +1098,8 @@ def _bone_material(g):
     col = t.mix(main * 0.9, col, (0.055, 0.009, 0.007))
     h = h - main * 3.0 - hair * 1.2
     # wounds and fractures are bloody, but the bone must still read: patchy film
-    blood = (t.attr("gore_blood") * 0.55).max(main * 0.7)
+    gb = t.attr("gore_blood")
+    blood = (gb * 0.55).max(main * 0.7).max(gb.smooth(0.8, 1.0) * 0.95)
     bl = _blood_layer(t, g, col, b["Roughness"], blood, p)
     h = t.mix(bl["Height Mask"], h, bl["Height"] * 2.0 - main * 2.0)
     bsdf = t.principled({

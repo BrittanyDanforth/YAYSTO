@@ -1014,7 +1014,9 @@ def _build_slash():
     pool = c.pool(q, s * 0.0035 * (0.5 + bleed), bleed * opened, drop=open_hw * 0.6)
     lip_blood = t.smooth(0.004, 0.0, d_out) * lens.gt(0.02) * opened * bleed \
         * (0.35 + 0.65 * low_lip) * t.smooth(-0.3, 0.3, t.noise(c.np * 350.0, detail=2.0))
-    blood = (pool * is_skin * (0.35 + 0.65 * low_lip)).max(lip_blood).max(exposed * 0.9).max(score * 0.8) \
+    # bone reached by the cut lies in a pool of blood (periosteum, not white bone)
+    bone_bed = reach * is_bone * t.smooth(open_hw * 1.3, open_hw * 0.6, av) * lens.gt(0.02)
+    blood = (pool * is_skin * (0.35 + 0.65 * low_lip)).max(lip_blood).max(exposed * 0.9).max(bone_bed) \
         .max(scratch * 0.3 * bleed)
     _finish_kind(t, cut, disp=disp, wall=wall, center=center, wound=wound, edge=scratch, blood=blood)
     return t
@@ -1042,7 +1044,7 @@ def _build_blunt():
     nl = t.noise(c.np * 120.0, detail=3.0)
     hours = t.inp("Age") * t.inp("Age") * 48.0
     # swelling: some at once, most within the first hours (peak ~24 h)
-    f_sw = 0.2 + 0.8 * t.smooth(0.03, 16.0, hours)
+    f_sw = 0.25 + 0.75 * t.smooth(0.02, 6.0, hours)
     rsw = s * 0.017
     swell = t.inp("Swelling") * (0.0035 + 0.0055 * s.min(1.3)) * f_sw \
         * t.math('EXPONENT', -(c.rho / rsw) ** 2.0) * (1.0 + nl * 0.25) * soft
