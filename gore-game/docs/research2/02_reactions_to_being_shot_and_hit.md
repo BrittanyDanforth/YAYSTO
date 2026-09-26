@@ -1367,3 +1367,95 @@ All sources were read only through search-result summaries (see §0.1).
 - **[S65]** King SM et al. Defensive head movements to looming visual stimuli in human adults. *Perception* 1992. https://doi.org/10.1068/p210245
 
 Round-one sources (Karger momentum paper, Rossen neck-cuff experiments, fencing-response details, Plum & Posner) are listed in the round-one files and cited here through `[R1-0x]`.
+
+---
+
+## 18. Fact-check (independent review, 2026-09-26)
+
+### 18.1 Method and limits of this check
+
+- **No fresh web evidence could be obtained.** The first `WebSearch` in this pass was refused because the session's shared budget was already exhausted (200/200). One `WebFetch` to a PubMed abstract was refused by the egress proxy (`EGRESS_BLOCKED`).
+- The check therefore rests on:
+  1. **independent recomputation** of every derived number (momentum, XcoM thresholds, topple times, logistic probabilities, impulse cross-check);
+  2. the checker's own knowledge of the primary literature `[K]`, with a confidence grade;
+  3. internal consistency with round one (`[R1-01]`, `[R1-03]`, `[R1-04]`).
+- The sibling round-two files (03, 04, 06) were **not** used as independent confirmation, because they copy these same `[S#]` sources.
+- Marks used in the text:
+  - **✓ verified**: arithmetic re-derived, or matches the checker's knowledge at (H) or (M).
+  - **⚠ not re-verified**: plausible, but no independent confirmation was possible.
+  - **Corrected: was X**: a value, attribution or interpretation was changed.
+- **Priority for a future session with web access**: re-open [S2] (LASR pooled means), [S13] (Karger 4/2/1 of 7), [S27] (eye-movement counts), [S31] (5.9 vs 3.5 krad/s²), [S38] (ISO / In Compliance wording), [S47] (radial palsy paper) and [S51] (2.02–7.41 m/s interval).
+
+### 18.2 Per-claim verdicts
+
+| # | Claim | Verdict | Value to use | Basis |
+|---|---|---|---|---|
+| 1 | Startle EMG onsets and flinch pattern | ✓ ranges and order; ⚠ LASR pooled means | Ranges as in §1.1; masseter ≈ SCM 60–70 ms | Classic startle EMG (Wilkins 1986; Brown 1991) `[K]` (H). The ±1/±2 vs ±13 spreads look like mixed SE/SD |
+| 2 | RIII ~100 ms; heat withdrawal 190–280 / 1,170–1,460 ms | ✓ RIII; ⚠ heat values | Leg values as given; scale the C component by path length (hand 0.6–1.0 s, face 0.2–0.5 s) | Willer 1977 RIII `[K]` (H); C-fibre conduction ~1 m/s `[K]` |
+| 3 | Bullet momentum negligible; punch ≈ 9× a 9 mm | ✓ | Unchanged | All p and Δv recomputed; impulse cross-check (2/π)·3,427 N·12 ms ≈ 26 N·s |
+| 4 | FBI 1989: 10–15 s of voluntary action; psychology unreliable | ✓ | 10–15 s window; LOC usually 6–12 s after flow stops | Widely reproduced FBI text `[K]` (H) |
+| 5 | FBI 2014: "decide to stop"; delayed pain; 20–30 % hit rate | ⚠ | Keep the substance; attribute cautiously | Wording not re-checked; substance matches FBI 1989. NYPD 18 % / RAND ✓ `[K]` (M) |
+| 6 | Ellifritz: ~2 hits; 47 %/34 %; 13–17 % never; shotgun 86/12 % | ✓ (M), **range corrected** | ~2 hits, by calibre **1.4–2.5** (was 1.5–2.4) | Recollection of Ellifritz's table: .22 ≈ 1.4, 9 mm ≈ 2.45 `[K]` (M) |
+| 7 | Karger 1999 cardiac-stab activity 4/2/1 of 7; hours with peripheral wounds | ⚠ | Keep as a small-sample shape | Paper real; general finding ✓ with `[R1-03 §5]` |
+| 8 | Fall ⅔ s to ≥ 1 s; unavoidable falls 0.7–1.2 s; arm burst ~100 ms; 91 % | ✓ physics and ~100 ms; ⚠ 91 % and the sources | Unchanged | A COM free fall of 0.39 s is the lower bound; ~0.7 s to impact in lateral falls `[K]` |
+| 9 | 227 falls: hands 74 %, head 37 %; causes 41/21/11/11/11 % | Numbers ✓; **attribution corrected** | Hands and head → **Schonnop et al., *CMAJ* 2013** [S24b]; causes → Robinovitch, *Lancet* 2013 [S24] | `[K]` (M–H) |
+| 10 | Head impact 2.02–7.41 m/s; rigid topple 1.0–1.6 s, 6.5–7 m/s | ✓ topple arithmetic; ⚠ S51 interval | Rigid 1.0–1.6 s; **0.8–1.6 s** when not fully rigid | Re-derived; a non-uniform body changes ω by ~2 %; crown speed ceiling √(3gL) = 7.2 m/s |
+| 11 | Postural EMG 73–110 ms; toe-off 0.24 s; lean limit 32.2° vs 23.5°; crossover ~50 % | ✓ EMG and lean; ⚠ toe-off and crossover | Toe-off 0.22–0.35 s | Horak & Nashner 1986; Thelen 1997 ≈ 32.5° / 23.9° `[K]` (M) |
+| 12 | Syncope: LOC 12.1 ± 4.4 s, myoclonus 90 %, eyes open and up (13/14) | ✓ Lempert 1994; ⚠ 1996 counts | Unchanged; upgaze transient | `[K]` (H) for the 1994 values |
+| 13 | Knockout biomechanics (Walilko, Viano hook, LOC vs no LOC, thresholds, tone ≤ 100 ms) | ✓ Walilko and hook; ⚠ Clin Biomech 2019 and ≤ 100 ms; **threshold interpretation clarified** | 4,500 = **25 %-risk concussion** level (Zhang 2004: 4,600/5,900/7,900 for 25/50/80 %), not loss of consciousness; ~10,000 ≈ bridging-vein tolerance for pulses < 10 ms (Depreitere 2006); P_LOC midpoint 7,500–8,000 if braced | `[K]` (M–H) |
+| 14 | MMA: 53.9 % jaw; 3.5 s (0–20 s) to stoppage | ✓ (M) | Unchanged | Hutchison et al. 2014 `[K]`. The "n = 503" elsewhere in §6.3 is doubtful (usually cited as 844 fights) |
+| 15 | Video signs; slow to get up 66 % | ✓ definition and six signs; ⚠ NFL 66 % | Unchanged | Davis et al. 2019 `[K]` (H) |
+| 16 | Artwohl 84/79/74/62 %; Anzio 32 % vs 83 % | ✓ numbers; **context corrected** | Officers who fired, not victims. Civilian 83 % = Beecher's later (1956) surgical-wound comparison | `[K]` (H) Artwohl & Christensen 1997; `[K]` (M) Beecher |
+| 17 | Turn 180° 0.26–0.54 s; 2.18 extra shots, last at 0.36 s | ⚠ | Unchanged | Order of magnitude ✓ (stop-signal RT 0.2–0.4 s) |
+| 18 | Scream roughness 30–150 Hz; pain F0 and nonlinearity rise; PSPI | ✓ | AU43 is binary | Arnal 2015; Prkachin & Solomon 2008 `[K]` (H). [S41] used acted pain |
+| 19 | Peritonitis still, colic writhe; touch gates pain | ✓ | Unchanged | Textbook sign `[K]` (H); Mancini 2015 `[K]` (M) |
+| 20 | Radial palsy 26.5 % (30/113); thoracic 48–64 %; hip GSW cannot bear weight | ✓ arithmetic and plausibility; ⚠ source paper | 0.2–0.3 | Closed-fracture palsy ~12 % pooled `[K]` |
+| 21 | ISO 0.5 s; real hot-metal contact 1–5 s; pain threshold 43–45 °C | ✓ threshold; **0.5 s clarified; 1–5 s corrected to [E]** | Unintentional contact 0.5–1 s (alert), 4 s (impaired). Bare-metal burn ≈ 65–70 °C at 1 s, 58–60 °C at 4 s, 55 °C at 10 s | ISO 13732-1 tables and IEC Guide 117 design periods `[K]` (M) |
+
+### 18.3 Other changes made in the text
+
+- §9.4: **corrected** "shooting survivors" to officers involved in shootings (Artwohl's respondents fired; they were not shot).
+- §6.3: **corrected** the eye mechanism. The knockout upgaze is the tonic upgaze of loss of consciousness, not Bell's phenomenon. `ko_eyes` relabelled.
+- §8 / burn parameters: `unintentional_contact_min`, `hot_metal_contact_real` and `burn_second_pain` corrected or rescaled; `metal_burn_threshold` added.
+- §4 parameters: `step_toe_off` widened to 0.22–0.35 s.
+- §5 parameters: `topple_ground_time` note (0.8–1.6 s when not rigid); `hand_impact_p` / `head_impact_p` re-attributed.
+- §2 parameters: `hits_to_stop_mean` range corrected.
+
+### 18.4 Myth audit
+
+| Myth | Status in this document |
+|---|---|
+| Bullets knock people backwards | ✓ Correctly rejected (§1.3, §14 row 1). Arithmetic re-verified. Added §14 row 16 (spin or fly in the bullet's direction) |
+| Eyes "roll back" at the moment of death | **Gap filled**: §5.6 and §14 row 14. Upgaze is transient in syncope or knockout; the dead rest near neutral or slightly divergent (`[R1-04 §11, §14]`) |
+| "Hydrostatic shock" drops people from torso hits | **Gap filled**: §14 row 13. No reliable remote incapacitation at handgun velocity (FBI 1987/1989, Fackler). Remote-effect claims for rifles (Suneson 1990; Courtney & Courtney 2007–08) are contested and never an instant off switch |
+| Everyone screams when shot | **Gap filled**: §14 row 15. Silence, a grunt or "I'm hit" are common; screaming follows fractures, burns and discovery of the wound |
+| Heart shot = instant drop | ✓ Correctly rejected (§2.5) |
+| Faint or knockout = slow drift down | ✓ Correctly rejected (§6.3, §14 row 7) |
+
+### 18.5 Gaps added
+
+1. **Femoral nerve injury** (§3 row 22): the knee buckles under load; the person stands only with the knee locked. `[K]` (H).
+2. **Path-length scaling of heat and C-fibre withdrawal** (§1.2, §8 parameters).
+3. **Concussion vs loss-of-consciousness thresholds** (Zhang 2004 risk curve) and a **braced-target** P_LOC shift (§6.1–6.2).
+4. **Loss of consciousness 6–12 s after circulatory arrest** as the realistic end of the "10–15 s" window (§2.1).
+5. **Artwohl extras**: temporary paralysis 7 %, dissociation 39 % (§2.4). Useful as a freeze ceiling for trained people.
+6. **Burn thresholds for bare metal by contact time** (§8).
+7. **Post-knockout strikes**: ~2.6 further strikes landed in MMA (§6.3), `[K]` (L–M).
+8. Myth rows 13–16 (§14).
+
+### 18.6 Checker's bibliography (`[K]`; cited from memory, **not accessed** in this session, so no URLs)
+
+- Wilkins DE, Hallett M, Wess MM. Audiogenic startle reflex of man and its relationship to startle syndromes. *Brain* 1986;109:561–573.
+- Brown P, Rothwell JC, Thompson PD, et al. New observations on the normal auditory startle reflex in man. *Brain* 1991;114:1891–1902.
+- Willer JC. Comparative study of perceived pain and nociceptive flexion reflex in man. *Pain* 1977;3:69–80.
+- Moritz AR, Henriques FC. Studies of thermal injury II. *Am J Pathol* 1947;23:695–720.
+- IEC Guide 117:2010. Electrotechnical equipment — Temperatures of touchable hot surfaces.
+- Schonnop R et al. *CMAJ* 2013;185:E803–E810 (see [S24b]).
+- Thelen DG, Wojcik LA, Schultz AB, Ashton-Miller JA, Alexander NB. Age differences in using a rapid step to regain balance during a forward fall. *J Gerontol A* 1997;52:M8–M13.
+- Zhang L, Yang KH, King AI. A proposed injury threshold for mild traumatic brain injury. *J Biomech Eng* 2004;126:226–236.
+- Depreitere B, Van Lierde C, Vander Sloten J, et al. Mechanics of acute subdural hematomas resulting from bridging vein rupture. *J Neurosurg* 2006;104:950–956.
+- Beecher HK. Relationship of significance of wound to pain experienced. *JAMA* 1956;161:1609–1613.
+- Artwohl A, Christensen LW. *Deadly Force Encounters*. Paladin Press, 1997.
+- Suneson A, Hansson HA, Seeman T. Pressure wave injuries to the nervous system caused by high-energy missile extremity impact. *J Trauma* 1990;30:281–294.
+- Courtney A, Courtney M. Links between traumatic brain injury and ballistic pressure waves originating in the thoracic cavity and extremities. *Brain Inj* 2007;21:657–662.
+- Hajiaghamemar M, Seidi M, Ferguson JR, Caccese V. Measurement of head impact due to standing fall in adults using anthropomorphic test dummies. *Ann Biomed Eng* 2015;43:2143–2152 (= [S51]).

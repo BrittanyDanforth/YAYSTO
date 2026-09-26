@@ -274,11 +274,11 @@ Suggested humanoid bones. Heads and tails are joint centres from §1 and §4. Th
 |---|---|---|---|---|
 | `stature` | 1.780 | m | All heights scale linearly with stature (§14.3) | brief |
 | `mass_total` | 75 | kg | | brief |
-| `girth_chest / waist_navel / hips` | 98 / 84 / 97 | cm | ±6 cm covers 70–80 kg | [B1] [E] (M) |
-| `girth_neck / upperarm / forearm / wrist` | 38 / 30 / 27.5 / 17 | cm | | [B1] (M) |
-| `girth_thigh_upper / mid / knee / calf / ankle` | 56 / 51 / 37.5 / 37.5 / 22.5 | cm | | [B1] (M) |
-| `breadth_biacromial / bideltoid / chest / hip` | 40.5 / 47 / 31.5 / 35 | cm | | [B1] (M) |
-| `depth_chest / waist / buttock` | 23 / 20.5 / 23.5 | cm | | [B1] [E] (M) |
+| `girth_chest / waist_navel / hips` | 100 / 84 / 97 | cm | ±6 cm covers 70–80 kg. *Chest corrected: was 98.* Waist and hips ✓ verified (ANSUR II subsample 84.0 / 96.2) | [B1] (H) |
+| `girth_neck / upperarm / forearm / wrist` | 38 / 30 / 27.5 / 17 | cm | Neck ✓ verified (38.3) | [B1] (M) |
+| `girth_thigh_upper / mid / knee / calf / ankle` | 58 / 51 / 37.5 / 37.5 / 22.5 | cm | *Upper thigh corrected: was 56.* Calf ✓ verified (37.0) | [B1] (M) |
+| `breadth_biacromial / bideltoid / chest / hip` | 42 / 49 / 28.7 / 33 | cm | *Corrected: was 40.5 / 47 / 31.5 / 35* (ANSUR II subsample 42.1 / 49.4 / 28.7 / 33.1) | [B1] (H) |
+| `depth_chest / waist / buttock` | 23 / 20.5 / 23.5 | cm | Chest depth ✓ verified (23.1) | [B1] [E] (M) |
 | `superellipse_n_chest / waist / limbs` | 3.5 / 2.8 / 2.5 | — | Tune to match the girths | [E] |
 | `segment_mass_fractions` | table §2.2 | — | Dempster / Winter | [B3] [B5] (H) |
 | `line_of_gravity_y` | 0 (origin) | m | 5 cm in front of the ankles, 1.5 cm behind the hip centres | [B8] [E] (M) |
@@ -287,9 +287,9 @@ Suggested humanoid bones. Heads and tails are joint centres from §1 and §4. Th
 
 - In profile, the **ear canal, the shoulder-joint centre, the greater trochanter and a point just in front of the ankle line up vertically**. If the head sits in front of the shoulder, the model looks slumped. If the chest sits behind the hips, it looks as if it is leaning back.
 - The **lumbar hollow** is real. The back skin at L3 is ~4 cm further forward than at T7 (y +0.08 vs +0.122). The buttocks then bulge back to y +0.145.
-- The **shoulders slope**. The acromion (1.458) is 4 cm below C7 (1.50) and at the same height as the jugular notch (1.455).
+- The **shoulders slope**. The acromion (1.450–1.458) is **~8 cm** below the C7 skin bump (1.532) and at the same height as the jugular notch (1.455). *Corrected: was "4 cm below C7 (1.50)".* ANSUR II gives cervicale − acromion = 8.3 cm.
 - **Nipples sit 15.5 cm below the jugular notch and 20 cm apart. The navel is ~20 cm below the xiphoid tip and ~23 cm below the xiphisternal joint.** These proportions are what players notice first.
-- **Arms in A-pose**: the fingertips reach z ≈ 0.78 (mid-thigh) at x ≈ ±0.55. The palms face the thighs.
+- **Arms in A-pose**: the fingertips reach z ≈ 0.77 (mid-thigh) at x ≈ ±0.55. The palms face the thighs. *(Corrected: was 0.78, after the forearm-length correction.)*
 
 ---
 
@@ -504,7 +504,7 @@ The sternum is inclined **~20° from vertical**, with its lower end forward. Uni
 |---|---|---|---|---|---|---|---|
 | Manubrium | jugular notch (0, −0.047, 1.453) | sternal angle (0, −0.064, 1.406) | 5.0 (4.5–5.5) | 5.5 at the clavicular notches → 3 at the bottom | 1.5 | Clavicles and 1st ribs attach to its upper lateral corners | [K] (M) |
 | Body (gladiolus) | sternal angle | xiphisternal joint (0, −0.100, 1.307) | 10.5 (9.5–11.5) | 2.5 → 3.5 (at the 4th–5th costal cartilages) → 2.5 | 1.0–1.2 | Costal notches for cartilages 2–7 | [K] (M) |
-| Xiphoid | xiphisternal joint | tip (0, −0.094, 1.273) | 3.5 (2–5) | 1.5–2 | 0.3–0.6 | Cartilaginous in youth; ossifies from the 40s; may be bifid | [K] (M) |
+| Xiphoid | xiphisternal joint | tip (0, −0.094, 1.273) | 3.5 (2–5) | 1.5–2 | 0.3–0.6 | Cartilaginous in youth; ossifies from the 40s; may be bifid. ✓ verified: StatPearls sternum anatomy gives 2–5 cm, mostly cartilaginous when young and nearly wholly ossified by age 40 | [K] (H) |
 | **Total** | | | **17–19** | | | Males ~2 cm longer than females | [K] (H) |
 
 - Sternal cortex is ~1 mm thick. The interior is red-marrow trabecular bone, so the **sternum bleeds from its marrow when split** `[K] (H)`.
@@ -539,7 +539,7 @@ The sternum is inclined **~20° from vertical**, with its lower end forward. Uni
   - Rib 1: flat, 25–30 mm wide and 5 mm thick. Ribs 11–12: 8–10 mm high.
   - Put a **costal groove** on the lower inner edge; the intercostal vein, artery and nerve run in it, top to bottom.
   - Sweep the cartilages the same way at 10–15 × 6–10 mm.
-- **Rib cortex**: 0.6–1.8 mm, mean ~1 mm, around trabecular bone `[B40] (M)`.
+- **Rib cortex**: 0.6–1.8 mm, mean ~1 mm, around trabecular bone `[B40] (M)`. *Fact-check: unverified; no source retrieved. [B40] (Kemper 2005) is a coupon material-property study and is a weak citation for thickness. The figure matches the fact-checker's own knowledge (L/M).*
 - **Intercostal spaces**: 15–25 mm at the front (2nd and 3rd widest), 12–18 mm at the side and 8–12 mm at the back. Each holds three thin muscle layers, 5–7 mm in total `[K] (M)`.
 
 ### 5.3 Cage dimensions (bone)
@@ -591,7 +591,7 @@ The sternum is inclined **~20° from vertical**, with its lower end forward. Uni
 
 | Item | Value | Unit | Notes | Source |
 |---|---|---|---|---|
-| Length (straight, sternal → acromial end) | 14.8 (13.5–16) | cm | | [K] (H) |
+| Length (straight, sternal → acromial end) | 14.8 (13.5–16) | cm | Not independently re-sourced; consistent with the SC-to-AC distance in §1 (14.9 cm) | [K] (M) |
 | Shape | S-curve: medial ⅔ convex forward, lateral ⅓ concave forward | — | | [K] (H) |
 | Waypoints (left) | sternal end (+0.025, −0.040, 1.450) → front-bulge point (+0.070, −0.050, 1.452) → (+0.125, −0.020, 1.462) → acromial end (+0.165, +0.010, 1.462) | m | Rises ~1 cm laterally and sweeps ~20° backward | [E] (M) |
 | Cross-section | sternal end 25 × 20 (bulbous); mid-shaft 13 × 10 (round-oval); acromial end 25 × 10 (flat) | mm | | [K] (M) |
@@ -617,27 +617,27 @@ The sternum is inclined **~20° from vertical**, with its lower end forward. Uni
 
 | Item | Value | Unit | Notes | Source |
 |---|---|---|---|---|
-| Maximum length | 33.5 (31–36) | cm | Trotter–Gleser predicts 34.9 ± 1.3 for 178 cm; the landmark fit (acromion → radiale) gives 33.5 | [B7] [B3] (M) |
+| Maximum length | 33.5 (31–36) | cm | Trotter–Gleser (white males, stature = 2.89 × humerus + 78.10 ± 4.57 cm) predicts **34.6 cm** for 178 cm *(corrected: was "34.9 ± 1.3")*. ANSUR II acromion–radiale length (skin) in 14 men of 1.77–1.79 m averages 33.6 cm. Use 33.5–34.5 | [B7] [B1] (M) |
 | Head: diameter / centre | 48 (vertical, 45–51) / glenohumeral (+0.180, +0.020, 1.415) | mm / m | Head retroverted 20–30° | [K] (H) |
 | Surgical neck | 15–20 mm below the head | mm | Common fracture site | [K] (H) |
 | Mid-shaft outer diameter | 22 × 20 (ML × AP) | mm | | [K] (M) |
 | **Mid-shaft cortex** | **4–6 (default 5)** | mm | Canal Ø 10–12 | [K] (M) |
 | Distal epicondylar width / articular width | 63 / 42 | mm | | [K] (M) |
-| Axis in A-pose | glenohumeral centre → elbow centre (+0.330, +0.020, 1.155) | m | Joint-to-joint length 0.300 | [E] |
+| Axis in A-pose | glenohumeral centre → elbow centre (+0.325, +0.020, 1.164) | m | Joint-to-joint length 0.290. *Corrected: was (+0.330, 1.155) and 0.300* (§1.3 note) | [E] |
 | Radial nerve | spirals behind the mid-shaft (radial groove) | — | Mid-shaft fractures cause **wrist drop** | [K] (H) |
 
 ### 6.4 Radius and ulna
 
 | Item | Radius | Ulna | Unit | Source |
 |---|---|---|---|---|
-| Maximum length | 25.5 (24–27) | 27.5 (26–29) | cm | [B7] [K] (M) |
+| Maximum length | **26.0** (24.5–27.5). *Corrected: was 25.5.* Trotter–Gleser: stature = 3.79 × radius + 79.42 ± 4.66, giving 26.0 cm; ANSUR II radiale–stylion (skin) 27.2 | 27.5 (26–29). ✓ verified: Trotter–Gleser (3.76 × ulna + 75.55 ± 4.72) gives 27.2 cm | cm | [B7] [B1] (M) |
 | Proximal end | head: 22-mm disc, 1 cm below the elbow axis | olecranon 2.5 cm proximal to the axis (point of the elbow); coronoid process | — | [K] (H) |
 | Mid-shaft diameter | 14 × 12 | 13 × 12 | mm | [K] (M) |
 | **Cortex (mid-shaft)** | **2.5–3.5** | **2.5–3.5** | mm | [K] (M) |
 | Distal end | 33 wide × 20 AP; styloid ~1 cm beyond the ulnar head | head 16–18 mm; small styloid | mm | [K] (M) |
 | Position in A-pose | on the −Y (anterolateral) side of the forearm axis, at y ≈ +0.010 | on the +Y (posteromedial) side, at y ≈ +0.030; subcutaneous along its whole back border | m | [K] [E] (M) |
 
-- The **forearm axis** runs from the elbow centre (+0.330, +0.020, 1.155) to the wrist centre (+0.455, +0.020, 0.938), 0.250 m `[E]`.
+- The **forearm axis** runs from the elbow centre (+0.325, +0.020, 1.164) to the wrist centre (+0.460, +0.020, 0.930), 0.270 m `[E]`. *Corrected: was (+0.330, 1.155) → (+0.455, 0.938), 0.250 m.* Sources: de Leva 1996 elbow-to-wrist 268.9 mm at 1.741 m stature; ANSUR II radiale–stylion 272 mm.
 - The radius and ulna are ~1.5–2 cm apart at mid-forearm, joined by the **interosseous membrane** `[K] (H)`.
 
 ### 6.5 Hand (simplified, left)
@@ -658,8 +658,8 @@ The sternum is inclined **~20° from vertical**, with its lower end forward. Uni
 |---|---|---|---|---|
 | `a_pose_abduction` | 30 | deg | From vertical, in the coronal plane | brief |
 | `gh_centre_L` | (+0.180, +0.020, 1.415) | m | | [E] (M) |
-| `len_gh_to_elbow / elbow_to_wrist / wrist_to_mcp3 / wrist_to_tip3` | 0.300 / 0.250 / 0.095 / 0.185 | m | Joint-to-joint | [B3] [E] (M) |
-| `humerus_len / radius_len / ulna_len / clavicle_len` | 0.335 / 0.255 / 0.275 / 0.148 | m | Bone maximum lengths | [B7] [K] (M) |
+| `len_gh_to_elbow / elbow_to_wrist / wrist_to_mcp3 / wrist_to_tip3` | 0.290 / 0.270 / 0.095 / 0.185 | m | Joint-to-joint. *Corrected: was 0.300 / 0.250* (de Leva 1996; ANSUR II) | [B1] [E] (M) |
+| `humerus_len / radius_len / ulna_len / clavicle_len` | 0.335 / 0.260 / 0.275 / 0.148 | m | Bone maximum lengths. *Radius corrected: was 0.255.* Ulna ✓ verified (Trotter–Gleser) | [B7] [K] (M) |
 | `humerus_head_d / midshaft_d / cortex` | 48 / 21 / 5 | mm | | [K] (M) |
 | `radius_ulna_midshaft_d / cortex` | 13–14 / 3 | mm | | [K] (M) |
 | `clavicle_midshaft_d / cortex` | 12 / 2.5 | mm | | [K] (M) |
@@ -682,23 +682,27 @@ The sternum is inclined **~20° from vertical**, with its lower end forward. Uni
 
 **Hip-centre fit** `[B9] (M)`:
 - Bell's method places the hip-joint centre relative to the midpoint of the two ASIS, as fractions of the inter-ASIS width W (0.245 m): **30 % below, 19 % behind and 36 % lateral**.
-- So HJC = (±0.36 W, ASIS_y + 0.19 W, ASIS_z − 0.30 W) = **(±0.087, −0.015, 0.935)**.
+  - ✓ Verified. Gait-lab implementations of Bell, Pedersen & Brand (1990) use exactly `HJC_pel = [-0.19*IASI; -0.30*IASI; 0.36*IASI]` (posterior, inferior, lateral). Examples: `knee_joint_center_methods_comparison.m` in github.com/cdolynski/biomechanics-motion-analysis, and the Bell entry in github.com/jeremydwong/bonelab_inverse_dynamics, which cites J Biomech 23(6):617–621.
+  - The inter-ASIS width of 24.5 cm could not be sourced. It is plausible against the verified bicristal breadth of 27.0 cm.
+- So HJC = (±0.36 W, ASIS_y + 0.19 W, ASIS_z − 0.30 W) = **(±0.087, −0.015, 0.918)**, with the ASIS at z **0.992**.
+  - *Corrected: was ASIS z 1.009, giving HJC z 0.935.* That old result put the hip centre ~2 cm above the ANSUR II trochanterion (0.513 H; 0.920 m in 14 matching men). It also left the ASIS level with the PSIS (0° pelvic tilt).
+  - The arithmetic of the method was correct; the ASIS height was the error.
 
 | Item | Value (left) | Unit | Notes | Source |
 |---|---|---|---|---|
-| Iliac crest, highest point | (+0.140, +0.025, 1.070) | m | L4/L5 (supracristal plane) | [K] (M) |
-| Iliac tubercle (widest crest point) | (+0.143, −0.030, 1.055) | m | Bicristal breadth 28.5 (27–30) cm | [K] (M) |
-| ASIS | (+0.122, −0.062, 1.009) | m | Inter-ASIS 24.5 (23–26) cm | [K] [B9] (M) |
-| AIIS | (+0.105, −0.055, 0.975) | m | | [K] (L) |
-| PSIS | (+0.045, +0.090, 1.010) | m | S2 | [K] (M) |
-| Acetabulum centre = HJC | (+0.087, −0.015, 0.935) | m | Cup Ø ~55 mm; opens lateral, forward (anteversion 15–20°) and down (inclination ~45°) | [K] [B9] (M) |
-| Pubic tubercle | (+0.022, −0.068, 0.930) | m | Inguinal ligament runs ASIS → pubic tubercle | [K] (M) |
-| Pubic symphysis | upper anterior (0, −0.068, 0.928); centre (0, −0.062, 0.905); lower (0, −0.055, 0.883) | m | Height 45 mm; fibrocartilage disc ~4 mm; bone ~15 mm thick AP | [K] [E] (M) |
-| Ischial spine | (+0.045, +0.035, 0.915) | m | | [K] (L) |
-| Ischial tuberosity (lowest point) | (+0.055, +0.020, 0.858) | m | The sitting bones | [K] [E] (M) |
-| Obturator foramen centre | (+0.050, −0.040, 0.895) | m | 5 × 3.5 cm oval, closed by membrane | [K] (L) |
+| Iliac crest, highest point | (+0.140, +0.025, 1.070) | m | L4/L5 (supracristal plane). ✓ verified (ANSUR II iliocristale 1.071) | [B1] (H) |
+| Iliac tubercle (widest crest point) | (+0.135, −0.030, 1.055) | m | Bicristal breadth **27.0** (24.5–29.5) cm. *Corrected: was 28.5 (27–30) and x +0.143* (ANSUR II) | [B1] (H) |
+| ASIS | (+0.122, −0.062, **0.992**) | m | Inter-ASIS 24.5 (23–26) cm, unverified. *Corrected: was z 1.009* | [K] [B9] (M) |
+| AIIS | (+0.105, −0.055, 0.958) | m | *Corrected: was 0.975* (moved with the ASIS) | [K] (L) |
+| PSIS | (+0.045, +0.090, 1.010) | m | S2. ASIS now ~2 cm lower than PSIS, i.e. ~7° anterior tilt of the ASIS–PSIS line | [K] (M) |
+| Acetabulum centre = HJC | (+0.087, −0.015, **0.918**) | m | Cup Ø ~55 mm; opens lateral, forward (anteversion 15–20°) and down (inclination ~45°). *Corrected: was 0.935* | [K] [B9] [B1] (M) |
+| Pubic tubercle | (+0.022, −0.068, 0.913) | m | Inguinal ligament runs ASIS → pubic tubercle. *Corrected: was 0.930* | [K] (M) |
+| Pubic symphysis | upper anterior (0, −0.068, 0.911); centre (0, −0.062, 0.888); lower (0, −0.055, 0.866) | m | Height 45 mm; fibrocartilage disc ~4 mm; bone ~15 mm thick AP. *Corrected: was 0.928 / 0.905 / 0.883* | [K] [E] (M) |
+| Ischial spine | (+0.045, +0.035, 0.898) | m | *Corrected: was 0.915* | [K] (L) |
+| Ischial tuberosity (lowest point) | (+0.055, +0.020, 0.841) | m | The sitting bones. *Corrected: was 0.858* | [K] [E] (M) |
+| Obturator foramen centre | (+0.050, −0.040, 0.878) | m | 5 × 3.5 cm oval, closed by membrane. *Corrected: was 0.895* | [K] (L) |
 | Pelvic inlet, AP (true conjugate) × transverse | 10.5 × 12.5 (male, heart-shaped) | cm | Inlet plane ~60° to horizontal when standing | [K] (H) |
-| Pelvic outlet, AP (lower symphysis → coccyx tip) × bi-ischial | 9.5 × 9 | cm | | [K] (M) |
+| Pelvic outlet, AP (lower symphysis → coccyx tip) × bi-ischial | 9.5–10.3 × 9 | cm | With the lowered symphysis the model's outlet is 10.3 cm (was 9.5), still within the male range | [K] (M) |
 | Subpubic angle | 50–60 (male) | deg | Female 80–90 | [K] (H) |
 | Pelvic height (crest top → ischial tuberosity) | 21 | cm | | [K] [E] (M) |
 | **Iliac wing thickness** | 2–4 mm in the thin centre of the iliac fossa; 10–15 mm at the crest; > 30 mm around the acetabulum and sacroiliac joint | mm | Cortex 1–2 mm around trabecular bone | [K] (M) |
@@ -708,33 +712,33 @@ The sternum is inclined **~20° from vertical**, with its lower end forward. Uni
 
 | Item | Value | Unit | Notes | Source |
 |---|---|---|---|---|
-| Maximum length | **47.0** (44–50) | cm | The landmark fit (hip centre 0.935 → joint line 0.487) gives 46.5–47. Trotter–Gleser (white males) predicts ~49 ± 1.4. Stature/femur ≈ 3.79 | [B7] [E] (M) |
-| Head: diameter / centre | **49** (46–52) / HJC (+0.087, −0.015, 0.935) | mm / m | | [K] (H) |
+| Maximum length | **47.0** (44–50) | cm | The landmark fit gives 46.5–47. That fit is now hip centre 0.918 → joint line 0.480; it was 0.935 → 0.487, and the change leaves the length nearly the same. ✓ The Trotter–Gleser check holds, with the SE corrected. White males, 1952: stature = 2.38 × femur + 61.41 (± 3.27 cm stature SE) gives 49.0 cm. The 1958 equation (2.32 × femur + 65.53 ± 3.94) gives 48.5. *The "± 1.4" in the original was not the published SE.* Stature/femur ≈ 3.79. For a game, 47–48.5 cm | [B7] [E] (M) |
+| Head: diameter / centre | **49** (46–52) / HJC (+0.087, −0.015, 0.918) | mm / m | *Centre corrected: was z 0.935* | [K] (H) |
 | Neck: length / section (SI × AP) / neck–shaft angle / anteversion | 35 / 32 × 26 / **127°** (120–135) / **12°** (10–15) | mm, deg | | [K] (H) |
-| Greater trochanter: tip / lateral surface | tip (+0.145, 0.000, 0.940); lateral (+0.158, 0.000, 0.930) | m | Tip level with the head centre and the upper symphysis | [K] (M) |
-| Lesser trochanter | (+0.075, +0.010, 0.880) | m | Posteromedial, 5–6 cm below the head centre | [K] (L) |
-| Shaft (anatomical axis) | piriform fossa (+0.120, +0.005, 0.940) → intercondylar notch (+0.092, +0.015, 0.500) | m | 5–7° from the mechanical axis. Anterior bow radius ~1.2–1.5 m | [K] [E] (M) |
+| Greater trochanter: tip / lateral surface | tip (+0.145, 0.000, 0.923); lateral (+0.158, 0.000, 0.913) | m | Tip roughly level with the head centre and the upper symphysis. *Corrected: was 0.940 / 0.930.* ANSUR II trochanterion 0.920 in matching men | [B1] (H) |
+| Lesser trochanter | (+0.075, +0.010, 0.863) | m | Posteromedial, 5–6 cm below the head centre. *Corrected: was 0.880* | [K] (L) |
+| Shaft (anatomical axis) | piriform fossa (+0.120, +0.005, 0.923) → intercondylar notch (+0.092, +0.015, 0.487) | m | 5–7° from the mechanical axis. Anterior bow radius ~1.2–1.5 m. *Corrected: was 0.940 → 0.500* | [K] [E] (M) |
 | Mid-shaft outer diameter | 29 (AP) × 27 (ML) | mm | | [K] (M) |
 | **Mid-shaft cortex** | **6–8 (default 7)**; up to 9–10 posteriorly (linea aspera) | mm | Medullary canal 12–14 mm (isthmus 11–13) | [K] (M) |
 | Distal: bicondylar width / condylar AP depth | 84 (80–88) / 60–65 | mm | | [K] (M) |
-| Knee joint centre (epicondylar axis) | (+0.092, +0.020, 0.505) | m | Joint line (tibial plateau) at 0.487 | [E] (M) |
-| Femoral artery path | groin (mid-inguinal point) (+0.065, −0.068, 0.955) → adductor hiatus (+0.080, +0.030, 0.620) → popliteal fossa (+0.092, +0.055, 0.510) | m | Medial, then posterior. See doc 03 | [K] [E] (M) |
+| Knee joint centre (epicondylar axis) | (+0.092, +0.020, 0.492) | m | Joint line (tibial plateau) at 0.480. *Corrected: was 0.505 / 0.487* (ANSUR II lateral femoral epicondyle 0.490, tibiale 0.480) | [B1] (H) |
+| Femoral artery path | groin (mid-inguinal point) (+0.065, −0.068, 0.940) → adductor hiatus (+0.080, +0.030, 0.610) → popliteal fossa (+0.092, +0.055, 0.497) | m | Medial, then posterior. See doc 03. *Corrected: was 0.955 / 0.620 / 0.510*, moved with the pelvis and knee | [K] [E] (M) |
 
 ### 7.3 Patella, tibia, fibula
 
 | Item | Value | Unit | Notes | Source |
 |---|---|---|---|---|
 | Patella size | 53 tall × 51 wide × 25 thick | mm | Thin cortex over trabecular bone; articular cartilage up to 5–7 mm (the thickest in the body) | [K] (M) |
-| Patella centre (knee straight) | (+0.090, −0.035, 0.522) | m | Lower pole ~1 cm above the joint line | [K] (M) |
-| Patellar tendon | 45–50 long × 25–30 wide × 4–6 thick; to the tibial tuberosity (+0.090, −0.025, 0.447) | mm / m | | [K] (M) |
-| Tibia maximum length | **41** (38–43) | cm | Including the medial malleolus. (Trotter's original tibia measure excluded the malleolus, so her regression gives a shorter 39.4) | [B7] [E] (M) |
-| Tibial plateau | width 78 × AP 50; z 0.487 | mm / m | | [K] (M) |
+| Patella centre (knee straight) | (+0.090, −0.035, 0.509) | m | Lower pole ~1 cm above the joint line. *Corrected: was 0.522* | [K] (M) |
+| Patellar tendon | 45–50 long × 25–30 wide × 4–6 thick; to the tibial tuberosity (+0.090, −0.025, 0.434) | mm / m | *Tuberosity corrected: was 0.447* | [K] (M) |
+| Tibia maximum length | **41** (38–43) | cm | Including the medial malleolus. (Trotter's original tibia measure excluded the malleolus, so her regression gives a shorter length.) ✓ Verified: 1952 equation stature = 2.52 × tibia + 78.62 gives 39.4 cm; 1958 equation 2.42 × tibia + 81.93 gives 39.7 cm. Plateau 0.480 to medial malleolus tip 0.068 = 41.2 cm | [B7] [E] (M) |
+| Tibial plateau | width 78 × AP 50; z 0.480 | mm / m | *z corrected: was 0.487* (ANSUR II tibiale height 0.480) | [B1] (M) |
 | Tibial mid-shaft | triangular, 32 (AP) × 23 (ML) | mm | **The anteromedial face is subcutaneous** (§12) | [K] (M) |
 | **Tibial cortex (mid-shaft)** | **5–7** (anterior crest up to 8) | mm | Canal 10–12 mm | [K] (M) |
 | Tibial plafond (distal joint surface) | z 0.090; width 45 mm | m / mm | | [E] (M) |
 | Medial malleolus tip | (+0.065, +0.045, 0.068) | m | | [K] (M) |
-| Fibula length / mid-shaft Ø / cortex | 39.5 cm / 14–16 mm / 2.5–3.5 mm | | Non-weight-bearing strut | [K] (M) |
-| Fibular head | (+0.130, +0.035, 0.465) | m | **Common peroneal nerve** wraps its neck, just below: foot drop if cut | [K] (H) |
+| Fibula length / mid-shaft Ø / cortex | 39.5 cm / 14–16 mm / 2.5–3.5 mm | | Non-weight-bearing strut. Length ✓ verified: Trotter–Gleser 1952 (2.68 × fibula + 71.78) gives 39.6 cm; 1958 (2.60 × fibula + 75.50) gives 39.4 cm | [B7] [K] (M) |
+| Fibular head | (+0.130, +0.035, 0.452) *(corrected: was 0.465)* | m | **Common peroneal nerve** wraps its neck, just below: foot drop if cut | [K] (H) |
 | Lateral malleolus tip | (+0.132, +0.060, 0.055) | m | | [K] (H) |
 | Ankle joint centre | (+0.095, +0.050, 0.075) | m | Axis passes just below both malleolar tips, tilted ~8° (lateral end lower) | [K] (M) |
 
@@ -756,15 +760,15 @@ The sternum is inclined **~20° from vertical**, with its lower end forward. Uni
 
 | Parameter | Value / range | Unit | Notes | Source |
 |---|---|---|---|---|
-| `hjc_L` | (+0.087, −0.015, 0.935) | m | Bell's method | [B9] (M) |
-| `knee_centre_L / ankle_centre_L` | (+0.092, +0.020, 0.505) / (+0.095, +0.050, 0.075) | m | | [E] (M) |
-| `len_thigh / len_shank` (joint to joint) | 0.431 / 0.431 | m | | [E] (M) |
-| `femur_len / tibia_len / fibula_len` | 0.470 / 0.410 / 0.395 | m | | [B7] [E] (M) |
+| `hjc_L` | (+0.087, −0.015, 0.918) | m | Bell's method (✓ verified coefficients) from the corrected ASIS. *Corrected: was z 0.935* | [B9] [B1] (M) |
+| `knee_centre_L / ankle_centre_L` | (+0.092, +0.020, 0.492) / (+0.095, +0.050, 0.075) | m | *Knee corrected: was 0.505.* Ankle ✓ verified (ANSUR II) | [B1] (H) |
+| `len_thigh / len_shank` (joint to joint) | 0.428 / 0.418 | m | *Corrected: was 0.431 / 0.431.* Thigh ✓ consistent with de Leva (0.432 m at 1.78 m) | [B1] [E] (M) |
+| `femur_len / tibia_len / fibula_len` | 0.470 / 0.410 / 0.395 | m | ✓ verified against Trotter–Gleser (femur 48.5–49.0, tibia without malleolus 39.4–39.7, fibula 39.4–39.6) | [B7] [E] (M) |
 | `femur_head_d / neck_shaft_angle / anteversion` | 49 mm / 127° / 12° | | | [K] (H) |
 | `femur_midshaft_d / cortex / canal` | 28 / 7 / 13 | mm | Thickest cortex in the body | [K] (M) |
 | `tibia_midshaft_ap_ml / cortex` | 32 × 23 / 6 | mm | | [K] (M) |
 | `patella_hwt` | 53 / 51 / 25 | mm | | [K] (M) |
-| `pelvis_bicristal / inter_asis / bitrochanteric_bone` | 0.285 / 0.245 / 0.316 | m | | [K] (M) |
+| `pelvis_bicristal / inter_asis / bitrochanteric_bone` | 0.270 / 0.245 / 0.316 | m | *Bicristal corrected: was 0.285* (ANSUR II 27.0 cm). Inter-ASIS and bitrochanteric unverified | [B1] [K] (M) |
 | `iliac_wing_thin_centre` | 2–4 | mm | Bullets perforate it cleanly | [K] (M) |
 | `toe_out_angle` | 7 (5–15) | deg | | [K] [G] |
 
@@ -851,7 +855,7 @@ The sternum is inclined **~20° from vertical**, with its lower end forward. Uni
 | Parameter | Value / range | Unit | Notes | Source |
 |---|---|---|---|---|
 | `bone_cortical_density` | 1.9 | g/cm³ | | [K] (H) |
-| `bone_cortex_by_bone` | femur 7, tibia 6, humerus 5, radius/ulna 3, fibula 3, clavicle 2.5, rib 1, scapula blade 1–3 (total), vertebral shell 0.4, skull §3.1 | mm | Drives penetration and fracture thresholds in docs 01/02 | [K] (M) |
+| `bone_cortex_by_bone` | femur 7, tibia 6, humerus 5, radius/ulna 3, fibula 3, clavicle 2.5, rib 1, scapula blade 1–3 (total), vertebral shell 0.4, skull §3.1 | mm | Drives penetration and fracture thresholds in docs 01/02. **Fact-check: unverified.** No source for these thicknesses could be retrieved. They agree with the fact-checker's own knowledge of CT and cadaver data but carry medium–low confidence. Mid-shaft values in particular vary ±30 % between individuals and around the circumference (e.g. the femoral linea aspera is thicker). The rib cortex citation to Kemper 2005 is doubtful: that study reports coupon material properties, not an in-situ cortical-thickness survey | [K] (M/L) |
 | `bone_marrow_type` | red: axial skeleton + proximal femur/humerus; yellow: long-bone shafts | enum | Picks the colour and bleeding of the cut surface | [K] (H) |
 | `skeleton_mass_total` | 10.5 | kg | | [B43] (H) |
 
@@ -872,9 +876,9 @@ Doc 04 covers what injury to these structures does. This section covers **where 
 
 | Item | Value | Unit | Notes | Source |
 |---|---|---|---|---|
-| Length (foramen magnum → conus tip) | 45 (42–46, male) | cm | | [K] (H) |
-| Mass | ~30 | g | | [B43] (H) |
-| **Conus medullaris tip** | **L1/L2 disc** (range T12 → L3; mean lower third of L1) | level | Body frame ≈ (0, +0.017, 1.180) | [B28] (H) |
+| Length (foramen magnum → conus tip) | 45 (42–46, male) | cm | ✓ verified: StatPearls "Neuroanatomy, Spinal Cord" and Wikipedia give ~45 cm in men and ~43 cm in women | [K] (H) |
+| Mass | ~30 | g | Not independently re-sourced (fact-checker's knowledge: 30–35 g) | [B43] (M) |
+| **Conus medullaris tip** | **L1/L2 disc** (range T12 → L3; mean lower third of L1) | level | Body frame ≈ (0, +0.017, 1.180). ✓ verified: StatPearls says the adult cord terminates at L1–L2. The Saifuddin range was not re-read | [B28] (H) |
 | Filum terminale | ~20 cm, conus → dural sac (S2) → coccyx | cm | | [K] (H) |
 | **Cauda equina** | roots L2–S5 (+ coccygeal) hanging in the thecal sac from L1/L2 to S2 | — | Lower-motor-neuron roots; float in CSF | [K] (H) |
 | Dural (thecal) sac ends | S2, (0, +0.035, 0.995) | — | | [K] (H) |
@@ -889,17 +893,17 @@ The cord centre is at (0, y, z) with y from the "Cord centre y" column of §4.1 
 
 | Level | Cord size (transverse × AP, mm) | Canal (AP × transverse, mm) | Cord / canal AP | Note |
 |---|---|---|---|---|
-| Cervicomedullary junction (at the foramen magnum) | 11 × 9 | FM 35 × 30 | — | Point (0, +0.030, 1.627) |
+| Cervicomedullary junction (at the foramen magnum) | 11 × 9 | FM 35 × 30 | — | Point (0, +0.030, 1.619) *(corrected: was 1.627; head refit −0.008)* |
 | C1 | 11.5 × 8.5 | 30 × 28 | ~⅓ | Steel's rule of thirds: dens, cord, free space |
-| C2 | 11.5 × 8.5 | 16 × 24 | 0.53 | |
+| C2 | **11.9 × 7.9** | 16 × 24 | 0.49 | *Corrected: was 11.5 × 8.5.* ✓ MRI norm, 203 healthy adults (spine-generic / PAM50 normalised metrics, Valošek et al.): C2 transverse 11.9 ± 0.8 mm, AP 7.86 ± 0.56 mm, CSA 73.6 ± 7.4 mm² |
 | C3–C4 | 12.5–13 × 8 | 14–14.5 × 23–24 | 0.55 | |
-| **C5–C6 (cervical enlargement, max)** | **13.5 × 7.7** | 14 × 24 | 0.55 | Brachial-plexus segments C5–T1 |
+| **C5–C6 (cervical enlargement, max)** | **13.5 × 7.7** | 14 × 24 | 0.55 | Brachial-plexus segments C5–T1. ✓ verified (transverse): StatPearls gives the largest transverse diameter at C5, 13.3 ± 2.2 mm. AP not re-sourced |
 | C7 | 12 × 7.5 | 14 × 23 | 0.54 | |
 | T1 | 10.5 × 7 | 14 × 19 | 0.50 | |
-| T2–T9 (thinnest ~T7–T8) | 8–9 × 6.3–6.5 | 13.5–14 × 15.5–16 | 0.46 | Round canal. **Watershed blood supply around T4–T8** |
+| T2–T9 (thinnest ~T7–T8) | 8–9 × 6.3–6.5 | 13.5–14 × 15.5–16 | 0.46 | Round canal. **Watershed blood supply around T4–T8**. ✓ verified (transverse): StatPearls gives 8.3 ± 2.1 mm at T8 and a thoracic width of 6.4–8.3 mm; Wikipedia gives ~6.4 mm thoracic. AP not re-sourced |
 | T10 | 8.5 × 7 | 14.5 × 17 | 0.48 | |
-| T11–T12 (lumbosacral enlargement) | 9.5–10 × 7.5–8 | 15–16 × 18–21 | 0.50 | Lumbar segments L1–L5 lie here |
-| L1 (conus) | tapers 8 → 3 | 17 × 22 | — | Sacral segments S1–S5 and coccygeal |
+| T11–T12 (lumbosacral enlargement) | 9.5–10 × 7.5–8 | 15–16 × 18–21 | 0.50 | Lumbar segments L1–L5 lie here. (StatPearls: lumbar-enlargement transverse diameter 9.4 ± 1.5 mm ✓) |
+| L1 (conus) | tapers 8 → 3 | 17 × 22 | — | Sacral segments S2–S5 and coccygeal (conus). The epiconus (L4–S1) lies just above, at T12/L1. *Corrected: was "S1–S5"*, per StatPearls' definition of conus = S2–S5 + Co and epiconus = L4–S1 |
 | L2–S1 | cauda equina bundle, ~12–15 mm spread | 16–17 × 23–26 | — | Roots only |
 
 - **Cord hit volume** `[G]`: a capsule chain of 26 nodes (C1 → L1) using the §4.1 cord y and z, with radii = half the transverse and AP sizes above.
@@ -909,6 +913,15 @@ The cord centre is at (0, y, z) with y from the "Cord centre y" column of §4.1 
 ### 9.3 Vertebral level → cord segments (for the paralysis map)
 
 The cord is shorter than the spine, so its segments sit above the vertebra of the same name `[K] (H)`. Rule of thumb: add **+1** in the cervical region, **+2** in the upper thoracic region and **+3** in the lower thoracic region. T11–L1 contain all the lumbar and sacral segments.
+
+**Fact-check** (M):
+- **The rule is a standard textbook rule and is consistent with the sources found**, but no source stating it was retrieved:
+  - The cord ends at L1–L2 (StatPearls ✓).
+  - The conus (S2–S5, Co) lies at L1 and the epiconus (L4–S1) just above it (StatPearls ✓).
+  - The diaphragm is supplied from C3–C5 (textbook, not re-sourced).
+- **Sources disagree by about one segment in the T10–T12 rows.** Many clinical tables give T10 = L1–L2, T11 = L3–L4, T12 = L5–S1 and L1 = S2–S5.
+  - The table below is ~1 segment higher. For the game, blend: treat a T12 hit as affecting L3–S1.
+- The key gameplay outputs are unaffected: a thoracolumbar-junction hit gives flaccid legs and loss of bladder control.
 
 | Vertebral level of the injury | Cord segments there | Key function lost below (see doc 04) |
 |---|---|---|
@@ -924,8 +937,8 @@ The cord is shorter than the spine, so its segments sit above the vertebra of th
 | T6–T9 | T8–T12 | Paraplegia; lower abdominal muscles lost |
 | T10 | T11–L1 | Paraplegia; hip flexion lost |
 | T11 | L1–L3 | Legs: hips and knees lost |
-| T12 | L3–L5 | Knees and ankles lost; lumbar enlargement |
-| L1 | S1–S5 (conus) | Ankles, **bladder, bowel and sexual function** (conus medullaris syndrome) |
+| T12 | L3–S1 (epiconus L4–S1) | Knees and ankles lost; lumbar enlargement. *Corrected: was L3–L5* |
+| L1 | S2–S5, Co (conus) | Ankles (partly), **bladder, bowel and sexual function** (conus medullaris syndrome). *Corrected: was S1–S5* (StatPearls conus = S2–S5 + Co) |
 | L2–S2 | cauda equina roots only | Flaccid, often **asymmetric and incomplete** leg weakness; saddle anaesthesia; bladder |
 
 - Motor levels for the paralysis map `[K] (H)`:
@@ -939,6 +952,11 @@ The cord is shorter than the spine, so its segments sit above the vertebra of th
 - The brainstem lies **on the clivus**, behind the sphenoid and nasopharynx and in front of the cerebellum.
 - Its long axis (Meynert's axis) is **tilted ~15–25° from vertical, top forward**.
 - **Key fit**: the **pontomedullary junction lies at almost exactly the height and AP position of the head origin**. The vestibulocochlear nerve (CN VIII) leaves the brainstem there and runs out through the internal acoustic meatus, which is nearly level with the ear canal `[K] [E] (M)`.
+- **Fact-check**:
+  - **Not independently verified.** No neuroanatomy or cephalometric source could be retrieved.
+  - The fact-checker's own knowledge agrees on the level: the IAM and EAM are near-coaxial, and CN VII/VIII leave at the pontomedullary junction. The AP position (0–2 cm in front of the ear-canal line) is less certain, at ±1 cm.
+  - The segment lengths (medulla ~3 cm, pons ~2.5 cm, midbrain ~1.5–2 cm) are standard textbook values. Keep them at (M).
+  - **Body-frame z values in this table** were fitted to the old head origin 1.655. **Subtract 0.008** (§0.4). The relative-to-head-origin column is unaffected.
 
 | Structure | Centre, body frame (x, y, z) | Centre relative to head origin | Size (length along axis × width × AP, mm) | Notes | Source |
 |---|---|---|---|---|---|
@@ -961,11 +979,11 @@ The cord is shorter than the spine, so its segments sit above the vertebra of th
 | Parameter | Value / range | Unit | Notes | Source |
 |---|---|---|---|---|
 | `cord_centreline` | §4.1 "Cord centre y" + body-centre z, C1 → L1 | m | 26-node capsule chain | [E] (M) |
-| `cord_radius_transverse / ap` | per §9.2 (C5: 6.75 / 3.85 mm; T7: 4.0 / 3.15 mm) | mm | | [B26] [B27] (M) |
-| `conus_tip` | (0, +0.017, 1.180) = L1/L2 | m | | [B28] (H) |
+| `cord_radius_transverse / ap` | per §9.2 (C2: 5.95 / 3.95; C5: 6.75 / 3.85 mm; T7: 4.0 / 3.15 mm) | mm | Transverse ✓ verified at C2, C5 and T8 (spine-generic MRI norms; StatPearls) | [B26] [B27] (M/H) |
+| `conus_tip` | (0, +0.017, 1.180) = L1/L2 | m | ✓ level verified (StatPearls) | [B28] (H) |
 | `cauda_equina_chain` | L1/L2 → S2, radius 7 mm | m | | [K] (M) |
 | `thecal_sac_end` | S2 (0, +0.035, 0.995) | m | | [K] (H) |
-| `cord_segment_offset` | cervical +1, upper thoracic +2, lower thoracic +3; T11–L1 = lumbosacral | levels | Paralysis map §9.3 | [K] (H) |
+| `cord_segment_offset` | cervical +1, upper thoracic +2, lower thoracic +3; T11–L1 = lumbosacral (conus S2–S5 at L1) | levels | Paralysis map §9.3. ±1 segment between sources at T10–T12 | [K] (M) |
 | `brainstem_nodes_rel_head_origin` | midbrain (0, −0.010, +0.035); pons (0, −0.006, +0.012); medulla (0, +0.005, −0.014); CMJ (0, +0.010, −0.028) | m | Existing head space | [K] [E] (M) |
 | `medulla / pons / midbrain length` | 30 / 25 / 18 | mm | Matches doc 04 | [D04] (M) |
 | `cord_depth_from_back_skin` T7 / L1 (conus) / C5 | ~53 / ~60 / ~45 | mm | Thin people less, heavy people more | [E] (M) |
@@ -1012,19 +1030,19 @@ All positions are **standing, at end-expiration**. For supine and breathing offs
 - Long axis from the **centre of the base** (atria, posterior-superior, right) (0.000, −0.005, 1.360) to the **apex** (+0.082, −0.068, 1.285).
 - Length 0.127 m. Unit vector **u = (0.632, −0.498, −0.593)**.
 - The axis points **left, forward and down**: ~45° left of the sagittal plane and ~35° below horizontal.
-- The **apex beat is at the 5th left ICS, mid-clavicular line** (~9 cm from the midline).
+- The **apex beat is at the 5th left ICS, mid-clavicular line** (~9 cm from the midline). ✓ Verified: Wikipedia (Heart, citing Moore) places the apex 8–9 cm left of the midsternal line, near the 4th/5th rib junction with the costal cartilages.
 
 | Item | Value | Unit | Notes | Source |
 |---|---|---|---|---|
-| External size | **12–13 (base–apex) × 8.5–9 (transverse) × 6–6.5 (AP)** | cm | Roughly a clenched fist | [K] (H) |
-| **Mass** | **320 (range 250–380)** | g | Molina & DiMaio male mean ≈ 330 g; ICRP reference male 330 g | [B17] [B43] (H) |
+| External size | **12–13 (base–apex) × 8.5–9 (transverse) × 6–6.5 (AP)** | cm | Roughly a clenched fist. ✓ consistent: Wikipedia (Heart) gives 12 × 8 × 6 cm and notes "the heart is likely to be slightly larger" | [K] (H) |
+| **Mass** | **320 (range 250–380)** | g | ✓ verified: Molina & DiMaio male mean 331 g (as quoted in the opencobra COBRA.papers whole-body model); Wikipedia gives adult 250–350 g | [B17] [B43] (H) |
 | Volume (tissue) / with blood in the chambers | ~300 / ~750 | mL | End-diastolic chamber volumes total ~450 mL | [B22] [E] (M) |
 | Centre (geometric) | **(+0.030, −0.035, 1.330)** | m | ~⅔ of the heart lies left of the midline | [K] [E] (M) |
 | Axis-aligned extents | x [−0.048, +0.090], y [−0.082, +0.010], z [1.278, 1.405] | m | For a quick AABB; use the oriented box for hits | [E] (M) |
 | Right border | right atrium, 1–2 cm right of the sternal edge, from the 3rd to the 6th right costal cartilage: x ≈ −0.045, z 1.310–1.380 | m | | [K] (H) |
 | Left border | from the 2nd left ICS, 2 cm from the sternal edge (+0.035, 1.395), curving to the apex | m | | [K] (H) |
 | Inferior border | from the 6th right costal cartilage (−0.030, 1.305) to the apex, along the central tendon (≈ xiphisternal level) | m | | [K] (H) |
-| Anterior surface | right ventricle, directly behind the lower half of the sternum and the left 3rd–6th costal cartilages; y ≈ −0.075 to −0.082 | m | **2.5–3.5 cm below the skin over the lower sternum** | [K] [E] (M) |
+| Anterior surface | right ventricle, directly behind the lower half of the sternum and the left 3rd–6th costal cartilages; y ≈ −0.075 to −0.082 | m | **2.5–3.5 cm below the skin over the lower sternum**. Fact-check: unverified (no CT source retrieved). StatPearls only says the heart is "a few fingerbreadths" below the subxiphoid needle entry | [K] [E] (M/L) |
 | Posterior surface | left atrium at y ≈ +0.010, directly in front of the oesophagus and descending aorta (T6–T8) | m | | [K] (H) |
 
 **Chambers and walls** (centres in body frame; sizes from echocardiography norms `[B22] (H)` unless marked):
@@ -1034,7 +1052,7 @@ All positions are **standing, at end-expiration**. For supine and breathing offs
 | Right atrium | (−0.030, −0.018, 1.335) | ~45 × 50 mm; ~60 mL max | 2–3 mm | Receives the SVC (top) and IVC (bottom) |
 | Right ventricle | (+0.012, −0.060, 1.312) | EDV 150–170 mL; basal Ø ≤ 41 mm | **3–5 mm** | Crescent wrapped around the LV. **Most anterior chamber: the one a stab wound behind the sternum hits first** |
 | Left atrium | (+0.008, −0.008, 1.365) | AP ~35–40 mm; ~55 mL | 2–3 mm | Most posterior chamber; 4 pulmonary veins enter it |
-| Left ventricle | (+0.045, −0.035, 1.305) | EDV ~140 mL (male 100–190); end-diastolic Ø 48–50 mm (42–58); stroke volume 70–80 mL | **9–11 mm** (normal ≤ 12); septum 9–11 mm | Forms the apex and most of the left border |
+| Left ventricle | (+0.045, −0.035, 1.305) | EDV ~140 mL. Normal ranges depend on the method: 2D echo (ASE 2015) male ~106 ± 22 mL (62–150); cardiac MRI ~150–160 mL. 140 sits between them and is acceptable. *Was quoted as "male 100–190" from ASE, which is not the ASE range.* End-diastolic Ø 48–50 mm (42–58) ✓ verified (echo reference: male LVIDd 42–58 mm). Stroke volume 70–80 mL | **8–10 mm** (echo normal 6–10 mm in men). *Corrected: was 9–11 mm (normal ≤ 12).* Septum 8–10 mm. (At autopsy, contracted LV walls measure thicker, ~10–15 mm) | Forms the apex and most of the left border |
 | Pericardium | encloses the heart plus the first 2–3 cm of the great vessels | 15–50 mL fluid | fibrous sac 1–2 mm | Tamponade from ~150–200 mL of acute bleeding (doc 03) |
 | Epicardial fat | along the AV and interventricular grooves | ~5 mm | — | Yellow (#E6C45A) |
 
@@ -1058,7 +1076,7 @@ Diameters follow doc 03 `[D03:R43–R49]`. The positions are this document's fit
 | Vessel | Waypoints (x, y, z), in order | Lumen Ø (mm) | Notes |
 |---|---|---|---|
 | Ascending aorta | aortic valve (+0.008, −0.038, 1.360) → (−0.008, −0.048, 1.405) | 30 (28–35) | Rises forward and right to the sternal-angle level. Inside the pericardium |
-| Aortic arch | (−0.008, −0.048, 1.405) → apex (0.000, −0.020, 1.428) → (+0.022, +0.030, 1.418) (T4, left) | 27 (25–30) | Top ~2.5 cm below the jugular notch, behind the manubrium |
+| Aortic arch | (−0.008, −0.048, 1.405) → apex (0.000, −0.020, 1.428) → (+0.022, +0.030, 1.418) (T4, left) | 27 (25–30) | Top ~2.5 cm below the jugular notch, behind the manubrium. Fact-check: textbook value, not independently re-sourced (M) |
 | Brachiocephalic trunk | (−0.002, −0.035, 1.430) → split behind the right SC joint (−0.025, −0.030, 1.455) | 12 | → right subclavian + right CCA |
 | Left common carotid (CCA) | (+0.010, −0.025, 1.432) → C6 (+0.028, −0.018, 1.515) → bifurcation at C4 (+0.030, −0.012, 1.558) | 7 (6–8) | ~2–3 cm deep to the skin in the neck. Right CCA mirrors it from the brachiocephalic split |
 | Left subclavian | (+0.020, −0.008, 1.430) → over the 1st rib, behind the mid-clavicle (+0.065, −0.015, 1.462) → becomes the axillary at the rib's outer border (+0.090, −0.015, 1.450) | 8.5 | |
@@ -1066,10 +1084,10 @@ Diameters follow doc 03 `[D03:R43–R49]`. The positions are this document's fit
 | Superior vena cava (SVC) | (−0.028, −0.035, 1.438) → right atrium (−0.028, −0.028, 1.378) | 20 | 7 cm long; right of the ascending aorta |
 | Pulmonary trunk | pulmonary valve (+0.022, −0.058, 1.378) → bifurcation under the arch (+0.012, −0.030, 1.405) | 27 (25–30) | RPA → right hilum (−0.060, +0.005, 1.385); LPA → left hilum (+0.055, +0.015, 1.395) |
 | Descending thoracic aorta | T4 (+0.022, +0.030, 1.418) → T8 (+0.020, +0.030, 1.329) → aortic hiatus at T12 (+0.006, −0.012, 1.227) | 24 (20–26) | Left front of the vertebral bodies. Isthmus just past the left subclavian = classic blunt-rupture site |
-| Abdominal aorta | T12 → renal arteries at L1/L2 (+0.008, −0.030, 1.180) → **bifurcation at L4 (+0.010, −0.045, 1.085)** | 21 → 18 | Just left of midline, on the vertebral bodies; ~7–8 cm under the skin of the navel |
-| Common iliac arteries | bifurcation → (±0.040, −0.030, 1.035) (L5/S1, internal/external split) | 10 | |
-| External iliac → femoral | → mid-inguinal point (±0.065, −0.068, 0.955) | 8.5 | The femoral artery lies just medial to the femoral head (§7.2) |
-| Inferior vena cava (IVC) | formed at L5 (−0.020, −0.035, 1.050) → behind the liver (−0.022, −0.015, 1.260) → caval hiatus at T8 (−0.022, −0.010, 1.325) → right atrium (−0.025, −0.015, 1.315) | 21 (17–25) | Right of the aorta. The retrohepatic segment is embedded in the liver |
+| Abdominal aorta | T12 → renal arteries at L1/L2 (+0.008, −0.030, 1.180) → **bifurcation at L4 (+0.010, −0.045, 1.085)** | 21 → 18 | Just left of midline, on the vertebral bodies; ~7–8 cm under the skin of the navel. ✓ Verified: aortic hiatus at T12 and bifurcation at L4 (StatPearls, posterior abdominal wall). The 7–8 cm depth is unverified: it comes from the fact-checker's memory of laparoscopic-entry CT studies, which give ~6 cm in normal-weight adults and more in obese ones (L/M) |
+| Common iliac arteries | bifurcation → (±0.040, −0.030, 1.035) (L5/S1, internal/external split) | 10 | ✓ Internal/external iliac split at L5/S1 (StatPearls) |
+| External iliac → femoral | → mid-inguinal point (±0.065, −0.068, 0.940) | 8.5 | The femoral artery lies just medial to the femoral head (§7.2). *z corrected: was 0.955* (pelvis refit) |
+| Inferior vena cava (IVC) | formed at L5 (−0.020, −0.035, 1.050) → behind the liver (−0.022, −0.015, 1.260) → caval hiatus at T8 (−0.022, −0.010, 1.325) → right atrium (−0.025, −0.015, 1.315) | 21 (17–25) | Right of the aorta. The retrohepatic segment is embedded in the liver. ✓ Verified: formed by the common iliac veins at L5, and passes the diaphragm at T8 (StatPearls) |
 | Renal arteries / veins | aorta at L1/L2 → hila (±0.048, +0.010, 1.170) | artery 5–6; left vein 8–10 | The left renal vein crosses in front of the aorta |
 
 ### 10.5 Lungs and pleura
@@ -1081,15 +1099,19 @@ Diameters follow doc 03 `[D03:R43–R49]`. The positions are this document's fit
 | Extents x | [−0.140, −0.010] | [+0.010, +0.140] | m | The two anterior borders nearly meet behind the sternum from T2 to T4 | [E] (M) |
 | Extents y | [−0.078, +0.090] | [−0.075, +0.090] | m | The lungs fill the paravertebral gutters behind | [E] (M) |
 | Extents z (apex → lowest peripheral base) | [1.270, 1.495] | [1.265, 1.495] | m | Height ~23–25 cm | [E] (M) |
-| Apex | (−0.040, +0.015, 1.495) | (+0.040, +0.015, 1.495) | m | **2.5–3 cm above the medial third of the clavicle**; at the neck of rib 1 (T1) behind | [K] (H) |
+| Apex | (−0.040, +0.015, 1.495) | (+0.040, +0.015, 1.495) | m | **2.5–3 cm above the medial third of the clavicle**; at the neck of rib 1 (T1) behind. Fact-check: standard textbook value, not re-sourced (H by consensus) | [K] (H) |
 | Hilum | (−0.050, +0.020, 1.380) | (+0.050, +0.025, 1.388) | m | T5–T7 | [K] (M) |
 | Lower border, lung (quiet expiration) | 6th rib at the MCL; 8th at the MAL; 10th at the back (T10) | same, slightly lower | — | "6-8-10" rule; z ≈ 1.27–1.28 all round | [K] (H) |
 | Lower border, pleura | 8th rib at the MCL; 10th at the MAL; 12th at the back (T12) | same | — | "8-10-12" rule; costodiaphragmatic recess z ≈ 1.21–1.23. A stab there can cross pleura and diaphragm into the liver or spleen | [K] (H) |
 | Fissures | oblique: T3 spinous (back) → along the 5th rib → 6th costal cartilage (front); horizontal: 4th costal cartilage → meets the oblique at the MAL | oblique only (same line) | — | | [K] (H) |
-| Mass (autopsy, with blood) | 550–650 (use 550 living) | 450–550 (use 480 living) | g | ICRP: both lungs 1,200 g with blood | [B17] [B43] (M) |
+| Mass (autopsy, with blood) | reference range **155–720** (use 550) | reference range **110–675** (use 480) | g | *Corrected ranges: were 550–650 / 450–550.* Molina & DiMaio 2012 male reference ranges, as quoted by Wikipedia (Lung), are right 155–720 g and left 110–675 g; their midpoints are ≈ 440 / 390 g. ICRP 89 total with blood, 1,200 g, was not re-sourced. The game values 550 / 480 (1,030 g total) lie inside both and are kept | [B17] [B43] (M) |
 | Volume at FRC / TLC | ~1.8 / 3.9 | ~1.55 / 3.2 | L | Right ≈ 55 % | [B19] [E] (M) |
 
 **Whole-lung volumes for this man** (ERS 1993 reference equations, H in m, age A = 30) `[B19] (H)`:
+- ✓ **Verified.** The male ECSC/Quanjer 1993 coefficients are TLC [7.99 H, 0 A, −7.08, RSD 0.70], FRC [2.34 H, 0.009 A, −1.09, RSD 0.60] and RV [1.31 H, 0.022 A, −1.23, RSD 0.41]. Source: the `pulmonary-function-lab.html` reference table in github.com/drsrennie-stack/human-physiology-Fa26.
+- The arithmetic below is correct.
+- The VC equation was not re-sourced.
+- Note that ±1 RSD on TLC is ±0.7 L.
 
 | Volume | Equation | Value |
 |---|---|---|
@@ -1106,13 +1128,13 @@ Diameters follow doc 03 `[D03:R43–R49]`. The positions are this document's fit
 
 | Item | Value | Unit | Notes | Source |
 |---|---|---|---|---|
-| Right dome apex (standing, end-expiration) | (−0.070, −0.005, 1.320) | m | 5th rib / 4th ICS at the front (MCL); T8–T9 behind | [K] [E] (M) |
+| Right dome apex (standing, end-expiration) | (−0.070, −0.005, 1.320) | m | 5th rib / 4th ICS at the front (MCL); T8–T9 behind. Fact-check: dome heights not re-sourced. Note that the verified nipple height (1.305, 4th ICS) puts the "5th rib at the MCL" at ~1.29–1.30, so 1.300–1.320 is the plausible band | [K] [E] (M) |
 | Left dome apex | (+0.075, +0.005, 1.300) | m | ~1.5–2 cm lower than the right; 5th ICS / 6th rib | [K] [E] (M) |
 | Central tendon (the heart sits on it) | (0.000, −0.030, 1.310) | m | ≈ xiphisternal level | [K] (H) |
-| Openings | IVC at T8 (−0.022, −0.010, 1.325); oesophagus at T10 (+0.022, −0.008, 1.280); aorta at T12 (+0.006, −0.012, 1.227) | m | "I 8 10 Eggs At 12" | [K] (H) |
+| Openings | IVC at T8 (−0.022, −0.010, 1.325); oesophagus at T10 (+0.022, −0.008, 1.280); aorta at T12 (+0.006, −0.012, 1.227) | m | "I 8 10 Eggs At 12". ✓ Verified: StatPearls (diaphragm) gives the vena caval foramen in the central tendon at T8, the oesophageal hiatus at T10 and the aortic hiatus between the crura at T12 | [K] (H) |
 | Peripheral attachments | xiphoid; inner surfaces of costal cartilages 7–10 and ribs 11–12 (z ≈ 1.12–1.30 around the margin); arcuate ligaments; crura to L1–L3 (right) and L1–L2 (left) bodies | — | | [K] (H) |
 | Thickness | muscle 3–5; central tendon 1–2 | mm | | [K] (M) |
-| Excursion | quiet 1.5–2 cm; deep 6–10 cm | cm | Upper abdominal organs move with it (§14) | [K] (H) |
+| Excursion | quiet 1.5–2 cm; deep 6–10 cm | cm | Upper abdominal organs move with it (§14). Fact-check: not re-sourced. It matches the fact-checker's memory of ultrasound norms (Boussuges 2009, men: quiet ~1.8 cm, deep ~7 cm) (M/H) | [K] (H) |
 | Posture | supine: domes ~2–4 cm higher than standing | cm | | [K] (M) |
 
 ### 10.7 Simulation parameters: neck and thoracic organs
@@ -1123,8 +1145,8 @@ Diameters follow doc 03 `[D03:R43–R49]`. The positions are this document's fit
 | `heart_axis_base_to_apex` | (0, −0.005, 1.360) → (+0.082, −0.068, 1.285) | m | Oriented-box long axis | [K] [E] (M) |
 | `heart_obb_half_extents` | 0.063 (long) × 0.045 × 0.032 | m | 12.5 × 9 × 6.5 cm | [K] (H) |
 | `heart_mass` | 320 | g | | [B17] [B43] (H) |
-| `lv_wall / rv_wall / atrial_wall` | 10 / 4 / 2.5 | mm | | [B22] (H) |
-| `lv_edv / rv_edv / sv` | 140 / 160 / 75 | mL | | [B22] (H) |
+| `lv_wall / rv_wall / atrial_wall` | 9 / 4 / 2.5 | mm | *LV corrected: was 10.* Echo normal IVS/posterior wall 6–10 mm (ASE-based reference table). Use 12–14 mm for a post-mortem cut surface | [B22] (H) |
+| `lv_edv / rv_edv / sv` | 140 / 160 / 75 | mL | LV EDV between the echo (106 ± 22) and MRI (~150–160) norms. From the fact-checker's memory, not re-sourced | [B22] (M) |
 | `chamber_centres` | table §10.3 | m | 4 ellipsoids inside the heart OBB | [E] (M) |
 | `great_vessel_waypoints` | table §10.4 | m | Shared with doc 03 | [K] [E] (M) |
 | `lung_R / lung_L` centre, extents | table §10.5 | m | Use 3 + 2 lobe sub-volumes split by the fissure planes | [E] (M) |
@@ -1155,12 +1177,12 @@ Positions are **standing, end-expiration**. Upper abdominal organs sit ~2–4 cm
 
 | Item | Value | Unit | Notes | Source |
 |---|---|---|---|---|
-| Mass | **1,550** (1,400–1,800) | g | Molina & DiMaio male mean ~1,560 g; ICRP 1,800 g | [B17] [B43] (H) |
+| Mass | **1,550** (970–1,860) | g | ✓ Verified. Wikipedia (Liver, citing Molina & DiMaio 2012) gives ~1.5 kg, with a male reference range of 970–1,860 g. *Range widened: was 1,400–1,800.* ICRP 1,800 g not re-sourced | [B17] [B43] (H) |
 | Volume | ~1,450 | mL | Density 1.06 | [E] |
 | Centre of mass | **(−0.055, −0.005, 1.230)** | m | Right upper quadrant, under ribs 7–11 | [K] [E] (M) |
 | Extents x | [−0.145, +0.080] | m | Transverse 22.5 cm (20–23); the left lobe reaches the left MCL | [K] [E] (M) |
 | Extents y | [−0.085, +0.070] | m | Right lobe AP 13–15 cm; left lobe 5–7 cm thick | [K] [E] (M) |
-| Extents z | dome [1.315] (under the right hemidiaphragm, ~5th rib); lower edge 1.155 at the right MAL, 1.19 at the midline, 1.21 at the left MCL | m | Craniocaudal at the right MCL: **14.5 cm** (ultrasound normal ≤ 16) | [B23] [K] (M) |
+| Extents z | dome [1.315] (under the right hemidiaphragm, ~5th rib); lower edge 1.155 at the right MAL, 1.19 at the midline, 1.21 at the left MCL | m | Craniocaudal at the right MCL: **14.5 cm** (ultrasound normal ≤ 16). Fact-check: the Kratzer 2003 figures were not re-read. The fact-checker recalls a mean of ~14 cm at the MCL, which is consistent. The transverse 22.5 cm is also unverified: Wikipedia gives "width of about 15 cm", which is ambiguous about axis. Keep (M) | [B23] [K] (M) |
 | Lower border | follows the right costal margin; crosses the midline roughly halfway between xiphoid and navel (≈ transpyloric plane) | — | In a lean man the edge may be felt just below the right costal margin on deep inspiration | [K] (H) |
 | Right lobe | ~60–65 % of volume; centre (−0.075, +0.005, 1.230) | — | | [K] (M) |
 | Left lobe (segments II–III) | centre (+0.040, −0.045, 1.270); thin, extends over the stomach | — | | [K] (M) |
@@ -1174,8 +1196,8 @@ Positions are **standing, end-expiration**. Upper abdominal organs sit ~2–4 cm
 
 | Item | Value | Unit | Notes | Source |
 |---|---|---|---|---|
-| Size | **12 × 7 × 4** (length 9–13) | cm | "1-3-5-7-9-11": 1 × 3 × 5 in, ~7 oz, ribs 9–11 | [B25] [K] (H) |
-| Mass | **150** (80–250) | g | ICRP 150 g | [B43] [B17] (H) |
+| Size | **12 × 7 × 3** (length 9–13; thickness 3–4) | cm | "1-3-5-7-9-11": 1 × 3 × 5 in, ~7 oz, ribs 9–11. *Corrected: thickness was 4.* StatPearls (splenectomy anatomy) gives an average of 12 × 7 × 3 cm, lying under the 9th–11th ribs; 1 inch is also 2.5 cm | [B25] [K] (H) |
+| Mass | **150** (80–250) | g | ✓ Verified: StatPearls gives an average of 150 g | [B43] [B17] (H) |
 | Centre | **(+0.105, +0.040, 1.228)** | m | Left posterior, under ribs 9–11 | [K] [E] (M) |
 | Long axis | along the 10th rib: upper pole (+0.080, +0.075, 1.275) → lower pole (+0.130, +0.005, 1.180) | m | The normal spleen does not reach in front of the MAL | [K] (H) |
 | Relations | diaphragm and ribs behind and to the side; stomach in front; left kidney below and medial; pancreatic tail at the hilum | — | Lower rib fractures (9–11) on the left → splenic tear | [K] (H) |
@@ -1187,13 +1209,13 @@ Positions are **standing, end-expiration**. Upper abdominal organs sit ~2–4 cm
 
 | Item | Left kidney | Right kidney | Unit | Notes | Source |
 |---|---|---|---|---|---|
-| Size | 11.5 × 6 × 4 | 11 × 6 × 4 | cm | Normal length 10–13 cm | [B24] (H) |
-| Mass | 150 | 145 | g | ICRP: 310 g for both | [B43] [B17] (H) |
-| Centre (standing) | **(+0.070, +0.025, 1.180)** (L1–L2) | **(−0.070, +0.025, 1.160)** (L2) | m | **Right ~2 cm lower** (liver above it). Supine: +2 cm | [K] [E] (M) |
+| Size | 11.5 × 6 × 4 | 11 × 6 × 4 | cm | Normal length 10–13 cm. ✓ Verified: StatPearls (kidney) gives 10–12 × 5–7 × 3–5 cm | [B24] (H) |
+| Mass | 150 | 145 | g | ICRP: 310 g for both. ✓ Consistent with StatPearls (150–200 g in males) and with the COBRA whole-body model quoting 310 g for both (male). A value of 160–170 g each is equally valid | [B43] [B17] (H) |
+| Centre (standing) | **(+0.070, +0.025, 1.180)** (L1–L2) | **(−0.070, +0.025, 1.160)** (L2) | m | **Right ~2 cm lower** (liver above it). Supine: +2 cm. ✓ Verified (level): StatPearls gives the kidneys between the T12 and L3 transverse processes, with the right usually slightly lower because of the liver | [K] [E] (M) |
 | Upper pole | (+0.055, +0.035, 1.235) | (−0.055, +0.035, 1.215) | m | Poles are tilted: upper medial and posterior | [K] [E] (M) |
 | Lower pole | (+0.085, +0.012, 1.125) | (−0.085, +0.012, 1.105) | m | | [K] [E] (M) |
 | Hilum | (+0.048, +0.010, 1.180) | (−0.048, +0.010, 1.160) | m | Faces forward and medially (kidney rotated ~30° about its long axis) | [K] (M) |
-| Depth from back skin | 5–7 cm to the posterior surface | same | cm | Under the 12th rib, quadratus lumborum and erector spinae | [K] [E] (M) |
+| Depth from back skin | 5–7 cm to the posterior surface | same | cm | Under the 12th rib, quadratus lumborum and erector spinae. Fact-check: unverified; no CT renal-depth source was retrieved (M/L) | [K] [E] (M) |
 | Structure | cortex 7–10 mm; medulla (8–12 pyramids); sinus fat; renal pelvis → ureter | | | Perirenal fat 5–30 mm (lean: 5–10) | [K] (H) |
 | Blood flow | ~0.55 L/min each (≈ 20–25 % of CO for both) | | L/min | | [K] (H) |
 | Adrenal gland | crescent on the upper-medial pole: (+0.042, +0.025, 1.230) | pyramid above the upper pole, behind the IVC: (−0.040, +0.030, 1.235) | m | Each 5 × 3 × 0.6 cm, 4–6 g. Yellow cortex (#D9A441), brown medulla | [K] [B43] (M) |
@@ -1204,8 +1226,8 @@ Positions are **standing, end-expiration**. Upper abdominal organs sit ~2–4 cm
 |---|---|---|---|---|---|
 | **Stomach** (moderately full, ~500 mL, standing) | cardia at T11 (+0.030, −0.018, 1.255); fundus under the left dome (+0.070, +0.010, 1.290); body down the left side; greater curvature low point (+0.050, −0.050, 1.100); antrum across the midline (0.000, −0.065, 1.140); pylorus (−0.025, −0.045, 1.170) at L1–L2 | AABB x [−0.035, +0.110], y [−0.085, +0.035], z [1.095, 1.305]; empty ~50 mL, meal 0.5–1 L, max 1.5–4 L | wall ~150 g | Wall 3–5 mm distended, 5–8 mm empty (rugae). Serosa pink-grey (#C9A0A0); mucosa red-pink (#C4676B). **Gastric contents spill on penetration** | [K] [B43] (M) |
 | **Pancreas** (retroperitoneal) | head in the duodenal C (−0.035, −0.035, 1.160), L2; neck (−0.005, −0.050, 1.180); body over the aorta at L1 (+0.025, −0.045, 1.195); tail to the splenic hilum (+0.090, +0.015, 1.215) | 14 cm long; head 3 cm thick, body and tail 2 cm | 90–140 g | Pale tan, lobulated (#D8B49A). Crushed against L1 by a blow to the upper abdomen | [K] [B43] (M) |
-| **Urinary bladder** | empty: (0, −0.030, 0.915), behind the symphysis; full (500 mL): centre (0, −0.035, 0.960), dome up to z ≈ 1.01 (above the pubis) | empty ~5 × 5 × 4 cm; capacity 400–600 mL (urge at 300–400) | wall ~50 g | Wall 3 mm distended, 5+ mm empty. Pale pink-tan (#D8B5A5) | [K] [B43] (H) |
-| Prostate (optional) | (0, −0.025, 0.880), below the bladder neck | 4 × 3 × 3 cm | ~20 g | | [K] (M) |
+| **Urinary bladder** | empty: (0, −0.030, 0.898), behind the symphysis; full (500 mL): centre (0, −0.035, 0.943), dome up to z ≈ 0.99 (above the pubis). *Corrected: was 0.915 / 0.960 / 1.01*, moved with the symphysis (pelvis refit, §7.1) | empty ~5 × 5 × 4 cm; capacity 400–600 mL (urge at 300–400) | wall ~50 g | Wall 3 mm distended, 5+ mm empty. Pale pink-tan (#D8B5A5) | [K] [B43] (H) |
+| Prostate (optional) | (0, −0.025, 0.863), below the bladder neck *(corrected: was 0.880)* | 4 × 3 × 3 cm | ~20 g | | [K] (M) |
 
 ### 11.5 Space the intestines fill (placeholder, not modelled in detail)
 
@@ -1220,14 +1242,14 @@ Positions are **standing, end-expiration**. Upper abdominal organs sit ~2–4 cm
 | `liver_centre / aabb` | (−0.055, −0.005, 1.230); x [−0.145, 0.080], y [−0.085, 0.070], z [1.155, 1.315] | m | Model as right lobe, left lobe and caudate sub-volumes | [K] [E] (M) |
 | `liver_mass` | 1,550 | g | | [B17] (H) |
 | `gallbladder_fundus` | (−0.075, −0.065, 1.190) | m | | [K] (M) |
-| `spleen_centre / axis` | (+0.105, +0.040, 1.228); poles (+0.080, +0.075, 1.275) → (+0.130, +0.005, 1.180) | m | 12 × 7 × 4 cm OBB | [K] [E] (M) |
+| `spleen_centre / axis` | (+0.105, +0.040, 1.228); poles (+0.080, +0.075, 1.275) → (+0.130, +0.005, 1.180) | m | 12 × 7 × 3 cm OBB. *Corrected: was 12 × 7 × 4* | [K] [E] (M) |
 | `spleen_mass` | 150 | g | | [B43] (H) |
 | `kidney_L / R centre` | (+0.070, +0.025, 1.180) / (−0.070, +0.025, 1.160) | m | 11.5 × 6 × 4 cm OBB along the pole axis | [K] [E] (M) |
 | `kidney_mass` | 150 each | g | | [B43] (H) |
 | `adrenal_L / R` | (+0.042, +0.025, 1.230) / (−0.040, +0.030, 1.235) | m | 5 g each | [K] (M) |
 | `stomach_aabb` | x [−0.035, 0.110], y [−0.085, 0.035], z [1.095, 1.305] | m | Fill level changes volume | [K] (M) |
 | `pancreas_path` | head → neck → body → tail, as §11.4 | m | Capsule chain, r 10–15 mm | [K] (M) |
-| `bladder_centre_empty / full` | (0, −0.030, 0.915) / (0, −0.035, 0.960) | m | Radius 25 / 50 mm | [K] (M) |
+| `bladder_centre_empty / full` | (0, −0.030, 0.898) / (0, −0.035, 0.943) | m | Radius 25 / 50 mm. *Corrected: was z 0.915 / 0.960* | [K] (M) |
 | `bowel_filler_mass` | 2.0–2.5 | kg | | [B43] [G] |
 | `standing_vs_supine_shift` | liver, spleen −2 to −3 cm; kidneys −2 to −4 cm | m | §14 | [K] (M) |
 
@@ -1291,10 +1313,10 @@ Positions are **standing, end-expiration**. Upper abdominal organs sit ~2–4 cm
 | Wrist, volar | 1.0 | 2–3 | tendons | **Radial artery at 2–5 mm**; ulnar artery 4–7 mm | [K] (H) |
 | Palm | 1.5–2 | fat pad 4–8 | palmar aponeurosis 1, then tendons | Metacarpals at 10–15 mm | [K] (M) |
 | Back of the hand | 1.0–1.5 | 1–3 | extensor tendons 1–2 | Metacarpals at 3–6 mm | [K] (M) |
-| Thigh, anterior mid | 1.5–2 | 6–12 | rectus femoris + vastus intermedius 45–55 | Femur at **55–70 mm** | [B29] [K] (M) |
+| Thigh, anterior mid | 1.5–2 | 6–12 | rectus femoris + vastus intermedius 45–55 | Femur at **55–70 mm**. Fact-check: Abe 1994 not re-read. Consistent with the verified mid-thigh girth: 51 cm girth gives a radius of ~8 cm, and the femur lies slightly anterior of centre (M) | [B29] [K] (M) |
 | Thigh, posterior mid | 1.5–2 | 8–15 | hamstrings 50–65 | Femur at 65–80 mm | [B29] (M) |
 | Knee, anterior | 1.5 | 2–4 | (prepatellar bursa) | **Patella at 4–8 mm** | [K] (H) |
-| **Shin, anteromedial** | 1.5–2 | 1–3 | **none** | **Tibia at 3–6 mm** | [K] (H) |
+| **Shin, anteromedial** | 1.5–2 | 1–3 | **none** | **Tibia at 3–6 mm**. Fact-check: unverified (no ultrasound source retrieved); plausible from anatomy. Lean-subject pretibial soft tissue is usually quoted at a few mm (M) | [K] (M) |
 | Calf, posterior | 1.5 | 4–8 | gastrocnemius 15–22 + soleus 15–25 | Posterior tibial vessels / tibia at 40–55 mm | [B29] (M) |
 | Ankle (malleoli) | 1.5 | 1–2 | none | Malleoli at 2–4 mm | [K] (H) |
 | Heel (plantar) | 2–4 | fat pad 15–20 (honeycomb) | — | Calcaneus at 18–24 mm | [K] (H) |
@@ -1325,9 +1347,9 @@ Colours match doc 02 where the tissue overlaps `[K] [G]`.
 | `skin_thickness_map` | §12.1 (face 1.8, trunk front 2, back 3.2, limbs 1.5, palm/sole 2–3) | mm | Paint as a texture channel | [B31] (M) |
 | `sat_thickness_map` | chest 6, abdomen 15, flank 15, back 8, buttock 20, thigh 9, arm 6, forearm 4, calf 6, shin 2, hands/feet 2 | mm | Scale × (body fat % / 15) | [B29] [B30] [E] (M) |
 | `muscle_thickness_map` | pectoral 18, rectus 11, obliques 17, erector (thoracic/lumbar) 28/48, glute max 40, deltoid 20, biceps+brachialis 35, triceps 30, forearm 20, quadriceps 50, hamstrings 58, calf 38 | mm | Scale × a muscularity factor | [B29] (M) |
-| `chest_wall_to_pleura` 2nd ICS MCL / 5th ICS MAL | 42 / 32 | mm | | [B20] [B21] (M) |
+| `chest_wall_to_pleura` 2nd ICS MCL / 5th ICS MAL | 42 / 32 | mm | Fact-check: not re-sourced. These agree with the fact-checker's memory of the Laan et al. 2016 meta-analysis (Injury): ~43 mm at 2nd ICS MCL, ~40 mm at 4th/5th ICS AAL, ~34 mm at MAL. Use 34 for the MAL and 40 for the AAL if they are modelled separately | [B20] [B21] (M) |
 | `sternum_skin_to_RV` | 30 | mm | | [E] (M) |
-| `abdo_skin_to_peritoneum` (paramedian) | 30 | mm | | [E] (M) |
+| `abdo_skin_to_peritoneum` (paramedian) | 30 | mm | Fact-check: unverified; an engineering sum of SAT + rectus. Plausible for BMI ~24 (M) | [E] (M) |
 | `back_skin_to_kidney` | 60 | mm | | [K] [E] (M) |
 | `subcutaneous_bone_sites` | tibial shaft, patella, malleoli, olecranon/ulna border, clavicle, iliac crest, ASIS, sternum, spinous processes, knuckles, skull | list | Blunt impacts here split the skin (doc 02) | [K] (H) |
 
@@ -1351,21 +1373,22 @@ These blocks repeat the tables above in a form that can be pasted into a data fi
 ```csv
 # name,x,y,z,kind   (kind: skin | bone | joint)
 vertex,0.000,0.020,1.780,skin
-head_origin_mid_ear_canals,0.000,0.020,1.655,joint
-ear_canal_L,0.068,0.020,1.655,skin
-glabella,0.000,-0.078,1.683,skin
-eye_cornea_L,0.032,-0.074,1.666,skin
-eye_centre_L,0.032,-0.062,1.666,bone
-pronasale,0.000,-0.106,1.625,skin
+head_origin_mid_ear_canals,0.000,0.020,1.647,joint
+ear_canal_L,0.068,0.020,1.647,skin
+glabella,0.000,-0.078,1.675,skin
+eye_cornea_L,0.032,-0.074,1.658,skin
+eye_centre_L,0.032,-0.062,1.658,bone
+pronasale,0.000,-0.106,1.617,skin
 menton,0.000,-0.068,1.550,skin
-gonion_L,0.052,-0.005,1.585,skin
-mastoid_tip_L,0.055,0.030,1.620,bone
-inion,0.000,0.112,1.662,skin
-basion,0.000,0.018,1.634,bone
-atlanto_occipital_pivot,0.000,0.015,1.630,joint
+gonion_L,0.052,-0.005,1.577,skin
+mastoid_tip_L,0.055,0.030,1.612,bone
+inion,0.000,0.112,1.654,skin
+basion,0.000,0.018,1.626,bone
+atlanto_occipital_pivot,0.000,0.015,1.622,joint
 laryngeal_prominence,0.000,-0.062,1.537,skin
 cricoid,0.000,-0.055,1.515,skin
-c7_spinous_cervicale,0.000,0.075,1.500,skin
+c7_spinous_cervicale,0.000,0.075,1.532,skin
+# fact-check: head rows above were lowered 0.008 (ANSUR II tragion-top of head); menton kept at 0.870 H; cervicale was 1.500
 jugular_notch,0.000,-0.048,1.455,skin
 sc_joint_L,0.025,-0.040,1.450,joint
 ac_joint_L,0.165,0.010,1.462,joint
@@ -1379,23 +1402,24 @@ scapula_inferior_angle_L,0.085,0.105,1.325,bone
 costal_margin_lowest_L,0.112,-0.050,1.125,bone
 navel,0.000,-0.108,1.075,skin
 iliac_crest_top_L,0.140,0.025,1.070,bone
-iliac_tubercle_L,0.143,-0.030,1.055,bone
-asis_L,0.122,-0.062,1.009,bone
+iliac_tubercle_L,0.135,-0.030,1.055,bone
+asis_L,0.122,-0.062,0.992,bone
 psis_L,0.045,0.090,1.010,bone
-pubic_symphysis_top,0.000,-0.068,0.928,bone
-hip_joint_centre_L,0.087,-0.015,0.935,joint
-greater_trochanter_L,0.158,0.000,0.930,bone
-ischial_tuberosity_L,0.055,0.020,0.858,bone
+pubic_symphysis_top,0.000,-0.068,0.911,bone
+hip_joint_centre_L,0.087,-0.015,0.918,joint
+greater_trochanter_L,0.158,0.000,0.913,bone
+ischial_tuberosity_L,0.055,0.020,0.841,bone
 coccyx_tip,0.000,0.040,0.905,bone
-crotch,0.000,0.005,0.840,skin
-elbow_centre_L_apose,0.330,0.020,1.155,joint
-wrist_centre_L_apose,0.455,0.020,0.938,joint
-mcp3_L_apose,0.503,0.020,0.856,joint
-fingertip3_L_apose,0.548,0.020,0.778,skin
-knee_centre_L,0.092,0.020,0.505,joint
-patella_centre_L,0.090,-0.035,0.522,bone
-tibial_tuberosity_L,0.090,-0.025,0.447,bone
-fibular_head_L,0.130,0.035,0.465,bone
+crotch,0.000,0.005,0.860,skin
+elbow_centre_L_apose,0.325,0.020,1.164,joint
+wrist_centre_L_apose,0.460,0.020,0.930,joint
+mcp3_L_apose,0.508,0.020,0.848,joint
+fingertip3_L_apose,0.553,0.020,0.770,skin
+knee_centre_L,0.092,0.020,0.492,joint
+patella_centre_L,0.090,-0.035,0.509,bone
+tibial_tuberosity_L,0.090,-0.025,0.434,bone
+fibular_head_L,0.130,0.035,0.452,bone
+# fact-check: pelvis, hip, knee, crotch and A-pose arm rows above corrected (see sections 1.2, 1.3, 7)
 ankle_centre_L,0.095,0.050,0.075,joint
 lateral_malleolus_L,0.132,0.060,0.055,bone
 medial_malleolus_L,0.065,0.045,0.068,bone
@@ -1425,17 +1449,18 @@ liver_right_lobe,ellipsoid,-0.075,0.000,1.235,0.140,0.150,0.160,1,0,0,0,1,0,0
 liver_left_lobe,ellipsoid,0.035,-0.045,1.270,0.090,0.070,0.060,1,0,0,0,1,0,0
 liver_caudate,ellipsoid,-0.010,0.030,1.255,0.030,0.030,0.060,1,0,0,0,1,0,0
 gallbladder,capsule,-0.060,-0.043,1.208,0.080,0.035,0.035,0.466,0.699,0.543,0.832,-0.555,0,40
-spleen,obb,0.105,0.040,1.228,0.120,0.070,0.040,0.390,-0.547,-0.742,0.445,-0.594,0.672,150
+spleen,obb,0.105,0.040,1.228,0.120,0.070,0.030,0.390,-0.547,-0.742,0.445,-0.594,0.672,150
 kidney_L,obb,0.070,0.024,1.180,0.115,0.060,0.040,0.258,-0.198,-0.946,-0.804,-0.586,-0.097,150
 adrenal_L,ellipsoid,0.042,0.025,1.230,0.030,0.010,0.050,1,0,0,0,1,0,5
 stomach,aabb,0.038,-0.025,1.200,0.145,0.120,0.210,1,0,0,0,1,0,150
-bladder_empty,sphere,0.000,-0.030,0.915,0.050,0.050,0.050,1,0,0,0,1,0,50
-bladder_full,sphere,0.000,-0.035,0.960,0.100,0.100,0.100,1,0,0,0,1,0,50
+bladder_empty,sphere,0.000,-0.030,0.898,0.050,0.050,0.050,1,0,0,0,1,0,50
+bladder_full,sphere,0.000,-0.035,0.943,0.100,0.100,0.100,1,0,0,0,1,0,50
 thyroid_lobe_L,ellipsoid,0.022,-0.028,1.505,0.020,0.018,0.050,1,0,0,0,1,0,9
 thyroid_isthmus,ellipsoid,0.000,-0.042,1.492,0.020,0.005,0.020,1,0,0,0,1,0,2
 bowel_filler,aabb,0.000,-0.040,1.040,0.240,0.120,0.280,1,0,0,0,1,0,2200
 # right side: kidney_R centre (-0.070,0.024,1.160) u(-0.258,-0.198,-0.946) v(0.804,-0.586,-0.097); adrenal_R (-0.040,0.030,1.235); thyroid_lobe_R (-0.022,-0.028,1.505)
 # bowel_filler has the lowest hit priority: resolve every other organ first
+# fact-check: spleen thickness 0.040 -> 0.030 (StatPearls 12 x 7 x 3 cm); bladder z lowered 0.017 with the pelvis
 ```
 
 ### 13.3 Tube structures (capsule chains: name, radius_m, then points)
@@ -1453,7 +1478,7 @@ ivc,0.011,-0.020,-0.035,1.050,-0.022,-0.015,1.260,-0.022,-0.010,1.325,-0.025,-0.
 svc,0.010,-0.028,-0.035,1.438,-0.028,-0.028,1.378
 pulmonary_trunk,0.0135,0.022,-0.058,1.378,0.012,-0.030,1.405
 cca_L,0.0035,0.010,-0.025,1.432,0.028,-0.018,1.515,0.030,-0.012,1.558
-brainstem,0.011,0.000,0.030,1.627,0.000,0.025,1.641,0.000,0.020,1.655,0.000,0.014,1.667,0.000,0.010,1.690
+brainstem,0.011,0.000,0.030,1.619,0.000,0.025,1.633,0.000,0.020,1.647,0.000,0.014,1.659,0.000,0.010,1.682
 cauda_equina,0.007,0.000,0.017,1.180,0.000,0.013,1.161,0.000,0.008,1.124,0.000,0.011,1.087,0.000,0.022,1.050,0.000,0.035,0.995
 ```
 
@@ -1461,10 +1486,10 @@ cauda_equina,0.007,0.000,0.017,1.180,0.000,0.013,1.161,0.000,0.008,1.124,0.000,0
 
 ```csv
 # level,y,z,body_h_mm,body_w_mm,body_d_mm,disc_below_mm,canal_ap_mm,canal_w_mm,spinous_dy_mm,cord_y,cord_w_mm,cord_ap_mm
-C1,0.020,1.618,10,78,45,0,30,28,30,0.024,11.5,8.5
-C2,0.012,1.596,23,17,15.5,5,16,24,43,0.027,11.5,8.5
-C3,0.007,1.574,14,16.5,15.5,5,14.5,23,40,0.023,12.5,8.0
-C4,0.004,1.555,14,17.5,15.5,5,14,24,40,0.020,13.0,7.8
+C1,0.020,1.610,10,78,45,0,30,28,30,0.024,11.5,8.5
+C2,0.012,1.590,23,17,15.5,5,16,24,43,0.027,11.9,7.9
+C3,0.007,1.570,14,16.5,15.5,5,14.5,23,40,0.023,12.5,8.0
+C4,0.004,1.553,14,17.5,15.5,5,14,24,40,0.020,13.0,7.8
 C5,0.003,1.536,13.5,18.5,16,5,14,24,42,0.019,13.5,7.7
 C6,0.004,1.518,13.5,20,16.5,5,14,24,45,0.020,13.0,7.5
 C7,0.010,1.500,15,22,16.5,5,14,23,57,0.026,12.0,7.5
@@ -1487,6 +1512,7 @@ L4,-0.016,1.087,27,50,35,12,16,24,70,0.011,0,0
 L5,-0.005,1.050,26.5,52,35,11,17,26,65,0.022,0,0
 S1,0.014,1.012,30,50,30,0,15,30,0,0.035,0,0
 # L2-S1 cord_w/ap 0 = no cord (cauda equina only); cord_y there is the thecal-sac centre
+# fact-check: C1-C4 z lowered (head refit); C2 cord size from spine-generic MRI norms (11.9 x 7.86 mm)
 ```
 
 ---
