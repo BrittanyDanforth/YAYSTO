@@ -56,7 +56,7 @@ Confidence (H)/(M)/(L) is added where it matters. `R2-0x §y` after a tag names 
 ### 0.3 Conventions
 
 - **Reference body**: male, 75 kg, 1.75 m (round two).
-  - RB anatomy uses 1.78 m. Scale lengths by stature / 1.75 and masses by segment fractions (§4.1).
+  - RB anatomy uses 1.78 m (C-14). Scale lengths by stature / 1.75 and masses by segment fractions (§4.1).
   - Standing centre of mass (CM) 0.96 m. Inverted-pendulum constant ω₀ = √(9.81 / 0.96) = **3.20 s⁻¹** `[E]`.
 - **Frames**:
   - Body frame: +Z up, face −Y, character's left = +X (RB §1.2).
@@ -498,7 +498,7 @@ After apnoea: hypoxic arrest 4–10 min later (default 6) `[K] R1-04 §2.4`. Pos
 | `herniation_stage_durations` | §1.7.3 | min | Real time; game 4× | `[E]` on `[S R2-01:S87]` |
 | `kernohan_p` | 0.1–0.2 | p | Ipsi hemiparesis | `[S R2-01:S88]` (L) |
 | `hutchinson_false_side_p` | 0.10–0.15 | p | First dilated pupil opposite the mass | `[K] (M)` |
-| `p_seizure_penetrating_1h` / `blunt_1h` | 0.05–0.10 (×1.5 motor/temporal) / 0.02–0.04 | p | | `[E]` on `[S R2-01:S103]` |
+| `p_seizure_penetrating_1h` / `blunt_1h` | 0.05–0.10 (×1.5 motor/temporal) / 0.02–0.04 | p | First hour only; RB's 0.2 / 0.10–0.15 cover the first week (C-02) | `[E]` on `[S R2-01:S103]` |
 | `concussive_convulsion_p` | 0.014 | p | On knockout | `[S R2-01:S100]` |
 | `posture_episode` | ramp 0.5–2 s, hold 5–60 s, release 1–3 s; refractory 5–20 s | s | | `[E] R2-01 §18.2, R2-04 §5.6` |
 | `fencing_p` / `duration` | 0.66 / 2–10 (≤ 20) | p / s | | `[S R2-01:S99]` ✓ |
@@ -564,7 +564,7 @@ Lesion overlays **persist through coma**: a CN III palsy stays down-and-out whil
 | Smooth pursuit | Accurate to ~30 °/s, then catch-up saccades | `[K] (M)` |
 | VOR / doll's eyes | Gain ≈ 1.0, latency ~10 ms; suppressed by fixation when awake; obvious when unconscious | `[S R2-01:S68]` (H) |
 | Normal lid aperture | 9–10 mm; the upper lid covers the top 1–2 mm of the iris; the lid follows vertical gaze (gain ≈ 1) | `[K] RB §5.1` |
-| Blink | Close 70–100 ms, reopen 150–250 ms, total 100–400 ms | `[K] (H) R2-06 §12.2` |
+| Blink | Close 70–100 ms, closed 0–50 ms, reopen 150–250 ms: a full spontaneous blink lasts **250–400 ms**. Reflex and incomplete blinks may be 100–250 ms (C-15) | `[K] (H) R2-06 §12.2, RB §5.2` |
 | Pupil light reflex | Latency 200–300 ms; constriction ~1 s; redilation 2–4 s; consensual | `[K] (H)` |
 | Hippus | ±0.2–0.5 mm at 0.2–0.5 Hz (living, awake) | `[K] RB §5.2` |
 | Pathological pupil change | 0.5–1 mm/s for acute changes; minutes for herniation stages | `[E] R2-01 §14.9` |
@@ -576,7 +576,7 @@ Lesion overlays **persist through coma**: a CN III palsy stays down-and-out whil
 
 | State | Entry condition | Upper lid (mm) | Gaze | Pupil (mm) / reactivity | Blinks | Saccades / slow movements | Face tone and droop | Jaw (mm) | FACS / PSPI | Tag |
 |---|---|---|---|---|---|---|---|---|---|---|
-| `ALERT` | GCS 15, stress < 0.3 | 9–10 | Fixations on targets | base 3–4, brisk; hippus | 15–20 /min (10–25), 100–400 ms | ~2–3 saccades/s, 2–15° | Tone 1; micro-motion 0.02–0.05 weight at 0.3–2 Hz; swallow every 30–120 s | 0–2 | none | `[K] R2-06 §8.4, §12` |
+| `ALERT` | GCS 15, stress < 0.3 | 9–10 | Fixations on targets | base 3–4, brisk; hippus | 15–20 /min (10–25), 250–400 ms | ~2–3 saccades/s, 2–15° | Tone 1; micro-motion 0.02–0.05 weight at 0.3–2 Hz; swallow every 30–120 s | 0–2 | none | `[K] R2-06 §8.4, §12` |
 | `FEAR` (threat seen) | stress ≥ 0.3 and threat present | **11–12** (white above the iris) | Hypervigilant scanning 2–4 saccades/s among attacker, weapon and exits; weapon focus | base +0.5–1.5 (4–7), brisk | Suppressed (< 5 /min), then bursts | Fast | Tone 1; nostrils flare with breaths when RR > 25 | 5–10 (AU26B) | 1C 2C 4B **5D** 7B **20C** 26B 38B | `[K] (H) R2-06 §8.2` ✓ |
 | `PAIN` (acute) | pain ≥ 2 | Mild 7–9; moderate squeezed 3–6; severe **shut at each burst apex** | Fixed on the wound, or shut | Pain spike +0.3–1.0 within 0.3–0.6 s, peak 1–2 s, decays over 3–10 s; stays reactive | Replaced by squeezes of 0.3–3 s | Few | Tone 1 | Clenched between cries; opens with vocalisation | Mild 4B, 6B/7B, 10A (PSPI ~3–5); moderate 4C 6C 7C 9B 10C 43B 20B 25 (PSPI ~8–11); severe 4D–E 6D 7D 9D 10D **43** 20C 25 31 21C (PSPI 13–16) | `[S R2-02:S39]` `[K⚠] R2-06 §12.1` |
 | `PAIN_SUPPRESSED` (fighter, stoic) | pain ≥ 2 and mindset = trained or enraged | 6–8 | On the threat | +0.3–1.0 | Normal | Normal | Tone 1 | Set (AU31C) | 4B 7B **24C** 17B 31C; full pain face leaks for 0.3–1 s | `[K] (M) R2-06 §8.2` |
@@ -712,7 +712,7 @@ Behavioural consequences of misalignment (diplopia): squinting, closing one eye,
 |---|---|---|---|---|
 | `lid_aperture` alert / fear / shock / stupor / coma gap | 9–10 / 11–12 / 5–8 / 2–6 / 1–5 | mm | | `[K] RB §5.3, R2-04 §7` |
 | `blink_rate` alert / threat / shock / coma / dead | 15–20 / < 5 then bursts / 5–10 / 0 / 0 | /min | Poisson, minimum interval 1 s | `[K] R2-06 §12.2` |
-| `blink_duration` normal / shock | 100–400 / 300–500 | ms | | `[K]` |
+| `blink_duration` spontaneous / reflex or incomplete / shock | 250–400 / 100–250 / 300–500 | ms | C-15 | `[K] RB §5.2, R2-06 §12.2` |
 | `saccade_duration` | 21 + 2.2 × amplitude | ms | Peak 400–700 °/s | `[K] (H)` ✓ |
 | `saccade_rate` fear / dazed, shock | 2–4 / 0.5–1 | /s | | `[E] R2-06 §12.3` |
 | `pupil_pain_spike` | +0.3–1.0; latency 0.3–0.6 s; peak 1–2 s; decay 3–10 s | mm | Conflict C-03 | `[K⚠] R2-06 §12.1` |
@@ -1234,7 +1234,7 @@ Conflicts C-07 and C-08: RB §4.10 lists ζ 0.9 for posturing and fencing, ω 8�
 |---|---|---|---|---|
 | Shoulder | Adducted; internal rotation 30–60°; flexion 0–30° (arms on the chest) | Adducted; **internal rotation 60–90°**; extension 0–20° | Flexion 60–120°, abduction 0–30° / adducted | Extended arm: flexion 30–90°, abduction 20–45° / flexed arm across the chest |
 | Elbow | **Flexion 90–130°** | **0–10°** | 0–20° / 90–120° | 0–20° / 90–130° |
-| Forearm | Neutral to 45° pronation | **Full pronation 80–90°** (palms turned outward and backward) | Neutral | Pronated / neutral |
+| Forearm | Neutral to 45° pronation | **Full pronation 80–90°** (palms turned outward and backward; C-13) | Neutral | Pronated / neutral |
 | Wrist | Flexion 45–80° | Flexion 30–70° | Neutral to 30° | Flexion 30–60° |
 | Fingers | Fist, thumb tucked | Flexed | Flexed or loose | Fist |
 | Hip | Extension 0–10°, adduction 10–20°, internal rotation 10–30° | Same, stiffer | Varies | Extended |
@@ -1326,7 +1326,7 @@ Default when perfectly upright and still: forward 0.45, backward 0.25, sideways 
   | Wet blood / tacky blood | 0.18 / 0.75 |
   | Grass | 0.45 |
 
-  Set `friction` directly on each `PhysicalBone3D`; it has no PhysicsMaterial slot.
+  Set `friction` directly on each `PhysicalBone3D`; it has no PhysicsMaterial slot. RB §4.10 gives 0.6–0.9 for skin or cloth on a floor (C-16).
 - **Slide**: d = v² / (2μg). A standing collapse lands mostly vertically, with 0.5–2 m/s of horizontal CM speed at contact, so it slides only **0.03–0.4 m**. **A body that slides a metre after a standing collapse is a bug** `[E] R2-03 §6.4` ✓.
 - **Rolling**: flesh has a flat contact patch and does not roll by itself. Capsules and spheres do, so use hull shapes for the head and trunk, plus contact-dependent angular damping (§4.7).
 
@@ -1759,7 +1759,7 @@ Time origins as R2-04 §0.3:
 | Event | Default p | Condition |
 |---|---|---|
 | Agonal gasps | 0.45 / 0.4 / 0.7 / **0** | Destroyed heart or VF / exsanguination to PEA / asphyxia with a beating heart / medulla destroyed |
-| Anoxic myoclonus at LOC | 0.8 / 0.5 | Sudden / slow onset |
+| Anoxic myoclonus at LOC | 0.8 / 0.5 | Sudden / slow onset (C-11: RB uses 0.9 for a destroyed heart) |
 | Upgaze at LOC | 0.6–0.9 | Circulatory LOC |
 | Anoxic tonic spasm | 0.15–0.3 | Arrest ≥ 15 s |
 | Release extension / kicking | 0.3–0.6 / 0.1–0.2 | Midbrain or upper pons destroyed |
@@ -1783,7 +1783,7 @@ Time origins as R2-04 §0.3:
 | `syncope_jerks` | 1–10 over 5–15 s, irregular | — | | `[S R2-04:S1]` ✓ |
 | `anoxic_tonic` | p 0.15–0.3; 5–20 s; starts 15–30 s after `t_arr` | — | | `[K⚠]` |
 | `cerebral_arrest_loc` | 5–10 (cuff) / 8–15 (heart); × 0.85 upright, × 1.2 supine | s | | `[K] (H)` ✓ |
-| `ischaemic_beating_heart_seq` | LOC 10–15; jerks 15; extension 20; flexion 40; limp 60–90; last breath 60–120; last twitch 110–450 (240) | s | | `[K] (M)` ✓ recall |
+| `ischaemic_beating_heart_seq` | LOC 10–15; jerks 15; extension 20; flexion 40; limp 60–90; last breath 60–120; last twitch 110–450 (240) | s | C-06 | `[K] (M)` ✓ recall |
 | `gtc_total` / `tonic` / `clonic` | 62 (30–120) / 10–20 / 30–60 | s | | `[S R2-04:S3]` ✓ |
 | `gtc_clonic_f` | 3–4 → 0.5–1 Hz, τ 10–20 s | — | Stop when the interval exceeds 2–3 s | `[E]` |
 | `vibratory` | 8–12 Hz, 0.5–2°, 2–5 s | — | Additive | `[K] (L)` |
@@ -2416,6 +2416,7 @@ Sources: `[K] (H) R2-06 §3.1, §16`.
 - Knife slash across the **left** side of the neck of a standing, unarmed man.
 - Transects the left common carotid and the internal jugular vein; the airway is intact.
 - Uncompressed arterial flow 1.0 L/min; own-hand compression × 0.4–0.7.
+- **Timing caveat (C-17)**: the clock below follows R2-04 §10.3 (1.0 L/min). RB §3.4 scenario D (supine, uncompressed, open neck) gives LOC at 20–60 s and arrest at 2–5 min. RB owns the bleeding solver: if its output is faster, keep the order of events below and compress the clock to match.
 
 **Rolls.**
 - Poor collaterals → left-hemisphere ischaemia: yes (p 0.2–0.3), onset 12 s.
@@ -2573,7 +2574,7 @@ Sources: `[K] (H) R2-06 §3.1, §16`.
 | `scenario_frontal_transient_loc` | 75 (5–120) | s | Impact apnoea 40 s | `[G]` on `[K]` |
 | `scenario_temporal_mass` | 15 mL + 1.0 mL/min; herniation effective volume × 1.3 | — | Apnoea ~72 min, `t_arr` ~78 min | `[E]` |
 | `scenario_heart_loc` | 11 (8–15 × 0.85 upright) | s | Gasps from 30 s | `[K]` `[E]` |
-| `scenario_carotid_flow` | 1.0 uncompressed; × 0.5 two hands; × 0.7 one hand | L/min | LOC ~3 min; `t_arr` ~5 min | `[E] R2-04 §10.3` |
+| `scenario_carotid_flow` | 1.0 uncompressed; × 0.5 two hands; × 0.7 one hand | L/min | LOC ~3 min; `t_arr` ~5 min; RB solver governs (C-17) | `[E] R2-04 §10.3` |
 | `scenario_femur_giveway` | 0.1–0.3 | s | Contact 0.6–0.9 s | `[E]` |
 | `scenario_ko_forces` | straight 2,800 N; hooks 3,500 N | N | §3.7 | `[S R2-02:S28,S29]` `[E]` |
 | `scenario_hammer_energy` | 60 / 70 | J | Seizure onset 3:10 | `[E]` |
