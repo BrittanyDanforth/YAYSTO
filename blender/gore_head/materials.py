@@ -521,10 +521,11 @@ def _finish(mat, t, viewport_color, rough=0.5):
 def _group_blood_film():
     """GHS_BloodFilm: blood layered over a base surface.
 
-    Blood (0..1) is coverage *and* thickness: low values are thin smears that
-    tint the surface underneath, high values are pooled, glossy, raised blood
-    that hides it.  Age 0 = fresh saturated red with a wet coat, 1 = dark
-    brown-black, matte, cracked.  Thin films dry (darken) before thick pools.
+    Blood (0..1) is coverage *and* thickness: low values are semi-transparent
+    smears that tint the surface underneath (darker at their rims), high values
+    are pooled, glossy, raised blood that hides it (clots in broad pools only).
+    Age 0 = fresh deep red with a wet coat, 1 = dark brown-black, matte, finely
+    cracked.  Thin films dry (darken) before thick pools.
     """
     ng, t = _new_group("GHS_BloodFilm", [
         ("Color", 'RGBA', (0.6, 0.4, 0.3)), ("Roughness", 'VALUE', 0.4), ("Blood", 'VALUE', 0.0),
@@ -537,9 +538,10 @@ def _group_blood_film():
 
     n_big = t.noise(p, 70.0, 3.0, 0.6)
     n_mid = t.noise(p, 330.0, 2.0, 0.55)
-    # coverage: blotchy edges; the noise only acts where there is blood at all
-    # blotchy fringes; the body of a run or pool (blood near 1) stays even
-    cov = blood * (0.6 + 0.8 * n_big) + (n_mid - 0.5) * 0.4 * blood.smooth(0.0, 0.3) * (1.0 - blood.smooth(0.5, 0.85))
+    # coverage: blotchy fringes where there is a little blood; the body of a
+    # run or pool (blood near 1) stays even
+    fringe = blood.smooth(0.0, 0.3) * (1.0 - blood.smooth(0.5, 0.85))
+    cov = blood * (0.6 + 0.8 * n_big) + (n_mid - 0.5) * 0.4 * fringe
     film = cov.smooth(0.10, 0.19)
     thick = cov.smooth(0.45, 1.0)
     # fine spatter droplets on the fringe of a bloody area
@@ -1697,7 +1699,7 @@ def _gore_head(mat, R=0.07, subdiv=9):
     rw = 0.0105 * (1.0 + 0.22 * _wave_noise(n, 7.0, 1, 2) + 0.09 * _wave_noise(n, 45.0, 9, 2))
     wound = _smoothstep(rw * 1.03, rw * 0.97, sw)
     q = np.clip(1.0 - sw / rw, 0.0, 1.0)
-    depth = np.clip(q * 2.2 + 0.1 * _wave_noise(v, 300.0, 6), 0.0, 1.0) * (sw < rw)
+    depth = np.clip(q * 2.2 + 0.28 * _wave_noise(v, 160.0, 6) + 0.1 * _wave_noise(v, 700.0, 14), 0.0, 1.0) * (sw < rw)
     disp = 0.0095 * _smoothstep(0.0, 0.5, q) * (1.0 + 0.2 * _wave_noise(v, 250.0, 8)) \
         + 0.0012 * _smoothstep(0.0, 0.3, q) * _wave_noise(v, 900.0, 12, 2)
     rim = (sw - rw) / 0.0045
