@@ -265,6 +265,22 @@ then irregular), and cover the wall and lip in wet dark clot and pooled blood.
   blood-stained bone); wound walls are smooth glossy plastic (real: shredded, lumpy, stringy torn tissue with clot);
   far too little blood; no soot/burn on surrounding skin.
 
+## 5.16 Material separation and wall thickness (user feedback on `fixer3/blast_wide_c.png`)
+- MATERIAL SEPARATION (biggest win): today too many surfaces share the same deep-red glossy shine.
+  - Bone: MATTE and PALE (ivory/grey-white, rough, porous, dry-looking except where blood films it); broken edges
+    chalky, cancellous bone spongy with blood in the pores.
+  - Tissue (muscle, fat, mouth lining, torn skin): DARKER, SOFTER, low-to-medium sheen, subsurface scattering,
+    irregular — muscle dull dark red to maroon, fat yellow and lumpy, torn skin underside pale.
+  - Wet fresh blood: the ONLY strongly reflective, mirror-glossy surface; thick pools near-black red; clots duller.
+  - Teeth: pale enamel with a slight sheen, blood-smeared.
+- Break up smooth wound edges and blood streams so they don't look moulded or painted on: irregular ragged margins,
+  varying stream width, beads, splits, drying edges.
+- WALL THICKNESS: our inner wound walls are too thick, smooth and "molded". In the reference photos the exposed
+  layers are thin and ragged: skin ~1-3 mm (face/scalp up to ~5-7 mm), a thin fat layer, then torn muscle. There is no
+  thick smooth rim or tube around an opening. Make the extruded walls thinner, ragged and torn, collapsing into
+  irregular tissue, not a smooth sleeve.
+- Keep: loose teeth and the broken jaw in the mouth blast (they sell it).
+
 ## 6. What to change in our assets (actionable)
 
 | Where | Change |

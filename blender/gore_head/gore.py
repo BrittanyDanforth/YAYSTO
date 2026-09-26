@@ -1715,7 +1715,7 @@ DRIP_STEPS = 20
 # REFERENCE_NOTES: far more blood than a few thin lines; scalp and exit
 # wounds keep pouring). The lengths are reached at drip_time 1 (= 60 s).
 DRIP_KINDS = {
-    "bullet": (1.6, 0.9, 0.0034, 0.100, 0.0022),
+    "bullet": (1.6, 0.9, 0.0034, 0.100, 0.0016),
     "exit":   (4.0, 1.7, 0.0085, 0.130, 0.0024),
     "slash":  (1.0, 0.0, 0.0,    0.100, 0.0024),
     "blunt":  (2.0, 1.0, 0.0085, 0.100, 0.0021),
@@ -2584,7 +2584,8 @@ def _build_cut():
     # or every strip gets its own normal and the bed shades as a row of slats;
     # its lumps and clots are separate blobs and shader detail, never values
     # stored on the strips' ends)
-    fblur = t.node('GeometryNodeBlurAttribute', {'Value': t.pos(), 'Iterations': 3, 'Weight': 1.0},
+    fill = t.out(t.node('GeometryNodeSubdivideMesh', {'Mesh': fill, 'Level': 1}))
+    fblur = t.node('GeometryNodeBlurAttribute', {'Value': t.pos(), 'Iterations': 6, 'Weight': 1.0},
                    data_type='FLOAT_VECTOR')
     fill = t.out(t.node('GeometryNodeSetPosition', {'Geometry': fill, 'Position': t.out(fblur)}))
     fill = t.store(fill, "g_wk", float(WALL_STEPS + 2))
