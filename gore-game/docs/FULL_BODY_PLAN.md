@@ -1,5 +1,7 @@
 # Gore Head — Full-Body Build Plan (technical direction)
 
+> **BLOOD MUST COME FROM THE WOUND** (user requirement): see `REFERENCE_NOTES.md` §5.9 — blood wells up in the wound, overflows the lowest rim point and pours down along the body from there; no stains without a path from the wound except impact spatter. Applies to G3/G4.
+
 > **Reference photos:** real forensic reference photos are in the git-ignored folder `refs/` at the repo root (1-8). LOOK at them with the image viewer whenever you build or judge anything wound-, blood-, tissue-, bone-, skull-, brain- or death-related, and compare your renders side by side. Use injury/blood/tissue properties only; never faces or identities. Per-image notes: `gore-game/docs/REFERENCE_NOTES.md` §5.
 
 > Audio removed by the user; the game has no sound. Audio sections below were deleted or reworded to visuals.

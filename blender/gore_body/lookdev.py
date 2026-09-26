@@ -186,6 +186,7 @@ def _body_skin_material():
     col = t.mix(palm * 0.85, col, palm_col)
     # extensor surfaces of joints: darker, slightly purplish-brown, lined
     jl = t.ridge(t.noise(t.vec(p.x * 0.15, p.y * 0.15, p.z), 700.0, 2.0, 0.5), 0.06) * joint
+    jl = jl * detail + joint * 0.08 * (1.0 - detail)                  # 1.4 mm lines: averaged when baked
     col = t.mix(joint * 0.45, col, col * (0.80, 0.66, 0.62))
     col = col * (1.0 - jl * 0.18)
     # freckles and melanin spots (the head's, a few more on sun-exposed skin)
@@ -203,7 +204,7 @@ def _body_skin_material():
         * (1.0 - nipple)
     col = t.mix(nipple * 0.9, col, (0.17, 0.065, 0.05))
     # superficial veins (B5 centrelines) and the dorsal venous network of hands and feet
-    net = t.ridge(t.noise(t.warp(p, 60.0, 0.012), 45.0, 3.0), 0.03) * t.noise(p, 25.0).smooth(0.4, 0.6) * dorsum
+    net = t.ridge(t.noise(t.warp(p, 60.0, 0.012), 45.0, 3.0), 0.06) * t.noise(p, 25.0).smooth(0.4, 0.6) * dorsum
     vv = (vein + net * 0.7).clamp()
     col = t.mix(vv * (0.30 + 0.45 * pallor), col, col * (0.60, 0.72, 0.92))
     # moles
