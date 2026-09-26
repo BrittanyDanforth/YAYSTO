@@ -1165,7 +1165,7 @@ def _build_blunt():
     lf_c = t.noise(ring_c, detail=3.0, signed=False)
     tears_c = c.tears(6, first=10, width=(0.12, 0.35), length=(0.3, 1.0), sharp=1.4, wobble=0.25)
     R_cr = s * (0.004 + 0.02 * cr) * soft_cr
-    r_cr = R_cr * (0.55 + 0.6 * lf_c + 0.55 * tears_c) \
+    r_cr = R_cr * (0.5 + 0.75 * lf_c + 0.3 * tears_c) \
         + t.noise(c.np * 150.0, detail=2.0) * 0.0015 + t.noise(c.np * 420.0, detail=1.0) * 0.0004
     cut_cr = t.switch(t.bool('AND', cr.gt(0.08), soft_cr.gt(0.5)), -1.0, r_cr - c.rho)
     cut_soft = cut_soft.max(cut_cr)
@@ -1197,10 +1197,12 @@ def _build_blunt():
     # their pale fatty undersides show
     flap_cr = t.smooth(R_cr * 0.6 + 0.004, 0.0, d_cr) * cr * soft_cr
     curl_c = 0.6 + 0.6 * t.noise(c.np * 90.0, detail=1.0, signed=False)
-    lift_cr = flap_cr * flap_cr * s * 0.0045 * curl_c
+    lift_cr = flap_cr * flap_cr * s * 0.0035 * curl_c
     # the eye sinks into the broken orbit (the globe moves back along the hit)
     sink_eye = c.is_layer(LAYER_EYE) * cr * s * 0.0075 * t.smooth(0.05, 0.025, c.rho)
-    disp = t.vec(0.0, 0.0, -depress - frac * dep_on * 0.0005 - sink_eye + lift_cr) + c.radial * (lift_cr * 0.6)
+    # (the flaps fold back outward over the face, fatty side up, rather than
+    # standing up as petals)
+    disp = t.vec(0.0, 0.0, -depress - frac * dep_on * 0.0005 - sink_eye + lift_cr * 0.35) + c.radial * (lift_cr * 1.3)
     # the margins are pushed apart a little and bulge (crushed, swollen lips)
     mg = t.smooth(0.003, 0.0, -cut_split) * split_on * is_skin
     swell = swell + mg * 0.0006 - cave
@@ -1241,7 +1243,7 @@ def _build_blunt():
     # walls of the crushed opening drop steeply (a crater, not a V)
     in_cr = cut_cr.gt(cut_split)
     center = t.switch(in_cr, center, c.center, 'VECTOR')
-    wall = t.switch(in_cr, wall, t.vec(0.0, 0.0, -wl * 0.8) + c.center * 0.25, 'VECTOR')
+    wall = t.switch(in_cr, wall, t.vec(0.0, 0.0, -wl * 0.55) + c.center * 0.4, 'VECTOR')
     _finish_kind(t, cut, disp=disp, dispn=swell, wall=wall, center=center, wound=wound, edge=edge,
                  blood=blood, bruise=bruise, fracture=frac)
     return t
@@ -1630,8 +1632,12 @@ class _Hit:
             tol_in = tol_in + 0.012 + self.rho * 0.9
             tol_out = tol_out + 0.02 + self.rho * 0.6
         if kind == "blast":
-            # (the mandible and teeth lie 10-40 mm behind the lips)
-            tol_in = tol_in + 0.03
+            # a blast destroys everything from the lips to ~6 cm deep: measured
+            # from the hit empty, not from this layer's own impact (a ray into
+            # the open mouth meets the mouth lining at the back of the throat,
+            # so the lining around the teeth would lie "in front" of it)
+            wT = self.w + self.W
+            return t.smooth(-0.065, -0.06, wT) * t.smooth(0.03, 0.025, wT)
         return t.smooth(-tol_in - 0.003, -tol_in, self.w) * t.smooth(tol_out + 0.003, tol_out, self.w)
 
     def within(self, kind, reach=False, layer=None):
