@@ -83,9 +83,16 @@ This document builds on the earlier files and does not repeat them:
 | **Dempster 1955**, via Winter's textbook tables | 8 male cadavers, aged ~52–83 (mean ~69), lean (~60 kg) | Segmented cadavers; pendulum MOI | **Thigh 10.0 %, trunk 49.7 %** ✓ verified [K] (H). **Corrected (reason): was "elderly and lean: thigh too light, trunk too heavy".** The gap comes mostly from **different segment boundaries** (where the thigh–trunk and head–trunk cuts are made, and Dempster's trunk runs from the greater trochanter to the glenohumeral joint), and only partly from the elderly, lean cadaver sample and embalming-era methods | Cross-check only |
 | **Zatsiorsky–Seluyanov**, adjusted by **de Leva 1996** `[S1]` | 100 young living men (mean ~24 y, ~73 kg) and 15 women | Gamma-ray mass scanning; de Leva moved the endpoints to joint centres | Athletic young adults | **Primary table** |
 
-Where the tables disagree, **use de Leva** `[K] (H)`. It comes from living, young, normal-weight adults, its endpoints are joint centres (which matches a skeleton rig), and it splits the trunk into three parts, which a three-body spine needs. The largest disagreements are the thigh (10.0 vs 14.16 %), the trunk (49.7 vs 43.46 %) and the head+neck (8.1 vs 6.94 %). Those gaps shift the standing CM by ~2–3 cm and change leg-swing inertia by ~40 %.
+Where the tables disagree, **use de Leva** `[K] (H)`. It comes from living, young, normal-weight adults, its endpoints are joint centres (which matches a skeleton rig), and it splits the trunk into three parts, which a three-body spine needs. The largest disagreements are the thigh (10.0 vs 14.16 %), the trunk (49.7 vs 43.46 %) and the head+neck (8.1 vs 6.94 %). Those gaps shift the standing CM by ~2–3 cm ✓ (fact-check `[E]`: moving ~6 kg of thigh mass up to trunk level raises the CM ~3–4 cm; Dempster's heavier shanks and feet take back ~0.5–1 cm).
 
-### 1.2 de Leva (1996) adult male: relative values `[S1]` (M, reproduced from memory; see §0.1)
+**Corrected: was "and change leg-swing inertia by ~40 %".** Recomputed `[E]` with the §1.3 lengths:
+- the **thigh's own** MOI about the hip differs by ~35 % (Dempster 0.39 vs de Leva 0.53 kg·m²);
+- but the **whole-leg swing inertia about the hip is almost identical, ≈ 2.67 kg·m² with either table**, because Dempster's heavier shank (4.65 vs 4.33 %) and foot (1.45 vs 1.37 %) sit far from the hip and compensate.
+- The table choice therefore matters for where the mass sits in the trunk and thigh (CM height, trunk inertia, how a hit thigh moves), not for leg-swing timing. de Leva stays the primary table because its endpoints are joint centres.
+
+### 1.2 de Leva (1996) adult male: relative values `[S1]` (M, reproduced from memory; see §0.1) — ✓ verified (fact-check)
+
+Fact-check `[K]` / `[E]`: every length, mass %, CM % and radius below matches the checker's independent recall of de Leva's Table 4 (male), including the sub-trunk rows. An extra consistency test that a mis-remembered row would break: the three sub-trunk CMs recombine to **241.6 mm** below suprasternale (15.96 × 51.2 + 16.33 × 267.7 + 11.17 × 475.3, divided by 43.46), against **238.6 mm** for the whole trunk (44.86 % × 531.9). They differ by 3 mm. The source population is 100 men (mean ~24 y, 1.741 m, 73.0 kg) and 15 women (~19 y, 1.735 m, 61.9 kg) ✓ [K] (M). The PDF was still not opened, so confidence is raised from M to M–H, not to H.
 
 CM position is given as a percentage of segment length from the first-named (proximal or cranial) endpoint. Radii of gyration are percentages of segment length about three axes through the segment CM:
 - **r_AP**: about the anteroposterior axis (frontal-plane motion: lateral bending, abduction);
@@ -112,9 +119,9 @@ CM position is given as a percentage of segment length from the first-named (pro
 - The sub-trunk lengths sum to 531.9 mm, which equals suprasternale → mid-hip. C7 sits 71.4 mm above suprasternale.
 - The trunk CM computed from C7 (51.38 % × 603.3 = 310 mm) and from suprasternale (44.86 % × 531.9 + 71.4 = 310 mm) agree.
 
-**Female values** (mass %, for procedural bodies) `[S1]` (M): head 6.68, trunk 42.57, upper arm 2.55, forearm 1.38, hand 0.56, thigh 14.78, shank 4.81, foot 1.29. They sum to 100.0 %.
+**Female values** (mass %, for procedural bodies) `[S1]` (M): head 6.68, trunk 42.57, upper arm 2.55, forearm 1.38, hand 0.56, thigh 14.78, shank 4.81, foot 1.29. They sum to 100.0 % ✓ verified (sum 99.99 %; values match the checker's recall; sub-trunk split 15.45 / 14.65 / 12.47 % `[K]` (M)).
 
-### 1.3 Absolute values for the 75 kg, 1.75 m reference body `[E]` from §1.2
+### 1.3 Absolute values for the 75 kg, 1.75 m reference body `[E]` from §1.2 — ✓ verified (every mass and MOI recomputed; all within rounding)
 
 Lengths are scaled by 1.75 / 1.741 = 1.005. MOI = m × (r × L)², about the segment CM.
 

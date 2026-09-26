@@ -1706,7 +1706,10 @@ All cited **from memory**; none re-opened in this session (§0.1).
   - `WebSearch` was unavailable (session budget exhausted).
   - `WebFetch` was blocked for every non-GitHub domain tried: NCBI/PubMed, Europe PMC, Radiopaedia, Wikipedia, docs.godotengine.org, Crossref, OpenAlex, Semantic Scholar, PLOS, Frontiers, arXiv and Zenodo.
   - The only reachable sources were **GitHub-hosted files**, through raw file fetch and GitHub code search.
-- **The strongest evidence found is the raw ANSUR II male dataset.** It was used to check this body directly: the 14 soldiers with stature 1.772–1.786 m (mean 1.781) and mass 71.4–79.1 kg (mean 75.0), i.e. the reference body itself. Averages were computed by hand from the 14 records.
+- **The strongest evidence found is the raw ANSUR II male dataset.** It was used to check this body directly: 14 soldiers with stature 1.772–1.786 m (mean 1.781) and mass 71.4–79.1 kg (mean 75.0), i.e. the reference body itself.
+  - These were the first 14 matching records in file order, not the full set of matches.
+  - Averages were computed by hand from the 14 records.
+  - Where published all-male medians were available (trochanterion 0.513 H, tragion–top of head 131 mm, waist height 0.602 H), they agree with the subsample.
 - **Other evidence is secondary**: StatPearls and Wikipedia text mirrors, published equations as implemented in open-source gait and physiology code, and the Godot and Blender source trees.
 - **"Unverified"** means that no independent source could be reached. In those cases the fact-checker's own knowledge is stated and labelled as such.
 
