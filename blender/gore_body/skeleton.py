@@ -1034,7 +1034,7 @@ def _pca_frame(pts):
 
 
 GH_L = np.array(BN.HUMERUS["head_centre"], float)
-HUM_HEAD_R = 0.0235
+HUM_HEAD_R = BN.HUMERUS["head_d_mm"] / 2000.0
 G_DIR = _n((0.94, -0.34, 0.0))                  # glenoid faces lateral-forward (blade 35-40 deg)
 
 
@@ -1092,73 +1092,1041 @@ ACET_DIR = _n((0.664, -0.242, -0.707))          # opens lateral, anterior (~20 d
 OBT_AXES = np.array([_n((0.35, 0.94, 0.0)), EZ, _n(np.cross((0.35, 0.94, 0.0), EZ))])
 
 
+def _smooth_loop(pts, n=6):
+    """Closed Catmull-Rom densification of an outline (list of 3D points)."""
+    P = np.asarray(pts, float)
+    out = []
+    K = len(P)
+    for i in range(K):
+        p0, p1, p2, p3 = P[i - 1], P[i], P[(i + 1) % K], P[(i + 2) % K]
+        for s in range(n):
+            t = s / n
+            t2, t3 = t * t, t * t * t
+            out.append(0.5 * ((2 * p1) + (-p0 + p2) * t + (2 * p0 - 5 * p1 + 4 * p2 - p3) * t2
+                              + (-p0 + 3 * p1 - 3 * p2 + p3) * t3))
+    return np.array(out)
+
+
 def hip_bone_sdf():
-    """Left os coxae: thin iliac fossa between thick crest and borders, acetabulum with lunate
-    rim and notch around the femoral head, pubic body and rami, ischium and tuberosity, the
-    obturator foramen left open, pelvic brim, ischial spine, greater/lesser sciatic notches."""
+    """Left os coxae: fan-shaped wing with a concave iliac fossa (2-4 mm) between a thick S-curved
+    crest and borders, iliac pillar from the tubercle to the acetabulum, acetabulum (socket for
+    the femoral head + cartilage, lunate rim, inferior notch), pubic body and rami, ischium and
+    tuberosity, obturator foramen, pelvic brim, ischial spine and the sciatic notches."""
     A = _A()
     P = BN.PELVIS
     asis, aiis, top, tub = (np.array(P[k]) for k in ("asis", "aiis", "iliac_crest_top", "iliac_tubercle"))
     psis = np.array(P["psis"])
-    crest_back = np.array((0.092, 0.072, 1.058))
+    crest_back = np.array((0.098, 0.070, 1.060))
     piis = np.array((0.052, 0.086, 0.986))
-    notch = np.array((0.068, 0.058, 0.948))
-    acet_top = ACET_C + np.array((0.004, 0.004, 0.034))
-    wing_outline = [asis, tub, top, crest_back, psis, piis, (0.060, 0.070, 0.965), notch,
-                    (0.080, 0.030, 0.945), acet_top, (0.100, -0.036, 0.950), aiis, (0.113, -0.060, 0.975)]
-    extra = [(0.100, 0.020, 1.020), (0.085, 0.040, 0.990), (0.115, -0.020, 1.010)]
-    wing = Sheet(_pca_frame(wing_outline), wing_outline, extra,
-                 thick=lambda u, v, e: 0.0030 + 0.004 * np.exp(-(e / 0.006) ** 2))
-    crest = [asis, tub, top, (0.123, 0.056, 1.068), crest_back, (0.066, 0.086, 1.040), psis]
-    crest_r = [0.0055, 0.0075, 0.0065, 0.0060, 0.0058, 0.0060, 0.0065]
-    post_border = [psis, piis, (0.058, 0.072, 0.968), notch, (0.058, 0.044, 0.925),
+    notch = np.array((0.068, 0.056, 0.950))
+    acet_top = ACET_C + np.array((0.002, 0.006, 0.036))
+    ctrl = [asis, tub, top, (0.124, 0.054, 1.068), crest_back, (0.064, 0.086, 1.042), psis, piis,
+            (0.062, 0.070, 0.966), notch, (0.078, 0.030, 0.950), acet_top, (0.100, -0.038, 0.952), aiis,
+            (0.114, -0.060, 0.974)]
+    outline = _smooth_loop(ctrl, 5)
+    fr = _pca_frame(outline)
+    outer = fr.R[2] if fr.R[2] @ np.array((0.66, 0.40, -0.61)) > 0 else -fr.R[2]   # gluteal (convex) side
+    fossa = [np.array(p) + outer * dz for p, dz in (((0.108, 0.010, 1.020), 0.0105), ((0.090, 0.035, 1.000), 0.0070),
+                                                    ((0.118, -0.028, 1.012), 0.0070), ((0.100, 0.020, 0.985), 0.0055),
+                                                    ((0.120, 0.012, 1.045), 0.0060))]
+    wing = Sheet(fr, outline, fossa, thick=lambda u, v, e: 0.0028 + 0.0045 * np.exp(-(e / 0.007) ** 2))
+    crest = [asis, tub, top, (0.124, 0.054, 1.068), crest_back, (0.064, 0.086, 1.042), psis]
+    crest_r = [0.0055, 0.0072, 0.0062, 0.0058, 0.0058, 0.0060, 0.0068]
+    post_border = [psis, piis, (0.060, 0.072, 0.968), notch, (0.058, 0.043, 0.925),
                    np.array(P["ischial_spine"])]
-    ant_border = [asis, (0.117, -0.060, 0.975), aiis, (0.098, -0.048, 0.945)]
-    # thick posterior ilium (auricular part) that meets the sacral ala at the SI joint
-    brim = [(0.056, 0.048, 0.990), (0.066, 0.020, 0.960), (0.074, -0.020, 0.936), (0.060, -0.048, 0.922),
-            (0.035, -0.064, 0.915), np.array(P["pubic_tubercle"])]
-    sup_ramus = [(0.080, -0.030, 0.926), (0.050, -0.058, 0.914), (0.024, -0.064, 0.905)]
-    inf_ramus = [(0.008, -0.054, 0.868), (0.026, -0.036, 0.852), (0.044, -0.004, 0.844),
+    ant_border = [asis, (0.117, -0.060, 0.975), aiis, (0.098, -0.046, 0.945)]
+    pillar = [tub, (0.118, -0.018, 1.010), (0.102, -0.006, 0.965)]
+    brim = [(0.050, 0.052, 0.996), (0.060, 0.030, 0.972), (0.070, -0.004, 0.948), (0.068, -0.036, 0.930),
+            (0.048, -0.056, 0.920), (0.028, -0.066, 0.914)]
+    sup_ramus = [(0.082, -0.028, 0.928), (0.052, -0.056, 0.915), (0.026, -0.063, 0.906)]
+    inf_ramus = [(0.008, -0.054, 0.868), (0.026, -0.036, 0.852), (0.044, -0.004, 0.845),
                  np.array(P["ischial_tuberosity"]) + np.array((0.0, -0.004, 0.0))]
-    isch = [ACET_C + np.array((-0.006, 0.020, -0.020)), (0.068, 0.028, 0.880), (0.058, 0.024, 0.852)]
+    isch = [ACET_C + np.array((-0.008, 0.020, -0.018)), (0.066, 0.028, 0.880), (0.058, 0.024, 0.853)]
     sacrum_fn = sacrum_sdf()[0]
+    pub_axes = np.array([EX, _n((0.0, 0.94, 0.34)), _n((0.0, -0.34, 0.94))])
 
     def fn(x, y, z):
         d = wing(x, y, z)
-        d = smin(d, A.sd_polyline(x, y, z, crest, crest_r)[0], 0.006)
-        d = smin(d, A.sd_polyline(x, y, z, post_border, [0.0065, 0.0060, 0.0060, 0.0080, 0.0085, 0.0045])[0],
+        d = smin(d, A.sd_polyline(x, y, z, crest, crest_r)[0], 0.007)
+        d = smin(d, A.sd_polyline(x, y, z, post_border, [0.0065, 0.0060, 0.0062, 0.0082, 0.0085, 0.0040])[0],
                  0.006)
-        d = smin(d, A.sd_polyline(x, y, z, ant_border, [0.0050, 0.0045, 0.0055, 0.0070])[0], 0.005)
+        d = smin(d, A.sd_polyline(x, y, z, ant_border, [0.0050, 0.0042, 0.0055, 0.0072])[0], 0.005)
+        d = smin(d, A.sd_polyline(x, y, z, pillar, [0.0065, 0.0075, 0.0110])[0], 0.008)
         # auricular (SI) part: thick posterior ilium
-        d = smin(d, A.sd_ellipsoid(x, y, z, (0.060, 0.062, 0.992), (0.010, 0.020, 0.030)), 0.008)
-        # body around the acetabulum + the cup (lunate rim), acetabular notch below
-        body = A.sd_sphere(x, y, z, ACET_C, 0.0355)
-        body = smin(body, A.sd_ellipsoid(x, y, z, ACET_C + np.array((-0.012, 0.012, 0.018)),
-                                         (0.018, 0.026, 0.026)), 0.010)
+        d = smin(d, A.sd_ellipsoid(x, y, z, (0.060, 0.064, 0.994), (0.010, 0.020, 0.030)), 0.008)
+        # body around the acetabulum
+        body = A.sd_sphere(x, y, z, ACET_C, 0.0345)
+        body = smin(body, A.sd_ellipsoid(x, y, z, ACET_C + np.array((-0.012, 0.012, 0.020)),
+                                         (0.017, 0.024, 0.024)), 0.010)
         d = smin(d, body, 0.010)
-        d = smin(d, A.sd_polyline(x, y, z, brim, [0.0065, 0.0060, 0.0062, 0.0060, 0.0065, 0.0050])[0], 0.005)
-        d = smin(d, A.sd_polyline(x, y, z, sup_ramus, [0.0100, 0.0085, 0.0080])[0], 0.005)
-        pub = ebox(x, y, z, (0.0130, -0.0605, 0.889), (0.0105, 0.0065, 0.0215),
-                   np.array([EX, _n((0.0, 0.94, 0.34)), _n((0.0, -0.34, 0.94))]), rnd=0.0055)
+        d = smin(d, A.sd_polyline(x, y, z, brim, [0.0062, 0.0058, 0.0060, 0.0060, 0.0062, 0.0055])[0], 0.004)
+        d = smin(d, A.sd_polyline(x, y, z, sup_ramus, [0.0095, 0.0082, 0.0078])[0], 0.005)
+        pub = ebox(x, y, z, (0.0130, -0.0605, 0.889), (0.0105, 0.0065, 0.0215), pub_axes, rnd=0.0055)
         d = smin(d, pub, 0.006)
+        d = smin(d, A.sd_ellipsoid(x, y, z, np.array(P["pubic_tubercle"]), (0.0045, 0.0045, 0.0045)), 0.003)
         d = smin(d, A.sd_polyline(x, y, z, inf_ramus, [0.0055, 0.0052, 0.0058, 0.0080])[0], 0.005)
-        d = smin(d, A.sd_polyline(x, y, z, isch, [0.0120, 0.0115, 0.0110])[0], 0.008)
+        d = smin(d, A.sd_polyline(x, y, z, isch, [0.0115, 0.0110, 0.0105])[0], 0.008)
         d = smin(d, A.sd_ellipsoid(x, y, z, np.array(P["ischial_tuberosity"]) + np.array((0.002, 0.003, 0.004)),
-                                   (0.0115, 0.0145, 0.0185)), 0.006)
-        # obturator foramen (open), acetabular socket (femoral head + 2 x 2 mm cartilage)
+                                   (0.0110, 0.0140, 0.0180)), 0.006)
+        # obturator foramen (open)
         obt = ell3(x, y, z, np.array(P["obturator_centre"]) + np.array((0.002, 0.004, 0.0)),
                    (0.0235, 0.0165, 0.016), OBT_AXES)
         d = smax(d, -obt, 0.004)
-        cup = A.sd_sphere(x, y, z, ACET_C, FEM_HEAD_R + 0.0040)
-        d = smax(d, -cup, 0.0015)
-        # the rim stops at the acetabular opening plane; notch at the inferior rim
-        rim_cut = smax(plane(x, y, z, ACET_C + ACET_DIR * 0.006, ACET_DIR),
-                       A.sd_sphere(x, y, z, ACET_C, 0.045) , 0.004)
-        d = smax(d, -rim_cut, 0.003)
-        notch_c = ACET_C + np.array((0.004, 0.006, -0.028))
-        d = smax(d, -A.sd_ellipsoid(x, y, z, notch_c, (0.012, 0.011, 0.010)), 0.003)
+        # acetabulum: socket = femoral head + 2 x 2 mm cartilage; open beyond the rim plane; notch
+        d = smax(d, -A.sd_sphere(x, y, z, ACET_C, FEM_HEAD_R + 0.0040), 0.0015)
+        mouth = np.maximum(-plane(x, y, z, ACET_C + ACET_DIR * 0.004, ACET_DIR), A.sd_sphere(x, y, z, ACET_C, 0.050))
+        d = smax(d, -mouth, 0.003)
+        notch_c = ACET_C + np.array((0.006, 0.004, -0.027))
+        d = smax(d, -A.sd_ellipsoid(x, y, z, notch_c, (0.011, 0.010, 0.010)), 0.003)
         # pubic symphysis gap (disc 2 x 2.5 mm) and SI joint clearance to the sacrum
         d = smax(d, 0.0025 - x, 0.002)
         d = np.maximum(d, -(sacrum_fn(x, y, z) - 0.0012))
         return d
     return fn, (np.array([0.0, -0.085, 0.815]), np.array([0.165, 0.110, 1.085]))
+
+
+# ===========================================================================
+# Long bones (left) at the rig joint centres [RB §7.2, §7.3]; each returns (outer, box, core)
+# where ``core`` is the marrow core SDF (outer inset by the cortex, diaphysis only).
+# ===========================================================================
+ELB_L = np.array(BN.HUMERUS["elbow_centre"], float)
+WRI_L = np.array(LM.landmark("wrist_centre_L_apose"), float)
+HIP_L = np.array(BN.FEMUR["head_centre"], float)
+KNEE_L = np.array(BN.FEMUR["knee_centre"], float)
+ANK_L = np.array(BN.KNEE_LEG["ankle_centre"], float)
+EPI_AX = _n(np.array(LM.landmark("lateral_epicondyle_L_apose")) - np.array(LM.landmark("medial_epicondyle_L_apose")))
+
+
+def _core(outer, cortex, a, b, k=0.006):
+    """Marrow core: the outer surface inset by ``cortex`` between the planes through a and b."""
+    a, b = np.asarray(a, float), np.asarray(b, float)
+    u = _n(b - a)
+
+    def fn(x, y, z):
+        d = outer(x, y, z) + cortex
+        clip = np.maximum(-plane(x, y, z, a, u), plane(x, y, z, b, u))
+        return smax(d, clip, k)
+    return fn
+
+
+def humerus_sdf():
+    """Humerus (left): retroverted head, anatomical neck, greater/lesser tubercles with the
+    intertubercular groove, shaft with deltoid tuberosity, flattened distal end with medial and
+    lateral epicondyles, capitulum, trochlea, olecranon and coronoid fossae."""
+    A = _A()
+    E, G = ELB_L, GH_L
+    D, LAT = ARM_D, ARM_LAT
+    # head faces medial + up (neck-shaft 135 deg) and back (retroversion 25 deg)
+    hd = _n(math.cos(math.radians(45)) * (-LAT) + math.sin(math.radians(45)) * (-D))
+    hd = _n(hd * math.cos(math.radians(25)) + EY * math.sin(math.radians(25)))
+    s0 = G + 0.010 * LAT + 0.030 * D
+    s1 = E - 0.040 * D + 0.004 * EY
+    mid = 0.5 * (s0 + s1) + 0.002 * LAT
+    kn = [0.0, 0.15, 0.5, 0.8, 1.0]
+    rn = [0.0150, 0.0120, 0.0100, 0.0092, 0.0090]         # antero-posterior half
+    rb = [0.0155, 0.0120, 0.0110, 0.0140, 0.0195]         # medio-lateral half (flattens distally)
+
+    def sec(n, b, t):
+        return gg_superellipse(n, b, interp(t, kn, rn), interp(t, kn, rb), 2.3)
+    shaft = Tube([s0 - 0.012 * D, mid, s1], sec, ref_fn=lambda P: np.tile(ANT, (len(P), 1)), step=0.003,
+                 round_ends=True)
+    cap_c = E + 0.0140 * EPI_AX - 0.0020 * EY + 0.0010 * D
+    tro_c = E - 0.0080 * EPI_AX + 0.0010 * D
+    epi_m = np.array(LM.landmark("medial_epicondyle_L_apose"))
+    epi_l = np.array(LM.landmark("lateral_epicondyle_L_apose"))
+    lat_ax = np.array([EPI_AX, _n(np.cross(D, EPI_AX)), _n(np.cross(EPI_AX, np.cross(D, EPI_AX)))])
+
+    def fn(x, y, z):
+        head = A.sd_sphere(x, y, z, G, HUM_HEAD_R)
+        head = smax(head, -plane(x, y, z, G - hd * 0.007, hd), 0.004)             # anatomical neck
+        neck = A.sd_capsule(x, y, z, G - hd * 0.004, s0, 0.0180, 0.0150)
+        d = smin(head, neck, 0.006)
+        gt = A.sd_ellipsoid(x, y, z, G + 0.0175 * LAT + 0.0040 * D - 0.0030 * EY, (0.0100, 0.0120, 0.0135))
+        lt = A.sd_ellipsoid(x, y, z, G + 0.0040 * LAT + 0.0150 * D - 0.0150 * EY, (0.0060, 0.0065, 0.0085))
+        d = smin(d, smin(gt, lt, 0.004), 0.006)
+        groove = A.sd_capsule(x, y, z, G + 0.0120 * LAT - 0.0165 * EY - 0.004 * D,
+                              G + 0.0110 * LAT - 0.0150 * EY + 0.045 * D, 0.0030)
+        d = smax(d, -groove, 0.002)
+        d = smin(d, shaft(x, y, z), 0.010)
+        d = smin(d, A.sd_ellipsoid(x, y, z, G + 0.105 * D + 0.0115 * LAT, (0.0045, 0.0060, 0.0180)), 0.006)
+        # distal end: epicondylar plate, epicondyles, capitulum, trochlea
+        plate = ell3(x, y, z, E - 0.024 * D + 0.003 * EY, (0.0235, 0.0100, 0.0300), lat_ax)
+        d = smin(d, plate, 0.012)
+        d = smin(d, A.sd_ellipsoid(x, y, z, E - 0.0240 * EPI_AX - 0.004 * D + 0.004 * EY, (0.0080, 0.0075, 0.0100)),
+                 0.009)
+        d = smin(d, A.sd_ellipsoid(x, y, z, E + 0.0215 * EPI_AX - 0.006 * D + 0.002 * EY, (0.0065, 0.0070, 0.0100)),
+                 0.009)
+        cap = A.sd_sphere(x, y, z, cap_c, 0.0095)
+        tro = A.sd_capsule(x, y, z, tro_c - 0.0110 * EPI_AX, tro_c + 0.0095 * EPI_AX, 0.0115)
+        tro = smin(tro, A.sd_capsule(x, y, z, tro_c - 0.0125 * EPI_AX + 0.0020 * D, tro_c - 0.0080 * EPI_AX
+                                     + 0.0020 * D, 0.0130), 0.002)                      # medial trochlear lip
+        tgroove = _torus(x, y, z, tro_c + 0.0005 * EPI_AX, EPI_AX, 0.0122, 0.0030)
+        tro = smax(tro, -tgroove, 0.0015)
+        d = smin(d, smin(cap, tro, 0.002), 0.004)
+        # fossae: olecranon (posterior), coronoid + radial (anterior)
+        d = smax(d, -A.sd_ellipsoid(x, y, z, E - 0.018 * D + 0.0135 * EY - 0.004 * EPI_AX, (0.0095, 0.0060, 0.0095)),
+                 0.002)
+        d = smax(d, -A.sd_ellipsoid(x, y, z, E - 0.016 * D - 0.0125 * EY - 0.004 * EPI_AX, (0.0070, 0.0040, 0.0065)),
+                 0.002)
+        return d
+    core = _core(fn, 0.0048, G + 0.070 * D, E - 0.060 * D)
+    lo = np.minimum(G, E) - 0.04
+    hi = np.maximum(G, E) + 0.04
+    return fn, (lo, hi), core
+
+
+def _torus(x, y, z, c, axis, R, r):
+    """Torus around ``axis`` through ``c`` (major R, minor r)."""
+    ax = _n(axis)
+    dx, dy, dz = x - c[0], y - c[1], z - c[2]
+    h = dx * ax[0] + dy * ax[1] + dz * ax[2]
+    q = np.sqrt(np.maximum(dx * dx + dy * dy + dz * dz - h * h, 0.0))
+    return np.sqrt((q - R) ** 2 + h * h) - r
+
+
+RAD_HEAD_C = ELB_L + 0.0140 * EPI_AX + 0.0190 * ARM_D - 0.0025 * EY
+
+
+def radius_sdf():
+    """Radius (left, neutral forearm: thumb forward): disc-shaped head under the capitulum, neck,
+    radial tuberosity, laterally bowed shaft with a sharp interosseous border, broad distal end
+    with the styloid on the thumb side (-Y) and the dorsal tubercle."""
+    A = _A()
+    D, LAT = ARM_D, ARM_LAT
+    hc = RAD_HEAD_C
+    dist_c = WRI_L - 0.0150 * D + np.array((0.0, -0.0010, 0.0))
+    p = [hc + 0.012 * D, hc + 0.035 * D + 0.002 * LAT, 0.5 * (hc + dist_c) + 0.006 * LAT - 0.004 * EY,
+         dist_c - 0.030 * D - 0.002 * EY]
+    kn = [0.0, 0.2, 0.6, 1.0]
+    rn = [0.0062, 0.0068, 0.0062, 0.0085]
+    rb = [0.0062, 0.0070, 0.0075, 0.0110]
+
+    def sec(n, b, t):
+        s = gg_superellipse(n, b, interp(t, kn, rn), interp(t, kn, rb), 2.2)
+        # interosseous border: a sharp edge toward the ulna (+Y side)
+        ridge = A.ellipse2(n - 0.0, b - interp(t, kn, rb) * 0.85, 0.0018, 0.0030)
+        return smin(s, ridge, 0.0015)
+    shaft = Tube(p, sec, ref_fn=lambda P: np.tile(LAT, (len(P), 1)), step=0.003, round_ends=True)
+    dax = np.array([D, EY, _n(np.cross(D, EY))])
+
+    def fn(x, y, z):
+        head = A.sd_capsule(x, y, z, hc - 0.0035 * D, hc + 0.0040 * D, 0.0105)
+        head = smax(head, -A.sd_sphere(x, y, z, hc - 0.0115 * D, 0.0105), 0.001)      # concave fovea
+        d = smin(head, A.sd_capsule(x, y, z, hc + 0.003 * D, hc + 0.018 * D, 0.0065, 0.0060), 0.004)
+        d = smin(d, A.sd_ellipsoid(x, y, z, hc + 0.030 * D + 0.004 * EY - 0.002 * LAT, (0.0050, 0.0055, 0.0085)),
+                 0.004)
+        d = smin(d, shaft(x, y, z), 0.008)
+        dist = ebox(x, y, z, dist_c, (0.0100, 0.0150, 0.0095), dax, rnd=0.0060)
+        d = smin(d, dist, 0.008)
+        sty = A.sd_capsule(x, y, z, dist_c - 0.0110 * EY, WRI_L - 0.0010 * D - 0.0150 * EY + 0.001 * LAT,
+                           0.0050, 0.0026)
+        d = smin(d, sty, 0.004)
+        d = smin(d, A.sd_ellipsoid(x, y, z, dist_c + 0.0095 * LAT - 0.002 * EY - 0.004 * D, (0.0050, 0.0030, 0.0030)),
+                 0.002)
+        # carpal articular surface (concave) and the ulnar notch
+        d = smax(d, -A.sd_sphere(x, y, z, WRI_L + 0.004 * D + np.array((0.0, -0.001, 0.0)), 0.0125), 0.002)
+        return d
+    core = _core(fn, 0.0028, hc + 0.045 * D, dist_c - 0.035 * D)
+    lo = np.minimum(ELB_L, WRI_L) - 0.035
+    hi = np.maximum(ELB_L, WRI_L) + 0.035
+    return fn, (lo, hi), core
+
+
+def ulna_sdf():
+    """Ulna (left): olecranon and coronoid around the trochlear notch (clears the trochlea),
+    radial notch, triangular shaft thinning distally, head and styloid (posteromedial, +Y)."""
+    A = _A()
+    D, LAT = ARM_D, ARM_LAT
+    tro_c = ELB_L - 0.0080 * EPI_AX + 0.0010 * D
+    head_c = WRI_L - 0.0290 * D + np.array((0.0, 0.0140, 0.0)) - 0.0020 * LAT
+    p = [ELB_L + 0.010 * D + 0.0100 * EY - 0.0060 * EPI_AX, ELB_L + 0.060 * D + 0.0110 * EY - 0.004 * EPI_AX,
+         0.5 * (ELB_L + head_c) + 0.010 * EY * 0.0, head_c - 0.012 * D]
+    kn = [0.0, 0.25, 0.7, 1.0]
+    rn = [0.0105, 0.0085, 0.0062, 0.0058]
+    rb = [0.0085, 0.0072, 0.0058, 0.0062]
+
+    def sec(n, b, t):
+        s = gg_superellipse(n, b, interp(t, kn, rn), interp(t, kn, rb), 2.2)
+        ridge = A.ellipse2(n, b + interp(t, kn, rb) * 0.85, 0.0017, 0.0030)       # interosseous border (-Y)
+        return smin(s, ridge, 0.0015)
+    shaft = Tube(p, sec, ref_fn=lambda P: np.tile(LAT, (len(P), 1)), step=0.003, round_ends=True)
+
+    def fn(x, y, z):
+        prox = A.sd_ellipsoid(x, y, z, tro_c + 0.0060 * EY - 0.0020 * D, (0.0130, 0.0120, 0.0150))
+        olec = A.sd_ellipsoid(x, y, z, ELB_L - 0.0150 * D + 0.0150 * EY - 0.0060 * EPI_AX, (0.0100, 0.0095, 0.0100))
+        coro = A.sd_ellipsoid(x, y, z, ELB_L + 0.0140 * D - 0.0070 * EY - 0.0060 * EPI_AX, (0.0085, 0.0070, 0.0075))
+        d = smin(smin(prox, olec, 0.006), coro, 0.005)
+        # trochlear notch: clear the trochlea + 2 x 1.5 mm cartilage; radial notch clears the radial head
+        d = smax(d, -A.sd_capsule(x, y, z, tro_c - 0.014 * EPI_AX, tro_c + 0.012 * EPI_AX, 0.0145), 0.0015)
+        d = smax(d, -A.sd_capsule(x, y, z, RAD_HEAD_C - 0.005 * D, RAD_HEAD_C + 0.006 * D, 0.0125), 0.0015)
+        d = smin(d, shaft(x, y, z), 0.008)
+        d = smin(d, A.sd_sphere(x, y, z, head_c, 0.0078), 0.005)
+        sty = A.sd_capsule(x, y, z, head_c + 0.0040 * EY, WRI_L - 0.0195 * D + np.array((0.0, 0.0205, 0.0)),
+                           0.0034, 0.0018)
+        d = smin(d, sty, 0.003)
+        return d
+    core = _core(fn, 0.0028, ELB_L + 0.050 * D, head_c - 0.030 * D)
+    lo = np.minimum(ELB_L, WRI_L) - 0.04
+    hi = np.maximum(ELB_L, WRI_L) + 0.04
+    return fn, (lo, hi), core
+
+
+def femur_sdf():
+    """Femur (left): head with fovea, neck (127 deg, anteversion 12 deg), greater trochanter with
+    trochanteric fossa, lesser trochanter, intertrochanteric crest, anteriorly bowed shaft with
+    linea aspera, flared metaphysis, condyles, epicondyles, intercondylar notch, patellar groove."""
+    A = _A()
+    F = BN.FEMUR
+    H = HIP_L
+    s_top = np.array((0.124, 0.004, 0.884))
+    s_bot = np.array((0.094, 0.018, 0.575))
+    mid = 0.5 * (s_top + s_bot) + np.array((0.0, -0.008, 0.0))
+    kn = [0.0, 0.15, 0.5, 0.85, 1.0]
+    rn = [0.0150, 0.0138, 0.0135, 0.0150, 0.0180]          # AP half
+    rb = [0.0165, 0.0148, 0.0145, 0.0180, 0.0240]          # ML half
+
+    def sec(n, b, t):
+        s = gg_superellipse(n, b, interp(t, kn, rn), interp(t, kn, rb), 2.1)
+        la = A.ellipse2(n + interp(t, kn, rn) * 0.92, b, 0.0035, 0.0032)          # linea aspera (posterior)
+        return smin(s, la + 0.0006 * (1 - sstep(0.2, 0.5, t) * (1 - sstep(0.7, 0.9, t))) * 3, 0.002)
+    shaft = Tube([s_top + np.array((0.004, -0.001, 0.02)), s_top, mid, s_bot], sec,
+                 ref_fn=lambda P: np.tile(ANT, (len(P), 1)), step=0.003, round_ends=True)
+    neck_end = np.array((0.128, -0.002, 0.896))
+    K = KNEE_L
+
+    def dsec(n, b, t):
+        kk = [0.0, 0.35, 0.7, 1.0]
+        return gg_superellipse(b, n, interp(t, kk, [0.0180, 0.0240, 0.0360, 0.0400]),
+                               interp(t, kk, [0.0160, 0.0180, 0.0240, 0.0270]), interp(t, kk, [2.2, 2.3, 2.7, 3.0]))
+    dist = Tube([(0.096, 0.017, 0.610), (0.093, 0.019, 0.560), (0.092, 0.022, 0.520), (0.092, 0.024, 0.500)], dsec,
+                ref_fn=lambda P: np.tile(ANT, (len(P), 1)), step=0.002, round_ends=True)
+    cz = 0.5045
+
+    def fn(x, y, z):
+        head = A.sd_sphere(x, y, z, H, FEM_HEAD_R)
+        head = smax(head, -A.sd_sphere(x, y, z, H + _n(np.array((-0.55, 0.15, -0.6))) * 0.025, 0.004), 0.001)
+        nk = ecap(x, y, z, H, neck_end, (0.0150, 0.0160), (0.0125, 0.0150), EZ)
+        d = smin(head, nk, 0.007)
+        gt = A.sd_ellipsoid(x, y, z, (0.140, 0.006, 0.899), (0.0170, 0.0210, 0.0260))
+        d = smin(d, gt, 0.008)
+        d = smax(d, -A.sd_ellipsoid(x, y, z, (0.130, 0.014, 0.918), (0.006, 0.007, 0.009)), 0.002)   # troch. fossa
+        lt = A.sd_ellipsoid(x, y, z, np.array(F["lesser_trochanter"]) + np.array((0.006, 0.002, 0.002)),
+                            (0.0085, 0.0090, 0.0120))
+        d = smin(d, lt, 0.008)
+        calcar = A.sd_ellipsoid(x, y, z, (0.104, 0.006, 0.876), (0.0200, 0.0150, 0.0260))
+        d = smin(d, calcar, 0.010)
+        d = smin(d, A.sd_capsule(x, y, z, (0.140, 0.020, 0.902), (0.090, 0.016, 0.866), 0.0055), 0.006)  # crest
+        d = smin(d, shaft(x, y, z), 0.012)
+        # distal end: metaphysis, condyles, epicondyles
+        d = smin(d, dist(x, y, z), 0.010)
+        mc = A.sd_ellipsoid(x, y, z, (0.071, 0.024, cz), (0.0140, 0.0300, 0.0230))
+        lc = A.sd_ellipsoid(x, y, z, (0.113, 0.022, cz + 0.001), (0.0145, 0.0295, 0.0225))
+        d = smin(d, smin(mc, lc, 0.010), 0.008)
+        d = smin(d, A.sd_ellipsoid(x, y, z, (0.058, 0.022, 0.518), (0.0070, 0.0120, 0.0120)), 0.009)
+        d = smin(d, A.sd_ellipsoid(x, y, z, (0.127, 0.020, 0.518), (0.0065, 0.0110, 0.0110)), 0.009)
+        # intercondylar notch (posterior-inferior) and patellar groove (anterior)
+        d = smax(d, -A.sd_ellipsoid(x, y, z, (0.092, 0.042, 0.488), (0.0095, 0.0260, 0.0200)), 0.002)
+        d = smax(d, -A.sd_capsule(x, y, z, (0.093, -0.0165, 0.545), (0.092, -0.0120, 0.495), 0.0055), 0.003)
+        return d
+    core = _core(fn, 0.0070, (0.119, 0.007, 0.840), (0.095, 0.017, 0.600), k=0.010)
+    return fn, (np.array((0.035, -0.045, 0.465)), np.array((0.185, 0.075, 0.955))), core
+
+
+def patella_sdf():
+    """Patella (left): rounded triangle with the apex down, thick centre, ridged articular back;
+    the front ~6 mm under the skin (lean site 4-8 mm)."""
+    A = _A()
+    c = np.array(BN.KNEE_LEG["patella_centre"]) + np.array((0.0, 0.0045, 0.0))
+
+    def fn(x, y, z):
+        zz = (z - c[2]) / 0.0265
+        sx = 1.0 / (1.0 - 0.40 * sstep(0.0, -1.0, zz))               # narrower towards the apex
+        d = A.sd_ellipsoid((x - c[0]) * sx, y, z, (0.0, c[1], c[2]), (0.0255, 0.0115, 0.0265)) / sx
+        ridge = A.sd_ellipsoid(x, y, z, (c[0] - 0.002, c[1] + 0.006, c[2]), (0.0060, 0.0065, 0.0200))
+        return smin(d, ridge, 0.004)
+    return fn, (c - 0.035, c + 0.035)
+
+
+def tibia_sdf():
+    """Tibia (left): plateau with two condyles flaring out of the shaft, dished facets and the
+    intercondylar eminence, tuberosity, triangular shaft (sharp anterior crest, subcutaneous
+    anteromedial face), quadrilateral distal end with a flat plafond and the medial malleolus."""
+    A = _A()
+    K = BN.KNEE_LEG
+    top = K["tibial_plateau_z"] - 0.0025
+    plaf = K["tibial_plafond_z"] + 0.0035
+    p = [(0.092, 0.008, 0.450), (0.093, 0.026, 0.300), (0.091, 0.040, 0.170), (0.090, 0.046, plaf + 0.006)]
+    kn = [0.0, 0.12, 0.45, 0.78, 1.0]
+    rA = [0.0165, 0.0135, 0.0118, 0.0120, 0.0185]      # centre -> anterior crest
+    rP = [0.0150, 0.0115, 0.0102, 0.0105, 0.0175]      # centre -> posterior surface
+    rW = [0.0220, 0.0150, 0.0112, 0.0125, 0.0215]      # half width (medio-lateral)
+    sq = [2.4, 2.2, 2.2, 2.4, 3.2]                     # rounded square at the distal end
+
+    def sec(n, b, t):
+        a_, p_, w_, e_ = interp(t, kn, rA), interp(t, kn, rP), interp(t, kn, rW), interp(t, kn, sq)
+        crest = np.clip(1.0 - np.abs(t - 0.45) / 0.45, 0.0, 1.0)            # sharp crest mid-shaft
+        s_front = gg_superellipse(n + 0.25 * p_ * crest, b, a_ + 0.25 * p_ * crest, w_, e_ - 1.0 * crest)
+        s_back = gg_superellipse(n, b, p_, w_, e_)
+        return np.where(n > 0, s_front, s_back)
+    shaft = Tube(p, sec, ref_fn=lambda P: np.tile(ANT, (len(P), 1)), step=0.003, round_ends=True)
+    mm_tip = np.array(K["medial_malleolus_tip"])
+
+    def csec(n, b, t):
+        kk = [0.0, 0.10, 0.30, 0.55, 0.80, 1.0]
+        return gg_superellipse(b, n, interp(t, kk, [0.0385, 0.0378, 0.0325, 0.0265, 0.0222, 0.0205]),
+                               interp(t, kk, [0.0245, 0.0245, 0.0228, 0.0200, 0.0178, 0.0165]), 2.15)
+    cond = Tube([(0.092, 0.024, top), (0.092, 0.020, top - 0.030), (0.092, 0.013, top - 0.062)], csec,
+                ref_fn=lambda P: np.tile(EY, (len(P), 1)), step=0.002, round_ends=False)
+
+    def fn(x, y, z):
+        d = smin(cond(x, y, z), shaft(x, y, z), 0.012)
+        d = smax(d, z - top, 0.006)                                           # rounded plateau rim
+        for dx in (-0.020, 0.019):
+            d = smax(d, -A.sd_ellipsoid(x, y, z, (0.092 + dx, 0.024, top + 0.0045), (0.0140, 0.0170, 0.0055)), 0.002)
+        d = smin(d, A.sd_ellipsoid(x, y, z, (0.092, 0.024, top - 0.001), (0.0040, 0.0060, 0.0048)), 0.002)
+        d = smin(d, A.sd_ellipsoid(x, y, z, np.array(K["tibial_tuberosity"]) + np.array((0.0, 0.0180, 0.002)),
+                                   (0.0110, 0.0090, 0.0180)), 0.009)
+        d = smin(d, A.sd_ellipsoid(x, y, z, (0.121, 0.036, 0.456), (0.0080, 0.0080, 0.0070)), 0.006)  # fibular facet
+        mm = A.sd_capsule(x, y, z, (0.073, 0.046, 0.102), mm_tip + np.array((0.0, 0.0, 0.0055)), 0.0085, 0.0055)
+        d = smax(d, plaf - z, 0.003)                                          # flat plafond
+        d = smin(d, mm, 0.006)
+        d = smax(d, -A.sd_ellipsoid(x, y, z, (0.124, 0.052, 0.100), (0.0055, 0.010, 0.020)), 0.002)  # fibular notch
+        return d
+    core = _core(fn, 0.0058, (0.092, 0.012, 0.410), (0.091, 0.043, 0.150), k=0.010)
+    return fn, (np.array((0.040, -0.040, 0.050)), np.array((0.145, 0.080, 0.490))), core
+
+
+def fibula_sdf():
+    """Fibula (left): head with apex, neck, slender shaft, lateral malleolus."""
+    A = _A()
+    K = BN.KNEE_LEG
+    hc = np.array(K["fibular_head"]) + np.array((0.0, 0.0, -0.004))
+    lm = np.array(K["lateral_malleolus_tip"])
+    p = [hc + np.array((0.0, 0.002, -0.012)), (0.128, 0.045, 0.330), (0.128, 0.054, 0.200), (0.131, 0.058, 0.090)]
+
+    def sec(n, b, t):
+        r = interp(t, [0.0, 0.2, 0.8, 1.0], [0.0068, 0.0072, 0.0068, 0.0085])
+        return gg_superellipse(n, b, r * 0.95, r, 2.0)
+    shaft = Tube(p, sec, ref_fn=lambda P: np.tile(ANT, (len(P), 1)), step=0.003, round_ends=True)
+
+    def fn(x, y, z):
+        head = A.sd_ellipsoid(x, y, z, hc, (0.0120, 0.0110, 0.0100))
+        apex = A.sd_capsule(x, y, z, hc, hc + np.array((0.003, 0.005, 0.0075)), 0.0050, 0.0028)
+        d = smin(head, apex, 0.003)
+        d = smin(d, shaft(x, y, z), 0.008)
+        mal = A.sd_ellipsoid(x, y, z, lm + np.array((0.0, -0.002, 0.021)), (0.0088, 0.0120, 0.0210))
+        d = smin(d, mal, 0.008)
+        return d
+    core = _core(fn, 0.0030, hc - np.array((0.0, 0.0, 0.045)), (0.131, 0.058, 0.130), k=0.006)
+    return fn, (np.array((0.105, 0.010, 0.030)), np.array((0.150, 0.080, 0.475))), core
+
+
+# ===========================================================================
+# Hand and foot bones (left).  Sub-bones are separate islands of the "hand_L" / "foot_L" piece;
+# each carries its own rigid bone (hand / thumb / fingers, foot / toes).  Packed short bones
+# (carpals, tarsals) are separated by Voronoi planes with a 1.2 mm joint gap, so none overlap.
+# Finger and toe layout follows the skin's relaxed-curl fingers (placeholder / B1 hand).
+# ===========================================================================
+MCP3 = np.array(LM.landmark("mcp3_L_apose"), float)
+CARPAL_C = np.array(BN.HAND_BONES["carpal_centre"], float)
+THUMB_PTS = (np.array((0.468, -0.005, 0.915)), np.array((0.482, -0.021, 0.878)), np.array((0.500, -0.030, 0.840)))
+FINGER_LAYOUT = [(-0.001, 0.080, 0.0095, 0.0080, 0.002), (0.020, 0.090, 0.0098, 0.0082, 0.0),
+                 (0.038, 0.084, 0.0092, 0.0078, 0.003), (0.054, 0.068, 0.0082, 0.0070, 0.010)]
+CURL_DEG = (8.0, 18.0, 28.0)
+HAND_AX = np.array([ARM_D, EY, ARM_NM])        # distal, ulnar (+Y; thumb is -Y), palmar
+
+
+def finger_polyline(y0, length, setback):
+    """MCP -> PIP -> DIP -> tip of a left finger in the relaxed A-pose curl (skin layout)."""
+    base = MCP3 - setback * ARM_D + np.array([0.0, y0 - MCP3[1], 0.0])
+    seg = np.array([0.45, 0.30, 0.25]) * length
+    pts = [base]
+    for s_, ang in zip(seg, CURL_DEG):
+        a = math.radians(ang)
+        pts.append(pts[-1] + s_ * (math.cos(a) * ARM_D + math.sin(a) * ARM_NM))
+    return np.array(pts)
+
+
+def _cluster(items, gap=0.0012):
+    """Separate packed ellipsoids by Voronoi planes: [(name, centre, radii, axes, extra_fn|None)] ->
+    [(name, fn, box)] with every pair at least ``gap`` apart."""
+    A = _A()
+    C = np.array([it[1] for it in items])
+    out = []
+    for i, (name, c, r, axes, extra) in enumerate(items):
+        def fn(x, y, z, i=i, c=c, r=r, axes=axes, extra=extra):
+            d = ell3(x, y, z, c, r, axes)
+            if extra is not None:
+                d = smin(d, extra(x, y, z), 0.002)
+            for j in range(len(C)):
+                if j == i:
+                    continue
+                n = C[j] - C[i]
+                L = np.linalg.norm(n)
+                m = 0.5 * (C[i] + C[j])
+                d = np.maximum(d, plane(x, y, z, m, n / L) + 0.5 * gap)
+            return d
+        R = max(r) + 0.006
+        out.append((name, fn, (np.asarray(c) - R, np.asarray(c) + R)))
+    return out
+
+
+def _clipped(fn, others, gap):
+    """``fn`` with every SDF in ``others`` (grown by ``gap``) carved away."""
+    def g(x, y, z):
+        d = fn(x, y, z)
+        for q in others:
+            d = np.maximum(d, -(q(x, y, z) - gap))
+        return d
+    return g
+
+
+def _hl(p):
+    """Hand-local offset (distal, ulnar, palmar) from the carpal centre -> world."""
+    return CARPAL_C + np.asarray(p, float) @ HAND_AX
+
+
+def _long_small(a, b, r_base, r_shaft, r_head):
+    """A short tubular bone (metacarpal, phalanx, metatarsal): base knob, waisted shaft, head."""
+    A = _A()
+    a, b = np.asarray(a, float), np.asarray(b, float)
+
+    def fn(x, y, z):
+        d = A.sd_capsule(x, y, z, a, b, r_base * 0.85, r_head * 0.8)
+        h, _dd = A.seg_param(x, y, z, a, b)
+        waist = (r_shaft - 0.5 * (r_base + r_head)) * np.sin(np.pi * h) ** 0.6
+        d = d - waist                                  # waisted shaft
+        d = smin(d, A.sd_sphere(x, y, z, a + 0.3 * r_base * _n(b - a), r_base), 0.002)
+        d = smin(d, A.sd_sphere(x, y, z, b - 0.3 * r_head * _n(b - a), r_head), 0.002)
+        return d
+    R = max(r_base, r_head) + 0.004
+    return fn, (np.minimum(a, b) - R, np.maximum(a, b) + R)
+
+
+def hand_parts():
+    """Left hand bones: [(name, fn, box, rigid bone)]: 8 carpals, 5 metacarpals, 14 phalanges."""
+    ax = HAND_AX
+    carpals = [("scaphoid", (-0.004, -0.012, 0.001), (0.0080, 0.0060, 0.0065), None),
+               ("lunate", (-0.006, 0.001, 0.000), (0.0070, 0.0065, 0.0072), None),
+               ("triquetrum", (-0.003, 0.013, -0.002), (0.0065, 0.0060, 0.0062), None),
+               ("pisiform", (-0.002, 0.015, 0.009), (0.0045, 0.0040, 0.0045), None),
+               ("trapezium", (0.012, -0.021, 0.003), (0.0068, 0.0062, 0.0068), None),
+               ("trapezoid", (0.013, -0.009, 0.000), (0.0062, 0.0052, 0.0060), None),
+               ("capitate", (0.011, 0.002, 0.000), (0.0110, 0.0060, 0.0072), None),
+               ("hamate", (0.012, 0.013, 0.000), (0.0092, 0.0062, 0.0072), None)]
+    items = [(n, _hl(p), r, ax, e) for n, p, r, e in carpals]
+    rad = radius_sdf()[0]
+    uln = ulna_sdf()[0]
+    out = []
+    for name, fn, box in _cluster(items):
+        def g(x, y, z, fn=fn):
+            d = fn(x, y, z)
+            return np.maximum(np.maximum(d, -(rad(x, y, z) - 0.0015)), -(uln(x, y, z) - 0.0015))
+        out.append((name, g, box, "hand_L"))
+    bases_y = (-0.010, 0.000, 0.009, 0.017)
+    for k, ((y0, L, r0, r1, sb), by) in enumerate(zip(FINGER_LAYOUT, bases_y)):
+        P = finger_polyline(y0, L, sb)
+        u0 = _n(P[1] - P[0])
+        base = _hl((0.0215, by, 0.0))
+        head = P[0] - 0.0040 * ARM_D
+        fn, box = _long_small(base, head, 0.0048, 0.0036, 0.0060)
+        out.append((f"metacarpal{k + 2}", fn, box, "hand_L"))
+        # phalanges: proximal, middle, distal (distal tip 3 mm inside the skin)
+        u1, u2 = _n(P[2] - P[1]), _n(P[3] - P[2])
+        tip = P[3] + u2 * (0.75 * r1)
+        segs = [(P[0] + u0 * 0.0080, P[1] - u0 * 0.0022, 0.0050, 0.0034, 0.0040),
+                (P[1] + u1 * 0.0032, P[2] - u1 * 0.0020, 0.0040, 0.0028, 0.0033),
+                (P[2] + u2 * 0.0028, tip - u2 * 0.0030, 0.0033, 0.0022, 0.0030)]
+        for j, (a, b, rb_, rs, rh) in enumerate(segs):
+            fn, box = _long_small(a, b, rb_, rs, rh)
+            out.append((f"phalanx{k + 2}_{j + 1}", fn, box, "fingers_L"))
+    # thumb: metacarpal from the trapezium (CMC) to the MCP, proximal + distal phalanx
+    t0, t1, t2 = THUMB_PTS
+    u = _n(t1 - t0)
+    fn, box = _long_small(t0 + u * 0.0060, t1 - u * 0.0045, 0.0060, 0.0042, 0.0065)
+    out.append(("metacarpal1", fn, box, "thumb_L"))
+    v = _n(t2 - t1)
+    fn, box = _long_small(t1 + v * 0.0075, t1 + v * 0.0310, 0.0055, 0.0038, 0.0045)
+    out.append(("phalanx1_1", fn, box, "thumb_L"))
+    fn, box = _long_small(t1 + v * 0.0345, t1 + v * 0.0485, 0.0045, 0.0030, 0.0036)
+    out.append(("phalanx1_2", fn, box, "thumb_L"))
+    return out
+
+
+TARSAL_BOX = {"talus": ((0.075, 0.028, 0.038), (0.116, 0.080, 0.094)),
+              "calcaneus": ((0.062, 0.000, 0.008), (0.132, 0.116, 0.066)),
+              "navicular": ((0.062, -0.016, 0.032), (0.106, 0.012, 0.068)),
+              "cuboid": ((0.104, -0.012, 0.016), (0.138, 0.024, 0.048)),
+              "cuneiform_med": ((0.070, -0.034, 0.022), (0.096, -0.002, 0.060)),
+              "cuneiform_int": ((0.085, -0.029, 0.030), (0.107, -0.001, 0.061)),
+              "cuneiform_lat": ((0.096, -0.028, 0.026), (0.120, 0.002, 0.059))}
+FOOT_AX = np.array([_n(np.cross(LM.FOOT_AXIS_L, EZ)), _n(LM.FOOT_AXIS_L), EZ])   # lateral, forward, up
+
+
+def foot_parts():
+    """Left foot bones: talus (trochlea, neck, head), calcaneus (tuber, sustentaculum), navicular,
+    cuboid, three cuneiforms, five metatarsals, 14 toe phalanges."""
+    A = _A()
+    ax = FOOT_AX
+    tib = tibia_sdf()[0]
+    fib = fibula_sdf()[0]
+
+    def talus(x, y, z):
+        body = _A().extrude(gg_superellipse(x - 0.095, y - 0.053, 0.0140, 0.0165, 3.0), z - 0.066, 0.0140, 0.004)
+        troch = np.maximum(np.abs(x - 0.0955) - 0.0138, np.sqrt((y - 0.053) ** 2 + (z - 0.0705) ** 2) - 0.0180)
+        troch = smax(troch, -_torus(x, y, z, (0.0955, 0.053, 0.0705), EX, 0.0195, 0.0022), 0.001)   # central groove
+        d = smin(body, troch, 0.003)
+        neck = A.sd_capsule(x, y, z, (0.093, 0.040, 0.064), (0.090, 0.020, 0.057), 0.0095)
+        head = A.sd_ellipsoid(x, y, z, (0.088, 0.012, 0.055), (0.0120, 0.0105, 0.0110))
+        post = A.sd_ellipsoid(x, y, z, (0.097, 0.071, 0.058), (0.0060, 0.0050, 0.0050))
+        return smin(smin(smin(d, neck, 0.005), head, 0.005), post, 0.003)
+
+    def csec(n, b, t):
+        return gg_superellipse(b, n, interp(t, [0.0, 0.3, 0.7, 1.0], [0.0135, 0.0140, 0.0130, 0.0120]),
+                               interp(t, [0.0, 0.3, 0.7, 1.0], [0.0200, 0.0165, 0.0140, 0.0130]), 2.6)
+    ctube = Tube([(0.095, 0.098, 0.037), (0.098, 0.068, 0.037), (0.104, 0.040, 0.036), (0.113, 0.020, 0.033)], csec,
+                 ref_fn=lambda P: np.tile(EZ, (len(P), 1)), step=0.002, round_ends=True)
+
+    def calcaneus(x, y, z):
+        d = ctube(x, y, z)
+        d = smin(d, A.sd_ellipsoid(x, y, z, (0.095, 0.092, 0.036), (0.0140, 0.0120, 0.0200)), 0.006)   # tuber
+        d = smin(d, A.sd_ellipsoid(x, y, z, (0.080, 0.046, 0.046), (0.0090, 0.0110, 0.0045)), 0.004)   # sustentac.
+        return d
+
+    def navicular(x, y, z):
+        d = ell3(x, y, z, (0.086, -0.002, 0.051), (0.0130, 0.0060, 0.0110))
+        return smin(d, A.sd_sphere(x, y, z, (0.074, 0.001, 0.045), 0.0050), 0.003)
+
+    def block(c, r, n=3.0, rnd=0.003):
+        """Rounded tarsal block (superelliptic plan, flat top and bottom)."""
+        return lambda x, y, z: A.extrude(gg_superellipse(x - c[0], y - c[1], r[0], r[1], n), z - c[2], r[2], rnd)
+
+    def mt5_base(x, y, z):
+        return A.sd_sphere(x, y, z, (0.146, -0.006, 0.025), 0.0065)
+    cuboid = block((0.121, 0.006, 0.032), (0.0105, 0.0125, 0.0105), 2.8)
+    cun = block
+    order = [("talus", talus, "foot_L"), ("calcaneus", calcaneus, "foot_L"), ("navicular", navicular, "foot_L"),
+             ("cuboid", cuboid, "foot_L"), ("cuneiform_med", cun((0.083, -0.018, 0.040), (0.0075, 0.0100, 0.0135)), "foot_L"),
+             ("cuneiform_int", cun((0.096, -0.015, 0.045), (0.0058, 0.0080, 0.0100)), "foot_L"),
+             ("cuneiform_lat", cun((0.108, -0.013, 0.042), (0.0065, 0.0092, 0.0105)), "foot_L")]
+    out = []
+    done = []
+    for name, f0, rb in order:
+        def g(x, y, z, f0=f0, prev=tuple(done)):
+            d = f0(x, y, z)
+            d = np.maximum(d, -(tib(x, y, z) - 0.0035))
+            d = np.maximum(d, -(fib(x, y, z) - 0.0020))
+            for q in prev:
+                d = np.maximum(d, -(q(x, y, z) - 0.0015))
+            return d
+        done.append(f0)
+        lo, hi = TARSAL_BOX[name]
+        out.append((name, g, (np.array(lo), np.array(hi)), rb))
+    F = BN.FOOT_BONES
+    mtp1, mtp5 = np.array(F["mtp1"]), np.array(F["mtp5"])
+    heads = [mtp1, np.array((0.104, -0.084, 0.019)), np.array((0.122, -0.076, 0.018)),
+             np.array((0.141, -0.064, 0.018)), mtp5]
+    bases = [np.array((0.083, -0.031, 0.040)), np.array((0.096, -0.027, 0.044)), np.array((0.108, -0.024, 0.041)),
+             np.array((0.122, -0.010, 0.033)), np.array((0.136, -0.006, 0.029))]
+    rads = [(0.0080, 0.0058, 0.0090), (0.0060, 0.0040, 0.0062), (0.0058, 0.0040, 0.0060), (0.0058, 0.0040, 0.0058),
+            (0.0065, 0.0042, 0.0058)]
+    for k in range(5):
+        u = _n(heads[k] - bases[k])
+        fn, box = _long_small(bases[k] + u * 0.004, heads[k], *rads[k])
+        if k == 4:
+            fn0 = fn
+            fn = lambda x, y, z, fn0=fn0: smin(fn0(x, y, z), mt5_base(x, y, z), 0.003)
+        fn = _clipped(fn, done, 0.0015)
+        out.append((f"metatarsal{k + 1}", fn, (box[0] - 0.006, box[1] + 0.006), "foot_L"))
+    # toes: tips 5 mm inside the skin's toe block front edge
+    tipx = [0.086, 0.106, 0.122, 0.138, 0.153]
+    nseg = [2, 3, 3, 3, 3]
+    for k in range(5):
+        yf = -0.116 - 0.032 * math.sqrt(max(1.0 - ((tipx[k] - 0.119) / 0.044) ** 2, 0.0)) + 0.006
+        tip = np.array((tipx[k], yf, 0.012))
+        mtp = heads[k]
+        u = _n(tip - mtp)
+        L = np.linalg.norm(tip - mtp)
+        r0 = 0.0060 if k == 0 else 0.0040
+        fr = (0.62, 0.38) if nseg[k] == 2 else (0.52, 0.26, 0.22)
+        s0 = (rads[k][2] + 0.0015)
+        pos = s0
+        for j, f_ in enumerate(fr):
+            seg_len = (L - s0) * f_
+            a = mtp + u * (pos + 0.0012)
+            b = mtp + u * (pos + seg_len - 0.0012)
+            sc = 1.0 - 0.18 * j
+            fn, box = _long_small(a, b, r0 * sc, r0 * 0.65 * sc, r0 * 0.8 * sc)
+            out.append((f"toe{k + 1}_{j + 1}", fn, box, "toes_L"))
+            pos += seg_len
+    return out
+
+
+# ===========================================================================
+# Skull and mandible: the head project's bones (6.5 mm vault with outer/inner tables),
+# re-imported read-only at every build and moved into the body frame
+# ===========================================================================
+def skull_sdf():
+    A = _A()
+    o = HEAD_OFFSET
+
+    def fn(x, y, z):
+        return A.skull_sdf(x - o[0], y - o[1], z - o[2])
+    return fn, (np.array(A.SKULL_BOX[0]) + o, np.array(A.SKULL_BOX[1]) + o)
+
+
+def mandible_sdf():
+    A = _A()
+    o = HEAD_OFFSET
+
+    def fn(x, y, z):
+        return A.jaw_sdf(x - o[0], y - o[1], z - o[2])
+    return fn, (np.array(A.JAW_BOX[0]) + o, np.array(A.JAW_BOX[1]) + o)
+
+
+# ===========================================================================
+# Piece table (plan §4.1 budgets) and assembly
+# ===========================================================================
+LEVELS = [r["level"] for r in ROWS]
+
+
+def level_bone(z):
+    """Rig bone that carries a spine-level piece at height z (the rig's trunk segmentation)."""
+    for zz, b in ((1.490, "neck"), (1.353, "upper_chest"), (1.212, "chest"), (1.027, "spine")):
+        if z >= zz:
+            return b
+    return "hips"
+
+
+def _one(fnbox, rigid, core=None):
+    """A single-island piece; a third element of ``fnbox`` is its marrow core."""
+    fn, box = fnbox[0], fnbox[1]
+    if core is None and len(fnbox) > 2:
+        core = fnbox[2]
+    return [("main", fn, box, rigid, core)]
+
+
+def piece_table():
+    """[(piece, mirrored, h_hr (m), lod0 triangles, subs())] in BONE_PIECES order.
+
+    ``subs()`` -> [(sub name, sdf, box, rigid bone, marrow-core sdf | None)].  Left pieces
+    (``*_L``) are mirrored into their ``*_R`` twins."""
+    T = []
+    T.append(("skull", False, 0.0013, 9500, lambda: _one(skull_sdf(), "head")))
+    T.append(("mandible", False, 0.0008, 1600, lambda: _one(mandible_sdf(), "jaw")))
+    lod = {"C1": 300, "C2": 320}
+    for lv in LEVELS[:-1]:
+        n = lod.get(lv, {"C": 200, "T": 190, "L": 250}[lv[0]])
+        T.append((lv.lower(), False, 0.0008 if lv[0] != "L" else 0.0009, n,
+                  lambda lv=lv: _one(vertebra_sdf(lv), level_bone(ROW[lv]["z"]))))
+    T.append(("sacrum", False, 0.0010, 550, lambda: _one(sacrum_sdf(), "hips")))
+    T.append(("coccyx", False, 0.0007, 60, lambda: _one(coccyx_sdf(), "hips")))
+    for a, b in zip(LEVELS[1:-1], LEVELS[2:]):
+        T.append((f"disc_{a.lower()}_{b.lower()}", False, 0.0008, 30,
+                  lambda a=a, b=b: _one(disc_sdf(a, b), level_bone(0.5 * (ROW[a]["z"] + ROW[b]["z"])))))
+    T.append(("sternum", False, 0.0009, 300, lambda: _one(sternum_parts(), "upper_chest")))
+    for n in range(1, 13):
+        head_z = RB_.RIB_TABLE[n][1][2]
+        T.append((f"rib{n}_L", True, 0.0009, {1: 130, 11: 110, 12: 80}.get(n, 150),
+                  lambda n=n, hz=head_z: _one(rib_sdf(n), level_bone(hz))))
+    for n in range(1, 11):
+        head_z = RB_.RIB_TABLE[n][1][2]
+        T.append((f"costal_cartilage{n}_L", True, 0.0009, 45,
+                  lambda n=n, hz=head_z: _one(cartilage_sdf(n), level_bone(hz))))
+    T.append(("clavicle_L", True, 0.0009, 180,
+              lambda: _one(clavicle_sdf(), "clavicle_L", _core(clavicle_sdf()[0], 0.0024,
+                                                                  np.array(BN.CLAVICLE_WAYPOINTS[0]) + (0.03, 0, 0),
+                                                                  np.array(BN.CLAVICLE_WAYPOINTS[-1]) - (0.03, 0.02, 0),
+                                                                  k=0.004))))
+    T.append(("scapula_L", True, 0.0008, 450, lambda: _one(scapula_sdf(), "clavicle_L")))
+    T.append(("humerus_L", True, 0.0010, 600, lambda: _one(humerus_sdf(), "upper_arm_L")))
+    T.append(("radius_L", True, 0.0009, 300, lambda: _one(radius_sdf(), "forearm_L")))
+    T.append(("ulna_L", True, 0.0009, 330, lambda: _one(ulna_sdf(), "forearm_L")))
+    T.append(("hand_L", True, 0.0006, 900, lambda: [(n, f, b, r, None) for n, f, b, r in hand_parts()]))
+    T.append(("hip_bone_L", True, 0.0010, 1300, lambda: _one(hip_bone_sdf(), "hips")))
+    T.append(("femur_L", True, 0.0011, 850, lambda: _one(femur_sdf(), "thigh_L")))
+    T.append(("patella_L", True, 0.0008, 90, lambda: _one(patella_sdf(), "shin_L")))
+    T.append(("tibia_L", True, 0.0010, 650, lambda: _one(tibia_sdf(), "shin_L")))
+    T.append(("fibula_L", True, 0.0009, 240, lambda: _one(fibula_sdf(), "shin_L")))
+    T.append(("foot_L", True, 0.0007, 950, lambda: [(n, f, b, r, None) for n, f, b, r in foot_parts()]))
+    return T
+
+
+CORE_TRIS = {"humerus_L": 50, "radius_L": 40, "ulna_L": 40, "femur_L": 60, "tibia_L": 50, "fibula_L": 30,
+             "clavicle_L": 30}
+HR_FACTOR = 18                    # GB_Skeleton_HR keeps ~18x the LOD0 triangles (bake source)
+
+
+def _mirror_bone(b):
+    return b[:-2] + "_R" if b.endswith("_L") else b
+
+
+def _right(name):
+    return name[:-2] + "_R" if name.endswith("_L") else name
+
+
+_MESHED = {}                      # piece -> meshed data (reused by the variants, capsules, bones.json)
+
+
+def mesh_pieces(quick=False, only=None, log=True):
+    """Polygonise every piece: {piece: {"subs": [{sub, rigid, hr:(v,f), lod:(v,f)}], "core": {...}|None,
+    "cls": int, "slot": int, "fn": sdf, "core_fn": sdf|None}} for left and mirrored right pieces."""
+    out = {}
+    scale = 1.7 if quick else 1.0
+    for piece, mirrored, h, lod, subs_fn in piece_table():
+        if only and piece not in only and _right(piece) not in only:
+            continue
+        t0 = time.perf_counter()
+        subs = subs_fn()
+        cls = BN.BONE_PIECE_CLASS[piece]
+        slot = CARTILAGE_SLOT if cls == 4 else 0
+        meshed = []
+        for sub, fn, box, rigid, core in subs:
+            v, f = mesh_sdf(fn, box, h * scale)
+            meshed.append(dict(sub=sub, rigid=rigid, fn=fn, box=box, core_fn=core, hr=(v, f)))
+        tot = sum(len(m["hr"][1]) for m in meshed)
+        for m in meshed:
+            share = len(m["hr"][1]) / max(tot, 1)
+            m["lod"] = decimate_arrays(*m["hr"], max(24, int(round(lod * share))))
+            m["hr"] = decimate_arrays(*m["hr"], max(200, int(round(HR_FACTOR * lod * share))))
+            if m["core_fn"] is not None:
+                vc, fc = mesh_sdf(m["core_fn"], m["box"], h * scale)
+                m["core_hr"] = decimate_arrays(vc, fc, 30 * CORE_TRIS.get(piece, 40))
+                m["core_lod"] = decimate_arrays(vc, fc, CORE_TRIS.get(piece, 40))
+        rec = dict(subs=meshed, cls=cls, slot=slot)
+        out[piece] = rec
+        if mirrored:
+            rsubs = []
+            for m in meshed:
+                r = dict(sub=m["sub"], rigid=_mirror_bone(m["rigid"]), fn=None, box=None, core_fn=None,
+                         hr=mirror_arrays(*m["hr"]), lod=mirror_arrays(*m["lod"]))
+                if "core_lod" in m:
+                    r["core_hr"] = mirror_arrays(*m["core_hr"])
+                    r["core_lod"] = mirror_arrays(*m["core_lod"])
+                rsubs.append(r)
+            out[_right(piece)] = dict(subs=rsubs, cls=cls, slot=slot)
+        if log:
+            gbc.log(f"  B3 {piece:22s} hr {sum(len(m['hr'][1]) for m in meshed):7d}  lod "
+                    f"{sum(len(m['lod'][1]) for m in meshed):5d} tris  {time.perf_counter() - t0:5.1f} s")
+    _MESHED.update(out)
+    return out
+
+
+def _parts(meshed, level):
+    """join_parts() parts of every piece at ``level`` ('hr' | 'lod'), marrow cores included."""
+    import gb_geom as gg
+    parts = []
+    for piece, rec in meshed.items():
+        pid = BN.BONE_PIECE_ID[piece]
+        for m in rec["subs"]:
+            v, f = m[level]
+            rb = RT.BONE_INDEX[m["rigid"]]
+            parts.append(gg.part(v, f, rec["slot"], gb_piece=pid, gb_class=rec["cls"], gb_rigid_bone=rb))
+            ck = "core_" + level
+            if ck in m:
+                vc, fc = m[ck]
+                parts.append(gg.part(vc, fc, 0, gb_piece=pid, gb_class=MARROW_CLASS, gb_rigid_bone=rb))
+    return parts
+
+
+def _finish(obj, atlas=True):
+    """Codes UV (piece, class), atlas UV, UV order, smooth shading, glTF extras."""
+    import gb_geom as gg
+    import placeholder as PH
+    u = gbc.read_point_attr(obj, "gb_piece", 'INT')
+    v = gbc.read_point_attr(obj, "gb_class", 'INT')
+    gbc.set_codes_uv(obj, u, v)
+    if atlas:
+        gg.smart_uv(obj, margin=0.004)
+    PH.finish_uvs(obj)
+    obj.data.shade_smooth()
+    obj["gb_layer"] = gbc.LAYER_OF.get(obj.name, "bone")
+    obj["gb_schema"] = 1
+    obj["gb_status"] = "B3"
+
+
+def build_skeleton():
+    """GB_Skeleton (LOD0, exported) + GB_Skeleton_HR (bake source): every bone piece, codes in UV2,
+    rigid bone per vertex, long bones as double shells.  Also writes ``bones.json``."""
+    import gb_geom as gg
+    quick = _quick()
+    with gbc.Timer("B3 skeleton: mesh pieces"):
+        meshed = mesh_pieces(quick)
+    with gbc.Timer("B3 skeleton: objects"):
+        skel = gg.object_from_parts("GB_Skeleton", _parts(meshed, "lod"))
+        _finish(skel)
+        hr = gg.object_from_parts("GB_Skeleton_HR", _parts(meshed, "hr"))
+        _finish(hr, atlas=False)
+    with gbc.Timer("B3 skeleton: bones.json"):
+        write_bones_json(meshed)
+    return {"GB_Skeleton": skel, "GB_Skeleton_HR": hr}
+
+
+# ===========================================================================
+# Broad-phase hit capsules and bones.json (pieces, capsules, exact-hit mesh, variants)
+# ===========================================================================
+CAPSULES_PER_PIECE = {"skull": 3, "mandible": 2, "sternum": 2, "scapula": 2, "humerus": 2, "radius": 2,
+                      "ulna": 2, "hand": 2, "hip_bone": 3, "femur": 2, "tibia": 2, "foot": 2, "clavicle": 2}
+
+
+def _fit_capsules(V, k):
+    """k bounding capsules along the principal axis of point set V: [(a, b, r)]."""
+    V = np.asarray(V, float)
+    c = V.mean(0)
+    _u, _s, vt = np.linalg.svd(V - c, full_matrices=False)
+    t = (V - c) @ vt[0]
+    qs = np.quantile(t, np.linspace(0.0, 1.0, k + 1))
+    out = []
+    for i in range(k):
+        lo, hi = qs[i], qs[i + 1]
+        pad = 0.08 * (hi - lo)
+        sel = V[(t >= lo - pad) & (t <= hi + pad)]
+        if len(sel) < 4:
+            continue
+        cc = sel.mean(0)
+        _u, _s, w = np.linalg.svd(sel - cc, full_matrices=False)
+        tt = (sel - cc) @ w[0]
+        perp = np.linalg.norm((sel - cc) - np.outer(tt, w[0]), axis=1)
+        r0 = float(np.percentile(perp, 90))
+        a = cc + w[0] * max(tt.min() + r0, tt.min() * 0.5 if tt.min() < 0 else 0)
+        b = cc + w[0] * min(tt.max() - r0, tt.max() * 0.5 if tt.max() > 0 else 0)
+        # exact bounding radius to the segment
+        ab = b - a
+        L2 = max(float(ab @ ab), 1e-12)
+        h = np.clip(((sel - a) @ ab) / L2, 0, 1)
+        r = float(np.linalg.norm(sel - (a + np.outer(h, ab)), axis=1).max())
+        out.append((a, b, r))
+    return out
+
+
+def _piece_vertices():
+    """{piece name: vertices} from the meshed pieces or, if the stage came from the cache, GB_Skeleton."""
+    if _MESHED:
+        return {p: np.vstack([m["lod"][0] for m in rec["subs"]]) for p, rec in _MESHED.items()}
+    import bpy
+    o = bpy.data.objects.get("GB_Skeleton")
+    if o is None:
+        return {}
+    v = gbc.get_verts(o.data)
+    pc = gbc.read_point_attr(o, "gb_piece", 'INT')
+    cl = gbc.read_point_attr(o, "gb_class", 'INT')
+    inv = {i: n for n, i in BN.BONE_PIECE_ID.items()}
+    return {inv[i]: v[(pc == i) & (cl != MARROW_CLASS)] for i in np.unique(pc)}
+
+
+def bone_capsules():
+    """Broad-phase hit capsules (body frame): [{"piece", "bone", "a", "b", "r"}].
+
+    One per vertebra and cartilage, two per rib, 2-3 for large or bent bones (skull, hip bone,
+    long bones split into proximal/distal halves); discs are covered by the exact-hit mesh."""
+    verts = _piece_vertices()
+    bones = _piece_rigid_bones()
+    out = []
+    for piece, _cls in BN.BONE_PIECES:
+        if piece not in verts or piece.startswith("disc_") or len(verts[piece]) < 8:
+            continue
+        base = piece[:-2] if piece.endswith(("_L", "_R")) else piece
+        base = "rib" if base.startswith("rib") else base
+        k = 2 if base == "rib" else CAPSULES_PER_PIECE.get(base, 1)
+        for a, b, r in _fit_capsules(verts[piece], k):
+            out.append({"piece": piece, "piece_id": BN.BONE_PIECE_ID[piece], "bone": bones.get(piece, ""),
+                        "a": a, "b": b, "r": r})
+    return out
+
+
+def _piece_rigid_bones():
+    """{piece: main rig bone} (hands/feet: hand / foot; fingers, thumb and toes per vertex)."""
+    fixed = {"skull": "head", "mandible": "jaw", "sacrum": "hips", "coccyx": "hips", "sternum": "upper_chest"}
+    for lv in LEVELS[:-1]:
+        fixed[lv.lower()] = level_bone(ROW[lv]["z"])
+    for side in "LR":
+        fixed.update({f"clavicle_{side}": f"clavicle_{side}", f"scapula_{side}": f"clavicle_{side}",
+                      f"humerus_{side}": f"upper_arm_{side}", f"radius_{side}": f"forearm_{side}",
+                      f"ulna_{side}": f"forearm_{side}", f"hand_{side}": f"hand_{side}",
+                      f"hip_bone_{side}": "hips", f"femur_{side}": f"thigh_{side}", f"patella_{side}": f"shin_{side}",
+                      f"tibia_{side}": f"shin_{side}", f"fibula_{side}": f"shin_{side}", f"foot_{side}": f"foot_{side}"})
+        for n in range(1, 13):
+            fixed[f"rib{n}_{side}"] = level_bone(RB_.RIB_TABLE[n][1][2])
+        for n in range(1, 11):
+            fixed[f"costal_cartilage{n}_{side}"] = level_bone(RB_.RIB_TABLE[n][1][2])
+    for a, b in zip(LEVELS[1:-1], LEVELS[2:]):
+        fixed[f"disc_{a.lower()}_{b.lower()}"] = level_bone(0.5 * (ROW[a]["z"] + ROW[b]["z"]))
+    return fixed
+
+
+LONG_BONE_KEY = {"femur": "femur", "tibia": "tibia", "fibula": "fibula", "humerus": "humerus", "radius": "radius",
+                 "ulna": "ulna", "clavicle": "clavicle"}
+INTERIOR = {0: BN.BONE_COLOURS["yellow_marrow"], 1: BN.BONE_COLOURS["red_marrow"], 2: BN.BONE_COLOURS["red_marrow"],
+            3: BN.BONE_COLOURS["diploe"], 4: BN.BONE_COLOURS["costal_cartilage"], 5: "#E6DDC8",
+            6: BN.BONE_COLOURS["yellow_marrow"]}
+HIT_MESH_TRIS = 20000
+gbc.SCHEMAS.setdefault("gb.bones/1", ("pieces", "capsules", "hit_mesh", "classes", "variants"))
+BONES_JSON = os.path.join(gbc.SUBJECT_OUT, "bones.json")
+
+
+def piece_lengths(verts=None):
+    """Maximum length (cm) of each long bone along its principal axis (osteometric board)."""
+    verts = verts or _piece_vertices()
+    out = {}
+    for piece, V in verts.items():
+        base = piece[:-2] if piece.endswith(("_L", "_R")) else piece
+        if base in LONG_BONE_KEY and len(V):
+            c = V.mean(0)
+            _u, _s, vt = np.linalg.svd(V[::3] - c, full_matrices=False)
+            t = (V - c) @ vt[0]
+            out[piece] = float(100.0 * (t.max() - t.min()))
+    return out
+
+
+def bone_table(meshed=None, variants=None):
+    """``bones.json`` data: pieces (id, class, rigid bone, bounds, length, cortex, interior colour),
+    capsules, exact-hit mesh (<= 20k triangles, per-triangle piece id), classes, variants."""
+    meshed = meshed or _MESHED
+    verts = _piece_vertices()
+    rig = _piece_rigid_bones()
+    lengths = piece_lengths(verts)
+    pieces = []
+    for piece, cls in BN.BONE_PIECES:
+        if piece not in verts:
+            continue
+        V = verts[piece]
+        base = piece[:-2] if piece.endswith(("_L", "_R")) else piece
+        row = {"id": BN.BONE_PIECE_ID[piece], "name": piece, "class": cls, "class_name": BN.BONE_CLASS[cls],
+               "bone": rig.get(piece), "bounds": [V.min(0), V.max(0)], "interior_colour": INTERIOR[cls]}
+        if base in BN.LONG_BONES:
+            row["length_cm"] = lengths.get(piece)
+            row["length_bible_cm"] = BN.LONG_BONES[base]["length_cm"]
+            row["cortex_mm"] = BN.LONG_BONES[base]["cortex_mm"]
+            row["marrow_core"] = True
+        pieces.append(row)
+    # exact-hit mesh: the LOD0 surfaces (no marrow cores) decimated to <= 20k triangles
+    hv, ht, hp = [], [], []
+    off = 0
+    total = sum(len(m["lod"][1]) for rec in meshed.values() for m in rec["subs"]) if meshed else 0
+    ratio = min(1.0, HIT_MESH_TRIS / max(total, 1)) * 0.97
+    for piece, rec in meshed.items():
+        for m in rec["subs"]:
+            v, f = m["lod"]
+            if ratio < 1.0:
+                v, f = decimate_arrays(v, f, max(12, int(len(f) * ratio)))
+            hv.append(v)
+            ht.append(f + off)
+            hp.append(np.full(len(f), BN.BONE_PIECE_ID[piece]))
+            off += len(v)
+    hit = {"verts": np.vstack(hv).ravel() if hv else [], "tris": np.vstack(ht).ravel().astype(int) if ht else [],
+           "tri_piece": np.concatenate(hp).astype(int) if hp else [],
+           "note": "rest pose, body frame; build a ConcavePolygonShape3D per piece or one static body"}
+    return {"pieces": pieces, "capsules": bone_capsules(), "hit_mesh": hit,
+            "classes": {str(k): v for k, v in BN.BONE_CLASS.items()},
+            "interior_colours": {str(k): v for k, v in INTERIOR.items()},
+            "colours": BN.BONE_COLOURS, "material": BN.BONE_MATERIAL, "variants": variants or {}}
+
+
+def write_bones_json(meshed=None, variants=None):
+    """Write ``bones.json`` (schema gb.bones/1) next to the other sidecars."""
+    if variants is None and os.path.exists(BONES_JSON):
+        try:
+            variants = gbc.read_json(BONES_JSON)["data"].get("variants", {})
+        except Exception:
+            variants = {}
+    return gbc.write_json(BONES_JSON, bone_table(meshed, variants), "gb.bones/1")

@@ -1762,7 +1762,7 @@ def build_anatomy():
 # ---------------------------------------------------------------------------
 def _principled(name, color, rough=0.5, sss=0.0, sss_radius=(0.004, 0.0015, 0.001), coat=0.0):
     m = bpy.data.materials.get(name) or bpy.data.materials.new(name)
-    if not m.use_nodes:
+    if m.node_tree is None:
         m.use_nodes = True
     b = m.node_tree.nodes.get("Principled BSDF")
     b.inputs["Base Color"].default_value = (*color, 1.0)

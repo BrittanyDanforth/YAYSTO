@@ -104,6 +104,11 @@ BONE_COLOURS = {"cortical_cut": "#E9DFCC", "periosteum": "#E6CFC4", "articular_c
 
 # bone class codes for UV2.y of GB_Skeleton / GB_Frac_* (plan §5.5)
 BONE_CLASS = {0: "long_bone_cortex", 1: "flat", 2: "vertebra", 3: "skull", 4: "cartilage", 5: "tooth"}
+# 6 (appended by B3): marrow core of a long bone = the endosteal surface of the medullary canal as a
+# closed inner shell inside the cortex (outward normals).  A discard hole through the periosteal
+# surface shows the cortex ring (outer back faces) around the marrow (these faces, marrow colour:
+# yellow #E4C36A in shafts).  Plan §8.2 B3 "double shells".
+BONE_CLASS[6] = "marrow"
 
 # ---------------------------------------------------------------------------
 # Bone pieces: UV2.x code of GB_Skeleton / GB_Frac_* (plan §5.5).  id = index + 1

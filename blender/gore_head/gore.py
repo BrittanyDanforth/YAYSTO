@@ -453,7 +453,7 @@ LAYER_Z       = [0.0,    0.004,  0.008,  0.008,  0.017,  0.0,    0.010,  0.008] 
 LAYER_WALL    = [0.0046, 0.0042, 0.0066, 0.0055, 0.0,    0.0030, 0.0,    0.0025]  # wall length toward next layer (m)
 LAYER_D0      = [0.0,    0.6,    1.0,    1.0,    1.0,    0.3,    1.0,    0.6]     # gore_depth at the top of a wall
 LAYER_D1      = [0.75,    0.95,   1.0,    1.0,    1.0,    0.5,    1.0,    0.7]     # gore_depth at the bottom of a wall
-LAYER_SURF_D  = [0.12,   0.6,    1.0,    1.0,    1.0,    0.3,    1.0,    0.6]     # gore_depth of exposed surface
+LAYER_SURF_D  = [0.08,   0.6,    1.0,    1.0,    1.0,    0.3,    1.0,    0.6]     # gore_depth of exposed surface
 LAYER_TOL_IN  = [0.012,  0.012,  0.016,  0.016,  0.035,  0.014,  0.05,   0.03]    # how far below the impact a layer is affected
 LAYER_TOL_OUT = [0.016,  0.016,  0.010,  0.010,  0.010,  0.016,  0.03,   0.02]
 LAYER_IS_BONE = [0, 0, 1, 1, 0, 0, 0, 0]
@@ -659,7 +659,8 @@ def _build_sub_tear():
     """One straight-ish tear of a blunt split: a tapered wedge from the centre."""
     f, v = 'NodeSocketFloat', 'NodeSocketVector'
     t = NodeTree("GH_Gore_Tear", (("U", f), ("V", f), ("Seed", f), ("K", f), ("Size", f, 0.01),
-                                  ("Core", f, 0.002), ("Noise Pos", v), ("Gape", f, 1.0)),
+                                  ("Core", f, 0.002), ("Noise Pos", v), ("Gape", f, 1.0),
+                                  ("Phi", f, 0.0), ("Phi Mix", f, 0.0), ("Length", f, 1.0)),
                  (("Cut", f), ("Line", v)), description="Perpendicular distance field of one tear")
     seed, k3 = t.inp("Seed"), t.inp("K") * 3.0 + 40.0
     size, rc = t.inp("Size"), t.inp("Core")
@@ -668,8 +669,8 @@ def _build_sub_tear():
     def hk(off):
         kk = k3 + off
         return t.math('FRACT', t.math('SINE', seed * (12.9898 + kk * 3.71) + kk * 0.618) * 43758.5453)
-    phi = hk(0.0) * TAU
-    length = size * 0.0125 * (0.25 + 0.95 * hk(1.0))
+    phi = t.mix(hk(0.0) * TAU, t.inp("Phi") + (hk(0.0) - 0.5) * 0.5, t.inp("Phi Mix"))
+    length = size * 0.0125 * (0.25 + 0.95 * hk(1.0)) * t.inp("Length")
     w0 = size * 0.0012 * (0.7 + 0.7 * hk(2.0)) * t.inp("Gape")
     dx, dy = phi.cos(), phi.sin()
     a = u * dx + v_ * dy
@@ -921,7 +922,8 @@ def _slash_params(t, s, e, D, tx, ty, scalp):
     """
     half_len = s * 0.012 * e
     sin2 = ty * ty / (tx * tx + ty * ty).max(1e-8)
-    G = 0.035 + 0.175 * sin2
+    # (a cut through the muscle gapes more: the muscle retracts as well)
+    G = 0.035 + 0.175 * sin2 + 0.07 * t.smooth(0.6, 0.9, D)
     f_depth = t.smooth(0.1, 0.5, D)
     f_reg = 1.0 + scalp * t.smooth(0.45, 0.6, D) * 0.45
     gape = (half_len * 2.0 * G * f_depth * f_reg).min(0.018)
@@ -1018,7 +1020,16 @@ def _build_slash():
 
 
 def _build_blunt():
-    """Blunt trauma: swelling, bruise, stellate split, depressed skull fracture."""
+    """Blunt trauma: swelling, bruise, split (laceration) over bone, depressed fracture.
+
+    Research 02 / REALISM_BIBLE rows 15-17: blunt lacerations split the skin
+    against the bone: a linear or Y-shaped split along the skin's lines
+    (through the vermilion on a lip), crushed and ragged margins with a
+    2-4 mm abraded rim, tissue bridges spanning the floor, walls down to the
+    bone, blood welling in the bed. Swelling (up to a 4-10 mm goose egg) and
+    the bruise develop with the wound age: redness at once, a bruise over
+    30-60 min, the full deep bruise after hours.
+    """
     t = _kind_tree("GH_Gore_Blunt", "Blunt trauma fields")
     c = _KindCtx(t)
     s, D = c.s, c.D
@@ -1028,29 +1039,40 @@ def _build_blunt():
     is_brain = c.is_layer(LAYER_BRAIN)
     soft = c.lc([1.0, 0.35, 0.0, 0.0, 0.0, 0.25, 0.0, 0.6])
     nl = t.noise(c.np * 120.0, detail=3.0)
-    rsw = s * 0.022
-    swell = t.inp("Swelling") * s * 0.0058 * t.math('EXPONENT', -(c.rho / rsw) ** 2.0) * (1.0 + nl * 0.25) * soft
-    rb = s * 0.028
+    hours = t.inp("Age") * t.inp("Age") * 48.0
+    # swelling: some at once, most within the first hours (peak ~24 h)
+    f_sw = 0.2 + 0.8 * t.smooth(0.03, 16.0, hours)
+    rsw = s * 0.017
+    swell = t.inp("Swelling") * (0.0035 + 0.0055 * s.min(1.3)) * f_sw \
+        * t.math('EXPONENT', -(c.rho / rsw) ** 2.0) * (1.0 + nl * 0.25) * soft
+    # bruise: immediate redness only, a bruise over 30-60 min, deep after hours
+    f_br = 0.18 + 0.47 * t.smooth(0.05, 1.0, hours) + 0.35 * t.smooth(3.0, 24.0, hours)
+    rb = s * 0.024 * (0.75 + 0.25 * t.smooth(0.2, 24.0, hours))
     bruise = t.smooth(1.1, 0.3, c.rho / rb + nl * 0.32) * (0.72 + 0.28 * t.noise(c.np * 420.0))
-    bruise = bruise * t.inp("Bruising") * c.lc([1.0, 1.0, 0.0, 0.0, 0.0, 0.6, 0.0, 1.0])
-    # stellate split: a crushed centre plus up to 5 tapered tears. Each tear is
-    # a thin wedge along its own direction, so its field is the perpendicular
-    # distance to the tear (like a small cut) and its walls close in a V.
+    bruise = bruise * t.inp("Bruising") * f_br * c.lc([1.0, 1.0, 0.0, 0.0, 0.0, 0.6, 0.0, 1.0])
+    # the split: 2 arms (linear) or 3 (Y) along the skin's lines, around a
+    # small crushed centre; each arm is a thin wedge whose walls close in a V
     split_on = t.smooth(0.25, 0.45, D) * is_skin + t.smooth(0.55, 0.7, D) * is_muscle * 0.45
-    # a crushing blow (depth -> 1) bursts the soft tissue open down to the
-    # depressed bone, so the fracture (or the broken teeth) can be seen: the
-    # tears go through the muscle as well, gape, and the crushed centre bursts
-    # open into an irregular hole
     crush0 = t.smooth(0.8, 1.0, D)
-    k_sz = s * t.switch(is_muscle.gt(0.5), 1.0, 0.45 + 0.4 * crush0)
+    k_sz = s * t.switch(is_muscle.gt(0.5), 1.0, 0.55 + 0.4 * crush0)
     crush = crush0 * (is_skin + is_muscle * 1.1)
-    rc = k_sz * 0.0022 * (1.0 + 0.45 * nl) + crush * s * 0.0036 * (1.0 + 0.5 * nl)
+    rc = k_sz * 0.0018 * (1.0 + 0.45 * nl) + crush * s * 0.0032 * (1.0 + 0.5 * nl)
+    tens = t.inp("Tension")
+    phi0 = t.math('ARCTAN2', tens.y, tens.x)
+    y_shape = c.hash(9).gt(0.5).max(0.0)
+    arms = ((phi0, 1.0, 1.1), (phi0 + math.pi, 1.0, 0.85), (phi0 + 1.9, y_shape, 0.7),
+            (phi0 - 1.2, crush, 0.6))
     cut_arm = to_line = None
-    for k in range(5):
+    for k, (phi, on, ln) in enumerate(arms):
         tn = t.group(_sub("tear"), {"U": c.u, "V": c.v, "Seed": c.seed, "K": float(k),
                                     "Size": k_sz * (1.0 + 0.35 * crush), "Core": rc, "Noise Pos": c.np,
-                                    "Gape": 1.0 + crush * 2.6})
+                                    "Gape": (1.0 + crush * 2.2) * 1.15, "Phi": phi, "Phi Mix": 1.0,
+                                    "Length": on * ln * 1.25})
         ck, line_k = t.out(tn, "Cut"), t.out(tn, "Line")
+        if isinstance(on, float) and on < 1.0:
+            ck = ck - 1.0 + 1.0 * on
+        elif not isinstance(on, float):
+            ck = ck - (1.0 - on) * 0.01
         if cut_arm is None:
             cut_arm, to_line = ck, line_k
         else:
@@ -1058,8 +1080,16 @@ def _build_blunt():
             cut_arm = cut_arm.max(ck)
     cut_centre = rc - c.rho + s * 0.0003 * t.noise(c.np * 1300.0) \
         + crush * s * 0.0014 * t.noise(c.np * 330.0, detail=2.0)
-    cut_split = cut_centre.max(cut_arm)
+    # crushed, ragged margins (not a clean cut)
+    ragged = t.noise(c.np * 1500.0, detail=2.0) * 0.00045 + t.noise(c.np * 450.0, detail=2.0) * 0.0006
+    cut_split = cut_centre.max(cut_arm) + ragged
     in_arm = cut_arm.gt(cut_centre)
+    # tissue bridges: thin strands of nerves / vessels / fibrous tissue that
+    # were not torn, spanning the split
+    br_n = t.noise(c.np * 700.0 + t.vec(c.seed * 3.0, 0.0, 0.0), detail=1.0, signed=False)
+    bridge = t.smooth(0.045, 0.015, t.math('ABSOLUTE', br_n - 0.5)) \
+        * t.smooth(0.45, 0.6, t.noise(c.np * 160.0, detail=1.0, signed=False)) * (1.0 - crush)
+    cut_split = cut_split - bridge * is_skin * 0.004
     cut_soft = t.switch(split_on.gt(0.05), -1.0, cut_split)
     # depressed skull fracture with radiating cracks
     dep_on = t.smooth(0.62, 0.85, D) * is_bone
@@ -1076,84 +1106,107 @@ def _build_blunt():
     cut_bone = t.switch(breach.gt(0.5), -1.0, s * 0.0045 * (1.0 + nl * 0.3) - c.rho)
     cut = cut_soft.max(cut_bone)
     disp = t.vec(0.0, 0.0, -depress - frac * dep_on * 0.0005)
+    # the margins are pushed apart a little and bulge (crushed, swollen lips)
+    mg = t.smooth(0.003, 0.0, -cut_split) * split_on * is_skin
+    swell = swell + mg * 0.0006
     # blood: from the split, hematoma under the skin, contusion on the brain
     bleed = t.inp("Bleed")
     pool = c.pool(c.L, s * 0.0045 * (0.5 + bleed), bleed * t.smooth(0.25, 0.45, D), drop=s * 0.003)
     hema = t.smooth(rsw * 1.1, rsw * 0.3, c.rho) * c.lc([0.0, 0.85, 0.35, 0.35, 0.0, 0.7, 0.0, 0.8])
     contusion = t.smooth(rd * 1.3, rd * 0.4, c.rho + nl * 0.002) * is_brain * t.smooth(0.5, 0.8, D)
-    # bloodied teeth must still read as teeth: a few vertical runs of blood
-    # near the blow, not a coat (the loosened ones also bleed from the gum
-    # line, see GH_Gore_Teeth)
-    runs = t.noise(t.vec(c.np.x * 520.0, c.np.y * 520.0, c.np.z * 55.0), detail=2.0, signed=False)
-    teeth_blood = t.smooth(s * 0.03, s * 0.01, c.rho) * c.is_layer(LAYER_TEETH) * t.smooth(0.2, 0.4, D) \
-        * t.smooth(0.56, 0.66, runs)
+    teeth_blood = t.smooth(s * 0.03, s * 0.01, c.rho) * c.is_layer(LAYER_TEETH) * t.smooth(0.2, 0.4, D) * 0.0
     blood = (pool * is_skin).max(hema * t.smooth(0.2, 0.5, D)).max(contusion).max(teeth_blood)
-    blood = blood.max(t.smooth(0.0008, 0.0, -cut_split) * split_on * 0.8)
-    # abraded, crushed margins follow the tears
-    edge = t.smooth(s * 0.0032, 0.0, -cut_split + t.noise(c.np * 800.0) * 0.0008) * split_on * is_skin
+    blood = blood.max(t.smooth(0.0015, 0.0, -cut_split) * split_on * (0.55 + 0.45 * bleed))
+    # abraded, crushed margins (2-4 mm, dry brown-red, patchy)
+    en = t.noise(c.np * 800.0, detail=2.0)
+    edge = t.smooth(s * 0.0035, 0.0, -cut_split + en * 0.0009) * split_on * is_skin
     # patchy abrasion where the striking surface scraped the skin
     scrape = t.smooth(-0.1, 0.35, t.noise(c.np * 210.0, detail=3.0)) * t.smooth(s * 0.013, s * 0.004, c.rho + nl * 0.003)
     edge = edge.max(scrape * t.smooth(0.2, 0.5, D) * is_skin * 0.75)
-    wound = (t.smooth(s * 0.0011, 0.0, -cut_split) * split_on).max(contusion * 0.5).max(frac * 0.4)
+    wound = (t.smooth(s * 0.0009, 0.0, -cut_split) * split_on).max(contusion * 0.5).max(frac * 0.4)
     wound = wound.max(t.smooth(s * 0.006, s * 0.0045, c.rho) * breach)
     tw = c.lc(LAYER_WALL)
-    # each tear closes in a V toward its own mid line (like a small cut); the
-    # crushed centre closes toward the impact point
+    # skin walls run down to the bone (the floor of a blunt split is the
+    # bruised periosteum); the arms close in a V toward their mid line
+    bd = t.inp("Bone Depth")
+    wl = t.mix(tw * t.mix(0.55, 1.0, crush), (bd * 0.95).min(0.012).max(0.002), is_skin)
     center = t.switch(in_arm, c.center, to_line, 'VECTOR')
-    # (a burst-open centre drops straight down instead of closing into a funnel)
-    wall = t.vec(0.0, 0.0, -tw * t.mix(0.55, 1.0, crush)) + center * t.switch(in_arm, 0.75 - 0.6 * crush, 0.95)
+    wall = t.vec(0.0, 0.0, -wl) + center * t.switch(in_arm, 0.75 - 0.6 * crush, 0.9)
     _finish_kind(t, cut, disp=disp, dispn=swell, wall=wall, center=center, wound=wound, edge=edge,
                  blood=blood, bruise=bruise, fracture=frac)
     return t
 
 
+# blisters: Voronoi cells of this size (1/m)
+BLISTER_SCALE = 70.0
+BLISTER_KEEP = 0.8           # cells with a random value above this blister
+
+
 def _build_burn():
-    """Burn: charred shrunken centre, blister ring, peeling epidermis."""
+    """Burn: zones of different depth from a smooth, lobed dose field.
+
+    From the edge inward (research 02 / REALISM_BIBLE row 18): a band of red
+    skin; partial thickness with real blister domes (appearing 30 s-5 min
+    after the burn and filling over hours) and lifted, curled sheets of dead
+    epidermis; full thickness: waxy white / tan leather, sunk ~0.5-1 mm and
+    shrinking, pulling the skin around toward it; a charred core that splits
+    open along real fissures showing red and yellow tissue. The dose is also
+    written as gore_burn, which the skin material turns into the zone colours.
+    """
     t = _kind_tree("GH_Gore_Burn", "Burn fields")
     c = _KindCtx(t)
     s, D = c.s, c.D
     is_skin = c.is_layer(LAYER_SKIN)
     R = s * 0.022
-    # relief heights follow the tissue, not the burn's extent: a large burn is
-    # not deeper or more blistered than a small one
+    hours = t.inp("Age") * t.inp("Age") * 48.0
+    # relief heights follow the tissue, not the burn's extent
     sd = s.min(1.2)
     rho_e = (c.u * c.u + (c.v / c.e) ** 2.0).sqrt()
-    nl = t.noise(c.np * 90.0, detail=3.0)
-    nh = t.noise(c.np * 650.0, detail=2.0)
-    cover = t.smooth(1.0, 0.42, rho_e / R + nl * 0.3 + nh * 0.05)
-    # severity varies in broad patches (charred islands, leathery and raw zones,
-    # blistered margins) instead of concentric rings; small burns (s <= 1)
-    # keep their charred centre
-    sev = t.smooth(-0.55, 0.45, t.noise(c.np * 36.0 + t.vec(c.seed * 7.0, 0.0, 0.0), detail=3.0))
-    patchy = t.smooth(1.0, 1.8, s)
-    b = cover * (1.0 - patchy * (0.55 - 0.6 * sev))
-    char = t.smooth(0.55, 0.95, b)
-    # charred, shrunken crust with fine crackle
-    crust = t.out(t.voronoi(c.np, 700.0, 'DISTANCE_TO_EDGE', 1.0), 'Distance')
-    crackle = t.smooth(0.08, 0.0, crust) * char
-    dn = char * sd * -0.0011 * (0.5 + D) + nh * char * 0.00025 - crackle * 0.00025
-    # blisters in the partial-thickness ring
-    ringb = t.smooth(0.1, 0.26, b) * t.smooth(0.62, 0.42, b)
-    vor = t.voronoi(c.np, 230.0, 'F1', 1.0)
-    vd = t.out(vor, 'Distance')
-    vcol = t.sep(t.vmath('ADD', t.out(vor, 'Color'), (0, 0, 0)))
-    keep = t.smooth(0.42, 0.56, vcol[0])
-    brad = 0.26 + vcol[1] * 0.16
+    # smooth dose with a lobed, irregular boundary (no thresholded noise)
+    ring = t.vec(c.theta.cos() * 1.3, c.theta.sin() * 1.3, c.seed * 7.0)
+    lobes = t.noise(ring, detail=2.0)
+    n2 = t.noise(c.np * 70.0, detail=3.0)
+    rn = rho_e / R * (1.0 + 0.3 * lobes) + 0.1 * n2
+    b = (1.0 - rn).clamp() ** 0.75
+    dose = (b * (0.55 + 0.6 * D)).clamp()
+    partial = t.smooth(0.2, 0.3, dose) * t.smooth(0.56, 0.48, dose)
+    full = t.smooth(0.52, 0.62, dose)
+    char = t.smooth(0.72, 0.86, dose)
+    # full thickness shrinks and sinks; the surrounding skin is pulled toward it
+    sink = -(full * (0.00045 + 0.0004 * D) + char * 0.0003) * sd
+    pull = t.smooth(0.25, 0.7, dose) * 0.07 * sd
+    shrink = t.vec(-c.u * pull, -c.v * pull, 0.0)
+    # blisters: domes of fluid under lifted epidermis, only on partial thickness
+    bv = t.voronoi(c.np, BLISTER_SCALE, 'F1', 1.0)
+    vd = t.out(bv, 'Distance')
+    vcol = t.sep(t.vmath('ADD', t.out(bv, 'Color'), (0, 0, 0)))
+    keep = t.smooth(BLISTER_KEEP, BLISTER_KEEP + 0.04, vcol[0])
+    brad = 0.26 + vcol[1] * 0.2
+    grow = t.smooth(0.008, 0.08, hours) * (0.55 + 0.45 * t.smooth(0.1, 8.0, hours))
     dome = (1.0 - (vd / brad) ** 2.0).max(0.0).sqrt()
-    blister = ringb * keep * dome * sd * 0.0013
-    # peeling epidermis: sloughed patches with curled, lifted rims
-    pm = t.noise(c.np * 150.0 + t.vec(3.1, 1.7, 0.4), detail=2.0)
-    ringp = t.smooth(0.22, 0.45, b) * t.smooth(0.97, 0.75, b)
-    peel = t.smooth(0.10, 0.16, pm) * ringp
-    peel_rim = t.smooth(0.04, 0.10, pm) * t.smooth(0.2, 0.12, pm) * ringp
-    dn = dn + blister + peel_rim * sd * 0.0007 - peel * sd * 0.0003
+    blister = partial * keep * dome * grow * (brad / BLISTER_SCALE) * 0.55 * sd
+    # sloughed epidermis: raw patches with lifted, curled rims
+    pm = t.noise(c.np * 110.0 + t.vec(3.1, 1.7, 0.4), detail=2.0)
+    peel = t.smooth(0.10, 0.16, pm) * partial
+    peel_rim = t.smooth(0.04, 0.10, pm) * t.smooth(0.2, 0.12, pm) * partial
+    dn = sink + blister + peel_rim * sd * 0.0006 - peel * sd * 0.00025
     dn = dn * is_skin
-    burn = (b - crackle * 0.35).max(0.0) * c.lc([1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 1.0, 1.0])
-    burn = burn.max(b * t.smooth(0.55, 0.8, D) * c.lc([0.0, 0.8, 0.6, 0.6, 0.0, 0.0, 0.0, 0.0]))
-    wound = peel * is_skin
-    edge = peel_rim * is_skin
+    # charred skin splits: real fissures 1-2 mm wide
+    fv = t.voronoi(c.np, 140.0, 'DISTANCE_TO_EDGE', 1.0)
+    fe = t.out(fv, 'Distance') / 140.0
+    fw = (0.00045 + 0.0004 * t.noise(c.np * 300.0, detail=1.0)) * t.smooth(0.8, 0.95, dose)
+    cut = t.switch(t.bool('AND', is_skin.gt(0.5), fw.gt(0.00005)), -1.0, fw - fe)
+    burn = dose * c.lc([1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 1.0, 1.0])
+    burn = burn.max(dose * t.smooth(0.55, 0.8, D) * c.lc([0.0, 0.8, 0.6, 0.6, 0.0, 0.0, 0.0, 0.0]))
+    wound = (peel * is_skin).max(t.smooth(0.0012, 0.0, fe - fw) * t.smooth(0.8, 0.95, dose) * is_skin)
+    # (on burns the edge channel carries the blister fluid mask for the shader)
+    edge = t.smooth(0.0, 0.5, dome) * partial * keep * t.smooth(0.004, 0.03, hours) * is_skin
     blood = peel * 0.3 * t.inp("Bleed") * is_skin
-    _finish_kind(t, -1.0, dispn=dn, center=c.center, wound=wound, edge=edge, blood=blood, burn=burn)
+    bd = t.inp("Bone Depth")
+    wall = t.vec(0.0, 0.0, -(bd * 0.6).min(0.0035).max(0.0015))
+    disp = shrink * is_skin
+    _finish_kind(t, cut, disp=disp, dispn=dn, wall=wall, center=(0.0, 0.0, 0.0), wound=wound, edge=edge,
+                 blood=blood, burn=burn)
     return t
 
 
@@ -1186,6 +1239,10 @@ def _tension_region(t, I, N):
     # the two fields point either way along a line: align before blending
     flip = t.switch(horiz.dot(cheek).lt(0.0), 1.0, -1.0)
     tv = t.mix(horiz * flip, cheek, w_cheek)
+    # around the lips the lines run radially (vertical through the vermilion)
+    dm = t.vec(I.x / 0.024, (I.y + 0.092) / 0.02, (I.z + 0.056) / 0.016)
+    w_mouth = t.math('EXPONENT', -(dm.dot(dm)))
+    tv = t.mix(tv, (0.0, 0.0, 1.0), w_mouth)
     tv = (tv - N * tv.dot(N)).normalize()
     scalp = (t.smooth(0.042, 0.066, I.z) + t.smooth(-0.035, 0.0, I.y) * t.smooth(-0.06, -0.02, I.z)).clamp()
     neck = t.smooth(-0.095, -0.12, I.z)
@@ -1291,8 +1348,9 @@ class _Hit:
         tol_in = t.pick(layer, LAYER_TOL_IN) + self.rho * self.rho * 6.25
         tol_out = t.pick(layer, LAYER_TOL_OUT)
         if kind == "burn":
+            # (the face curves away from the hit plane: nose, brow, jaw)
             tol_in = tol_in + 0.012
-            tol_out = tol_out + 0.02
+            tol_out = tol_out + 0.02 + self.rho * 0.6
         return t.smooth(-tol_in - 0.003, -tol_in, self.w) * t.smooth(tol_out + 0.003, tol_out, self.w)
 
     def within(self, kind, reach=False, layer=None):
@@ -1628,7 +1686,8 @@ def _build_teeth():
     t = NodeTree("GH_Gore_Teeth",
                  inputs=(("Geometry", 'NodeSocketGeometry'), ("Blunt", 'NodeSocketGeometry'),
                          ("Count", 'NodeSocketInt', 0), ("Damage", 'NodeSocketFloat', 1.0),
-                         ("Tooth Root", 'NodeSocketFloat', 1.0)),
+                         ("Tooth Root", 'NodeSocketFloat', 1.0), ("Bullet", 'NodeSocketGeometry'),
+                         ("Bullet Count", 'NodeSocketInt', 0)),
                  outputs=(("Geometry", 'NodeSocketGeometry'),),
                  description="Teeth near blunt hits are knocked out or pushed in and tilted")
     isl = t.out(t.node('GeometryNodeInputMeshIsland'), 'Island Index')
@@ -1662,9 +1721,20 @@ def _build_teeth():
     # loosened teeth bleed from the torn gum: blood at the neck of the tooth
     # and a few runs down the crown (a full coat would hide the enamel)
     toward_root = (p - c).dot(root)
-    runs = t.noise(t.vec(p.x * 520.0, p.y * 520.0, p.z * 55.0), detail=2.0, signed=False)
-    tb = t.smooth(-0.0022, 0.0006, toward_root).max(t.smooth(0.52, 0.62, runs))
+    # a film collecting at the gum line and between the teeth, thinning toward the edge
+    tb = t.smooth(-0.0035, 0.0008, toward_root) * (0.75 + 0.25 * t.noise(p * 600.0, detail=2.0, signed=False))
     gg = t.store(gg, "g_tb", t.attr("g_tb").max(t.smooth(0.0, 0.3, f) * tb))
+    g = _end_repeat(t, rout, [("Geometry", gg)])["Geometry"]
+    # a bullet through the mouth shatters the teeth in its path
+    rin, rout, cur = _repeat(t, t.inp("Bullet Count"), [("Geometry", 'GEOMETRY', g)])
+    i = F(t, rin.outputs['Iteration'])
+    hb = _Hit(t, t.inp("Bullet"), i, t.inp("Damage"), P=c)
+    in_path = t.bool('AND', hb.rho.lt(hb.s * 0.0085), t.bool('AND', hb.w.gt(-0.03), hb.w.lt(0.008)))
+    shot = t.bool('AND', in_path, hb.D.gt(0.3))
+    gg = t.store(cur["Geometry"], "g_kill", t.attr("g_kill").max(t.switch(shot, 0.0, 1.0)))
+    # the neighbours of a shattered tooth are loosened and bloodied
+    near = t.smooth(hb.s * 0.012, hb.s * 0.005, hb.rho) * hb.w.gt(-0.03) * hb.D.gt(0.3)
+    gg = t.store(gg, "g_tb", t.attr("g_tb").max(near * t.smooth(-0.0035, 0.0008, (p - c).dot(root))))
     g = _end_repeat(t, rout, [("Geometry", gg)])["Geometry"]
     g = t.out(t.node('GeometryNodeDeleteGeometry', {'Geometry': g, 'Selection': t.attr("g_kill").gt(0.5)},
                      domain='POINT'))
@@ -1906,7 +1976,9 @@ def _build_cut():
     for k in range(1, WALL_STEPS + 1):
         cum = WALL_PROFILE[k - 1]
         # torn tissue: every ring down the wall is a little more ragged
-        jit = t.noise(t.pos() * 320.0 + t.vec(k * 0.37, 0.0, 0.0), detail=2.0, color=True) * (0.0004 * k / WALL_STEPS)
+        # (two scales, growing down the wall: shredded tissue, not a pleated curtain)
+        jit = t.noise(t.pos() * 320.0 + t.vec(k * 0.37, 0.0, 0.0), detail=2.0, color=True) * (0.0006 * k / WALL_STEPS) \
+            + t.noise(t.pos() * 1100.0 + t.vec(0.0, k * 0.53, 0.0), detail=1.0, color=True) * (0.0003 * k / WALL_STEPS)
         ex = t.node('GeometryNodeExtrudeMesh', {'Mesh': g, 'Selection': sel_e,
                                                 'Offset': dn * (1.0 / WALL_STEPS) + lat * (cum - prev) + jit},
                     mode='EDGES')
@@ -2037,7 +2109,8 @@ def build_gore_node_group():
     # teeth are knocked out / tilted before anything else
     is_teeth = t.compare('EQUAL', layer, LAYER_TEETH, 'INT')
     tn = t.group(teeth_g, {"Geometry": geo_in, "Blunt": hits["blunt"][0], "Count": hits["blunt"][1],
-                           "Damage": damage, "Tooth Root": t.inp("Tooth Root")})
+                           "Damage": damage, "Tooth Root": t.inp("Tooth Root"),
+                           "Bullet": hits["bullet"][0], "Bullet Count": hits["bullet"][1]})
     g = t.switch(is_teeth, geo_in, t.out(tn), 'GEOMETRY')
     # 1. refine where wounds need resolution
     g = t.store(g, "g_n", t.normal(), 'FLOAT_VECTOR')
@@ -2105,52 +2178,99 @@ def ensure_hit_collections():
 
 
 # outer surfaces a hit can land on (a shot into the eye or the open mouth)
-SURFACE_OBJECTS = ("GH_Skin", "GH_Eye_L", "GH_Eye_R", "GH_Teeth_Upper", "GH_Teeth_Lower", "GH_Gums", "GH_Tongue")
+SURFACE_OBJECTS = ("GH_Skin", "GH_Eye_L", "GH_Eye_R", "GH_Teeth_Upper", "GH_Teeth_Lower", "GH_Gums",
+                   "GH_Tongue", "GH_MouthCavity")
+_BVH_CACHE = {}
 
 
 def _surface_bvh():
-    """World-space BVH of the outer surfaces, evaluated *without* the gore
-    modifier (so existing holes do not swallow the ray)."""
+    """World-space BVH of the outer surfaces, built from the base meshes.
+
+    GH_Gore is the only modifier on these objects, so the undeformed mesh
+    data is the surface the wounds are placed on (existing holes never
+    swallow a ray). Cached per mesh / vertex count / transform, so placing
+    many hits costs one BVH build."""
+    import numpy as np
     from mathutils.bvhtree import BVHTree
     obs = [bpy.data.objects.get(n) for n in SURFACE_OBJECTS]
     obs = [o for o in obs if o is not None and o.type == 'MESH']
     if not obs:
         return None
-    mods = [o.modifiers.get(MOD_NAME) for o in obs]
-    states = [m.show_viewport if m else None for m in mods]
+    key = tuple((o.data.as_pointer(), len(o.data.vertices), tuple(round(x, 6) for row in o.matrix_world for x in row))
+                for o in obs)
+    if _BVH_CACHE.get("key") == key:
+        return _BVH_CACHE["bvh"]
     verts, polys = [], []
-    try:
-        for m in mods:
-            if m:
-                m.show_viewport = False
-        dg = bpy.context.evaluated_depsgraph_get()
-        dg.update()
-        for o in obs:
-            ev = o.evaluated_get(dg)
-            me = ev.to_mesh()
-            mw = o.matrix_world
-            base = len(verts)
-            verts.extend(mw @ v.co for v in me.vertices)
-            polys.extend([base + i for i in p.vertices] for p in me.polygons)
-            ev.to_mesh_clear()
-    finally:
-        for m, s in zip(mods, states):
-            if m:
-                m.show_viewport = s
-    return BVHTree.FromPolygons(verts, polys)
+    for o in obs:
+        me = o.data
+        co = np.empty(len(me.vertices) * 3)
+        me.vertices.foreach_get("co", co)
+        mw = np.array(o.matrix_world)
+        co = co.reshape(-1, 3) @ mw[:3, :3].T + mw[:3, 3]
+        base = len(verts)
+        verts.extend(map(Vector, co))
+        polys.extend([base + i for i in p.vertices] for p in me.polygons)
+    bvh = BVHTree.FromPolygons(verts, polys)
+    _BVH_CACHE.clear()
+    _BVH_CACHE.update(key=key, bvh=bvh)
+    return bvh
 
 
-def add_hit(kind, location, direction=None, size=1.0, elongation=1.0, depth=0.6, name=None, roll=0.0):
-    """Place a wound: an empty in GH_Hits_<Kind>, snapped onto the skin surface.
+def _first_front_hit(bvh, origin, d, length):
+    """First surface along the ray that faces the ray (skips inside-facing hits)."""
+    o = origin.copy()
+    travelled = 0.0
+    for _ in range(8):
+        co, nrm, _i, dist = bvh.ray_cast(o, d, length - travelled)
+        if co is None:
+            return None
+        travelled += dist
+        if nrm.dot(d) < 0.0:
+            return co, nrm, travelled
+        o = co + d * 1e-5
+    return None
+
+
+def _snap(bvh, loc, d, radius=0.0045):
+    """Impact point of a projectile of `radius` travelling along d toward loc.
+
+    Casts the axis and a ring of rays offset by the radius from well outside
+    the head; the nearest surface any of them meets (facing the shot) is the
+    impact, projected back onto the axis. So a shot into the open mouth hits
+    the lips and teeth instead of passing through the 7 mm gap."""
+    start = loc - d * 0.25
+    side = d.orthogonal().normalized()
+    up = d.cross(side).normalized()
+    best = None
+    offsets = [Vector((0.0, 0.0, 0.0))] + [(side * math.cos(a) + up * math.sin(a)) * radius
+                                            for a in (i * TAU / 6.0 for i in range(6))]
+    for k, off in enumerate(offsets):
+        h = _first_front_hit(bvh, start + off, d, 0.5)
+        if h is None:
+            continue
+        dist = h[2] - (0.0 if k == 0 else 0.0)
+        if best is None or dist < best[2] - 1e-6:
+            best = (h[0] - off, h[1], dist, k)
+    return best
+
+
+def add_hit(kind, location, direction=None, size=1.0, elongation=1.0, depth=0.6, name=None, roll=0.0,
+            muzzle_distance=None):
+    """Place a wound: an empty in GH_Hits_<Kind>, snapped onto the outer surface.
 
     kind: bullet | exit | slash | blunt | burn.
     location: impact point (anywhere near the surface).
     direction: direction the damage travels into the head. None = straight in
         along the surface normal. For exits pass the bullet's travel direction
         or the inward direction; it is flipped so local -Z always points into
-        the head.
+        the head. With a direction the hit lands on the first surface facing
+        the shot along that line (a ring of rays the width of a bullet, so a
+        shot into the open mouth hits lips and teeth).
     size, elongation, depth: stored as scale x, y, z (see CONTRACT.md).
     roll: extra rotation (radians) around the hit axis; turns a slash.
+    muzzle_distance: bullets only, metres from the muzzle to the skin (stored
+        as scale.y; default 1 m = no soot or stippling; < 0.3 m soot,
+        < 0.9 m stippling, ~0 contact).
     The empty's local X is horizontal by default (slash direction).
     """
     kind = kind.lower()
@@ -2163,15 +2283,18 @@ def add_hit(kind, location, direction=None, size=1.0, elongation=1.0, depth=0.6,
     if bvh is not None:
         hit = None
         if d is not None:
-            best = None
-            for sign in (1.0, -1.0):  # surface ahead of or behind the given point
-                co, nrm, _i, dist = bvh.ray_cast(loc, d * sign, 0.3)
-                if co is not None and (best is None or dist < best[3]):
-                    best = (co, nrm, _i, dist)
-            hit = best
+            # exits are given along the bullet's travel: find the surface on
+            # the way out as well as on the way in, keep the nearer one
+            cands = [c for c in (_snap(bvh, loc, d), _snap(bvh, loc, -d)) if c is not None]
+            if cands:
+                cands.sort(key=lambda c: (c[0] - loc).length)
+                co, nrm, _dist, _k = cands[0]
+                hit = (co, nrm)
         if hit is None:
-            hit = bvh.find_nearest(loc)
-        if hit is not None and hit[0] is not None:
+            co, nrm, _i, _dist = bvh.find_nearest(loc)
+            if co is not None:
+                hit = (co, nrm)
+        if hit is not None:
             loc = hit[0].copy()
             n_out = hit[1].normalized()
             if d is None:
@@ -2184,6 +2307,8 @@ def add_hit(kind, location, direction=None, size=1.0, elongation=1.0, depth=0.6,
     if roll:
         from mathutils import Quaternion
         quat = quat @ Quaternion((0.0, 0.0, 1.0), roll)
+    if kind == "bullet":
+        elongation = max(0.005, muzzle_distance if muzzle_distance is not None else 1.0)
     empty = bpy.data.objects.new(name or f"GH_Hit_{kind.capitalize()}", None)
     empty.empty_display_type = 'ARROWS' if kind == "slash" else 'SINGLE_ARROW'
     empty.empty_display_size = 0.015
@@ -2192,6 +2317,11 @@ def add_hit(kind, location, direction=None, size=1.0, elongation=1.0, depth=0.6,
     empty.scale = (size, elongation, depth)
     cols[kind].objects.link(empty)
     return empty
+
+
+def add_hits(hits):
+    """Place several hits at once: [(kind, location, {add_hit keyword args}), ...]. Returns the empties."""
+    return [add_hit(kind, loc, **dict(kw or {})) for kind, loc, kw in hits]
 
 
 def clear_hits():
@@ -2208,7 +2338,8 @@ def _standin_material(name, color, rough=0.5):
     mat = bpy.data.materials.get(name)
     if mat is None:
         mat = bpy.data.materials.new(name)
-        mat.use_nodes = True
+        if mat.node_tree is None:        # (5.x materials always have one)
+            mat.use_nodes = True
         bsdf = mat.node_tree.nodes.get("Principled BSDF")
         if bsdf is not None:
             bsdf.inputs["Base Color"].default_value = (*color, 1.0)
@@ -2435,7 +2566,8 @@ class _Shader:
     """Minimal helper for the preview shaders (only used without materials.py)."""
 
     def __init__(self, mat):
-        mat.use_nodes = True
+        if mat.node_tree is None:
+            mat.use_nodes = True
         self.nt = mat.node_tree
         self.nt.nodes.clear()
         self.out = self.nt.nodes.new('ShaderNodeOutputMaterial')
@@ -2603,19 +2735,22 @@ def _setup_materials(objs):
 
 
 def _load_anatomy():
-    """Real anatomy if anatomy.py works, otherwise the placeholder layers."""
+    """Real anatomy if anatomy.py is present, otherwise the placeholder layers.
+
+    Only a missing anatomy module falls back to the placeholders; an error
+    inside anatomy.build_anatomy() is a real regression and is raised."""
     try:
         import anatomy
-        objs = anatomy.build_anatomy()
-        if objs and objs.get("GH_Skin") is not None:
-            print("[gore] using anatomy.py")
-            return objs, True
-    except Exception as exc:  # noqa: BLE001  (anatomy is built in parallel)
-        print(f"[gore] anatomy.py not usable ({exc!r}); using placeholder layers")
-    for ob in list(bpy.data.collections.get("GoreHead").objects) if bpy.data.collections.get("GoreHead") else []:
-        if ob.name != ghc.CONTROLS_NAME:
-            bpy.data.objects.remove(ob)
-    return _placeholder_anatomy(), False
+    except ImportError:
+        import traceback
+        traceback.print_exc()
+        print("[gore] anatomy.py not importable; using placeholder layers")
+        return _placeholder_anatomy(), False
+    objs = anatomy.build_anatomy()
+    if objs and objs.get("GH_Skin") is not None:
+        print("[gore] using anatomy.py")
+        return objs, True
+    raise RuntimeError("anatomy.build_anatomy() returned no GH_Skin")
 
 
 def _closeup(name, hit, dist=0.12, lens=85.0, offset=(0.0, 0.0, 0.0), up_tilt=0.25):
@@ -2775,7 +2910,9 @@ def verify_gore(objs=None):
     for a in ATTRS:
         vals = [0.0] * len(me.vertices)
         me.attributes[a].data.foreach_get("value", vals)
-        stats[a] = sum(1 for v in vals if v > 0.5)
+        # (a bruise at the default wound age of ~2 h is still light)
+        lim = 0.2 if a == "gore_bruise" else 0.5
+        stats[a] = sum(1 for v in vals if v > lim)
     skin.evaluated_get(dg).to_mesh_clear()
     check("skin attributes non-trivial", all(stats[a] > 0 for a in ATTRS if a not in ("gore_fracture", "gore_soot")),
           ", ".join(f"{k[5:]}>{0.5}:{v}" for k, v in stats.items()))

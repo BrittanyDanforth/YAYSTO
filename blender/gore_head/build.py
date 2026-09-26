@@ -27,6 +27,10 @@ Usage (bpy module or Blender):
 --res N         square render resolution (default 640)
 --only A,B      render only these items: preset names, 'cutaway', 'closeup_exit'
 --render-dir D  where the PNGs go (default: renders/)
+--force         render and save even when the verification fails (exit code 1 then)
+
+The saved file asks Cycles for the GPU; Blender uses the CPU when no GPU
+compute device is set up in Preferences > System.
 """
 import math
 import os
@@ -97,7 +101,8 @@ PRESETS = {
             # cranium: burst scalp over a depressed skull fracture
             ("blunt", (-0.052, -0.035, 0.092), dict(size=1.2, depth=0.95, name="GH_Hit_Blunt_Cranium")),
         ],
-        controls=dict(bleed=0.75, bruising=0.8, swelling=0.4),
+        # ~3 h after the blows: swollen, bruised
+        controls=dict(bleed=0.75, bruising=0.8, swelling=0.6, wound_age=0.25),
     ),
     "burn": dict(
         hits=[
@@ -107,7 +112,8 @@ PRESETS = {
             ("burn", (-0.040, -0.072, -0.060), dict(size=1.9, elongation=1.1, depth=0.6, roll=0.4,
                                                     name="GH_Hit_Burn_Jaw")),
         ],
-        controls=dict(bleed=0.5),
+        # ~1 h after the burn: blisters have formed
+        controls=dict(bleed=0.5, wound_age=0.15),
     ),
     "carnage": dict(
         hits=[
@@ -143,7 +149,7 @@ PRESET_NAMES = tuple(PRESETS)
 
 # control values every preset starts from (then its own overrides)
 BASE_CONTROLS = dict(damage=1.0, bleed=0.7, drip_time=1.0, wetness=0.8, blood_age=0.0,
-                     bruising=0.6, swelling=0.5, skin_tone=0.25, pallor=0.0)
+                     bruising=0.6, swelling=0.5, wound_age=0.2, skin_tone=0.25, pallor=0.0)
 
 
 def _aim(location, target):
@@ -241,12 +247,25 @@ def remove_closeup_light():
         bpy.data.lights.remove(data)
 
 
+ANIM_ACTION = "GH_ControlsAnim"
+
+
 def animate_controls(frames=ANIM_FRAMES):
-    """Keyframe GH_Controls: damage 0 -> 1 over 1-12, drip_time 0 -> 1 over 12-120."""
+    """Keyframe GH_Controls: damage 0 -> 1 over 1-12, drip_time 0 -> 1 over 12-120.
+
+    Always writes into one action named GH_ControlsAnim (an old one is
+    replaced), so the Dope Sheet shows a clean name."""
     scene = bpy.context.scene
     ctrl = ghc.ensure_controls()
     if ctrl.animation_data is not None:
         ctrl.animation_data_clear()
+    old = bpy.data.actions.get(ANIM_ACTION)
+    if old is not None:
+        bpy.data.actions.remove(old)
+    for act in [a for a in bpy.data.actions if a.name.startswith(ghc.CONTROLS_NAME) and a.users == 0]:
+        bpy.data.actions.remove(act)
+    ctrl.animation_data_create()
+    ctrl.animation_data.action = bpy.data.actions.new(ANIM_ACTION)
     for prop, keys in (("damage", DAMAGE_KEYS), ("drip_time", DRIP_KEYS)):
         for frame, value in keys:
             ctrl[prop] = value
@@ -391,7 +410,8 @@ def _lash_strands(bvh, rng, sign, upper=True):
 def _hair_material(name):
     """GH_Hair: eyebrows, dark brown Principled Hair BSDF with lighter tips."""
     mat = bpy.data.materials.get(name) or bpy.data.materials.new(name)
-    mat.use_nodes = True
+    if mat.node_tree is None:        # (5.x materials always have one)
+        mat.use_nodes = True
     nt = mat.node_tree
     nt.nodes.clear()
     out = nt.nodes.new('ShaderNodeOutputMaterial')
@@ -418,7 +438,8 @@ def _lash_material(name):
     model's highlights and transmission turn the sub-pixel lashes into a
     pale fringe, while real lashes read as a dark line along the lid."""
     mat = bpy.data.materials.get(name) or bpy.data.materials.new(name)
-    mat.use_nodes = True
+    if mat.node_tree is None:        # (5.x materials always have one)
+        mat.use_nodes = True
     nt = mat.node_tree
     nt.nodes.clear()
     out = nt.nodes.new('ShaderNodeOutputMaterial')
@@ -636,6 +657,11 @@ def verify(objs):
           ctrl["damage"] > 0.99 and 0.2 < ctrl["drip_time"] < 0.8
           and _signature(layers["GH_Skin"])[0] > intact["GH_Skin"][0],
           f"damage {ctrl['damage']:.2f}, drip_time {ctrl['drip_time']:.2f}")
+    # the gore module's own self-test (moving / rotating / scaling a hit,
+    # bleed 0, drip_time) on the real anatomy
+    apply_preset("intact")
+    gore_ok = gore.verify_gore(objs)
+    check("gore.verify_gore() self-test", gore_ok)
     lines.append("RESULT: " + ("all checks passed" if ok else "SOME CHECKS FAILED"))
     print("[build] verification\n" + "\n".join(lines))
     return ok
@@ -772,8 +798,10 @@ def save_blend(path, preset="gunshot"):
         closeup_camera(hit)
     scene.camera = bpy.data.objects["GH_Cam_front"]
     scene.frame_set(ANIM_FRAMES[1])
-    # compact, reasonably fast defaults for whoever opens the file
+    # compact, reasonably fast defaults for whoever opens the file; GPU when
+    # the user's Blender has a compute device set up (Cycles falls back to CPU)
     ghc.configure_render(40, (1080, 1080))
+    scene.cycles.device = 'GPU'
     scene.view_settings.exposure = materials.STAGE_EXPOSURE
     path = os.path.abspath(path)
     bpy.ops.wm.save_as_mainfile(filepath=path, compress=True, relative_remap=True)
@@ -811,6 +839,7 @@ def parse_args(argv=None):
     p.add_argument("--res", type=int, default=640)
     p.add_argument("--only", default=None, help="comma list: preset names, cutaway, closeup_exit")
     p.add_argument("--render-dir", default=ghc.RENDER_DIR)
+    p.add_argument("--force", action="store_true", help="render and save even if verification fails")
     return p.parse_args(argv)
 
 
@@ -826,7 +855,10 @@ def main():
         apply_preset(name)
         evals[name] = evaluate_all(objs)
     print("[build] evaluation (all layers): " + ", ".join(f"{k} {v:.2f} s" for k, v in evals.items()))
-    verify(objs)
+    ok = verify(objs)
+    if not ok and not args.force:
+        print("[build] verification FAILED: not rendering or saving (use --force to save anyway)")
+        sys.exit(1)
     times = {}
     if not args.no_render:
         presets = (args.preset,) if args.preset else PRESET_NAMES
@@ -842,6 +874,8 @@ def main():
         print(f"  renders {sum(times.values()):.0f} s: " + ", ".join(f"{k} {v:.0f}" for k, v in times.items()))
     print(f"  saved {path} ({size:.1f} MB)")
     print(f"  total {time.time() - t_start:.0f} s")
+    if not ok:
+        sys.exit(1)
 
 
 if __name__ == "__main__":

@@ -847,6 +847,10 @@ def _skin_material(g, name="GH_Skin"):
     h_tis = t.mix(f_fat, t.noise(p, 900.0) * 0.6, fat["Height"])
     h_tis = t.mix(f_mus, h_tis, mus["Height"])
     h_tis = t.mix(f_bone, h_tis, bone["Height"])
+    # burns: exposed tissue is raw, weeping dermis (mottled red, pin-point bleeding)
+    raw_col = t.noise(p, 300.0, 3.0, 0.6).ramp([(0.25, (0.24, 0.025, 0.024)), (0.5, (0.40, 0.075, 0.062)),
+                                                (0.72, (0.48, 0.15, 0.11)), (0.9, (0.50, 0.28, 0.22))])
+    tis = t.mix(burn.smooth(0.08, 0.18) * (1.0 - dn.smooth(0.3, 0.5)), tis, raw_col)
     wm = (wound + (t.noise(p, 400.0) - 0.5) * 0.3).smooth(0.35, 0.65)
     col = t.mix(wm, skin_col, tis)
     rgh = t.mix(wm, rough, t.mix(wet, 0.45, 0.14))
@@ -854,7 +858,7 @@ def _skin_material(g, name="GH_Skin"):
 
     # ---- abraded / torn rim ----------------------------------------------
     en = t.noise(p, 220.0, 2.0)
-    em = (edge * (0.55 + 0.9 * en)).clamp().smooth(0.15, 0.6) * (1.0 - wm)
+    em = (edge * (0.55 + 0.9 * en)).clamp().smooth(0.15, 0.6) * (1.0 - wm) * (1.0 - burn.smooth(0.08, 0.18))
     scr = t.noise(p * (1.0, 1.0, 0.18), 1400.0, 3.0)         # drag scratches
     ab = (t.noise(p, 900.0, 4.0) * 0.7 + scr * 0.3).ramp(
         [(0.25, (0.36, 0.07, 0.05)), (0.5, (0.19, 0.035, 0.025)), (0.75, (0.08, 0.02, 0.014))])
@@ -865,8 +869,17 @@ def _skin_material(g, name="GH_Skin"):
 
     # ---- bruise (under the skin: multiplies the colour) ---------------------
     bz = (bruise * (0.5 + 1.0 * t.noise(p, 60.0, 4.0, 0.65))).clamp()
-    tint = bz.ramp([(0.0, (1.0, 1.0, 1.0)), (0.1, (0.96, 0.95, 0.76)), (0.25, (0.84, 0.74, 0.56)),
-                    (0.45, (0.64, 0.40, 0.45)), (0.7, (0.42, 0.24, 0.42)), (1.0, (0.24, 0.13, 0.30))])
+    # colour follows the wound age (hours = 48 * wound_age^2): red at first,
+    # purple-blue after some hours, green-yellow margins only after ~18 h
+    age = t.control("wound_age")
+    ageh = age * age * 48.0
+    young = bz.ramp([(0.0, (1.0, 1.0, 1.0)), (0.25, (0.93, 0.70, 0.70)), (0.55, (0.74, 0.44, 0.48)),
+                     (1.0, (0.46, 0.22, 0.34))])
+    mid = bz.ramp([(0.0, (1.0, 1.0, 1.0)), (0.2, (0.88, 0.74, 0.76)), (0.45, (0.64, 0.40, 0.47)),
+                   (0.7, (0.42, 0.24, 0.42)), (1.0, (0.24, 0.13, 0.30))])
+    tint = t.mix(ageh.smooth(0.5, 4.0), young, mid)
+    old_edge = ageh.smooth(18.0, 40.0) * (1.0 - bz.smooth(0.2, 0.55)) * bz.smooth(0.0, 0.08)
+    tint = t.mix(old_edge, tint, (0.86, 0.84, 0.58))
     col = col * t.mix(wm, tint, (1.0, 1.0, 1.0))
     ptd, ptc, _ = t.voronoi(p, 1100.0)
     pete = (1.0 - ptd.smooth(0.05, 0.18)) * t.sep(ptc)[0].smooth(0.55, 0.6) * bz.smooth(0.35, 0.8)
@@ -876,28 +889,33 @@ def _skin_material(g, name="GH_Skin"):
     # ---- burn: erythema -> weeping dermis + blisters -> waxy leather -> char ---
     bno = t.noise(p, 90.0, 3.0, 0.6)
     bnf = t.noise(p, 420.0, 2.0, 0.6)
-    jit = ((bno - 0.5) * 0.75 + (bnf - 0.5) * 0.3) * burn.smooth(0.0, 0.3) * (1.0 - burn.smooth(0.92, 1.0) * 0.5)
+    # (the dose field from the gore system is already smooth with lobed edges;
+    # only a little noise here, or the zones break up into confetti)
+    jit = ((bno - 0.5) * 0.22 + (bnf - 0.5) * 0.08) * burn.smooth(0.0, 0.3) * (1.0 - burn.smooth(0.92, 1.0) * 0.5)
     bn = (burn + jit).clamp()
     ery = bn.smooth(0.02, 0.22) * (0.6 + 0.4 * bnf)
     raw = bn.smooth(0.28, 0.42)
     leather = bn.smooth(0.55, 0.70)
     char = bn.smooth(0.70, 0.86)
     col = t.mix(ery, col, col * (1.10, 0.50, 0.46))
-    # weeping dermis: mottled pink-red, pin-point bleeding, pale coagulated patches
-    raw_col = t.noise(p, 500.0, 3.0, 0.6).ramp([(0.25, (0.22, 0.022, 0.022)), (0.5, (0.40, 0.075, 0.062)),
-                                                (0.72, (0.48, 0.16, 0.12)), (0.9, (0.50, 0.31, 0.25))])
-    col = t.mix(raw, col, raw_col)
-    # blisters: domes of lifted, yellowish translucent epidermis
-    bd, bcol, _ = t.voronoi(p, 190.0, 'F1')
-    blister = (1.0 - bd.smooth(0.0, 0.42)) * t.sep(bcol)[0].smooth(0.5, 0.58)
-    blister = blister * bn.smooth(0.16, 0.26) * (1.0 - bn.smooth(0.44, 0.54))
-    bm = blister.smooth(0.02, 0.25)
-    col = t.mix(bm * 0.7, col, t.mix(0.5, col, (0.52, 0.43, 0.30)))
+    # partial thickness: moist, deep pink-red skin (the epidermis still on);
+    # raw weeping dermis only where the gore system sloughed it (gore_wound)
+    moist = t.noise(p, 110.0, 3.0, 0.55).ramp([(0.3, (0.40, 0.11, 0.095)), (0.6, (0.50, 0.19, 0.155)),
+                                              (0.85, (0.56, 0.28, 0.22))])
+    col = t.mix(raw * 0.9, col, moist)
+    # blisters are real domes in the geometry; on a burn the gore system writes
+    # their fluid-filled area into gore_edge (see gore._build_burn)
+    on_burn = burn.smooth(0.08, 0.18)
+    blister = edge * on_burn
+    bm = blister.smooth(0.05, 0.6)
+    # tense, translucent yellowish fluid under a thin grey-white roof
+    col = t.mix(bm * 0.75, col, t.mix(0.55, col * (1.05, 0.72, 0.62), (0.55, 0.42, 0.25)))
     # sheets of dead epidermis peeling off: greyed skin colour, dark curled edges
-    pe = t.noise(p, 150.0, 3.0, 0.6, distortion=0.4)
+    # (a few large sheets, not confetti)
+    pe = t.noise(p, 55.0, 3.0, 0.6, distortion=0.4)
     band = bn.smooth(0.26, 0.36) * (1.0 - bn.smooth(0.58, 0.68))
-    peel = pe.smooth(0.55, 0.585) * band
-    peel_edge = (1.0 - (pe - 0.567).abs().smooth(0.0, 0.012)) * band
+    peel = pe.smooth(0.66, 0.69) * band
+    peel_edge = (1.0 - (pe - 0.675).abs().smooth(0.0, 0.01)) * band
     lum_s = t.luminance(skin_col)
     peel_col = t.mix(0.55, skin_col, t.vec(lum_s, lum_s, lum_s) * (1.05, 0.97, 0.86))
     col = t.mix(peel * 0.9, col, peel_col * (0.85 + 0.3 * pe.smooth(0.6, 0.75)))
@@ -926,7 +944,7 @@ def _skin_material(g, name="GH_Skin"):
     rgh = t.mix(leather, rgh, 0.38)
     rgh = t.mix(char, rgh, 0.35 + cn.smooth(0.35, 0.7) * 0.55)       # glossy tarry spots
     height = t.mix(raw, height, height * 0.3)
-    height = height + blister.smooth(0.0, 0.6) * 5.0 + peel * 1.5 - peel_edge * 0.5
+    height = height + peel * 1.5 - peel_edge * 0.5
     height = t.mix(char, height, bno * 2.0 + bnf * 1.2 + cn * 1.2 - crack * 3.0 - fissure * 0.8)
 
     # ---- blood on top -----------------------------------------------------
@@ -1006,6 +1024,8 @@ def _fat_material(g):
     col = t.mix(dm, f["Color"], dermis)
     # deep in a cut: muscle (dark red, blood-soaked)
     fm = dj.smooth(0.58, 0.68)
+    # lips have almost no fat: under the vermilion lies the orbicularis muscle
+    fm = fm.max(t.attr("gh_lip").smooth(0.2, 0.6) * dj.smooth(0.1, 0.18))
     col = t.mix(fm, col, mus["Color"] * (0.8, 0.7, 0.7))
     # blood between the fat lobules
     sept = 1.0 - f["Height"].smooth(0.1, 0.5)
@@ -1018,7 +1038,7 @@ def _fat_material(g):
     bsdf = t.principled({
         'Base Color': bl["Color"], 'Roughness': bl["Roughness"], 'IOR': 1.45,
         'Subsurface Weight': 0.6 * bl["SSS"], 'Subsurface Radius': (1.0, 0.6, 0.3),
-        'Subsurface Scale': 0.0015, 'Coat Weight': (f["Coat"] + bl["Coat"]).clamp(),
+        'Subsurface Scale': 0.0015, 'Coat Weight': ((f["Coat"] + bl["Coat"]) * 0.6).clamp(),
         'Coat Roughness': t.mix(bl["Mask"], 0.1, bl["Coat Roughness"]), 'Coat Tint': bl["Coat Tint"],
         'Normal': t.bump(h, 0.00025)})
     t.output(bsdf)
@@ -1265,7 +1285,12 @@ def _teeth_material(g):
     ao = t.o(t.node('ShaderNodeAmbientOcclusion', {'Distance': 0.0012}, only_local=True, samples=8), 'AO')
     col = t.mix((1.0 - ao) * 0.7, col, col * (0.62, 0.50, 0.35))
     peri = t.noise(p * (0.1, 0.1, 1.0), 2200.0, 2.0)          # growth lines around the crown
-    bl = _blood_layer(t, g, col, t.mix(wet, 0.3, 0.12), t.attr("gore_blood"), p)
+    # blood on teeth is a smeared film that collects at the gum line and in
+    # the gaps between the teeth; skip the film's fine-droplet fringe (on
+    # enamel those droplets read as decay)
+    tb = (t.attr("gore_blood") * (0.45 + 0.75 * h.smooth(0.35, 1.0))).clamp()
+    tb = tb.smooth(0.04, 0.3) * 0.55 + tb * 0.45
+    bl = _blood_layer(t, g, col, t.mix(wet, 0.3, 0.12), tb, p)
     nrm = t.bump(t.mix(bl["Height Mask"], peri * 0.3 + craze, bl["Height"]), 0.00004)
     bsdf = t.principled({
         'Base Color': bl["Color"], 'Roughness': bl["Roughness"], 'IOR': 1.62, 'Specular IOR Level': 0.6,
