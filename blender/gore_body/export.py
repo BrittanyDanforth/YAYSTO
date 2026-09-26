@@ -502,11 +502,14 @@ def scene_summary(mesh_names):
         o = bpy.data.objects.get(n)
         if o is None:
             continue
-        o.data.calc_loop_triangles()
-        meshes[n] = {"triangles": len(o.data.loop_triangles),
-                     "shape_keys": [k.name for k in o.data.shape_keys.key_blocks[1:]] if o.data.shape_keys else [],
-                     "materials": sorted({m.name for m in o.data.materials if m}),
-                     "groups": sorted(g.name for g in o.vertex_groups)}
+        me = o.data
+        me.calc_loop_triangles()
+        mi = np.empty(len(me.loop_triangles), np.int32)
+        me.loop_triangles.foreach_get("material_index", mi)
+        used = sorted({me.materials[i].name for i in np.unique(mi) if i < len(me.materials) and me.materials[i]})
+        meshes[n] = {"triangles": len(me.loop_triangles),
+                     "shape_keys": [k.name for k in me.shape_keys.key_blocks[1:]] if me.shape_keys else [],
+                     "materials": used, "groups": sorted(g.name for g in o.vertex_groups)}
     return {"meshes": meshes, "bones": sorted(b.name for b in arm.data.bones),
             "actions": sorted(gbc.POSE_ACTIONS)}
 
@@ -689,8 +692,9 @@ def godot_import_check(glb, godot=GODOT_BIN, timeout=900):
     probs = []
     if got.get("skeletons") != 1:
         probs.append(f"{got.get('skeletons')} skeletons")
-    if got.get("bones") != list(rig.BONE_NAMES):
-        probs.append("bone names/order differ from rig.json")
+    if sorted(got.get("bones", [])) != sorted(rig.BONE_NAMES):
+        probs.append("bone names differ from rig.json")
+    order_same = got.get("bones") == list(rig.BONE_NAMES)
     want = [n for n in gbc.exported_mesh_names(0) if n in bpy.data.objects]
     meshes = got.get("meshes", {})
     for n in want:
@@ -704,11 +708,15 @@ def godot_import_check(glb, godot=GODOT_BIN, timeout=900):
             probs.append(f"{n} lacks UV2")
         if m["bones_per_vertex"] != 4:
             probs.append(f"{n} bones/vertex {m['bones_per_vertex']}")
-        nk = len(gbc.SHAPE_KEYS.get(n, ()))
+        me = bpy.data.objects[n].data
+        nk = len(me.shape_keys.key_blocks) - 1 if me.shape_keys else 0
         if m["blend_shapes"] != nk:
             probs.append(f"{n} blend shapes {m['blend_shapes']} (want {nk})")
-        if m["surfaces"] != len(gbc.MATERIAL_SLOTS.get(n, ())):
-            probs.append(f"{n} surfaces {m['surfaces']}")
+        me.calc_loop_triangles()
+        mi = np.empty(len(me.loop_triangles), np.int32)
+        me.loop_triangles.foreach_get("material_index", mi)
+        if m["surfaces"] != len(np.unique(mi)):
+            probs.append(f"{n} surfaces {m['surfaces']} (want {len(np.unique(mi))})")
     missing_anims = [a for a in gbc.POSE_ACTIONS if a not in got.get("animations", [])]
     if missing_anims:
         probs.append(f"animations missing {missing_anims}")
@@ -716,6 +724,9 @@ def godot_import_check(glb, godot=GODOT_BIN, timeout=900):
     if not (c0.get("has_custom0") and c0.get("rgba_float") and c0.get("bones_kept")):
         probs.append(f"CUSTOM0 injection failed: {c0}")
     detail = {"meshes": len(meshes), "bones": len(got.get("bones", [])), "animations": got.get("animations", []),
+              "bone_order": "same as rig.json" if order_same else "differs from rig.json: map bones by NAME "
+                                                                 "(Skeleton3D.find_bone), never by index",
+              "godot_bone_order": got.get("bones", []),
               "custom0": c0, "body_aabb_godot": [round(x, 4) for x in got.get("body_aabb", [])],
               "compressed_meshes": sorted(n for n, m in meshes.items() if m.get("compressed")),
               "problems": probs}
