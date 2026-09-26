@@ -40,8 +40,11 @@ from gb_data import vertebrae as VT  # noqa: E402
 
 O = gbc.HEAD_OFFSET
 CODE_CAUDA, CODE_DURA, CODE_ROOT0 = 30, 31, 40
-BRAIN_H = 0.0011                   # brain polygonisation (head project: 0.95 mm)
-BRAIN_TRIS = 13800                 # plan §4.1: 14k
+BRAIN_H = 0.0008                   # brain polygonisation: fine enough for the 3 mm cerebellar folia in the
+                                   # bake source (the head project meshes at 0.95 mm)
+BRAIN_TRIS = 27800                 # LOD0 (plan §4.1 raised 14k -> 28k: hero asset of every headshot/cutaway;
+                                   # the gyri stay rounded instead of faceting; worst visible subject ~149k)
+BRAIN_HR_TRIS = 420000             # GB_Brain_HR (bake source, carries the folia for brain_normal)
 CORD_TRIS = 3000
 
 
@@ -69,12 +72,87 @@ BRAIN_BOTTOM = 1.600               # GB_Brain ends here, GB_Cord starts 3 mm abo
 CORD_TOP = 1.603
 
 
+_BONE = []
+_FIT = {}
+
+
+def _spine_bone(x, y, z):
+    """Union SDF of B3's vertebrae, discs and sacrum near height ``z`` (scalar), body frame."""
+    import skeleton as SK
+    if not _BONE:
+        for r in VT.VERTEBRAE:
+            fn = SK.sacrum_sdf()[0] if r["level"] == "S1" else SK.vertebra_sdf(r["level"])[0]
+            _BONE.append((r["z"], fn))
+        lv = [r["level"] for r in VT.VERTEBRAE]
+        for a, b in zip(lv[1:-1], lv[2:]):
+            _BONE.append((0.5 * (VT.VERTEBRA[a]["z"] + VT.VERTEBRA[b]["z"]), SK.disc_sdf(a, b)[0]))
+    d = np.full(np.shape(x), 1.0)
+    for zz, fn in _BONE:
+        if abs(zz - z) < 0.045:
+            d = np.minimum(d, fn(x, y, np.full(np.shape(x), z)))
+    return d
+
+
+def _free_interval(z, y0, need):
+    """Free (non-bone) interval [lo, hi] along y at x = 0, height z, containing y0 (or the nearest free y)."""
+    ys = np.linspace(y0 - 0.025, y0 + 0.025, 201)
+    b = _spine_bone(np.zeros_like(ys), ys, z)
+    i0 = int(np.argmin(np.abs(ys - y0)))
+    if b[i0] <= 0.0:
+        free = np.nonzero(b > 0.0)[0]
+        if len(free) == 0:
+            return y0 - need, y0 + need
+        i0 = int(free[np.argmin(np.abs(free - i0))])
+    lo = i0
+    while lo > 0 and b[lo - 1] > 0.0:
+        lo -= 1
+    hi = i0
+    while hi < len(ys) - 1 and b[hi + 1] > 0.0:
+        hi += 1
+    return ys[lo], ys[hi]
+
+
+def canal_fit(z, y0, need=0.0045):
+    """(y, free half width, free half AP) of B3's actual vertebral canal at height ``z`` near the table's
+    cord y ``y0``.  The free interval along y is the tightest over z +- 4 mm (the laminae shingle, so a
+    single height can look open to the back); y is the table's y moved only as far as needed to keep
+    ``need`` (cord half AP + CSF + dura) clear of bone.  The dura and cord are fitted to it so they never
+    enter bone (the table's cord_y and the meshed canal differ by 1-3 mm at some levels)."""
+    key = (round(float(z), 5), round(float(y0), 5), round(float(need), 5))
+    if key in _FIT:
+        return _FIT[key]
+    lo, hi = -1.0, 1.0
+    for dz in (-0.004, 0.0, 0.004):
+        a, b = _free_interval(z + dz, y0, need)
+        lo, hi = max(lo, a), min(hi, b)
+    if hi - lo < 2 * need:
+        yc = 0.5 * (lo + hi)
+    else:
+        yc = float(np.clip(y0, lo + need, hi - need))
+    ha = min(yc - lo, hi - yc)
+    xs = np.linspace(0.0, 0.025, 101)
+    hw = 0.025
+    for dz in (-0.004, 0.0, 0.004):
+        bx = _spine_bone(xs, np.full_like(xs, yc), z + dz)
+        inb = np.nonzero(bx <= 0.0)[0]
+        if len(inb):
+            hw = min(hw, xs[inb[0]])
+    _FIT[key] = (float(yc), float(hw), float(ha))
+    return _FIT[key]
+
+
 def cord_profile():
-    """Cord centreline samples (z, y, half width, half AP) from the brain junction to the conus tip."""
+    """Cord centreline samples (z, y, half width, half AP) from the brain junction to the conus tip.
+
+    The y of every level is B3's actual canal centre there (``canal_fit``) and the cord keeps >= 2 mm of
+    CSF + dura inside the canal."""
     rows = [(CORD_TOP, 0.0285, 0.0056, 0.0044)]
     for r in VT.VERTEBRAE:
         if r["cord_w_mm"] > 0 and r["z"] < CORD_TOP - 0.004:
-            rows.append((r["z"], r["cord_y"], r["cord_w_mm"] / 2000.0, r["cord_ap_mm"] / 2000.0))
+            yc, fw, fa = canal_fit(r["z"], r["cord_y"], r["cord_ap_mm"] / 2000.0 + 0.0030)
+            hw = min(r["cord_w_mm"] / 2000.0, fw - 0.0022)
+            ha = min(r["cord_ap_mm"] / 2000.0, fa - 0.0022)
+            rows.append((r["z"], yc, hw, ha))
     # conus medullaris: tapers from the L1 size to a point at the tip [RB §7.4]
     rows.append((VT.CONUS_TIP[2] + 0.008, VT.CONUS_TIP[1] + 0.002, 0.0030, 0.0028))
     rows.append((VT.CONUS_TIP[2], VT.CONUS_TIP[1], 0.0008, 0.0008))
@@ -153,14 +231,24 @@ def cord_parts(q=False):
     for z in zs:
         y, hw, ha = cord_centre(z)
         cw, ca = _canal_half(z)
-        dw.append(min(max(hw, 0.004) + 0.0028, cw - 0.0030))
-        da.append(max(min(max(ha, 0.004) + 0.0022, ca - 0.0030), ha + 0.0008))
-        dy.append(y + 0.0006)
+        yc, fw, fa = canal_fit(z, y)
+        # dura: cord + CSF, inside the table canal minus epidural fat, and >= 1.2 mm off B3's bone
+        dw.append(max(min(max(hw, 0.004) + 0.0028, cw - 0.0030, fw - 0.0012), hw + 0.0008))
+        da.append(max(min(max(ha, 0.004) + 0.0022, ca - 0.0030, fa - 0.0012), ha + 0.0008))
+        dy.append(yc)
     cauda = np.array(VT.CAUDA_CHAIN[1:])
+    # the lumbar/sacral dural sac follows B3's canal too
+    for i, c in enumerate(cauda):
+        yc, fw, fa = canal_fit(c[2], c[1])
+        cauda[i, 1] = yc
     Pd = np.vstack([np.column_stack([np.zeros(len(zs)), dy, zs]), cauda])
-    rd = np.vstack([np.column_stack([dw, da]),
-                    np.column_stack([np.linspace(0.0065, 0.0040, len(cauda)),
-                                     np.linspace(0.0045, 0.0034, len(cauda))])])
+    cw_ = np.linspace(0.0065, 0.0040, len(cauda))
+    ca_ = np.linspace(0.0045, 0.0034, len(cauda))
+    for i, c in enumerate(cauda):
+        _yc, fw, fa = canal_fit(c[2], c[1])
+        cw_[i] = max(min(cw_[i], fw - 0.0012), 0.0015)
+        ca_[i] = max(min(ca_[i], fa - 0.0012), 0.0012)
+    rd = np.vstack([np.column_stack([dw, da]), np.column_stack([cw_, ca_])])
     v, f, tt = gg.sweep(Pd, rd, sides=8, step=0.020, smooth=True,
                         normal_fn=lambda Q: np.tile([1.0, 0.0, 0.0], (len(Q), 1)))
     parts.append(gg.part(v, f, 0, gb_piece=np.full(len(v), CODE_DURA, np.int32), gb_tt=tt))
@@ -232,12 +320,51 @@ def brain_sdf(x, y, z):
     medulla that follows CMJ_PATH through the foramen magnum), closed at BRAIN_BOTTOM."""
     A = _A()
     V = _V()
-    d = A.brain_sdf(x - O[0], y - O[1], z - O[2])
+    d = _tent_brain(A, x - O[0], y - O[1], z - O[2])
     low = (BRAIN_CUT_Z - z) * 1.0
     d = V.smax(d, np.where(y < 0.062, low, -1.0), 0.004)            # remove the head's lower stem
     med = V.chain(x / 0.82, y, z, [(0.0, 0.0365, 1.640)] + CMJ_PATH, [0.0068, 0.0060, 0.0050, 0.0047, 0.0046])
     d = V.smin(d, med, 0.006)
     return V.smax(d, BRAIN_BOTTOM - z, 0.001)
+
+
+def _tent_brain(A, x, y, z):
+    """The head project's brain (head frame) with a tent-shaped tentorium.
+
+    ``gore_head.anatomy.brain_sdf`` separates the occipital lobes from the cerebellum with a flat,
+    tilted 1.6 mm slot, which reads as a flat-cut sliver.  The real tentorium rises to the straight
+    sinus in the midline: here the cerebrum is carved and the cerebellum (same envelope and folia as the
+    head's) raised up to a tent that is 7 mm higher in the midline and meets the head's plane laterally,
+    keeping the 1.6 mm membrane gap everywhere."""
+    ax = np.abs(x)
+    d = A.brain_sdf(x, y, z)
+    behind = A.smoothstep(A.TENTORIUM_Y0, A.TENTORIUM_Y0 + 0.012, y)
+    zt = 0.010 - 0.010 * A.smoothstep(0.02, 0.09, y)
+    lift = 0.007 * np.clip(1.0 - (ax / 0.045) ** 2, 0.0, 1.0) * behind * A.smoothstep(0.095, 0.075, y)
+    if not np.any(lift > 1e-6):
+        return d
+    tent = zt + lift
+    V = _V()
+    # cerebrum: nothing below the tent (+ half the membrane gap) behind the temporal lobes
+    slab = np.maximum(z - (tent + 0.0008), (zt - 0.0008) - z)          # < 0 between the old slot and the tent
+    slab = np.where(lift > 1e-6, slab, 1.0)
+    d = V.smax(d, -slab, 0.0015)
+    # cerebellum raised into the tent (the head's own posterior-fossa envelope and folia)
+    env = V.smax(A._vault(ax, y, z, A.SCALP + A.BONE_T + A.BRAIN_ENV_GAP),
+                 A.bone_face_sdf(ax, y, z) + A.BONE_T + A.BRAIN_ENV_GAP, 0.004)
+    env = V.smax(env, A.cranial_floor(ax, y, z) + A.BRAIN_ENV_GAP, 0.012)
+    fill = np.maximum(env, z - (tent - 0.0008))
+    fill = np.maximum(fill, (zt - 0.0030) - z)
+    fill = V.smax(fill, A.sd_ellipsoid(ax, y, z, (0.0, 0.052, -0.012), (0.057, 0.041, 0.040)), 0.004)
+    cc = np.array([0.0, 0.030, 0.004])
+    r = np.sqrt((ax - cc[0]) ** 2 + ((y - cc[1]) * 0.9) ** 2 + ((z - cc[2]) * 1.2) ** 2)
+    fol = 0.5 + 0.5 * np.cos(2 * np.pi * r / 0.0030)
+    fill = fill + 0.0016 * fol ** 4 * A.smoothstep(-0.007, -0.002, env)
+    fill = V.smax(fill, -A.sd_ellipsoid(ax, y, z, (0.0, 0.080, -0.012), (0.004, 0.012, 0.030)), 0.004)
+    fill = np.where(lift > 1e-6, fill, 1.0)
+    d = V.smin(d, fill, 0.0015)
+    cav = A.cranial_cavity(ax, y, z)
+    return V.smax(d, cav + A.BRAIN_GAP, 0.001)
 
 
 def brain_box():
@@ -257,8 +384,9 @@ def build_brain():
     h = BRAIN_H * (1.9 if quick() else 1.0)
     t0 = time.perf_counter()
     v, f = V.mesh_sdf(brain_sdf, brain_box(), h)
-    hr = V.decimate_components(v, f, 12 * BRAIN_TRIS)
+    hr = V.decimate_components(v, f, BRAIN_HR_TRIS) if len(f) > BRAIN_HR_TRIS else (v, f)
     lod = V.decimate_components(*hr, BRAIN_TRIS)
+    lod = (_shrinkwrap_relax(lod[0], lod[1], brain_sdf, h), lod[1])
     gbc.log(f"  B4 brain  raw {len(f)}  hr {len(hr[1])}  lod {len(lod[1])} tris  {time.perf_counter() - t0:.1f} s")
     out = {}
     for name, (vv, ff) in (("GB_Brain", lod), ("GB_Brain_HR", hr)):
@@ -281,6 +409,25 @@ def build_brain():
         obj["gb_status"] = "B4"
         out[name] = obj
     return out
+
+
+def _shrinkwrap_relax(v, f, fn, h, iters=3):
+    """Relax a decimated mesh tangentially (uniform Laplacian, 0.5) and project it back onto the exact
+    surface each round: the quadric collapse leaves long slivers across the gyri that shade as crumpled
+    facets; relaxed, evenly spaced vertices on the true surface keep the gyri rounded."""
+    A = _A()
+    V = _V()
+    e = np.concatenate([f[:, [0, 1]], f[:, [1, 2]], f[:, [2, 0]]])
+    e = np.unique(np.sort(e, axis=1), axis=0)
+    deg = np.maximum(np.bincount(e.ravel(), minlength=len(v)).astype(float), 1.0)[:, None]
+    v = np.array(v, float)
+    for _ in range(iters):
+        acc = np.zeros_like(v)
+        np.add.at(acc, e[:, 0], v[e[:, 1]])
+        np.add.at(acc, e[:, 1], v[e[:, 0]])
+        v = 0.5 * v + 0.5 * acc / deg
+        v = A.project_to_surface(fn, v, h, 2)
+    return v
 
 
 def build_cord():

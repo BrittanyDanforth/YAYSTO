@@ -1688,7 +1688,7 @@ def b4_cord_sizes_conus():
     return not bad, f"{'; '.join(rep)}; bad {bad}"
 
 
-@check("scene", owner="B4", severity="warn")
+@check("scene", owner="B4", quick_ok=False)
 def b4_cord_in_canal():
     """Cord, dura and roots inside the vertebral canal: fraction of GB_Cord vertices inside GB_Skeleton bone
     (the C1 / foramen-magnum misalignment between the head skull and the atlas is reported by level)."""

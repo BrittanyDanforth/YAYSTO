@@ -70,8 +70,9 @@ from gb_data import vessels as VS  # noqa: E402
 from gb_data import rig_table as RT  # noqa: E402
 
 MM = 1e-3
-SKIN_FLOOR_MM = 1.3            # skin (dermis) under which a tube wall may lie [RB §7.6: limbs 1.0-2.0 mm]
-BONE_CLEAR_MM = 0.5            # gap between a tube wall and bone
+SKIN_FLOOR_MM = 1.6            # skin (dermis) under which a tube wall may lie [RB §7.6: limbs 1.0-2.0 mm]
+BONE_CLEAR_MM = 0.8            # gap between a tube wall and bone
+FINAL_SIGMA_MIN = 0.003        # m, last fairing of every fitted centreline (no kinks left by bone escapes)
 BRAIN_CLEAR_MM = 0.3           # gap between an intracranial tube wall and the brain surface
 FIT_ITERS = 24
 MAX_STEP = 0.004              # m, largest fit move per iteration
@@ -555,6 +556,14 @@ def fit_centreline(key, vid, P0, r, probe, anchor_disp=None, seg=None, cranial=F
     w = _gauss_smooth(np.clip(moved / (2.0 * MM), 0.0, 1.0)[:, None].repeat(3, 1), sa, 0.010)[:, 0]
     P = P + (_gauss_smooth(P, sa, FAIR_SIGMA) - P) * (ends * np.clip(w, 0.0, 1.0))[:, None]
     P = relax(P, iters // 2)
+    # final fairing of the WHOLE centreline (not only the moved stretches): the bone-escape moves and the
+    # depth bands leave corners that the tube rings turn into a zigzag 'wiring' look; ends and the origin
+    # stay put, then the hard rules get the last word again
+    sa = _arc(P)
+    ends = np.clip(np.minimum(sa, sa[-1] - sa) / 0.006, 0.0, 1.0) * anchor
+    sig = float(np.clip(1.2 * np.mean(r), FINAL_SIGMA_MIN, 0.008))
+    P = P + (_gauss_smooth(P, sa, sig) - P) * ends[:, None]
+    P = relax(P, max(4, iters // 3))
     rep = measure(key, vid, P, r, probe, seg=seg, cranial=cranial or under_skull, bone_mask=bone_mask,
                   clear=clear)
     rep["moved_mm_max"] = round(float(np.linalg.norm(P - P0, axis=1).max() / MM), 2)
@@ -694,8 +703,10 @@ def fit_network(probe=None, log=True):
 # ===========================================================================
 # Tubes
 # ===========================================================================
-def _stations(P, r, tol_frac=0.5, tol_min=0.0020, max_step=RING_MAX_STEP):
-    """Indices of the ring stations: Douglas-Peucker on the dense centreline plus a maximum spacing."""
+def _stations(P, r, tol_frac=0.35, tol_min=0.0010, max_step=RING_MAX_STEP, max_turn_deg=14.0):
+    """Indices of the ring stations: Douglas-Peucker on the dense centreline (tolerance 0.35 r, >= 1 mm),
+    a maximum spacing, and no turn sharper than ``max_turn_deg`` between consecutive rings (so small
+    vessels bend smoothly instead of kinking)."""
     keep = {0, len(P) - 1}
 
     def dp(i, j):
@@ -717,6 +728,18 @@ def _stations(P, r, tol_frac=0.5, tol_min=0.0020, max_step=RING_MAX_STEP):
             dp(i + 1 + k, j)
     dp(0, len(P) - 1)
     idx = sorted(keep)
+    # bend limit: split any span whose centreline turns more than max_turn_deg
+    T = np.gradient(P, axis=0) if len(P) > 2 else np.repeat((P[1] - P[0])[None], len(P), axis=0)
+    T /= np.maximum(np.linalg.norm(T, axis=1, keepdims=True), 1e-12)
+    cos_lim = math.cos(math.radians(max_turn_deg))
+    again = True
+    while again:
+        again = False
+        for a, b in zip(idx[:-1], idx[1:]):
+            if b - a > 1 and T[a] @ T[b] < cos_lim:
+                idx.append((a + b) // 2)
+                again = True
+        idx = sorted(set(idx))
     s = _arc(P)
     out = [idx[0]]
     for a, b in zip(idx[:-1], idx[1:]):
@@ -798,6 +821,15 @@ def _tube_parts(fit, probe=None):
         t = sa / max(sa[-1], 1e-9)
         idx = _stations(P, r, tol_min=0.0008) if s["vessel"] in TORTUOUS else _stations(P, r)
         Ps, rs, ts = P[idx], r[idx], t[idx]
+        if s["root"] and s["vessel"] not in ON_HEART and len(Ps) > 1:
+            # great vessels join their chamber: the tube starts 1.5 r inside the heart wall with a 15 %
+            # flare, so no flat end cap shows at the atrium / ventricle
+            t0 = Ps[1] - Ps[0]
+            t0 /= max(np.linalg.norm(t0), 1e-9)
+            Ps = np.vstack([Ps[0] - t0 * min(1.5 * rs[0], 0.014), Ps])
+            rs = np.concatenate([[1.15 * rs[0]], rs])
+            rs[1] *= 1.10
+            ts = np.concatenate([[ts[0]], ts])
         section, pref = "round", None
         if s["vessel"] in TRI_SECTION or s["kind"] == "V":
             section = "tri" if s["vessel"] in TRI_SECTION else "vein"
