@@ -238,6 +238,31 @@ def fbm(x, y, z, freq, octaves=3, seed=0):
     return out / tot
 
 
+def centripetal_catmull(points, n=16):
+    """Centripetal Catmull-Rom (alpha 0.5) through the points: no cusps or loops where consecutive
+    control points are unevenly spaced (the uniform spline overshoots there and the swept section then
+    shows flat 'washer' fins)."""
+    p = np.asarray(points, float)
+    p = np.vstack([2 * p[0] - p[1], p, 2 * p[-1] - p[-2]])
+    out = []
+    for i in range(1, len(p) - 2):
+        p0, p1, p2, p3 = p[i - 1], p[i], p[i + 1], p[i + 2]
+        t0 = 0.0
+        t1 = t0 + max(np.linalg.norm(p1 - p0), 1e-9) ** 0.5
+        t2 = t1 + max(np.linalg.norm(p2 - p1), 1e-9) ** 0.5
+        t3 = t2 + max(np.linalg.norm(p3 - p2), 1e-9) ** 0.5
+        for s in range(n):
+            t = t1 + (t2 - t1) * s / n
+            a1 = (t1 - t) / (t1 - t0) * p0 + (t - t0) / (t1 - t0) * p1
+            a2 = (t2 - t) / (t2 - t1) * p1 + (t - t1) / (t2 - t1) * p2
+            a3 = (t3 - t) / (t3 - t2) * p2 + (t - t2) / (t3 - t2) * p3
+            b1 = (t2 - t) / (t2 - t0) * a1 + (t - t0) / (t2 - t0) * a2
+            b2 = (t3 - t) / (t3 - t1) * a2 + (t - t1) / (t3 - t1) * a3
+            out.append((t2 - t) / (t2 - t1) * b1 + (t - t1) / (t2 - t1) * b2)
+    out.append(p[-2])
+    return np.array(out)
+
+
 class Tube:
     """Swept solid along a smooth centreline with a per-station 2D section.
 
@@ -247,10 +272,10 @@ class Tube:
     orthogonalised) or parallel transport.  Ends are flat (use ``caps`` to
     round them with the section's size)."""
 
-    def __init__(self, pts, sec, ref_fn=None, step=0.002, smooth=True, round_ends=True):
+    def __init__(self, pts, sec, ref_fn=None, step=0.002, smooth=True, round_ends=True, centripetal=False):
         P = np.asarray(pts, float)
         if smooth and len(P) > 2:
-            P = _A().catmull(P, n=10)
+            P = centripetal_catmull(P, n=16) if centripetal else _A().catmull(P, n=10)
         seg = np.linalg.norm(np.diff(P, axis=0), axis=1)
         keep = np.concatenate([[True], seg > 1e-9])
         P = P[keep]
@@ -441,6 +466,19 @@ def _region_params(lvl):
                 facet_x=12.0 + 1.3 * k, facet_r=(6.5, 8.0, 7.5))
 
 
+def transverse_tip(lvl):
+    """(world centre of the tip tubercle of the left transverse process of thoracic ``lvl``, local posterior
+    axis of that vertebra); the same numbers ``vertebra_sdf`` builds the process from."""
+    r = ROW[lvl]
+    F = spine_frame(lvl)
+    P = _region_params(lvl)
+    h, d = r["body_h_mm"] / 1e3, r["body_d_mm"] / 1e3
+    yc = 0.5 * d + 0.5 * r["canal_ap_mm"] / 1e3
+    tp = P["tp"]
+    a1 = np.array([tp["len"] / 1e3, yc + tp["back"] / 1e3, 0.08 * h + tp["up"] / 1e3])
+    return F.world(a1), F.R[1].copy()
+
+
 def vertebra_sdf(lvl):
     """SDF (world coords) of vertebra ``lvl`` (C3-L5 typical; C1, C2 special) and its box."""
     if lvl == "C1":
@@ -555,6 +593,18 @@ def vertebra_sdf(lvl):
     ext = max(0.5 * w, 0.5 * cw + pw + 0.012, (P["tp"]["len"] / 1e3 + 0.007) if P.get("tp") else 0.03) + 0.006
     return fn, _frame_box(F, (-ext, -0.5 * d - 0.006, -0.5 * h - P["drop"] / 1e3 - 0.016),
                           (ext, spy + 0.010, 0.5 * h + 0.016))
+
+
+def upper_spinous_sdf():
+    """Union of the vertebrae C6-T6 (the spinous row the skin runs over; B1 pads the skin on it)."""
+    fns = [vertebra_sdf(lv)[0] for lv in ("C6", "C7", "T1", "T2", "T3", "T4", "T5", "T6")]
+
+    def fn(x, y, z):
+        d = fns[0](x, y, z)
+        for f in fns[1:]:
+            d = np.minimum(d, f(x, y, z))
+        return d
+    return fn, (np.array([-0.04, -0.02, 1.30]), np.array([0.04, 0.13, 1.53]))
 
 
 def gg_superellipse(a, b, ra, rb, n):
@@ -920,16 +970,25 @@ def mirror_arrays(v, f):
 # Thorax: ribs 1-12, costal cartilages 1-10, sternum [RB §7.3 rib table, R05 §5]
 # ===========================================================================
 def _rib_normal_fn(n):
-    """Preferred section normal N along a rib: outward from the cage axis (flat faces in/out);
-    rib 1 lies flat (faces up/down), rib 2 in between."""
+    """Preferred section normal N along a rib: the horizontal normal of the centreline pointing out of
+    the cage (flat faces in/out, height vertical); rib 1 lies flat (faces up/down), rib 2 in between.
+
+    N is built from the centreline tangent (``EZ x T``), so it never degenerates where the rib runs
+    radially out of the cage (the neck); a radial reference alone did, which flipped the section frames
+    along the neck and broke it apart."""
     def fn(P):
+        T = np.gradient(np.asarray(P, float), axis=0)
+        T /= np.maximum(np.linalg.norm(T, axis=1, keepdims=True), 1e-12)
         out = np.stack([P[:, 0], P[:, 1] - 0.012, np.zeros(len(P))], axis=1)
         out /= np.maximum(np.linalg.norm(out, axis=1, keepdims=True), 1e-9)
+        hz = np.cross(np.tile(EZ, (len(P), 1)), T)
+        hz /= np.maximum(np.linalg.norm(hz, axis=1, keepdims=True), 1e-9)
+        hz *= np.where((hz * out).sum(1) < 0.0, -1.0, 1.0)[:, None]
         if n == 1:
-            return np.tile(EZ, (len(P), 1)) * 0.85 + out * 0.15
+            return np.tile(EZ, (len(P), 1)) * 0.85 + hz * 0.15
         if n == 2:
-            return out * 0.55 + EZ * 0.45
-        return out
+            return hz * 0.55 + EZ * 0.45
+        return hz
     return fn
 
 
@@ -938,6 +997,13 @@ def rib_sdf(n):
     groove on the inner lower edge, cupped costochondral end (floating ribs taper)."""
     A = _A()
     pts = np.array(RB_.rib_points(n))
+    # costotransverse joint: the neck runs IN FRONT of the transverse process of T(n) and the tubercle
+    # meets the front of the process tip (a waypoint there keeps the neck from crossing the process,
+    # which used to be carved out of the rib and left the head and tubercle as loose chips)
+    tp_tip, tp_post = transverse_tip(f"T{n}")
+    tub_pt = tp_tip - tp_post * (0.0052 + 0.0034 + 0.0009) + EX * 0.0015
+    tub_pt[2] = float(np.clip(tub_pt[2], pts[0][2] - 0.012, pts[0][2] + 0.003))
+    pts = np.vstack([pts[:1], tub_pt[None], pts[1:]])
     hmm, tmm = RB_.RIB_SECTION_MM.get(n, RB_.RIB_SECTION_MM["default"])
     if n in (2, 3):
         hmm = 15.0                      # upper ribs at the top of the 12-15 mm range (front spaces <= 25 mm)
@@ -967,19 +1033,19 @@ def rib_sdf(n):
         tloc = tt * (1.0 - 0.30 * shaft * np.clip(-b / hh, 0, 1))
         s = gg_superellipse(nn, b, tloc, hh, 2.4)
         groove = A.ellipse2(nn + 0.55 * tt, b + 0.55 * hh, 0.35 * tt, 0.28 * hh)
-        return smax(s, -groove * 1.0 - 0.0003 + (1 - shaft) * 0.01, 0.0006)
-    tube = Tube(pts, sec, ref_fn=_rib_normal_fn(n), step=0.0018, round_ends=True)
-    # tubercle: where the rib passes the tip of its transverse process
-    tub_t = 0.13
-    k = int(tub_t * (len(tube.P) - 1))
-    tubc = tube.P[k] + tube.N[k] * (0.4 * Tk) - tube.B[k] * 0.002
+        # (the groove fades out towards the neck and the costochondral end: its carve term is pushed far
+        # negative there; the old "+ (1 - shaft) * 0.01" turned it positive and cut the neck off the head)
+        return smax(s, -groove * 1.0 - 0.0003 - (1 - shaft) * 0.01, 0.0006)
+    tube = Tube(pts, sec, ref_fn=_rib_normal_fn(n), step=0.0018, round_ends=True, centripetal=True)
+    # tubercle: a knob on the back of the neck facing the tip of the transverse process
+    tubc = tub_pt + tp_post * 0.0018
     ccj = pts[-1]
     tan_end = _n(tube.T[-1])
 
     def fn(x, y, z):
         d = tube(x, y, z)
         d = smin(d, A.sd_ellipsoid(x, y, z, head, (0.0050, 0.0052, 0.0060)), 0.003)
-        d = smin(d, A.sd_sphere(x, y, z, tubc, 0.0042), 0.003)
+        d = smin(d, A.sd_sphere(x, y, z, tubc, 0.0036), 0.003)
         if not floating:
             d = np.maximum(d, plane(x, y, z, ccj, tan_end) + 0.0003)         # flat costochondral end
         return d

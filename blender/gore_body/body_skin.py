@@ -48,6 +48,9 @@ import numpy as np
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import gb_common as gbc  # noqa: E402
 from gb_data import landmarks as LM  # noqa: E402
+from gb_data import bones as _BN  # noqa: E402
+
+BN_CLAVICLE = [tuple(p) for p in _BN.CLAVICLE_WAYPOINTS]
 
 HEAD_OFFSET = gbc.HEAD_OFFSET
 SEAM_Z = gbc.SEAM_Z
@@ -317,17 +320,17 @@ TORSO = np.array([
     (1.260, 0.150, -0.105, 0.112, 2.9, 2.8),
     (1.300, 0.153, -0.111, 0.120, 3.0, 2.9),     # chest 100 cm; xiphisternal joint -0.110
     (1.340, 0.154, -0.100, 0.125, 3.0, 2.9),     # T7 spinous skin 0.122
-    (1.400, 0.145, -0.081, 0.117, 3.0, 2.9),     # sternal angle -0.075 (bone) + skin
-    (1.430, 0.146, -0.068, 0.108, 2.5, 2.6),     # shoulder girdle: clavicles in front, scapular spines behind
-    (1.455, 0.136, -0.050, 0.099, 2.2, 2.5),     # jugular notch -0.048
-    (1.470, 0.112, -0.050, 0.095, 2.2, 2.8),     # scapular superior angles under trapezius
-    (1.485, 0.063, -0.054, 0.082, 2.1, 2.2),     # seam plane (plan D19)
+    (1.400, 0.145, -0.081, 0.121, 3.0, 2.9),     # sternal angle -0.075 (bone) + skin
+    (1.430, 0.146, -0.068, 0.114, 2.5, 2.6),     # shoulder girdle: clavicles in front, scapular spines behind
+    (1.455, 0.136, -0.050, 0.106, 2.2, 2.5),     # jugular notch -0.048; T1-T3 spinous tips 8-12 mm deep
+    (1.470, 0.102, -0.050, 0.100, 2.2, 2.8),     # scapular superior angles under trapezius
+    (1.485, 0.063, -0.054, 0.085, 2.1, 2.2),     # seam plane (plan D19)
     (1.515, 0.0595, -0.057, 0.069, 2.1, 2.2),    # neck 38 cm: 12 x 11.7 (front -0.055 / back +0.063)
-    (1.540, 0.058, -0.054, 0.072, 2.1, 2.2),     # C7 spinous skin 0.075 at 1.532 (bump added)
-    (1.565, 0.058, -0.047, 0.077, 2.1, 2.2),
-    (1.595, 0.059, -0.033, 0.089, 2.1, 2.3),     # nape: suboccipital mass under the occiput
-    (1.625, 0.060, -0.020, 0.098, 2.1, 2.4),
-    (1.660, 0.058, -0.010, 0.100, 2.1, 2.4),
+    (1.540, 0.058, -0.044, 0.072, 2.1, 2.2),     # C7 spinous skin 0.075 at 1.532 (bump added); the front
+    (1.565, 0.058, -0.032, 0.077, 2.1, 2.2),     # recedes under the jaw: submental surface / cervicomental
+    (1.595, 0.059, -0.024, 0.089, 2.1, 2.3),     # angle ~110 deg with the chin (menton -0.068, 1.550)
+    (1.625, 0.060, -0.014, 0.098, 2.1, 2.4),     # nape: suboccipital mass under the occiput
+    (1.660, 0.058, -0.006, 0.100, 2.1, 2.4),
 ])
 TORSO_Z0, TORSO_Z1 = 0.862, 1.655
 
@@ -351,7 +354,7 @@ def _pec_relief(x, z):
     z_low = 1.265 + 2.8 * np.maximum(ax - 0.060, 0.0) ** 2 + 0.035 * sstep(0.110, 0.155, ax)
     lower = sstep(z_low - 0.014, z_low + 0.030, z)
     dome = sinterp(z, [1.26, 1.30, 1.36, 1.42, 1.455], [1.0, 1.0, 0.75, 0.35, 0.0])
-    medial = sstep(0.006, 0.030, ax)                                # sternal furrow between the heads
+    medial = sstep(0.0, 0.042, ax)                                  # broad, shallow sternal furrow
     lateral = sstep(0.180, 0.130, ax)
     bulk = 0.0085 * lower * dome * medial * lateral
     # areola / nipple [RB §7.1 nipple (0.100, -0.112, 1.300)]; x is the base-section x, which the pectoral
@@ -449,7 +452,7 @@ def _torso_profile(Z, TH):
     rel = rel * trunk + ws * _side_relief(ys, Z) * trunk
     # neck: laryngeal prominence handled as a primitive; nuchal furrow at the back midline
     nuchal = -0.0025 * gauss(xs, 0.010) * band(Z, 1.55, 1.62, 0.03) * wb
-    nuchal = nuchal + 0.0045 * gauss(xs, 0.012) * gauss(Z - 1.530, 0.012) * wb       # C7 vertebra prominens
+    nuchal = nuchal + 0.0030 * gauss(xs, 0.013) * gauss(Z - 1.522, 0.014) * wb       # C7 vertebra prominens
     return R0 + rel + nuchal
 
 
@@ -552,17 +555,35 @@ def _shoulder(ax, y, z):
     # upper trapezius: broad slope from the nape to the acromion
     # the lateral neck point sits at z ~1.49 (between the jugular notch 1.455 and C7 1.532) and the
     # shoulder line falls ~11 deg to the acromion; below the seam plane beyond |x| 0.075 (plan D19 ring)
-    trap = sd_polyline(ax, y, z, [(0.035, 0.056, 1.459), (0.090, 0.046, 1.452), (0.140, 0.035, 1.451),
-                                  (0.186, 0.022, 1.446)], [0.024, 0.0205, 0.018, 0.016], k=0.02)
-    clav = sd_polyline(ax, y, z, [np.array(p) + np.array([0.0, -0.001, 0.001]) for p in
-                                  ((0.026, -0.037, 1.451), (0.070, -0.049, 1.453), (0.125, -0.021, 1.461),
-                                   (0.168, 0.008, 1.459))], [0.0062, 0.0074, 0.0074, 0.0080], k=0.012)
+    # upper trapezius: rises from the acromion up the side of the neck, so the neck-shoulder line is one
+    # smooth slope (top line 1.525 at |x| 0.045 -> 1.497 at 0.07 -> 1.478 at 0.10 -> 1.460 at the acromion)
+    # instead of a flat shelf with the neck standing on it; below the seam plane beyond |x| ~0.08 (D19 ring)
+    trap = sd_polyline(ax, y, z, [(0.042, 0.047, 1.502), (0.068, 0.043, 1.476), (0.100, 0.038, 1.457),
+                                  (0.140, 0.031, 1.449), (0.186, 0.022, 1.444)],
+                       [0.023, 0.022, 0.021, 0.019, 0.016], k=0.02)
+    # clavicle: soft subcutaneous ridge over B3's bone (its waypoints), bone half-depth + skin + subcutis
+    clav = sd_polyline(ax, y, z, [np.array(p) + np.array([0.0, -0.0015, 0.0015]) for p in BN_CLAVICLE],
+                       [0.0125, 0.0105, 0.0100, 0.0112], k=0.012)
     # axillary folds: the pectoralis (front) and latissimus/teres (back) sweep from the chest wall into
     # the arm; only their lower borders show, the web above them fills up to the shoulder
     a_arm = GH + 0.075 * ARM_D - 0.018 * ARM_LAT + np.array([0.0, -0.022, 0.0])
     ant_fold = _fold(ax, y, z, (0.120, -0.058, 1.380), a_arm, 0.016, 0.040)
     p_arm = GH + 0.085 * ARM_D - 0.016 * ARM_LAT + np.array([0.0, 0.028, 0.0])
     post_fold = _fold(ax, y, z, (0.120, 0.070, 1.350), p_arm, 0.020, 0.045)
+    # supraspinatus + trapezius over the spine of the scapula and the acromion: the posterior shoulder is
+    # one rounded mass that wraps the bone (the spine is palpable, never a shelf) [RB §7.6: 5-8 mm over it]
+    sup = _fold(ax, y, z, (0.078, 0.094, 1.450), (0.184, 0.046, 1.458), 0.0125, 0.020)
+    trap = smin(trap, sup, 0.022)
+    # teres major / infraspinatus lower belly: fills the posterior axillary junction (no pit behind the arm)
+    teres = _fold(ax, y, z, (0.105, 0.098, 1.360), GH + 0.070 * ARM_D + 0.020 * ARM_LAT + np.array([0.0, 0.030, 0.0]),
+                  0.018, 0.030)
+    post_fold = smin(post_fold, teres, 0.020)
+    # axillary apex filler: the deep axillary contents (fat, vessels, subscapularis) between the chest
+    # wall, the folds and the deltoid; without it the smooth unions leave enclosed voids whose walls
+    # show as pits behind and in front of the armpit
+    fill = sd_oellipsoid(ax, y, z, (0.152, 0.062, 1.412), (0.022, 0.030, 0.026), np.eye(3))
+    fill = smin(fill, sd_oellipsoid(ax, y, z, (0.148, 0.012, 1.390), (0.014, 0.030, 0.016), np.eye(3)), 0.012)
+    post_fold = smin(post_fold, fill, 0.015)
     return delt, trap, clav, ant_fold, post_fold
 
 
@@ -868,10 +889,63 @@ FOOT_BOX = Box((0.02, -0.17, -0.01), (0.19, 0.14, 0.24), margin=0.03)
 # Neck primitives
 # ===========================================================================
 def _neck_parts(ax, y, z):
-    """Sternocleidomastoid ridges and the laryngeal prominence [RB §7.1 (0, -0.062, 1.537)]."""
+    """Sternocleidomastoid ridges and the laryngeal prominence (0, -0.061, 1.527).
+
+    The prominence sits 10 mm below RB §7.1's 1.537 (C5 level instead of C4-C5) so it lies 2.3 cm
+    under the menton with a real cervicomental angle between them (gb_data.landmarks, CONTRACT.md)."""
     scm = sd_capsule(ax, y, z, (0.017, -0.046, 1.463), (0.058, 0.022, 1.600), 0.0080, 0.0130)
-    lar = sd_oellipsoid(ax, y, z, (0.0, -0.050, 1.535), (0.013, 0.0125, 0.017), np.eye(3))
+    lar = sd_oellipsoid(ax, y, z, (0.0, -0.049, 1.520), (0.0105, 0.0125, 0.0140), np.eye(3))
     return scm, lar
+
+
+# ===========================================================================
+# Subcutaneous bone pads [RB §7.6]: wherever a bone lies just under the skin (clavicle, scapular spine
+# and acromion, manubrium/sternum, C7/T1 spinous tips, iliac crest, PSIS, tibial face, malleoli,
+# patella) the skin may never come closer to it than skin + subcutis.  The pad is the skeleton's own
+# SDF (B3, evaluated live, so it follows every bone change) grown by that depth; it is smooth-unioned
+# into the body, which gives the soft subcutaneous ridge a lean man shows over these bones instead of
+# the bone poking through (FB-4).  The muscle shell covers the same bones by 0.5 mm.
+# ===========================================================================
+# (key, skeleton builder (name, args), box lo, box hi, pad depth (m), blend k (m), tissue group)
+PAD_SITES = (
+    ("clavicle", ("clavicle_sdf", ()), (0.0, -0.075, 1.425), (0.200, 0.035, 1.490), 0.0045, 0.010, "trunk"),
+    ("scapula", ("scapula_sdf", ()), (0.070, -0.005, 1.428), (0.220, 0.120, 1.490), 0.0055, 0.006, "trunk"),
+    ("sternum", ("sternum_parts", ()), (0.0, -0.120, 1.270), (0.040, -0.030, 1.470), 0.0055, 0.003, "trunk"),
+    ("spine", ("upper_spinous_sdf", ()), (0.0, 0.030, 1.360), (0.030, 0.130, 1.520), 0.0075, 0.004, "trunk"),
+    ("iliac_crest", ("hip_bone_sdf", ()), (0.030, -0.090, 0.995), (0.170, 0.062, 1.090), 0.0100, 0.012, "trunk"),
+    ("psis", ("hip_bone_sdf", ()), (0.030, 0.062, 0.985), (0.110, 0.110, 1.080), 0.0060, 0.008, "trunk"),
+    ("tibia", ("tibia_sdf", ()), (0.030, -0.060, 0.060), (0.150, 0.080, 0.440), 0.0035, 0.004, "leg"),
+    ("fibula", ("fibula_sdf", ()), (0.090, 0.000, 0.030), (0.160, 0.100, 0.110), 0.0028, 0.004, "leg"),
+    ("patella", ("patella_sdf", ()), (0.050, -0.070, 0.460), (0.130, -0.020, 0.540), 0.0055, 0.004, "leg"),
+)
+_PAD_FNS = {}
+
+
+def _pad_fn(builder):
+    """The (cached) skeleton SDF of a pad site, body frame, left side."""
+    if builder not in _PAD_FNS:
+        import skeleton as SK
+        name, args = builder
+        _PAD_FNS[builder] = getattr(SK, name)(*args)[0]
+    return _PAD_FNS[builder]
+
+
+def bone_pads(ax, y, z, group):
+    """(pad SDF, blend k) of the subcutaneous bone sites of ``group`` ('trunk' | 'leg'), left side (|x|)."""
+    d = np.full_like(z, 1.0)
+    kk = np.full_like(z, 0.001)
+    for _key, builder, lo, hi, pad, k, g in PAD_SITES:
+        if g != group:
+            continue
+        box = Box(lo, hi, margin=0.02)
+        fn = _pad_fn(builder)
+        m = box.run(lambda a, b, c: fn(a, b, c) - pad, ax, y, z)
+        # outside the site box the pad is only a distance bound: keep it from reaching the skin there
+        inside = ((ax >= lo[0]) & (ax <= hi[0]) & (y >= lo[1]) & (y <= hi[1]) & (z >= lo[2]) & (z <= hi[2]))
+        m = np.where(inside, m, np.maximum(m, 0.05))
+        kk = np.where(m < d, k, kk)
+        d = np.minimum(d, m)
+    return d, kk
 
 
 # ===========================================================================
@@ -896,6 +970,8 @@ def body_components(x, y, z):
     out["glute"] = Box((0.0, -0.05, 0.78), (0.19, 0.16, 1.05), margin=0.08).run(_glute, ax, y, z)
     out["glute_k"] = 0.010 + 0.045 * sstep(0.85, 0.99, z) + 0.02 * sstep(0.10, 0.15, ax)
     out["foot"] = FOOT_BOX.run(_foot, ax, y, z)
+    out["pad_trunk"], out["pad_trunk_k"] = bone_pads(ax, y, z, "trunk")
+    out["pad_leg"], out["pad_leg_k"] = bone_pads(ax, y, z, "leg")
     out["_y"] = y
     out["_z"] = z
     return out
@@ -912,17 +988,22 @@ def union_components(c, off=None, kplus=0.0):
     K = kplus
     trunk = smin(g["torso"], g["scm"], 0.016 + K)
     trunk = smin(trunk, g["larynx"], 0.008 + K)
-    trunk = smin(trunk, g["trapezius"], 0.020 + K)
+    trunk = smin(trunk, g["trapezius"], 0.028 + K)
     trunk = smin(trunk, g["clavicle"], 0.020 + K)
     arm = smin(g["arm"], g["deltoid"], 0.030 + K)
     arm = smin(arm, g["hand"], 0.012 + K)
-    body = smin(trunk, arm, 0.010 + 0.020 * sstep(1.39, 1.45, g["_z"]) + K)
+    # arm <-> trunk: crisp in the armpit hollow, wide (26-30 mm) at the anterior/posterior axillary
+    # junctions and the shoulder so no cusp or pit forms where deltoid, folds and chest wall meet
+    ay = np.abs(g["_y"] - 0.004)
+    body = smin(trunk, arm, 0.010 + 0.020 * sstep(1.39, 1.45, g["_z"]) + 0.016 * sstep(0.030, 0.060, ay) + K)
     body = smin(body, g["ant_fold"], 0.028 + K)
     body = smin(body, g["post_fold"], 0.030 + K)
     leg = smin(g["leg"], g["foot"], 0.012 + K)
+    leg = smin(leg, g["pad_leg"], g["pad_leg_k"] + K)
     body = smin(body, leg, 0.022 + 0.015 * sstep(0.02, -0.06, g["_y"]) + K)
     # gluteal fold stays crisp below, the upper and outer buttock melt into the back and hip
-    return smin(body, g["glute"], g["glute_k"] + K)
+    body = smin(body, g["glute"], g["glute_k"] + K)
+    return smin(body, g["pad_trunk"], g["pad_trunk_k"] + K)
 
 
 def body_sdf(x, y, z):
@@ -935,10 +1016,20 @@ def body_sdf(x, y, z):
 # head skin is clipped under the jaw and the occiput and the body neck (bible-placed) takes over.
 # ===========================================================================
 def head_clip_z(x, y):
-    """Height below which the head project's skin is replaced by the body neck (body frame)."""
+    """Height below which the head project's skin is replaced by the body neck (body frame).
+
+    In front the clip follows the inferior border of the head's mandible (measured on
+    ``gore_head.anatomy.jaw_sdf``: menton 1.550 -> body 1.551-1.555 -> angle 1.571-1.573) 6 mm below
+    the bone (skin + platysma + submental fat), so the head keeps its whole jaw and chin and the
+    body neck forms the submental / submandibular surface under it (cervicomental angle) instead
+    of the head project's own neck column (which hung below the jaw as a pouch).  Behind the
+    ramus the clip rises under the ear to the occiput as before."""
     ax = np.abs(x)
-    zc = sinterp(y, [-0.12, -0.030, 0.000, 0.030, 0.070, 0.12], [1.536, 1.540, 1.560, 1.590, 1.612, 1.622])
-    return zc + 0.010 * sstep(0.04, 0.07, ax) * sstep(0.03, -0.02, y)
+    # polar angle about the point between the mandibular angles: 0 = straight ahead (menton), 90 deg = at
+    # the angle (gonion), > 90 deg = behind the ramus, under the ear, nape
+    ang = np.degrees(np.arctan2(ax, -(y - 0.004)))
+    return sinterp(ang, [0.0, 25.0, 50.0, 70.0, 85.0, 100.0, 125.0, 150.0, 180.0],
+                   [1.544, 1.545, 1.549, 1.554, 1.562, 1.572, 1.598, 1.614, 1.622])
 
 
 def _head_part(x, y, z):
@@ -951,10 +1042,14 @@ HEAD_BOX = Box((-0.12, -0.135, 1.50), (0.12, 0.15, 1.80), margin=0.03)
 
 
 def skin_sdf(x, y, z):
-    """Combined outer skin: gore_head head (clipped under the jaw/occiput) smooth-united with the body."""
+    """Combined outer skin: gore_head head (clipped under the jaw/occiput) smooth-united with the body.
+
+    The blend is wide (16-20 mm) where the body neck meets the jaw and the nape, so the neck flows
+    into the submandibular surface and the occiput without a crease or step; it narrows above the
+    mandibular border so the jaw line itself stays defined."""
     b = body_sdf(x, y, z)
     h = HEAD_BOX.run(_head_part, x, y, z)
-    k = 0.004 + 0.012 * sstep(1.52, 1.56, z)
+    k = 0.016 + 0.012 * sstep(0.0, 0.06, y) - 0.008 * sstep(1.57, 1.60, z) * sstep(0.02, -0.02, y)
     return smin(b, h, k)
 
 
@@ -964,8 +1059,9 @@ def skin_sdf(x, y, z):
 # Tissue thickness [RB §7.6] and skin tension lines [RB §2.3.1]
 # ===========================================================================
 FAT_SCALE = LM.BODY_FAT_PCT / 15.0          # fat map is for 15 % body fat (tissue.FAT_MM)
-GROUPS = {"torso": ("torso", "scm", "larynx", "trapezius", "clavicle", "ant_fold", "post_fold"),
-          "glute": ("glute",), "arm": ("arm", "deltoid"), "hand": ("hand",), "leg": ("leg",), "foot": ("foot",)}
+GROUPS = {"torso": ("torso", "scm", "larynx", "trapezius", "clavicle", "ant_fold", "post_fold", "pad_trunk"),
+          "glute": ("glute",), "arm": ("arm", "deltoid"), "hand": ("hand",), "leg": ("leg", "pad_leg"),
+          "foot": ("foot",)}
 
 
 def _group_distances(c):
@@ -1170,6 +1266,10 @@ def _body_muscle(x, y, z):
     # are inset less so the shell keeps them instead of opening the armpit
     off = {k: t for k in c if not (k.endswith("_k") or k.startswith("_"))}
     off["ant_fold"] = off["post_fold"] = 0.45 * t
+    # over subcutaneous bone the shell sits on the periosteum (+0.5 mm): pad depth - 0.5 mm inward
+    pads = {key: pad for key, _b, _lo, _hi, pad, _k, _g in PAD_SITES}
+    off["pad_trunk"] = min(pads[k] for k in ("clavicle", "sternum", "psis")) - 0.0005
+    off["pad_leg"] = min(pads[k] for k in ("tibia", "fibula")) - 0.0005
     shell = union_components(c, off=off, kplus=3.0 * t)
     # the widened blends bulge out by up to depth / 2; never closer than 2.5 mm to the skin (FB-4)
     return np.maximum(shell, union_components(c) + 0.0025)
