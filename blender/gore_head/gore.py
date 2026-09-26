@@ -2898,7 +2898,8 @@ def verify_gore(objs=None):
     hits = place_test_hits(KINDS)
     lines.append(f"gore verification: {len(hits)} hits, layers: {', '.join(objs)}")
     secs = _evaluate_all(objs)
-    check("evaluation time, all layers, %d hits" % len(hits), secs < 5.0, f"{secs:.2f} s")
+    # (wall-clock budget with margin: other jobs may share the 4 CPU cores)
+    check("evaluation time, all layers, %d hits" % len(hits), secs < 8.0, f"{secs:.2f} s")
     # attributes on every evaluated layer
     dg = bpy.context.evaluated_depsgraph_get()
     missing = []

@@ -664,8 +664,8 @@ def disc_sdf(upper, lower):
     fu, fl = spine_frame(upper), spine_frame(lower)
     ru, rl = ROW[upper], ROW[lower]
     A = _A()
-    pu = fu.c - fu.R[2] * (ru["body_h_mm"] / 2000.0 + 0.0002)
-    pl = fl.c + fl.R[2] * (rl["body_h_mm"] / 2000.0 + 0.0002)
+    pu = fu.c - fu.R[2] * (ru["body_h_mm"] / 2000.0 + 0.0007)
+    pl = fl.c + fl.R[2] * (rl["body_h_mm"] / 2000.0 + 0.0007)
     if upper == "C2":
         pu = fu.c - fu.R[2] * (0.0025 + 0.0085 + 0.0002)
     mid = Frame(0.5 * (pu + pl), EX, _n(fu.R[1] + fl.R[1]))
@@ -954,7 +954,7 @@ def rib_sdf(n):
         hv = [0.0070, 0.0060, 0.7 * H, H, H, 0.85 * H]
         tv = [0.0065, 0.0050, 0.0045, Tk, Tk, 0.0060]
     elif n in (2, 3):
-        hv = [0.0080, 0.0068, 0.75 * H, H, 1.08 * H, 1.02 * H]
+        hv = [0.0080, 0.0068, 0.75 * H, H, 1.13 * H, 1.05 * H]
         tv = [0.0075, 0.0055, 0.0060, Tk, Tk, 0.0080]
     else:
         hv = [0.0080, 0.0068, 0.75 * H, H, 0.95 * H, 0.90 * H]
@@ -1882,7 +1882,17 @@ def _below(lv):
     if i == 0:
         return fn, box
     up, ubox = vertebra_sdf(LEVELS[i - 1])
-    return _clip_near(fn, up, 0.0008, *ubox), box
+    return _clip_near(fn, up, 0.0011, *ubox), box
+
+
+def _rib_clipped(n):
+    """Rib ``n`` with its head kept 1 mm clear of the two vertebrae it articulates with."""
+    fn, box = rib_sdf(n)
+    head = np.array(RB_.RIB_TABLE[n][1])
+    for lv in {f"T{n}", f"T{max(n - 1, 1)}"}:
+        vf, _vb = vertebra_sdf(lv)
+        fn = _clip_near(fn, vf, 0.0011, head - 0.03, head + 0.03)
+    return fn, box
 
 
 def _sacrum_clipped():
@@ -1947,7 +1957,7 @@ def piece_table():
     for n in range(1, 13):
         head_z = RB_.RIB_TABLE[n][1][2]
         T.append((f"rib{n}_L", True, 0.0009, {1: 130, 11: 110, 12: 80}.get(n, 150),
-                  lambda n=n, hz=head_z: _one(rib_sdf(n), level_bone(hz))))
+                  lambda n=n, hz=head_z: _one(_rib_clipped(n), level_bone(hz))))
     for n in range(1, 11):
         head_z = RB_.RIB_TABLE[n][1][2]
         T.append((f"costal_cartilage{n}_L", True, 0.0009, 45,
@@ -2408,10 +2418,10 @@ def long_variants(meshed):
                     ang = math.radians(rng.uniform(20, 40))
                     nrm = _n(math.cos(ang) * ax + math.sin(ang) * side)
                     seeds = np.array([mid + nrm * 0.05, mid - nrm * 0.05])
-                    cells = Cells(seeds, warp=0.0022, freq=70.0, seed=int(rng.integers(1, 1 << 20)))
+                    cells = Cells(seeds, warp=0.0040, freq=60.0, seed=int(rng.integers(1, 1 << 20)))
                 else:
                     zone = 0.035 if piece.startswith(("radius", "ulna")) else 0.045
-                    n_small = int(rng.integers(8, 14)) if not piece.startswith(("radius", "ulna")) else int(rng.integers(10, 13))
+                    n_small = int(rng.integers(8, 14)) if not piece.startswith(("radius", "ulna")) else int(rng.integers(12, 15))
                     r = np.linalg.norm((V - c0) - np.outer(t, ax), axis=1)
                     rad = float(np.median(r[np.abs(t - (mid - c0) @ ax) < 0.02])) if np.any(
                         np.abs(t - (mid - c0) @ ax) < 0.02) else 0.012
@@ -2429,7 +2439,7 @@ def long_variants(meshed):
                     pts[0] = mid + ax * (zone + 0.20)
                     pts[1] = mid - ax * (zone + 0.20)
                     wts[0] = wts[1] = (0.20 ** 2)
-                    cells = Cells(np.array(pts), warp=0.0020, freq=80.0, seed=int(rng.integers(1, 1 << 20)),
+                    cells = Cells(np.array(pts), warp=0.0032, freq=70.0, seed=int(rng.integers(1, 1 << 20)),
                                   weights=np.array(wts) * 0.98)
                 fr = _fragment_meshes(shell, cells, V, box, hq, extra=lambda x, y, z, c=core: c(x, y, z) + 0.0003)
                 frags.append((piece, fr))
@@ -2476,11 +2486,16 @@ def _closed_decimate(v, f, target):
     triangles, finally the undecimated fragment)."""
     for mult in (1.0, 1.6, 2.5):
         v2, f2 = decimate_arrays(v, f, int(target * mult))
-        if len(f2) and nonmanifold_edges(f2) == 0:
+        if len(f2) and nonmanifold_edges(f2) == 0 and _min_area(v2, f2) > 1e-11:
             return v2, f2
-    if nonmanifold_edges(f):
+    if nonmanifold_edges(f) or _min_area(v, f) <= 1e-11:
         v, f = _remesh(v, f, 0.0010)                     # last resort: manifold voxel shell
     return v, f
+
+
+def _min_area(v, f):
+    """Smallest triangle area (Blender's validate() deletes zero-area faces -> holes)."""
+    return float(np.linalg.norm(np.cross(v[f[:, 1]] - v[f[:, 0]], v[f[:, 2]] - v[f[:, 0]]), axis=1).min()) * 0.5
 
 
 def _mesh_volume(v, f):

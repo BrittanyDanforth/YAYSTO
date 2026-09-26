@@ -308,7 +308,7 @@ class StarTube:
 TORSO = np.array([
     (0.850, 0.118, -0.062, 0.078, 2.2, 2.2),
     (0.880, 0.146, -0.078, 0.096, 2.3, 2.4),
-    (0.930, 0.157, -0.090, 0.100, 2.3, 2.4),     # pubic fat pad; inguinal groove carves the sides
+    (0.930, 0.157, -0.085, 0.100, 2.2, 2.4),     # pubic fat pad (symphysis -0.068 + 15-20 mm); groin creases
     (0.990, 0.154, -0.106, 0.095, 2.5, 2.4),     # ASIS level (asis skin -0.072 at x 0.122)
     (1.040, 0.149, -0.113, 0.093, 2.7, 2.5),
     (1.075, 0.1465, -0.117, 0.0895, 2.8, 2.6),   # navel 84 cm: 29.5 x 20.5 (front -0.118 / back +0.087)
@@ -377,7 +377,7 @@ def _abdomen_relief(x, z):
     px, pz = 0.122 - 0.100 * t, 0.992 - 0.079 * t
     # groin crease, deepest at the mid-inguinal point [RB §7.1 (0.065, -0.068, 0.940)] where the femoral
     # vessels pass (FB-5 depth 15-30 mm is measured from this skin)
-    ing = -(0.0028 + 0.0140 * gauss(t - 0.60, 0.22)) * gauss(np.hypot(ax - px, z - pz), 0.013) * sstep(1.2, 0.9, t)
+    ing = -(0.0028 + 0.0160 * gauss(t - 0.60, 0.22)) * gauss(np.hypot(ax - px, z - pz), 0.013) * sstep(1.2, 0.9, t)
     # costal margin: slight hollow below the ribs, epigastric fossa
     epi = -0.0022 * gauss(ax, 0.03) * gauss(z - 1.245, 0.025)
     jug = -0.004 * gauss(ax, 0.012) * gauss(z - 1.458, 0.010)
@@ -555,8 +555,8 @@ def _shoulder(ax, y, z):
     trap = sd_polyline(ax, y, z, [(0.035, 0.056, 1.459), (0.090, 0.046, 1.452), (0.140, 0.035, 1.451),
                                   (0.186, 0.022, 1.446)], [0.024, 0.0205, 0.018, 0.016], k=0.02)
     clav = sd_polyline(ax, y, z, [np.array(p) + np.array([0.0, -0.001, 0.001]) for p in
-                                  ((0.024, -0.040, 1.451), (0.070, -0.050, 1.453), (0.125, -0.021, 1.461),
-                                   (0.168, 0.008, 1.459))], [0.0080, 0.0078, 0.0076, 0.0080], k=0.01)
+                                  ((0.026, -0.037, 1.451), (0.070, -0.049, 1.453), (0.125, -0.021, 1.461),
+                                   (0.168, 0.008, 1.459))], [0.0062, 0.0074, 0.0074, 0.0080], k=0.012)
     # axillary folds: the pectoralis (front) and latissimus/teres (back) sweep from the chest wall into
     # the arm; only their lower borders show, the web above them fills up to the shoulder
     a_arm = GH + 0.075 * ARM_D - 0.018 * ARM_LAT + np.array([0.0, -0.022, 0.0])
@@ -672,8 +672,8 @@ LEG_W = unit(ANKLE - HIP)
 LEG = np.array([
     (1.010, -0.040, 0.070, 0.050, 0.130, 2.3),      # thigh top buried in the pelvis
     (0.960, -0.055, 0.095, 0.020, 0.160, 2.3),      # femoral triangle below the inguinal crease
-    (0.910, -0.075, 0.108, 0.008, 0.177, 2.3),
-    (0.860, -0.079, 0.116, 0.004, 0.177, 2.3),
+    (0.910, -0.066, 0.108, 0.008, 0.177, 2.3),
+    (0.860, -0.076, 0.116, 0.004, 0.177, 2.3),
     (0.820, -0.076, 0.118, 0.004, 0.177, 2.3),      # gluteal fold (0.090, 0.120, 0.820)
     (0.790, -0.073, 0.108, 0.004, 0.176, 2.3),      # upper thigh 58 cm (17.5 x 18.5)
     (0.740, -0.070, 0.099, 0.009, 0.173, 2.3),
@@ -681,13 +681,13 @@ LEG = np.array([
     (0.650, -0.064, 0.089, 0.020, 0.166, 2.3),
     (0.600, -0.060, 0.080, 0.029, 0.159, 2.3),
     (0.555, -0.056, 0.071, 0.036, 0.152, 2.3),
-    (0.520, -0.052, 0.067, 0.038, 0.148, 2.3),
-    (0.495, -0.043, 0.066, 0.037, 0.146, 2.35),     # knee 37.5 cm (patella adds 6 mm -> skin -0.049)
-    (0.465, -0.041, 0.069, 0.038, 0.144, 2.35),
+    (0.520, -0.052, 0.068, 0.036, 0.149, 2.3),
+    (0.495, -0.043, 0.067, 0.035, 0.148, 2.35),     # knee 37.5 cm (patella adds 6 mm -> skin -0.049)
+    (0.465, -0.041, 0.070, 0.036, 0.146, 2.35),
     (0.440, -0.033, 0.078, 0.040, 0.144, 2.3),
-    (0.410, -0.020, 0.097, 0.040, 0.146, 2.3),
-    (0.370, -0.002, 0.116, 0.040, 0.148, 2.3),      # calf 37.5 cm
-    (0.330, 0.008, 0.119, 0.043, 0.145, 2.3),
+    (0.410, -0.020, 0.095, 0.038, 0.146, 2.3),
+    (0.370, -0.002, 0.113, 0.035, 0.148, 2.3),      # calf 37.5 cm (medial head bulges the inner outline)
+    (0.330, 0.008, 0.117, 0.039, 0.145, 2.3),
     (0.280, 0.016, 0.116, 0.048, 0.141, 2.3),
     (0.220, 0.023, 0.101, 0.055, 0.135, 2.35),
     (0.160, 0.024, 0.092, 0.061, 0.130, 2.4),
@@ -741,7 +741,7 @@ def _leg_profile(S, TH):
     R = R + bump(0.530, -55, 0.0020, 0.030, 12)          # biceps femoris tendon
     R = R + bump(0.530, -125, 0.0022, 0.030, 12)         # semitendinosus tendon
     R = R + bump(0.452, -25, 0.0022, 0.012, 20)          # fibular head
-    R = R + bump(0.365, -125, 0.0075, 0.050, 34)         # gastrocnemius medial head (lower)
+    R = R + bump(0.365, -125, 0.0062, 0.050, 34)         # gastrocnemius medial head (lower)
     R = R + bump(0.395, -58, 0.0050, 0.045, 30)          # gastrocnemius lateral head
     R = R + bump(0.330, 55, 0.0030, 0.080, 25)           # tibialis anterior
     R = R + bump(0.300, 125, -0.0020, 0.100, 20)         # flat subcutaneous tibial face (lean)
@@ -901,23 +901,28 @@ def body_components(x, y, z):
     return out
 
 
-def union_components(c, off=None):
-    """Blend the components into the body (``off``: per-component inward offsets, m)."""
+def union_components(c, off=None, kplus=0.0):
+    """Blend the components into the body.
+
+    ``off``: per-component inward offsets (m); ``kplus`` widens every blend radius
+    (the muscle shell passes its own depth, so an inward offset keeps rounded
+    creases instead of cusps in the armpit, groin and shoulder)."""
     o = off or {}
     g = {k: (v + o.get(k, 0.0) if not (k.endswith("_k") or k.startswith("_")) else v) for k, v in c.items()}
-    trunk = smin(g["torso"], g["scm"], 0.016)
-    trunk = smin(trunk, g["larynx"], 0.008)
-    trunk = smin(trunk, g["trapezius"], 0.020)
-    trunk = smin(trunk, g["clavicle"], 0.020)
-    arm = smin(g["arm"], g["deltoid"], 0.030)
-    arm = smin(arm, g["hand"], 0.012)
-    body = smin(trunk, arm, 0.010 + 0.020 * sstep(1.39, 1.45, g["_z"]))
-    body = smin(body, g["ant_fold"], 0.028)
-    body = smin(body, g["post_fold"], 0.030)
-    leg = smin(g["leg"], g["foot"], 0.012)
-    body = smin(body, leg, 0.022 + 0.015 * sstep(0.02, -0.06, g["_y"]))
+    K = kplus
+    trunk = smin(g["torso"], g["scm"], 0.016 + K)
+    trunk = smin(trunk, g["larynx"], 0.008 + K)
+    trunk = smin(trunk, g["trapezius"], 0.020 + K)
+    trunk = smin(trunk, g["clavicle"], 0.020 + K)
+    arm = smin(g["arm"], g["deltoid"], 0.030 + K)
+    arm = smin(arm, g["hand"], 0.012 + K)
+    body = smin(trunk, arm, 0.010 + 0.020 * sstep(1.39, 1.45, g["_z"]) + K)
+    body = smin(body, g["ant_fold"], 0.028 + K)
+    body = smin(body, g["post_fold"], 0.030 + K)
+    leg = smin(g["leg"], g["foot"], 0.012 + K)
+    body = smin(body, leg, 0.022 + 0.015 * sstep(0.02, -0.06, g["_y"]) + K)
     # gluteal fold stays crisp below, the upper and outer buttock melt into the back and hip
-    return smin(body, g["glute"], g["glute_k"])
+    return smin(body, g["glute"], g["glute_k"] + K)
 
 
 def body_sdf(x, y, z):
@@ -1157,15 +1162,27 @@ def tension_at(points, normals):
 # Muscle shell SDF: skin offset inward by skin + fat (plan §8.2 B1, [RB §7.6])
 # ===========================================================================
 def _body_muscle(x, y, z):
+    """Body part of the shell: every component inset by skin + fat, blends widened by the same depth."""
     c = body_components(x, y, z)
-    d = union_components(c)
     skin, fat, _m = tissue_fields(x, y, z, comps=c)
-    return d + (skin + fat) * 1e-3
+    t = (skin + fat) * 1e-3
+    # thin muscular components (axillary folds are pectoralis / latissimus under only skin + a little fat)
+    # are inset less so the shell keeps them instead of opening the armpit
+    off = {k: t for k in c if not (k.endswith("_k") or k.startswith("_"))}
+    off["ant_fold"] = off["post_fold"] = 0.45 * t
+    shell = union_components(c, off=off, kplus=3.0 * t)
+    # the widened blends bulge out by up to depth / 2; never closer than 2.5 mm to the skin (FB-4)
+    return np.maximum(shell, union_components(c) + 0.0025)
+
+
+HEAD_MUSCLE_DEPTH = 0.0055      # scalp 3.5-5.5 mm skin, 5-8 mm to bone; face skin + fat ~4-6 mm [RB §7.6] E
 
 
 def _head_muscle(x, y, z):
+    """Head part of the shell: the (closed-mouth) head skin inset by ~5.5 mm.  The head project's own
+    GH_Muscle is a thin, gappy layer that meshes into rags at the shell's 5 mm resolution."""
     A = _A()
-    h = A.muscle_sdf(x, y - HEAD_OFFSET[1], z - HEAD_OFFSET[2])
+    h = A.skin_sdf(x, y - HEAD_OFFSET[1], z - HEAD_OFFSET[2], mouth_cavity=False) + HEAD_MUSCLE_DEPTH
     return smax(h, head_clip_z(x, y) + 0.004 - z, 0.006)
 
 
@@ -1839,58 +1856,57 @@ def build_body_skin(quick=None):
         bake_body_maps(body, os.path.join(gbc.SUBJECT_OUT, "textures"))
     out = {"GB_Body": body, "GB_Body_HR": hr, "GB_Body_LOD1": lod}
     with T("B1: fit a placeholder head to the canonical ring"):
-        out.update(adapt_placeholder_head(ring))
+        out.update(adapt_placeholder_head(ring, quick))
     return out
 
 
-def adapt_placeholder_head(ring):
-    """Keep FB-1 true while B2 has not built the head: the B0 placeholder GB_Head was zipped to the
-    placeholder mannequin's ring, so its neck is projected onto this body's ``skin_sdf`` and re-zipped
-    to the canonical ring (shape keys and codes rebuilt, LOD1 re-decimated).  No-op for B2's head."""
+def adapt_placeholder_head(ring, quick=None):
+    """Keep FB-1 true while B2 has not built the head.
+
+    The B0 placeholder GB_Head was zipped to the placeholder mannequin's ring and
+    carries the head project's neck column (3 cm behind the bible neck).  Until
+    B2 delivers, the stand-in head is rebuilt exactly like B0 does it but from
+    this module's ``skin_sdf`` (head clipped under the jaw + the bible neck), cut
+    above the seam plane and zipped to the canonical ring; codes, mouth-lining
+    slot, UVs, the 24 face keys and LOD1 are redone.  No-op once B2's head exists."""
     import bpy
-    import bmesh
     import gb_geom as gg
     import head_integration as hi
     import placeholder
-    head = bpy.data.objects.get("GB_Head")
-    if head is None or head.get("gb_status") != "placeholder":
+    old = bpy.data.objects.get("GB_Head")
+    if old is None or not str(old.get("gb_status", "")).startswith("placeholder"):
         return {}
-    me = head.data
-    if me.shape_keys is not None:
-        head.shape_key_clear()
-    v = gbc.get_verts(me)
-    low = v[:, 2] < 1.62
-    A = _A()
-    q = A.project_to_surface(skin_sdf, v[low], 0.012, 6)
-    w = sstep(1.62, 1.58, v[low, 2])[:, None]
-    v[low] = (1 - w) * v[low] + w * q
-    gbc.set_verts(me, v)
-    bm = bmesh.new()
-    bm.from_mesh(me)
-    kill = [f for f in bm.faces if any(abs(p.co.z - SEAM_Z) < 1e-6 for p in f.verts)]
-    bmesh.ops.delete(bm, geom=kill, context='FACES')
-    bmesh.ops.delete(bm, geom=[p for p in bm.verts if not p.link_faces], context='VERTS')
-    bm.to_mesh(me)
-    bm.free()
-    me.update()
+    hh = 0.0030 if _quick(quick) else 0.0020
+    head = _sdf_object("GB_Head", skin_sdf, (-0.118, -0.135, SEAM_Z - 3 * hh), (0.118, 0.150, 1.795), hh)
+    gg.decimate_to(head, 29800 - 2 * len(ring))
+    gg.cut_plane(head.data, SEAM_Z + 0.002, keep="above")
+    gg.remove_loose(head.data)
+    _largest_piece(head.data)
     hi.zip_to_ring(head, ring, side="above")
-    me.shade_smooth()
+    head.data.shade_smooth()
+    A = _A()
+    c = gbc.face_centres(head.data) - HEAD_OFFSET
+    closed = A.skin_sdf(c[:, 0].copy(), c[:, 1].copy(), c[:, 2].copy(), mouth_cavity=False)
+    in_mouth = ((np.abs(c[:, 0]) < 0.034) & (c[:, 1] > -0.105) & (c[:, 1] < -0.01) & (c[:, 2] > -0.09)
+                & (c[:, 2] < -0.02))
     placeholder.set_skin_codes(head, body_segment="head_neck")
+    gbc.set_material_slots(head, ((closed < -0.0006) & in_mouth).astype(np.int32))
     gg.smart_uv(head, margin=0.004)
     placeholder.finish_uvs(head)
-    status = "placeholder (neck fitted to the B1 ring)"
+    placeholder.tag(head)
+    status = "placeholder (B0 method on the B1 skin_sdf)"
     out = {"GB_Head": head}
-    lod = bpy.data.objects.get("GB_Head_LOD1")
-    if lod is not None:
-        new = gbc.new_object("GB_Head_LOD1", me.copy())          # copied before the shape keys exist
-        _protect_ring_decimate(new, gbc.tri_count(me) // 2)
-        placeholder.set_skin_codes(new, body_segment="head_neck")
-        gbc.set_material_slots(new)
-        placeholder.finish_uvs(new)
-        placeholder.tag(new)
-        new["gb_status"] = status
-        out["GB_Head_LOD1"] = new
-    placeholder.add_shape_keys(head, placeholder.face_shape_fields(gbc.get_verts(me)), gbc.SHAPE_KEYS["GB_Head"])
+    if bpy.data.objects.get("GB_Head_LOD1") is not None:
+        lod = gbc.new_object("GB_Head_LOD1", head.data.copy())          # copied before the shape keys exist
+        _protect_ring_decimate(lod, gbc.tri_count(head.data) // 2)
+        placeholder.set_skin_codes(lod, body_segment="head_neck")
+        gbc.set_material_slots(lod)
+        placeholder.finish_uvs(lod)
+        placeholder.tag(lod)
+        lod["gb_status"] = status
+        out["GB_Head_LOD1"] = lod
+    placeholder.add_shape_keys(head, placeholder.face_shape_fields(gbc.get_verts(head.data)),
+                               gbc.SHAPE_KEYS["GB_Head"])
     head["gb_status"] = status
     return out
 
@@ -1954,6 +1970,24 @@ def build_shorts(skin=None, quick=None):
     return {"GB_Shorts": obj}
 
 
+def taubin(me, iters=10, lam=0.50, mu=-0.53):
+    """Taubin lambda/mu smoothing (no net shrink) on a mesh, in place."""
+    import bmesh
+    v = gbc.get_verts(me)
+    ev = np.empty(len(me.edges) * 2, np.int64)
+    me.edges.foreach_get("vertices", ev)
+    ev = ev.reshape(-1, 2)
+    deg = np.bincount(ev.ravel(), minlength=len(v)).astype(float)[:, None]
+    for _ in range(iters):
+        for f in (lam, mu):
+            acc = np.zeros_like(v)
+            np.add.at(acc, ev[:, 0], v[ev[:, 1]])
+            np.add.at(acc, ev[:, 1], v[ev[:, 0]])
+            v = v + f * (acc / np.maximum(deg, 1.0) - v)
+    gbc.set_verts(me, v)
+    return me
+
+
 def build_muscle_shell(skin=None, quick=None):
     """GB_MuscleShell: closed shell at skin + fat depth [RB §7.6], 24k tris, 6 surfaces."""
     import gb_geom as gg
@@ -1961,6 +1995,9 @@ def build_muscle_shell(skin=None, quick=None):
     h = _res(quick)["muscle"]
     with T("B1: muscle shell SDF mesh"):
         obj = _sdf_object("GB_MuscleShell", muscle_sdf, (-0.60, -0.20, -0.004), (0.60, 0.20, 1.80), h)
+        # an inward offset turns every concave crease tighter than the offset into a cusp (armpit, groin,
+        # navel, shoulder notch); Taubin smoothing rounds them without shrinking the shell
+        taubin(obj.data, iters=20)
         gg.decimate_to(obj, MUSCLE_TRIS)
     with T("B1: muscle shell codes + surfaces + UV"):
         paint_codes(obj)
