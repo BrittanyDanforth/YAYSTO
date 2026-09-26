@@ -296,11 +296,11 @@ def _gates():
     # ---- arm --------------------------------------------------------------------------------
     # shoulder: sectors lateral(superior) / anterior / medial(axilla) / posterior
     g["shoulder"] = Gate(GH, ARM_D, ARM_LAT, ANT,
-                         o=_k("shoulder", 0.10, 0.55, 1.25, 0.65), w=_k("shoulder", 0.55, 0.65, 0.75, 0.65),
+                         o=_k("shoulder", 0.27, 0.82, 1.55, 0.91), w=_k("shoulder", 0.91, 1.18, 1.00, 1.18),
                          o_axis=0.020, w_axis=0.030, r_att=(0.020, 0.045),
-                         contain=(_k("shoulder", 1.45, 1.05, 0.92, 1.15), _k("shoulder", 2.00, 1.60, 1.40, 1.70)),
+                         contain=(_k("shoulder", 1.55, 1.36, 1.13, 1.45), _k("shoulder", 2.45, 2.18, 1.82, 2.27)),
                          contain_a=(0.14, 0.24), contain_far=(0.090, 0.130))
-    # elbow: flexor = anterior; the extensor (olecranon) side blends 3 cm proximal of the joint
+    # elbow: flexor = anterior; on the olecranon side the blend sits proximal of the olecranon (ray gate)
     g["elbow"] = Gate(EL, ARM_D, ANT, ARM_LAT, mode="ray", r0=0.6 * R_J["elbow"],
                       o=(4.0, -8.0, -58.0, -8.0), w=(14.0, 22.0, 26.0, 22.0),
                       o_axis=-15.0, w_axis=30.0, r_att=(0.012, 0.030))
@@ -325,9 +325,10 @@ def _gates():
                     o=_k("hip", -0.22, -0.28, 1.20, 0.40), w=_k("hip", 0.22, 0.40, 0.80, 0.33),
                     o_axis=0.0, w_axis=0.030, r_att=(0.030, 0.070),
                     contain=((0.13,) * 4, (0.18,) * 4), contain_a=(0.30, 0.40), contain_far=(0.30, 0.40))
-    # knee: flexor = posterior; the patella side blends above the patella (7 cm up)
+    # knee: flexor = posterior; on the patella side the blend sits above the patella (ray gate: the
+    # shin share reaches ~16 cm up the thigh front, 50 % at ~7 cm, full over the patella)
     g["knee"] = Gate(KN, u_shin, POST, LEFT, mode="ray", r0=0.6 * R_J["knee"],
-                     o=(6.0, -14.0, -52.0, -14.0), w=(14.0, 22.0, 24.0, 22.0),
+                     o=(6.0, -24.0, -45.0, -24.0), w=(20.0, 26.0, 20.0, 26.0),
                      o_axis=-15.0, w_axis=30.0, r_att=(0.020, 0.045))
     # ankle: phi 0 = front (dorsum), 90 = lateral (malleolus stays with the shin), 180 = heel
     g["ankle"] = Gate(AN, u_shin, ANT, LEFT,

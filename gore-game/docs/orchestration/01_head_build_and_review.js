@@ -136,13 +136,15 @@ const USER_FEEDBACK = `USER FEEDBACK (TOP PRIORITY, the user was blunt about it)
 - silhouette test: viewed at a grazing angle or in profile the wound visibly breaks the surface contour (a notch/opening), and a cross-section shows real walls;
 - bullet holes are real openings you can look into, bruising/abrasion is under or on the skin, burns shrink/blister/split the skin geometry.
 Also match the fact-checked research in /home/user/YAYSTO/gore-game/docs/research/01_gunshot_wounds.md and 02_sharp_blunt_burn.md: 9 mm entrance in scalp ~6-9 mm hole (0.7-1.0 x calibre), elsewhere often SMALLER than the bullet (4-6 mm), with a 1-3 mm red-brown abrasion collar (eccentric for angled shots); head exits 10-30 mm stellate/irregular, everted, no collar; cut gape = length x G(theta) x depth x region factor (a 40 mm cut across tension lines through the dermis gapes ~6-10 mm, along the lines only 1-2 mm; scalp cuts through the galea gape 12-20 mm); lacerations over bone (eyebrow, cheekbone, chin, scalp) are ragged with tissue bridges. Entrance holes that are coin-sized are wrong.
-Also apply the "current head vs real" fix table in /home/user/YAYSTO/gore-game/docs/REALISM_BIBLE.md §2.7 (25 rows: e.g. skull entry hole larger than the skin hole with inward bevel, concentric collar unless angled, soot/stipple for close shots, varied exit shapes, spatter directed away from the victim, knife cannot cut through the skull, bruises/burns develop over time, wider drips, thick pools near-black red). Other known issues: a shot into the open mouth lands inside the mouth cavity and does not hit lips/teeth; blunt splits have paper-sharp edges (need crushed, abraded, bridged margins); teeth show brown speckles that read as rot instead of blood; not enough blunt swelling; burns look like even confetti instead of zones of different depth with shrinking and cracking skin.
-BLOOD MUST COME FROM THE WOUND (user, verbatim: "VERY UNREALISTIC BLOOD WOULD POUR OUT THE WOUND OF HEADSHOT AND NOT MAGICALLY APPEAR BLOOD AROUND THE HOLE IT WOULD COME FROM THE INJURY ETC BE 1:1 REALISTIC THATS STANDARD EXTREME REALISM"):
+Also apply the "current head vs real" fix table in /home/user/YAYSTO/gore-game/docs/REALISM_BIBLE.md §2.7 (25 rows: e.g. skull entry hole larger than the skin hole with inward bevel, concentric collar unless angled, soot/stipple for close shots, varied exit shapes, spatter directed away from the victim, knife cannot cut through the skull, bruises/burns develop over time, wider drips, thick pools near-black red). Other known issues: a shot into the open mouth lands inside the mouth cavity and does not hit lips/teeth; blunt splits have paper-sharp edges (need crushed, abraded, bridged margins); teeth show brown speckles that read as rot instead of blood; not enough blunt swelling; burns look like even confetti instead of zones of different depth with shrinking and cracking skin.`
+
+const BLOOD_RULE = `BLOOD MUST COME FROM THE WOUND (user, verbatim: "VERY UNREALISTIC BLOOD WOULD POUR OUT THE WOUND OF HEADSHOT AND NOT MAGICALLY APPEAR BLOOD AROUND THE HOLE IT WOULD COME FROM THE INJURY ETC BE 1:1 REALISTIC THATS STANDARD EXTREME REALISM"):
 - NO blood may appear on the skin that did not physically get there. Remove any pre-painted halo/pool/smear around a wound (e.g. gore_blood teardrops or rings stamped around the hole). Every stain on the skin must be connected to the wound by the path the blood actually travelled, or be an impact spatter droplet thrown at the moment of the hit.
 - Sequence (animate/time-drive it): t=0 hole opens, impact spatter only (exits throw blood and tissue AWAY from the head; entrances get back-spatter toward the shooter, very little on the victim's own skin); then blood WELLS UP inside the wound cavity (a blood surface filling the hole, dark and glossy, brain/tissue extruding at exits); it OVERFLOWS at the LOWEST point of the wound rim; a continuous stream POURS from that lip and runs down under gravity following the skin's shape (around the jaw line, down the neck), with a rounded bead at the leading front; the front advances at a realistic speed (cm/s on skin), the stream widens with volume, more streams split off the rim as flow increases, it collects in creases and drips off low points (chin, earlobe, nose). Behind the front, a thinner film/stain remains along the path and darkens as it dries at the edges.
 - Flow rate follows the injury: scalp/head wounds bleed heavily and keep pouring; arterial = pulsing surges; after cardiac arrest only slow gravity drainage.
 - Look: thick blood is dark maroon to near-black, glossy, with clots; thin films are translucent red; never uniform bright-red tubes.
 - Test: render a time sequence (at least 6 moments from 0 to 60 s) — the blood must visibly originate in the wound and travel outward/downward; any blood appearing somewhere without a path from the wound is a HIGH-severity failure.`
+const fb = r => (r >= 3 ? USER_FEEDBACK + '\n' + BLOOD_RULE : USER_FEEDBACK)
 
 const CRITICS = [
   {
@@ -150,7 +152,7 @@ const CRITICS = [
     prompt: (round, prior) => `${PRE}
 
 YOU ARE A CRITIC (round ${round}); do not edit project files. Role: senior character artist judging the ANATOMY and overall visual quality. Look at ${DIR}/renders/ (preset_*, cutaway, anatomy_*, materials_*). Re-render extra angles or close-ups if needed (python, write to ${SCRATCH}/critic_visual_r${round}/; you may write small scratch scripts there that import the project modules). Judge: head proportions and silhouette; eyes and eyelids; nose; lips parted with teeth and tongue visible; ears; neck; skin shading realism; skull thickness; brain folds and placement; eyes in orbits; teeth shapes on the arch; intersections. Compare against real human anatomy. Also flag any wound that reads as a flat sticker rather than cut skin (see below).
-${USER_FEEDBACK}
+${fb(round)}
 ${prior}
 Severity: high = immediately looks broken/ugly/fake or a contract feature is missing; medium = clearly noticeable quality gap; low = polish. Give concrete, actionable fixes (file, function, what to change). Verdict 'ship' only if there are no high issues and it would impress a demanding user.`,
   },
@@ -158,7 +160,7 @@ Severity: high = immediately looks broken/ugly/fake or a contract feature is mis
     key: 'gore',
     prompt: (round, prior) => `${PRE}
 
-YOU ARE A CRITIC (round ${round}); do not edit project files. Role: horror film prosthetics/VFX supervisor judging the GORE. Look at ${DIR}/renders/ (preset_*, closeup_exit, gore_*). Render your own close-ups of each wound type on the real head (write scratch scripts in ${SCRATCH}/critic_gore_r${round}/ that import build.py/gore.py; add hits with gore.add_hit). Judge each type against how that injury really looks: bullet entry (small round hole, abrasion collar), exit (ragged everted stellate tear, bone fragments), slash (gaping clean-edged gash, V walls), blunt (swelling, bruise colours, stellate split, depressed fracture, knocked-out teeth), burn (char, blisters, peeling). ${USER_FEEDBACK}
+YOU ARE A CRITIC (round ${round}); do not edit project files. Role: horror film prosthetics/VFX supervisor judging the GORE. Look at ${DIR}/renders/ (preset_*, closeup_exit, gore_*). Render your own close-ups of each wound type on the real head (write scratch scripts in ${SCRATCH}/critic_gore_r${round}/ that import build.py/gore.py; add hits with gore.add_hit). Judge each type against how that injury really looks: bullet entry (small round hole, abrasion collar), exit (ragged everted stellate tear, bone fragments), slash (gaping clean-edged gash, V walls), blunt (swelling, bruise colours, stellate split, depressed fracture, knocked-out teeth), burn (char, blisters, peeling). ${fb(round)}
 Render every wound type close-up from 3 angles (straight on, 45 degrees, grazing/profile) plus a cross-section; any wound that reads as a flat sticker at any angle is a HIGH severity issue. Also: do the layers line up and show skin/fat/muscle/bone rings with thickness, or do wounds read as dents / show void; is the brain visible through deep wounds; does blood obey gravity and hug the surface; drip shapes and beads; fresh vs dried blood colours (blood_age); does it look like a real prop or like CG blobs?
 ${prior}
 Severity: high = injury clearly unconvincing/broken or a contract wound feature missing; medium = noticeable quality gap; low = polish. Concrete fixes (file/node group/what to change). Verdict 'ship' only if every wound type is convincing.`,
@@ -197,7 +199,7 @@ for (let round = 1; round <= 3; round++) {
   const FIX = `${PRE}
 
 YOUR TASK: fix round ${round}. You may edit any project file in ${DIR} (anatomy.py, materials.py, gore.py, build.py, gh_common.py, CONTRACT.md).
-${USER_FEEDBACK}
+${fb(round)}
 Treat the sticker problem as the #1 issue until the critics confirm every wound is real cut geometry from every angle. Critics reported these issues:
 ${JSON.stringify(issues, null, 1)}
 ${history.length ? 'Earlier rounds:\n' + JSON.stringify(history.map(h => ({ round: h.round, fixed: h.fixed })), null, 1) : ''}
@@ -217,6 +219,7 @@ const FINAL = `${PRE}
 
 YOUR TASK: finalize. You may edit any project file in ${DIR}.
 ${USER_FEEDBACK}
+${BLOOD_RULE}
 Before finishing, re-render every wound type close-up at 3 angles and confirm none reads as a sticker; fix it if any does. Review history:
 ${JSON.stringify(history, null, 1)}
 1. Delete stale/throwaway files from ${DIR} and ${DIR}/renders (keep only renders the README uses plus module look-dev renders that are current). Remove __pycache__.

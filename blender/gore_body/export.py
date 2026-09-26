@@ -1,22 +1,35 @@
-"""glTF export, JSON sidecars and manifest (owner B6; first working draft by B0).
+"""glTF export, JSON sidecars, manifest, LOD1 and the export checks (owner B6).
 
 Plan §3.3.3, §4.3, §5.7-5.9, §8.2 B6.
 
 Final entry points
 ------------------
-``export_subject(objs, out)``  -> writes GB_Subject.glb, GB_Subject_LOD1.glb and every JSON sidecar
-                                  (rig, landmarks, organs, vessels, spine, codes, brain_labels) to ``out``
+``export_subject(objs, out)``  -> GB_Subject.glb, GB_Subject_LOD1.glb and every JSON sidecar (rig, landmarks,
+                                  organs, vessels, spine, codes, brain_labels; bones.json from B3) in ``out``
 ``export_props(out)``          -> weapons.glb, room.glb, props.json, room.json (delegates to props.py, B8)
-``write_manifest(out, ...)``   -> manifest.json (schema/generator versions, build id, input hashes,
-                                  per-mesh counts, surfaces, bounds, wound grid, segment origins,
-                                  textures, budget checks, pending stages)
+``write_manifest(out, ...)``   -> manifest.json: schema/generator versions, build id, input hashes, files
+                                  (bytes + sha256), per-mesh counts/surfaces/keys, armature, rest bounds,
+                                  wound grid, segment origins, the texture list with import hints, budget
+                                  and file-size checks, rig/deformation/round-trip/Godot-import results
+``round_trip(glb)``            -> re-imports a glb in a fresh Blender process and compares it with the scene
+``godot_import_check(glb)``    -> imports the glb with Godot 4.5.1 headless in a temporary project and
+                                  inspects the result (skeleton, skins, blend shapes, animations, CUSTOM0)
 
-The glTF options are exactly plan §5.9 (verified in the bundled exporter 5.0.21).
-Only the armature and the contract meshes are exported (``use_selection``);
-GB_Data curves/empties, stage lights and cameras never reach the glb.
+Before exporting, ``prepare_for_export`` re-applies B7's re-charted inner atlases (``bake.prepare_uvs``,
+cached) so the exported UVs always match the baked textures, and refreshes the painter dominant-bone
+maps (``bake.bake_painter_inputs``) whenever the weight model changed.
+
+The glTF options are exactly plan §5.9 (verified in the bundled exporter 5.0.21).  Only the armature
+and the contract meshes are exported (``use_selection``); GB_Data curves/empties, the high-res bake
+sources, stage lights and cameras never reach the glb.
 """
+import hashlib
+import json
 import os
+import shutil
+import subprocess
 import sys
+import tempfile
 
 import numpy as np
 
@@ -45,8 +58,13 @@ GLTF_OPTIONS = dict(
 
 SUBJECT_GLB = "GB_Subject.glb"
 LOD1_GLB = "GB_Subject_LOD1.glb"
+GODOT_BIN = "/opt/godot/Godot_v4.5.1-stable_linux.x86_64"
 # plan §3.3.3 wound lookup grid: 2.5 cm cells over the measured A-pose rest bounds + 1 cell margin
 WOUND_CELL_M = 0.025
+# sidecars written by other stages (kept in the manifest file list when present)
+FOREIGN_SIDECARS = ("bones.json",)
+# results of the export checks run in this process (verify fills them; the final manifest reports them)
+CHECKS = {}
 
 
 def _select_only(objs):
@@ -76,6 +94,63 @@ def export_glb(path, mesh_names):
     os.makedirs(os.path.dirname(path), exist_ok=True)
     bpy.ops.export_scene.gltf(filepath=path, **GLTF_OPTIONS)
     return path, [o.name for o in objs]
+
+
+# ---------------------------------------------------------------------------
+# Pre-export: B7 atlases and painter bone maps must match what is exported
+# ---------------------------------------------------------------------------
+def weights_hash(names=("GB_Head", "GB_Body", "GB_Shorts")):
+    """Fingerprint of the analytic weight function on the painter meshes (every 5th vertex)."""
+    import rig
+    h = hashlib.sha256()
+    for n in names:
+        o = bpy.data.objects.get(n)
+        if o is None:
+            continue
+        v = gbc.get_verts(o.data)[::5]
+        idx, w = rig.weights_at(v)
+        h.update(n.encode())
+        h.update(idx.astype(np.int32).tobytes())
+        h.update(np.rint(w * rig.QUANT).astype(np.int32).tobytes())
+    return h.hexdigest()[:16]
+
+
+def _previous_manifest(out):
+    path = os.path.join(out, "manifest.json")
+    if not os.path.exists(path):
+        return {}
+    try:
+        return gbc.read_json(path)["data"]
+    except (ValueError, KeyError):
+        return {}
+
+
+def prepare_for_export(out=gbc.SUBJECT_OUT, refresh_painter=True):
+    """Re-apply B7's inner-mesh atlases and refresh the painter bone maps if the weights changed."""
+    res = {"uvs": "bake module unavailable", "painter": "unchanged"}
+    try:
+        import bake
+    except Exception as exc:                                         # pragma: no cover - B7 missing
+        res["uvs"] = f"bake import failed: {exc}"
+        return res
+    try:
+        with gbc.Timer("export: B7 atlases (bake.prepare_uvs)"):
+            res["uvs"] = {k: bool(v.get("cached", False)) for k, v in bake.prepare_uvs().items()}
+    except Exception as exc:                                         # pragma: no cover
+        res["uvs"] = f"prepare_uvs failed: {exc}"
+    wh = weights_hash()
+    res["weights_hash"] = wh
+    prev = _previous_manifest(out).get("rig", {}).get("painter_weights_hash")
+    tex = os.path.join(out, "textures")
+    have = all(os.path.exists(os.path.join(tex, f"{s}_bone.png")) for s in ("head", "body", "shorts"))
+    if refresh_painter and (prev != wh or not have):
+        present = {n: bpy.data.objects[n] for n in ("GB_Head", "GB_Body", "GB_Shorts") if n in bpy.data.objects}
+        with gbc.Timer("export: painter bone maps (bake.bake_painter_inputs)"):
+            bake.bake_painter_inputs(present, tex)
+        res["painter"] = "refreshed (weight model changed)"
+    CHECKS["painter_weights_hash"] = wh
+    CHECKS["prepare"] = res
+    return res
 
 
 # ---------------------------------------------------------------------------
@@ -110,8 +185,14 @@ def landmarks_table():
     }
 
 
+CORD_EXTRA = {"30": "cauda_equina", "31": "dura"}      # B4: 40 + n = root stub of cord segment n
+
+
 def codes_table():
     """codes.json 'data': every integer code carried in UV2 / CUSTOM0.w (plan §5.5)."""
+    cord = {str(i): s for i, s in enumerate(MYO.CORD_SEGMENTS)}
+    cord.update(CORD_EXTRA)
+    cord.update({str(40 + i): f"root_{s}" for i, s in enumerate(MYO.CORD_SEGMENTS)})
     return {
         "segment": {str(k): v for k, v in SG.SEGMENTS.items()},
         "region": {str(k): v for k, v in SG.REGIONS.items()},
@@ -120,17 +201,20 @@ def codes_table():
         "bone_piece": {str(v): k for k, v in BN.BONE_PIECE_ID.items()},
         "organ": {str(o["organ_id"]): o["id"] for o in OR.ORGANS},
         "brain_region": {str(k): v[0] for k, v in BR.BRAIN_REGIONS.items()},
-        "cord_segment": {str(i): s for i, s in enumerate(MYO.CORD_SEGMENTS)} | {"30": "cauda_equina"},
+        "cord_segment": cord,
         "region_stride": SG.REGION_STRIDE,
         "uv2": {
             "GB_Head, GB_Body, GB_Shorts, GB_MuscleShell, GB_*_LOD1": "x = segment + 32 * region, y = dermatome",
-            "GB_Eye_*, GB_EyeFX_*, GB_Mouth": "x = 0 + 32 * region(eyelid_lip) = 64, y = 0",
+            "GB_Eye_*, GB_EyeFX_*": "x = 0 + 32 * region(eyelid_lip) = 64, y = 0",
+            "GB_Mouth": "x = 64, y = FDI tooth number (0 = gums / tongue) (B2)",
             "GB_BrowLash": "x = 32 (face), y = 0",
-            "GB_Skeleton, GB_Frac_*": "x = bone piece id, y = bone class (fracture fragments = loose islands)",
-            "GB_Organs": "x = organ id, y = sub-part id (heart chambers 1 RA, 2 RV, 3 LA, 4 LV)",
+            "GB_Skeleton, GB_Frac_*": "x = bone piece id, y = bone class (6 = marrow core; fracture fragments = "
+                                      "loose islands, gb_frag index in bones.json)",
+            "GB_Organs": "x = organ id, y = sub-part id (organs.json sub_parts; heart 1 RA, 2 RV, 3 LA, 4 LV)",
             "GB_Vessels_Art, GB_Vessels_Ven": "x = vessel_index (vessels.json), y = t along the segment 0..1",
             "GB_Brain": "x = brain region id, y = sulcus depth 0..1",
-            "GB_Cord": "x = cord segment index (C1 = 0 ... S5 = 29, cauda 30), y = t",
+            "GB_Cord": "x = cord segment index (C1 = 0 ... S5 = 29), 30 cauda equina, 31 dura, 40 + n root stub of "
+                       "segment n; y = t",
             "v_flip": "Blender stores 1 - v; the glTF exporter flips V, so Godot reads UV2 = (x, y) exactly",
         },
         "custom0_w": "segment code (plan §3.3.1) for skin-like meshes; piece/organ id otherwise (G0 import)",
@@ -155,6 +239,10 @@ def write_sidecars(out):
     labels, meta = neuro.brain_labels()
     files["brain_labels.png"] = gbc.write_png_u8(os.path.join(out, "brain_labels.png"), neuro.labels_atlas(labels))
     files["brain_labels.json"] = gbc.write_json(os.path.join(out, "brain_labels.json"), meta, "gb.brain_labels/1")
+    for f in FOREIGN_SIDECARS:
+        p = os.path.join(out, f)
+        if os.path.exists(p):
+            files[f] = p
     return files
 
 
@@ -175,7 +263,7 @@ def mesh_stats(obj):
     keys = [k.name for k in me.shape_keys.key_blocks[1:]] if me.shape_keys else []
     return {"vertices": len(me.vertices), "triangles": len(me.loop_triangles), "surfaces": surf,
             "shape_keys": keys, "layer": obj.get("gb_layer", ""), "status": obj.get("gb_status", "built"),
-            "uv_maps": [l.name for l in me.uv_layers]}
+            "uv_maps": [l.name for l in me.uv_layers], "bones_used": len(obj.vertex_groups)}
 
 
 def rest_bounds(names):
@@ -221,13 +309,101 @@ def segment_origins():
 
 
 def budget_checks(meshes):
-    """Plan §4.1 triangle budgets and §4.3 file limits (placeholder meshes are expected to pass too)."""
+    """Plan §4.1 triangle budgets (+10 %) and §4.3 file limits."""
     res = {}
     for key, budget in gbc.TRI_BUDGET.items():
         names = gbc.TRI_BUDGET_GROUPS.get(key, (key,))
         tris = sum(meshes[n]["triangles"] for n in names if n in meshes)
         res[key] = {"triangles": tris, "budget": budget, "ok": tris <= budget * 1.10}
     return res
+
+
+def file_checks(out):
+    """Every file under ``out`` < 50 MB, GB_Subject.glb <= 40 MB, 2048^2 PNG <= 12 MB (plan §4.3)."""
+    bad, total, biggest = [], 0, ("", 0)
+    for root, _d, files in os.walk(out):
+        for f in files:
+            p = os.path.join(root, f)
+            b = os.path.getsize(p)
+            total += b
+            if b > biggest[1]:
+                biggest = (os.path.relpath(p, out), b)
+            if b > gbc.FILE_LIMITS_MB["any"] * 1e6 or (f == SUBJECT_GLB and b > gbc.FILE_LIMITS_MB[SUBJECT_GLB] * 1e6) \
+                    or (f.endswith(".png") and b > 12e6):
+                bad.append(f"{os.path.relpath(p, out)} {b / 1e6:.1f} MB")
+    return {"ok": not bad, "over": bad, "total_mb": round(total / 1e6, 2),
+            "largest": {"file": biggest[0], "mb": round(biggest[1] / 1e6, 2)},
+            "limits_mb": {"any": gbc.FILE_LIMITS_MB["any"], SUBJECT_GLB: gbc.FILE_LIMITS_MB[SUBJECT_GLB],
+                          "png": 12.0, "generated_total": 250.0}}
+
+
+# import hints per texture role (plan §4.2); Godot's importer settings for G0
+_TEX_HINT = {"albedo": "VRAM compressed (BC7), sRGB, mipmaps", "normal": "normal map (RGTC/BC5), linear, mipmaps",
+             "orm": "VRAM compressed (BC7), linear, mipmaps", "height": "linear",
+             "position": "lossless, uncompressed (half float EXR), no mipmaps, no filtering",
+             "rest_normal": "lossless, no mipmaps", "valid": "lossless, no mipmaps, nearest",
+             "bone": "lossless, no mipmaps, nearest (indices)", "tissue_depth": "lossless, linear",
+             "tension": "lossless, linear", "hair": "VRAM compressed (BC7), sRGB, alpha scissor 0.35"}
+
+
+def texture_list(out):
+    """manifest 'textures': every texture set (B7 textures.json, B1 body_maps.json, B2 hair cards)."""
+    tex_dir = os.path.join(out, "textures")
+    res = {"sets": {}, "painter": {}, "extra": {}, "tileables": {}, "files": 0}
+    tj = os.path.join(tex_dir, "textures.json")
+    if os.path.exists(tj):
+        d = gbc.read_json(tj)["data"]
+        for name, s in d.get("sets", {}).items():
+            res["sets"][name] = {"mesh": s.get("target"), "lod1": s.get("lod1", []), "size": s.get("size"),
+                                 "surfaces": s.get("surfaces", []), "uv_hash": s.get("uv_hash"),
+                                 "files": {k: {"file": f, "import": _TEX_HINT.get(k, "")}
+                                           for k, f in s.get("files", {}).items()}}
+        for name, s in d.get("painter", {}).items():
+            res["painter"][name] = {"mesh": s.get("mesh"), "size": s.get("size"), "bone_size": s.get("bone_size"),
+                                    "files": {k: {"file": f, "import": _TEX_HINT.get(k, "")}
+                                              for k, f in s.get("files", {}).items()}}
+        res["tileables"] = {k: {"tile_m": v.get("tile_m"), "files": v.get("files")}
+                            for k, v in d.get("tileables", {}).items()}
+        res["eyes"] = d.get("eyes", {})
+        res["decals"] = {k: d.get("decals", {}).get(k) for k in ("files", "grid", "tile_px", "count")}
+        res["room"] = {k: {"tile_m": v.get("tile_m"), "files": v.get("files")} for k, v in d.get("room", {}).items()}
+        res["material_map"] = d.get("material_map", {})
+        res["conventions"] = d.get("conventions", {})
+        res["texture_manifest"] = "textures/textures.json"
+    bm = os.path.join(tex_dir, "body_maps.json")
+    if os.path.exists(bm):
+        d = gbc.read_json(bm)["data"]
+        res["extra"]["body_maps"] = {"mesh": d.get("mesh"), "manifest": "textures/body_maps.json",
+                                     "files": {"tissue_depth": {"file": d["tissue_depth"]["file"],
+                                                                "import": _TEX_HINT["tissue_depth"]},
+                                               "tension": {"file": d["tension"]["file"],
+                                                           "import": _TEX_HINT["tension"]}}}
+    if os.path.exists(os.path.join(tex_dir, "hair_cards.png")):
+        res["extra"]["hair_cards"] = {"mesh": "GB_BrowLash", "files": {"albedo": {"file": "hair_cards.png",
+                                                                                  "import": _TEX_HINT["hair"]}}}
+    if os.path.isdir(tex_dir):
+        res["files"] = len([f for f in os.listdir(tex_dir) if f.endswith((".png", ".exr"))])
+    return res
+
+
+def rig_summary():
+    """manifest 'rig': bone fits, weight fingerprint, deformation-test and round-trip results of this build."""
+    import rig
+    fits = {b["name"]: {"head": list(b["head"]), "tail": list(b["tail"]), "note": b["note"]}
+            for b in rig.bone_rows() if b.get("fit")}
+    out = {"bones": len(rig.BONE_NAMES), "bone_fits": fits, "influences": rig.MAX_INF, "weight_grid": rig.QUANT,
+           "painter_weights_hash": CHECKS.get("painter_weights_hash"),
+           "twist_drivers": [list(t) for t in rig.TWIST_DRIVERS]}
+    for k in ("deformation", "roundtrip", "godot_import", "prepare"):
+        if k in CHECKS:
+            out[k] = CHECKS[k]
+    return out
+
+
+def deformation_summary(res):
+    """Compact per-test deformation results for the manifest."""
+    return {k: {"level": v["level"], "ok": v["ok"], "poke_mm": v["poke_mm"], "poke_over_3mm": v["poke_over"],
+                "vol_loss": v["vol_loss"], "shorts_mm": v.get("shorts_mm")} for k, v in res.items()}
 
 
 def write_manifest(out, glb_paths=(), sidecars=None, pending=None, timings=None, quick=False):
@@ -249,6 +425,7 @@ def write_manifest(out, glb_paths=(), sidecars=None, pending=None, timings=None,
     except Exception:                                                # pragma: no cover
         exporter = "unknown"
     arm = bpy.data.objects.get(gbc.ARMATURE)
+    textures = texture_list(out)
     data = {
         "build": {"build_id": gbc.build_id(), "blender": bpy.app.version_string, "gltf_exporter": exporter,
                   "quick": bool(quick), "timings_s": timings or {},
@@ -264,13 +441,31 @@ def write_manifest(out, glb_paths=(), sidecars=None, pending=None, timings=None,
                                        "max": np.maximum(gbc.b2g(lo), gbc.b2g(hi)).tolist()}},
         "wound_grid": wound_grid(lo, hi),
         "segment_origins": segment_origins(),
-        "textures": [],
-        "texture_note": "no baked textures yet (B7); materials are named placeholders swapped in Godot",
+        "textures": textures,
+        "texture_note": ("baked sets are plain PNG/EXR files next to the glb (no images inside the glb); the "
+                         "import script builds ShaderMaterials from them by material name (plan D15)"),
         "budgets": budget_checks(meshes),
+        "file_limits": file_checks(out),
+        "rig": rig_summary(),
+        "lod": {"lod0": SUBJECT_GLB, "lod1": LOD1_GLB,
+                "lod1_meshes": {n: {"triangles": meshes[n]["triangles"], "lod0": n.replace("_LOD1", ""),
+                                    "ratio": round(meshes[n]["triangles"] /
+                                                   max(meshes.get(n.replace("_LOD1", ""), {}).get("triangles", 1), 1),
+                                                   3)}
+                                for n in gbc.LOD1_OBJECTS if n in meshes},
+                "note": "LOD1 = head + body skin at ~50 % (same armature, weights, UV atlases, codes and shape "
+                        "keys); every other mesh has one LOD (plan D18)"},
         "pending": pending or {},
         "import_hints": {"import_script": "res://pipeline/import/subject_post_import.gd",
                          "inner_meshes_hidden": list(gbc.INNER_OBJECTS) + list(gbc.VARIANT_OBJECTS),
-                         "uv2": "codes (see codes.json)", "custom0": "rest position + segment (G0)"},
+                         "uv2": "codes (see codes.json)", "custom0": "rest position + segment (G0)",
+                         "materials": "replace GBM_* by name (plan §5.6); textures per manifest 'textures'",
+                         "hair_cards": "alpha scissor 0.35, double sided (B2)",
+                         "face": "rig.json face: lid bones rotate + scale per lid_table; blend shapes on GB_Head, "
+                                 "GB_EyeFX_L/R, GB_BrowLash, GB_Head_LOD1 are driven together by name (B2)",
+                         "twist_bones": "drive rig.json kinematic.*_twist_*.driver every frame",
+                         "animations": "pose_idle/guard/cower/brace: single-frame key poses (hips translation keeps "
+                                       "the feet planted)"},
     }
     gbc.write_json(os.path.join(out, "manifest.json"), data, "gb.manifest/1")
     return data
@@ -279,6 +474,7 @@ def write_manifest(out, glb_paths=(), sidecars=None, pending=None, timings=None,
 def export_subject(objs=None, out=gbc.SUBJECT_OUT, pending=None, timings=None, quick=False):
     """Export GB_Subject.glb (+ LOD1), every sidecar and the manifest into ``out``."""
     os.makedirs(out, exist_ok=True)
+    prepare_for_export(out)
     lod0 = [n for n in gbc.exported_mesh_names(0) if n in bpy.data.objects]
     lod1 = [n for n in gbc.exported_mesh_names(1) if n in bpy.data.objects]
     glbs = [export_glb(os.path.join(out, SUBJECT_GLB), lod0)[0]]
@@ -293,3 +489,240 @@ def export_props(out=gbc.PROPS_OUT):
     """weapons.glb, room.glb, props.json and room.json from props.py (B8 builds and exports them)."""
     import props
     return props.export_props(out)
+
+
+# ===========================================================================
+# Round trip: re-import the glb in a clean Blender process and compare with the scene
+# ===========================================================================
+def scene_summary(mesh_names):
+    """What the glb should contain: per mesh triangles, shape keys, materials, bones; bones; actions."""
+    arm = bpy.data.objects[gbc.ARMATURE]
+    meshes = {}
+    for n in mesh_names:
+        o = bpy.data.objects.get(n)
+        if o is None:
+            continue
+        o.data.calc_loop_triangles()
+        meshes[n] = {"triangles": len(o.data.loop_triangles),
+                     "shape_keys": [k.name for k in o.data.shape_keys.key_blocks[1:]] if o.data.shape_keys else [],
+                     "materials": sorted({m.name for m in o.data.materials if m}),
+                     "groups": sorted(g.name for g in o.vertex_groups)}
+    return {"meshes": meshes, "bones": sorted(b.name for b in arm.data.bones),
+            "actions": sorted(gbc.POSE_ACTIONS)}
+
+
+def _import_summary(glb):
+    """(Runs in the child process) import ``glb`` into an empty file and summarise it."""
+    bpy.ops.wm.read_factory_settings(use_empty=True)
+    bpy.ops.import_scene.gltf(filepath=glb)
+    meshes, bones = {}, []
+    for o in bpy.data.objects:
+        if o.type == 'MESH':
+            me = o.data
+            me.calc_loop_triangles()
+            groups = sorted(g.name for g in o.vertex_groups)
+            # glTF splits a mesh per material into primitives but Blender re-joins them on import
+            meshes[o.name] = {"triangles": len(me.loop_triangles),
+                              "shape_keys": [k.name for k in me.shape_keys.key_blocks[1:]] if me.shape_keys else [],
+                              "materials": sorted({m.name for m in me.materials if m}), "groups": groups,
+                              "uv_layers": len(me.uv_layers),
+                              "max_influences": int(max((sum(1 for g in v.groups if g.weight > 0)
+                                                         for v in me.vertices), default=0))}
+        elif o.type == 'ARMATURE':
+            bones = sorted(b.name for b in o.data.bones)
+    return {"meshes": meshes, "bones": bones, "actions": sorted(a.name for a in bpy.data.actions)}
+
+
+def round_trip(glb, mesh_names=None):
+    """Re-import ``glb`` in a fresh Blender process; compare names, triangle counts, shape keys, materials,
+    vertex groups, bones and actions with the current scene.  Returns (ok, detail dict)."""
+    mesh_names = mesh_names or [n for n in gbc.exported_mesh_names(0) if n in bpy.data.objects]
+    want = scene_summary(mesh_names)
+    here = os.path.abspath(__file__)
+    binary = bpy.app.binary_path or ""
+    if binary and os.path.basename(binary).lower().startswith("blender"):
+        cmd = [binary, "-b", "--factory-startup", "--python", here, "--", "--roundtrip", glb]
+    else:
+        cmd = [sys.executable, here, "--roundtrip", glb]
+    proc = subprocess.run(cmd, capture_output=True, text=True, timeout=900)
+    line = next((l for l in proc.stdout.splitlines() if l.startswith("ROUNDTRIP ")), None)
+    if line is None:
+        return False, {"error": "no summary", "stderr": proc.stderr[-2000:], "stdout": proc.stdout[-2000:]}
+    got = json.loads(line[len("ROUNDTRIP "):])
+    probs = []
+    if got["bones"] != want["bones"]:
+        probs.append(f"bones differ ({len(got['bones'])} vs {len(want['bones'])})")
+    if [a for a in want["actions"] if a not in got["actions"]]:
+        probs.append(f"actions missing: {[a for a in want['actions'] if a not in got['actions']]}")
+    for n, w in want["meshes"].items():
+        g = got["meshes"].get(n)
+        if g is None:
+            probs.append(f"{n} missing")
+            continue
+        if g["triangles"] != w["triangles"]:
+            probs.append(f"{n} triangles {g['triangles']} vs {w['triangles']}")
+        if g["shape_keys"] != w["shape_keys"]:
+            probs.append(f"{n} shape keys differ")
+        if g["materials"] != w["materials"]:
+            probs.append(f"{n} materials {g['materials']} vs {w['materials']}")
+        if not set(g["groups"]) <= set(want["bones"]) or not set(w["groups"]) <= set(g["groups"]):
+            probs.append(f"{n} vertex groups differ")
+        if g["max_influences"] > 4:
+            probs.append(f"{n} {g['max_influences']} influences")
+    detail = {"meshes": len(got["meshes"]), "bones": len(got["bones"]), "actions": got["actions"],
+              "problems": probs}
+    return not probs, detail
+
+
+# ===========================================================================
+# Godot 4.5.1 headless import check (temporary project; nothing is written into gore-game/)
+# ===========================================================================
+_GODOT_CHECK_GD = r'''extends SceneTree
+# B6 export check: load the imported subject, report skeleton / meshes / skins / blend shapes /
+# animations, and test CUSTOM0 injection (plan §3.3.1, FB-11 precursor) on one skinned surface.
+func _init() -> void:
+	var out := {}
+	var ps: PackedScene = load("res://GB_Subject.glb")
+	if ps == null:
+		print("GODOTCHECK " + JSON.stringify({"error": "load failed"}))
+		quit(1)
+		return
+	var root := ps.instantiate()
+	var skels := root.find_children("*", "Skeleton3D", true, false)
+	out["skeletons"] = skels.size()
+	if skels.size() > 0:
+		var sk: Skeleton3D = skels[0]
+		var names := []
+		for i in sk.get_bone_count():
+			names.append(sk.get_bone_name(i))
+		out["bones"] = names
+		out["skeleton_name"] = String(sk.name)
+	var meshes := {}
+	for n in root.find_children("*", "MeshInstance3D", true, false):
+		var mi := n as MeshInstance3D
+		var m := mi.mesh
+		if m == null:
+			continue
+		var info := {"surfaces": m.get_surface_count(), "blend_shapes": 0, "skin": mi.skin != null,
+			"skeleton_path": String(mi.skeleton), "materials": [], "uv2": true, "bones_per_vertex": 0,
+			"compressed": false}
+		if m is ArrayMesh:
+			var am := m as ArrayMesh
+			info["blend_shapes"] = am.get_blend_shape_count()
+			for s in am.get_surface_count():
+				var mat := am.surface_get_material(s)
+				info["materials"].append(mat.resource_name if mat else "")
+				var fmt := am.surface_get_format(s)
+				if (fmt & Mesh.ARRAY_FORMAT_TEX_UV2) == 0:
+					info["uv2"] = false
+				if (fmt & Mesh.ARRAY_FLAG_USE_8_BONE_WEIGHTS) != 0:
+					info["bones_per_vertex"] = 8
+				elif (fmt & Mesh.ARRAY_FORMAT_BONES) != 0:
+					info["bones_per_vertex"] = 4
+				if (fmt & Mesh.ARRAY_FLAG_COMPRESS_ATTRIBUTES) != 0:
+					info["compressed"] = true
+		meshes[String(mi.name)] = info
+	out["meshes"] = meshes
+	var anims := []
+	for n in root.find_children("*", "AnimationPlayer", true, false):
+		var ap := n as AnimationPlayer
+		for a in ap.get_animation_list():
+			anims.append(String(a))
+	out["animations"] = anims
+	# CUSTOM0 injection test on GB_Body surface 0: rest position + segment as RGBA32F
+	var body := root.find_child("GB_Body", true, false) as MeshInstance3D
+	if body != null and body.mesh is ArrayMesh:
+		var am := body.mesh as ArrayMesh
+		var arrays := am.surface_get_arrays(0)
+		var verts: PackedVector3Array = arrays[Mesh.ARRAY_VERTEX]
+		var c0 := PackedFloat32Array()
+		c0.resize(verts.size() * 4)
+		for i in verts.size():
+			c0[i * 4] = verts[i].x
+			c0[i * 4 + 1] = verts[i].y
+			c0[i * 4 + 2] = verts[i].z
+			c0[i * 4 + 3] = 1.0
+		arrays[Mesh.ARRAY_CUSTOM0] = c0
+		var nm := ArrayMesh.new()
+		var fmt := Mesh.ARRAY_CUSTOM_RGBA_FLOAT << Mesh.ARRAY_FORMAT_CUSTOM0_SHIFT
+		nm.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, arrays, [], {}, fmt)
+		var f2 := nm.surface_get_format(0)
+		out["custom0"] = {"vertices": verts.size(), "has_custom0": (f2 & Mesh.ARRAY_FORMAT_CUSTOM0) != 0,
+			"rgba_float": ((f2 >> Mesh.ARRAY_FORMAT_CUSTOM0_SHIFT) & Mesh.ARRAY_FORMAT_CUSTOM_MASK) == Mesh.ARRAY_CUSTOM_RGBA_FLOAT,
+			"bones_kept": (f2 & Mesh.ARRAY_FORMAT_BONES) != 0}
+		# rest vertex positions: Godot (x, y, z) must equal Blender (x, z, -y)
+		var bb := AABB()
+		for i in verts.size():
+			bb = bb.expand(verts[i]) if i > 0 else AABB(verts[i], Vector3.ZERO)
+		out["body_aabb"] = [bb.position.x, bb.position.y, bb.position.z, bb.end.x, bb.end.y, bb.end.z]
+	print("GODOTCHECK " + JSON.stringify(out))
+	root.free()
+	quit(0)
+'''
+
+
+def godot_import_check(glb, godot=GODOT_BIN, timeout=900):
+    """Import ``glb`` with Godot headless in a temporary project and inspect it.  Returns (ok, detail);
+    ok is None when the Godot binary is not installed (the check is then skipped, not failed)."""
+    if not os.path.exists(godot):
+        return None, {"skipped": f"no Godot binary at {godot}"}
+    tmp = tempfile.mkdtemp(prefix="gb_godot_check_")
+    try:
+        with open(os.path.join(tmp, "project.godot"), "w") as fh:
+            fh.write('config_version=5\n\n[application]\nconfig/name="gb_b6_import_check"\n')
+        shutil.copy(glb, os.path.join(tmp, "GB_Subject.glb"))
+        with open(os.path.join(tmp, "check.gd"), "w") as fh:
+            fh.write(_GODOT_CHECK_GD)
+        env = dict(os.environ)
+        imp = subprocess.run([godot, "--headless", "--path", tmp, "--import"], capture_output=True, text=True,
+                             timeout=timeout, env=env)
+        run = subprocess.run([godot, "--headless", "--path", tmp, "--script", "res://check.gd"], capture_output=True,
+                             text=True, timeout=timeout, env=env)
+        line = next((l for l in run.stdout.splitlines() if l.startswith("GODOTCHECK ")), None)
+        if line is None:
+            return False, {"error": "no output", "import_rc": imp.returncode, "rc": run.returncode,
+                           "stderr": (imp.stderr + run.stderr)[-3000:]}
+        got = json.loads(line[len("GODOTCHECK "):])
+    finally:
+        shutil.rmtree(tmp, ignore_errors=True)
+    import rig
+    probs = []
+    if got.get("skeletons") != 1:
+        probs.append(f"{got.get('skeletons')} skeletons")
+    if got.get("bones") != list(rig.BONE_NAMES):
+        probs.append("bone names/order differ from rig.json")
+    want = [n for n in gbc.exported_mesh_names(0) if n in bpy.data.objects]
+    meshes = got.get("meshes", {})
+    for n in want:
+        m = meshes.get(n)
+        if m is None:
+            probs.append(f"{n} missing")
+            continue
+        if not m["skin"]:
+            probs.append(f"{n} not skinned")
+        if not m["uv2"]:
+            probs.append(f"{n} lacks UV2")
+        if m["bones_per_vertex"] != 4:
+            probs.append(f"{n} bones/vertex {m['bones_per_vertex']}")
+        nk = len(gbc.SHAPE_KEYS.get(n, ()))
+        if m["blend_shapes"] != nk:
+            probs.append(f"{n} blend shapes {m['blend_shapes']} (want {nk})")
+        if m["surfaces"] != len(gbc.MATERIAL_SLOTS.get(n, ())):
+            probs.append(f"{n} surfaces {m['surfaces']}")
+    missing_anims = [a for a in gbc.POSE_ACTIONS if a not in got.get("animations", [])]
+    if missing_anims:
+        probs.append(f"animations missing {missing_anims}")
+    c0 = got.get("custom0", {})
+    if not (c0.get("has_custom0") and c0.get("rgba_float") and c0.get("bones_kept")):
+        probs.append(f"CUSTOM0 injection failed: {c0}")
+    detail = {"meshes": len(meshes), "bones": len(got.get("bones", [])), "animations": got.get("animations", []),
+              "custom0": c0, "body_aabb_godot": [round(x, 4) for x in got.get("body_aabb", [])],
+              "compressed_meshes": sorted(n for n, m in meshes.items() if m.get("compressed")),
+              "problems": probs}
+    return not probs, detail
+
+
+if __name__ == "__main__":
+    args = gbc.script_args()
+    if "--roundtrip" in args:
+        print("ROUNDTRIP " + json.dumps(_import_summary(args[args.index("--roundtrip") + 1])))

@@ -23,6 +23,7 @@ Run: ``python3 verify.py`` (tables + files; add ``--blend <file>`` to open a
 saved build for the scene checks) or let ``build.py`` call ``verify_all``.
 """
 import json
+import math
 import os
 import struct
 import sys
@@ -384,7 +385,8 @@ def armature_and_poses():
     if arm is None:
         return False, "no armature"
     names = [b.name for b in arm.data.bones]
-    bm = {b["name"]: b for b in RT.bones()}
+    import rig                                          # B6: the rig table as built (table + documented fits)
+    bm = rig.bone_map()
     off = [b.name for b in arm.data.bones if not _close(b.head_local, bm[b.name]["head"], 1e-5)
            or not _close(b.tail_local, bm[b.name]["tail"], 1e-5)]
     acts = [a for a in gbc.POSE_ACTIONS if a not in bpy.data.actions]
@@ -2235,6 +2237,341 @@ def b7_inner_atlas_quality():
         ok &= good
         out.append(f"{name} cover {cov:.2f} overlap {over:.3f} distortion {lo:+.2f}/{hi:+.2f}")
     return ok, "; ".join(out)
+
+
+
+# ===========================================================================
+# B6 rig, weights, poses and export (plan §8.2 B6 acceptance): joint positions +-2 mm of RB §7.2,
+# weight sums 1 +- 1e-4 with <= 4 influences from ONE function for every layer, FB-2 deformation
+# (volume loss < 15 %, no inner-layer vertex > 3 mm outside the skin up to 90 % of the live ROM),
+# key poses, rig.json, manifest, file limits, round trip (re-import) and the Godot headless import.
+# ===========================================================================
+def _b6_ready():
+    bpy = _bpy()
+    return gbc.ARMATURE in bpy.data.objects and "GB_Body" in bpy.data.objects
+
+
+def _b6_deform():
+    """Deformation tests, run once per process (the manifest reports the same numbers)."""
+    import export
+    import posetest
+    if "deformation_full" not in export.CHECKS:
+        res = posetest.run_tests(quiet=True)
+        export.CHECKS["deformation_full"] = res
+        export.CHECKS["deformation"] = export.deformation_summary(res)
+    return export.CHECKS["deformation_full"]
+
+
+@check("scene", owner="B6")
+def b6_joint_positions():
+    """Armature joint centres within 2 mm of the RB §7.1/§7.2 landmarks; B6 fits (jaw hinge, thumb) listed."""
+    if not _b6_ready():
+        return True, "n/a (no scene)"
+    import rig
+    bpy = _bpy()
+    arm = bpy.data.objects[gbc.ARMATURE]
+    lm = LM.all_landmarks()
+    pairs = {"upper_arm": "gh_joint", "forearm": "elbow_centre", "hand": "wrist_centre", "fingers": "mcp3",
+             "thigh": "hip_joint_centre", "shin": "knee_centre", "foot": "ankle_centre", "clavicle": "sc_joint"}
+    worst, bad = 0.0, []
+    for base, l in pairs.items():
+        for s in ("L", "R"):
+            key = f"{l}_{s}_apose" if f"{l}_{s}_apose" in lm else f"{l}_{s}"
+            d = float(np.linalg.norm(np.array(arm.data.bones[f"{base}_{s}"].head_local) - np.array(lm[key])))
+            worst = max(worst, d)
+            if d > 0.002:
+                bad.append(f"{base}_{s} {d * 1000:.1f} mm")
+    d = float(np.linalg.norm(np.array(arm.data.bones["head"].head_local) - np.array(lm["atlanto_occipital_pivot"])))
+    worst = max(worst, d)
+    fits = [b["name"] for b in rig.bone_rows() if b.get("fit")]
+    jaw = np.array(arm.data.bones["jaw"].head_local)
+    import head_integration as hi
+    jd = float(np.linalg.norm(jaw - hi.jaw_pivot()))
+    return not bad and jd < 1e-4, (f"worst joint offset {worst * 1000:.2f} mm (limit 2); off {bad}; jaw head = B2 "
+                                   f"measured hinge ({jd * 1000:.2f} mm); fitted bones {fits}")
+
+
+@check("scene", owner="B6")
+def b6_weights_function():
+    """ONE weight function (plan D8): deterministic; every analytic mesh's vertex groups equal weights_at at
+    its vertices (lids included); rows sum to 1 within 1e-4 with <= 4 influences."""
+    if not _b6_ready():
+        return True, "n/a (no scene)"
+    import rig
+    bpy = _bpy()
+    rng = gbc.rng("verify")
+    pts = rng.uniform((-0.6, -0.2, 0.0), (0.6, 0.2, 1.8), (4000, 3))
+    i1, w1 = rig.weights_at(pts)
+    i2, w2 = rig.weights_at(pts)
+    det = bool(np.array_equal(i1, i2) and np.array_equal(w1, w2))
+    sums = np.abs(w1.sum(1) - 1.0).max()
+    bad, checked = [], 0
+    for o in _exported():
+        rb = gbc.read_point_attr(o, "gb_rigid_bone", 'INT')
+        if o.name in rig.FOLLOWERS or (rb is not None and np.all(rb >= 0)):
+            continue
+        idx, w = rig.read_weights(o)
+        n = len(o.data.vertices)
+        sel = rng.choice(n, min(1500, n), replace=False)
+        if rb is not None:
+            sel = sel[rb[sel] < 0]
+        v = gbc.get_verts(o.data)[sel]
+        ia, wa = rig.weights_at(v)
+        dense_a = np.zeros((len(sel), rig.NB))
+        dense_s = np.zeros((len(sel), rig.NB))
+        rows = np.repeat(np.arange(len(sel)), 4)
+        np.add.at(dense_a, (rows, ia.ravel()), wa.ravel())
+        np.add.at(dense_s, (rows, idx[sel].ravel()), w[sel].ravel())
+        err = float(np.abs(dense_a - dense_s).max()) if len(sel) else 0.0
+        checked += len(sel)
+        if err > 1.5 / rig.QUANT:
+            bad.append(f"{o.name} {err:.4f}")
+    return det and sums < 1e-9 and not bad, (f"deterministic {det}; row sum error {sums:.1e}; {checked} vertices of "
+                                            f"every analytic mesh equal weights_at; differing: {bad}")
+
+
+@check("scene", owner="B6")
+def b6_seam_and_layers():
+    """Neck seam ring: GB_Head and GB_Body ring vertices carry identical weights; the muscle shell follows
+    the skin (mean L1 weight difference to the nearest skin vertex <= 0.1)."""
+    if not _b6_ready():
+        return True, "n/a (no scene)"
+    import posetest
+    import rig
+    bpy = _bpy()
+    h, b = bpy.data.objects["GB_Head"], bpy.data.objects["GB_Body"]
+    vh, vb = gbc.get_verts(h.data), gbc.get_verts(b.data)
+    ih, wh = rig.read_weights(h)
+    ib, wb = rig.read_weights(b)
+    rh = np.nonzero(np.abs(vh[:, 2] - gbc.SEAM_Z) < 1e-6)[0]
+    rb_ = np.nonzero(np.abs(vb[:, 2] - gbc.SEAM_Z) < 1e-6)[0]
+    kb = {tuple(np.round(vb[i], 6)): i for i in rb_}
+    diff = 0.0
+    for i in rh:
+        j = kb.get(tuple(np.round(vh[i], 6)))
+        if j is None:
+            diff = 1.0
+            break
+        a = dict(zip(ih[i].tolist(), wh[i].tolist()))
+        c = dict(zip(ib[j].tolist(), wb[j].tolist()))
+        diff = max(diff, max(abs(a.get(k, 0) - c.get(k, 0)) for k in set(a) | set(c)))
+    lc = posetest.layer_consistency()
+    return diff < 1e-9 and lc["mean_l1"] <= 0.1, (f"{len(rh)} ring vertices, max weight difference {diff:.2e}; "
+                                                  f"muscle shell vs nearest skin vertex {lc}")
+
+
+@check("scene", owner="B6")
+def b6_followers():
+    """Brow/lash cards and eye FX shells take the skin weights at their anchors (lids included, B2)."""
+    if not _b6_ready():
+        return True, "n/a (no scene)"
+    import rig
+    bpy = _bpy()
+    bad, lids = [], {}
+    for n in rig.FOLLOWERS:
+        o = bpy.data.objects.get(n)
+        if o is None:
+            continue
+        if not rig._has_anchors(o):
+            bad.append(f"{n} no anchors")
+            continue
+        idx, w = rig.read_weights(o)
+        a = np.stack([gbc.read_point_attr(o, "gb_anchor_" + c, 'FLOAT') for c in "xyz"], 1)
+        ia, wa = rig.weights_at(a)
+        dense_a = np.zeros((len(a), rig.NB))
+        dense_s = np.zeros((len(a), rig.NB))
+        rows = np.repeat(np.arange(len(a)), 4)
+        np.add.at(dense_a, (rows, ia.ravel()), wa.ravel())
+        np.add.at(dense_s, (rows, idx.ravel()), w.ravel())
+        err = float(np.abs(dense_a - dense_s).max())
+        lid = [rig.BONE_INDEX[b] for b in ("lid_upper_L", "lid_lower_L", "lid_upper_R", "lid_lower_R")]
+        lids[n] = int((dense_s[:, lid].sum(1) > 0.5).sum())
+        if err > 1.5 / rig.QUANT:
+            bad.append(f"{n} {err:.4f}")
+    return not bad, f"follower weights = skin weights at the anchors; lid-driven vertices {lids}; bad {bad}"
+
+
+@check("scene", owner="B6")
+def b6_deformation_fb2():
+    """FB-2 / plan §8.2 B6: elbow, knee, shoulder abduction, hip flexion up to 90 % of the live ROM - no
+    inner-layer vertex > 3 mm outside the posed skin, joint-region volume loss < 15 %."""
+    if not _b6_ready():
+        return True, "n/a (no scene)"
+    res = _b6_deform()
+    acc = {k: v for k, v in res.items() if v["level"] == "fb2"}
+    bad = [k for k, v in acc.items() if not v["ok"]]
+    s = "; ".join(f"{k}: poke {v['poke_mm']} mm / {v['poke_over']} > 3 mm, vol loss {v['vol_loss']}"
+                  for k, v in acc.items())
+    return not bad and len(acc) >= 5, f"failing {bad}; {s}"
+
+
+@check("scene", owner="B6", severity="warn")
+def b6_deformation_quality():
+    """Every other deformation test (twist, wrist, fist, ankle, toes, neck, trunk, jaw, FB-2 maxima): reported."""
+    if not _b6_ready():
+        return True, "n/a (no scene)"
+    res = _b6_deform()
+    other = {k: v for k, v in res.items() if v["level"] != "fb2"}
+    bad = [k for k, v in other.items() if not v["ok"]]
+    s = "; ".join(f"{k} {v['poke_mm']}mm/{v['poke_over']}/{v['vol_loss']}" for k, v in other.items())
+    return not bad, f"over 3 mm or >= 15 % loss: {bad}; {s}"
+
+
+@check("scene", owner="B6", severity="warn")
+def b6_rest_pose_nesting():
+    """Inner-layer vertices > 3 mm outside the skin already in the REST pose (geometry of B1/B3/B4/B5, not
+    deformation): listed so their owners can fix them."""
+    if not _b6_ready():
+        return True, "n/a (no scene)"
+    import posetest
+    md = posetest.load_meshes(posetest.SKIN + posetest.INNER)
+    ro = posetest.rest_outside(md)
+    bad = {n: int(m.sum()) for n, m in ro.items() if m.sum()}
+    detail = {}
+    for n, m in ro.items():
+        if m.sum() and md[n].piece is not None:
+            inv = {v: k for k, v in BN.BONE_PIECE_ID.items()}
+            detail[n] = sorted({inv.get(int(p), "?") for p in md[n].piece[m]})[:10]
+    return not bad, f"vertices > 3 mm outside the rest skin: {bad}; pieces {detail}"
+
+
+@check("scene", owner="B6")
+def b6_key_poses():
+    """pose_idle/guard/cower/brace: every joint angle inside its live limits; both feet planted (ankles within
+    10 mm of rest via the keyed hips translation)."""
+    if not _b6_ready():
+        return True, "n/a (no scene)"
+    import rig
+    bpy = _bpy()
+    arm = bpy.data.objects[gbc.ARMATURE]
+    limits = {}
+    for b in RT.bodies():
+        if b["joint"]:
+            base = b["bone"][:-2] if b["bone"].endswith(("_L", "_R")) else b["bone"]
+            limits[base] = b["joint"]["limits_live_deg"]
+    limits.update(rig.KIN_LIMITS)
+    bad = []
+    feet = {}
+    for name in gbc.POSE_ACTIONS:
+        pose = rig.POSES[name]
+        for base, rots in pose.items():
+            lim = limits.get(base, {})
+            if "swing" in lim:
+                sw = math.hypot(*[d for ax, d in rots if ax in ("flex", "abd")] or [0.0])
+                if sw > lim["swing"][1] + 1e-6:
+                    bad.append(f"{name}:{base} swing {sw:.0f}")
+            for ax, d in rots:
+                if ax in lim and not (lim[ax][0] - 1e-6 <= d <= lim[ax][1] + 1e-6):
+                    bad.append(f"{name}:{base}.{ax} {d}")
+        act = bpy.data.actions.get(name)
+        if act is None:
+            bad.append(f"{name} missing")
+            continue
+        arm.animation_data_create()
+        arm.animation_data.action = act
+        bpy.context.scene.frame_set(1)
+        bm = rig.bone_map()
+        err = max(float(np.linalg.norm(np.array(arm.pose.bones[f"foot_{s}"].head) - np.array(bm[f"foot_{s}"]["head"])))
+                  for s in ("L", "R"))
+        feet[name] = round(err * 1000, 1)
+        if err > 0.010:
+            bad.append(f"{name} feet off {err * 1000:.1f} mm")
+        arm.animation_data.action = None
+        rig.reset_pose(arm)
+    return not bad, f"out of limits / feet: {bad}; ankle offset mm {feet}"
+
+
+@check("files", owner="B6")
+def b6_rig_json():
+    """rig.json: 39 bones (fits noted), 20 bodies with unit world axes, directional torque caps, live/dead limits,
+    myotomes; kinematic bones with axes and twist drivers; face block measured by B2; poses; weight model."""
+    path = os.path.join(gbc.SUBJECT_OUT, "rig.json")
+    if not os.path.exists(path):
+        return False, "rig.json missing"
+    d = gbc.read_json(path)["data"]
+    probs = []
+    if len(d["bones"]) != 39 or [b["name"] for b in d["bones"]] != list(RT.BONE_NAMES):
+        probs.append("bones")
+    if len(d["bodies"]) != 20:
+        probs.append("bodies")
+    for b in d["bodies"]:
+        j = b["joint"]
+        if not j:
+            continue
+        for ax, a in j["axes"].items():
+            if abs(np.linalg.norm(a["world"]) - 1.0) > 1e-4:
+                probs.append(f"{b['bone']}.{ax} not unit")
+        caps = j["torque_cap_nm"]
+        lo, hi = j["torque_cap_range_nm"]
+        if any(not (lo - 1e-6 <= c <= hi + 1e-6) for c in caps.values()):
+            probs.append(f"{b['bone']} cap outside plan range")
+        if not j.get("myotomes"):
+            probs.append(f"{b['bone']} no myotomes")
+    asym = sum(1 for b in d["bodies"] if b["joint"] and len(set(b["joint"]["torque_cap_nm"].values())) > 1)
+    kin = d.get("kinematic", {})
+    for k in ("upper_arm_twist_L", "forearm_twist_R", "fingers_L", "thumb_R", "toes_L", "jaw", "eye_L"):
+        if k not in kin:
+            probs.append(f"kinematic {k}")
+    if "driver" not in kin.get("upper_arm_twist_L", {}) or "driver" not in kin.get("forearm_twist_L", {}):
+        probs.append("twist drivers")
+    face = d.get("face", {})
+    if not str(face.get("status", "")).startswith("measured") or len(face.get("lid_table", {}).get("rows", [])) < 5:
+        probs.append("face lid table not measured")
+    if sorted(d.get("poses", {})) != sorted(gbc.POSE_ACTIONS):
+        probs.append("poses")
+    return not probs, (f"problems {probs}; {asym} bodies with direction-specific caps; kinematic "
+                       f"{len(kin)} bones; face {face.get('status')}")
+
+
+@check("files", owner="B6")
+def b6_manifest_and_files():
+    """manifest.json lists every exported file with sha256 (incl. B3 bones.json), the texture sets with import
+    hints, LOD1, the rig results; every generated file < 50 MB, GB_Subject.glb <= 40 MB (plan §4.3)."""
+    path = os.path.join(gbc.SUBJECT_OUT, "manifest.json")
+    d = gbc.read_json(path)["data"]
+    need = ["GB_Subject.glb", "GB_Subject_LOD1.glb", "rig.json", "landmarks.json", "organs.json", "vessels.json",
+            "spine.json", "codes.json", "brain_labels.png", "brain_labels.json", "bones.json"]
+    missing = [f for f in need if f not in d["files"]]
+    stale = [f for f, v in d["files"].items() if os.path.exists(os.path.join(gbc.SUBJECT_OUT, f)) and
+             gbc.file_hash(os.path.join(gbc.SUBJECT_OUT, f)) != v["sha256"]]
+    sets = sorted(d.get("textures", {}).get("sets", {}))
+    fl = d.get("file_limits", {})
+    lod = d.get("lod", {}).get("lod1_meshes", {})
+    ok = (not missing and not stale and len(sets) >= 7 and fl.get("ok", False) and len(lod) == 2
+          and "rig" in d)
+    return ok, (f"missing {missing}; stale hashes {stale}; texture sets {sets}; file limits {fl.get('ok')} "
+                f"(largest {fl.get('largest')}, total {fl.get('total_mb')} MB, over {fl.get('over')}); LOD1 {lod}")
+
+
+@check("scene", owner="B6")
+def b6_roundtrip():
+    """Round trip: GB_Subject.glb re-imported in a fresh Blender has every mesh with the same triangles, shape
+    keys, materials and vertex groups, the 39 bones and the 4 actions."""
+    if not _b6_ready():
+        return True, "n/a (no scene)"
+    import export
+    if "roundtrip" not in export.CHECKS:
+        ok, det = export.round_trip(os.path.join(gbc.SUBJECT_OUT, export.SUBJECT_GLB))
+        export.CHECKS["roundtrip"] = dict(det, ok=ok)
+    r = export.CHECKS["roundtrip"]
+    return r["ok"], {k: v for k, v in r.items() if k != "ok"}
+
+
+@check("scene", owner="B6")
+def b6_godot_import():
+    """Godot 4.5.1 headless import of GB_Subject.glb: one Skeleton3D with the 39 bones in rig.json order, every
+    contract mesh skinned (4 weights) with UV2, its surfaces and blend shapes, the 4 animations, and CUSTOM0
+    RGBA32F injection on a skinned surface works (plan §3.3.1, FB-11 precursor)."""
+    if not _b6_ready():
+        return True, "n/a (no scene)"
+    import export
+    if "godot_import" not in export.CHECKS:
+        ok, det = export.godot_import_check(os.path.join(gbc.SUBJECT_OUT, export.SUBJECT_GLB))
+        export.CHECKS["godot_import"] = dict(det, ok=ok)
+    r = export.CHECKS["godot_import"]
+    if r["ok"] is None:
+        return True, r
+    return r["ok"], {k: v for k, v in r.items() if k != "ok"}
 
 
 

@@ -36,51 +36,59 @@ INNER = ("GB_MuscleShell", "GB_Skeleton", "GB_Vessels_Art", "GB_Vessels_Ven", "G
 POKE_LIMIT_MM = 3.0
 VOL_LIMIT = 0.15
 
-# name: (pose, joint bone (region centre = its head), region radius m, ROM note, check level)
-#   level "accept": FB-2 / plan §8.2 B6 acceptance poses (up to 90 % of the live ROM)
-#   level "max":    the full FB-2 value (reported; not an acceptance gate for poke-through)
+# name: (pose, joint bone (region centre = its head), region radius m, ROM note, level)
+#   "fb2":     plan §8.2 B6 / FB-2 acceptance (elbow, knee, shoulder abduction, hip flexion) at 90 % of the
+#              live ROM: no inner-layer vertex > 3 mm outside the skin, volume loss < 15 %
+#   "max":     the same joints at the full FB-2 value (reported)
+#   "quality": every other joint and twist (reported; the same limits are the target)
+# Angles are about the rig's resolved axes from the A-pose bind (arm 30 deg abducted): anatomical shoulder
+# abduction 90 deg (arm horizontal) is +60 here, +90 is anatomical 120.
 TESTS = {
-    "elbow_130": ({"forearm_L": [("flex", 130.5)]}, "forearm_L", 0.13, "90 % of live 145", "accept"),
+    "elbow_130": ({"forearm_L": [("flex", 130.5)]}, "forearm_L", 0.13, "90 % of live 145", "fb2"),
     "elbow_145": ({"forearm_L": [("flex", 145.0)]}, "forearm_L", 0.13, "FB-2 max", "max"),
-    "knee_121": ({"shin_L": [("flex", 121.5)]}, "shin_L", 0.16, "90 % of live 135", "accept"),
+    "knee_121": ({"shin_L": [("flex", 121.5)]}, "shin_L", 0.16, "90 % of live 135", "fb2"),
     "knee_135": ({"shin_L": [("flex", 135.0)]}, "shin_L", 0.16, "FB-2 max", "max"),
-    "shoulder_abd_90": ({"upper_arm_L": [("abd", 90.0)]}, "upper_arm_L", 0.15, "FB-2 max = 90 % of swing 100",
-                        "accept"),
-    "shoulder_flex_90": ({"upper_arm_L": [("flex", 90.0)]}, "upper_arm_L", 0.15, "90 % of swing 100", "accept"),
-    "shoulder_rhythm_90": ({"upper_arm_L": [("abd", 60.0)], "clavicle_L": [("elev", 27.0)]}, "upper_arm_L", 0.15,
-                           "anatomical 2:1 scapulohumeral rhythm", "accept"),
-    "shoulder_twist_63": ({"upper_arm_L": [("twist", 63.0)]}, "upper_arm_L", 0.16, "90 % of twist 70", "accept"),
-    "shoulder_twist_-63": ({"upper_arm_L": [("twist", -63.0)]}, "upper_arm_L", 0.16, "90 % of twist 70",
-                           "accept"),
-    "hip_flex_108": ({"thigh_L": [("flex", 108.0)]}, "thigh_L", 0.20, "90 % of live 120", "accept"),
+    "shoulder_abd_60": ({"upper_arm_L": [("abd", 60.0)]}, "upper_arm_L", 0.15, "anatomical 90 (arm horizontal)",
+                        "fb2"),
+    "shoulder_abd_90": ({"upper_arm_L": [("abd", 90.0)]}, "upper_arm_L", 0.15, "FB-2 90 from the bind = 90 % of "
+                        "swing 100 (anatomical 120)", "fb2"),
+    "hip_flex_108": ({"thigh_L": [("flex", 108.0)]}, "thigh_L", 0.20, "90 % of live 120", "fb2"),
     "hip_flex_110": ({"thigh_L": [("flex", 110.0)]}, "thigh_L", 0.20, "FB-2 max", "max"),
-    "hip_abd_40": ({"thigh_L": [("abd", 40.5)]}, "thigh_L", 0.20, "90 % of abd 45", "accept"),
-    "hip_ext_22": ({"thigh_L": [("flex", -22.5)]}, "thigh_L", 0.20, "90 % of ext 25", "accept"),
-    "pronation_72": ({"hand_L": [("twist", -72.0)]}, "forearm_L", 0.22, "90 % of hand twist 80", "accept"),
-    "supination_72": ({"hand_L": [("twist", 72.0)]}, "forearm_L", 0.22, "90 % of hand twist 80", "accept"),
-    "wrist_flex_67": ({"hand_L": [("flex", 67.5)]}, "hand_L", 0.08, "90 % of flex 75", "accept"),
-    "wrist_ext_58": ({"hand_L": [("flex", -58.5)]}, "hand_L", 0.08, "90 % of ext 65", "accept"),
+    "shoulder_flex_90": ({"upper_arm_L": [("flex", 90.0)]}, "upper_arm_L", 0.15, "90 % of swing 100", "quality"),
+    "shoulder_rhythm_90": ({"upper_arm_L": [("abd", 60.0)], "clavicle_L": [("elev", 27.0)]}, "upper_arm_L", 0.15,
+                           "2:1 scapulohumeral rhythm, 90 % of clavicle elevation", "quality"),
+    "shoulder_twist_63": ({"upper_arm_L": [("twist", 63.0)]}, "upper_arm_L", 0.16, "90 % of twist 70", "quality"),
+    "shoulder_twist_-63": ({"upper_arm_L": [("twist", -63.0)]}, "upper_arm_L", 0.16, "90 % of twist 70",
+                           "quality"),
+    "hip_abd_40": ({"thigh_L": [("abd", 40.5)]}, "thigh_L", 0.20, "90 % of abd 45", "quality"),
+    "hip_ext_22": ({"thigh_L": [("flex", -22.5)]}, "thigh_L", 0.20, "90 % of ext 25", "quality"),
+    "pronation_72": ({"hand_L": [("twist", -72.0)]}, "forearm_L", 0.22, "90 % of hand twist 80", "quality"),
+    "supination_72": ({"hand_L": [("twist", 72.0)]}, "forearm_L", 0.22, "90 % of hand twist 80", "quality"),
+    "wrist_flex_67": ({"hand_L": [("flex", 67.5)]}, "hand_L", 0.08, "90 % of flex 75", "quality"),
+    "wrist_ext_58": ({"hand_L": [("flex", -58.5)]}, "hand_L", 0.08, "90 % of ext 65", "quality"),
     "fist_76": ({"fingers_L": [("flex", 76.5)], "thumb_L": [("flex", 45.0)]}, "fingers_L", 0.07,
-                "90 % of finger curl 85", "accept"),
-    "ankle_plantar_45": ({"foot_L": [("flex", -45.0)]}, "foot_L", 0.12, "90 % of plantar 50", "accept"),
-    "ankle_dorsi_18": ({"foot_L": [("flex", 18.0)]}, "foot_L", 0.12, "90 % of dorsi 20", "accept"),
-    "toes_ext_36": ({"toes_L": [("flex", -36.0)]}, "toes_L", 0.07, "90 % of toe extension 40", "accept"),
+                "90 % of finger curl 85", "quality"),
+    "ankle_plantar_45": ({"foot_L": [("flex", -45.0)]}, "foot_L", 0.12, "90 % of plantar 50", "quality"),
+    "ankle_dorsi_18": ({"foot_L": [("flex", 18.0)]}, "foot_L", 0.12, "90 % of dorsi 20", "quality"),
+    "toes_ext_36": ({"toes_L": [("flex", -36.0)]}, "toes_L", 0.07, "90 % of toe extension 40", "quality"),
     "neck_flex_42": ({"neck": [("flex", 25.2)], "head": [("flex", 17.1)]}, "neck", 0.16, "90 % of live flex",
-                     "accept"),
+                     "quality"),
     "neck_ext_50": ({"neck": [("flex", -29.7)], "head": [("flex", -19.8)]}, "neck", 0.16, "90 % of live ext",
-                    "accept"),
+                    "quality"),
     "neck_rot_63": ({"neck": [("twist", 31.5)], "head": [("twist", 31.5)]}, "neck", 0.16, "90 % of live rot",
-                    "accept"),
+                    "quality"),
     "neck_lat_40": ({"neck": [("lat", 24.3)], "head": [("lat", 16.2)]}, "neck", 0.16, "90 % of live lat",
-                    "accept"),
+                    "quality"),
     "trunk_flex_76": ({"spine": [("flex", 36.0)], "chest": [("flex", 27.0)], "upper_chest": [("flex", 13.5)]},
-                      "spine", 0.30, "90 % of live flex", "accept"),
+                      "spine", 0.30, "90 % of live flex", "quality"),
     "trunk_ext_31": ({"spine": [("flex", -13.5)], "chest": [("flex", -9.0)], "upper_chest": [("flex", -9.0)]},
-                     "spine", 0.30, "90 % of live ext", "accept"),
+                     "spine", 0.30, "90 % of live ext", "quality"),
     "trunk_rot_40": ({"spine": [("twist", 13.5)], "chest": [("twist", 18.0)], "upper_chest": [("twist", 9.0)]},
-                     "chest", 0.30, "90 % of live rot", "accept"),
-    "jaw_open_19": ({"jaw": [("open", 19.0)]}, "jaw", 0.09, "death jaw drop 30 mm", "accept"),
+                     "chest", 0.30, "90 % of live rot", "quality"),
+    "jaw_open_19": ({"jaw": [("open", 19.0)]}, "jaw", 0.09, "death jaw drop 30 mm (volume n/a: the mouth opens)",
+                    "quality"),
 }
+NO_VOLUME = {"jaw_open_19"}      # opening the mouth enlarges the oral cavity: a real volume change
 
 
 # ---------------------------------------------------------------------------
@@ -244,7 +252,9 @@ def run_test(md, arm, name, spec, rest=None):
             signed = np.where(wn >= 0.5, -dist, dist)
             res["shorts_mm"] = round(float(signed.min() * 1000.0), 2)
             res["shorts_inside"] = int((signed < 0).sum())
-    res["ok"] = bool(level != "accept" or (res["poke_frac"] == 0.0 and (res["vol_loss"] or 0.0) < VOL_LIMIT))
+    if name in NO_VOLUME:
+        res["vol_loss"] = None
+    res["ok"] = bool(res["poke_frac"] == 0.0 and (res["vol_loss"] or 0.0) < VOL_LIMIT)
     res["seconds"] = round(time.perf_counter() - t0, 2)
     return res
 
