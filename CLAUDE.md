@@ -43,8 +43,8 @@ integration stage and becomes the head of the full body.
   - Tools/engines only from official sources, verified against published checksums (Godot 4.5.1 was verified with
     Godot's official SHA512-SUMS; Blender's Python module came from PyPI). Tell them before any new download.
 - **Audio is REMOVED.** Verbatim: "REMOVE audio FROM THE PLAN". No sound code, no sound files, no audio package (G8).
-  The docs still contain audio sections: the step that strips them did NOT run (see §6). Ignore them; delete them
-  when you edit those docs.
+  Audio was stripped from FULL_BODY_PLAN.md, REALISM_BIBLE.md and BEHAVIOUR_BIBLE.md (G8 removed, ~254 engineer-days
+  total now; BB §7 is a "Removed" stub; vocal words like "scream" mean visible mouth/jaw/face movement only).
 - **No stickers.** Verbatim: "THE CUTS LOOK LIKE STICKERS ENSURE ITS THE ACTUAL SKIN ETC ALL THAT CUTTING SLICING AND NOT
   A STICKER ETC LIKE NICELY RELAISTIC DONE 1:1 REALISM". Every wound must be real geometry (see §8, the verbatim rule).
 - **Don't soften realism.** They explicitly want brain-damage deficits ("lose ability to do stuff, eyes might cross,
@@ -170,7 +170,7 @@ blood_age, bruising, swelling, skin_tone, pallor). Godot: install **Godot 4.5.1*
 ## 6. What to do next (in order)
 
 1. **Verify the local toolchain**: run the head build with Blender 5.1 (`--no-render`), fix any 5.0→5.1 API differences.
-2. **Strip audio from the docs** (never done): delete plan work package G8, plan §3.8, `BEHAVIOUR_BIBLE.md §7`, audio
+2. ~~Strip audio from the docs~~ — DONE (2026-09-26). Was: delete plan work package G8, plan §3.8, `BEHAVIOUR_BIBLE.md §7`, audio
    rows in checklists/folder layouts/dependency graphs; add "Audio removed by the user; no sound in the game." at the
    top of each bible/plan; mark `research2/06_sounds_voice_face.md` sound sections as reference-only.
 3. **Head review + fix rounds** (never ran). Priority 1 = anti-sticker (§8). Then the §7 backlog and

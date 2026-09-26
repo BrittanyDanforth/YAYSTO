@@ -1,5 +1,7 @@
 # 06 (round 2) — Sounds, voice and face of injured and dying people: acoustics, synthesis recipes, FACS, palsy, colour
 
+> Sound sections are reference only; audio was removed from the game. The facial-expression and face sections still apply.
+
 Project: gore simulator (Godot 4.5, Forward+, GDScript + Godot shaders, built-in Jolt, Skeleton3D + PhysicalBone3D ragdolls). Research round 2.
 Purpose: input for the **AudioGen** (impacts, fluids, falls, breathing, voice) and **FaceGen** (expression, palsy, tone, skin colour, sweat, tears, pupils and lids) generators of the behaviour layer. The goal is sound and facial behaviour that a clinician, forensic pathologist or trauma medic would accept as real, and that can be synthesised or processed procedurally from the physiology state.
 Audience: audio, facial-animation, shader and physiology engineers. Clinical, factual tone. The subject is a fictional, procedurally generated adult.

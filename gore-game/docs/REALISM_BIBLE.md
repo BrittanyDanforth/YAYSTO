@@ -440,7 +440,7 @@ clamp       : 25 mm face/scalp, 40 mm neck
 #### Visual/behavioural checklist (fist)
 - A punch leaves an instant knuckle-shaped red flush; swelling starts within minutes; real bruise colour needs 15 min to hours; deep bruises surface the next day, lower than the blow.
 - Skin splits only over bone "anvils": eyebrow first, then cheekbone, nasal bridge, chin, and the inner lip against the teeth.
-- A broken nose bleeds at once from both nostrils, deviates and crunches on the next hit; swelling hides the deformity within an hour.
+- A broken nose bleeds at once from both nostrils, deviates and shifts further on the next hit; swelling hides the deformity within an hour.
 - A knockout drops the character instantly; two in three show one arm stiffly extended and the other flexed for a few seconds, then slack, with slack-jawed obstructed breathing.
 - Punches never fracture the forehead.
 
@@ -1094,7 +1094,7 @@ Withdrawal reflex ~100 ms; heat withdrawal 190–280 ms (fast fibres) and 1.2–
 | **Kidney** | Parenchyma / hilum | 5–50 contained / 300–1,000 retroperitoneal | Survives / LOC 5–20 min | Haematuria | [R03 §5] C |
 | Stomach, bowel | Penetration | Minor bleeding; spillage | Peritonitis outside the game window | Sour gastric content; bowel through wounds ≥ 50–80 mm | [R2-05 §12.5] C |
 | Great vessels | Any | §3.3 table | §3.3 table | | [R03 §5] |
-| Trachea below cords | Cut or shot | Aphonia; aspiration (airway blood_flooded) | Aspiration killed 36.5 % of cut-throat victims | Bubbling at the wound, cough spray | [R02 §2.4] C |
+| Trachea below cords | Cut or shot | Aphonia (mouths words without airflow); aspiration (airway blood_flooded) | Aspiration killed 36.5 % of cut-throat victims | Bubbling at the wound, cough spray | [R02 §2.4] C |
 
 ### 4.5 Brain regions
 
@@ -1681,7 +1681,7 @@ Sweep a rounded section 12–15 × 5–7 mm (rib 1: 25–30 × 5) through head �
 | Clavicle | 14.8 | 12 | 2–3 | Subclavian vessels and plexus under its middle third |
 | Scapula blade | 15.5 × 10.5 | — | 1–3 total (fossae translucent) | Clean bullet hole + cracks |
 | Ribs | §7.3 | 13 × 6 | ~1 | Red marrow `#B5524A`, oozes |
-| Vertebral body | CSV | — | shell 0.3–0.6 | Red marrow; crushes with a muffled crunch |
+| Vertebral body | CSV | — | shell 0.3–0.6 | Red marrow; crushes |
 | Iliac wing | — | 2–4 thin centre, 10–15 crest | 1–2 | Bullets perforate it cleanly |
 | Skull vault | frontal 7 (5.8–8), parietal 6 (5.4–7), temporal squama 2–5, occipital 8–8.6, orbital roof/floor 0.25–1 | — | tables 1.5–2 each | Diploë `#A4574A` bleeds |
 
