@@ -1056,9 +1056,12 @@ def _fat_material(g):
     mus = t.group(g["muscle"], {"Vector": p, "Wetness": wet})
     d = t.attr("gore_depth")
     dj = d + (t.noise(p, 500.0) - 0.5) * 0.06
-    # the top of the wall is the dermis: dense, pale pink-white
-    dm = (1.0 - dj.smooth(0.05, 0.09)) * d.smooth(0.0, 0.02)
-    dermis = t.mix(t.noise(p, 900.0), DERMIS_LO, DERMIS_HI)
+    # the top of the wall is the dermis: a thin (<= ~0.3-0.6 mm) pink-red
+    # line, broken up by noise and by blood (a continuous even line reads as
+    # a painted outline)
+    dbreak = t.noise(p, 350.0, 2.0)
+    dm = (1.0 - (dj + (dbreak - 0.5) * 0.08).smooth(0.035, 0.07)) * d.smooth(0.0, 0.02) * dbreak.smooth(0.3, 0.45)
+    dermis = t.mix(t.noise(p, 900.0), DERMIS_LO, DERMIS_HI) * (0.8, 0.7, 0.7)
     col = t.mix(dm, f["Color"], dermis)
     # deep in a cut: muscle (dark red, blood-soaked)
     fm = dj.smooth(0.58, 0.68)
@@ -1068,13 +1071,25 @@ def _fat_material(g):
     # blood between the fat lobules
     sept = 1.0 - f["Height"].smooth(0.1, 0.5)
     col = t.mix(sept * 0.55 * (1.0 - dm), col, (0.10, 0.012, 0.012))
+    # torn tissue is never one clean colour: patches of dark clot (#3A0508,
+    # glossy), fresh blood and pale fascia flecks, from isotropic 3D noise and
+    # Voronoi cells (no direction, nothing repeats along the rim)
+    pc = t.warp(p, 90.0, 0.004)
+    cn = t.noise(pc, 140.0, 3.0, 0.6)
+    cv, _, _ = t.voronoi(pc, 380.0, 'F1', rand=1.0)
+    clot_m = (cn * 0.75 + (1.0 - cv) * 0.35).smooth(0.62, 0.74) * d.smooth(0.03, 0.12)
+    col = t.mix(clot_m, col, t.mix(t.noise(p, 800.0), (0.026, 0.0012, 0.002), (0.05, 0.003, 0.004)))
+    fresh_m = t.noise(pc + (2.3, 0.4, 1.1), 90.0, 3.0).smooth(0.58, 0.7) * (1.0 - clot_m)
+    col = t.mix(fresh_m * 0.8, col, (0.22, 0.012, 0.016))
+    fascia_m = t.noise(pc + (5.1, 3.3, 0.2), 420.0, 2.0).smooth(0.72, 0.8) * (1.0 - clot_m) * d.smooth(0.2, 0.4)
+    col = t.mix(fascia_m * 0.6, col, (0.42, 0.30, 0.27))
     # the deeper, the darker (self-shadowed, blood-filled bed)
     # (the whole wall sits in the wound's shade: a wall facing the key light
     # must not come out brighter than the skin around it)
     col = col * (0.62 - 0.42 * dj.smooth(0.12, 0.7))
     # (moist, but a satin sheen: a mirror-like wall reflects the key light as
     # a white sheet that reads as a row of teeth)
-    rough = t.mix(fm, f["Roughness"], mus["Roughness"]) + 0.16
+    rough = t.mix(fm, f["Roughness"], mus["Roughness"]) + 0.16 - clot_m * 0.12 + (cn - 0.5) * 0.15
     bl = _blood_layer(t, g, col, rough, (t.attr("gore_blood") * 0.75).max(0.1), p)
     h = t.mix(bl["Height Mask"], t.mix(fm, f["Height"], mus["Height"]), bl["Height"] * 2.0)
     bsdf = t.principled({
