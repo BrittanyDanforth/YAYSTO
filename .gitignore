@@ -1,2 +1,4 @@
 # Private reference images (real medical/forensic photos): never commit
 refs/
+# Throwaway test scripts left by build agents in the repo root
+/t_*.py
