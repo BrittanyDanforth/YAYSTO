@@ -755,16 +755,22 @@ def read_weights(obj):
 FOLLOWERS = ("GB_BrowLash", "GB_EyeFX_L", "GB_EyeFX_R")
 
 
-# meshes whose weights are transferred from the nearest body skin (and smoothed over their own surface)
-TRANSFERRED = ("GB_Shorts",)
+# meshes whose weights are transferred from the nearest skin point: {name: (source skins, smoothing iterations)}.
+# The shorts hang 1-3 cm off the thigh, so their own position can fall outside the thigh territory.  (The
+# muscle shell was tried here too: nearest-point transfer mis-assigns it in the groin / perineum creases,
+# where the nearest skin belongs to the other side of the crease; it keeps the analytic weights.)
+TRANSFERRED = {"GB_Shorts": (("GB_Body",), 6)}
 TRANSFER_SMOOTH_ITERS = 6
 
 
-def transfer_weights(obj, src_names=("GB_Body",)):
-    """Cloth weights: every vertex takes the analytic skin weights at its nearest point on the body skin
+def transfer_weights(obj, src_names=None, smooth_iters=None):
+    """Skin-following weights: every vertex takes the analytic skin weights at its nearest point on the skin
     (not at its own position: a loose leg tube 1-3 cm off the thigh used to fall outside the thigh territory
-    and stayed on the pelvis, so hip flexion tore the hem off), then the dense weights are smoothed over
-    the cloth's own edges so the leg opening and the crotch deform as one sheet."""
+    and stayed on the pelvis, so hip flexion tore the hem off), then (cloth) the dense weights are smoothed
+    over the mesh's own edges so the leg opening and the crotch deform as one sheet."""
+    cfg = TRANSFERRED.get(obj.name, (("GB_Body",), TRANSFER_SMOOTH_ITERS))
+    src_names = cfg[0] if src_names is None else src_names
+    smooth_iters = cfg[1] if smooth_iters is None else smooth_iters
     from mathutils import Vector
     from mathutils.bvhtree import BVHTree
     V, T = [], []
@@ -790,7 +796,7 @@ def transfer_weights(obj, src_names=("GB_Body",)):
     me.edges.foreach_get("vertices", ev)
     e = ev.reshape(-1, 2)
     deg = np.maximum(np.bincount(e.ravel(), minlength=len(pv)).astype(float), 1.0)[:, None]
-    for _ in range(TRANSFER_SMOOTH_ITERS):
+    for _ in range(smooth_iters):
         acc = np.zeros_like(W)
         np.add.at(acc, e[:, 0], W[e[:, 1]])
         np.add.at(acc, e[:, 1], W[e[:, 0]])
