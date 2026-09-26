@@ -816,4 +816,481 @@ States as in `[R2-01 §5.2]`. Normal speech runs at **4–6 syllables/s** (≈ 1
 - A throat wound below the voice box: lips move, no voice, air bubbles at the neck.
 - A punch to the larynx: hoarseness that turns to a whisper over minutes, with crowing breaths.
 
-<!-- CONTINUE-2 -->
+---
+
+## 8. Facial expression: FACS recipes
+
+The core pain face (PSPI) and its timing are in `[R2-02 §9.1]`; lids, jaw and tongue per physiological state are in `[R2-04 §7]`. This section gives the full action-unit (AU) recipes, the blending rules and a rig mapping.
+
+### 8.1 Action units used, with a blendshape mapping
+
+FACS AU names and muscles `[K; M11] (H)`. Blendshape names follow the common 52-shape (ARKit-style) convention `[K] (M)`; "custom" means the convention has no matching shape and one must be sculpted.
+
+| AU | Name | Main muscle | Visible effect | Blendshape (per side where available) |
+|---|---|---|---|---|
+| 1 | Inner brow raiser | Frontalis, medial | Inner brows up; oblique "worried" brows with AU4 | `browInnerUp` (**split L/R for palsy**) |
+| 2 | Outer brow raiser | Frontalis, lateral | Outer brows up | `browOuterUp_L/R` |
+| 4 | Brow lowerer | Corrugator, depressor supercilii, procerus | Brows down and together; vertical glabellar furrows | `browDown_L/R` |
+| 5 | Upper lid raiser | Levator palpebrae | Eyes wide; sclera visible above the iris | `eyeWide_L/R` |
+| 6 | Cheek raiser | Orbicularis oculi, orbital part | Cheeks up, crow's feet, lower lid bulges | `cheekSquint_L/R` |
+| 7 | Lid tightener | Orbicularis oculi, palpebral part | Lids tensed and narrowed | `eyeSquint_L/R` |
+| 9 | Nose wrinkler | Levator labii superioris alaeque nasi | Nose wrinkled, upper lip up | `noseSneer_L/R` |
+| 10 | Upper lip raiser | Levator labii superioris | Upper lip raised, upper teeth shown | `mouthUpperUp_L/R` |
+| 11 | Nasolabial deepener | Zygomaticus minor | Deepened nasolabial fold | custom |
+| 12 | Lip corner puller | Zygomaticus major | Corners up and back (also in pain grimaces) | `mouthSmile_L/R` |
+| 14 | Dimpler | Buccinator | Corners tightened inward | `mouthDimple_L/R` |
+| 15 | Lip corner depressor | Depressor anguli oris | Corners down | `mouthFrown_L/R` |
+| 16 | Lower lip depressor | Depressor labii inferioris | Lower lip down, lower teeth shown | `mouthLowerDown_L/R` |
+| 17 | Chin raiser | Mentalis | Chin boss wrinkled, lower lip pushed up | `mouthShrugLower` |
+| 18 / 22 | Lip pucker / funneler | Orbicularis oris | Lips rounded | `mouthPucker` / `mouthFunnel` |
+| 20 | Lip stretcher | Risorius, platysma | Lips stretched horizontally ("square mouth" with AU25–27) | `mouthStretch_L/R` |
+| 21 | Neck tightener | Platysma | Neck cords | custom |
+| 23 / 24 | Lip tightener / pressor | Orbicularis oris | Lips thinned or pressed together | `mouthPress_L/R` (+ `mouthRoll*`) |
+| 25 | Lips part | — | Lips apart | small `jawOpen` + `mouthClose` inverse |
+| 26 | Jaw drop | Masseter/temporalis relaxed | Jaw hangs open (to ~20 mm) | `jawOpen` 0.2–0.5 |
+| 27 | Mouth stretch | Pterygoids, digastric | Jaw pulled wide open (> 25 mm) | `jawOpen` 0.6–1.0 (+ `mouthStretch`) |
+| 31 | Jaw clencher | Masseter | Masseter bulge, jaw set | custom |
+| 34 | Cheek puff | — | Cheeks puffed (also passive on the paralysed side, §9) | `cheekPuff` (**split L/R**) |
+| 38 | Nostril dilator | Nasalis, dilator part | Nostrils flare | custom |
+| 41 / 42 / 43 | Lid droop / slit / eyes closed | Levator relaxed; orbicularis | Heavy lids → closed | `eyeBlink_L/R` 0.3 / 0.6 / 1.0 |
+| 45 | Blink | — | Blink (§12.2 timing) | `eyeBlink_L/R` pulse |
+| 51–58 | Head turns, tilts, up/down | — | Head pose | Neck/head bones |
+| 61–64 | Eyes left/right/up/down | — | Gaze | Eye bones |
+
+### 8.2 Expression recipes
+
+AU intensities as FACS letters (A trace … E maximum; weights in §0.3). Lid apertures from `[R2-04 §7.2]`. "Onset/hold" are for a single episode `[E]`.
+
+| State | AUs (intensity) | Eyes and lids | Mouth and neck | Head | Onset / hold | Tag |
+|---|---|---|---|---|---|---|
+| **Pain, mild** (pain 2–4) | 4B, 6B or 7B, 10A; longer blinks | Narrowed 7–9 mm | Closed or slightly parted | Still | 150–400 ms / 0.5–1.5 s bursts | [S1] [E] |
+| **Pain, moderate** (5–7) | 4C, 6C, 7C, 9B, 10C, 43B (brief squeezes), 20B, 25 | Squeezed 3–6 mm | Parted, teeth showing | Turns away or down | as above | [S1] [K; M10] [E] |
+| **Pain, severe** (8–10) | 4D–E, 6D, 7D, 9D, 10D, **43 closed**, 20C, 25, 31 between cries, 21C | **Shut** | Teeth bared; jaw clenched between cries | Arched or curled | Bursts every 3–15 s | [S1] [E] |
+| **Pain scream** | Severe pain set + **27D + 20D** (square mouth) | **Shut** (the key difference from a fear scream) | Wide square mouth; neck cords | Back or forward | With each scream | [S1] [E] |
+| Suppressed pain (stoic, fighter) | 4B, 7B, **24C**, 17B, **31C** | Narrowed | Lips pressed, jaw set | Still | Leaks of full pain face 0.3–1 s | [K; M10] (M), [E] |
+| **Fear** | 1C, 2C, 4B, **5D**, 7B, **20C**, 26B, 38B | **Wide 11–12 mm; white above the iris** | Lips stretched horizontally; jaw slightly dropped | Pulled back, chin down | 200–500 ms / sustained while the threat lasts | [K; M11] (H) |
+| **Terror scream** | 1D, 2D, 4C, **5E**, 20D, 27D, 21D, 38C | **Wide open**, fixed on the threat | Wide, stretched | Back | With each scream | [K; M11] [E] |
+| Startle (first 0.3 s) | 45 (blink at ~30 ms), 4B, 7C, 20C, 21C | Blink then wide | Stretched | Head down, shoulders up | 30–300 ms | `[R2-02 §1]` [K] |
+| Surprise (unhurt, e.g. a miss) | 1C, 2C, 5B, 26B | Wide | Dropped jaw | Back slightly | < 1 s | [K; M11] (H) |
+| **Circulatory shock** (class III) | All expression AUs ≤ A; **41–42**; **25, 26B** (open-mouth breathing); 38B with air hunger | **5–8 mm, heavy; eyes look sunken**; slow blinks (300–500 ms) | Open, dry, pale lips | Lolling, poor head control | Sustained; pain grimace when moved at ×0.3–0.6 | `[R2-04 §7.1]` [K] (M) |
+| **Dazed / concussed** | Near-neutral; 26A; occasionally 1B + 4A when addressed | "**Blank or vacant look**"; slow, few saccades | Slightly open | Slow, unsteady | Seconds to minutes | [S6] [K] (M) |
+| **Confused** (hypoxia, delirium, head injury) | 1B + 4B (puzzled), 7A, 24A | Wandering gaze, 1–3 saccades/s | Slightly parted | Tilted 5–15° | Waxes and wanes | [K] (M), [E] |
+| Anger, defiance | 4D, 5C, 7C, 23C or 24C | Glaring | Lips pressed or thinned | Forward | — | [K; M11] (H) |
+| **Roar** (fighting back) | 4D, 5C, 7C, 9B, 10C, 25, 27C | Glaring, open | Wide, upper teeth bared | Forward | With the roar | [K] (M) |
+| **Crying, despair** | 1C, 4C, 6C, 7B, 15C, 17C (+ 9B, 10B, 20B, 25/26 during sobs) | Squeezed, wet, reddening | Corners down, chin wrinkled | Down | Minutes | [K; M11] (H), [E] |
+| Pleading | 1D + 4C (oblique brows), 15B, 20B, 25 | Wide-ish, fixed on the attacker | Parted | Tilted, forward | — | [E] |
+| **Effort, straining** (pushing up, crawling, pressing a wound) | 4C, 6C, 7C, 9B, 10B, **24D or 31**, 21C | Squeezed | Lips pressed or teeth clenched | — | 0.5–3 s | [K] (M) |
+| **Air hunger, choking** | 1C, 2C, **5C**, 25, **27C** (gaping), **38D**, **21D** | Wide, frightened | Gaping; nostrils flared; neck cords | **Extended**; hands to throat `[R2-04 §7.5]` | With each breath | [K] (H) |
+| Nausea | 9B, 10B, 15B, 17B, 25A; swallowing every 10–30 s; yawns | Glazed | Lip-licking, swallowing | Still, head down | 10–120 s before vomiting `[R2-04 §2.7]` | [K] (M) |
+| Disgust at the wound | 9C, 10C, 15B, 16B, 25 | Narrowed | Upper lip up, lower lip down | Back 5–10° | 0.5–2 s | [K; M11] (H) |
+| Exhaustion, resignation (class III–IV, conscious) | 1A, 4A, 15A, 41C | Heavy lids, slow blinks | Slack | Drops | Sustained | [E] |
+
+### 8.3 Pain face: extra detail
+
+- **PSPI** = AU4 + max(AU6, AU7) + max(AU9, AU10) + AU43 (0–16) `[S1]`; game mapping PSPI ≈ 1.6 × pain `[R2-02 §9.1]`.
+- **Other AUs often seen in pain**: jaw drop / mouth stretch (AU25–27), lip stretch (AU20) and a **lip-corner pull (AU12)** that makes a "pain smile" grimace; the AU12 in pain is not happiness `[K; M10] (M)`.
+- **People have different pain faces.** A cluster analysis found a small number of recurring individual patterns, e.g. narrowed eyes with furrowed brows and wrinkled nose, or an opened mouth with narrowed eyes `[K; M10] (M–L)`. **Roll one pain-face type per character** (weights on the AU groups ±30 %) so that crowds do not grimace identically `[E]`.
+- **Expressivity varies**: many people show little facial expression at moderate pain `[K; M10] (L–M)`. Game: `pain_face_gain` 0.3–1.3 per character, default distribution median 1.
+- **Dynamics** `[E]`: onset 150–400 ms `[R2-02 §9.1]`; apex 0.5–1.5 s; in sustained pain, bursts of 1–3 s every 3–15 s with relaxation to 30–50 % between bursts; new pain spikes restart the burst.
+- **Pain scream vs fear scream**: in pain the eyes are **squeezed shut** (AU6/7/43); in terror they are **wide open** (AU5). This single cue tells the player which one they are looking at `[K] (M)`.
+
+### 8.4 Blending and living-face rules `[E]`
+
+- **Combine sources by maximum per AU**, not by sum (pain, fear, effort, breathing, vocalisation).
+- **Mouth AUs from the voice and breath generators override** the expression mouth (jaw opening from the F1 formula in §5.3; screams force AU27).
+- **Asymmetry**: ±10–20 % random per side per episode; living faces are rarely symmetric. Palsy gains (§9) are applied after.
+- **Micro-motion of the living face**: 0.02–0.05 weight noise at 0.3–2 Hz on brows, lids and lips; swallowing every 30–120 s when calm (every 5–30 s with nausea or blood in the mouth); nostril flare AU38 0.1–0.3 in time with inspiration when RR > 25. **The dead face gets none of this.**
+- **Gates**: no voluntary or emotional AUs without a working facial nerve on that side (§9) and a working pons; swollen lids (periorbital haematoma) cap AU5 at 0.2 and hold the lids partly closed; a fractured mandible caps voluntary AU27 (gravity can still open the jaw, §13).
+
+### 8.5 Timing reference
+
+| Event | Value | Tag |
+|---|---|---|
+| Startle blink latency | ~30 ms | `[R2-02 §1]` |
+| Expression onset / apex / offset | 150–500 ms / 0.5–2 s / 0.5–2 s | [K] (M), [E] |
+| Micro-expression (leaked, suppressed) | 40–200 ms | [K] (M) |
+| Pain-face onset after the pain is perceived | 150–400 ms | `[R2-02 §9.1]` |
+| Swallow duration (larynx rise and fall) | 0.5–1 s | [K] (M) |
+
+### Simulation parameters (expression)
+
+| Parameter | Value / range | Unit | Notes | Tag |
+|---|---|---|---|---|
+| `expr_recipes` | table §8.2 | AU weights | | [K; M11] [S1] [E] |
+| `pain_face_type` | one of 3–4 clusters, ±30 % group weights | — | Per character | [K; M10] (M–L), [E] |
+| `pain_face_gain` | 0.3–1.3 (median 1) | × | Per character | [E] |
+| `pain_burst` | 1–3 s every 3–15 s; relax to 30–50 % | — | Sustained pain | [E] |
+| `face_asymmetry` | ±10–20 % | per side | Per episode | [E] |
+| `micro_motion` | 0.02–0.05 at 0.3–2 Hz | weight | Living only | [E] |
+| `swallow_interval` | calm 30–120; nausea or oral blood 5–30 | s | | [K] (M), [E] |
+| `nostril_flare` | AU38 0.1–0.3 per inspiration when RR > 25; 0.6–0.9 in air hunger | weight | | [K] (M), [E] |
+| `lid_swelling_cap_AU5` | 0.2 | weight | Periorbital haematoma | [E] |
+
+### Visual/behavioural checklist (expression)
+- Pain: brows down, eyes squeezed, nose wrinkled, upper lip up, teeth bared; builds over half a second and comes in waves.
+- A pain scream is screamed with the eyes shut; a terror scream with the eyes wide and white showing above the iris.
+- Shock: a face that has stopped performing: heavy lids, open dry mouth, slow blinks, no expression until the body is moved.
+- A dazed victim stares blankly and answers late.
+- Air hunger: brows up, eyes wide, mouth gaping, nostrils flaring, neck cords standing out, head tipped back.
+- No two characters grimace identically.
+
+---
+
+## 9. Facial palsy: central versus peripheral
+
+### 9.1 The two patterns
+
+| Feature | **Central** (upper motor neuron): face area of the motor cortex (lower precentral gyrus), corona radiata, internal-capsule genu | **Peripheral** (lower motor neuron): facial nucleus in the pons, the nerve in the temporal bone, its branches in the parotid and cheek | Tag |
+|---|---|---|---|
+| Side | **Opposite** to the lesion | **Same** side as the lesion | [K] (H) |
+| Forehead (AU1, AU2) | **Largely spared** (upper face has input from both hemispheres); mild upper-face weakness is common in severe acute strokes | **Paralysed**: no wrinkling, brow lower | [S4] [K] (H) |
+| Eye closure, blink (AU43, AU45) | Preserved or mildly weak | **Incomplete closure** (lagophthalmos); **Bell's phenomenon**: the eye rolls up and out on attempted closure, showing white | [S4] [S5] [K] (H) |
+| Lower face (AU10, 12, 15, 20, 24) | Weak | Weak | [K] (H) |
+| Emotional vs voluntary movement | **Emotional smiling may still move the weak side** (volitional–emotional dissociation) | Both lost | [S4] |
+| Resting face | Mild: flat nasolabial fold, corner 1–3 mm lower | Marked (§9.3) | [K] (M), [E] |
+| Associated signs | Opposite arm and hand weak; aphasia if dominant `[R2-01 §2, §5]` | Pons: crossed signs `[R2-01 §13]`. Temporal bone: hearing loss, blood or CSF from the ear, later Battle's sign `[R1-01 §5]` | [K] (H) |
+| Onset in trauma | Immediate with the lesion | Immediate (nerve cut) or delayed by days (swelling in the canal) | [K] (H) |
+
+### 9.2 Branch injuries (face wounds): which AUs are lost
+
+| Branch (course) | AUs lost on that side | What the player sees | Tag |
+|---|---|---|---|
+| **Temporal (frontal)**: crosses the zygomatic arch | 1, 2 (part of 4) | Brow flat and lower; forehead smooth on that side | [K] (H) |
+| **Zygomatic**: across the cheekbone to the eye | 6, 7, 43/45 weak (part of 12) | Incomplete eye closure; weak blink; eye waters | [K] (H) |
+| **Buccal**: across the cheek, in front of the masseter | 9 (part), 10, 11, 12, 13, 14, upper 18/22/23, 34 | Upper lip droops; cheek billows; food and air pocket | [K] (H) |
+| **Marginal mandibular**: along the lower border of the jaw | 15, 16, (17) | When grimacing or showing teeth, **the lower lip on the injured side stays up**: lopsided grimace | [K] (H) |
+| **Cervical** | 21 | No neck cord on that side | [K] (M) |
+
+- Cuts in front of a vertical line through the outer corner of the eye usually hit small terminal branches with overlapping supply, so visible palsy is less likely there `[K] (M)`.
+
+### 9.3 Resting and moving asymmetry (peripheral palsy) `[E]` on `[K]`
+
+| Feature | Magnitude |
+|---|---|
+| Brow ptosis | 2–5 mm lower than the other side |
+| Palpebral fissure | Widened 1–3 mm (lower lid sags) |
+| Incomplete closure on attempted blink or squeeze | Gap 2–10 mm, white showing as the eye rolls up (Bell's) |
+| Nasolabial fold | Flattened (depth ×0.2–0.5) |
+| Mouth corner at rest | 2–6 mm lower |
+| Mouth midline at rest / on expression | Pulled 2–5 mm / **5–15 mm toward the healthy side** |
+| Cheek on expiration | **Puffs out 3–10 mm with each expiration** (passive; very visible in the unconscious) |
+| Fluids | Drool and blood leak from the paralysed corner; **tears spill** over the lower lid (it no longer pumps tears) |
+| Over hours | The exposed eye reddens and dries (a dry band like `[R1-04 §11]` but in a living eye) |
+
+- **Bell's phenomenon** (upward roll of the eye with lid closure) is present in most people `[S5] (M)`.
+- **Cheek puffing on expiration on the paralysed side** is a classic sign of hemiplegia in a comatose patient, and it also occurs in central palsy because the lower face is weak `[K] (H)`.
+
+### 9.4 Grading (House–Brackmann) → AU gain
+
+| Grade | Description `[K; M12] (H)` | AU gain on the affected side `[E]` |
+|---|---|---|
+| I | Normal | 1.0 |
+| II | Slight weakness on close inspection; complete eye closure with minimal effort | 0.8 |
+| III | Obvious but not disfiguring asymmetry; complete eye closure with effort; some forehead movement | 0.6 |
+| IV | Obvious, disfiguring asymmetry; **incomplete eye closure; no forehead movement** | 0.4 (forehead 0) |
+| V | Barely perceptible movement; asymmetric at rest | 0.15 |
+| VI | Total paralysis | 0 |
+
+### 9.5 Causes in the game
+
+| Cause | Palsy | Probability / notes | Tag |
+|---|---|---|---|
+| Lower precentral gyrus, corona radiata, capsule genu `[R2-01 §2, §11]` | Central, opposite side | Deterministic from the lesion map | `[R2-01]` |
+| Pons (facial nucleus or fascicle) `[R2-01 §13]` | Peripheral, same side, with crossed limb weakness | Deterministic | `[R2-01]` |
+| **Temporal bone fracture** (blunt or gunshot) | Peripheral, same side | ~7–10 % of all temporal bone fractures; **30–50 %** of fractures crossing the inner ear (transverse / otic-capsule-violating); gunshots through the temporal bone higher | [K; M23] (M–L) |
+| Cheek, parotid or jaw-line cut or gunshot | Branch pattern §9.2 | Deterministic from the track vs branch course | [K] (H) |
+| Both sides (bilateral temporal bone fractures, bilateral pontine injury) | **Facial diplegia**: expressionless, both eyes cannot close | Rare | [K] (M) |
+
+### 9.6 Palsy in the unconscious
+
+- Visible only through **tone**: the paralysed side is flatter, its mouth corner lower, its **cheek billows on expiration**, and its lid closes less `[K] (H)`.
+- **Pain stimulus test** (the player presses a nail bed or the supraorbital notch): the grimace moves only the working side `[K] (H)`. Use it as the in-game way to discover a palsy.
+
+### Simulation parameters (palsy)
+
+| Parameter | Value / range | Unit | Notes | Tag |
+|---|---|---|---|---|
+| `palsy_type` | none / central / peripheral / branch | enum per side | From the lesion resolver | [K] (H) |
+| `central_upper_face_gain` | 0.8–1.0 | × | Upper face largely spared | [S4] |
+| `central_emotional_smile_kept` | true (p 0.5–0.7) | bool | | [S4] [E] |
+| `peripheral_gain_by_HB` | I 1.0 … VI 0 | × | §9.4 | [K; M12] [E] |
+| `brow_ptosis` / `corner_droop` | 2–5 / 2–6 | mm | Peripheral, at rest | [E] on [K] |
+| `midline_pull_expression` | 5–15 | mm | Toward the healthy side | [E] on [K] |
+| `lagophthalmos_gap` | 2–10 | mm | Peripheral | [E] on [K] |
+| `bells_p` | ~0.75–0.9 | p | Eye rolls up on attempted closure | [S5] (M) |
+| `cheek_puff_expiration` | 3–10 | mm | Paralysed side; strongest in the unconscious | [K] (H), [E] |
+| `temporal_bone_palsy_p` | all 0.07–0.10; transverse/otic 0.3–0.5 | p | | [K; M23] (M–L) |
+
+### Visual/behavioural checklist (palsy)
+- A brain wound: the opposite lower face sags and the mouth pulls to the healthy side when the victim grimaces or screams, but both brows still lift and both eyes still close.
+- A temporal bone or pontine injury: the whole half of the face is dead, brow and all; the eye cannot close and rolls up, tears and drool run from that side.
+- A cut along the jaw line: only the lower lip on that side fails to drop in a grimace.
+- Unconscious hemiplegic: one cheek blows out with every breath out.
+
+---
+
+## 10. Colour: pallor, cyanosis, congestion, flushing and capillary refill
+
+Haemorrhage colours (face, lips, conjunctiva, nail beds by blood-loss class) are in `[R1-04 §7.7]`; the cyanosis threshold and mottling are in `[R2-04 §8]`. This section adds cyanosis ramps, other colour states, dark skin, timing and capillary refill.
+
+### 10.1 Model
+
+- Visible colour depends on the **amount of haemoglobin in the skin's capillaries** (Hb concentration × local perfusion), its **oxygen saturation**, **venous congestion**, **temperature** and **melanin** `[K] (H)`.
+- Recommended shader model: two chromophores (**melanin**, **haemoglobin**) plus the **oxy fraction**, as in practical dynamic facial-colour models, which also let expressions blanch compressed skin (forehead ridges in AU1/2, cheeks in AU6/12) and flush others `[K; M13] (M)`. The hex ramps below are the targets that such a model should reproduce under neutral lighting.
+- **Central vs peripheral cyanosis** `[K] (H)`: central cyanosis (low arterial saturation) turns the **tongue and oral mucosa** blue as well as the lips; peripheral cyanosis (slow flow in cold or shut-down extremities) leaves the **tongue pink** while fingers, nail beds, ear lobes and lips go dusky.
+
+### 10.2 Ramps (light-to-medium skin) `[E]` (tune under game lighting)
+
+Steps map to arterial deoxy-Hb = `Hb × (1 − SaO₂)`: **trace 1.5–2.5, mild 2.5–3.5, moderate 3.5–5, severe > 5 g/dL** (threshold 2.5 g/dL per `[R2-04 §8.2]`).
+
+| Region | Normal | Mild cyanosis | Moderate | Severe | Congested-cyanotic (asphyxia, strangulation, tonic seizure) | Exsanguinated (not blue) |
+|---|---|---|---|---|---|---|
+| Lips | `#B35E62` `[R1-04]` | `#9E6070` | `#8A5E7C` | `#6E587E` | `#5E3F66` | `#A99AA4` `[R1-04]` |
+| Nail beds | `#E2A9A6` `[R1-04]` | `#C9A0B2` | `#A994B4` | `#8C86AE` | `#7E6A9A` | `#EEE0DC` `[R1-04]` |
+| Tongue, gums, oral mucosa | `#C8646A` | `#A8637A` | `#8E5E82` | `#6F557E` | `#5A3F66` | `#D8B8BA` |
+| Palpebral conjunctiva | `#D98C87` `[R1-04]` | `#C48A98` | `#AE889F` | `#967FA0` | `#8A5A7A` + petechiae | `#EFDCD8` `[R1-04]` |
+| Face skin overlay (multiply) | — | `#7F86AE` 10 % | 20 % | 30–40 % | `#7A4A78` 30–60 % + petechiae `[R1-04 §11.8]` | Waxy `#E3DCD3` `[R1-04]` |
+| Ear lobes, nose tip, fingertips | Skin | Nail-bed ramp at 50 % over skin | ″ | ″ | ″ | Pale |
+
+**Other states** `[E]` on `[K]`:
+
+| State | Where | Colour | Tag |
+|---|---|---|---|
+| Peripheral (acro-)cyanosis: cold, shock with normal SaO₂ | Nail beds, fingertips, ear lobes, lips (tongue pink) | Mild ramp at the periphery only; lips `#A77E8A` | [K] (M) |
+| Livid face after circulatory arrest with a full blood volume | Face, lips | Overlay `#7E8196` 30–50 % within 1–3 min `[R2-04 §9.3]` | [E] |
+| Vasovagal pallor ("grey-green") | Face | Desaturate 30 %, overlay `#C9CCB0` 10–20 % | [E] (L) |
+| Fear or pain pallor | Face, lips | Desaturate 15–25 %; lips toward `#BF8583` | `[R1-04 §7.7]` [E] |
+| Flush (anger, heat, Cushing phase, CO₂ retention) | Cheeks, forehead, neck | Overlay `#D9786E` 15–35 % | [K] (M), [E] |
+| Straining (Valsalva, pushing up, tonic seizure start) | Whole face, congested | Overlay `#C0607A` 20–40 %; veins on forehead and neck | [K] (M), [E] |
+| Blanched skin under pressure | Pressed area | Light skin `#F0E4DC`; nail bed `#F2E6E2` | [E] |
+
+### 10.3 Dark skin (Fitzpatrick V–VI)
+
+- Pallor and cyanosis are **hard to see in the skin** itself; clinicians look at **lips (inner surface), gums, tongue, conjunctivae, nail beds, palms and soles** `[K] (H)`.
+- Game rule `[E]`: apply the full ramps of §10.2 to those regions; on facial skin use only a subtle **ashen grey** overlay: pallor `#8A8790` 10–25 %, cyanosis `#6C6F86` 10–20 %. The outer lip (vermilion) is often pigmented; drive the inner lip with the oral-mucosa ramp.
+
+### 10.4 Timing
+
+| Change | Onset | Full | Recovery | Tag |
+|---|---|---|---|---|
+| **Colour lag behind arterial saturation** | Lips and tongue **~5–15 s** (lung-to-tongue circulation); fingers and nail beds **~15–30 s**, longer in cold and shock | — | Same lags | [K; M27] (M) |
+| Apnoea or complete obstruction at rest, room air, normal lungs | SpO₂ holds > 90 % for **~60–120 s**, then falls steeply | Lips visibly blue at ~90–150 s (Hb 15) | Pink within ~10–30 s of airflow + lag | [K; M28] (M), `[R2-04 §8.2]` |
+| Same while struggling, seizing (oxygen use ×2) | ~30–60 s | Blue at ~40–80 s | as above | [K] (M), [E] |
+| Fear or pain pallor | 2–10 s | 20–60 s | 1–5 min | [E] on [K] |
+| Vasovagal pallor | 10–30 s before the faint | — | Minutes | `[R2-04 §8.1]` |
+| Haemorrhagic pallor | Follows loss class `[R1-04 §7.7]`, vasoconstriction lag τ 30–60 s | — | — | [E] |
+| Flush | 5–30 s | 30–60 s | 1–5 min | [K] (M), [E] |
+| Circulatory arrest | Face livid 1–3 min (full blood) or stays white (exsanguinated) | — | — | `[R2-04 §9.3]` |
+| Post-mortem | Pallor mortis minutes to ~30 min; livor from 20–30 min | — | — | `[R1-04 §12]` |
+
+Implement each colour driver as a first-order lag toward its target: face and lips τ = 8 s, extremities τ = 20 s, both ×2 in shock `[E]`.
+
+### 10.5 Capillary refill (player "press the skin" interaction)
+
+| State | Refill time after 5 s of pressure | Tag |
+|---|---|---|
+| Normal | **≤ 2 s** | [K] (H) |
+| Class II loss, cold ambient | 2–3 s (cold adds 1–2 s) | [K] (M) |
+| Class III | 3–4 s | [K] (M) |
+| Class IV | > 4–5 s | [K] (M) |
+| Dead | No refill. Once livor has formed, it still blanches under pressure until it fixes (~8–12 h) `[R1-04 §12]` | [K] (H) |
+
+Animate the blanched spot refilling from its edges inward, first-order with τ = refill time / 3 `[E]`.
+
+### Simulation parameters (colour)
+
+| Parameter | Value / range | Unit | Notes | Tag |
+|---|---|---|---|---|
+| `cyan_steps` | trace 1.5–2.5; mild 2.5–3.5; moderate 3.5–5; severe > 5 | g/dL deoxy-Hb | Arterial | [K; M21 of R2-04] (M), [E] |
+| `ramps` | table §10.2 | sRGB | Tune under lighting | [E] |
+| `central_vs_peripheral` | central: tongue blue; peripheral: tongue pink | rule | | [K] (H) |
+| `colour_lag_face` / `extremity` | 8 (5–15) / 20 (15–30) | s | ×2 in shock | [K; M27] (M), [E] |
+| `apnoea_spo2_hold` | 60–120 (rest); 30–60 (struggle) | s | Then steep fall | [K; M28] (M) |
+| `fear_pallor` | onset 2–10 s; full 20–60 s; recovery 1–5 min | — | | [E] |
+| `crt` | ≤ 2 / 2–3 / 3–4 / > 4–5 / none | s | Normal / II / III / IV / dead | [K] (H–M) |
+| `dark_skin_overlay` | pallor `#8A8790` 10–25 %; cyanosis `#6C6F86` 10–20 % | sRGB | Mucosa and nail beds carry the signal | [E] on [K] |
+
+### Visual/behavioural checklist (colour)
+- Blue lips and a blue tongue: the victim is not getting oxygen. Blue fingers with a pink tongue: cold or shut-down circulation.
+- An airway blocked at rest turns the lips blue in about one and a half to two and a half minutes; a struggling victim in under a minute and a half.
+- A bled-out victim goes white and grey-lilac, never blue.
+- Strangled, seizing or crushed: a dusky purple, congested face with pinpoint haemorrhages.
+- Pressing a nail bed: pink returns in under 2 s in the healthy, slowly in shock, never in the dead.
+- On dark skin, look at the gums, tongue, inner lips, eyelid linings and nail beds.
+
+---
+
+## 11. Sweat, wetness and skin sheen
+
+Onset and distribution of cold sweat are in `[R2-04 §8.1]` (forehead, upper lip, temples → neck, chest, palms; beads 0.5–3 mm; spreads over 1–3 min; stops at `t_arr`, dries over 30–60 min).
+
+| Item | Value | Tag |
+|---|---|---|
+| Eccrine gland density | Forehead ~150–200 /cm²; palms and soles ~350–600 /cm²; back ~60–100 /cm² | [K; M30] (M) |
+| Emotional ("psychogenic") sweating sites | Palms, soles, armpits, forehead, upper lip | [K] (H) |
+| Sudomotor latency (skin conductance response) | 1–3 s after the stimulus | [K] (H) |
+| Visible moisture | Palms 10–60 s after strong fear or pain; forehead beads 1–3 min `[R2-04 §8.1]` | [E] on [K] |
+| **Cold, clammy skin** of shock | Sweat + vasoconstriction: pale, cool, wet | [K] (H) |
+| Beads run | When a drop exceeds ~2–4 mm on vertical skin (contact-angle hysteresis) | [E] |
+| Wet-skin shading | Roughness 0.45 → 0.15–0.25; specular up; albedo darkens 5–10 % | [E] on [K] |
+| Sweat and blood | Sweat thins blood film at the hairline and brow: pinker, streaked runs | [E] |
+| After death | No new sweat; film evaporates in 30–60 min; skin dulls `[R2-04 §8.1]` | `[R2-04]` |
+| Below a spinal cord lesion | No sweating below the level | `[R2-04 §1]` |
+
+### Simulation parameters (sweat)
+
+| Parameter | Value / range | Unit | Notes | Tag |
+|---|---|---|---|---|
+| `sweat_latency_palms` / `forehead_beads` | 10–60 s / 1–3 min | — | Fear, pain, class II–III, prodrome | [E] on [K] |
+| `bead_run_size` | 2–4 | mm | | [E] |
+| `wet_roughness` | 0.15–0.25 | — | From ~0.45 dry | [E] |
+| `wet_albedo` | ×0.90–0.95 | — | | [E] |
+| `sweat_stop` | `t_arr`; below a cord lesion | rule | | `[R2-04 §1]` |
+
+### Visual/behavioural checklist (sweat)
+- Fear: palms wet within a minute. Shock: beads on the forehead and upper lip within minutes, grey skin that shines.
+- Sweat stops when the heart stops; the skin loses its sheen over the next hour.
+
+---
+
+## 12. Eyes: pupils, blinks, gaze and tears
+
+Lesion-specific pupil and gaze signs are in `[R2-01 §14]`; eyes when dying and dead in `[R1-04 §11]`; lid apertures per state in `[R2-04 §7]`.
+
+### 12.1 Pupils in pain, fear and shock
+
+| Condition | Pupil behaviour | Tag |
+|---|---|---|
+| Light | 2–4 mm in bright light, 4–8 mm in darkness; light reflex latency ~200–300 ms, constriction over ~1 s | [K] (H) |
+| **Pain (awake)**: pupillary dilation reflex | Dilates ~**0.3–1 mm** within **0.3–0.6 s**, peak at ~1–2 s, back over 3–10 s; larger with stronger stimuli (much larger, 2–4 mm, under anaesthesia) | [K; M14] (L–M) |
+| Fear, arousal (sustained) | Baseline +0.5–1.5 mm (typical 4–7 mm in normal light) | `[R2-04 §7.1]` [E] |
+| Shock class III | Normal to large, sluggish | `[R1-04 §7]` |
+| Hypoxia, anoxia | Dilating; fixed and wide by 1–2 min after circulatory arrest | `[R1-04 §11]` `[R2-04 §14]` |
+| Brain death | Fixed, mean ~5 mm | [S9] |
+
+### 12.2 Blinks
+
+| Condition | Rate | Duration | Tag |
+|---|---|---|---|
+| Calm | 15–20/min (10–25) | 100–400 ms (close 70–100 ms, reopen 150–250 ms) | [K] (H) |
+| Talking, agitated | 20–30/min | Normal | [K] (M) |
+| **Watching a threat** | Suppressed (< 5/min), then bursts | Normal | [K] (M) |
+| Pain | Blinks replaced by squeezes (AU6/7/43) of 0.3–3 s | — | [S1] [E] |
+| **Shock, exhaustion, drowsiness** | 5–10/min | **Slow: 300–500 ms**; lids reopen incompletely (heavy lids) | `[R2-04 §7.1]` [K] (M) |
+| Stupor / coma / dead | 0–5/min / none / none | — | `[R2-04 §7.1]` |
+
+### 12.3 Gaze
+
+- **Saccade main sequence** `[K; M18] (H)`: duration ≈ **21 ms + 2.2 ms per degree**; peak velocity ~400 °/s at 10°, saturating near 500–700 °/s for large saccades.
+- **Fear and threat**: hypervigilant scanning at 2–4 saccades/s between the attacker, the weapon and exits; fixation on the weapon ("weapon focus") `[K] (M)`.
+- **Pain**: eyes shut or fixed on the wound.
+- **Shock, daze**: fewer saccades (0.5–1/s), slower (peak velocity ×0.6–0.8), long fixations and drift; the "vacant", "thousand-yard" stare `[S6]` `[K] (M)`, `[E]` values.
+- **Syncope and anoxic LOC**: eyes open and deviated upward for 2–10 s `[S15]` `[R2-04 §7.1]`.
+
+### 12.4 Tears
+
+| Item | Value | Tag |
+|---|---|---|
+| Basal tear secretion | ~1–2 µL/min | [K; M19] (H) |
+| Tear film volume / conjunctival sac maximum before overflow | ~7 µL / ~25–30 µL | [K; M19] (M) |
+| **Reflex tearing** (pain, eye or nose injury, smoke, irritants) | ~10–100 µL/min | [K] (L–M), [E] |
+| **Nose struck (trigeminal reflex)** | Eyes **glisten within 1–5 s**; tears run down the cheeks within ~10–30 s | [K] (M), [E] timing |
+| Emotional crying | Tears run within ~30–120 s of crying onset; nose runs (tears drain through the nasolacrimal duct): sniffing | [K] (M), [E] |
+| A tear running down the cheek | 10–30 µL; 5–20 mm/s on a vertical cheek; slows in blood or sweat | [E] |
+| Conjunctival redness after crying or rubbing | Sclera tints toward `#E8B4B0` over 1–5 min | [E] |
+| Without blinking (coma, dead) | Tear film breaks up in ~10–20 s; the eye loses its glisten over minutes; dry band later `[R1-04 §11]` | [K] (M) |
+| Paralysed lower lid (§9) | Tears spill over the lid on that side | [K] (H) |
+
+### Simulation parameters (eyes)
+
+| Parameter | Value / range | Unit | Notes | Tag |
+|---|---|---|---|---|
+| `pdr_pain` | +0.3–1.0 mm; latency 0.3–0.6 s; peak 1–2 s; decay 3–10 s | — | Awake | [K; M14] (L–M) |
+| `pupil_fear_offset` | +0.5–1.5 | mm | Sustained arousal | [E] |
+| `blink_rate` | calm 15–20; threat < 5 then bursts; shock 5–10 | /min | | [K] (M–H) |
+| `blink_duration` | normal 100–400; shock 300–500 | ms | | [K] (M) |
+| `saccade_duration` | 21 + 2.2 × amplitude(°) | ms | | [K; M18] (H) |
+| `saccade_rate` | fear 2–4; shock 0.5–1 | /s | | [K] (M), [E] |
+| `tear_basal` / `reflex` | 1–2 / 10–100 | µL/min | | [K; M19] (H) / (L–M) |
+| `tear_overflow_volume` | 20–25 | µL excess | Then a drop runs | [E] |
+| `nose_hit_tear_time` | glisten 1–5 s; run 10–30 s | s | | [E] |
+
+### Visual/behavioural checklist (eyes)
+- Pain: pupils widen a little within a second; eyes squeeze shut.
+- Fear: eyes wide, darting between the attacker, the weapon and the way out.
+- Shock: slow heavy blinks, few eye movements, a fixed stare.
+- A punch to the nose makes the eyes water at once, even in a tough character.
+- Crying: tears, a running nose, sniffing, reddened eyes.
+- An eye that cannot close (palsy, coma) loses its shine and reddens.
+
+---
+
+## 13. Loss of facial tone and the death mask
+
+### 13.1 How fast the face goes slack
+
+| Death type | Face | Tag |
+|---|---|---|
+| **Brainstem destroyed** | Tone lost within ~100 ms `[R2-02 §0.4]`: expression vanishes instantly; lids stay where they were (often open); the jaw drops as soon as the head moves or tilts back | `[R2-02]` `[R1-04 §2]` |
+| **Circulatory arrest** (heart destroyed, exsanguination to PEA) | Expression lasts until LOC at 8–15 s; an **anoxic grimace or tonic spasm** may follow (10–40 s); flaccid by ~1–1.5 min; gasps open the jaw wide `[R2-04 §2.2, §3]` | `[R2-04]` |
+| **Slow death** (hours) | Progressive: heavy lids → cannot close the lids fully → **drooping nasolabial folds** → mandibular breathing → slack | `[R2-04 §2.3]` [K; M14 of R2-04] |
+| Jaw tone after LOC | Supine jaw opens within 0.5–5 s `[R2-04 §7.3]` | `[R2-04]` |
+
+### 13.2 What a face without tone does (gravity only) `[E]` on `[K]`
+
+| Feature | Supine | Upright slumped | Prone |
+|---|---|---|---|
+| Jaw | Opens 10–30 mm `[R2-04 §7.3]` | Closed or slightly open; chin on chest | Pressed; mouth distorted against the floor |
+| Lips | Parted; lower lip everts and sags 2–5 mm | Lower lip hangs 2–5 mm | Compressed, distorted |
+| Cheeks and jowls | Slide toward the ears and back of the head **3–10 mm**: face looks flatter and wider | Sag down 3–8 mm: jowls, heavy lower face | Pushed up and sideways |
+| Nasolabial folds | Flatten | Deepen by sag | Distorted |
+| Lids | Where they were at the loss of tone; drop 2–4 mm over 1–3 s `[R2-04 §7.2]` | Drift down | Closed by pressure or open |
+| Eyes | Fixed, slightly divergent `[R1-04 §11]` | Down | — |
+| Tongue | Falls back; tip behind the lower teeth `[R2-04 §7.4]` | Forward | Tip may show between the teeth |
+
+- The newly dead face looks **"emptier" and older** because all tone and micro-motion stop; this, not a dramatic pose, is the cue players read as death `[E]` on `[K]`.
+
+### 13.3 No frozen expression
+
+- **The pain or fear face does not persist after death.** It releases at loss of consciousness. The final facial "expression" is produced by gravity and posture `[K] (H)`.
+- **Cadaveric spasm** (instant rigor fixing the last posture) is rare and almost always involves the **hands**, not the face `[K; M19 of R2-04] (M)`. Do not fix a scream on the corpse.
+- Rigor later fixes whatever gravity produced (jaw and lids first, from ~1–3 h) `[R1-04 §12]`.
+
+### 13.4 The Hippocratic face (dying over hours to days)
+
+Hippocrates' description (*Prognostic*) remains the classic picture of the moribund face `[K; M17] (H)`: **a sharp nose, hollow eyes, sunken temples, ears cold and drawn in with the lobes turned out, the skin of the forehead hard, stretched and dry, and the colour of the whole face green-yellow, black, livid or lead-coloured**. Game version `[E]`: temples hollow 2–4 mm, eyes sunken 1–3 mm, lips thin and dry, nose tip paler and sharper, skin tight and dull. **Use it only for deaths lasting hours** (slow bleeding with compensation, raised ICP); it does not develop in minutes.
+
+### 13.5 Unconscious versus dead: the face tells
+
+| Sign | Unconscious (alive) | Dead | Tag |
+|---|---|---|---|
+| Lids | Closed or open a slit (1–5 mm); **a lifted lid closes slowly over 1–2 s** | **Stays where it is put** | `[R2-04 §7.1]` `[R1-04 §11]` |
+| Blink to touching the eyelashes or cornea | Present while the pons works | None | `[R2-04 §1]` |
+| Micro-motion, swallowing, nostril movement with breaths | Present | None | [E] on [K] |
+| Colour | Pink to pale; lips pink, blue or grey by physiology | Pallor mortis; livid if asphyxial | §10 |
+| Eye surface | Moist, glistening | Glisten fades over minutes; dry band later | `[R1-04 §11]` |
+| Mouth when supine | Open 5–20 mm, snoring | Open 10–30 mm, silent | `[R2-04 §7.3]` |
+| Grimace to a pain stimulus | Present in stupor and light coma | None | `[R2-01 §19]` |
+
+### 13.6 The death mask over the first hours
+
+Details and times are in `[R1-04 §11–§12]`. For FaceGen, flag these per hour: pallor mortis (minutes–30 min); corneal dulling (minutes–hours with the eye open); dry scleral band (hours with the eye open); lips drying brown (hours); jaw and lid rigor (1–3 h); softening, "sunken" eyes as eye pressure falls (hours); livor of the face only if the face is dependent (prone).
+
+### Simulation parameters (death mask)
+
+| Parameter | Value / range | Unit | Notes | Tag |
+|---|---|---|---|---|
+| `face_tone_loss` | brainstem ≤ 0.1; circulatory arrest 60–90 after LOC; slow death hours | s | Tone → 0 | `[R2-02]` `[R2-04]` |
+| `cheek_gravity_shift` | supine 3–10 toward ears; upright 3–8 down | mm | Corrective sag shapes, weight = 1 − tone | [E] |
+| `lower_lip_sag` | 2–5 | mm | | [E] |
+| `frozen_expression` | never (face) | rule | Cadaveric spasm: hands only | [K] (H) |
+| `hippocratic_face` | temples −2–4 mm; eyes −1–3 mm; dull tight skin | — | Deaths lasting hours only | [K; M17] (H), [E] |
+| `lid_after_lift` | alive 1–2 s to close; dead stays | s | | `[R1-04 §11]` |
+
+### Visual/behavioural checklist (death mask)
+- At death the face does not hold its last expression; it goes slack: jaw hangs, lower lip sags, cheeks slide with gravity, lids stay part-open.
+- A lifted eyelid on a dead face stays up; on an unconscious face it drifts shut.
+- Over the next hours: paler, duller eyes, drying lips, a jaw that becomes fixed where it fell.
+- Only those who die slowly get the hollow-eyed, sharp-nosed, lead-coloured face.
+
+<!-- CONTINUE-3 -->
