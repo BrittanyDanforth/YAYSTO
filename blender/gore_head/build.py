@@ -8,8 +8,9 @@ textures, HDRIs or add-ons.  This script
   3. adds the live, layered gore system (gore.py),
   4. grows eyebrows and eyelashes (hair curves) that follow the wounded skin,
   5. sets up the stage lighting and one camera per view,
-  6. renders every wound preset, a side cutaway of the intact head and a
-     close-up of the gunshot exit wound into renders/,
+  6. renders every wound preset, a side cutaway of the intact head, a
+     close-up of the gunshot exit wound, the blood time sequence, a wound
+     contact sheet, the hero image and the 4-stage strip into renders/,
   7. saves gore_head.blend with the 'gunshot' preset active and an animation
      (damage 0 -> 1 over frames 1-12, drip_time 0 -> 1 over frames 12-120).
 
@@ -25,7 +26,8 @@ Usage (bpy module or Blender):
 --out FILE      .blend path (default: gore_head.blend next to this script)
 --samples N     Cycles samples per render (default 40, denoised)
 --res N         square render resolution (default 640)
---only A,B      render only these items: preset names, 'cutaway', 'closeup_exit'
+--only A,B      render only these items: preset names, 'cutaway', 'closeup_exit',
+                'sequence', 'contact_sheet', 'hero', 'stages'
 --render-dir D  where the PNGs go (default: renders/)
 --force         render and save even when the verification fails (exit code 1 then)
 
@@ -896,6 +898,10 @@ def render_all(objs, presets, out_dir, samples=40, res=640, only=None):
         times.update(render_blood_sequence(out_dir, samples, min(res, 480)))
     if want("contact_sheet"):
         times.update(render_contact_sheet(out_dir, samples, res))
+    if want("hero"):
+        times["hero"] = render_hero(out_dir)
+    if want("stages"):
+        times.update(render_stages(out_dir, times, samples))
     if want("cutaway"):
         apply_preset("intact")
         cleanup = add_cutaway(objs)
@@ -903,6 +909,73 @@ def render_all(objs, presets, out_dir, samples=40, res=640, only=None):
         times["cutaway"] = _render(os.path.join(out_dir, "cutaway.png"), cam, samples, res)
         cleanup()
     bpy.context.scene.camera = cams["front"]
+    return times
+
+
+HERO_PRESET = "carnage"
+HERO_RES = 1024
+HERO_SAMPLES = 96
+
+
+def render_hero(out_dir, preset=HERO_PRESET, res=HERO_RES, samples=HERO_SAMPLES):
+    """The showcase image: three-quarter view of `preset` at high quality (renders/hero.png)."""
+    cams = setup_cameras()
+    apply_preset(preset)
+    return _render(os.path.join(out_dir, "hero.png"), cams["three_q"], samples, res)
+
+
+STAGES = ("intact", "blunt", "gunshot", "carnage")
+
+
+def _load_rgba(path):
+    img = bpy.data.images.load(path)
+    w, h = img.size
+    px = np.array(img.pixels[:], dtype=np.float32).reshape(h, w, 4)
+    bpy.data.images.remove(img)
+    return px
+
+
+def render_stages(out_dir, done=None, samples=40, cell=512, gutter=6):
+    """One strip of 4 three-quarter panels: intact -> blunt -> gunshot -> carnage
+    (renders/stages.png). Reuses preset_<name>_three_q.png when this run already
+    rendered it, otherwise renders the panel into a temporary file."""
+    done = done or {}
+    cams = setup_cameras()
+    panels, times = [], {}
+    tmp = os.path.join(out_dir, ".stages_tmp")
+    for name in STAGES:
+        path = os.path.join(out_dir, f"preset_{name}_three_q.png")
+        if f"preset_{name}_three_q" not in done:
+            apply_preset(name)
+            path = os.path.join(tmp, f"{name}.png")
+            times[f"stages_{name}"] = _render(path, cams["three_q"], samples, cell)
+        px = _load_rgba(path)
+        if px.shape[0] != cell:
+            # nearest-neighbour resample to the panel size (numpy only)
+            idx = (np.arange(cell) * px.shape[0] / cell).astype(int)
+            px = px[idx][:, idx]
+        panels.append(px)
+        if path.startswith(tmp):
+            os.remove(path)
+    try:
+        os.rmdir(tmp)
+    except OSError:
+        pass
+    sep = np.zeros((cell, gutter, 4), dtype=np.float32)
+    sep[..., 3] = 1.0
+    row = [panels[0]]
+    for px in panels[1:]:
+        row += [sep, px]
+    strip = np.concatenate(row, axis=1)
+    h, w = strip.shape[:2]
+    dst = os.path.join(out_dir, "stages.png")
+    out = bpy.data.images.new("stages", w, h, alpha=True)
+    out.pixels[:] = strip.ravel()
+    out.filepath_raw = dst
+    out.file_format = 'PNG'
+    out.save()
+    bpy.data.images.remove(out)
+    print(f"[build] composed {dst} ({w}x{h})")
     return times
 
 
@@ -1046,7 +1119,7 @@ def parse_args(argv=None):
     p.add_argument("--samples", type=int, default=40)
     p.add_argument("--res", type=int, default=640)
     p.add_argument("--only", default=None,
-                   help="comma list: preset names, cutaway, closeup_exit, sequence, contact_sheet")
+                   help="comma list: preset names, cutaway, closeup_exit, sequence, contact_sheet, hero, stages")
     p.add_argument("--render-dir", default=ghc.RENDER_DIR)
     p.add_argument("--force", action="store_true", help="render and save even if verification fails")
     return p.parse_args(argv)

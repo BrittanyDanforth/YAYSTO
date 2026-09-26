@@ -363,9 +363,9 @@ def _pec_relief(x, z):
     gz = 1.425 - 0.10 * np.maximum(ax - 0.03, 0.0)
     bulk = bulk - 0.0014 * gauss(z - gz, 0.006) * sstep(0.025, 0.06, ax) * sstep(0.16, 0.12, ax)
     # areola / nipple [RB §7.1 nipple (0.100, -0.112, 1.300)]; x is the base-section x, which the pectoral
-    # relief pushes ~4.5 mm outward on this slope, hence the 0.0955 centre
-    areola = 0.0009 * gauss(np.hypot(ax - 0.0955, (z - 1.300)), 0.012)
-    nipple = 0.0030 * np.exp(-(np.hypot(ax - 0.0955, z - 1.300) / 0.0045) ** 4)
+    # relief pushes ~6 mm outward on this slope (fix-round pec bulk), hence the 0.0940 centre
+    areola = 0.0009 * gauss(np.hypot(ax - 0.0940, (z - 1.300)), 0.012)
+    nipple = 0.0030 * np.exp(-(np.hypot(ax - 0.0940, z - 1.300) / 0.0045) ** 4)
     return bulk + areola + nipple
 
 
@@ -1082,10 +1082,14 @@ PAD_SITES = (
     ("sternum", ("sternum_parts", ()), (0.0, -0.120, 1.270), (0.040, -0.030, 1.470), 0.0055, 0.003, "trunk"),
     ("spine", ("upper_spinous_sdf", ()), (0.0, 0.030, 1.360), (0.030, 0.130, 1.520), 0.0075, 0.004, "trunk"),
     ("iliac_crest", ("hip_bone_sdf", ()), (0.030, -0.090, 0.995), (0.170, 0.062, 1.090), 0.0060, 0.005, "trunk"),
-    ("psis", ("hip_bone_sdf", ()), (0.030, 0.062, 0.985), (0.110, 0.110, 1.080), 0.0050, 0.005, "trunk"),
+    ("psis", ("hip_bone_sdf", ()), (0.030, 0.062, 0.985), (0.110, 0.110, 1.080), 0.0035, 0.005, "trunk"),
     ("tibia", ("tibia_sdf", ()), (0.030, -0.060, 0.060), (0.150, 0.080, 0.440), 0.0035, 0.004, "leg"),
     ("fibula", ("fibula_sdf", ()), (0.090, 0.000, 0.030), (0.160, 0.100, 0.230), 0.0028, 0.004, "leg"),
     ("patella", ("patella_sdf", ()), (0.050, -0.070, 0.460), (0.130, -0.020, 0.540), 0.0055, 0.004, "leg"),
+    # lateral forefoot: the 5th metatarsal head and shaft lie 3-5 mm under the skin of the outer foot edge
+    ("foot_lateral", ("foot_sdf", ()), (0.130, -0.140, 0.000), (0.190, 0.020, 0.050), 0.0035, 0.003, "leg"),
+    # every other foot bone keeps >= 2.5 mm (navicular / cuneiform dorsum, the hallux tip under the nail)
+    ("foot", ("foot_sdf", ()), (0.060, -0.160, 0.000), (0.130, 0.120, 0.100), 0.0025, 0.003, "leg"),
 )
 _PAD_FNS = {}
 
@@ -1136,7 +1140,7 @@ def body_components(x, y, z):
     # fascia and the lumbar fat pad over it) [RB §7.6]; a broad soft roll along the crest keeps that cover
     # without a bone-shaped ridge (the thin bone pad alone left sharp 'belt' ridges on the lower back)
     lb = Box((0.0, 0.02, 0.95), (0.16, 0.16, 1.12), margin=0.02)
-    roll = lb.run(lambda a, b, c: sd_capsule(a, b, c, (0.042, 0.071, 1.004), (0.108, 0.046, 1.068), 0.031, 0.027),
+    roll = lb.run(lambda a, b, c: sd_capsule(a, b, c, (0.044, 0.068, 1.006), (0.108, 0.046, 1.068), 0.027, 0.027),
                   ax, y, z)
     out["torso"] = smin(out["torso"], roll, 0.040)
     sh = Box((0.0, -0.10, 1.25), (0.30, 0.10, 1.53), margin=0.05)
@@ -1449,7 +1453,7 @@ def _body_muscle(x, y, z):
     # over subcutaneous bone the shell sits on the periosteum (+0.5 mm): pad depth - 0.5 mm inward
     pads = {key: pad for key, _b, _lo, _hi, pad, _k, _g in PAD_SITES}
     off["pad_trunk"] = min(pads[k] for k in ("clavicle", "sternum", "psis")) - 0.0005
-    off["pad_leg"] = min(pads[k] for k in ("tibia", "fibula")) - 0.0005
+    off["pad_leg"] = min(pads[k] for k in ("tibia", "fibula", "foot")) - 0.0005
     shell = union_components(c, off=off, kplus=3.0 * t)
     # the widened blends bulge out by up to depth / 2; never closer than 2.5 mm to the skin (FB-4)
     return np.maximum(shell, union_components(c) + 0.0025)

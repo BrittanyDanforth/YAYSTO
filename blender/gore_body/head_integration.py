@@ -1941,6 +1941,35 @@ def _lash_ribbons(strands, sign, upper, atlas):
     return out
 
 
+def _snap_brow_keys(cards, skin):
+    """Brow cards under every face key: each brow vertex keeps its rest offset (0.10-0.25 mm) above the POSED
+    skin (nearest point + normal), so the cards never lift off where a key bends the brow more sharply than
+    the transferred anchor displacement (AU01/AU04 lifted a few tips ~1 mm)."""
+    from mathutils import Vector
+    from mathutils.bvhtree import BVHTree
+    rb = gbc.read_point_attr(cards, "gb_rigid_bone", 'INT')
+    brow = np.nonzero(rb == RT.BONE_INDEX["head"])[0]
+    if not len(brow) or cards.data.shape_keys is None:
+        return
+    cv = gbc.get_verts(cards.data)
+    hv, ht = gbc.mesh_arrays(skin.data)
+    bvh0 = BVHTree.FromPolygons(hv.tolist(), ht.tolist())
+    rest_off = np.array([bvh0.find_nearest(Vector(cv[i]))[3] for i in brow])
+    hk = key_displacements(skin)
+    for kb in cards.data.shape_keys.key_blocks[1:]:
+        if kb.name not in hk:
+            continue
+        bvh = BVHTree.FromPolygons((hv + hk[kb.name]).tolist(), ht.tolist())
+        co = np.empty(len(kb.data) * 3)
+        kb.data.foreach_get("co", co)
+        co = co.reshape(-1, 3)
+        for j, i in enumerate(brow):
+            loc, nrm, _f, _d = bvh.find_nearest(Vector(co[i]))
+            if loc is not None:
+                co[i] = np.array(loc) + np.array(nrm) * rest_off[j]
+        kb.data.foreach_set("co", co.ravel())
+
+
 def build_hair_cards():
     """GB_BrowLash: alpha-scissor cards converted from the head project's brow and lash curves
     (brows rigid to ``head``, upper/lower lashes rigid to ``lid_upper_*`` / ``lid_lower_*``), the
@@ -1986,6 +2015,7 @@ def build_hair_cards():
     set_anchors(obj, np.concatenate(anchors))
     if skin.data.shape_keys is not None:
         transfer_keys(obj, skin, max_dist=0.004, anchors=np.concatenate(anchors))
+        _snap_brow_keys(obj, skin)
     tex_dir = os.path.join(gbc.SUBJECT_OUT, "textures")
     os.makedirs(tex_dir, exist_ok=True)
     atlas.save(os.path.join(tex_dir, HAIR_TEX))

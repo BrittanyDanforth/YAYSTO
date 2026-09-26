@@ -366,13 +366,20 @@ Deviations from the bible / plan that the code now makes on purpose (each also n
 | Neck girth | 38 cm at z 1.515 (horizontal) | measured as the anthropometric tape (`verify.neck_tape`: anchored at the cricoid point, perpendicular to the neck, smallest of 0-16 deg tilts): 39.1 cm | a horizontal cut at 1.515 runs below the C7 skin landmark (0.075, 1.532) through the trapezius (the neck *base*, 42.6 cm) |
 | Vessel tube rings | 0.35-0.5 r Douglas-Peucker | 0.7 r / 3 mm, turn limit by tube size (18-60 deg), 75 mm max span + forced rings at every limb joint | the 14,000-triangle plan budget with no kinks at joints |
 | Eye centres | RB §1.2 (±0.032, −0.050, 1.669) | follow the head project (±0.0315, −0.0475, 1.669) | the head team moved the eyes 2.5 mm back (head is authoritative) |
+| Left lung | RB box | cardiac notch below z 1.345 medial of x 4.8 cm | the lingula tip reached the lower sternum over the heart |
+| Epiglottis | - | behind the hyoid (0, −0.027, 1.555) | it sat in front of the hyoid under the submental skin |
+| Cord roots / cauda | straight stubs to the table canal width | run down beside the cord and exit 1.2 mm inside B3's fitted canal; C1 exits between the skull base and the atlas | the stubs cut through pedicles and the condyles (8 % of GB_Cord vertices in bone) |
 
 Rig / tests:
 - Deep layers (bone, organs, vessels, nerves, cord, brain) take the head share of the 12-22 mm band around the
   mandible (they turn with the head) but the jaw share only within 2-6 mm of the bone; the throat sheet (jaw
   share of the submental skin) starts at z 1.528 (above the thyroid cartilage), so opening the mouth no longer
   drags the neck skin over the larynx.
+- The mandible band does not reach below the jaw line (`body_skin.head_clip_z`): the submental skin over the hyoid
+  and larynx is only stretched by the throat sheet; the back of the mouth floor (tongue base / vallecula) follows
+  the jaw 30 %.
 - The neck gate's radial containment was widened (68-112 mm) so neck rotation spreads over the trapezius base.
+- GB_Body LOD0 is decimated with denser rings within 4 cm of every limb joint (`joint_weighted_decimate`).
 - The shorts take the skin weights at their nearest skin point (smoothed over the cloth).
 - `posetest`: a point counts as outside only if the global winding number AND the nearest posed face agree
   (a remote inside-out fold along a winding ray no longer flags rigidly-inside points); "exposed" needs two

@@ -214,6 +214,18 @@ def _sweep_part(points, radii2, sides, step, code, t_mode="along", caps=True):
     return gg.part(v, f, 0, gb_piece=code(v) if callable(code) else code, gb_tt=t)
 
 
+def _clear_of_spine(p, yc, clear=0.0024, steps=12):
+    """Move a root control point toward the canal centre line (x -> 0, y -> ``yc``) until its tube (r ~1.1 mm)
+    keeps ``clear`` - 1.1 mm off B3's vertebrae and discs."""
+    p = np.array(p, float)
+    for _ in range(steps):
+        if float(_spine_bone(np.array([p[0]]), np.array([p[1]]), float(p[2]))[0]) >= clear:
+            break
+        p[0] *= 0.85
+        p[1] += 0.2 * (yc - p[1])
+    return p
+
+
 def cord_parts(q=False):
     """join_parts parts of the cord, dura, cauda and root stubs (budget ~3k triangles)."""
     import gb_geom as gg
@@ -221,7 +233,7 @@ def cord_parts(q=False):
     P = np.column_stack([np.zeros(len(prof)), prof[:, 1], prof[:, 0]])
     parts = []
     # --- cord proper (ellipse sections), segment code by z, t within the segment
-    v, f, tt = gg.sweep(P, prof[:, 2:4], sides=8, step=0.013, smooth=True,
+    v, f, tt = gg.sweep(P, prof[:, 2:4], sides=8, step=0.015, smooth=True,
                         normal_fn=lambda Q: np.tile([1.0, 0.0, 0.0], (len(Q), 1)))
     seg, tseg = _seg_of_z(v[:, 2])
     parts.append(gg.part(v, f, 0, gb_piece=seg.astype(np.int32), gb_tt=tseg))
@@ -236,8 +248,11 @@ def cord_parts(q=False):
         dw.append(max(min(max(hw, 0.004) + 0.0028, cw - 0.0030, fw - 0.0012), hw + 0.0008))
         da.append(max(min(max(ha, 0.004) + 0.0022, ca - 0.0030, fa - 0.0012), ha + 0.0008))
         dy.append(yc)
-    cauda = np.array(VT.CAUDA_CHAIN[1:])
-    # the lumbar/sacral dural sac follows B3's canal too
+    # the lumbar/sacral dural sac follows B3's canal too, sampled every ~6 mm: with only the table's six chain
+    # points the smooth sweep cut the lumbosacral bend and ran 4 mm into the front of S1
+    ch = np.array(VT.CAUDA_CHAIN[1:])
+    zz = np.linspace(ch[0, 2], ch[-1, 2], max(len(ch), int(round((ch[0, 2] - ch[-1, 2]) / 0.006)) + 1))
+    cauda = np.column_stack([np.zeros(len(zz)), np.interp(zz, ch[::-1, 2], ch[::-1, 1]), zz])
     for i, c in enumerate(cauda):
         yc, fw, fa = canal_fit(c[2], c[1])
         cauda[i, 1] = yc
@@ -260,19 +275,28 @@ def cord_parts(q=False):
         for k, nm in enumerate(("L2", "L3", "L4", "L5", "S1", "S2")):
             fz = _foramen_z(nm) if nm[0] == "L" else {"S1": 1.000, "S2": 0.985}[nm]
             def yc(zz):
-                """Canal (cauda chain) y at height zz."""
-                return float(np.interp(zz, [c[2] for c in VT.CAUDA_CHAIN[::-1]], [c[1] for c in VT.CAUDA_CHAIN[::-1]]))
+                """B3's fitted canal y at height zz (near the cauda chain's table y)."""
+                y0 = float(np.interp(zz, [c[2] for c in VT.CAUDA_CHAIN[::-1]], [c[1] for c in VT.CAUDA_CHAIN[::-1]]))
+                return canal_fit(zz, y0, 0.0030)[0]
+
+            def xin(zz, x):
+                """x kept 1.2 mm inside the fitted canal's half width (the root never enters bone)."""
+                y0 = float(np.interp(zz, [c[2] for c in VT.CAUDA_CHAIN[::-1]], [c[1] for c in VT.CAUDA_CHAIN[::-1]]))
+                return min(x, max(canal_fit(zz, y0, 0.0030)[1] - 0.0023, 0.0012))
             lat = 0.0010 + 0.0007 * (5 - k)
-            zm = 0.5 * (tip[2] + fz) + 0.01
-            pts = [tip + [sx * 0.0015, 0.001 * (k % 3 - 1), 0.012 - 0.002 * k],
-                   (sx * lat, yc(zm) - 0.001 * (k % 2), zm),
-                   (sx * (lat + 0.0008), yc(fz + 0.012), fz + 0.012),
-                   (sx * 0.0040, yc(fz) - 0.0010, fz)]                   # leaves through its dural sleeve
+            # down the sac every ~8 mm on B3's fitted canal line (4 control points cut the lumbosacral bend)
+            z0 = tip[2] + 0.012 - 0.002 * k
+            zs_ = np.linspace(z0, fz + 0.012, max(3, int(round((z0 - fz) / 0.008))))
+            pts = [tip + [sx * 0.0015, 0.001 * (k % 3 - 1), 0.012 - 0.002 * k]]
+            for j, zj in enumerate(zs_[1:], 1):
+                xj = 0.0015 + (lat + 0.0008 - 0.0015) * j / (len(zs_) - 1)
+                pts.append((sx * xin(zj, xj), yc(zj) - 0.0008 * (k % 2), zj))
+            pts.append((sx * xin(fz, 0.0040), yc(fz) - 0.0010, fz))          # leaves through its dural sleeve
             v, f, tt = gg.sweep(pts, 0.0011, sides=4, step=0.022, smooth=True)
             parts.append(gg.part(v, f, 0, gb_piece=np.full(len(v), CODE_CAUDA, np.int32), gb_tt=tt))
     for dx in (-0.0012, 0.0012):
-        pts = [tip + [dx, 0.0, 0.004], (dx, cauda[2][1], cauda[2][2]), (dx * 0.5, cauda[-1][1] - 0.001,
-                                                                        cauda[-1][2] + 0.006)]
+        cm = cauda[int(np.argmin(np.abs(cauda[:, 2] - 1.087)))]
+        pts = [tip + [dx, 0.0, 0.004], (dx, cm[1], cm[2]), (dx * 0.5, cauda[-1][1] - 0.001, cauda[-1][2] + 0.006)]
         v, f, tt = gg.sweep(pts, 0.0012, sides=4, step=0.025, smooth=True)
         parts.append(gg.part(v, f, 0, gb_piece=np.full(len(v), CODE_CAUDA, np.int32), gb_tt=tt))
     # --- root stubs C1-L1: from the cord's side (segment centre) out through the dura to the foramen
@@ -286,10 +310,29 @@ def cord_parts(q=False):
             continue
         y0, hw, ha = cord_centre(z0)
         cw, _ca = _canal_half(fz)
+        yf, hwf, _haf = cord_centre(fz)
+        ycf, fwf, _faf = canal_fit(fz, yf)
+        # the root runs down beside the cord inside the canal and turns out to its dural sleeve at the foramen
+        # level, 1.2 mm inside B3's actual canal (a straight stub from the cord to the table's canal width cut
+        # through the pedicles in between)
+        xe = min(cw - 0.0010, max(fwf - 0.0023, hwf + 0.0020))
+        if fz > 1.58:
+            # C1 leaves between the occiput and the atlas: its sleeve must clear the skull base (condyles) too
+            import skeleton as SK
+            sk = SK.skull_sdf()[0]
+            best = (-1.0, fz)
+            for k in range(29):
+                zc = fz - 0.0005 * k
+                xa, ya, za = np.array([xe]), np.array([ycf + 0.0008]), np.array([zc])
+                clear = min(float(sk(xa, ya, za)[0]), float(_spine_bone(xa, ya, zc)[0]))
+                if clear > best[0]:
+                    best = (clear, zc)
+            fz = best[1]
         for sx in (1.0, -1.0):
             a = np.array([sx * (hw - 0.0008), y0 + 0.0005, z0])
-            b = np.array([sx * (cw - 0.0010), cord_centre(fz)[0] + 0.0010, fz])   # dural sleeve at the foramen
-            m = 0.5 * (a + b) + np.array([0.0, 0.0, 0.25 * (a[2] - b[2])])
+            m = np.array([sx * (hwf + 0.0012), yf + 0.0005, fz + min(0.006, 0.5 * (z0 - fz))])
+            b = np.array([sx * xe, ycf + 0.0008, fz])                              # dural sleeve
+            a, m, b = (_clear_of_spine(q, ycf) for q in (a, m, b))
             v, f, tt = gg.sweep([a, m, b], [0.0011, 0.0012, 0.0010], sides=4, step=0.030, smooth=True)
             parts.append(gg.part(v, f, 0, gb_piece=np.full(len(v), CODE_ROOT0 + i, np.int32), gb_tt=tt))
     return parts

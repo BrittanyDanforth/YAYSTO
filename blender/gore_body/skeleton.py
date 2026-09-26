@@ -1974,6 +1974,25 @@ TARSAL_BOX = {"talus": ((0.075, 0.028, 0.038), (0.116, 0.080, 0.094)),
 FOOT_AX = np.array([_n(np.cross(LM.FOOT_AXIS_L, EZ)), _n(LM.FOOT_AXIS_L), EZ])   # lateral, forward, up
 
 
+def foot_sdf():
+    """Union of the left foot bones (fn, box) - B1's lateral forefoot pad (the 5th metatarsal head and base)."""
+    parts = foot_parts()
+    lo = np.min([np.asarray(b[0]) for _n, _f, b, _r in parts], axis=0)
+    hi = np.max([np.asarray(b[1]) for _n, _f, b, _r in parts], axis=0)
+
+    def fn(x, y, z):
+        d = np.full(np.shape(x), 1.0)
+        for _n, f, (blo, bhi), _r in parts:
+            inb = ((x > blo[0] - 0.01) & (x < bhi[0] + 0.01) & (y > blo[1] - 0.01) & (y < bhi[1] + 0.01)
+                   & (z > blo[2] - 0.01) & (z < bhi[2] + 0.01))
+            if np.any(inb):
+                dd = np.full(np.shape(x), 1.0)
+                dd[inb] = f(x[inb], y[inb], z[inb])
+                d = np.minimum(d, dd)
+        return d
+    return fn, (lo, hi)
+
+
 def foot_parts():
     """Left foot bones: talus (trochlea, neck, head), calcaneus (tuber, sustentaculum), navicular,
     cuboid, three cuneiforms, five metatarsals, 14 toe phalanges."""

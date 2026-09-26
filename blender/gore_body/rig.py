@@ -455,7 +455,7 @@ MANDIBLE_NEAR = (0.012, 0.022)      # skin within 12 mm of the mandible is head/
 # the chin.  Columns are rays from the neck axis (x = 0, y = NECK_AXIS_Y): skin, fat and muscle shell
 # on one ray share the weight; the fade toward the axis keeps the spine, cord and deep vessels on the
 # neck bone.
-JAW_THROAT = {"z_m": (1.528, 1.572), "sector_deg": (55.0, 95.0), "axis_r_m": (0.030, 0.048),
+JAW_THROAT = {"z_m": (1.545, 1.575), "sector_deg": (55.0, 95.0), "axis_r_m": (0.030, 0.048),
               "neck_axis_y": 0.015}
 
 
@@ -501,6 +501,12 @@ def _head_jaw(p, g_axial, layer="skin"):
     # 2-6 mm of the bone also take the JAW share (opening the mouth moves the skin over the mandible, not
     # the vessels and glands under the jaw line)
     near = _sstep(MANDIBLE_NEAR[1], MANDIBLE_NEAR[0], dj)
+    # ... but not below the jaw line: the submental skin under the mandible's inferior border (and the tissue
+    # over the hyoid and larynx) is only STRETCHED by opening the mouth (throat sheet), it does not swing
+    # back with the chin into the throat (the larynx then poked 3-12 mm through the skin in jaw_open)
+    import body_skin as BS_
+    clip = BS_.head_clip_z(q[:, 0], q[:, 1])
+    near = near * _sstep(clip, clip + 0.008, q[:, 2])
     gh[m] = np.maximum(gh[m], near)
     ds = np.full(len(q), 1.0)
     need = gh[m] > 1e-6
@@ -508,6 +514,12 @@ def _head_jaw(p, g_axial, layer="skin"):
         qq = q[need]
         ds[need] = skull(qq[:, 0], qq[:, 1], qq[:, 2])
     gj[m] = _sstep(-0.004, 0.004, ds - dj)
+    # the back of the mouth floor (tongue base, vallecula, oropharyngeal lining over the hyoid and epiglottis)
+    # hangs from the hyoid, not the chin: it follows the jaw only 30 %, so a dropped jaw stretches the floor
+    # instead of swinging it 2 cm down through the top of the larynx
+    back = (_sstep(-0.052, -0.036, q[:, 1]) * _sstep(0.030, 0.018, np.abs(q[:, 0]))
+            * _sstep(1.588, 1.576, q[:, 2]) * _sstep(1.536, 1.546, q[:, 2]))
+    gj[m] *= 1.0 - 0.7 * back
     if not superficial:
         gj[m] *= _sstep(0.006, 0.002, dj)
     return gh, gj, th

@@ -1104,7 +1104,7 @@ def adrenal_sdf(side):
         # left: the kidney's upper pole carves the lower half of the crescent away, which lifted the gland's
         # centroid 6 mm above RB's centre; the ellipsoid sits 6 mm lower so the carved gland is centred
         cc = c + (np.array([0.001, 0.0, -0.006]) if side == "L" else 0.0)
-        d = ell(x, y, z, cc, (0.0150, 0.0053, 0.0255) if side == "L" else (0.0125, 0.0045, 0.0215))
+        d = ell(x, y, z, cc, (0.0160, 0.0057, 0.0270) if side == "L" else (0.0125, 0.0045, 0.0215))
         d = smax(d, -(kid(x, y, z) - 0.0035), 0.004)
         if side == "R":
             d = carve(d, vessel_sdf(["V10"])(x, y, z), 0.0015, 0.002)
