@@ -216,13 +216,16 @@ class NodeTree:
 
     # -- group interface ------------------------------------------------------
     def inp(self, name):
+        """Group input socket `name` as F."""
         return F(self, self.gin.outputs[name])
 
     def result(self, name, val):
+        """Connect `val` to group output `name`."""
         self.wire(self.gout, name, val)
 
     # -- math -----------------------------------------------------------------
     def math(self, op, a, b=None, c=None):
+        """Float Math node."""
         n = self.node('ShaderNodeMath', operation=op)
         self.wire(n, 0, a)
         self.wire(n, 1, b)
@@ -230,6 +233,7 @@ class NodeTree:
         return F(self, n.outputs[0])
 
     def vmath(self, op, a, b=None, c=None, scale=None):
+        """Vector Math node (DOT/LENGTH/DISTANCE return the float output)."""
         n = self.node('ShaderNodeVectorMath', operation=op)
         self.wire(n, 0, a)
         self.wire(n, 1, b)
@@ -308,6 +312,7 @@ class NodeTree:
         return F(self, n.outputs[0])
 
     def switch(self, cond, false, true, itype='FLOAT'):
+        """Switch node: `true` where cond, else `false` (lazy for single values)."""
         n = self.node('GeometryNodeSwitch', {'Switch': cond, 'False': false, 'True': true}, input_type=itype)
         return F(self, n.outputs[0])
 
@@ -353,17 +358,20 @@ class NodeTree:
             'GeometryNodeInputNamedAttribute', {'Name': name}, data_type=dtype).outputs[0]))
 
     def store(self, geo, name, value, dtype='FLOAT', domain='POINT', sel=None):
+        """Store Named Attribute; with `sel` only the selection is evaluated and written."""
         n = self.node('GeometryNodeStoreNamedAttribute', {'Geometry': geo, 'Selection': sel,
                                                           'Name': name, 'Value': value},
                       data_type=dtype, domain=domain)
         return F(self, n.outputs[0])
 
     def sample(self, geo, value, index, dtype='FLOAT', domain='POINT'):
+        """Sample Index: `value` evaluated on `geo` at `index`."""
         n = self.node('GeometryNodeSampleIndex', {'Geometry': geo, 'Value': value, 'Index': index},
                       data_type=dtype, domain=domain)
         return F(self, n.outputs[0])
 
     def rand(self, lo, hi, id_=None, seed=0, dtype='FLOAT'):
+        """Random Value (FLOAT, INT or FLOAT_VECTOR)."""
         if dtype == 'FLOAT':
             ins = {'Min_001': lo, 'Max_001': hi, 'ID': id_, 'Seed': seed}
             idx = 1
@@ -392,11 +400,13 @@ class NodeTree:
         return self.vmath('ADD', c, (0.0, 0.0, 0.0))
 
     def voronoi(self, vec, scale=1.0, feature='F1', rand=1.0, dims='3D', w=None):
+        """Voronoi Texture node (returns the node; pick outputs with out())."""
         n = self.node('ShaderNodeTexVoronoi', {'Vector': vec, 'Scale': scale, 'Randomness': rand, 'W': w},
                       feature=feature, voronoi_dimensions=dims)
         return n
 
     def group(self, tree, ins=None):
+        """Group node instancing `tree` (NodeTree or node group) with inputs `ins`."""
         n = self.node('GeometryNodeGroup')
         n.node_tree = tree.ng if isinstance(tree, NodeTree) else tree
         if ins:
@@ -509,8 +519,14 @@ class _KindCtx:
     def opened(self, at):
         return self.t.smooth(at, at + 0.02, self.D)
 
-    def pool(self, q, radius, amount, stretch=3.2):
-        """Graded blood coverage around q = 0: a teardrop running down, broken into streaks."""
+    def pool(self, q, radius, amount, stretch=3.2, drop=0.0):
+        """Graded blood coverage around q = 0: a teardrop running down, broken into streaks.
+
+        drop moves the pool down (along world -Z): blood leaves a wound over its
+        lower rim, the upper margin stays readable.
+        """
+        if drop:
+            q = q - self.down * drop
         n = self.t.group(_sub("pool"), {"Q": q, "Down": self.down, "Noise Pos": self.np, "Radius": radius,
                                          "Amount": amount, "Stretch": stretch})
         return self.t.out(n, "Coverage")
@@ -714,7 +730,7 @@ def _build_bullet():
     # blood: small pool running down on the skin, the whole exposed area below
     bleed = t.inp("Bleed")
     pool_r = s * 0.0055 * (0.5 + bleed)
-    pool = c.pool(c.L, pool_r, bleed * opened)
+    pool = c.pool(c.L, pool_r, bleed * opened, drop=r0 * 1.4)
     blood = (pool * is_skin).max(exposed * 0.9).max(edge * 0.45 * bleed)
     # brain: deep crater / tunnel along the track
     crat = t.smooth(0.88, 0.97, D) * is_brain
@@ -790,7 +806,7 @@ def _build_exit():
     frac = lines * t.smooth(R * 3.0, R * 1.1, c.rho) * is_bone * opened
     frac = frac.max(t.smooth(s * 0.004, 0.0, d_out) * is_bone * opened)
     bleed = t.inp("Bleed")
-    pool = c.pool(c.L, s * 0.014 * (0.5 + bleed), bleed * opened)
+    pool = c.pool(c.L, s * 0.012 * (0.5 + bleed), bleed * opened, drop=R * 0.7)
     flap_blood = flap * flap * (0.3 + 0.45 * bleed) * t.smooth(-0.3, 0.45, t.noise(c.np * 330.0))
     blood = (pool * is_skin).max(flap_blood).max(exposed).max(brain_w)
     tw = c.lc(LAYER_WALL)
@@ -854,7 +870,7 @@ def _build_slash():
     wound = (t.smooth(0.0005, 0.0, av - hwl) * opened * along).max(exposed).max(score)
     bleed = t.inp("Bleed")
     q = t.vec(u - t.clamp(u, -half_len * 0.8, half_len * 0.8), vc, c.w)
-    pool = c.pool(q, s * 0.004 * (0.5 + bleed), bleed * opened)
+    pool = c.pool(q, s * 0.004 * (0.5 + bleed), bleed * opened, drop=hw.max(s * 0.001))
     blood = (pool * is_skin).max(exposed).max(score).max(edge * 0.5 * bleed)
     _finish_kind(t, cut, disp=disp, wall=wall, center=center, wound=wound, edge=edge, blood=blood, fracture=score)
     return t
@@ -913,7 +929,7 @@ def _build_blunt():
     disp = t.vec(0.0, 0.0, -depress - frac * dep_on * 0.0005)
     # blood: from the split, hematoma under the skin, contusion on the brain
     bleed = t.inp("Bleed")
-    pool = c.pool(c.L, s * 0.0045 * (0.5 + bleed), bleed * t.smooth(0.25, 0.45, D))
+    pool = c.pool(c.L, s * 0.0045 * (0.5 + bleed), bleed * t.smooth(0.25, 0.45, D), drop=s * 0.003)
     hema = t.smooth(rsw * 1.1, rsw * 0.3, c.rho) * c.lc([0.0, 0.85, 0.35, 0.35, 0.0, 0.7, 0.0, 0.8])
     contusion = t.smooth(rd * 1.3, rd * 0.4, c.rho + nl * 0.002) * is_brain * t.smooth(0.5, 0.8, D)
     teeth_blood = t.smooth(s * 0.03, s * 0.01, c.rho) * c.is_layer(LAYER_TEETH) * t.smooth(0.2, 0.4, D)
