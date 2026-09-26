@@ -58,7 +58,9 @@ GLTF_OPTIONS = dict(
 
 SUBJECT_GLB = "GB_Subject.glb"
 LOD1_GLB = "GB_Subject_LOD1.glb"
-GODOT_BIN = "/opt/godot/Godot_v4.5.1-stable_linux.x86_64"
+# Godot 4.5.1 binary for the import check: $GODOT_BIN (e.g. the Windows .exe path on the user's PC), else the
+# cloud container's install.  When missing the check is reported as skipped with a visible warning.
+GODOT_BIN = os.environ.get("GODOT_BIN", "/opt/godot/Godot_v4.5.1-stable_linux.x86_64")
 # plan §3.3.3 wound lookup grid: 2.5 cm cells over the measured A-pose rest bounds + 1 cell margin
 WOUND_CELL_M = 0.025
 # sidecars written by other stages (kept in the manifest file list when present)
@@ -309,12 +311,13 @@ def segment_origins():
 
 
 def budget_checks(meshes):
-    """Plan §4.1 triangle budgets (+10 %) and §4.3 file limits."""
+    """Plan §4.1 triangle budgets: ``ok`` = tris <= budget; ``within_tolerance`` = tris <= budget + 10 %."""
     res = {}
     for key, budget in gbc.TRI_BUDGET.items():
         names = gbc.TRI_BUDGET_GROUPS.get(key, (key,))
         tris = sum(meshes[n]["triangles"] for n in names if n in meshes)
-        res[key] = {"triangles": tris, "budget": budget, "ok": tris <= budget * 1.10}
+        res[key] = {"triangles": tris, "budget": budget, "ok": tris <= budget,
+                    "within_tolerance": tris <= budget * 1.10}
     return res
 
 
@@ -406,8 +409,24 @@ def deformation_summary(res):
                 "vol_loss": v["vol_loss"], "shorts_mm": v.get("shorts_mm")} for k, v in res.items()}
 
 
-def write_manifest(out, glb_paths=(), sidecars=None, pending=None, timings=None, quick=False):
-    """manifest.json (plan §5.7).  Returns the manifest data dict."""
+def _file_build_id(path):
+    """The envelope build_id of a generated JSON file (None for binaries / other files)."""
+    if not path.endswith(".json"):
+        return None
+    try:
+        return gbc.read_json(path).get("build_id")
+    except Exception:                                                # pragma: no cover
+        return None
+
+
+def write_manifest(out, glb_paths=(), sidecars=None, pending=None, timings=None, quick=False, stage_keys=None,
+                   status=None):
+    """manifest.json (plan §5.7).  Returns the manifest data dict.
+
+    ``stage_keys`` (build.stage_key per geometry stage) and ``status`` (built / cached / placeholder per
+    stage) are recorded so verify can prove the loaded caches match the current sources.  Every listed
+    file carries its own envelope build_id, and the texture block says which build produced the baked
+    sets when the bake was skipped and earlier textures are reused."""
     meshes = {}
     for n in gbc.exported_mesh_names(0) + gbc.exported_mesh_names(1):
         o = bpy.data.objects.get(n)
@@ -419,6 +438,9 @@ def write_manifest(out, glb_paths=(), sidecars=None, pending=None, timings=None,
         if p and os.path.exists(p):
             files[os.path.basename(p)] = {"bytes": os.path.getsize(p), "sha256": gbc.file_hash(p),
                                           "mb": round(os.path.getsize(p) / 1e6, 3)}
+            bid = _file_build_id(p)
+            if bid is not None:
+                files[os.path.basename(p)]["build_id"] = bid
     try:
         import io_scene_gltf2
         exporter = ".".join(str(x) for x in io_scene_gltf2.bl_info["version"])
@@ -426,12 +448,19 @@ def write_manifest(out, glb_paths=(), sidecars=None, pending=None, timings=None,
         exporter = "unknown"
     arm = bpy.data.objects.get(gbc.ARMATURE)
     textures = texture_list(out)
+    pending = dict(pending or {})
+    tj = os.path.join(out, "textures", "textures.json")
+    if os.path.exists(tj):
+        textures["build_id"] = _file_build_id(tj)
+        if str(pending.get("bake", "")).startswith("skipped"):
+            pending["bake"] = f"skipped: reusing textures baked by {textures['build_id']}"
     data = {
         "build": {"build_id": gbc.build_id(), "blender": bpy.app.version_string, "gltf_exporter": exporter,
                   "quick": bool(quick), "timings_s": timings or {},
                   "input_hashes": {os.path.relpath(p, gbc.HERE).replace(os.sep, "/"): gbc.file_hash(p)[:16]
                                    for p in gbc.source_files() if os.path.exists(p)},
-                  "schemas": {k: k for k in gbc.SCHEMAS}},
+                  "schemas": {k: k for k in gbc.SCHEMAS},
+                  "stage_keys": dict(stage_keys or {}), "stage_status": dict(status or {})},
         "files": files,
         "meshes": meshes,
         "armature": {"bones": [b.name for b in arm.data.bones] if arm else [],
@@ -455,7 +484,7 @@ def write_manifest(out, glb_paths=(), sidecars=None, pending=None, timings=None,
                                 for n in gbc.LOD1_OBJECTS if n in meshes},
                 "note": "LOD1 = head + body skin at ~50 % (same armature, weights, UV atlases, codes and shape "
                         "keys); every other mesh has one LOD (plan D18)"},
-        "pending": pending or {},
+        "pending": pending,
         "import_hints": {"import_script": "res://pipeline/import/subject_post_import.gd",
                          "inner_meshes_hidden": list(gbc.INNER_OBJECTS) + list(gbc.VARIANT_OBJECTS),
                          "uv2": "codes (see codes.json)", "custom0": "rest position + segment (G0)",
@@ -471,7 +500,8 @@ def write_manifest(out, glb_paths=(), sidecars=None, pending=None, timings=None,
     return data
 
 
-def export_subject(objs=None, out=gbc.SUBJECT_OUT, pending=None, timings=None, quick=False):
+def export_subject(objs=None, out=gbc.SUBJECT_OUT, pending=None, timings=None, quick=False, stage_keys=None,
+                   status=None):
     """Export GB_Subject.glb (+ LOD1), every sidecar and the manifest into ``out``."""
     os.makedirs(out, exist_ok=True)
     prepare_for_export(out)
@@ -481,7 +511,7 @@ def export_subject(objs=None, out=gbc.SUBJECT_OUT, pending=None, timings=None, q
     if lod1:
         glbs.append(export_glb(os.path.join(out, LOD1_GLB), lod1)[0])
     side = write_sidecars(out)
-    man = write_manifest(out, glbs, side, pending, timings, quick)
+    man = write_manifest(out, glbs, side, pending, timings, quick, stage_keys, status)
     return {"glb": glbs, "sidecars": side, "manifest": os.path.join(out, "manifest.json"), "data": man}
 
 
@@ -791,12 +821,21 @@ def godot_import_check(glb, godot=GODOT_BIN, timeout=900):
     """Import ``glb`` with Godot headless in a temporary project and inspect it.  Returns (ok, detail);
     ok is None when the Godot binary is not installed (the check is then skipped, not failed)."""
     if not os.path.exists(godot):
-        return None, {"skipped": f"no Godot binary at {godot}"}
+        gbc.log(f"WARNING: Godot import check SKIPPED: no Godot binary at {godot} (set GODOT_BIN)")
+        return None, {"skipped": f"no Godot binary at {godot} (set the GODOT_BIN environment variable)"}
     tmp = tempfile.mkdtemp(prefix="gb_godot_check_")
+    extra_glbs = []
     try:
         with open(os.path.join(tmp, "project.godot"), "w") as fh:
             fh.write('config_version=5\n\n[application]\nconfig/name="gb_b6_import_check"\n')
         shutil.copy(glb, os.path.join(tmp, "GB_Subject.glb"))
+        # every other generated glb is imported in the same project (LOD1, weapons, room) so an importer
+        # error in any of them fails the check
+        for p in (os.path.join(os.path.dirname(glb), LOD1_GLB), os.path.join(gbc.PROPS_OUT, "weapons.glb"),
+                  os.path.join(gbc.PROPS_OUT, "room.glb")):
+            if os.path.exists(p):
+                shutil.copy(p, os.path.join(tmp, os.path.basename(p)))
+                extra_glbs.append(os.path.basename(p))
         with open(os.path.join(tmp, "check.gd"), "w") as fh:
             fh.write(_GODOT_CHECK_GD)
         with open(os.path.join(tmp, "poses.json"), "w") as fh:
@@ -804,6 +843,9 @@ def godot_import_check(glb, godot=GODOT_BIN, timeout=900):
         env = dict(os.environ)
         imp = subprocess.run([godot, "--headless", "--path", tmp, "--import"], capture_output=True, text=True,
                              timeout=timeout, env=env)
+        import_errors = [ln.strip() for ln in (imp.stdout + "\n" + imp.stderr).splitlines()
+                         if ln.strip().startswith(("ERROR:", "SCRIPT ERROR:", "WARNING:"))]
+        imported = sorted(f[:-len(".import")] for f in os.listdir(tmp) if f.endswith(".glb.import"))
         # skins register with the skeleton only with a real renderer: run the check under a virtual X
         # display with the OpenGL (Mesa llvmpipe) driver when xvfb-run exists, else headless (no pose bakes)
         xvfb = shutil.which("xvfb-run")
@@ -823,6 +865,12 @@ def godot_import_check(glb, godot=GODOT_BIN, timeout=900):
         shutil.rmtree(tmp, ignore_errors=True)
     import rig
     probs = []
+    errs = [e for e in import_errors if e.startswith(("ERROR:", "SCRIPT ERROR:"))]
+    if errs:
+        probs.append(f"{len(errs)} importer ERROR lines: {errs[:6]}")
+    not_imported = [g for g in ["GB_Subject.glb"] + extra_glbs if g not in imported]
+    if not_imported:
+        probs.append(f"not imported: {not_imported}")
     if got.get("skeletons") != 1:
         probs.append(f"{got.get('skeletons')} skeletons")
     if sorted(got.get("bones", [])) != sorted(rig.BONE_NAMES):
@@ -866,6 +914,7 @@ def godot_import_check(glb, godot=GODOT_BIN, timeout=900):
               "custom0": c0,
               "compressed_meshes": sorted(n for n, m in meshes.items() if m.get("compressed")),
               "skinning_vs_blender": pose_cmp,
+              "imported_glbs": imported, "import_warnings": [e for e in import_errors if e.startswith("WARNING:")][:10],
               "problems": probs}
     return not probs, detail
 

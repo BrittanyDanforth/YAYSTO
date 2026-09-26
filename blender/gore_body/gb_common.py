@@ -43,7 +43,7 @@ GAME_OUT = os.path.join(GAME_DIR, "assets", "generated")
 SUBJECT_OUT = os.path.join(GAME_OUT, "subject")
 PROPS_OUT = os.path.join(GAME_OUT, "props")
 RENDER_DIR = os.path.join(HERE, "renders")
-CACHE_DIR = os.path.join(HERE, ".cache")
+CACHE_DIR = os.environ.get("GB_CACHE_DIR") or os.path.join(HERE, ".cache")
 BLEND_PATH = os.path.join(HERE, "gore_body.blend")
 
 # ---------------------------------------------------------------------------
@@ -325,6 +325,21 @@ def import_head():
                 raise ImportError(f"{mod.__name__} resolved to {mod.__file__}, not the head project")
         _HEAD = _HeadModules(gh_anatomy, gh_materials, ghc)
     return _HEAD
+
+
+def set_output_root(root):
+    """Redirect every generated-asset path (``GAME_OUT``, ``SUBJECT_OUT``, ``PROPS_OUT``) to ``root``.
+
+    Used by ``build.py --quick`` so coarse iteration builds never overwrite the committed
+    deliverables in ``gore-game/assets/generated``.  Must run before ``export``/``bake``/
+    ``verify`` are imported (they bind the paths as default arguments)."""
+    global GAME_OUT, SUBJECT_OUT, PROPS_OUT
+    GAME_OUT = os.path.abspath(root)
+    SUBJECT_OUT = os.path.join(GAME_OUT, "subject")
+    PROPS_OUT = os.path.join(GAME_OUT, "props")
+    os.makedirs(os.path.join(SUBJECT_OUT, "textures"), exist_ok=True)
+    os.makedirs(PROPS_OUT, exist_ok=True)
+    return GAME_OUT
 
 
 def head_source_files():
@@ -731,13 +746,18 @@ class StageCache:
             objs = build_body_skin()
             cache.save(objs.values())
 
-    The key covers the listed input files, ``gb_common.py``, all ``gb_data``
-    tables and the Blender version.  Files live in ``HERE/.cache`` (not
+    The key covers the listed input files, ``gb_common.py``, ``gb_geom.py``, the
+    head-project sources (``head_source_files``), all ``gb_data`` tables and the
+    Blender version (``build.stage_key`` adds the import closure and the upstream
+    stage keys through ``input_paths``/``extra``).  Files live in ``HERE/.cache`` (not
     committed)."""
 
     def __init__(self, name, input_paths, extra=""):
         data_dir = os.path.join(HERE, "gb_data")
-        deps = list(input_paths) + [os.path.join(HERE, "gb_common.py")]
+        # always: the shared toolkit and the head project's sources (every organic stage calls
+        # import_head(), so a head-team change must invalidate every cache)
+        deps = list(input_paths) + [os.path.join(HERE, "gb_common.py"), os.path.join(HERE, "gb_geom.py")]
+        deps += head_source_files()
         deps += [os.path.join(data_dir, f) for f in sorted(os.listdir(data_dir)) if f.endswith(".py")]
         self.name = name
         self.key = input_hash(deps, extra + "|" + bpy.app.version_string)[:16]

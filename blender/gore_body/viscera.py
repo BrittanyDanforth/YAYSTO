@@ -2256,8 +2256,8 @@ if __name__ == "__main__":
     gbc.collections()
     objs = build_organs()
     if "--render" in gbc.script_args():
-        cache = gbc.stage_cache("skeleton", [os.path.join(gbc.HERE, "skeleton.py")],
-                                extra="quick" if quick() else "full")
+        import build
+        cache = build.stage_cache("skeleton", quick())
         if cache.hit:
             cache.load()
         render_organs()

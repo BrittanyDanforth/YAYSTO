@@ -15,8 +15,11 @@ Per layer the group:
      wall direction, wound / edge / blood / bruise / burn / fracture),
   4. displaces, cuts the holes, snaps the rims onto the ragged outline and
      extrudes thick wound walls toward the next layer,
-  5. adds extra geometry: blood rivulets on the skin and blood filling the
-     bed of bleeding cuts, bone chips on the skull, knocked-out teeth,
+  5. adds extra geometry: blood rivulets on the skin (time-driven: blood
+     only leaves a wound after its cavity has filled, from the lowest point
+     of the rim) and blood welling up in the bed of bleeding cuts, clot blobs
+     and tissue strands in the wounds, bone chips, knocked-out teeth, the
+     broken-off mandible segment of a blast,
   6. writes the `gore_*` point attributes from the contract.
 
 Typical use (after anatomy and materials):
@@ -1791,9 +1794,9 @@ def _drip_seeds(t, pts, kind, kind_id, damage, bleed, drip):
         hwo = (0.00045 + gape * 0.5) * _slash_lens(t, tt)
         # (start on the lower lip itself: a seed inside the opening lands on the
         # wall and its glossy start shows as a white tab in the cut)
-        # (just below the lower lip's edge: the lip itself is wet; a ribbon
-        # started on the edge curls over it and its end cap shows as a pale tab)
-        p0 = I + X * (tt * half_len) + Y * (sy * (hwo * 1.1 + 0.0006))
+        # (on the lower lip's cut edge: the run visibly pours over the lip out
+        # of the filled bed; the ribbon has no end cap to stand up there)
+        p0 = I + X * (tt * half_len) + Y * (sy * (hwo * 0.98))
     else:
         phi = t.math('ARCTAN2', dy, dx)
         th = phi + t.switch(first, (r1 - 0.5) * spread, 0.0)
@@ -1906,8 +1909,10 @@ def _build_blood():
     curves = t.out(t.node('GeometryNodeSetCurveRadius', {'Curve': curves, 'Radius': rad}))
     profile = t.out(t.node('GeometryNodeCurvePrimitiveCircle', {'Resolution': 10, 'Radius': 1.0}, mode='RADIUS'))
     radius = t.out(t.node('GeometryNodeInputRadius'))
+    # (open ends: the ribbon is flattened onto the skin, a cap at its start
+    # would stand up as a pale tab on the wound's lip)
     tubes = t.out(t.node('GeometryNodeCurveToMesh', {'Curve': curves, 'Profile Curve': profile,
-                                                     'Scale': radius, 'Fill Caps': True}))
+                                                     'Scale': radius, 'Fill Caps': False}))
     tubes = t.store(tubes, "d_flat", 0.24)
     tubes = t.store(tubes, "d_cap", 0.00018)
     path = t.out(t.node('GeometryNodeCurveToMesh', {'Curve': curves}))
@@ -2165,12 +2170,17 @@ WALL_LUMPS = ((210.0, 0.00055), (650.0, 0.00018))
 # iris; clot blobs sit in the track instead)
 # (< 1: the two lips' sheets must never cross -- two sheets crossing along a
 # jagged line alternate which one is on top and the bed reads as a dashed strip)
-FILL_EXTENT = {"slash": 0.95, "blunt": 0.8}
+FILL_EXTENT = {"slash": 0.985, "blunt": 0.8}
 # clot blobs per wall area (relative to CLOT_DENSITY) and the chance that a
 # vertex of the first wall ring starts a tissue strand across the gap
 CLOT_DENSITY = 30000.0        # blobs per m^2 of wall at factor 1
 CLOT_DENSITY_K = {"bullet": 2.5, "exit": 1.3, "slash": 0.9, "blunt": 1.2, "blast": 0.9}
-STRAND_P = {"slash": 0.004, "blunt": 0.007, "exit": 0.005, "blast": 0.006}
+# (none in incised cuts: a knife divides everything in its path -- tissue
+# bridges are the forensic sign of a blunt laceration, not of a cut)
+STRAND_P = {"blunt": 0.007, "exit": 0.005, "blast": 0.006}
+# extra blood on the wound walls per kind: a bullet track is a narrow tube
+# lined with blood and clot (no clean yellow fat), an exit is soaked
+WALL_BLOOD = {"bullet": 0.85, "exit": 0.6, "blast": 0.6}
 FILL_KINDS = tuple(FILL_EXTENT)
 MAIN_INPUTS = (
     ("Geometry", 'NodeSocketGeometry'),
@@ -2312,6 +2322,7 @@ def _build_wound_step(kind, kind_group):
         clot = clot * (1.0 + h.crush)
         strand = strand * (1.0 + 1.5 * h.crush)
     g = t.store(g, "g_clot", t.switch(better, t.attr("g_clot"), clot), sel=sel)
+    g = t.store(g, "g_wb", t.switch(better, t.attr("g_wb"), WALL_BLOOD.get(kind, 0.0)), sel=sel)
     g = t.store(g, "g_strand", t.switch(better, t.attr("g_strand"), strand), sel=sel)
     g = t.store(g, "g_vshape", t.switch(better, t.attr("g_vshape"), 1.0 if kind in VSHAPE_KINDS else 0.0), sel=sel)
     g = t.store(g, "g_disp", t.attr("g_disp", 'FLOAT_VECTOR') + t.vec(p[7], p[8], p[9]), 'FLOAT_VECTOR', sel=sel)
@@ -2581,7 +2592,10 @@ def _build_cut():
     fill = t.out(t.node('GeometryNodeSetMaterial', {'Geometry': fill, 'Material': t.inp("Blood Material")}))
     fill = t.out(t.node('GeometryNodeSetShadeSmooth', {'Mesh': fill, 'Shade Smooth': True}))
     side = t.attr("g_side")
-    clots = _join(t, _clot_blobs(t, g, t.bool('AND', side.gt(1.5), side.lt(WALL_STEPS + 1.5)), 1.0),
+    # (on the lower half of the walls, the floor and the fill: a clot sitting
+    # right at the lip reads as a pill stuck to the cut edge)
+    clots = _join(t, _clot_blobs(t, g, t.bool('AND', side.gt(WALL_STEPS * 0.5 - 0.5), side.lt(WALL_STEPS + 1.5)),
+                                 0.8),
                   _clot_blobs(t, fill, t.attr("g_fill").gt(0.05), 0.7))
     strands = _tissue_strands(t, g, vshape)
     # every wall ring gets the wall material (it paints the thin dermis line at
@@ -2632,7 +2646,9 @@ def _build_attributes():
         "gore_wound": a.x.max(wallf).clamp(),
         "gore_depth": depth,
         "gore_edge": (a.y * (1.0 - wallf)).clamp(),
-        "gore_blood": t.mix(wallf, a.z.max(t.attr("g_tb")), wall_blood.max(a.z * 0.5)).clamp(),
+        # (surface blood on the surface, the wall's own blood on the walls)
+        "gore_blood": t.mix(a.z.max(t.attr("g_tb")),
+                            wall_blood.max(a.z * 0.5).max(t.attr("g_wb") * (0.7 + 0.3 * wn)), wallf).clamp(),
         "gore_bruise": b.x.clamp(),
         "gore_burn": b.y.clamp(),
         # the last channel is bone fracture on bone, gunpowder soot on the skin
@@ -2708,6 +2724,7 @@ def build_gore_node_group():
     g = t.store(g, "g_floor", 0.0)
     g = t.store(g, "g_fill", 0.0)
     g = t.store(g, "g_clot", 0.0)
+    g = t.store(g, "g_wb", 0.0)
     g = t.store(g, "g_strand", 0.0)
     g = t.store(g, "g_vshape", 0.0)
     for name in ("g_disp", "g_wall", "g_ctr", "g_a", "g_b"):
@@ -2859,7 +2876,7 @@ def add_hit(kind, location, direction=None, size=1.0, elongation=1.0, depth=0.6,
             muzzle_distance=None):
     """Place a wound: an empty in GH_Hits_<Kind>, snapped onto the outer surface.
 
-    kind: bullet | exit | slash | blunt | burn.
+    kind: bullet | exit | slash | blunt | burn | blast.
     location: impact point (anywhere near the surface).
     direction: direction the damage travels into the head. None = straight in
         along the surface normal. For exits pass the bullet's travel direction

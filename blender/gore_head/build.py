@@ -980,6 +980,19 @@ def render_contact_sheet(out_dir, samples=40, res=640):
     return times
 
 
+def _has_gpu():
+    """True when Cycles has a GPU compute device here (else the saved file uses the CPU)."""
+    try:
+        addon = bpy.context.preferences.addons.get("cycles")
+        if addon is None:
+            return False
+        prefs = addon.preferences
+        prefs.refresh_devices()
+        return any(d.type != 'CPU' for d in prefs.devices)
+    except Exception:     # noqa: BLE001  (no device API in this build: stay on the CPU)
+        return False
+
+
 def save_blend(path, preset="gunshot"):
     """Apply `preset`, animate the controls and save a compressed .blend (relative paths)."""
     scene = bpy.context.scene
@@ -993,7 +1006,7 @@ def save_blend(path, preset="gunshot"):
     # compact, reasonably fast defaults for whoever opens the file; GPU when
     # the user's Blender has a compute device set up (Cycles falls back to CPU)
     ghc.configure_render(40, (1080, 1080))
-    scene.cycles.device = 'GPU'
+    scene.cycles.device = 'GPU' if _has_gpu() else 'CPU'
     scene.view_settings.exposure = materials.STAGE_EXPOSURE
     path = os.path.abspath(path)
     bpy.ops.wm.save_as_mainfile(filepath=path, compress=True, relative_remap=True)

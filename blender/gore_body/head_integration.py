@@ -919,7 +919,6 @@ LID_BONES = ("lid_upper_L", "lid_lower_L", "lid_upper_R", "lid_lower_R")
 LID_FADE_UP = (0.30, 0.66)         # upper lid weight 1 up to 0.30 rad above the margin, 0 at 0.66 (crease)
 LID_FADE_LO = (0.16, 0.46)         # lower lid weight 1 down to 0.16 rad below the margin, 0 at 0.46
 LID_LOWER_SHARE = 0.35            # in a blink the lower lid rises ~1/3 of the upper lid's rotation [K]
-FACE_RIG_JSON = os.path.join(gbc.HERE, "head_face_rig.json")
 
 
 def face_weights(points):
@@ -1189,12 +1188,14 @@ def jaw_pivot():
 def face_rig_table(head=None, measure=True):
     """rig.json "face" block (plan §5.8): bone pivots and axes, the measured lid table, blend shapes.
 
-    With ``head`` (GB_Head) and ``measure`` the lid table is measured on the mesh and
-    cached in ``head_face_rig.json``; without, the cached file is returned."""
+    With ``head`` (GB_Head) and ``measure`` the lid table is measured on the mesh.  Without, the
+    table stored on the GB_Head object in the scene (custom property ``gb_face_rig``, written by
+    ``build_face_shapes`` and carried by the head stage cache) is returned, so rig.json always
+    describes the head that is actually exported.  Nothing is ever written into the source tree."""
     if head is None or not measure:
-        if os.path.exists(FACE_RIG_JSON):
-            with open(FACE_RIG_JSON) as fh:
-                return json.load(fh)["data"]
+        stored = _stored_face_table(head)
+        if stored is not None:
+            return stored
         head = None
     A = _A()
     tab = lid_table(head, "L") if head is not None else {"rest_aperture_mm": None, "rows": []}
@@ -1233,18 +1234,19 @@ def face_rig_table(head=None, measure=True):
                         "GB_Mouth tongue": "tongue", "GB_BrowLash brows": "head", "GB_BrowLash lashes": "lid_*",
                         "GB_EyeFX tearline": "lid_lower_*", "GB_EyeFX occlusion": "lid_upper_*/lid_lower_*"},
     }
-    if head is not None:
-        _write_face_json(FACE_RIG_JSON, face)
     return face
 
 
-def _write_face_json(path, data):
-    """The face block in the plan §5.8 envelope (schema gb.face_rig/1, deterministic bytes)."""
-    env = {"schema": "gb.face_rig/1", "frame": gbc.FRAME, "godot_mapping": gbc.GODOT_MAPPING,
-           "generator": "blender/gore_body/head_integration.py", "data": gbc._clean(data)}
-    with open(path, "w") as fh:
-        json.dump(env, fh, indent=1, sort_keys=True)
-        fh.write("\n")
+def _stored_face_table(head=None):
+    """The face table stored on ``head`` (or the scene's GB_Head) as ``gb_face_rig``, else None."""
+    try:
+        import bpy
+    except ImportError:                                               # pragma: no cover
+        return None
+    obj = head if head is not None else bpy.data.objects.get("GB_Head")
+    if obj is None or "gb_face_rig" not in obj.keys():
+        return None
+    return json.loads(str(obj["gb_face_rig"]))
 
 
 # ===========================================================================

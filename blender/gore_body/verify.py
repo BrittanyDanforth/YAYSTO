@@ -45,14 +45,29 @@ from gb_data import vertebrae as VT  # noqa: E402
 from gb_data import vessels as VS  # noqa: E402
 
 CHECKS = []          # (group, name, owner, severity, fn)
+QUICK_SKIP = set()   # names of checks that measure full-accuracy geometry (skipped under --quick)
+# build context filled by build.py before verify_all: {"quick": bool, "bake": "built"/"skipped", "stage_keys": {...}}
+CONTEXT = {"quick": False, "bake": None, "stage_keys": {}, "status": {}}
 
 
-def check(group, owner="B0", severity="fail"):
-    """Decorator registering a verification check."""
+def check(group, owner="B0", severity="fail", quick_ok=True):
+    """Decorator registering a verification check.
+
+    ``quick_ok=False`` marks a full-accuracy acceptance check (landmarks, gaps, lid tables ...) that is
+    meaningless on the coarse ``--quick`` meshes; it is reported as ``skip`` in quick builds.  A check may
+    also return ``(None, detail)`` itself to report ``skip`` (e.g. a B7 file check when the bake was
+    skipped on purpose)."""
     def deco(fn):
         CHECKS.append((group, fn.__name__, owner, severity, fn))
+        if not quick_ok:
+            QUICK_SKIP.add(fn.__name__)
         return fn
     return deco
+
+
+def _bake_skipped():
+    """True when build.py ran without the bake stage (B7 texture checks are then skipped, not failed)."""
+    return str(CONTEXT.get("bake") or "").startswith("skipped")
 
 
 def _close(a, b, tol):
@@ -224,8 +239,33 @@ def landmark_checklist():
     return ok, f"nipples {d1:.3f} below the notch, {d2:.3f} apart; navel {d3:.3f} below the xiphoid"
 
 
+@check("files")
+def stage_caches_current():
+    """Every geometry stage the manifest says was built/loaded from cache has the stage key the CURRENT sources
+    give (build.stage_key: import closure + gb_data + head project + upstream key).  Fails when the committed
+    exports were made from stale caches or the head project changed since the export."""
+    path = os.path.join(gbc.SUBJECT_OUT, "manifest.json")
+    if not os.path.exists(path):
+        return False, "manifest.json missing"
+    b = gbc.read_json(path)["data"]["build"]
+    keys, st = b.get("stage_keys", {}), b.get("stage_status", {})
+    if not keys:
+        return False, "manifest has no stage_keys (exported by an older build.py)"
+    import build
+    quick = bool(b.get("quick"))
+    bad = {}
+    for stage, key in keys.items():
+        if str(st.get(stage, "")).startswith(("built", "cached")):
+            now = build.stage_key(stage, quick)
+            if now != key:
+                bad[stage] = f"manifest {key} != current {now}"
+    return not bad, f"stale stages: {bad}" if bad else f"all {len(keys)} stage keys match the current sources"
+
+
 @check("tables")
 def json_deterministic():
+    """The JSON writer itself is deterministic (same dict -> same bytes).  Build-level reproducibility
+    (clean rebuild -> byte-identical sidecars) is proven by ``python3 verify.py --reproduce``."""
     import tempfile
     data = {"bones": RT.bones()[:3], "bodies": RT.bodies()[:2], "face": {}}
     with tempfile.TemporaryDirectory() as td:
@@ -512,16 +552,19 @@ def vessels_inside_skin():
     return all(v <= 0.01 for v in res.values()), f"fraction of sampled tube vertices outside the skin: {res}"
 
 
-@check("scene", severity="warn")
+@check("scene")
 def triangle_budgets():
+    """Plan §4.1 triangle budgets: ok only when tris <= budget (the +10 % tolerance is reported separately)."""
     bpy = _bpy()
-    over = []
+    over, tol = [], []
     for key, budget in gbc.TRI_BUDGET.items():
         names = gbc.TRI_BUDGET_GROUPS.get(key, (key,))
         tris = sum(gbc.tri_count(bpy.data.objects[n].data) for n in names if n in bpy.data.objects)
-        if tris > budget * 1.10:
+        if tris > budget:
             over.append(f"{key} {tris}/{budget}")
-    return not over, f"plan §4.1 budgets (+10 %); over: {over}"
+            if tris <= budget * 1.10:
+                tol.append(key)
+    return not over, f"plan §4.1 budgets; over: {over}; within +10 % tolerance: {tol}"
 
 
 # ===========================================================================
@@ -2542,7 +2585,8 @@ def b6_manifest_and_files():
     sets = sorted(d.get("textures", {}).get("sets", {}))
     fl = d.get("file_limits", {})
     lod = d.get("lod", {}).get("lod1_meshes", {})
-    ok = (not missing and not stale and len(sets) >= 7 and fl.get("ok", False) and len(lod) == 2
+    need_sets = 0 if _bake_skipped() else 7          # texture sets are required only when the bake ran
+    ok = (not missing and not stale and len(sets) >= need_sets and fl.get("ok", False) and len(lod) == 2
           and "rig" in d)
     return ok, (f"missing {missing}; stale hashes {stale}; texture sets {sets}; file limits {fl.get('ok')} "
                 f"(largest {fl.get('largest')}, total {fl.get('total_mb')} MB, over {fl.get('over')}); LOD1 {lod}")
@@ -2586,11 +2630,23 @@ def verify_all(groups=("tables", "scene", "files"), quiet=False):
     for group, name, owner, sev, fn in CHECKS:
         if group not in groups:
             continue
+        if CONTEXT.get("quick") and name in QUICK_SKIP:
+            res[name] = {"ok": True, "skip": True, "severity": sev, "owner": owner, "group": group,
+                         "detail": "skip: full-accuracy check, not meaningful on --quick meshes"}
+            continue
+        if owner == "B7" and _bake_skipped():
+            res[name] = {"ok": True, "skip": True, "severity": sev, "owner": owner, "group": group,
+                         "detail": "skip: bake stage skipped on purpose (--no-bake)"}
+            continue
         try:
             ok, detail = fn()
         except Exception as exc:                        # a crashing check is a failing check
             ok, detail = False, f"EXCEPTION {type(exc).__name__}: {exc}\n{traceback.format_exc(limit=3)}"
-        res[name] = {"ok": bool(ok), "severity": sev, "owner": owner, "group": group, "detail": detail}
+        skip = ok is None
+        res[name] = {"ok": True if skip else bool(ok), "severity": sev, "owner": owner, "group": group,
+                     "detail": detail}
+        if skip:
+            res[name]["skip"] = True
     if not quiet:
         report(res)
     return res
@@ -2604,15 +2660,77 @@ def failures(res):
 def report(res):
     """Print a compact report."""
     for k, v in res.items():
-        flag = "PASS" if v["ok"] else ("FAIL" if v["severity"] == "fail" else "WARN")
+        flag = "SKIP" if v.get("skip") else ("PASS" if v["ok"] else ("FAIL" if v["severity"] == "fail" else "WARN"))
         print(f"  [{flag}] {v['group']:6s} {v['owner']:3s} {k}: {v['detail']}")
     f = failures(res)
     w = [k for k, v in res.items() if not v["ok"] and v["severity"] != "fail"]
-    print(f"verify: {len(res)} checks, {len(f)} failures, {len(w)} warnings")
+    sk = [k for k, v in res.items() if v.get("skip")]
+    print(f"verify: {len(res)} checks, {len(f)} failures, {len(w)} warnings, {len(sk)} skipped")
+
+
+def reproduce(keep=False):
+    """Plan §5.8 reproducibility: rebuild every geometry stage from clean (no caches) into a temporary output
+    root with ``--no-bake``, then byte-compare every JSON sidecar and the per-mesh vertex hashes of
+    GB_Subject.glb with the committed files.  Returns (ok, detail).  Takes a full build's time (~25 min)."""
+    import subprocess
+    import tempfile
+    tmp = tempfile.mkdtemp(prefix="gb_reproduce_")
+    env = dict(os.environ, GB_OUTPUT_ROOT=os.path.join(tmp, "out"), GB_CACHE_DIR=os.path.join(tmp, "cache"))
+    cmd = [sys.executable, os.path.join(gbc.HERE, "build.py"), "--stage", "skin", "head", "skeleton", "viscera",
+           "neuro", "vascular", "export", "--no-bake", "--no-save", "--no-verify"]
+    run = subprocess.run(cmd, env=env, capture_output=True, text=True)
+    if run.returncode != 0:
+        return False, {"build_rc": run.returncode, "tail": run.stdout[-2000:] + run.stderr[-2000:]}
+    new_dir = os.path.join(tmp, "out", "subject")
+    diff, same = [], []
+    for f in sorted(os.listdir(gbc.SUBJECT_OUT)):
+        if not f.endswith(".json") or f == "manifest.json":
+            continue
+        a, b = os.path.join(gbc.SUBJECT_OUT, f), os.path.join(new_dir, f)
+        if not os.path.exists(b):
+            diff.append(f"{f}: not rebuilt")
+            continue
+        da, db = gbc.read_json(a), gbc.read_json(b)
+        da.pop("build_id", None)
+        db.pop("build_id", None)
+        (same if da == db else diff).append(f)
+    ga, gb_ = _glb_mesh_hashes(os.path.join(gbc.SUBJECT_OUT, "GB_Subject.glb")), \
+        _glb_mesh_hashes(os.path.join(new_dir, "GB_Subject.glb"))
+    mesh_diff = sorted(k for k in set(ga) | set(gb_) if ga.get(k) != gb_.get(k))
+    if not keep:
+        import shutil
+        shutil.rmtree(tmp, ignore_errors=True)
+    ok = not diff and not mesh_diff
+    return ok, {"json_identical": same, "json_different": diff, "glb_meshes_different": mesh_diff,
+                "tmp": tmp if keep else None}
+
+
+def _glb_mesh_hashes(path):
+    """{mesh name: sha1 of its POSITION accessor bytes} of a .glb (per-mesh vertex hashes)."""
+    import hashlib
+    with open(path, "rb") as fh:
+        raw = fh.read()
+    jl = struct.unpack_from("<I", raw, 12)[0]
+    js = json.loads(raw[20:20 + jl])
+    binoff = 20 + jl + 8
+    out = {}
+    for m in js.get("meshes", []):
+        h = hashlib.sha1()
+        for prim in m["primitives"]:
+            acc = js["accessors"][prim["attributes"]["POSITION"]]
+            bv = js["bufferViews"][acc["bufferView"]]
+            start = binoff + bv.get("byteOffset", 0) + acc.get("byteOffset", 0)
+            h.update(raw[start:start + acc["count"] * 12])
+        out[m["name"]] = h.hexdigest()
+    return out
 
 
 if __name__ == "__main__":
     args = gbc.script_args()
+    if "--reproduce" in args:
+        ok, det = reproduce(keep="--keep" in args)
+        print(json.dumps(det, indent=1))
+        sys.exit(0 if ok else 1)
     groups = ["tables", "files"]
     if "--blend" in args:
         import bpy
