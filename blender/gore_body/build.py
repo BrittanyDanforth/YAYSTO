@@ -282,6 +282,18 @@ def run(stages, opts):
         with gbc.Timer("renders"):
             gbc.render_views("build", samples=24)
     if opts["save"]:
+        # the saved file shows the subject with its look-dev materials (GBL_*: iris, sclera, skin, bone ...)
+        # instead of the flat GBM_* placeholders the glb carries; export already ran with the GBM_* names
+        ld_state = None
+        try:
+            import lookdev
+            with gbc.Timer("look-dev materials for the saved .blend"):
+                lookdev.build_materials()
+                if "bake" not in stages or not opts["bake"]:
+                    lookdev.prepare_attributes()
+                ld_state = lookdev.lookdev_on([o for o in bpy.data.objects if o.type == 'MESH'])
+        except Exception as exc:                                        # pragma: no cover
+            gbc.log(f"WARNING: look-dev materials not applied to the saved .blend: {exc}")
         with gbc.Timer("save .blend"):
             if os.environ.get("GB_OUTPUT_ROOT"):
                 blend = os.path.join(gbc.GAME_OUT, "gore_body.blend")
@@ -290,6 +302,8 @@ def run(stages, opts):
             else:
                 blend = gbc.BLEND_PATH
             bpy.ops.wm.save_as_mainfile(filepath=blend, compress=True)
+        if ld_state is not None:
+            lookdev.lookdev_off(ld_state)
     res = None
     if opts["verify"]:
         import verify

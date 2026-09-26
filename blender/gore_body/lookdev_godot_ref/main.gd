@@ -1,7 +1,9 @@
 extends Node3D
 # B7 reference stage (plan §8.2 B7 acceptance "Godot vs Cycles renders of the reference stage"):
 # loads the exported GB_Subject.glb at runtime (GLTFDocument, no import step), puts the baked texture
-# sets on the skin/shorts/mouth with plain StandardMaterial3D, uses the cameras of lookdev.TURNTABLE["ref"]
+# sets on the skin/shorts/mouth with plain StandardMaterial3D, the eyes with a small iris/sclera/cornea shader
+# (eye_iris_albedo + eye_sclera_albedo) and the brows/lashes as alpha-scissor cards (hair_cards.png),
+# uses the cameras of lookdev.TURNTABLE["ref"]
 # and saves godot_<view>.png.  Run (from the repo root):
 #   xvfb-run -a godot --path blender/gore_body/lookdev_godot_ref --rendering-driver vulkan -- \
 #       <abs path GB_Subject.glb> <abs textures dir> <abs output dir>
@@ -39,6 +41,62 @@ func _mat(set_name: String, skin: bool) -> StandardMaterial3D:
 		m.subsurf_scatter_skin_mode = true
 	return m
 
+const EYE_SHADER := """
+shader_type spatial;
+render_mode blend_mix, cull_back;
+uniform sampler2D sclera_tex : source_color, filter_linear_mipmap;
+uniform sampler2D iris_tex : source_color, filter_linear_mipmap;
+uniform vec3 eye_centre;        // model space (the rest pose == Godot body frame)
+uniform float iris_disc_radius; // textures.json eyes.iris.radius_m (image edge)
+varying vec3 lp;
+void vertex() { lp = VERTEX - eye_centre; }
+void fragment() {
+	vec4 sc = texture(sclera_tex, UV);
+	// iris disc: projected along the gaze axis (+Z in Godot = body -Y), front hemisphere only
+	vec2 iuv = vec2(0.5) + vec2(lp.x, -lp.y) / (2.0 * iris_disc_radius);
+	vec3 iris = texture(iris_tex, iuv).rgb;
+	float front = step(0.0, lp.z);
+	vec3 col = mix(iris, sc.rgb, mix(1.0, sc.a, front));
+	ALBEDO = col;
+	ROUGHNESS = mix(0.06, 0.18, sc.a);
+	SPECULAR = 0.6;
+	CLEARCOAT = 1.0;
+	CLEARCOAT_ROUGHNESS = 0.02;
+	SSS_STRENGTH = 0.15 * sc.a;
+}
+"""
+
+func _eye_mat(mi: MeshInstance3D, iris_r: float) -> ShaderMaterial:
+	# eye centre: the eyeball is a sphere, so its bounding-box centre (back pole side) is the centre
+	var ab := mi.mesh.get_aabb()
+	var m := ShaderMaterial.new()
+	var sh := Shader.new()
+	sh.code = EYE_SHADER
+	m.shader = sh
+	m.set_shader_parameter("sclera_tex", _tex("eye_sclera_albedo.png", true))
+	m.set_shader_parameter("iris_tex", _tex("eye_iris_albedo.png", true))
+	var c := ab.get_center()
+	c.z = ab.position.z + 0.012       # centre = back pole + radius (the cornea bulges in front)
+	m.set_shader_parameter("eye_centre", c)
+	m.set_shader_parameter("iris_disc_radius", iris_r)
+	return m
+
+func _lash_mat() -> StandardMaterial3D:
+	var m := StandardMaterial3D.new()
+	m.albedo_texture = _tex("hair_cards.png", true)
+	m.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA_SCISSOR
+	m.alpha_scissor_threshold = 0.35
+	m.cull_mode = BaseMaterial3D.CULL_DISABLED
+	m.roughness = 0.55
+	return m
+
+func _iris_radius() -> float:
+	var f := FileAccess.open(tex_dir + "/textures.json", FileAccess.READ)
+	if f == null:
+		return 0.0075
+	var j = JSON.parse_string(f.get_as_text())
+	return float(j["data"]["eyes"]["iris"]["radius_m"])
+
 func _ready() -> void:
 	var args := OS.get_cmdline_user_args()
 	glb = args[0]
@@ -56,9 +114,14 @@ func _ready() -> void:
 	var mats := {"GB_Body": _mat("body", true), "GB_Head": _mat("head", true), "GB_Shorts": _mat("shorts", false),
 		"GB_Mouth": _mat("mouth", false)}
 	var show := ["GB_Body", "GB_Head", "GB_Shorts", "GB_Mouth", "GB_Eye_L", "GB_Eye_R", "GB_BrowLash"]
+	var iris_r := _iris_radius()
 	for n in scene.find_children("*", "MeshInstance3D", true, false):
 		var mi := n as MeshInstance3D
 		mi.visible = mi.name in show
+		if mi.name in ["GB_Eye_L", "GB_Eye_R"]:
+			mi.material_override = _eye_mat(mi, iris_r)
+		elif mi.name == "GB_BrowLash":
+			mi.material_override = _lash_mat()
 		if mi.name in mats:
 			for s in range(mi.mesh.get_surface_count()):
 				if mi.name == "GB_Head" and s == 1:

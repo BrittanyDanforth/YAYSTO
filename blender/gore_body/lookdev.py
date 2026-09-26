@@ -154,6 +154,8 @@ def _body_skin_material():
     nipple, sun, covered = t.attr("lk_nipple"), t.attr("lk_sun"), t.attr("lk_covered")
     vein, mole, hair = t.attr("lk_vein"), t.attr("lk_mole"), t.attr("lk_hair")
     dorsum, oily = t.attr("lk_dorsum"), t.attr("lk_oily")
+    nail, lunula = t.attr("lk_nail"), t.attr("lk_lunula")
+    warm, cool = t.attr("lk_warm"), t.attr("lk_cool")
     # sub-millimetre detail (pores, skin furrows, single hairs) is below the body atlas' 0.84 mm texel:
     # the bake sets GB_bake_detail = 0 and gets the averaged look (the game adds it back from the
     # skin_micro tileable); look-dev renders keep 1
@@ -209,6 +211,10 @@ def _body_skin_material():
     col = t.mix(vv * (0.30 + 0.45 * pallor), col, col * (0.60, 0.72, 0.92))
     # moles
     col = t.mix(mole, col, t.mix(m_fine, (0.10, 0.052, 0.035), (0.16, 0.085, 0.06)))
+    # regional colour zones (red / yellow / blue of the skin-painting convention): warmer, redder
+    # extremities, knees, elbows and lower face side of the neck; paler, slightly cooler trunk
+    col = t.mix(warm * body_k * 0.45, col, col * (1.06, 0.90, 0.86))
+    col = t.mix(cool * body_k * 0.35, col, col * (0.97, 0.99, 1.04))
     # light male body hair: fine dark strokes along the local down/distal direction (object z)
     hd, hcol, _ = t.voronoi(p * (1.0, 1.0, 0.28), 900.0)
     strand = (1.0 - hd.smooth(0.0, 0.16)) * t.sep(hcol)[1].smooth(0.92 - hair * 0.35, 0.95 - hair * 0.35)
@@ -224,17 +230,20 @@ def _body_skin_material():
     groove = groove * detail + 0.05 * (1.0 - detail)
     fine = fine * detail + 0.5 * (1.0 - detail)
     col = col * (1.0 - pore * 0.10 - groove * 0.03)
+    # nails: translucent keratin over the pink nail bed, pale lunula, slightly paler free edge
+    nail_col = t.mix(lunula, t.mix(m_fine, (0.56, 0.36, 0.33), (0.62, 0.41, 0.37)), (0.74, 0.62, 0.56))
+    col = t.mix(nail * 0.92, col, nail_col)
     lum = t.luminance(col)
     skin_col = t.mix(pallor * 0.72, col, t.vec(lum, lum, lum) * (0.97, 1.0, 1.06) * 1.08)
     mid = t.noise(ph, 160.0, 2.0)
     h = -pore * 0.9 - groove * 0.5 + fine * 0.2 + mid * 0.4 - jl * 1.2 + mont * 1.5 + mole * 0.6 \
         + vv * 0.8 * (1.0 - pallor * 0.5) + strand * hair * 0.3
     rough = 0.44 + (m_fine - 0.5) * 0.14 + (fine - 0.5) * 0.12 - oily * 0.1 - t.control("wetness") * 0.04 \
-        + pore * 0.1 + (joint * 0.08 + palm * 0.05) * body_k
+        + pore * 0.1 + (joint * 0.08 + palm * 0.05) * body_k - nail * 0.24
     n_skin = t.bump(h, 0.0001)
     bsdf = t.principled(dict(SKIN_SSS, **{
         'Base Color': skin_col, 'Roughness': rough, 'Subsurface Weight': 1.0 - palm * 0.15,
-        'Coat Weight': 0.10 + oily * 0.1, 'Coat Roughness': 0.32, 'Coat IOR': 1.45, 'Coat Normal': n_skin,
+        'Coat Weight': 0.10 + oily * 0.1 + nail * 0.35, 'Coat Roughness': 0.32, 'Coat IOR': 1.45, 'Coat Normal': n_skin,
         'Sheen Weight': 0.05 + hair * 0.05, 'Normal': n_skin}), sss_method='RANDOM_WALK_SKIN')
     t.output(bsdf)
     return _finish(mat, t, (0.47, 0.28, 0.19), 0.47)
@@ -673,6 +682,17 @@ def body_region_fields(obj):
     f["lk_oily"] = (seg == 1) * np.exp(-(ax_ / 0.07) ** 2) * np.clip((v[:, 2] - 1.15) / 0.15, 0, 1)
     f.setdefault("lk_dorsum", np.zeros(n))
     f["lk_dorsum"] = _smooth_attr(me, f["lk_dorsum"], 3)
+    # nails (B1's nail plates on fingers, thumbs and toes) and their lunulae
+    import body_skin as BS
+    nail, lun = BS.nail_mask(v)
+    f["lk_nail"] = nail
+    f["lk_lunula"] = lun
+    # colour zones: extremities, knees, elbows and the face side of the neck are warmer / redder (more
+    # superficial capillaries), the trunk and upper arms paler and a little cooler
+    warm = np.isin(seg, (6, 7, 8, 9)) * 0.8 + f["lk_joint"] * 0.6
+    warm = np.maximum(warm, np.clip((v[:, 2] - 1.42) / 0.06, 0, 1) * 0.35)
+    f["lk_warm"] = _smooth_attr(me, np.clip(warm, 0, 1), 8)
+    f["lk_cool"] = _smooth_attr(me, ((seg == 1) & (v[:, 2] > 1.05) & (v[:, 2] < 1.40)).astype(float) * 0.7, 10)
     return f
 
 

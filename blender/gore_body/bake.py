@@ -28,12 +28,12 @@ Mesh sets (plan §4.2)
 set      target (UV0 atlas)   bake source       size   look-dev materials
 ======== ==================== ================= ====== =================================
 head     GB_Head              GB_Head_HR        2048   GBL_skin_head, GBL_mouth_lining
-body     GB_Body              GB_Body_HR        2048   GBL_skin_body
+body     GB_Body              GB_Body_HR        4096   GBL_skin_body
 shorts   GB_Shorts            GB_Shorts         1024   GBL_cloth
 mouth    GB_Mouth             GB_Mouth          1024   GBL_teeth, GBL_gums, GBL_tongue
 skeleton GB_Skeleton          GB_Skeleton_HR    2048   GBL_bone, GBL_cartilage
 organs   GB_Organs            GB_Organs_HR      2048   GBL_organ
-brain    GB_Brain             GB_Brain_HR       1024   GBL_brain
+brain    GB_Brain             GB_Brain_HR       2048   GBL_brain
 ======== ==================== ================= ====== =================================
 GB_Head_LOD1 / GB_Body_LOD1 share their LOD0's atlas layout and use the same sets.
 """
@@ -55,13 +55,15 @@ gbc.SCHEMAS.setdefault(SCHEMA, ("sets", "tileables", "eyes", "decals", "painter"
 
 DILATE_PX = 8
 UV_MARGIN_PX = 8          # island margin of the re-charted atlases (at the set's resolution)
+MIN_CHART_M2 = 0.5e-4     # 0.5 cm2: smaller charts are merged into a neighbour
+OVERLAP_MAX = 0.001       # re-chart until at most 0.1 % of the covered texels are shared
 UV_VERSION = 3            # bump when the charting algorithm changes (part of the UV cache key)
 
 SETS = {
     # name: target, source, size, cage extrusion (m), max ray (m), AO distance (m), surfaces
     "head": dict(target="GB_Head", source="GB_Head_HR", size=2048, cage=0.003, ray=0.008, ao=0.03, rough_offset=0.06,
                  surfaces=["GBM_skin_head", "GBM_mouth_lining"], lod1=["GB_Head_LOD1"]),
-    "body": dict(target="GB_Body", source="GB_Body_HR", size=2048, cage=0.003, ray=0.008, ao=0.06, rough_offset=0.06,
+    "body": dict(target="GB_Body", source="GB_Body_HR", size=4096, cage=0.003, ray=0.008, ao=0.06, rough_offset=0.06,
                  detail=0.0,
                  surfaces=["GBM_skin_torso", "GBM_skin_arm_L", "GBM_skin_arm_R", "GBM_skin_leg_L",
                            "GBM_skin_leg_R"], lod1=["GB_Body_LOD1"]),
@@ -75,12 +77,13 @@ SETS = {
                      surfaces=["GBM_bone", "GBM_cartilage"], id_attr="gb_piece", emit_from="target"),
     "organs": dict(target="GB_Organs", source="GB_Organs_HR", size=2048, cage=0.0015, ray=0.004, ao=0.01,
                    surfaces=["GBM_organ"], id_attr="gb_organ", emit_from="target"),
-    "brain": dict(target="GB_Brain", source="GB_Brain_HR", size=1024, cage=0.0008, ray=0.002, ao=0.006,
+    "brain": dict(target="GB_Brain", source="GB_Brain_HR", size=2048, cage=0.0008, ray=0.002, ao=0.006,
                   surfaces=["GBM_brain"], emit_from="target"),
 }
-RECHART = {"GB_Skeleton": dict(size=2048, smooth=2, interior_scale=0.45, cone=60.0, margin=6),
-           "GB_Organs": dict(size=2048, smooth=2, interior_scale=0.6, cone=60.0, margin=6),
-           "GB_Brain": dict(size=1024, smooth=0, interior_scale=1.0, cone=62.0, margin=3)}
+# margins >= 8 px at 2048 (RB §8.3; BC7 mips 2-3 no longer bleed across islands)
+RECHART = {"GB_Skeleton": dict(size=2048, smooth=2, interior_scale=0.45, cone=60.0, margin=9),
+           "GB_Organs": dict(size=2048, smooth=2, interior_scale=0.6, cone=60.0, margin=9),
+           "GB_Brain": dict(size=2048, smooth=0, interior_scale=1.0, cone=62.0, margin=9)}
 PAINTER = {"head": ("GB_Head", 1024, 512), "body": ("GB_Body", 1024, 512), "shorts": ("GB_Shorts", 1024, 512)}
 
 _RESULTS = {"sets": {}, "tileables": {}, "eyes": {}, "decals": {}, "painter": {}, "room": {}, "uv": {},
@@ -513,7 +516,8 @@ def _select_only(obj):
     vl.objects.active = obj
 
 
-def grow_charts(obj, cone_deg=55.0, max_frac=0.03, absorb_deg=75.0, min_faces=6, smooth=0):
+def grow_charts(obj, cone_deg=55.0, max_frac=0.03, absorb_deg=75.0, min_faces=6, smooth=0, isolate=None,
+                min_area=0.0):
     """Greedy normal-cone charts: from the largest unassigned face, grow over edge neighbours whose
     normal lies within ``cone_deg`` of the seed normal (area capped at ``max_frac`` of the mesh).
     Every chart is then a height field over the plane normal to its seed, so a planar projection
@@ -548,6 +552,8 @@ def grow_charts(obj, cone_deg=55.0, max_frac=0.03, absorb_deg=75.0, min_faces=6,
         while q:
             f = q.popleft()
             for g in nbr[f]:
+                if isolate is not None and isolate[g] != isolate[seed]:
+                    continue                  # faces found overlapping before never share a chart with others
                 if chart[g] < 0 and area < cap and fn[g] @ ax >= cos_c:
                     chart[g] = k
                     area += fa[g]
@@ -557,8 +563,10 @@ def grow_charts(obj, cone_deg=55.0, max_frac=0.03, absorb_deg=75.0, min_faces=6,
     axes = np.asarray(axes)
     # absorb tiny charts into a neighbour whose axis they still face
     cnt = np.bincount(chart, minlength=k)
+    carea = np.bincount(chart, weights=fa, minlength=k)
     cos_a = np.cos(np.radians(absorb_deg))
-    for c in np.nonzero(cnt < min_faces)[0].tolist():
+    small = np.nonzero((cnt < min_faces) | (carea < min_area))[0].tolist()
+    for c in small:
         faces = np.nonzero(chart == c)[0]
         cand = {chart[g] for f in faces.tolist() for g in nbr[f] if chart[g] != c}
         best, best_s = None, cos_a
@@ -577,7 +585,7 @@ def grow_charts(obj, cone_deg=55.0, max_frac=0.03, absorb_deg=75.0, min_faces=6,
     return chart, ax
 
 
-def rechart(obj, size=2048, smooth=0, interior_scale=1.0, margin_px=UV_MARGIN_PX, cone_deg=55.0):
+def rechart(obj, size=2048, smooth=0, interior_scale=1.0, margin_px=UV_MARGIN_PX, cone_deg=55.0, isolate=None):
     """Replace ``obj``'s ``atlas`` UVs with normal-cone charts, planar-projected and packed.
 
     Charts are projected in metres (uniform texel density by construction), interior surfaces (bone
@@ -585,7 +593,8 @@ def rechart(obj, size=2048, smooth=0, interior_scale=1.0, margin_px=UV_MARGIN_PX
     ``interior_scale`` since they only show in cuts, then Blender packs the islands with a
     ``margin_px`` margin at ``size``."""
     me = obj.data
-    chart, axes = grow_charts(obj, cone_deg, smooth=smooth)
+    # charts below 0.5 cm2 are absorbed by a neighbour (fewer tiny islands, fewer seams where wounds cut)
+    chart, axes = grow_charts(obj, cone_deg, smooth=smooth, isolate=isolate, min_area=MIN_CHART_M2)
     _, _, _, _, _, le, lf = _face_topology(me)
     lv = np.empty(len(me.loops), np.int64)
     me.loops.foreach_get("vertex_index", lv)
@@ -681,7 +690,18 @@ def prepare_uvs(objs=None, force=False):
                 continue
         before = uv_stats(obj, 512)
         n = rechart(obj, cfg["size"], cfg["smooth"], cfg["interior_scale"], cfg["margin"], cfg["cone"])
+        # overlap repair: faces whose texels collide are re-charted apart from their neighbours and re-packed
+        isolate = np.zeros(len(me.polygons), np.int64)
+        over, polys = uv_overlap_exact(obj, cfg["size"])
+        for rnd in range(3):
+            if over <= OVERLAP_MAX:
+                break
+            isolate[polys] = rnd + 1
+            n = rechart(obj, cfg["size"], cfg["smooth"], cfg["interior_scale"], cfg["margin"], cfg["cone"],
+                        isolate=isolate)
+            over, polys = uv_overlap_exact(obj, cfg["size"])
         after = uv_stats(obj, 512)
+        after = (after[0], over, after[2])
         uv = np.empty(len(me.loops) * 2, np.float32)
         me.uv_layers["atlas"].data.foreach_get("uv", uv)
         os.makedirs(gbc.CACHE_DIR, exist_ok=True)
@@ -1400,6 +1420,49 @@ def main():
 
 if __name__ == "__main__":
     main()
+
+
+def uv_overlap_exact(obj, size=2048, uv_name="atlas"):
+    """(overlap fraction, overlapping polygon indices): every UV triangle is rasterised at texel centres with
+    a half-open rule (a centre on a shared edge belongs to one triangle), texel hits are counted, and a
+    texel hit by two or more triangles is an overlap (two surfaces sharing texels).  Unlike uv_stats this is
+    exact up to one texel, so it does not mistake partially covered border texels for overlap."""
+    me = obj.data
+    uv = np.empty(len(me.loops) * 2, np.float32)
+    me.uv_layers[uv_name].data.foreach_get("uv", uv)
+    uv = uv.reshape(-1, 2).astype(np.float64) * size - 0.5
+    tl, _tv, tp = loop_triangles(obj)
+    cnt = np.zeros((size, size), np.int32)
+    owner = np.full((size, size), -1, np.int64)
+    P = uv[tl]
+    x0 = np.clip(np.floor(P[:, :, 0].min(1)).astype(int), 0, size - 1)
+    x1 = np.clip(np.ceil(P[:, :, 0].max(1)).astype(int), 0, size - 1)
+    y0 = np.clip(np.floor(P[:, :, 1].min(1)).astype(int), 0, size - 1)
+    y1 = np.clip(np.ceil(P[:, :, 1].max(1)).astype(int), 0, size - 1)
+    bad_tris = set()
+    for i in range(len(tl)):
+        (ax, ay), (bx, by), (cx, cy) = P[i]
+        den = (by - cy) * (ax - cx) + (cx - bx) * (ay - cy)
+        if abs(den) < 1e-12:
+            continue
+        X, Y = np.meshgrid(np.arange(x0[i], x1[i] + 1), np.arange(y0[i], y1[i] + 1))
+        l1 = ((by - cy) * (X - cx) + (cx - bx) * (Y - cy)) / den
+        l2 = ((cy - ay) * (X - cx) + (ax - cx) * (Y - cy)) / den
+        l3 = 1.0 - l1 - l2
+        m = (l1 > 1e-9) & (l2 > 1e-9) & (l3 > 1e-9)
+        if not m.any():
+            continue
+        xs, ys = X[m], Y[m]
+        hit = cnt[ys, xs] > 0
+        if hit.any():
+            bad_tris.add(i)
+            bad_tris.update(int(t) for t in np.unique(owner[ys[hit], xs[hit]]) if t >= 0)
+        cnt[ys, xs] += 1
+        owner[ys, xs] = i
+    covered = (cnt > 0).sum()
+    frac = float((cnt > 1).sum()) / max(int(covered), 1)
+    polys = np.unique(tp[np.array(sorted(bad_tris), np.int64)]) if bad_tris else np.zeros(0, np.int64)
+    return frac, polys
 
 
 def uv_distortion(obj):

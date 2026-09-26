@@ -1702,12 +1702,59 @@ def _head_build_module():
     return mod
 
 
+LASH_COUNT = {"upper": 120, "lower": 62}                 # per eye [K: 90-160 upper, 70-80 lower]
+LASH_LEN_MM = {"upper": (8.0, 12.0), "lower": (5.5, 7.8)}     # ends -> middle of the lid
+
+
+def lash_strands(bvh, rng, sign, upper=True):
+    """Eyelashes of one lid (head frame, 5 points each): rooted in 2-3 staggered rows on the lid margin,
+    leaving it straight forward and curling up (upper) / down (lower) and a little outward at the lateral
+    canthus; upper 8-12 mm, lower 5.5-7.8 mm, longest in the middle third.
+
+    (The head project's generator gives 2.6-5.8 mm upper / 1-2.4 mm lower lashes that lie on the lid and
+    the cheek; B2 grows its own from the same lid curves.)"""
+    import math
+    from mathutils import Vector
+    A = _A()
+    ec = Vector((sign * A.EYE_C[0], A.EYE_C[1], A.EYE_C[2]))
+    key = "upper" if upper else "lower"
+    count = LASH_COUNT[key]
+    lo, hi = LASH_LEN_MM[key]
+    a_prof = (0.0, 0.27, 0.53, 0.76, 0.94)                       # along the start direction
+    b_prof = (0.0, 0.03, 0.11, 0.25, 0.42) if upper else (0.0, 0.02, 0.07, 0.15, 0.24)   # curl
+    out = []
+    for k in range(count):
+        t = 0.04 + 0.93 * (k + rng.uniform(0.0, 0.9)) / count
+        u = A.LID_UM + t * (A.LID_UL - A.LID_UM)
+        _t, _st, up, low = A._lid_curves(np.array([u]))
+        row = (k % 3) * 0.010
+        v = float(up[0]) + 0.012 + row if upper else float(low[0]) - 0.008 - row * 0.6
+
+        def direction(vv):
+            return Vector((sign * math.cos(vv) * math.sin(u), -math.cos(vv) * math.cos(u), math.sin(vv)))
+        guess = ec + direction(v) * (A.LID_R + 0.0003)
+        q, _n, _i, _d = bvh.find_nearest(guess)
+        if q is None:
+            continue
+        radial = direction(v * 0.30)                               # straight out of the margin (forward)
+        ev = Vector((-sign * math.sin(v) * math.sin(u), math.sin(v) * math.cos(u), math.cos(v)))
+        if not upper:
+            ev = -ev
+        L = (lo + (hi - lo) * math.sin(math.pi * min(max(t + 0.06, 0.0), 1.0)) ** 0.8) * 1e-3
+        L *= rng.uniform(0.86, 1.10)
+        d0 = (radial + ev * (0.30 if upper else 0.50) + Vector((sign * 0.22 * max(t - 0.55, 0.0), 0.0, 0.0)))
+        d0 = (d0 + Vector((rng.normal(0, 0.04), rng.normal(0, 0.04), rng.normal(0, 0.04)))).normalized()
+        pts = [np.array(q + d0 * (L * a) + ev * (L * b)) for a, b in zip(a_prof, b_prof)]
+        out.append(pts)
+    return out
+
+
 def hair_strands(skin_obj):
     """Brow and lash strands of the head project (head frame, lists of 5 points) grown on ``skin_obj``.
 
-    Returns {"brow_L": [...], "brow_R", "lash_upper_L", "lash_lower_L", ...}: exactly the head
-    project's generators (``build._brow_strands`` / ``_lash_strands``) run on our skin, so the
-    brows and lashes are the head project's own."""
+    Returns {"brow_L": [...], "brow_R", "lash_upper_L", "lash_lower_L", ...}: the brows are the head
+    project's own generator (``build._brow_strands``) run on our skin; the lashes are B2's
+    ``lash_strands`` (real lengths and curl, rooted on the margin)."""
     from mathutils.bvhtree import BVHTree
     v, t = gbc.mesh_arrays(skin_obj.data)
     bvh = BVHTree.FromPolygons((v - HEAD_OFFSET).tolist(), t.tolist())
@@ -1716,8 +1763,8 @@ def hair_strands(skin_obj):
     out = {}
     for side, sign in (("L", 1), ("R", -1)):
         out["brow_" + side] = [[np.array(p) for p in s] for s in hb._brow_strands(bvh, rng, sign)]
-        out["lash_upper_" + side] = [[np.array(p) for p in s] for s in hb._lash_strands(bvh, rng, sign, True)]
-        out["lash_lower_" + side] = [[np.array(p) for p in s] for s in hb._lash_strands(bvh, rng, sign, False)]
+        out["lash_upper_" + side] = lash_strands(bvh, rng, sign, True)
+        out["lash_lower_" + side] = lash_strands(bvh, rng, sign, False)
     return out
 
 
@@ -2040,11 +2087,14 @@ def check_seam():
         return False, "GB_Body missing"
     err, n = ring_normal_error_deg(head, body)
     lod = ""
+    ok_lod = True
     hl, bl = bpy.data.objects.get("GB_Head_LOD1"), bpy.data.objects.get("GB_Body_LOD1")
     if hl is not None and bl is not None:
         e2, n2 = ring_normal_error_deg(hl, bl)
+        ok_lod = n2 == gbc.SEAM_RING_N and e2 < 1.0
         lod = f"; LOD1 pair {n2} shared, {e2:.3f} deg"
-    return n == gbc.SEAM_RING_N and err < 1.0, f"{n} shared ring vertices, max normal difference {err:.4f} deg{lod}"
+    return (n == gbc.SEAM_RING_N and err < 1.0 and ok_lod,
+            f"{n} shared ring vertices, max normal difference {err:.4f} deg{lod} (both LODs < 1 deg)")
 
 
 def check_lids():

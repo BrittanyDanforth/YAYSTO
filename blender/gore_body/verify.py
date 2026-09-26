@@ -326,12 +326,17 @@ def transforms_parent_modifier():
 
 @check("scene")
 def material_slots():
+    """Slot names equal plan §5.6 (a saved .blend carries the GBL_* look-dev material of each GBM_* slot; the
+    exported glb always has the GBM_* names - see glb_contents)."""
+    import lookdev
     bad = []
     for o in _exported():
         names = tuple(m.name if m else "" for m in o.data.materials)
-        if names != tuple(gbc.MATERIAL_SLOTS[o.name]):
+        want = tuple(gbc.MATERIAL_SLOTS[o.name])
+        if names != want and (len(names) != len(want)
+                              or any(a != b and a != lookdev.lookdev_for(o, b) for a, b in zip(names, want))):
             bad.append(f"{o.name}: {names}")
-    return not bad, f"slot names equal plan §5.6; bad: {bad}"
+    return not bad, f"slot names equal plan §5.6 (or their look-dev material); bad: {bad}"
 
 
 @check("scene")
@@ -2104,7 +2109,7 @@ B7_JSON = os.path.join(B7_TEX, "textures.json")
 gbc.SCHEMAS.setdefault("gb.textures/1", ("sets", "tileables", "eyes", "decals", "painter", "room",
                                          "material_map"))
 B7_SETS = ("head", "body", "shorts", "mouth", "skeleton", "organs", "brain")
-B7_PNG_MAX_MB = 12.0            # plan §4.3: each 2,048^2 PNG <= 12 MB
+B7_PNG_MAX_MB = 12.0            # plan §4.3: each 2,048^2 PNG <= 12 MB (scaled by texel count; any file < 50 MB)
 
 
 def _b7():
@@ -2139,14 +2144,15 @@ def b7_texture_files():
         if not os.path.exists(p):
             missing.append(fn)
             continue
-        if os.path.getsize(p) > B7_PNG_MAX_MB * 1e6:
+        limit = B7_PNG_MAX_MB * max(1.0, (float(size) / 2048.0) ** 2 if size else 1.0)
+        if os.path.getsize(p) > min(limit, gbc.FILE_LIMITS_MB["any"]) * 1e6:
             big.append(fn)
         if size and fn.endswith(".png") and texgen.png_size(p)[0] != size:
             bad.append(fn)
     miss_sets = [s for s in B7_SETS if s not in d["sets"]]
     ok = not missing and not bad and not big and not miss_sets
     return ok, (f"{len(names)} files, sets {sorted(d['sets'])}" + (f"; missing {missing[:6]}" if missing else "")
-                + (f"; wrong size {bad[:6]}" if bad else "") + (f"; > 12 MB {big}" if big else "")
+                + (f"; wrong size {bad[:6]}" if bad else "") + (f"; over the size budget {big}" if big else "")
                 + (f"; sets not baked {miss_sets}" if miss_sets else ""))
 
 
@@ -2298,9 +2304,10 @@ def b7_textures_match_uvs():
     return not bad, f"{n} meshes checked" + (f"; UVs differ from the bake: {sorted(set(bad))}" if bad else "")
 
 
-@check("scene", owner="B7", severity="warn")
+@check("scene", owner="B7", quick_ok=False)
 def b7_inner_atlas_quality():
-    """Re-charted inner atlases: overlap < 2 %, texel area distortion p10..p90 within 1.5 stops."""
+    """Re-charted inner atlases: exact texel overlap <= 0.1 % (bake.uv_overlap_exact), texel area distortion
+    p10..p90 within 1.5 stops."""
     bpy = _bpy()
     import bake
     out, ok = [], True
@@ -2308,13 +2315,30 @@ def b7_inner_atlas_quality():
         o = bpy.data.objects.get(name)
         if o is None:
             continue
-        cov, over, texel = bake.uv_stats(o, 512)
+        cov, _approx, texel = bake.uv_stats(o, 512)
+        over, _polys = bake.uv_overlap_exact(o, bake.RECHART[name]["size"])
         lo, hi = bake.uv_distortion(o)
-        good = over < 0.02 and lo > -1.5 and hi < 1.5
+        good = over <= 0.001 and lo > -1.5 and hi < 1.5
         ok &= good
         out.append(f"{name} cover {cov:.2f} overlap {over:.3f} distortion {lo:+.2f}/{hi:+.2f}")
     return ok, "; ".join(out)
 
+
+
+@check("scene", owner="B7", quick_ok=False)
+def uv_no_overlap():
+    """Every exported mesh's atlas UV (UV0): at most 0.1 % of its covered texels shared by two triangles
+    (exact rasterisation at 1024; plan §5.5 non-overlapping atlas)."""
+    import bake
+    out, bad = {}, []
+    for o in _exported():
+        if "atlas" not in o.data.uv_layers or len(o.data.polygons) == 0:
+            continue
+        frac, _p = bake.uv_overlap_exact(o, 1024)
+        out[o.name] = round(frac * 100, 3)
+        if frac > 0.001:
+            bad.append(o.name)
+    return not bad, f"overlap % of covered texels: {out}; over 0.1 %: {bad}"
 
 
 # ===========================================================================

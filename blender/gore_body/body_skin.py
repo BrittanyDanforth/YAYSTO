@@ -321,8 +321,9 @@ TORSO = np.array([
     (1.300, 0.153, -0.111, 0.120, 3.0, 2.9),     # chest 100 cm; xiphisternal joint -0.110
     (1.340, 0.154, -0.100, 0.125, 3.0, 2.9),     # T7 spinous skin 0.122
     (1.400, 0.145, -0.081, 0.121, 3.0, 2.9),     # sternal angle -0.075 (bone) + skin
-    (1.430, 0.146, -0.068, 0.114, 2.5, 2.6),     # shoulder girdle: clavicles in front, scapular spines behind
-    (1.455, 0.136, -0.050, 0.106, 2.2, 2.5),     # jugular notch -0.048; T1-T3 spinous tips 8-12 mm deep
+    (1.430, 0.146, -0.068, 0.114, 2.9, 2.6),     # shoulder girdle: clavicles in front, scapular spines behind
+    (1.455, 0.136, -0.050, 0.106, 2.8, 2.5),     # jugular notch -0.048; T1-T3 spinous tips 8-12 mm deep
+                                                 # (flat front: the chest wall rises flush to the clavicles)
     (1.470, 0.102, -0.050, 0.100, 2.2, 2.8),     # scapular superior angles under trapezius
     (1.485, 0.063, -0.054, 0.085, 2.1, 2.2),     # seam plane (plan D19)
     (1.515, 0.0595, -0.057, 0.069, 2.1, 2.2),    # neck 38 cm: 12 x 11.7 (front -0.055 / back +0.063)
@@ -356,7 +357,11 @@ def _pec_relief(x, z):
     dome = sinterp(z, [1.26, 1.30, 1.36, 1.42, 1.455], [1.0, 1.0, 0.75, 0.35, 0.0])
     medial = sstep(0.0, 0.042, ax)                                  # broad, shallow sternal furrow
     lateral = sstep(0.180, 0.130, ax)
-    bulk = 0.0085 * lower * dome * medial * lateral
+    bulk = 0.0105 * lower * dome * medial * lateral
+    # clavicular / sternal heads: a shallow oblique groove from the sternoclavicular joint out to the
+    # deltopectoral junction (visible under raking light on a lean man)
+    gz = 1.425 - 0.10 * np.maximum(ax - 0.03, 0.0)
+    bulk = bulk - 0.0014 * gauss(z - gz, 0.006) * sstep(0.025, 0.06, ax) * sstep(0.16, 0.12, ax)
     # areola / nipple [RB §7.1 nipple (0.100, -0.112, 1.300)]; x is the base-section x, which the pectoral
     # relief pushes ~4.5 mm outward on this slope, hence the 0.0955 centre
     areola = 0.0009 * gauss(np.hypot(ax - 0.0955, (z - 1.300)), 0.012)
@@ -369,9 +374,9 @@ def _abdomen_relief(x, z):
     ax = np.abs(x)
     rect = band(z, 0.965, 1.255, 0.03) * sstep(0.095, 0.060, ax)
     bulk = 0.0045 * rect * (0.7 + 0.3 * gauss(z - 1.00, 0.06))      # lower belly slightly rounded
-    alba = -0.0022 * gauss(ax, 0.0055) * band(z, 1.09, 1.26, 0.02)
-    inter = sum(-0.0008 * gauss(z - zi, 0.010) for zi in (1.140, 1.198)) * sstep(0.070, 0.045, ax)
-    semil = -0.0018 * gauss(ax - 0.078, 0.008) * band(z, 1.0, 1.23, 0.03)
+    alba = -0.0026 * gauss(ax, 0.0060) * band(z, 1.09, 1.26, 0.02)
+    inter = sum(-0.0014 * gauss(z - zi, 0.009) for zi in (1.140, 1.198, 1.245)) * sstep(0.070, 0.045, ax)
+    semil = -0.0024 * gauss(ax - 0.078, 0.008) * band(z, 1.0, 1.23, 0.03)
     # navel [RB §7.1 navel (0, -0.108, 1.075)]: pit with a soft rim
     rn = np.hypot(ax, (z - 1.075) * 0.85)
     navel = -0.0085 * np.exp(-(rn / 0.0065) ** 2.5) + 0.0012 * gauss(rn - 0.009, 0.005)
@@ -429,12 +434,19 @@ def _back_relief(x, z):
 
 
 def _side_relief(y, z):
-    """Latissimus flare, obliques over the iliac crest (the flank pad), serratus."""
-    lat = 0.009 * band(z, 1.20, 1.36, 0.06) * gauss(y - 0.050, 0.045)
-    obl = 0.0065 * gauss(z - 1.045, 0.035) * gauss(y + 0.010, 0.05)
+    """Latissimus flare, external oblique over the iliac crest (the flank pad), serratus anterior
+    digitations interlocking with the oblique, flank tissue over the lower ribs (RB §7.6: 10-25 mm fat +
+    15-20 mm muscle there)."""
+    lat = 0.010 * band(z, 1.20, 1.36, 0.06) * gauss(y - 0.050, 0.045)
+    obl = 0.0085 * gauss(z - 1.050, 0.034) * gauss(y + 0.008, 0.05)
+    flank = 0.0055 * gauss(z - 1.200, 0.045) * gauss(y - 0.010, 0.055)
     waist = -0.003 * gauss(z - 1.140, 0.04)
-    serr = 0.0025 * band(z, 1.24, 1.34, 0.03) * gauss(y + 0.050, 0.025)
-    return lat + obl + waist + serr
+    # serratus: 4 finger-like slips stepping down and forward below the pectoral border
+    serr = 0.0
+    for k in range(4):
+        zc, yc = 1.335 - 0.028 * k, -0.058 + 0.010 * k
+        serr = serr + 0.0026 * gauss(z - zc, 0.0075) * gauss(y - yc, 0.018)
+    return lat + obl + flank + waist + serr
 
 
 def _torso_profile(Z, TH):
@@ -502,7 +514,9 @@ ARM = np.array([
 def _arm_profile(S, TH):
     A_ = ARM
     rl, ra, rm, rp, n = (sinterp(S, A_[:, 0], A_[:, i]) for i in range(1, 6))
-    R = quad_radius(TH, rl, ra, rm, rp, n)
+    # upper arm ~30.5 cm relaxed girth (75 kg male): +3 % over the table on the arm, fading at the elbow
+    g = 1.0 + 0.03 * sstep(0.26, 0.20, S)
+    R = quad_radius(TH, rl * g, ra * g, rm * g, rp * g, n)
 
     def bump(s0, th0, amp, ss, sth):
         return amp * gauss(S - s0, ss) * gauss(wrap(TH - np.radians(th0)), np.radians(sth))
@@ -552,6 +566,12 @@ def _shoulder(ax, y, z):
     tub = sd_capsule(ax, y, z, GH + 0.05 * ARM_D + 0.036 * ARM_LAT, GH + 0.150 * ARM_D + 0.034 * ARM_LAT,
                      0.014, 0.005)
     delt = smin(delt, tub, 0.02)
+    # the three heads: shallow grooves between anterior / middle / posterior deltoid on the cap
+    q = np.stack([ax - GH[0], y - GH[1], z - GH[2]], -1)
+    sa = q @ ARM_D
+    th = np.arctan2(-q[..., 1], q @ ARM_LAT)
+    heads = sum(0.0013 * gauss(wrap(th - np.radians(t0)), np.radians(9.0)) for t0 in (48.0, -50.0))
+    delt = delt + heads * band(sa, -0.01, 0.13, 0.03)
     # upper trapezius: broad slope from the nape to the acromion
     # the lateral neck point sits at z ~1.49 (between the jugular notch 1.455 and C7 1.532) and the
     # shoulder line falls ~11 deg to the acromion; below the seam plane beyond |x| 0.075 (plan D19 ring)
@@ -563,25 +583,38 @@ def _shoulder(ax, y, z):
                        [0.023, 0.022, 0.021, 0.019, 0.016], k=0.02)
     # clavicle: soft subcutaneous ridge over B3's bone (its waypoints), bone half-depth + skin + subcutis
     clav = sd_polyline(ax, y, z, [np.array(p) + np.array([0.0, -0.0015, 0.0015]) for p in BN_CLAVICLE],
-                       [0.0125, 0.0105, 0.0100, 0.0112], k=0.012)
+                       [0.0104, 0.0088, 0.0084, 0.0094], k=0.012)
     # axillary folds: the pectoralis (front) and latissimus/teres (back) sweep from the chest wall into
     # the arm; only their lower borders show, the web above them fills up to the shoulder
     a_arm = GH + 0.075 * ARM_D - 0.018 * ARM_LAT + np.array([0.0, -0.022, 0.0])
     ant_fold = _fold(ax, y, z, (0.120, -0.058, 1.380), a_arm, 0.016, 0.040)
+    # clavicular pectoralis + anterior deltoid under the lateral clavicle: the chest rounds into the front of
+    # the shoulder with only a shallow deltopectoral groove (no deep infraclavicular pit, no box corner)
+    dpec = sd_oellipsoid(ax, y, z, (0.150, -0.012, 1.424), (0.034, 0.029, 0.032), np.eye(3))
+    ant_fold = smin(ant_fold, dpec, 0.030)
     p_arm = GH + 0.085 * ARM_D - 0.016 * ARM_LAT + np.array([0.0, 0.028, 0.0])
     post_fold = _fold(ax, y, z, (0.120, 0.070, 1.350), p_arm, 0.020, 0.045)
     # supraspinatus + trapezius over the spine of the scapula and the acromion: the posterior shoulder is
     # one rounded mass that wraps the bone (the spine is palpable, never a shelf) [RB §7.6: 5-8 mm over it]
     sup = _fold(ax, y, z, (0.078, 0.094, 1.450), (0.184, 0.046, 1.458), 0.0125, 0.020)
     trap = smin(trap, sup, 0.022)
+    # upper trapezius + levator scapulae over the superior angle of the scapula (it lies 1-2 cm deep, never
+    # palpable as a knob); a broad mass blended into the slope
+    sang = sd_oellipsoid(ax, y, z, (0.082, 0.066, 1.466), (0.034, 0.030, 0.034), np.eye(3))
+    trap = smin(trap, sang, 0.030)
     # teres major / infraspinatus lower belly: fills the posterior axillary junction (no pit behind the arm)
     teres = _fold(ax, y, z, (0.105, 0.098, 1.360), GH + 0.070 * ARM_D + 0.020 * ARM_LAT + np.array([0.0, 0.030, 0.0]),
                   0.018, 0.030)
     post_fold = smin(post_fold, teres, 0.020)
+    # infraspinatus + teres minor + posterior deltoid over the infraspinous fossa: the back of the shoulder
+    # blade is one convex mass (without it the teres fold below and the spine above framed a flat
+    # plate that read as a knob in raking light)
+    infra = sd_oellipsoid(ax, y, z, (0.138, 0.054, 1.414), (0.046, 0.034, 0.046), np.eye(3))
+    post_fold = smin(post_fold, infra, 0.030)
     # axillary apex filler: the deep axillary contents (fat, vessels, subscapularis) between the chest
     # wall, the folds and the deltoid; without it the smooth unions leave enclosed voids whose walls
     # show as pits behind and in front of the armpit
-    fill = sd_oellipsoid(ax, y, z, (0.152, 0.062, 1.412), (0.022, 0.030, 0.026), np.eye(3))
+    fill = sd_oellipsoid(ax, y, z, (0.152, 0.050, 1.412), (0.022, 0.026, 0.026), np.eye(3))
     fill = smin(fill, sd_oellipsoid(ax, y, z, (0.148, 0.012, 1.390), (0.014, 0.030, 0.016), np.eye(3)), 0.012)
     post_fold = smin(post_fold, fill, 0.015)
     return delt, trap, clav, ant_fold, post_fold
@@ -650,7 +683,7 @@ def _palm_tube():
     return PALM_TUBE
 
 
-def _nail(ax, y, z, A, B, rho_a, rho_b, dorsal, width=0.62, start=0.30, lift=0.00025, raised=True):
+def _nail(ax, y, z, A, B, rho_a, rho_b, dorsal, width=0.62, start=0.30, lift=0.00005, raised=True):
     """Nail plate on the dorsal surface of a distal phalanx A -> B (tip centre), finger radii rho_a/rho_b.
 
     Returns (plate SDF, fold groove SDF, 2-D outline SDF on the surface) in metres: a curved plate
@@ -674,16 +707,18 @@ def _nail(ax, y, z, A, B, rho_a, rho_b, dorsal, width=0.62, start=0.30, lift=0.0
     rr = np.sqrt(w * w + a * a)
     ang = np.arctan2(a, np.maximum(w, 1e-9))
     half = np.arcsin(np.clip(width, 0.0, 0.99))
-    # outline on the surface: angular half width, proximal fold (rounded), free edge just past the tip
-    e_ang = (np.abs(ang) - half) * rho
-    s0, s1 = start * L, L + 0.35 * rho_b
-    e_s = np.maximum(s0 - s, s - s1)
-    prox = np.hypot(np.maximum(s0 + 0.35 * rho - s, 0.0), np.abs(ang) * rho) - 0.35 * rho      # round lunula end
-    outline = np.maximum(np.maximum(e_ang, e_s), np.where(s < s0 + 0.35 * rho, prox, -1.0))
-    shell = np.abs(rr - (rho + lift)) - 0.00045
+    # outline on the surface: a rounded rectangle in (length, arc) coordinates - curved proximal fold
+    # (over the lunula) and rounded free-edge corners, never a sharp-cornered tile
+    s0, s1 = start * L, L + 0.30 * rho_b
+    hs, hw = 0.5 * (s1 - s0), half * rho
+    rc = 0.55 * hw
+    qs = np.abs(s - 0.5 * (s0 + s1)) - (hs - rc)
+    qa = np.abs(ang) * rho - (hw - rc)
+    outline = np.hypot(np.maximum(qs, 0.0), np.maximum(qa, 0.0)) + np.minimum(np.maximum(qs, qa), 0.0) - rc
+    shell = np.abs(rr - (rho + lift)) - 0.00040
     plate = np.maximum(shell, outline)
     plate = np.where(w > 0.0, plate, 1.0)
-    groove = np.hypot(np.minimum(np.abs(outline), 0.004), rr - rho) - 0.0006
+    groove = np.hypot(np.minimum(np.abs(outline), 0.004), rr - rho) - 0.00045
     groove = np.where((w > 0.0) & (s < s1 - 0.5 * rho_b), groove, 1.0)
     return plate, groove, np.where(w > 0.0, outline, 1.0)
 
@@ -763,7 +798,7 @@ def nail_mask(points, hands=True, feet=True):
                            start=0.28)[2], tp[2], tp[3], THUMB_R[2]))
     if feet:
         for A, B, ra, rb in _toe_nail_segments():
-            outl.append((_nail(x, y, z, A, B, ra, rb, (0.0, 0.0, 1.0), width=0.60, start=0.35)[2], A, B, ra))
+            outl.append((_nail(x, y, z, A, B, ra, rb, (0.0, 0.0, 1.0), width=0.68, start=0.15)[2], A, B, ra))
     for o, A, B, ra in outl:
         m = 1.0 - np.clip(o / 0.0006, 0.0, 1.0)
         # lunula: the pale crescent over the proximal fifth of the nail
@@ -994,7 +1029,7 @@ def _foot(ax, y, z):
         P = _toe_polyline(row)
         t = sd_polyline(ax, y, z, P, [r0, 0.5 * (r0 + r1) * 1.02, r1], k=0.004)
         toes = t if toes is None else smin(toes, t, 0.0012)
-        pl, gr, _o = _nail(ax, y, z, P[1], P[2], 0.5 * (r0 + r1) * 1.02, r1, (0.0, 0.0, 1.0), width=0.60, start=0.35)
+        pl, gr, _o = _nail(ax, y, z, P[1], P[2], 0.5 * (r0 + r1) * 1.02, r1, (0.0, 0.0, 1.0), width=0.68, start=0.15)
         plates.append(pl)
         grooves.append(gr)
     d = smin(d, toes, 0.010)
@@ -1040,12 +1075,12 @@ def _neck_parts(ax, y, z):
 # ===========================================================================
 # (key, skeleton builder (name, args), box lo, box hi, pad depth (m), blend k (m), tissue group)
 PAD_SITES = (
-    ("clavicle", ("clavicle_sdf", ()), (0.0, -0.075, 1.425), (0.200, 0.035, 1.490), 0.0045, 0.010, "trunk"),
-    ("scapula", ("scapula_sdf", ()), (0.070, -0.005, 1.428), (0.220, 0.120, 1.490), 0.0055, 0.006, "trunk"),
+    ("clavicle", ("clavicle_sdf", ()), (0.0, -0.075, 1.425), (0.200, 0.035, 1.490), 0.0035, 0.006, "trunk"),
+    ("scapula", ("scapula_sdf", ()), (0.070, -0.005, 1.428), (0.220, 0.120, 1.490), 0.0042, 0.003, "trunk"),
     ("sternum", ("sternum_parts", ()), (0.0, -0.120, 1.270), (0.040, -0.030, 1.470), 0.0055, 0.003, "trunk"),
     ("spine", ("upper_spinous_sdf", ()), (0.0, 0.030, 1.360), (0.030, 0.130, 1.520), 0.0075, 0.004, "trunk"),
-    ("iliac_crest", ("hip_bone_sdf", ()), (0.030, -0.090, 0.995), (0.170, 0.062, 1.090), 0.0100, 0.012, "trunk"),
-    ("psis", ("hip_bone_sdf", ()), (0.030, 0.062, 0.985), (0.110, 0.110, 1.080), 0.0060, 0.008, "trunk"),
+    ("iliac_crest", ("hip_bone_sdf", ()), (0.030, -0.090, 0.995), (0.170, 0.062, 1.090), 0.0060, 0.005, "trunk"),
+    ("psis", ("hip_bone_sdf", ()), (0.030, 0.062, 0.985), (0.110, 0.110, 1.080), 0.0050, 0.005, "trunk"),
     ("tibia", ("tibia_sdf", ()), (0.030, -0.060, 0.060), (0.150, 0.080, 0.440), 0.0035, 0.004, "leg"),
     ("fibula", ("fibula_sdf", ()), (0.090, 0.000, 0.030), (0.160, 0.100, 0.110), 0.0028, 0.004, "leg"),
     ("patella", ("patella_sdf", ()), (0.050, -0.070, 0.460), (0.130, -0.020, 0.540), 0.0055, 0.004, "leg"),
@@ -1072,9 +1107,13 @@ def bone_pads(ax, y, z, group):
         box = Box(lo, hi, margin=0.02)
         fn = _pad_fn(builder)
         m = box.run(lambda a, b, c: fn(a, b, c) - pad, ax, y, z)
-        # outside the site box the pad is only a distance bound: keep it from reaching the skin there
-        inside = ((ax >= lo[0]) & (ax <= hi[0]) & (y >= lo[1]) & (y <= hi[1]) & (z >= lo[2]) & (z <= hi[2]))
-        m = np.where(inside, m, np.maximum(m, 0.05))
+        # the pad fades out continuously beyond its site box (3 m/m ramp on the distance outside the box):
+        # a hard cut at the box face used to leave a step (the 'sock line' ring at the ankle)
+        lo_, hi_ = np.asarray(lo), np.asarray(hi)
+        dout = np.sqrt(np.maximum(np.maximum(lo_[0] - ax, ax - hi_[0]), 0.0) ** 2
+                       + np.maximum(np.maximum(lo_[1] - y, y - hi_[1]), 0.0) ** 2
+                       + np.maximum(np.maximum(lo_[2] - z, z - hi_[2]), 0.0) ** 2)
+        m = m + 3.0 * dout
         kk = np.where(m < d, k, kk)
         d = np.minimum(d, m)
     return d, kk
@@ -1091,6 +1130,13 @@ def body_components(x, y, z):
     """Component SDFs of the body (left authored, |x|).  Returns a dict of arrays."""
     ax = np.abs(x)
     out = {"torso": _torso_tube()(ax, y, z)}
+    # posterior iliac crest + PSIS: the crest runs 7-12 mm under the skin behind (erector spinae, thoracolumbar
+    # fascia and the lumbar fat pad over it) [RB §7.6]; a broad soft roll along the crest keeps that cover
+    # without a bone-shaped ridge (the thin bone pad alone left sharp 'belt' ridges on the lower back)
+    lb = Box((0.0, 0.02, 0.95), (0.16, 0.16, 1.12), margin=0.02)
+    roll = lb.run(lambda a, b, c: sd_capsule(a, b, c, (0.042, 0.071, 1.004), (0.108, 0.046, 1.068), 0.031, 0.027),
+                  ax, y, z)
+    out["torso"] = smin(out["torso"], roll, 0.040)
     sh = Box((0.0, -0.10, 1.25), (0.30, 0.10, 1.53), margin=0.05)
     delt, trap, clav, afold, pfold = sh.run_multi(_shoulder, ax, y, z)[:5]
     out.update(deltoid=delt, trapezius=trap, clavicle=clav, ant_fold=afold, post_fold=pfold)
@@ -1121,7 +1167,7 @@ def union_components(c, off=None, kplus=0.0):
     trunk = smin(g["torso"], g["scm"], 0.016 + K)
     trunk = smin(trunk, g["larynx"], 0.008 + K)
     trunk = smin(trunk, g["trapezius"], 0.028 + K)
-    trunk = smin(trunk, g["clavicle"], 0.020 + K)
+    trunk = smin(trunk, g["clavicle"], 0.028 + K)
     arm = smin(g["arm"], g["deltoid"], 0.030 + K)
     arm = smin(arm, g["hand"], 0.012 + K)
     # arm <-> trunk: crisp in the armpit hollow, wide (26-30 mm) at the anterior/posterior axillary
@@ -1623,7 +1669,7 @@ def paint_codes(obj, code_segment=None, body_segment=None):
 # ===========================================================================
 RES = {
     "quick": dict(master=0.0050, muscle=0.0085, shorts=0.0060),
-    "full": dict(master=0.0025, muscle=0.0050, shorts=0.0040),
+    "full": dict(master=0.0018, muscle=0.0050, shorts=0.0040),      # 1.8 mm: nails, knuckles, folds in the HR
 }
 BODY_TRIS = 43600                 # plan §4.1: 44,000 incl. the zip strip (TRI_BUDGET GB_Body)
 BODY_LOD1_TRIS = 21800
@@ -2073,6 +2119,9 @@ def build_body_skin(quick=None):
     with T("B1: shape keys + LOD1"):
         lod = _new_mesh_object("GB_Body_LOD1", body.data.copy())
         _protect_ring_decimate(lod, BODY_LOD1_TRIS)
+        # decimation drops custom normals: the ring gets the analytic seam normals again (FB-1 on LOD1 too)
+        import head_integration as hi
+        hi.apply_seam_normals(lod)
         paint_codes(lod)
         gbc.set_material_slots(lod)
         _material_by_segment(lod, "GBM_skin_", {"head_neck": "torso", "shorts": "torso"})
