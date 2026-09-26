@@ -101,19 +101,25 @@ def sweep(points, radii, sides=8, step=None, smooth=True, ellipse=None, normal_f
           up_hint=None):
     """Sweep a closed section along a polyline.
 
-    radii: scalar or per-control-point list (interpolated along the arc).
+    radii: scalar, per-control-point list, or (K, 2) per-point (radius along N, radius along B).
     ellipse: optional (ratio_N, ratio_B) scaling of the section (e.g. flat ribs).
     normal_fn: optional f(P) -> preferred section normal per sample (overrides transport).
     Returns (verts[V,3], faces[list], t_per_vertex[V])."""
     ctrl = np.asarray(points, dtype=float)
-    r_ctrl = np.broadcast_to(np.asarray(radii, dtype=float), (len(ctrl),)).astype(float)
+    r_in = np.asarray(radii, dtype=float)
+    if r_in.ndim == 2:                                  # per-point (radius_N, radius_B)
+        r_ctrl = r_in
+    else:
+        r1 = np.broadcast_to(r_in, (len(ctrl),)).astype(float)
+        r_ctrl = np.stack([r1, r1], axis=1)
     if step is None:
         step = max(0.004, 2.0 * float(r_ctrl.mean()))
     P, t = resample(ctrl, step, smooth)
     # radius along the arc: interpolate on the control points' cumulative length
     cl = np.concatenate([[0.0], np.cumsum(np.linalg.norm(np.diff(ctrl, axis=0), axis=1))])
     cl = cl / max(cl[-1], 1e-9)
-    R = np.interp(t, cl, r_ctrl)
+    RN = np.interp(t, cl, r_ctrl[:, 0])
+    RB = np.interp(t, cl, r_ctrl[:, 1])
     T, N, B = _frames(P, up_hint)
     if normal_fn is not None:
         pref = np.asarray(normal_fn(P), dtype=float)
@@ -124,8 +130,9 @@ def sweep(points, radii, sides=8, step=None, smooth=True, ellipse=None, normal_f
         B = np.cross(T, N)
     ex, ey = (1.0, 1.0) if ellipse is None else ellipse
     phi = np.linspace(0.0, 2.0 * np.pi, sides, endpoint=False)
-    ring = (np.cos(phi)[None, :, None] * N[:, None, :] * ex + np.sin(phi)[None, :, None] * B[:, None, :] * ey)
-    V = P[:, None, :] + R[:, None, None] * ring                     # (M, sides, 3)
+    ring = (np.cos(phi)[None, :, None] * N[:, None, :] * (ex * RN)[:, None, None]
+            + np.sin(phi)[None, :, None] * B[:, None, :] * (ey * RB)[:, None, None])
+    V = P[:, None, :] + ring                                        # (M, sides, 3)
     M = len(P)
     verts = V.reshape(-1, 3)
     tv = np.repeat(t, sides)
