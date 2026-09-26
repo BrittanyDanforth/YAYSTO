@@ -256,12 +256,14 @@ then irregular), and cover the wall and lip in wet dark clot and pooled blood.
   pours onto the floor forming a very large pool with splash marks beside the chair. Small entrances + heavy, gravity-
   driven bleeding and pooling — exactly the blood-source rule.
 
-## 5.15 User verdict on the mouth-blast render (fixer round 3, `fixer3/blast_wide.png`)
-- The user says the INTACT gum/mouth-interior tissue in the middle of the blast (glossy pink-red gums and mouth
-  lining) looks "perfectly fine" — keep that look for intact gums/mouth lining.
-- Still wrong (per our own review and refs 13, 15, 16): the jawbone is clean white plastic and unbroken (real: broken
-  segment with teeth hanging, fragments, blood-stained bone); wound walls are smooth glossy plastic (real: shredded,
-  lumpy, stringy torn tissue with clot); far too little blood; no soot/burn on surrounding skin.
+## 5.15 User verdict on the mouth-blast render (fixer round 3, `fixer3/blast_wide.png`) — CORRECTED
+- The user was being sarcastic: the gums and mouth lining in the MIDDLE of the blast are left "perfectly fine" (intact,
+  clean, glossy pink) and that is NOT realistic. An explosive in the mouth destroys the gums, palate, tongue and mouth
+  lining first: they must be torn, shredded, charred and blood-soaked, with teeth blown out or shattered, the palate
+  broken, and the tongue lacerated — nothing in the blast zone may stay intact or clean (refs 13, 15, 16).
+- Also wrong: the jawbone is clean white plastic and unbroken (real: broken segment with teeth hanging, fragments,
+  blood-stained bone); wound walls are smooth glossy plastic (real: shredded, lumpy, stringy torn tissue with clot);
+  far too little blood; no soot/burn on surrounding skin.
 
 ## 6. What to change in our assets (actionable)
 
