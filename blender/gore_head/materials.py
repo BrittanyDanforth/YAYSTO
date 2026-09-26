@@ -1677,7 +1677,7 @@ def _streak_wiggle(along, k):
     return 0.0006 * np.sin(along * 110.0 + k * 1.7) + 0.00025 * np.sin(along * 330.0 + k * 2.9)
 
 
-def _gore_head(mat, R=0.07, subdiv=8):
+def _gore_head(mat, R=0.07, subdiv=9):
     """Head-sized sphere with synthetic gore_* attributes (see module docstring)."""
     np = _np()
     ob = _sphere("GT_Skin", R, (0.0, 0.0, 0.0), subdiv, mat)
