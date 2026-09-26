@@ -154,6 +154,10 @@ def _body_skin_material():
     nipple, sun, covered = t.attr("lk_nipple"), t.attr("lk_sun"), t.attr("lk_covered")
     vein, mole, hair = t.attr("lk_vein"), t.attr("lk_mole"), t.attr("lk_hair")
     dorsum, oily = t.attr("lk_dorsum"), t.attr("lk_oily")
+    # sub-millimetre detail (pores, skin furrows, single hairs) is below the body atlas' 0.84 mm texel:
+    # the bake sets GB_bake_detail = 0 and gets the averaged look (the game adds it back from the
+    # skin_micro tileable); look-dev renders keep 1
+    detail = t.value("GB_bake_detail", 1.0)
 
     base = tone.ramp([(0.0, (0.61, 0.43, 0.35)), (0.25, (0.48, 0.30, 0.225)), (0.5, (0.30, 0.16, 0.10)),
                       (0.75, (0.13, 0.062, 0.038)), (1.0, (0.05, 0.026, 0.018))])
@@ -207,6 +211,7 @@ def _body_skin_material():
     # light male body hair: fine dark strokes along the local down/distal direction (object z)
     hd, hcol, _ = t.voronoi(p * (1.0, 1.0, 0.28), 900.0)
     strand = (1.0 - hd.smooth(0.0, 0.16)) * t.sep(hcol)[1].smooth(0.92 - hair * 0.35, 0.95 - hair * 0.35)
+    strand = strand * detail + hair * 0.06 * (1.0 - detail)          # averaged hair tint when baked
     col = t.mix(strand * hair * 0.45, col, (0.030, 0.020, 0.014))
     # micro relief (body pores are smaller and fainter than on the face)
     pd, _, _ = t.voronoi(ph, 2200.0)
@@ -214,6 +219,9 @@ def _body_skin_material():
     gd, _, _ = t.voronoi(ph * (1.0, 1.0, 1.5), 1000.0, 'DISTANCE_TO_EDGE', rand=0.9)
     groove = (1.0 - gd.smooth(0.0, 0.12)) * m_fine.smooth(0.3, 0.7) * 0.45
     fine = t.noise(ph, 6000.0, 2.0)
+    pore = pore * detail + 0.12 * (1.0 - detail)                      # mean pore darkening when baked
+    groove = groove * detail + 0.05 * (1.0 - detail)
+    fine = fine * detail + 0.5 * (1.0 - detail)
     col = col * (1.0 - pore * 0.10 - groove * 0.03)
     lum = t.luminance(col)
     skin_col = t.mix(pallor * 0.72, col, t.vec(lum, lum, lum) * (0.97, 1.0, 1.06) * 1.08)
@@ -365,18 +373,19 @@ def _organ_row(name):
 
 
 def _cloth_material():
-    """GBL_cloth: charcoal cotton-poly twill shorts (weave at ~34 threads/cm, heathered)."""
+    """GBL_cloth: charcoal cotton-poly shorts at the scale of the 1,024^2 atlas (~1.2 mm texels):
+    heathered tone, light pilling and wear lighter on the raised areas.  The weave itself (0.3 mm
+    threads) is below the atlas resolution and comes from the ``cloth_weave`` tileable in the game."""
     mat, t = _new("GBL_cloth")
     p = t.coord()
-    heather = t.noise(p, 1800.0, 2.0)
-    wale = t.noise(t.vec(p.x + p.z, p.y + p.z, 0.0), 1.0).smooth(0.2, 0.8) * 0.0
-    tw = t.math('SINE', (p.x + p.y * 0.6 + p.z) * 2.0 * math.pi * 3400.0 / 2.0)
-    col = t.mix(heather.smooth(0.45, 0.8), (0.030, 0.030, 0.032), (0.052, 0.052, 0.055))
-    col = col * (0.85 + 0.15 * t.noise(p, 30.0, 3.0))
-    col = col * (1.0 - (tw * 0.5 + 0.5) * 0.12)
-    h = tw * 0.1 + t.noise(p, 250.0, 3.0) * 0.6 + wale
+    tone = t.noise(p, 90.0, 3.0, 0.55)
+    col = t.mix(tone, (0.032, 0.032, 0.034), (0.046, 0.046, 0.049))
+    col = col * (0.9 + 0.2 * t.noise(p, 12.0, 2.0))
+    pill = t.noise(p, 180.0, 2.0).smooth(0.6, 0.75) * 0.25
+    col = t.mix(pill, col, col * 1.25)
+    h = t.noise(p, 60.0, 3.0) * 0.5 + pill
     bsdf = t.principled({'Base Color': col, 'Roughness': 0.9, 'Sheen Weight': 0.35, 'Sheen Roughness': 0.5,
-                         'Sheen Tint': (0.6, 0.6, 0.62), 'Normal': t.bump(h, 0.0002)})
+                         'Sheen Tint': (0.6, 0.6, 0.62), 'Normal': t.bump(h, 0.0003)})
     t.output(bsdf)
     return _finish(mat, t, (0.04, 0.04, 0.042), 0.9)
 

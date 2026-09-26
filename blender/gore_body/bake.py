@@ -62,6 +62,7 @@ SETS = {
     "head": dict(target="GB_Head", source="GB_Head_HR", size=2048, cage=0.003, ray=0.008, ao=0.03, rough_offset=0.06,
                  surfaces=["GBM_skin_head", "GBM_mouth_lining"], lod1=["GB_Head_LOD1"]),
     "body": dict(target="GB_Body", source="GB_Body_HR", size=2048, cage=0.003, ray=0.008, ao=0.06, rough_offset=0.06,
+                 detail=0.0,
                  surfaces=["GBM_skin_torso", "GBM_skin_arm_L", "GBM_skin_arm_R", "GBM_skin_leg_L",
                            "GBM_skin_leg_R"], lod1=["GB_Body_LOD1"]),
     "shorts": dict(target="GB_Shorts", source=None, size=1024, cage=0.0, ray=0.0, ao=0.05,
@@ -895,6 +896,13 @@ def _restore(st):
         me.materials[i] = m
 
 
+def _set_detail(mats, value):
+    """Set the look-dev materials' GB_bake_detail value (1 = full micro detail, 0 = texel-averaged)."""
+    for m in mats:
+        if m is not None and m.node_tree is not None and "GB_bake_detail" in m.node_tree.nodes:
+            m.node_tree.nodes["GB_bake_detail"].outputs[0].default_value = float(value)
+
+
 def _prepare_self(obj, img):
     """Self-bake: every current material of ``obj`` gets an active image node on ``img``."""
     for m in obj.data.materials:
@@ -943,6 +951,8 @@ def bake_set(name, spec, out):
         tmat = _target_material(img)
         ld_state = lookdev.lookdev_on([target] + ([source] if source is not None else []))
         shade = emit_src or target
+        _set_detail(list(target.data.materials) + (list(source.data.materials) if source is not None else []),
+                    spec.get("detail", 1.0))
         base_mats = [m for m in dict.fromkeys(shade.data.materials) if m is not None]
         for what in ("albedo", "data"):
             variants = {m.name: emission_variant(m, what) for m in base_mats}
@@ -982,6 +992,7 @@ def bake_set(name, spec, out):
             o.visible_diffuse, o.visible_shadow, o.visible_glossy = d, s, g
         bpy.data.images.remove(ao_img)
         _clear_self(target)
+        _set_detail(list(target.data.materials) + (list(source.data.materials) if source is not None else []), 1.0)
         lookdev.lookdev_off(ld_state)
         bpy.data.images.remove(img)
     covered = maps["albedo"][..., 3] > 0.5
