@@ -1950,7 +1950,9 @@ def build_hair_cards():
     from mathutils.bvhtree import BVHTree
     head = bpy.data.objects.get("GB_Head_HR") or bpy.data.objects["GB_Head"]
     strands = hair_strands(head)
-    v, t = gbc.mesh_arrays(head.data)
+    # the cards sit on the EXPORTED skin (GB_Head, the mesh they render and deform with): projected onto the
+    # high-res skin they stood up to 0.9 mm off the decimated brow ridge
+    v, t = gbc.mesh_arrays(bpy.data.objects["GB_Head"].data)
     bvh = BVHTree.FromPolygons((v - HEAD_OFFSET).tolist(), t.tolist())
     atlas = _Atlas(HAIR_TEX_PX)
     parts, uv_all, anchors = [], [], []

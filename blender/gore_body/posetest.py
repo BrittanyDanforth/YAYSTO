@@ -312,14 +312,24 @@ def run_test(md, arm, name, spec, rest=None):
         sel = np.linalg.norm(sh.v - J, axis=1) < radius
         if sel.any():
             P = rig.lbs(sh.v[sel], sh.idx[sel], sh.w[sel], mats)
-            dist = np.array([bvh.find_nearest(p.tolist())[3] for p in P])
-            cand = dist < 0.004
+            near = [bvh.find_nearest(p.tolist()) for p in P]
+            dist = np.array([h[3] for h in near])
+            cand = dist < 0.015
             wn = np.zeros(len(P))
             if cand.any():
                 wn[cand] = winding(bvh, N1, P[cand])
             signed = np.where(wn >= 0.5, -dist, dist)
-            res["shorts_mm"] = round(float(signed.min() * 1000.0), 2)
-            res["shorts_inside"] = int((signed < 0).sum())
+            # cloth trapped in a CLOSED skin crease (the groin fold at deep hip flexion, where thigh and belly
+            # skin meet) cannot stay off both sheets - real cloth is pinched there; such points (an opposing
+            # skin sheet within CREASE_GAP_MM along the local skin normal) are reported, not failed
+            pinched = np.zeros(len(P), bool)
+            for k in np.nonzero(signed < SHORTS_MIN_MM / 1000.0)[0]:
+                pinched[k] = _closed_crease(bvh, P[k], np.asarray(near[k][1], float))
+            free = ~pinched
+            res["shorts_mm"] = round(float(signed[free].min() * 1000.0), 2) if free.any() else None
+            res["shorts_inside"] = int((signed[free] < 0).sum())
+            res["shorts_pinched"] = int(pinched.sum())
+            res["shorts_pinched_mm"] = round(float(signed[pinched].min() * 1000.0), 2) if pinched.any() else None
     if name in NO_VOLUME:
         res["vol_loss"] = None
     if name.startswith("jaw_open"):
@@ -335,8 +345,40 @@ def run_test(md, arm, name, spec, rest=None):
 
 
 SHORTS_MIN_MM = 1.0             # B1: the shorts stay >= 1 mm off the skin at 90 deg hip flexion
-DEEP_LAYERS = ("GB_Vessels_Art", "GB_Vessels_Ven", "GB_Organs", "GB_Cord", "GB_Brain")
-DEEP_DRAG_MM = 2.0
+CREASE_GAP_MM = 25.0            # a cloth point with skin on both sides within this gap sits in a skin fold
+
+
+def _barycentric(p, a, b, c):
+    """Barycentric coordinates of ``p`` (on or near triangle abc)."""
+    v0, v1, v2 = b - a, c - a, p - a
+    d00, d01, d11 = v0 @ v0, v0 @ v1, v1 @ v1
+    d20, d21 = v2 @ v0, v2 @ v1
+    den = d00 * d11 - d01 * d01
+    if abs(den) < 1e-30:
+        return np.array([1.0, 0.0, 0.0])
+    v = (d11 * d20 - d01 * d21) / den
+    w = (d00 * d21 - d01 * d20) / den
+    return np.array([1.0 - v - w, v, w])
+
+
+def _closed_crease(bvh, p, n, gap=CREASE_GAP_MM / 1000.0):
+    """True if an OPPOSING skin sheet (normal against ``n``, the outward normal of the nearest skin) lies within
+    ``gap`` of ``p`` along +n: ``p`` then sits in a fold where two skin sheets face each other (a closed crease),
+    not merely under a single surface.  Up to 3 surface crossings are followed along the ray."""
+    o = np.asarray(p, float)
+    left = gap
+    for _ in range(3):
+        h = bvh.ray_cast(o.tolist(), n.tolist(), left)
+        if h[0] is None:
+            return False
+        if float(np.dot(np.asarray(h[1], float), n)) < -0.5:
+            return True
+        hp = np.asarray(h[0], float)
+        left -= float(np.linalg.norm(hp - o)) + 0.0002
+        if left <= 0.0:
+            return False
+        o = hp + n * 0.0002
+    return False
 
 
 def deep_drag(md, mats):

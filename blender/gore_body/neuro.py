@@ -66,9 +66,9 @@ def _V():
 # ===========================================================================
 # The head's foramen magnum (behind the basion lip, y 0.031-0.050 at z 1.612) and the atlas canal
 # (y 0.022-0.032 at z 1.604) do not line up (B2/B3 finding): the cord threads the gap here.
-CMJ_PATH = [(0.0, 0.0345, 1.628), (0.0, 0.0330, 1.616), (0.0, 0.0300, 1.607), (0.0, 0.0280, 1.598)]
+CMJ_PATH = [(0.0, 0.0345, 1.628), (0.0, 0.0330, 1.616), (0.0, 0.0300, 1.607), (0.0, 0.0280, 1.598), (0.0, 0.0272, 1.592)]
 BRAIN_CUT_Z = 1.623                # below this the head's own stem is replaced by CMJ_PATH
-BRAIN_BOTTOM = 1.600               # GB_Brain ends here, GB_Cord starts 3 mm above (overlap)
+BRAIN_BOTTOM = 1.595               # GB_Brain ends here (the LOD keeps it below 1.603), GB_Cord starts above: overlap
 CORD_TOP = 1.603
 
 
@@ -323,7 +323,7 @@ def brain_sdf(x, y, z):
     d = _tent_brain(A, x - O[0], y - O[1], z - O[2])
     low = (BRAIN_CUT_Z - z) * 1.0
     d = V.smax(d, np.where(y < 0.062, low, -1.0), 0.004)            # remove the head's lower stem
-    med = V.chain(x / 0.82, y, z, [(0.0, 0.0365, 1.640)] + CMJ_PATH, [0.0068, 0.0060, 0.0050, 0.0047, 0.0046])
+    med = V.chain(x / 0.82, y, z, [(0.0, 0.0365, 1.640)] + CMJ_PATH, [0.0068, 0.0060, 0.0050, 0.0047, 0.0046, 0.0046])
     d = V.smin(d, med, 0.006)
     return V.smax(d, BRAIN_BOTTOM - z, 0.001)
 

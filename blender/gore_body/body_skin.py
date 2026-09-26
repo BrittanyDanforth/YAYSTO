@@ -600,8 +600,8 @@ def _shoulder(ax, y, z):
     trap = smin(trap, sup, 0.022)
     # upper trapezius + levator scapulae over the superior angle of the scapula (it lies 1-2 cm deep, never
     # palpable as a knob); a broad mass blended into the slope, kept under the D19 seam plane (top 1.479)
-    sang = sd_oellipsoid(ax, y, z, (0.082, 0.068, 1.452), (0.034, 0.030, 0.027), np.eye(3))
-    trap = smin(trap, sang, 0.030)
+    sang = sd_oellipsoid(ax, y, z, (0.082, 0.070, 1.449), (0.034, 0.030, 0.026), np.eye(3))
+    trap = smin(trap, sang, 0.022)
     # teres major / infraspinatus lower belly: fills the posterior axillary junction (no pit behind the arm)
     teres = _fold(ax, y, z, (0.105, 0.098, 1.360), GH + 0.070 * ARM_D + 0.020 * ARM_LAT + np.array([0.0, 0.030, 0.0]),
                   0.018, 0.030)
@@ -1508,7 +1508,7 @@ def shorts_sdf(x, y, z):
     leg = _leg_tube()(ax, y, zc)
     trunk = smin(c["torso"], c["glute"], 0.05)        # the cloth bridges the natal cleft and the creases
     base = smin(trunk, leg, 0.05)
-    ease = sinterp(z, [0.68, 0.72, 0.80, 0.88, 0.95, 1.01, 1.045], [0.016, 0.014, 0.010, 0.008, 0.007, 0.005, 0.004])
+    ease = sinterp(z, [0.68, 0.72, 0.80, 0.88, 0.95, 1.01, 1.045], [0.017, 0.016, 0.015, 0.014, 0.011, 0.006, 0.004])
     d = base - ease - _shorts_folds(ax, y, z)
     split = 0.004 - ax - 2.0 * np.maximum(z - SHORTS_GUSSET, 0.0)       # separate leg tubes below the gusset
     d = smax(d, split, 0.004)
@@ -2010,9 +2010,12 @@ def _sdf_object(name, fn, lo, hi, h, project=3):
     return _new_mesh_object(name, me)
 
 
-def cut_neck(me, z, radius=0.095, centre_xy=(0.0, 0.012)):
+def cut_neck(me, z, radius=0.112, centre_xy=(0.0, 0.012)):
     """Bisect the mesh at the plane ``z`` inside the neck cylinder only and delete what lies above it there
-    (the shoulders never lose geometry even if something rises above the seam plane)."""
+    (the shoulders never lose geometry even if something rises above the seam plane).  The radius (112 mm)
+    lies beyond the widest point of the skin section at the seam plane (~103 mm, where the upper trapezius
+    meets the neck behind): a cylinder that cut through that slope left a torn flap (boundary loops +
+    non-manifold edges in fix round 1)."""
     import bmesh
     bm = bmesh.new()
     bm.from_mesh(me)
@@ -2220,13 +2223,19 @@ def build_shorts(skin=None, quick=None):
         # collapse decimation parks vertices off the surface; put them back on the cloth (rim rows stay put)
         v = gbc.get_verts(obj.data)
         rim = (v[:, 2] > SHORTS_TOP - 1e-4) | (v[:, 2] < SHORTS_HEM + 1e-4)
-        v[~rim] = _A().project_to_surface(shorts_sdf, v[~rim], h, 3)
+        pv = _A().project_to_surface(shorts_sdf, v[~rim], h, 3)
+        # a projection that jumps more than 2 cells went to another zero crossing (the fold relief / the
+        # gusset split): keep the decimated position there (a 33 mm spike into the hip in fix round 1)
+        jump = np.linalg.norm(pv - v[~rim], axis=1) > 2.0 * h
+        pv[jump] = v[~rim][jump]
+        v[~rim] = pv
         gbc.set_verts(obj.data, v)
     with T("B1: shorts solidify + UV"):
         mod = obj.modifiers.new("gb_solidify", 'SOLIDIFY')
         mod.thickness = SHORTS_THICK
         mod.offset = -1.0
-        mod.use_even_offset = True
+        mod.use_even_offset = False         # even offset explodes (1/cos) at near-degenerate corners
+        mod.use_quality_normals = True
         mod.use_rim = True
         gg.apply_modifier(obj, mod)
         obj.data.shade_smooth()

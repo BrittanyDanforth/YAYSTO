@@ -1563,7 +1563,9 @@ def radius_sdf():
     hc = RAD_HEAD_C
     dist_c = WRI_L - 0.0150 * D + np.array((0.0, -0.0010, 0.0))
     p = [hc + 0.012 * D, hc + 0.035 * D + 0.002 * LAT, 0.5 * (hc + dist_c) + 0.006 * LAT - 0.004 * EY,
-         dist_c - 0.030 * D - 0.002 * EY]
+         dist_c - 0.010 * D - 0.002 * EY]
+    # (the shaft runs INTO the distal block: ending 30 mm short left an 11 mm gap that the smooth union did
+    # not bridge, so the distal radius was a separate island - dropped as a 'chip' - and the radius 22 cm)
     kn = [0.0, 0.2, 0.6, 1.0]
     rn = [0.0062, 0.0068, 0.0062, 0.0085]
     rb = [0.0062, 0.0070, 0.0075, 0.0110]
@@ -2101,6 +2103,9 @@ def _condyle(A, ax, y, z):
     return A.sd_ellipsoid(ax, y, z, (0.0500, -0.0115, -0.0020), (0.0085, 0.0048, 0.0050), rot=A.rot_xyz(0, 0, 12))
 
 
+_VERT_CACHE = {}
+
+
 def _skull_head(x, y, z):
     """Body-side refinement of the head project's skull (head frame).
 
@@ -2135,6 +2140,16 @@ def _skull_head(x, y, z):
     add = np.maximum(add, BS.skin_sdf(bx, by, bz) + 0.004)
     add = np.maximum(add, -(A.cranial_cavity(ax, y, z) - 0.0010))
     add = np.maximum(add, -(A.sd_sphere(ax, y, z, A.EYE_C, A.EYE_R) - 0.0015))
+    # ... and 1.5 mm off the atlas and the axis (the occipital base / mastoid additions reached C1: 0.08 mm)
+    for lvl in ("C1", "C2"):
+        if lvl not in _VERT_CACHE:
+            _VERT_CACHE[lvl] = vertebra_sdf(lvl)
+        vfn, (vlo, vhi) = _VERT_CACHE[lvl]
+        near = np.all((np.stack([bx, by, bz], -1) > vlo - 0.01) & (np.stack([bx, by, bz], -1) < vhi + 0.01), -1)
+        if np.any(near):
+            dv = np.full(np.shape(bx), 1.0)
+            dv[near] = vfn(bx[near], by[near], bz[near])
+            add = np.maximum(add, -(dv - 0.0015))
     d = smin(base, add, 0.004)
     # glenoid fossa: seats the condyle with a 2 mm articular disc space
     return smax(d, -(_condyle(A, ax, y, z) - 0.0022), 0.0015)
