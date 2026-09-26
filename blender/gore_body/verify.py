@@ -528,6 +528,28 @@ def _outside_fraction(bvh, pts, tol):
     return out / max(len(pts), 1)
 
 
+_PARITY_DIRS = ((0.0, 0.0, 1.0), (0.577, -0.577, 0.577), (-0.707, 0.0, -0.707),
+                (0.267, 0.802, -0.535), (-0.8, -0.36, 0.48))
+
+
+def _parity_inside(bvh, p, dirs=_PARITY_DIRS, max_hits=64):
+    """Majority vote of ray-parity tests (odd crossings = inside) over 5 directions."""
+    from mathutils import Vector
+    votes = 0
+    for d in dirs:
+        dv = Vector(d).normalized()
+        o = Vector(p)
+        n = 0
+        for _ in range(max_hits):
+            h = bvh.ray_cast(o, dv)
+            if h[0] is None:
+                break
+            n += 1
+            o = h[0] + dv * 1e-6
+        votes += n % 2
+    return votes * 2 > len(dirs)
+
+
 def _nesting(names, tol=0.0):
     """{mesh: (vertices outside the skin by more than ``tol``, worst mm, worst point)} over ALL vertices.
 
@@ -547,7 +569,9 @@ def _nesting(names, tol=0.0):
             if loc is None:
                 continue
             s = (Vector(p) - loc).dot(nrm)
-            if s > tol:
+            # the nearest face's normal is ambiguous where the nearest point is an edge or corner of a thin
+            # fold (ear helix, nostril rim, eyelid margin): confirm by ray parity before counting
+            if s > tol and not _parity_inside(bvh, p):
                 cnt += 1
                 if s > worst:
                     worst, wp = s, [round(float(c), 4) for c in p]
