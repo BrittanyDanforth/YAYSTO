@@ -1,0 +1,243 @@
+<title>Gore Head</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+Condensed:wght@400;500;600&family=Special+Elite&display=swap');
+
+:root {
+  --bg: #0f1315;
+  --panel: #171d20;
+  --panel-2: #1c2427;
+  --line: #2a3539;
+  --text: #dde3e6;
+  --muted: #7f8c92;
+  --tag: #d9c9a0;
+  --tag-shade: #c9b787;
+  --ink: #1b1a17;
+  --danger: #8a1c1c;
+  --danger-hi: #b3302a;
+  --focus: #f0dca6;
+  --ff-tag: "Special Elite", "American Typewriter", "Courier New", Courier, monospace;
+  --ff-ui: "IBM Plex Sans Condensed", "Roboto Condensed", "Arial Narrow", "Helvetica Neue", Arial, sans-serif;
+  --ff-mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  --safe-b: env(safe-area-inset-bottom, 0px);
+  --safe-t: env(safe-area-inset-top, 0px);
+  --safe-l: env(safe-area-inset-left, 0px);
+  --safe-r: env(safe-area-inset-right, 0px);
+  color-scheme: dark;
+}
+html, body { margin: 0; padding: 0; height: 100%; background: var(--bg); color: var(--text); overflow: hidden; }
+body { font-family: var(--ff-ui); -webkit-font-smoothing: antialiased; -webkit-tap-highlight-color: transparent; overscroll-behavior: none; }
+* { box-sizing: border-box; }
+button { font: inherit; color: inherit; }
+
+#gh-app { position: fixed; inset: 0; overflow: hidden; background: radial-gradient(120% 90% at 50% 38%, #1a2226 0%, #111618 55%, #0b0e0f 100%); touch-action: none; user-select: none; -webkit-user-select: none; }
+#gh-view { position: absolute; inset: 0; width: 100%; height: 100%; display: block; outline: none; }
+#gh-app.tool-active #gh-view { cursor: none; }
+.gh-vignette { position: absolute; inset: 0; pointer-events: none; background: radial-gradient(ellipse 75% 70% at 50% 45%, transparent 55%, rgba(4,6,7,.55) 100%); }
+.gh-flash { position: absolute; inset: 0; pointer-events: none; background: #fff; opacity: 0; mix-blend-mode: soft-light; }
+.gh-redflash { position: absolute; inset: 0; pointer-events: none; opacity: 0; background: radial-gradient(ellipse at center, transparent 40%, rgba(120,0,0,.45) 100%); }
+
+/* ---------- case header ---------- */
+.gh-case { position: absolute; top: calc(14px + var(--safe-t)); left: calc(16px + var(--safe-l)); display: flex; align-items: stretch; gap: 10px; z-index: 5; max-width: calc(100% - 32px); }
+.gh-case-label { position: relative; background: var(--tag); color: var(--ink); font-family: var(--ff-tag); padding: 8px 14px 7px 16px; border-radius: 2px; box-shadow: 0 1px 0 rgba(255,255,255,.25) inset, 0 6px 18px rgba(0,0,0,.45); line-height: 1.15; }
+.gh-case-label::before { content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 5px; background: repeating-linear-gradient(180deg, var(--danger) 0 6px, transparent 6px 9px); opacity: .85; }
+.gh-case-title { font-size: 15px; letter-spacing: .04em; white-space: nowrap; }
+.gh-case-meta { font-family: var(--ff-mono); font-size: 11px; letter-spacing: .02em; opacity: .78; margin-top: 3px; white-space: nowrap; }
+.gh-btn { appearance: none; border: 1px solid var(--line); background: var(--panel); color: var(--text); border-radius: 4px; padding: 0 14px; min-height: 40px; font-family: var(--ff-ui); font-weight: 600; font-size: 13px; letter-spacing: .06em; text-transform: uppercase; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; box-shadow: 0 6px 18px rgba(0,0,0,.35); }
+.gh-btn:hover { background: var(--panel-2); border-color: #3a474c; }
+.gh-btn.danger { border-color: #5c1a17; background: linear-gradient(#2a1514, #1f1111); }
+.gh-btn.danger:hover { border-color: var(--danger-hi); }
+.gh-btn svg { width: 16px; height: 16px; flex: none; }
+:focus { outline: none; }
+:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+
+/* ---------- tool tags ---------- */
+.gh-tools { position: absolute; left: calc(10px + var(--safe-l)); top: 50%; transform: translateY(-46%); display: flex; flex-direction: column; gap: 9px; z-index: 5; padding: 6px 0; }
+.gh-tag { --lift: 0px; position: relative; display: grid; grid-template-columns: 22px 1fr; grid-template-rows: auto auto; column-gap: 8px; align-items: center; width: 152px; min-height: 52px; padding: 7px 12px 7px 10px; border: 0; cursor: pointer; text-align: left; color: var(--ink); background: linear-gradient(100deg, var(--tag) 0%, #e2d4ae 60%, var(--tag-shade) 100%); clip-path: polygon(14px 0, 100% 0, 100% 100%, 14px 100%, 0 calc(100% - 14px), 0 14px); transform: translateX(var(--lift)); transition: transform .18s ease, filter .18s ease; filter: brightness(.78) saturate(.8); box-shadow: none; }
+.gh-tag::before { /* reinforced eyelet */ content: ""; position: absolute; left: 8px; top: 50%; width: 11px; height: 11px; margin-top: -5.5px; border-radius: 50%; background: radial-gradient(circle, var(--bg) 0 3px, #9b8a5f 3.2px 4.6px, #b8a676 4.8px 5.5px); }
+.gh-tag:hover { filter: brightness(.92) saturate(.9); --lift: 4px; }
+.gh-tag[aria-pressed="true"] { filter: none; --lift: 12px; }
+.gh-tag[aria-pressed="true"]::after { content: "IN USE"; position: absolute; right: 8px; top: 5px; font-family: var(--ff-tag); font-size: 9px; letter-spacing: .1em; color: var(--danger-hi); border: 1.5px solid var(--danger-hi); padding: 1px 3px 0; transform: rotate(-8deg); opacity: .85; }
+.gh-tag-key { grid-row: 1 / span 2; grid-column: 1; justify-self: end; font-family: var(--ff-mono); font-size: 11px; font-weight: 500; opacity: .65; margin-left: 12px; }
+.gh-tag-name { grid-column: 2; font-family: var(--ff-tag); font-size: 16px; letter-spacing: .06em; text-transform: uppercase; line-height: 1; }
+.gh-tag-sub { grid-column: 2; font-family: var(--ff-mono); font-size: 10px; opacity: .6; margin-top: 3px; letter-spacing: .02em; }
+.gh-tag-cd { position: absolute; left: 14px; right: 0; bottom: 0; height: 3px; background: var(--danger); transform-origin: left center; transform: scaleX(0); opacity: .9; }
+.gh-tag-string { position: absolute; left: -12px; top: 50%; width: 22px; height: 1.5px; background: #6d6450; transform: rotate(-4deg); opacity: .8; pointer-events: none; }
+
+/* ---------- log ---------- */
+.gh-log { position: absolute; right: calc(14px + var(--safe-r)); top: calc(14px + var(--safe-t)); width: 318px; max-height: calc(100% - 130px); display: flex; flex-direction: column; background: rgba(23,29,32,.92); border: 1px solid var(--line); border-radius: 6px; box-shadow: 0 10px 30px rgba(0,0,0,.45); z-index: 6; backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); }
+.gh-log-head { display: flex; align-items: center; gap: 8px; padding: 10px 10px 10px 14px; border-bottom: 1px solid var(--line); }
+.gh-log-title { font-family: var(--ff-tag); font-size: 16px; letter-spacing: .05em; margin: 0; font-weight: 400; flex: 1; }
+.gh-count { font-family: var(--ff-mono); font-size: 11px; background: var(--danger); color: #f3dcd8; border-radius: 10px; padding: 2px 7px; min-width: 22px; text-align: center; }
+.gh-icon-btn { appearance: none; border: 1px solid transparent; background: transparent; width: 32px; height: 32px; border-radius: 4px; display: inline-grid; place-items: center; cursor: pointer; color: var(--muted); }
+.gh-icon-btn:hover { color: var(--text); background: var(--panel-2); }
+.gh-icon-btn svg { width: 16px; height: 16px; transition: transform .2s; }
+.gh-log.collapsed .gh-log-body { display: none; }
+.gh-log.collapsed .gh-icon-btn svg { transform: rotate(180deg); }
+.gh-log-body { overflow: auto; flex: 1; min-height: 0; scrollbar-width: thin; scrollbar-color: #334045 transparent; }
+.gh-log-list { list-style: none; margin: 0; padding: 4px 0; }
+.gh-log-empty { color: var(--muted); font-size: 13px; padding: 14px 14px 16px; line-height: 1.45; }
+.gh-entry { display: grid; grid-template-columns: 26px 1fr auto; column-gap: 8px; padding: 7px 12px 7px 10px; border-bottom: 1px solid rgba(42,53,57,.55); font-size: 13.5px; line-height: 1.3; animation: gh-in .5s ease-out; }
+.gh-entry:last-child { border-bottom: 0; }
+.gh-entry-n { font-family: var(--ff-mono); font-size: 11px; color: var(--muted); padding-top: 2px; }
+.gh-entry-text { color: var(--text); }
+.gh-entry-text b { font-weight: 600; }
+.gh-entry-time { display: block; font-family: var(--ff-mono); font-size: 10.5px; color: var(--muted); margin-top: 1px; }
+.gh-entry-m { font-family: var(--ff-mono); font-size: 12px; color: #e7b4ab; white-space: nowrap; padding-top: 1px; }
+.gh-entry.flash { background: linear-gradient(90deg, rgba(138,28,28,.35), transparent 80%); }
+@keyframes gh-in { from { background: rgba(138,28,28,.45); } to { background: transparent; } }
+.gh-log-foot { border-top: 1px solid var(--line); padding: 8px 14px 10px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+.gh-stat { font-size: 10.5px; color: var(--muted); text-transform: uppercase; letter-spacing: .08em; }
+.gh-stat b { display: block; font-family: var(--ff-mono); font-size: 14px; color: var(--text); font-weight: 500; letter-spacing: 0; text-transform: none; margin-top: 2px; }
+
+/* ---------- settings ---------- */
+.gh-settings { position: absolute; right: calc(14px + var(--safe-r)); bottom: calc(14px + var(--safe-b)); display: flex; gap: 8px; align-items: center; z-index: 5; flex-wrap: wrap; justify-content: flex-end; }
+.gh-seg { display: inline-flex; border: 1px solid var(--line); border-radius: 4px; overflow: hidden; background: var(--panel); }
+.gh-seg-label { font-size: 11px; text-transform: uppercase; letter-spacing: .1em; color: var(--muted); padding: 0 8px 0 10px; display: inline-flex; align-items: center; }
+.gh-seg button { appearance: none; border: 0; border-left: 1px solid var(--line); background: transparent; color: var(--muted); padding: 0 10px; min-height: 34px; font-size: 12.5px; cursor: pointer; }
+.gh-seg button[aria-pressed="true"] { background: #2a1616; color: #f1d2cd; box-shadow: inset 0 -2px 0 var(--danger-hi); }
+.gh-toggle { appearance: none; border: 1px solid var(--line); background: var(--panel); color: var(--muted); border-radius: 4px; min-height: 36px; padding: 0 10px 0 8px; display: inline-flex; align-items: center; gap: 7px; cursor: pointer; font-size: 12.5px; }
+.gh-toggle .sw { width: 26px; height: 14px; border-radius: 7px; background: #2b3438; position: relative; transition: background .15s; flex: none; }
+.gh-toggle .sw::after { content: ""; position: absolute; left: 2px; top: 2px; width: 10px; height: 10px; border-radius: 50%; background: #8d999e; transition: transform .15s, background .15s; }
+.gh-toggle[aria-pressed="true"] { color: var(--text); }
+.gh-toggle[aria-pressed="true"] .sw { background: #5a1b18; }
+.gh-toggle[aria-pressed="true"] .sw::after { transform: translateX(12px); background: #f0c9c2; }
+.gh-toggle kbd, .gh-kbd { font-family: var(--ff-mono); font-size: 10px; color: var(--muted); border: 1px solid var(--line); border-radius: 3px; padding: 0 4px; }
+
+/* ---------- hint + crosshair + loading ---------- */
+.gh-hint { position: absolute; left: 50%; bottom: calc(18px + var(--safe-b)); transform: translateX(-50%); font-size: 13px; letter-spacing: .03em; color: var(--muted); background: rgba(15,19,21,.72); border: 1px solid rgba(42,53,57,.8); padding: 7px 14px; border-radius: 20px; white-space: nowrap; pointer-events: none; z-index: 4; max-width: calc(100% - 700px); overflow: hidden; text-overflow: ellipsis; }
+.gh-hint b { color: var(--text); font-weight: 500; }
+.gh-xhair { position: absolute; left: 0; top: 0; width: 64px; height: 64px; margin: -32px 0 0 -32px; pointer-events: none; z-index: 7; opacity: 0; transition: opacity .12s; will-change: transform; }
+.gh-xhair.show { opacity: 1; }
+.gh-xhair svg { width: 100%; height: 100%; overflow: visible; }
+.gh-xhair .cd-ring { transition: stroke-dashoffset .05s linear; }
+.gh-loading { position: absolute; inset: 0; display: grid; place-items: center; z-index: 20; background: radial-gradient(ellipse at center, #151b1e 0%, #0b0e0f 100%); transition: opacity .6s ease; }
+.gh-loading.done { opacity: 0; pointer-events: none; }
+.gh-load-card { background: var(--tag); color: var(--ink); font-family: var(--ff-tag); padding: 20px 26px 18px 30px; width: min(360px, calc(100% - 40px)); position: relative; clip-path: polygon(22px 0, 100% 0, 100% 100%, 22px 100%, 0 calc(100% - 22px), 0 22px); box-shadow: 0 20px 60px rgba(0,0,0,.6); }
+.gh-load-card h1 { font-size: 22px; margin: 0 0 4px; font-weight: 400; letter-spacing: .06em; }
+.gh-load-card p { margin: 0; font-family: var(--ff-mono); font-size: 12px; opacity: .75; }
+.gh-load-bar { height: 4px; background: rgba(27,26,23,.18); margin-top: 14px; overflow: hidden; }
+.gh-load-bar i { display: block; height: 100%; width: 0; background: var(--danger); transition: width .3s; }
+.gh-load-warn { margin-top: 12px; font-family: var(--ff-ui); font-size: 12.5px; line-height: 1.4; opacity: .85; }
+.gh-toast { position: absolute; left: 50%; top: calc(80px + var(--safe-t)); transform: translate(-50%, -8px); background: var(--tag); color: var(--ink); font-family: var(--ff-tag); padding: 7px 14px; font-size: 14px; letter-spacing: .05em; opacity: 0; transition: opacity .25s, transform .25s; pointer-events: none; z-index: 9; box-shadow: 0 8px 24px rgba(0,0,0,.5); }
+.gh-toast.show { opacity: 1; transform: translate(-50%, 0); }
+.gh-logtoggle { display: none; }
+.gh-sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
+/* ---------- phone / narrow ---------- */
+@media (max-width: 760px), (max-height: 520px) and (pointer: coarse) {
+  .gh-case { top: calc(8px + var(--safe-t)); left: calc(8px + var(--safe-l)); right: calc(8px + var(--safe-r)); max-width: none; gap: 6px; }
+  .gh-case-label { flex: 1; min-width: 0; padding: 6px 10px 5px 13px; }
+  .gh-case-title { font-size: 12.5px; overflow: hidden; text-overflow: ellipsis; }
+  .gh-case-meta { font-size: 10px; }
+  .gh-btn { min-height: 44px; padding: 0 11px; font-size: 11.5px; }
+  .gh-btn .gh-btn-long { display: none; }
+  .gh-tools { left: 0; right: 0; top: auto; bottom: calc(8px + var(--safe-b)); transform: none; flex-direction: row; overflow-x: auto; overflow-y: hidden; gap: 7px; padding: 12px 10px 4px; scroll-snap-type: x proximity; scrollbar-width: none; }
+  .gh-tools::-webkit-scrollbar { display: none; }
+  .gh-tag { flex: none; width: 112px; min-height: 50px; padding: 6px 8px 6px 6px; grid-template-columns: 14px 1fr; column-gap: 4px; scroll-snap-align: start; clip-path: polygon(12px 0, 100% 0, 100% 100%, 12px 100%, 0 calc(100% - 12px), 0 12px); transform: translateY(calc(var(--lift) * -0.6)); }
+  .gh-tag-name { font-size: 14px; }
+  .gh-tag-sub { font-size: 9.5px; }
+  .gh-tag-key { display: none; }
+  .gh-tag::before { left: 4px; width: 9px; height: 9px; margin-top: -4.5px; }
+  .gh-tag[aria-pressed="true"]::after { font-size: 8px; right: 5px; top: 3px; }
+  .gh-tag-string { display: none; }
+  .gh-hint { bottom: calc(80px + var(--safe-b)); font-size: 12px; max-width: calc(100% - 24px); padding: 5px 12px; }
+  .gh-settings { top: calc(66px + var(--safe-t)); bottom: auto; right: calc(8px + var(--safe-r)); left: calc(8px + var(--safe-l)); justify-content: flex-start; gap: 6px; flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; }
+  .gh-settings::-webkit-scrollbar { display: none; }
+  .gh-seg-label { display: none; }
+  .gh-seg button { min-height: 32px; padding: 0 8px; font-size: 11.5px; }
+  .gh-toggle { min-height: 32px; font-size: 11.5px; padding: 0 8px 0 6px; flex: none; }
+  .gh-toggle kbd { display: none; }
+  .gh-log { left: 0; right: 0; top: auto; bottom: 0; width: auto; max-height: 58%; border-radius: 12px 12px 0 0; transform: translateY(105%); transition: transform .28s ease; z-index: 12; padding-bottom: var(--safe-b); }
+  .gh-log.open { transform: translateY(0); }
+  .gh-log.collapsed .gh-log-body { display: block; }
+  .gh-logtoggle { display: inline-flex; position: absolute; right: calc(10px + var(--safe-r)); bottom: calc(122px + var(--safe-b)); z-index: 6; min-height: 40px; font-size: 11.5px; }
+  .gh-xhair { display: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  * { transition-duration: .01ms !important; animation-duration: .01ms !important; }
+}
+</style>
+
+<div id="gh-app">
+  <canvas id="gh-view" tabindex="0" aria-label="Forensic viewer: the subject's head on a steel table. Use the selected tool by clicking or tapping on the head."></canvas>
+  <div class="gh-vignette"></div>
+  <div class="gh-redflash" id="gh-redflash"></div>
+  <div class="gh-flash" id="gh-flash"></div>
+
+  <header class="gh-case">
+    <div class="gh-case-label">
+      <div class="gh-case-title" id="gh-case-title">CASE 26-0926 · SUBJECT: UNKNOWN</div>
+      <div class="gh-case-meta" id="gh-case-meta">T+00:00 · 0 injuries · est. blood loss 0.00 L</div>
+    </div>
+    <button class="gh-btn danger" id="gh-reset" type="button" aria-label="New subject (R)">
+      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="M13.5 8a5.5 5.5 0 1 1-1.8-4.1"/><path d="M13.6 1.8v3.4h-3.4"/></svg>
+      <span>New<span class="gh-btn-long"> subject</span></span>
+    </button>
+  </header>
+
+  <nav class="gh-tools" id="gh-tools" aria-label="Tools"></nav>
+
+  <aside class="gh-log" id="gh-log" aria-label="Injury log">
+    <div class="gh-log-head">
+      <h2 class="gh-log-title">Injury log</h2>
+      <span class="gh-count" id="gh-count" aria-label="Number of injuries">0</span>
+      <button class="gh-icon-btn" id="gh-log-collapse" type="button" aria-expanded="true" aria-controls="gh-log-body" aria-label="Collapse injury log (L)">
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M3.5 10l4.5-4.5 4.5 4.5"/></svg>
+      </button>
+    </div>
+    <div class="gh-log-body" id="gh-log-body">
+      <div class="gh-log-empty" id="gh-log-empty">No injuries recorded. Select a tool on the left and work on the subject; every wound is logged here with region and measurement.</div>
+      <ol class="gh-log-list" id="gh-log-list" aria-live="polite"></ol>
+    </div>
+    <div class="gh-log-foot">
+      <div class="gh-stat">Wounds<b id="gh-stat-wounds">0</b></div>
+      <div class="gh-stat">Teeth lost<b id="gh-stat-teeth">0</b></div>
+      <div class="gh-stat">Blood loss<b id="gh-stat-blood">0.00 L</b></div>
+    </div>
+  </aside>
+  <button class="gh-btn gh-logtoggle" id="gh-logtoggle" type="button" aria-controls="gh-log" aria-expanded="false">Injury log <span class="gh-count" id="gh-count2">0</span></button>
+
+  <div class="gh-settings" id="gh-settings" role="group" aria-label="Settings">
+    <div class="gh-seg" role="group" aria-label="Blood amount">
+      <span class="gh-seg-label">Blood</span>
+      <button type="button" data-blood="low" aria-pressed="false">Low</button>
+      <button type="button" data-blood="normal" aria-pressed="true">Normal</button>
+      <button type="button" data-blood="extreme" aria-pressed="false">Extreme</button>
+    </div>
+    <button class="gh-toggle" type="button" id="gh-xray" aria-pressed="false"><span class="sw" aria-hidden="true"></span>X-ray <kbd>X</kbd></button>
+    <button class="gh-toggle" type="button" id="gh-rotate" aria-pressed="false"><span class="sw" aria-hidden="true"></span>Auto-rotate</button>
+    <button class="gh-toggle" type="button" id="gh-sound" aria-pressed="true"><span class="sw" aria-hidden="true"></span>Sound <kbd>M</kbd></button>
+  </div>
+
+  <div class="gh-hint" id="gh-hint" aria-live="polite"><b>Click</b> to fire · <b>Right-drag</b> to turn · <b>Scroll</b> to zoom</div>
+  <div class="gh-xhair" id="gh-xhair" aria-hidden="true"></div>
+  <div class="gh-toast" id="gh-toast" role="status"></div>
+
+  <div class="gh-loading" id="gh-loading" role="status" aria-live="polite">
+    <div class="gh-load-card">
+      <h1>CASE 26-0926</h1>
+      <p id="gh-load-text">Preparing subject…</p>
+      <div class="gh-load-bar"><i id="gh-load-bar"></i></div>
+      <div class="gh-load-warn" id="gh-load-warn" hidden></div>
+    </div>
+  </div>
+</div>
+
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://cdn.jsdelivr.net/npm/three@0.186.1/build/three.module.js",
+    "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.186.1/examples/jsm/",
+    "three-mesh-bvh": "https://cdn.jsdelivr.net/npm/three-mesh-bvh@0.9.15/build/index.module.js"
+  }
+}
+</script>
+<script>
+// Surface module load failures (e.g. blocked CDN) on the loading card instead of a silent black page.
+window.addEventListener('error', function (e) {
+  var w = document.getElementById('gh-load-warn');
+  var l = document.getElementById('gh-loading');
+  if (w && l && !l.classList.contains('done')) { w.hidden = false; w.textContent = 'Could not start: ' + (e.message || 'script error') + '. Check the connection and reload.'; }
+});
+</script>
+<script type="module" src="./src/main.js"></script>

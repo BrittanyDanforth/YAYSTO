@@ -669,6 +669,31 @@ def _blood_layer(t, g, base, rough, blood, p):
                                 "Vector": p})
 
 
+def _expression_lines(t, pm):
+    """Fine wrinkles at the contract's landmarks: forehead lines, crow's feet,
+    lines under the lower lids. ``pm`` = object position with |x|. Returns 0..1."""
+    x, y, z = t.sep(pm)
+    # forehead: arched horizontal lines, broken up along their length
+    fmask = z.smooth(0.042, 0.056) * (1.0 - z.smooth(0.084, 0.098)) * (1.0 - x.smooth(0.035, 0.056)) \
+        * (-y).smooth(0.055, 0.075)
+    arch = z - x * x * 4.0
+    fore = t.ridge(t.noise(t.vec(x * 0.06, y * 0.06, arch), 140.0, 2.0, 0.4), 0.035)
+    fore = fore * fmask * t.noise(pm, 45.0).smooth(0.3, 0.55)
+    # crow's feet: lines radiating from the outer eye corner
+    d = pm - (0.047, -0.066, 0.021)
+    dx, dy, dz = t.sep(d)
+    side = t.vec(dx, dy, 0.0).length()
+    ray = t.vec(side, dz, 0.0).normalize()
+    rx, ry, _ = t.sep(ray)
+    crow = t.ridge(t.noise(t.vec(rx * 6.0, ry * 6.0, d.length() * 60.0), 1.0, 2.0, 0.5), 0.04)
+    crow = crow * t.gauss(pm, (0.055, -0.060, 0.020), 0.011) * dx.smooth(-0.002, 0.004)
+    # under the lower lids: fine lines following the lid curve
+    ue = t.gauss(pm, (0.032, -0.081, 0.006), 0.009)
+    und = t.ridge(t.noise(t.vec(x * 0.08, y * 0.08, z + (x - 0.032) * (x - 0.032) * 12.0), 420.0, 2.0),
+                  0.05) * ue
+    return (fore + crow * 0.8 + und * 0.6).clamp()
+
+
 def _skin_material(g, name="GH_Skin", lips=False):
     """GH_Skin: subsurface skin, pores, mottling, and every gore attribute.
 
@@ -725,7 +750,8 @@ def _skin_material(g, name="GH_Skin", lips=False):
 
     # ---- micro relief -------------------------------------------------------
     pd, _, _ = t.voronoi(p, 2200.0)
-    pore = 1.0 - pd.smooth(0.0, 0.34)
+    big_pores = (t.gauss(pm, (0.0, -0.104, -0.010), 0.02) + t.gauss(pm, (0.04, -0.082, -0.006), 0.022)).clamp()
+    pore = 1.0 - pd.smooth(0.0, 0.30 + 0.14 * big_pores)
     gd, _, _ = t.voronoi(p * (1.0, 1.0, 1.5), 1000.0, 'DISTANCE_TO_EDGE', rand=0.9)
     groove = (1.0 - gd.smooth(0.0, 0.12)) * m_fine.smooth(0.3, 0.7) * 0.45
     fine = t.noise(p, 6000.0, 2.0)
@@ -735,17 +761,22 @@ def _skin_material(g, name="GH_Skin", lips=False):
     lum = t.luminance(col)
     skin_col = t.mix(pallor * 0.72, col, t.vec(lum, lum, lum) * (0.97, 1.0, 1.06) * 1.08)
     mid = t.noise(p, 160.0, 2.0)
-    h_skin = (-pore * 0.9 - groove * 0.4) * (1.0 - lip) + fine * 0.25 - lip_lines * 2.5 + mid * 0.5
+    wrinkles = _expression_lines(t, pm)
+    col = col * (1.0 - wrinkles * 0.08)
+    h_skin = (-pore * 0.9 - groove * 0.4) * (1.0 - lip) + fine * 0.25 - lip_lines * 1.6 + mid * 0.5 \
+        - wrinkles * 3.0
     h_lite = mid * 0.5 - pore * 0.6              # cheaper relief for the damage branch
-    rough = 0.44 + (m_fine - 0.5) * 0.14 - oily * 0.1 - lip * 0.12 - wet * 0.04 + pore * 0.06
+    rough = 0.44 + (m_fine - 0.5) * 0.14 + (fine - 0.5) * 0.12 - oily * 0.1 - lip * 0.12 - wet * 0.04 \
+        + pore * 0.1
 
     skin_sss = {'IOR': 1.4, 'Specular IOR Level': 0.5, 'Subsurface Radius': (1.0, 0.40, 0.22),
                 'Subsurface Scale': 0.0035, 'Subsurface IOR': 1.4, 'Subsurface Anisotropy': 0.8,
                 'Sheen Roughness': 0.35}
+    n_skin = t.bump(h_skin, 0.0001)              # the oily coat follows the pores too
     healthy = t.principled(dict(skin_sss, **{
         'Base Color': skin_col, 'Roughness': rough, 'Subsurface Weight': 1.0,
-        'Coat Weight': 0.12 + oily * 0.1 + lip * 0.15, 'Coat Roughness': 0.3 - lip * 0.1, 'Coat IOR': 1.45,
-        'Sheen Weight': 0.06, 'Normal': t.bump(h_skin, 0.0001)}), sss_method='RANDOM_WALK_SKIN')
+        'Coat Weight': 0.10 + oily * 0.1 + lip * 0.15, 'Coat Roughness': 0.32 - lip * 0.1, 'Coat IOR': 1.45,
+        'Coat Normal': n_skin, 'Sheen Weight': 0.06, 'Normal': n_skin}), sss_method='RANDOM_WALK_SKIN')
 
     # ==== damage (only evaluated where some gore attribute is non-zero) =======
     # ---- open wound: layered tissue by depth ---------------------------
@@ -1024,8 +1055,8 @@ def _blood_material(g):
     old = t.mix(n, (0.022, 0.008, 0.006), (0.045, 0.014, 0.009))
     col = t.mix(a, fresh, old)
     col = t.mix(clot * 0.7, col, (0.07, 0.008, 0.006))
-    rough = t.mix(a, t.mix(wet, 0.3, 0.04), 0.45 + n * 0.15) + clot * 0.15
-    h = clot * 0.8 + t.noise(p, 2000.0) * a * 0.5
+    rough = t.mix(a, t.mix(wet, 0.3, 0.04), 0.32 + n * 0.2) + clot * 0.1
+    h = clot * 0.3 * (1.0 - a) + t.noise(p, 4000.0) * a * 0.3
     bsdf = t.principled({
         'Base Color': col, 'Roughness': rough, 'IOR': 1.36, 'Specular IOR Level': 0.5,
         'Subsurface Weight': (1.0 - a) * 0.45, 'Subsurface Radius': (1.0, 0.02, 0.02),
@@ -1570,7 +1601,8 @@ def _gore_head(mat, R=0.07, subdiv=8):
     low = _smoothstep(0.2 * 0.0105, -0.5 * 0.0105, (el - el_w) * R)
     rim_pool = np.exp(-((sw - rw) / 0.0028) ** 2) * (0.12 + 0.8 * low) * (0.7 + 0.3 * _wave_noise(v, 200.0, 10))
     deep_low = _smoothstep(-0.2 * 0.0105, -0.6 * 0.0105, (el - el_w) * R)
-    blood = np.maximum(rim_pool, wound * (0.05 + 0.8 * deep_low * _smoothstep(0.5, 0.8, q)))
+    blood = np.maximum(rim_pool, wound * (0.3 + 0.1 * _wave_noise(v, 400.0, 11)
+                                          + 0.6 * deep_low * _smoothstep(0.5, 0.8, q)))
     # --- blood runs straight down from the lower rim (meridians of the sphere)
     rng = np.random.default_rng(7)
     streaks = []
@@ -1668,8 +1700,9 @@ def scene_gore(out_dir, dried=False, close=False):
     """Gore attribute test: wound rings, torn rim, streaks, bruise, burn, fractured bone."""
     _clear_test_scene()
     ctrl = ghc.ensure_controls()
-    ctrl["blood_age"] = 1.0 if dried else 0.0
+    ctrl["blood_age"] = 0.0
     mats = build_materials()
+    ctrl["blood_age"] = 1.0 if dried else 0.0       # after building: exercises the drivers
     ghc.setup_stage()
     _, info = _gore_head(mats["GH_Skin"])
     _drip_tubes(info, mats["GH_Blood"])
