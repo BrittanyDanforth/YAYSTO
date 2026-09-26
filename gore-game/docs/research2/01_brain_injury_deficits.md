@@ -15,7 +15,7 @@ This document goes deeper: **what each region does when destroyed, which side, h
 
 ### 0.1 Method and limits
 
-- About 75 `WebSearch` queries were run for this document (the session's shared search budget then ran out). `WebFetch` is blocked by network policy, so **no page was opened in full**. Values tagged [S#] come from search-result summaries of the listed pages. Before a number becomes a hard constant, QA should open the source (priority list in §21).
+- About 115 `WebSearch` queries were run for this document (the session's shared search budget then ran out). `WebFetch` is blocked by network policy, so **no page was opened in full**. Values tagged [S#] come from search-result summaries of the listed pages. Before a number becomes a hard constant, QA should open the source (priority list in §21).
 - Numbers not found in search results come from the author's knowledge of standard texts (Plum & Posner's *Diagnosis of Stupor and Coma*, Adams & Victor, Leigh & Zee *The Neurology of Eye Movements*, Blumenfeld *Neuroanatomy through Clinical Cases*, ATLS, Brain Trauma Foundation guidelines).
 - Where a search summary contained an error that conflicts with standard neurology, it is noted in the text and corrected (for example §13.1 Weber syndrome, §17.1 seizure incidence).
 
@@ -216,7 +216,7 @@ Visual/behavioural summary for the whole map:
 - **Akinetic mutism**: the patient is awake, eyes open and **may follow the examiner**, but makes no speech, no voluntary movement and no emotional response; incontinent. It usually follows bilateral anterior cingulate/medial frontal damage (bilateral ACA territory, masses, trauma) [S9].
 - Caudate damage (the "frontal" part of the basal ganglia) gives abulia in 28% and disinhibition in 11% of focal lesions [S10].
 - **A unilateral prefrontal wound may cause no visible deficit** apart from concussion; retained capacity to act after low-energy frontal shots is documented [R1-01 §6] [R1-04 §3.2]. Bihemispheric frontal tracks carry lower mortality than other bihemispheric tracks (bifrontal is excluded from the bihemispheric risk factor) [S95].
-- In the confused period after a coma (post-traumatic amnesia), disinhibition and agitation are extreme regardless of lesion site [S11 search summary] `[K] (M)`.
+- In the confused period after a coma (post-traumatic amnesia), disinhibition and agitation are marked regardless of lesion site `[K] (M)`.
 
 ### 4.2 Onset
 
@@ -362,7 +362,7 @@ Visual/behavioural summary for the whole map:
 | Lateral (superior temporal gyrus, left) | Comprehension, fluent jargon (§5) | Language | [S12] |
 | Auditory cortex | One side: little hearing loss (both ears project to both sides). Both sides: cortical deafness | — | `[K]` (H) |
 | Meyer's loop (optic radiation) | **Upper** quadrantanopia, contralateral ("pie in the sky") | Contra field | `[K]` (H) |
-| Hippocampus / medial temporal | **Anterograde amnesia** (cannot form new memories), repetitive questioning; severe only if bilateral | Global | [S83 search summary] `[K]` (H) |
+| Hippocampus / medial temporal | **Anterograde amnesia** (cannot form new memories), repetitive questioning; severe only if bilateral | Global | `[K]` (H) |
 | Amygdala | Reduced fear and threat responses; bilateral: placidity, oral exploration (Klüver-Bucy), rare | Global | `[K]` (M) |
 | Whole temporal lobe | Highest seizure risk of any site; temporal contusions and haematomas push the uncus into the tentorial gap → **uncal herniation** (§15.6) | — | [S90] `[K]` (H) |
 
@@ -774,7 +774,7 @@ Constants from [R1-04 §1]: ICP normal 5–15 mmHg (default 10); pressure–volu
 |---|---|---|
 | Compensatory reserve (CSF pushed into the spinal sac + venous blood squeezed out) before ICP climbs | 50–70 mL for an acutely growing mass (default 60) | [K] (M) / [E] |
 | ICP beyond the reserve | ICP = ICP₀ × 10^((V_mass − V_reserve) / PVI) | [E] on [R1-04] |
-| Midline shift from a lateral mass | ≈ 0.15 mm per mL (30 mL → 4.5 mm; 60 mL → 9 mm) | [E] |
+| Midline shift from a lateral mass | ≈ 0.10 mm per mL (30 mL → 3 mm; 50 mL → 5 mm; 70 mL → 7 mm; 90 mL → 9 mm), chosen so the Ropper thresholds below line up with the EDH timeline in §15.2 | [E] |
 | Consciousness vs horizontal pineal shift (Ropper) | 0–3 mm alert; 3–4 mm drowsy; 6–8.5 mm stupor; 8–13 mm coma | [S84] (M) |
 | Cushing response | Appears when CPP falls below ~15 mmHg (seen in almost every case below that) | [S85] (M) |
 | Plateau (Lundberg A) waves | ICP rises from near normal to **50–100 mmHg**, holds **5–20 min**, falls sharply; during them headache, nausea, stupor, **tonic posturing**; at the peak apnoea and decerebration | [S86] (M) |
@@ -791,7 +791,7 @@ Default "classic" EDH timeline for the game (arterial source, untreated) `[E]` o
 | Stage | Real time from impact (default, range) | Mass (mL) | What the player sees | t_game |
 |---|---|---|---|---|
 | Impact | 0 | 0 | Brief knockout 5 s – 5 min (p ≈ 0.6), or dazed only | 1× |
-| Lucid interval | 5 min – 1 h (15 min – 6 h) | 5 → 50 | Awake, talking, walking; worsening headache, 1–3 vomits, irritability | 4× → 15× |
+| Lucid interval | default 60 min (15 min – 6 h) | 5 → 50 | Awake, talking, walking; worsening headache, 1–3 vomits, irritability | 4× → 15× |
 | Early decline | +10–30 min | 50 → 70 | Drowsy, slurred, confused (GCS 13 → 10); **contralateral** arm drift and weakness begins; ipsilateral pupil 1 mm larger and sluggish | 4× |
 | Uncal herniation | +10–30 min | 70 → 90 | Stupor → coma (GCS ≤ 8); ipsilateral pupil 6–9 mm fixed; contralateral hemiplegia; decorticate then decerebrate spasms; Cushing (SBP 160–220, HR 40–60, irregular breathing); snoring/gurgling airway | 4× |
 | Brainstem failure | +5–20 min | > 90 | Both pupils fixed dilated; flaccid; ataxic → cluster breathing → apnoea | 1× for the last 60 s |
@@ -858,7 +858,7 @@ Default "classic" EDH timeline for the game (arterial source, untreated) `[E]` o
 | Parameter | Value / range | Unit | Notes | Tag |
 |---|---|---|---|---|
 | `icp_reserve_ml` | 60 (50–70) | mL | Then exponential with PVI 25 mL | [K]/[E] |
-| `mls_per_ml` | 0.15 | mm/mL | Lateral masses | [E] |
+| `mls_per_ml` | 0.10 | mm/mL | Lateral masses | [E] |
 | `loc_from_mls` | 0–3 alert, 3–4 drowsy, 6–8.5 stupor, 8–13 coma | mm | Interpolate | [S84] (M) |
 | `cushing_cpp` | < 15 | mmHg | Tachy + HTN first, then brady | [S85] (M) |
 | `plateau_wave` | 50–100 mmHg for 5–20 min | — | Triggers posturing episodes | [S86] (M) |
@@ -1104,4 +1104,222 @@ Game mapping `[E]`: E from arousal level and lid control (and eyelid swelling fr
 - GCS 3–5: nothing except spasms of stiffening; snoring or gurgling breathing, if any.
 
 ---
-<!-- PART5 -->
+## 20. Putting it together: the lesion resolver
+
+### 20.1 Region list and hit volumes
+
+Approximate volumes for a 1,300–1,400 g adult brain. Lobe shares of cerebral cortex: frontal 41%, temporal 22%, parietal 19%, occipital 18% [S38]; cerebellum ~10% of brain volume [S38]. Everything else `[K]` (M) or `[E]`.
+
+| Region ID (per side unless midline) | Volume (cm³) | Channel(s) it drives |
+|---|---|---|
+| `M1_leg`, `M1_trunk`, `M1_arm`, `M1_hand`, `M1_face`, `M1_bulbar` | 15–25 total strip | Contra strength per segment (§2) |
+| `SMA`, `PMC`, `FEF` | 8–12, 10–15, 2–4 | Initiation, proximal strength, gaze bias (§3) |
+| `PFC_dl`, `PFC_orb`, `ACC` | 40–60, 20–30, 5–8 | Response latency, perseveration, disinhibition, abulia (§4) |
+| `Broca_ext` (with insula/WM), `Wernicke` | 5–10, 5–10 | Vocal state (§5), dominant side only |
+| `S1`, `PPC` | 10–15, 30–50 | Sensation, neglect, reaching (§6) |
+| `V1_upper`, `V1_lower`, `V1_pole`, `optic_radiation` | 5–8 each bank | Visual field mask (§7) |
+| `temporal_lat`, `hippocampus`, `amygdala` | 60–80, 3.5–4, 1.5–2 | Language (left), memory, fear, seizure mult. (§8) |
+| `caudate`, `putamen`, `GP`, `STN` | ~4, ~5, 1.5–2, 0.15–0.2 | Drive, hemiplegia (with capsule), ballism (§9) |
+| `thal_lateral`, `thal_paramedian` | ~5, ~2 | Sensation, astasia, arousal, eyes down-in (§10) |
+| `IC_ant`, `IC_genu`, `IC_post` | 1–2, 0.5–1, 2–4 | Dense hemiplegia (§11) |
+| `corpus_callosum` (midline) | 15–20 | Disconnection; transventricular-track marker (§11) |
+| `cb_hemi`, `vermis`, `flocculonodular` | 55–65, 10–15, 2–3 | Ipsi ataxia, trunk balance, nystagmus (§12) |
+| `midbrain_ventral`, `midbrain_tegmentum`, `midbrain_tectum` | ~7 total | CN III, Weber/Parinaud, consciousness (§13.1) |
+| `pons_basis`, `pons_tegmentum` | ~15 total | CN VI/VII, gaze, locked-in, consciousness (§13.2) |
+| `medulla_lateral`, `medulla_medial` | ~6–7 total | Swallow, voice, Horner, tongue, breathing (§13.3) |
+| `hypothalamus_pituitary` (midline) | ~4 | Temperature, water balance (§20.4) |
+| `optic_nerve`, `chiasm`, `CN_III`, `CN_VI` (extra-axial) | small | Blindness of one eye, bitemporal loss, ocular palsies |
+
+### 20.2 Resolver rules `[E]`
+
+1. **Damage.** For each region r: `destroyed_r` = destroyed volume / region volume (0–1), from the wound track (permanent cavity) of [R1-01].
+2. **Stun.** Add concussive dysfunction for regions inside the stun radius around the track (≥ 18 mm for low-energy handgun tracks [R1-01 §6]; larger for higher energy): `stun_r` = 0.5–1.0, decaying with a half-life of 30 s – 10 min to a residual 0–0.3.
+3. **Ischaemia.** If the track cuts a named artery (MCA, ACA, PCA branch, basilar perforators), its territory gains `isch_r` rising to 1 over 10–20 s (brain function fails below ~20 mL/100 g/min [R1-04 §1]); in game time it never recovers.
+4. **Compression.** From §15 (mass, midline shift, herniation stage) add `comp_r` to the diencephalon and brainstem regions and to CN III on the mass side.
+5. **Dysfunction** `d_r(t) = clamp(destroyed_r + stun_r(t) + isch_r(t) + comp_r(t), 0, 1)`.
+6. **Severity** `sev_r = smoothstep(visible_at_r, full_at_r, d_r)` using the thresholds in §1 and each section; multiply by a per-character factor 0.85–1.15.
+7. **Side mapping.** Cortex, basal ganglia, thalamus, capsule, cerebral peduncle, corticospinal tracts in pons and upper medulla → contralateral body channels. Cerebellum → ipsilateral body. Cranial-nerve nuclei and nerves → ipsilateral eye/face/tongue/voice. Language regions → dominant side only (90% left).
+8. **Combine** channels by taking the maximum severity of any region driving that channel (a leg paralysed by the capsule is not made "more paralysed" by M1 as well).
+9. **Probabilistic signs** (neglect, anosognosia, pusher, ballism, seizure, Kernohan, wrong-way eyes) are rolled once, when the region's severity first crosses its threshold, with the probabilities given in the sections.
+10. **Consciousness** is resolved last (rule 2 in §0.4, [R1-04 §3.1]) and overrides behaviour: an unconscious character shows only reflexes, posturing, eye signs and breathing patterns.
+11. **Blunt force** (hammer, punch, fall) has no track: apply stun to the region under the impact (coup) and to the frontal and temporal poles, plus the opposite pole for occipital or lateral blows (contrecoup) `[K] (H)`; add EDH risk for temporal-squama fractures (§15.2) and DAI for rotational blows (§11).
+
+### 20.3 How the body goes down, by deficit (for the fall controller)
+
+| Deficit | Direction | Speed | Protective reaction | Notes | Tag |
+|---|---|---|---|---|---|
+| Loss of consciousness (concussion, brainstem) | Direction of existing lean/momentum | 0.6–1.2 s to the ground | None | [R1-04 §2.3] | [R1-04] |
+| Acute hemiplegia (M1 leg, capsule) | **Toward the paralysed side** | Paralysed knee buckles 0.2–0.6 s after load; topple 0.8–1.5 s | Good arm reaches out if conscious | Head may still hit on the paralysed side | [K] / [E] |
+| Pusher syndrome | Toward the paralysed side, actively pushed by the good limbs | 1–3 s | Resists being righted | Right-hemisphere lesions more often | [S20] |
+| Cerebellar hemisphere | **Toward the lesion side** | Staggers 2–5 wide steps first | Grabs at walls and objects | Often recovers balance once or twice | [S39][S41] |
+| Vermis | Any direction, often backward | Sways, then topples | Arms flail for balance | Cannot sit | [S43] |
+| Thalamic astasia | **Backward or away from the lesion side** | Topples from standing or sitting | Present | Strength near normal | [S30] |
+| Lateral medulla | Pulled sideways **toward the lesion** | Progressive lean | Present | Vertigo, vomiting | [S58][S59] |
+| Seizure (tonic) | Stiff, "like a log", often backward | 0.5–1 s | None | Epileptic cry at onset | [R1-04 §4] `[K]` |
+| Syncope | Crumples at knees and hips | 1–2 s | None | Eyes open, jerks | [S70] |
+| Abulia / akinetic | Does not fall; stays frozen standing or sitting | — | — | May slowly sink into a chair | [S9] |
+
+### 20.4 Other targets the resolver should know
+
+- **Hypothalamus / pituitary stalk** (midline, above the sella): early **central diabetes insipidus** (large dilute urine output) usually in the first days, sometimes within hours; associated with high mortality when very early; central hyperthermia [S115]. Game: body temperature rising 0.5–1 °C/h and wet trousers (polyuria) over hours `[E]`.
+- **Optic nerve** (orbit, optic canal): blindness of that eye with an afferent pupil defect (the pupil reacts to light shone in the other eye but not in this one) `[K] (H)`. **Chiasm**: loss of both outer half-fields `[K] (H)`. A temple-to-temple track through both orbits blinds both eyes [R1-04 §3.3].
+- **Olfactory tracts** (frontal base): anosmia (§4.3).
+
+### 20.5 Performance note
+
+The resolver runs **on wound events only** (a few hundred operations per hit). Continuous processes (ICP/mass integration, herniation stage, seizure timer, nystagmus/roving/bobbing generators, posturing episodes) run in the 20 Hz physiology tick of [R1-04 §0.4] and cost a handful of floats each. Eye movement generators should be evaluated per rendered frame only for characters on screen `[E]`.
+
+### Visual/behavioural checklist: integration
+- The same bullet produces different characters depending on where it went: a limp arm and a sagging mouth; a drunk-looking stagger toward the wound; a staring, silent statue; a thrashing arm; crossed eyes and a pinpoint coma.
+- Slow killers (haematoma, swelling) turn a talking, walking character into a posturing, blown-pupil coma over tens of minutes; the eyes and breathing tell the player it is happening before the body stops moving.
+
+---
+
+## 21. QA priority list (open the source and confirm before hard-coding)
+
+1. Conjugate eye deviation magnitude and incidence [S63]; FEF deviation duration [S64].
+2. Wallenberg sign frequencies [S58].
+3. Ocular bobbing kinematics and rate [S54]; ocular dipping timing [S55].
+4. Ropper midline-shift thresholds [S84].
+5. EDH lucid-interval frequency and timing [S76][S77]; EDH/ASDH mortality [S78][S80][S81].
+6. GCS-P and pupil-reactivity mortality [S92].
+7. Post-traumatic seizure incidences and the conflicting "50% immediate" summary [S103].
+8. Neglect and anosognosia percentages [S17][S19]; pusher incidence [S20].
+9. CN III squint sizes [S50].
+10. Author-only numbers most worth checking: gait metrics (§12.2), eye-rig numbers (§14.8), central-herniation stage durations (§15.6), EDH bleed rate (§15.2), Jacksonian march speed (§17.3), posture joint angles (§18.2).
+
+---
+
+## 22. References
+
+- **[S1]** Onset, time course and prediction of spasticity after stroke or traumatic brain injury. https://www.sciencedirect.com/science/article/pii/S1877065718300599
+- **[S2]** Sommerfeld D.K. et al. Spasticity after stroke. *Stroke* 2004. https://www.ahajournals.org/doi/10.1161/01.str.0000105386.05173.5e
+- **[S3]** Li S. Spasticity, motor recovery, and neural plasticity after stroke. *Front Neurol* 2017. https://www.frontiersin.org/journals/neurology/articles/10.3389/fneur.2017.00120/full
+- **[S4]** Insights from the supplementary motor area syndrome in balancing movement initiation and inhibition. https://www.ncbi.nlm.nih.gov/pmc/articles/PMC4246659/
+- **[S5]** Supplementary motor area syndrome after brain tumor surgery: a systematic review. https://www.sciencedirect.com/science/article/abs/pii/S1878875022008658
+- **[S6]** Anterior cerebral artery stroke syndromes (MedLink). https://www.medlink.com/articles/anterior-cerebral-artery-stroke-syndromes
+- **[S7]** Frontal lobe syndrome (StatPearls). https://www.ncbi.nlm.nih.gov/books/NBK532981/
+- **[S8]** Frontal lobe motor syndromes (Handb Clin Neurol). https://pubmed.ncbi.nlm.nih.gov/37620084/
+- **[S9]** On the pathophysiology and treatment of akinetic mutism. https://www.sciencedirect.com/science/article/pii/S0149763419301447 ; Akinetic mutism overview https://www.sciencedirect.com/topics/medicine-and-dentistry/akinetic-mutism
+- **[S10]** Bhatia K.P., Marsden C.D. The behavioural and motor consequences of focal lesions of the basal ganglia in man. *Brain* 1994. https://pubmed.ncbi.nlm.nih.gov/7922471/ ; Movement disorders following cerebrovascular lesion in the basal ganglia circuit https://pmc.ncbi.nlm.nih.gov/articles/PMC4886205/
+- **[S11]** Areas of brain damage underlying increased reports of behavioral disinhibition. https://psychiatryonline.org/doi/10.1176/appi.neuropsych.14060126
+- **[S12]** Wernicke aphasia (StatPearls). https://www.ncbi.nlm.nih.gov/sites/books/NBK441951/
+- **[S13]** Associations between lesion size, lesion location and aphasia in acute stroke. https://www.tandfonline.com/doi/full/10.1080/02687038.2020.1727838 ; The neuroanatomy of Broca's aphasia https://www.frontiersin.org/journals/language-sciences/articles/10.3389/flang.2025.1496209/full
+- **[S14]** Neuroanatomy, Broca area (StatPearls). https://www.ncbi.nlm.nih.gov/sites/books/NBK526096/ ; Wernicke's area https://en.wikipedia.org/wiki/Wernicke%27s_area
+- **[S15]** Variations in the presentation of aphasia in patients with closed head injuries. https://www.ncbi.nlm.nih.gov/pmc/articles/PMC2831203/ ; Cerebellar mutism following head trauma https://surgicalneurologyint.com/surgicalint-articles/cerebellar-mutism-following-head-trauma-a-case-report-and-literature-review/
+- **[S16]** Scanning dysarthria (GPnotebook). https://gpnotebook.com/pages/neurology/scanning-dysarthria
+- **[S17]** Ringman J.M. et al. Frequency, risk factors, anatomy, and course of unilateral neglect in an acute stroke cohort. *Neurology* 2004. https://www.neurology.org/doi/10.1212/01.WNL.0000133011.10689.CE
+- **[S18]** Unilateral spatial neglect due to stroke (NCBI Bookshelf). https://www.ncbi.nlm.nih.gov/books/NBK572008/
+- **[S19]** Anosognosia for hemiplegia as a tripartite disconnection syndrome. *eLife* 2019. https://elifesciences.org/articles/46075
+- **[S20]** Research progress in pusher syndrome after stroke. https://pmc.ncbi.nlm.nih.gov/articles/PMC12040677/ ; Prevalence and length of recovery of pusher syndrome by lesion side https://www.ahajournals.org/doi/10.1161/STROKEAHA.111.638379
+- **[S21]** Astereognosis (StatPearls). https://www.ncbi.nlm.nih.gov/sites/books/NBK560773/ ; Parietal lobe overview https://www.sciencedirect.com/topics/neuroscience/parietal-lobe
+- **[S22]** Cortical blindness (StatPearls). https://www.ncbi.nlm.nih.gov/books/NBK560626/
+- **[S23]** Cortical blindness (MedLink). https://www.medlink.com/articles/cortical-blindness
+- **[S24]** Hemianopsia (Moran CORE). https://morancore.utah.edu/basic-ophthalmology-review/hemianopsia/
+- **[S25]** Hemiballism (MedLink). https://www.medlink.com/articles/hemiballism ; Hemiballismus: current concepts and review https://www.sciencedirect.com/science/article/abs/pii/S1353802011002690
+- **[S26]** Hemiballismus (StatPearls). https://www.ncbi.nlm.nih.gov/sites/books/NBK559127/ ; Neurophysiological features of hemiballism https://pmc.ncbi.nlm.nih.gov/articles/PMC6353509/ ; Acute caudate nucleus stroke presenting as hemiballismus https://www.ncbi.nlm.nih.gov/pmc/articles/PMC10693717/
+- **[S27]** Basal ganglia hemorrhage (MedLink). https://www.medlink.com/articles/basal-ganglia-hemorrhage
+- **[S28]** The syndrome of bilateral paramedian thalamic infarction. https://pubmed.ncbi.nlm.nih.gov/6682494/ ; Bilateral thalamic stroke from artery of Percheron occlusion https://www.ncbi.nlm.nih.gov/pmc/articles/PMC6059518/
+- **[S29]** Wrong-way eyes with thalamic hemorrhage. *Neurology* 2003. https://www.neurology.org/doi/10.1212/01.WNL.0000065900.62880.4F
+- **[S30]** Masdeu J.C., Gorelick P.B. Thalamic astasia: inability to stand after unilateral thalamic lesions. *Ann Neurol* 1988. https://pubmed.ncbi.nlm.nih.gov/2841901/
+- **[S31]** Pure motor stroke as the most frequent lacunar syndrome: a clinical update. https://www.wjgnet.com/2218-6212/full/v3/i4/129.htm ; Lacunar stroke (Medscape) https://emedicine.medscape.com/article/322992-overview
+- **[S32]** Zhu L.L. et al. Lesion load of the corticospinal tract predicts motor impairment in chronic stroke. *Stroke* 2010. https://www.ahajournals.org/doi/10.1161/strokeaha.109.577023 ; Feng W., Schlaug G. et al. Corticospinal tract lesion load: an imaging biomarker for stroke motor outcomes https://musicianbrain.com/papers/Feng_Schlaug_CorticospinalTractLesionLoad_AnImagingBiomarkerforStrokeMotorOutcome.pdf
+- **[S33]** Cortical hand knob stroke: report of 25 cases. https://www.sciencedirect.com/science/article/abs/pii/S1052305718301071
+- **[S34]** Yousry T.A. et al. Localization of the motor hand area to a knob on the precentral gyrus. *Brain* 1997. https://pubmed.ncbi.nlm.nih.gov/9055804/ ; Use of a brain navigator to identify the precentral knob https://pubmed.ncbi.nlm.nih.gov/35039469/
+- **[S35]** Roux F.E. et al. Functional architecture of the motor homunculus detected by electrostimulation. *J Physiol* 2020. https://physoc.onlinelibrary.wiley.com/doi/abs/10.1113/JP280156 ; Modern coordinates for the motor homunculus https://pmc.ncbi.nlm.nih.gov/articles/PMC8033533/
+- **[S36]** Analysis of upper facial weakness in central facial palsy following acute ischemic stroke. https://www.ncbi.nlm.nih.gov/pmc/articles/PMC11767383/
+- **[S37]** Pronator drift (Neurosigns). https://www.neurosigns.org/pronator-drift.html ; Objective pronator drift test (PLOS One) https://journals.plos.org/plosone/article?id=10.1371%2Fjournal.pone.0041544
+- **[S38]** Brain facts and figures (Kennedy et al. 1998 lobe volumes). https://faculty.washington.edu/chudler/facts.html
+- **[S39]** Cerebellar neurological signs (StatPearls). https://www.ncbi.nlm.nih.gov/books/NBK556080/
+- **[S40]** Cerebellar hemorrhage (StatPearls). https://www.ncbi.nlm.nih.gov/books/NBK541076/
+- **[S41]** Diagnosis and management of acute cerebellar infarction. *Stroke* 2014. https://www.ahajournals.org/doi/10.1161/STROKEAHA.114.004474
+- **[S42]** A systematic review of the gait characteristics associated with cerebellar ataxia. https://pubmed.ncbi.nlm.nih.gov/29220753/ ; Stolze H. et al. Typical features of cerebellar ataxic gait https://pubmed.ncbi.nlm.nih.gov/12185166/
+- **[S43]** Evaluation of cerebellar ataxic patients. https://pmc.ncbi.nlm.nih.gov/articles/PMC10354692/ ; Truncal ataxia https://en.wikipedia.org/wiki/Truncal_ataxia
+- **[S44]** Holmes tremor (StatPearls). https://www.ncbi.nlm.nih.gov/books/NBK562149/ ; Intention tremor https://en.wikipedia.org/wiki/Intention_tremor
+- **[S45]** Nystagmus (EyeWiki). https://eyewiki.org/Nystagmus ; Incidence and anatomy of gaze-evoked nystagmus in patients with cerebellar lesions https://www.neurology.org/doi/10.1212/WNL.0b013e318208f4c3
+- **[S46]** Nystagmus types (StatPearls). https://www.ncbi.nlm.nih.gov/books/NBK539711/ ; Upbeat nystagmus: clinicoanatomical correlations in 15 patients https://www.thejcn.com/DOIx.php?id=10.3988%2Fjcn.2006.2.1.58 ; Periodic alternating nystagmus in isolated nodular infarction https://pubmed.ncbi.nlm.nih.gov/17372136/ ; See-saw nystagmus in a sellar/suprasellar mass https://journals.lww.com/jneuro-ophthalmology/fulltext/2024/09000/see_saw_nystagmus_in_a_case_of_sellar_suprasellar.96.aspx
+- **[S47]** Weber syndrome (StatPearls). https://www.ncbi.nlm.nih.gov/sites/books/NBK559158/ ; Benedikt syndrome https://en.wikipedia.org/wiki/Benedikt_syndrome
+- **[S48]** Parinaud syndrome (EyeWiki). https://eyewiki.org/Parinaud_Syndrome
+- **[S49]** Acquired oculomotor nerve palsy (EyeWiki). https://eyewiki.org/Acquired_Oculomotor_Nerve_Palsy ; Third cranial nerve disorders (Merck) https://www.merckmanuals.com/professional/neurologic-disorders/neuro-ophthalmologic-and-cranial-nerve-disorders/third-cranial-nerve-oculomotor-disorders
+- **[S50]** Clinical features and outcomes of strabismus treatment in third cranial nerve palsy during a 10-year period. https://pmc.ncbi.nlm.nih.gov/articles/PMC4307654/ ; Long term outcomes of strabismus surgery for third nerve palsy https://www.sciencedirect.com/science/article/pii/S1888429618300992 ; Lateral rectus–medial rectus union https://pubmed.ncbi.nlm.nih.gov/30371913
+- **[S51]** Abducens nerve palsy (EyeWiki). https://eyewiki.org/Abducens_Nerve_Palsy ; Transient bilateral sixth nerve palsy after head trauma https://www.ncbi.nlm.nih.gov/pmc/articles/PMC7894221/
+- **[S52]** One-and-a-half syndrome (EyeWiki). https://eyewiki.org/One_And_a_Half_Syndrome
+- **[S53]** Millard-Gubler syndrome (EyeWiki). https://eyewiki.org/Millard-Gubler_Syndrome ; Foville syndrome (EyeWiki) https://eyewiki.org/Foville_Syndrome
+- **[S54]** Pendular oscillation and ocular bobbing after pontine hemorrhage. *Cerebellum* 2019. https://link.springer.com/article/10.1007/s12311-019-01086-6 ; Ocular bobbing (MedLink media) https://www.medlink.com/media/85178490
+- **[S55]** Other involuntary eye movements (Canadian Neuro-ophthalmology Group textbook). https://www.neuroophthalmology.ca/textbook/disorders-of-eye-movements/xii-other-involuntary-eye-movements
+- **[S56]** Locked-in syndrome (StatPearls). https://www.ncbi.nlm.nih.gov/books/NBK559026/
+- **[S57]** Brainstem hemorrhage (MedLink). https://www.medlink.com/articles/brainstem-hemorrhage ; Management of brainstem haemorrhages (Swiss Med Wkly) https://smw.ch/index.php/smw/article/download/2602/4110?inline=1
+- **[S58]** Kim J.S. Pure lateral medullary infarction: clinical–radiological correlation of 130 acute, consecutive patients. *Brain* 2003. https://academic.oup.com/brain/article-pdf/126/8/1864/874738/awg169.pdf
+- **[S59]** Lateral medullary syndrome (StatPearls). https://www.ncbi.nlm.nih.gov/sites/books/NBK551670/ ; Dysphagia caused by lateral medullary infarction https://www.ncbi.nlm.nih.gov/pmc/articles/PMC3473978/
+- **[S60]** Medial medullary syndrome: report of 18 new patients and a review of the literature. https://pubmed.ncbi.nlm.nih.gov/7660396/
+- **[S61]** Skew deviation (EyeWiki). https://eyewiki.org/Skew_Deviation ; Brodsky M.C. et al. Skew deviation revisited https://www.surveyophthalmol.com/article/S0039-6257(05)00214-6/fulltext ; Ocular tilt reaction (EyeRounds) https://eyerounds.org/cases/200-OTR.htm
+- **[S62]** Internuclear ophthalmoplegia (EyeWiki). https://eyewiki.org/Internuclear_Ophthalmoplegia ; Wall-eyed bilateral INO https://www.ncbi.nlm.nih.gov/pmc/articles/PMC10147486/
+- **[S63]** CT assessment of conjugate eye deviation in acute stroke. *Neurology* 2003. https://www.neurology.org/doi/10.1212/01.WNL.0000042086.98735.75 ; Conjugate eye deviation in acute stroke: incidence, hemispheric asymmetry, and lesion pattern. *Stroke* 2006 https://www.ahajournals.org/doi/10.1161/01.str.0000244809.67376.10
+- **[S64]** Conjugate eye deviation with head version due to a cortical infarction of the frontal eye field. *Stroke* 2002. https://www.ahajournals.org/doi/10.1161/str.33.2.642 ; Contralateral gaze deviation after frontal lobe haemorrhage https://pmc.ncbi.nlm.nih.gov/articles/PMC1028190/
+- **[S65]** Wyllie E. et al. The lateralizing significance of versive head and eye movements during epileptic seizures. *Neurology* 1986. https://pubmed.ncbi.nlm.nih.gov/3703259/ ; Lateralizing significance of head and eye deviation in secondary generalized tonic-clonic seizures https://www.neurology.org/doi/10.1212/WNL.43.7.1308
+- **[S66]** Eye movements in coma (LITFL). https://litfl.com/eye-movements-in-coma/ ; Neuro-ophthalmic findings in coma (EyeWiki) https://eyewiki.org/Neuro-ophthalmic_Findings_in_Coma
+- **[S67]** Ping-pong gaze: bouncing back from structural brain damage. *J Neuro-Ophthalmol* 2024. https://journals.lww.com/jneuro-ophthalmology/fulltext/2024/03000/ping_pong_gaze__bouncing_back_from_structural.87.aspx
+- **[S68]** Doll's eyes (StatPearls). https://www.ncbi.nlm.nih.gov/books/NBK551716/
+- **[S69]** Bell's phenomenon. https://en.wikipedia.org/wiki/Bell%27s_phenomenon ; Eye movements, coma and pseudocoma (LITFL) https://litfl.com/eye-movements-coma-and-pseudocoma/
+- **[S70]** Lempert T. et al. Syncope: a videometric analysis of 56 episodes of transient cerebral hypoxia. *Ann Neurol* 1994. https://onlinelibrary.wiley.com/doi/10.1002/ana.410360217 ; The eye movements of syncope https://pubmed.ncbi.nlm.nih.gov/8780096/
+- **[S71]** Epileptic nystagmus (Epileptic Disorders). http://www.jle.com/en/revues/epd/e-docs/epileptic_nystagmus_272124/article.phtml?tab=texte
+- **[S72]** Horner syndrome (EyeWiki). https://eyewiki.org/Horner_Syndrome
+- **[S73]** Pupillometry in brain death: differences in pupillary diameter between paediatric and adult subjects. https://pubmed.ncbi.nlm.nih.gov/26184095/
+- **[S74]** Hutchinson's pupil. https://en.wikipedia.org/wiki/Hutchinson%27s_pupil ; Fixed and dilated: the history of a classic pupil abnormality https://pubmed.ncbi.nlm.nih.gov/25415062/
+- **[S75]** Pupillometry and pupillary abnormalities (EMCrit IBCC). https://emcrit.org/ibcc/pupil/
+- **[S76]** Lucid interval (ScienceDirect Topics). https://www.sciencedirect.com/topics/medicine-and-dentistry/lucid-interval
+- **[S77]** Progressive epidural hematoma in patients with head trauma: incidence, outcome, and risk factors. https://www.ncbi.nlm.nih.gov/pmc/articles/PMC3536037/
+- **[S78]** Epidural hematoma (Medscape). https://emedicine.medscape.com/article/1137065-overview
+- **[S79]** Bullock M.R. et al. Surgical management of acute epidural hematomas. *Neurosurgery* 2006. https://pubmed.ncbi.nlm.nih.gov/16710967/
+- **[S80]** Seelig J.M. et al. Traumatic acute subdural hematoma: major mortality reduction in comatose patients treated within four hours. *NEJM* 1981. https://www.nejm.org/doi/full/10.1056/NEJM198106183042503
+- **[S81]** Wilberger J.E. et al. Acute subdural hematoma: morbidity, mortality, and operative timing. *J Neurosurg* 1991. https://pubmed.ncbi.nlm.nih.gov/1988590/
+- **[S82]** Reilly P.L. et al. Patients with head injury who talk and die. *Lancet* 1975. https://www.sciencedirect.com/science/article/abs/pii/S0140673675928937 ; The "talk and die" phenomenon in TBI: a meta-analysis https://www.sciencedirect.com/science/article/abs/pii/S0303846722001433
+- **[S83]** Contusion progression following traumatic brain injury: a review. *Neurocrit Care* 2020. https://link.springer.com/article/10.1007/s12028-020-00994-4
+- **[S84]** Ropper A.H. Lateral displacement of the brain and level of consciousness in patients with an acute hemispheral mass. *NEJM* 1986. https://doi.org/10.1056/nejm198604103141504
+- **[S85]** Cushing reflex (StatPearls). https://www.ncbi.nlm.nih.gov/books/NBK549801/
+- **[S86]** Intracranial pressure (LITFL Part One). https://partone.litfl.com/intracranial_pressure.html ; Intracranial pressure waveform (IntechOpen) https://www.intechopen.com/chapters/73580
+- **[S87]** Rostrocaudal deterioration (Stroke Manual). https://www.stroke-manual.com/rostro-caudal-deterioration/ ; Brain herniation (Deranged Physiology) https://derangedphysiology.com/main/required-reading/neurological-intensive-care/Chapter-1162/brain-herniation
+- **[S88]** Kernohan-Woltman notch phenomenon (LITFL). https://litfl.com/kernohan-woltman-notch-phenomenon/
+- **[S89]** Clusmann H. et al. Fixed and dilated pupils after trauma, stroke, and previous intracranial surgery. *JNNP* 2001. https://neuroptics.com/wp-content/uploads/2017/02/Clusmann-H-Schaller-C-Schramm-J.-J-Neurol-Neurosurg-Psychiatry-2001.pdf ; Are bilaterally fixed and dilated pupils the kiss of death? https://www.sciencedirect.com/science/article/abs/pii/S187887502200571X ; The dilated pupil and brain herniation (ACNR) https://acnr.co.uk/articles/the-dilated-pupil-and-brain-herniation/
+- **[S90]** Brain herniation (StatPearls). https://www.ncbi.nlm.nih.gov/books/NBK542246/ ; Tonsillar herniation (StatPearls) https://www.ncbi.nlm.nih.gov/books/NBK562170/
+- **[S91]** Duret hemorrhages (StatPearls). https://www.ncbi.nlm.nih.gov/books/NBK560495/
+- **[S92]** Brennan P.M. et al. Simplifying the use of prognostic information in traumatic brain injury. Part 1: the GCS-Pupils score. *J Neurosurg* 2018. https://pubmed.ncbi.nlm.nih.gov/29631516/
+- **[S93]** The Glasgow structured approach to assessment of the Glasgow Coma Scale. https://www.glasgowcomascale.org/
+- **[S94]** Broderick J.P. et al. Volume of intracerebral hemorrhage: a powerful and easy-to-use predictor of 30-day mortality. *Stroke* 1993. https://pubmed.ncbi.nlm.nih.gov/8322400/
+- **[S95]** Predictors of outcome in civilians with gunshot wounds to the head upon presentation. *J Neurosurg* 2014. https://pubmed.ncbi.nlm.nih.gov/24995781/ ; Analysis of ballistic trajectories and clinical outcomes in civilian penetrating brain injury https://www.ncbi.nlm.nih.gov/pmc/articles/PMC11599325/
+- **[S96]** Respiratory rate and pattern disturbances in acute brain stem infarction. *Stroke* 1976. https://www.ahajournals.org/doi/pdf/10.1161/01.str.7.4.382 ; Disordered breathing in severe cerebral illness: towards a conceptual framework https://www.sciencedirect.com/science/article/pii/S1569904822000283
+- **[S97]** Sport Concussion Assessment Tool 6 (Physiopedia). https://www.physio-pedia.com/Sport_Concussion_Assessment_Tool_6_(SCAT6) ; On-field motor incoordination and recovery after concussion https://www.ncbi.nlm.nih.gov/pmc/articles/PMC7956999/
+- **[S98]** How can a punch knock you out? https://pmc.ncbi.nlm.nih.gov/articles/PMC7649325/
+- **[S99]** Hosseini A.H., Lifshitz J. Brain injury forces of moderate magnitude elicit the fencing response. *Med Sci Sports Exerc* 2009. https://pmc.ncbi.nlm.nih.gov/articles/PMC11421656/
+- **[S100]** McCrory P.R. et al. Concussive convulsions: incidence in sport and treatment recommendations. https://pubmed.ncbi.nlm.nih.gov/9519401/ ; Video analysis of acute motor and convulsive manifestations in sport-related concussion https://www.neurology.org/doi/10.1212/WNL.54.7.1488
+- **[S101]** Post-traumatic vomiting incidence (search summary; exact paper not identified; candidate URLs from the result list): https://pmc.ncbi.nlm.nih.gov/articles/PMC1736317 ; https://pubmed.ncbi.nlm.nih.gov/29599113/
+- **[S102]** Vision and concussion: symptoms, signs, evaluation, and treatment (AAO 2022). https://www.aao.org/education/clinical-statement/vision-concussion-symptoms-signs-evaluation-treatm
+- **[S103]** Post-traumatic seizure (ScienceDirect Topics). https://www.sciencedirect.com/topics/medicine-and-dentistry/post-traumatic-seizure ; Annegers J.F. et al. A population-based study of seizures after traumatic brain injuries. *NEJM* 1998 https://www.nejm.org/doi/full/10.1056/NEJM199801013380104
+- **[S104]** Theodore W.H. et al. The secondarily generalized tonic-clonic seizure: a videotape analysis. *Neurology* 1994. https://pubmed.ncbi.nlm.nih.gov/8058138/
+- **[S105]** Tonic clonic seizure (ScienceDirect Topics). https://www.sciencedirect.com/topics/pharmacology-toxicology-and-pharmaceutical-science/tonic-clonic-seizure
+- **[S106]** Focal to bilateral tonic-clonic seizures (MedLink). https://www.medlink.com/articles/focal-to-bilateral-tonic-clonic-seizures ; Semiology of focal- vs generalized-onset bilateral tonic-clonic seizures: systematic review https://pubmed.ncbi.nlm.nih.gov/33556863/
+- **[S107]** ILAE seizure descriptions: motor seizure https://www.epilepsydiagnosis.org/seizure/motor-overview.html ; frontal lobe seizure https://www.epilepsydiagnosis.org/seizure/frontal-lobe-overview.html
+- **[S108]** Jacksonian seizures (MedLink). https://www.medlink.com/articles/jacksonian-seizures ; Focal clonic seizures (MedLink) https://www.medlink.com/articles/focal-clonic-seizures
+- **[S109]** Epilepsia partialis continua (StatPearls). https://www.ncbi.nlm.nih.gov/books/NBK532275/
+- **[S110]** Gallmetzer P. et al. Postictal paresis in focal epilepsies: incidence, duration, and causes. *Neurology* 2004. https://www.neurology.org/doi/abs/10.1212/WNL.62.12.2160 ; Frequency and pathophysiology of post-seizure Todd's paralysis https://pmc.ncbi.nlm.nih.gov/articles/PMC7075081/
+- **[S111]** Decerebrate and decorticate posturing (StatPearls). https://www.ncbi.nlm.nih.gov/books/NBK559135/
+- **[S112]** Paroxysmal sympathetic hyperactivity after traumatic brain injury: what is important to know? https://www.ncbi.nlm.nih.gov/pmc/articles/PMC9161703/ ; Identification and management of PSH after TBI https://www.ncbi.nlm.nih.gov/pmc/articles/PMC7052349/
+- **[S113]** Frequency of spinal reflex movements in brain-dead patients. https://www.sciencedirect.com/science/article/abs/pii/S0041134503012752 ; Spittler J.F. et al. Phenomenological diversity of spinal reflexes in brain death https://onlinelibrary.wiley.com/doi/10.1046/j.1468-1331.2000.00062.x
+- **[S114]** Diffuse axonal injury (ScienceDirect Topics). https://www.sciencedirect.com/topics/neuroscience/diffuse-axonal-injury ; Diffuse axonal injury (StatPearls point of care) https://www.statpearls.com/point-of-care/20506 ; Post head injury autonomic complications (Medscape) https://emedicine.medscape.com/article/325994-overview
+- **[S115]** Diabetes insipidus after traumatic brain injury. https://www.ncbi.nlm.nih.gov/pmc/articles/PMC4519799/
+- **[S116]** Isolated astasia in acute infarction of the supplementary-motor area (title-level only). https://pmc.ncbi.nlm.nih.gov/articles/PMC3029349/
+- **[S118]** Craniocerebral gunshot injuries: a review of the current literature. https://pmc.ncbi.nlm.nih.gov/articles/PMC4897986/ ; Civilian gunshot wounds to the head: case report and review https://pmc.ncbi.nlm.nih.gov/articles/PMC7856761/
+- **[S119]** The non-haemorrhagic vagal response to trauma: a review. https://www.ncbi.nlm.nih.gov/pmc/articles/PMC11599317/
+- **[S121]** Neurologically intact survival after bihemispheric penetrating head trauma: a case report. https://www.sciencedirect.com/science/article/abs/pii/S0736467922008095
+- **[S122]** Performance of the IMPACT and CRASH prognostic models in a contemporary cohort (TRACK-TBI). *J Neurosurg* 2024. https://pubmed.ncbi.nlm.nih.gov/38489823/ ; GCS-P and hospital mortality in severe TBI: 1,066 Brazilian patients https://www.ncbi.nlm.nih.gov/pmc/articles/PMC10232027/ ; Comparative analysis of CRASH and IMPACT in 340 patients https://www.ncbi.nlm.nih.gov/pmc/articles/PMC10961482/
+
+(IDs S117 and S120 are unused.)
+
+---
+
+## 23. Suspicious content
+
+- No search result, snippet or summary contained instructions addressed to the agent (no requests to run commands, download or install anything, visit URLs, change files, reveal information, or ignore previous instructions).
+- Some result lists included irrelevant US patent PDFs (image-ppubs.uspto.gov) and commercial rehabilitation or law-firm blog pages. They were ignored as sources.
+- Content-quality issues, not injection: three search summaries contained medical errors or ambiguities that are corrected or flagged in the text: the CN III pupil called an "afferent" defect (§13.1), hemiparesis attributed to classic Claude syndrome (§13.1), and "~50% immediate seizures after penetrating injury" (§17.1).
+- No code, commands or executable links were copied into this document.
