@@ -3,7 +3,7 @@
  "frame": "body_zup_m",
  "godot_mapping": "(x, z, -y)",
  "generator": "blender/gore_body/build.py",
- "build_id": "gb-be448aa66c3e",
+ "build_id": "gb-4dae8b538130",
  "data": {
   "bones": [
    {
@@ -254,8 +254,8 @@
     "parent": "head",
     "head": [
      0.0,
-     0.0,
-     1.64
+     0.0085,
+     1.645
     ],
     "tail": [
      0.0,
@@ -273,16 +273,16 @@
      ],
      "y": [
       0.0,
-      -0.53,
-      -0.848
+      -0.5613,
+      -0.82761
      ],
      "z": [
       0.0,
-      -0.848,
-      0.53
+      -0.82761,
+      0.5613
      ]
     },
-    "note": "E: TMJ axis centre -> menton; fit to GH_Jaw condyles (B2)"
+    "note": "E: TMJ axis centre -> menton; fit to GH_Jaw condyles (B2); B6 fit: B2 measured TMJ hinge (condyle centres); plan row is E"
    },
    {
     "name": "tongue",
@@ -1021,71 +1021,71 @@
     "name": "thumb_L",
     "parent": "hand_L",
     "head": [
-     0.468,
-     -0.005,
-     0.915
+     0.4608,
+     0.0,
+     0.91661
     ],
     "tail": [
-     0.5,
-     -0.03,
-     0.84
+     0.48862,
+     -0.03014,
+     0.82137
     ],
     "deform": true,
     "physical": false,
     "kinematic": true,
     "rest_basis_world": {
      "x": [
-      -0.91978,
+      -0.95989,
       0.0,
-      -0.39244
+      -0.28039
      ],
      "y": [
-      0.3752,
-      -0.29313,
-      -0.87938
+      0.26828,
+      -0.29066,
+      -0.91845
      ],
      "z": [
-      -0.11503,
-      -0.95607,
-      0.26961
+      -0.0815,
+      -0.95683,
+      0.279
      ]
     },
-    "note": "E: CMC -> tip, kinematic"
+    "note": "E: CMC -> tip, kinematic; B6 fit: B1 thumb geometry (CMC -> tip); plan row is E"
    },
    {
     "name": "thumb_R",
     "parent": "hand_R",
     "head": [
-     -0.468,
-     -0.005,
-     0.915
+     -0.4608,
+     0.0,
+     0.91661
     ],
     "tail": [
-     -0.5,
-     -0.03,
-     0.84
+     -0.48862,
+     -0.03014,
+     0.82137
     ],
     "deform": true,
     "physical": false,
     "kinematic": true,
     "rest_basis_world": {
      "x": [
-      -0.91978,
+      -0.95989,
       0.0,
-      0.39244
+      0.28039
      ],
      "y": [
-      -0.3752,
-      -0.29313,
-      -0.87938
+      -0.26828,
+      -0.29066,
+      -0.91845
      ],
      "z": [
-      0.11503,
-      -0.95607,
-      0.26961
+      0.0815,
+      -0.95683,
+      0.279
      ]
     },
-    "note": "E: CMC -> tip, kinematic"
+    "note": "E: CMC -> tip, kinematic; B6 fit: B1 thumb geometry (CMC -> tip); plan row is E"
    },
    {
     "name": "thigh_L",
@@ -1520,12 +1520,12 @@
       ]
      },
      "torque_cap_nm": {
-      "flex": 250.0,
-      "lat_L": 250.0,
-      "rot_L": 250.0,
-      "ext": 250.0,
-      "lat_R": 250.0,
-      "rot_R": 250.0
+      "flex": 230.0,
+      "lat_L": 220.0,
+      "rot_L": 200.0,
+      "ext": 300.0,
+      "lat_R": 220.0,
+      "rot_R": 200.0
      },
      "torque_cap_range_nm": [
       200,
@@ -1572,7 +1572,8 @@
        "L2": 0.25,
        "L3": 0.25
       }
-     }
+     },
+     "torque_cap_tag": "K: directional split (strongest anatomical direction at the top of the plan range, weakest at the bottom); E magnitudes"
     }
    },
    {
@@ -1686,12 +1687,12 @@
       ]
      },
      "torque_cap_nm": {
-      "flex": 150.0,
+      "flex": 130.0,
       "lat_L": 150.0,
-      "rot_L": 150.0,
-      "ext": 150.0,
+      "rot_L": 140.0,
+      "ext": 170.0,
       "lat_R": 150.0,
-      "rot_R": 150.0
+      "rot_R": 140.0
      },
      "torque_cap_range_nm": [
       150,
@@ -1754,7 +1755,8 @@
        "T12": 0.14286,
        "L1": 0.14286
       }
-     }
+     },
+     "torque_cap_tag": "K: directional split (strongest anatomical direction at the top of the plan range, weakest at the bottom); E magnitudes"
     }
    },
    {
@@ -1868,12 +1870,12 @@
       ]
      },
      "torque_cap_nm": {
-      "flex": 100.0,
+      "flex": 90.0,
       "lat_L": 100.0,
-      "rot_L": 100.0,
-      "ext": 100.0,
+      "rot_L": 95.0,
+      "ext": 110.0,
       "lat_R": 100.0,
-      "rot_R": 100.0
+      "rot_R": 95.0
      },
      "torque_cap_range_nm": [
       100,
@@ -1930,7 +1932,8 @@
        "T5": 0.16667,
        "T6": 0.16667
       }
-     }
+     },
+     "torque_cap_tag": "K: directional split (strongest anatomical direction at the top of the plan range, weakest at the bottom); E magnitudes"
     }
    },
    {
@@ -2029,12 +2032,12 @@
       ]
      },
      "torque_cap_nm": {
-      "flex": 30.0,
-      "lat_L": 30.0,
-      "rot_L": 30.0,
-      "ext": 30.0,
-      "lat_R": 30.0,
-      "rot_R": 30.0
+      "flex": 25.0,
+      "lat_L": 28.0,
+      "rot_L": 20.0,
+      "ext": 40.0,
+      "lat_R": 28.0,
+      "rot_R": 20.0
      },
      "torque_cap_range_nm": [
       20,
@@ -2105,7 +2108,8 @@
        "C7": 0.05,
        "C8": 0.05
       }
-     }
+     },
+     "torque_cap_tag": "K: directional split (strongest anatomical direction at the top of the plan range, weakest at the bottom); E magnitudes"
     }
    },
    {
@@ -2204,12 +2208,12 @@
       ]
      },
      "torque_cap_nm": {
-      "flex": 30.0,
-      "lat_L": 30.0,
-      "rot_L": 30.0,
-      "ext": 30.0,
-      "lat_R": 30.0,
-      "rot_R": 30.0
+      "flex": 20.0,
+      "lat_L": 22.0,
+      "rot_L": 20.0,
+      "ext": 34.0,
+      "lat_R": 22.0,
+      "rot_R": 20.0
      },
      "torque_cap_range_nm": [
       20,
@@ -2280,7 +2284,8 @@
        "C7": 0.05,
        "C8": 0.05
       }
-     }
+     },
+     "torque_cap_tag": "K: directional split (strongest anatomical direction at the top of the plan range, weakest at the bottom); E magnitudes"
     }
    },
    {
@@ -2416,7 +2421,8 @@
        "C4": 0.3,
        "C5": 0.3
       }
-     }
+     },
+     "torque_cap_tag": "K: directional split (strongest anatomical direction at the top of the plan range, weakest at the bottom); E magnitudes"
     }
    },
    {
@@ -2552,7 +2558,8 @@
        "C4": 0.3,
        "C5": 0.3
       }
-     }
+     },
+     "torque_cap_tag": "K: directional split (strongest anatomical direction at the top of the plan range, weakest at the bottom); E magnitudes"
     }
    },
    {
@@ -2643,12 +2650,12 @@
       ]
      },
      "torque_cap_nm": {
-      "flex": 80.0,
-      "abd": 80.0,
-      "rot_ext": 80.0,
-      "ext": 80.0,
-      "add": 80.0,
-      "rot_int": 80.0
+      "flex": 75.0,
+      "abd": 70.0,
+      "rot_ext": 60.0,
+      "ext": 90.0,
+      "add": 100.0,
+      "rot_int": 65.0
      },
      "torque_cap_range_nm": [
       60,
@@ -2681,7 +2688,8 @@
        "C5": 0.5,
        "C6": 0.5
       }
-     }
+     },
+     "torque_cap_tag": "K: directional split (strongest anatomical direction at the top of the plan range, weakest at the bottom); E magnitudes"
     }
    },
    {
@@ -2772,12 +2780,12 @@
       ]
      },
      "torque_cap_nm": {
-      "flex": 80.0,
-      "abd": 80.0,
-      "rot_ext": 80.0,
-      "ext": 80.0,
-      "add": 80.0,
-      "rot_int": 80.0
+      "flex": 75.0,
+      "abd": 70.0,
+      "rot_ext": 60.0,
+      "ext": 90.0,
+      "add": 100.0,
+      "rot_int": 65.0
      },
      "torque_cap_range_nm": [
       60,
@@ -2810,7 +2818,8 @@
        "C5": 0.5,
        "C6": 0.5
       }
-     }
+     },
+     "torque_cap_tag": "K: directional split (strongest anatomical direction at the top of the plan range, weakest at the bottom); E magnitudes"
     }
    },
    {
@@ -2873,8 +2882,8 @@
       ]
      },
      "torque_cap_nm": {
-      "flex": 65.0,
-      "ext": 65.0
+      "flex": 75.0,
+      "ext": 52.0
      },
      "torque_cap_range_nm": [
       50,
@@ -2890,7 +2899,8 @@
        "C7": 0.6,
        "C8": 0.2
       }
-     }
+     },
+     "torque_cap_tag": "K: directional split (strongest anatomical direction at the top of the plan range, weakest at the bottom); E magnitudes"
     }
    },
    {
@@ -2953,8 +2963,8 @@
       ]
      },
      "torque_cap_nm": {
-      "flex": 65.0,
-      "ext": 65.0
+      "flex": 75.0,
+      "ext": 52.0
      },
      "torque_cap_range_nm": [
       50,
@@ -2970,7 +2980,8 @@
        "C7": 0.6,
        "C8": 0.2
       }
-     }
+     },
+     "torque_cap_tag": "K: directional split (strongest anatomical direction at the top of the plan range, weakest at the bottom); E magnitudes"
     }
    },
    {
@@ -3084,12 +3095,12 @@
       ]
      },
      "torque_cap_nm": {
-      "flex": 11.5,
-      "rad": 11.5,
-      "sup": 11.5,
-      "ext": 11.5,
-      "uln": 11.5,
-      "pron": 11.5
+      "flex": 15.0,
+      "rad": 12.0,
+      "sup": 9.0,
+      "ext": 10.0,
+      "uln": 11.0,
+      "pron": 9.0
      },
      "torque_cap_range_nm": [
       8,
@@ -3119,7 +3130,8 @@
        "C6": 0.5,
        "C7": 0.5
       }
-     }
+     },
+     "torque_cap_tag": "K: directional split (strongest anatomical direction at the top of the plan range, weakest at the bottom); E magnitudes"
     }
    },
    {
@@ -3233,12 +3245,12 @@
       ]
      },
      "torque_cap_nm": {
-      "flex": 11.5,
-      "rad": 11.5,
-      "sup": 11.5,
-      "ext": 11.5,
-      "uln": 11.5,
-      "pron": 11.5
+      "flex": 15.0,
+      "rad": 12.0,
+      "sup": 9.0,
+      "ext": 10.0,
+      "uln": 11.0,
+      "pron": 9.0
      },
      "torque_cap_range_nm": [
       8,
@@ -3268,7 +3280,8 @@
        "C6": 0.5,
        "C7": 0.5
       }
-     }
+     },
+     "torque_cap_tag": "K: directional split (strongest anatomical direction at the top of the plan range, weakest at the bottom); E magnitudes"
     }
    },
    {
@@ -3367,12 +3380,12 @@
       ]
      },
      "torque_cap_nm": {
-      "flex": 250.0,
-      "abd": 250.0,
-      "rot_ext": 250.0,
-      "ext": 250.0,
-      "add": 250.0,
-      "rot_int": 250.0
+      "flex": 220.0,
+      "abd": 210.0,
+      "rot_ext": 200.0,
+      "ext": 300.0,
+      "add": 230.0,
+      "rot_int": 200.0
      },
      "torque_cap_range_nm": [
       200,
@@ -3409,7 +3422,8 @@
        "S1": 0.5,
        "S2": 0.2
       }
-     }
+     },
+     "torque_cap_tag": "K: directional split (strongest anatomical direction at the top of the plan range, weakest at the bottom); E magnitudes"
     }
    },
    {
@@ -3508,12 +3522,12 @@
       ]
      },
      "torque_cap_nm": {
-      "flex": 250.0,
-      "abd": 250.0,
-      "rot_ext": 250.0,
-      "ext": 250.0,
-      "add": 250.0,
-      "rot_int": 250.0
+      "flex": 220.0,
+      "abd": 210.0,
+      "rot_ext": 200.0,
+      "ext": 300.0,
+      "add": 230.0,
+      "rot_int": 200.0
      },
      "torque_cap_range_nm": [
       200,
@@ -3550,7 +3564,8 @@
        "S1": 0.5,
        "S2": 0.2
       }
-     }
+     },
+     "torque_cap_tag": "K: directional split (strongest anatomical direction at the top of the plan range, weakest at the bottom); E magnitudes"
     }
    },
    {
@@ -3613,8 +3628,8 @@
       ]
      },
      "torque_cap_nm": {
-      "flex": 225.0,
-      "ext": 225.0
+      "flex": 200.0,
+      "ext": 250.0
      },
      "torque_cap_range_nm": [
       200,
@@ -3631,7 +3646,8 @@
        "S1": 0.5,
        "S2": 0.2
       }
-     }
+     },
+     "torque_cap_tag": "K: directional split (strongest anatomical direction at the top of the plan range, weakest at the bottom); E magnitudes"
     }
    },
    {
@@ -3694,8 +3710,8 @@
       ]
      },
      "torque_cap_nm": {
-      "flex": 225.0,
-      "ext": 225.0
+      "flex": 200.0,
+      "ext": 250.0
      },
      "torque_cap_range_nm": [
       200,
@@ -3712,7 +3728,8 @@
        "S1": 0.5,
        "S2": 0.2
       }
-     }
+     },
+     "torque_cap_tag": "K: directional split (strongest anatomical direction at the top of the plan range, weakest at the bottom); E magnitudes"
     }
    },
    {
@@ -3826,12 +3843,12 @@
       ]
      },
      "torque_cap_nm": {
-      "dorsi": 125.0,
-      "inv": 125.0,
-      "abd": 125.0,
-      "plantar": 125.0,
-      "ev": 125.0,
-      "add": 125.0
+      "dorsi": 100.0,
+      "inv": 100.0,
+      "abd": 100.0,
+      "plantar": 150.0,
+      "ev": 100.0,
+      "add": 100.0
      },
      "torque_cap_range_nm": [
       100,
@@ -3854,7 +3871,8 @@
        "L5": 0.5,
        "S1": 0.5
       }
-     }
+     },
+     "torque_cap_tag": "K: directional split (strongest anatomical direction at the top of the plan range, weakest at the bottom); E magnitudes"
     }
    },
    {
@@ -3968,12 +3986,12 @@
       ]
      },
      "torque_cap_nm": {
-      "dorsi": 125.0,
-      "inv": 125.0,
-      "abd": 125.0,
-      "plantar": 125.0,
-      "ev": 125.0,
-      "add": 125.0
+      "dorsi": 100.0,
+      "inv": 100.0,
+      "abd": 100.0,
+      "plantar": 150.0,
+      "ev": 100.0,
+      "add": 100.0
      },
      "torque_cap_range_nm": [
       100,
@@ -3996,26 +4014,443 @@
        "L5": 0.5,
        "S1": 0.5
       }
-     }
+     },
+     "torque_cap_tag": "K: directional split (strongest anatomical direction at the top of the plan range, weakest at the bottom); E magnitudes"
     }
    }
   ],
+  "kinematic": {
+   "fingers_L": {
+    "axes": {
+     "flex": {
+      "world": [
+       0.0,
+       1.0,
+       0.0
+      ],
+      "sign": 1,
+      "pos": "grip",
+      "neg": "open"
+     }
+    },
+    "limits_deg": {
+     "flex": [
+      -15.0,
+      85.0
+     ]
+    },
+    "myotomes": {
+     "grip": {
+      "C8": 0.7,
+      "T1": 0.3
+     },
+     "open": {
+      "C7": 1.0
+     }
+    }
+   },
+   "thumb_L": {
+    "axes": {
+     "flex": {
+      "world": [
+       -0.62295,
+       0.67489,
+       -0.39554
+      ],
+      "sign": 1,
+      "pos": "grip",
+      "neg": "open"
+     },
+     "abd": {
+      "world": [
+       -0.73482,
+       -0.67826,
+       0.0
+      ],
+      "sign": 1,
+      "pos": "abd",
+      "neg": "add"
+     }
+    },
+    "limits_deg": {
+     "flex": [
+      -15.0,
+      50.0
+     ],
+     "abd": [
+      -10.0,
+      45.0
+     ]
+    },
+    "myotomes": {
+     "grip": {
+      "C8": 0.7,
+      "T1": 0.3
+     },
+     "open": {
+      "C7": 1.0
+     }
+    }
+   },
+   "toes_L": {
+    "axes": {
+     "flex": {
+      "world": [
+       0.9926,
+       0.11891,
+       0.02477
+      ],
+      "sign": 1,
+      "pos": "flex",
+      "neg": "ext"
+     }
+    },
+    "limits_deg": {
+     "flex": [
+      -40.0,
+      30.0
+     ]
+    },
+    "myotomes": {
+     "ext": {
+      "L5": 1.0
+     },
+     "flex": {
+      "S1": 0.5,
+      "S2": 0.5
+     }
+    },
+    "note": "kinematic toe curl/extension (EHL L5, FHL S1-S2)"
+   },
+   "upper_arm_twist_L": {
+    "axes": {
+     "twist": {
+      "world": [
+       -0.50022,
+       0.0,
+       0.8659
+      ],
+      "sign": 1,
+      "pos": "rot_ext",
+      "neg": "rot_int"
+     }
+    },
+    "driver": {
+     "source": "upper_arm_L",
+     "component": "twist",
+     "source_axis": "twist",
+     "factor": -0.5,
+     "rule": "swing-twist decompose the source bone's local rotation about its rest twist axis (axes.twist of the source joint, world at rest); set this bone's local rotation to factor x that twist angle about its own axes.twist"
+    },
+    "note": "carries the proximal upper arm; world twist = 50 % of the shoulder twist (skin twists 0/50/100 %)"
+   },
+   "forearm_twist_L": {
+    "axes": {
+     "twist": {
+      "world": [
+       -0.49972,
+       0.0,
+       0.86619
+      ],
+      "sign": 1,
+      "pos": "sup",
+      "neg": "pron"
+     }
+    },
+    "myotomes": {
+     "sup": {
+      "C6": 1.0
+     },
+     "pron": {
+      "C6": 0.5,
+      "C7": 0.5
+     }
+    },
+    "driver": {
+     "source": "hand_L",
+     "component": "twist",
+     "source_axis": "twist",
+     "factor": 0.5,
+     "rule": "swing-twist decompose the source bone's local rotation about its rest twist axis (axes.twist of the source joint, world at rest); set this bone's local rotation to factor x that twist angle about its own axes.twist"
+    },
+    "note": "carries the mid/distal forearm; 50 % of the hand's pronation/supination (the hand body folds forearm rotation into its twist axis)"
+   },
+   "fingers_R": {
+    "axes": {
+     "flex": {
+      "world": [
+       0.0,
+       -1.0,
+       0.0
+      ],
+      "sign": 1,
+      "pos": "grip",
+      "neg": "open"
+     }
+    },
+    "limits_deg": {
+     "flex": [
+      -15.0,
+      85.0
+     ]
+    },
+    "myotomes": {
+     "grip": {
+      "C8": 0.7,
+      "T1": 0.3
+     },
+     "open": {
+      "C7": 1.0
+     }
+    }
+   },
+   "thumb_R": {
+    "axes": {
+     "flex": {
+      "world": [
+       -0.62295,
+       -0.67489,
+       0.39554
+      ],
+      "sign": 1,
+      "pos": "grip",
+      "neg": "open"
+     },
+     "abd": {
+      "world": [
+       -0.73482,
+       0.67826,
+       0.0
+      ],
+      "sign": 1,
+      "pos": "abd",
+      "neg": "add"
+     }
+    },
+    "limits_deg": {
+     "flex": [
+      -15.0,
+      50.0
+     ],
+     "abd": [
+      -10.0,
+      45.0
+     ]
+    },
+    "myotomes": {
+     "grip": {
+      "C8": 0.7,
+      "T1": 0.3
+     },
+     "open": {
+      "C7": 1.0
+     }
+    }
+   },
+   "toes_R": {
+    "axes": {
+     "flex": {
+      "world": [
+       0.9926,
+       -0.11891,
+       -0.02477
+      ],
+      "sign": 1,
+      "pos": "flex",
+      "neg": "ext"
+     }
+    },
+    "limits_deg": {
+     "flex": [
+      -40.0,
+      30.0
+     ]
+    },
+    "myotomes": {
+     "ext": {
+      "L5": 1.0
+     },
+     "flex": {
+      "S1": 0.5,
+      "S2": 0.5
+     }
+    },
+    "note": "kinematic toe curl/extension (EHL L5, FHL S1-S2)"
+   },
+   "upper_arm_twist_R": {
+    "axes": {
+     "twist": {
+      "world": [
+       -0.50022,
+       0.0,
+       -0.8659
+      ],
+      "sign": 1,
+      "pos": "rot_ext",
+      "neg": "rot_int"
+     }
+    },
+    "driver": {
+     "source": "upper_arm_R",
+     "component": "twist",
+     "source_axis": "twist",
+     "factor": -0.5,
+     "rule": "swing-twist decompose the source bone's local rotation about its rest twist axis (axes.twist of the source joint, world at rest); set this bone's local rotation to factor x that twist angle about its own axes.twist"
+    },
+    "note": "carries the proximal upper arm; world twist = 50 % of the shoulder twist (skin twists 0/50/100 %)"
+   },
+   "forearm_twist_R": {
+    "axes": {
+     "twist": {
+      "world": [
+       -0.49972,
+       0.0,
+       -0.86619
+      ],
+      "sign": 1,
+      "pos": "sup",
+      "neg": "pron"
+     }
+    },
+    "myotomes": {
+     "sup": {
+      "C6": 1.0
+     },
+     "pron": {
+      "C6": 0.5,
+      "C7": 0.5
+     }
+    },
+    "driver": {
+     "source": "hand_R",
+     "component": "twist",
+     "source_axis": "twist",
+     "factor": 0.5,
+     "rule": "swing-twist decompose the source bone's local rotation about its rest twist axis (axes.twist of the source joint, world at rest); set this bone's local rotation to factor x that twist angle about its own axes.twist"
+    },
+    "note": "carries the mid/distal forearm; 50 % of the hand's pronation/supination (the hand body folds forearm rotation into its twist axis)"
+   },
+   "jaw": {
+    "axes": {
+     "open": {
+      "world": [
+       1.0,
+       0.0,
+       0.0
+      ],
+      "sign": 1,
+      "pos": "open",
+      "neg": "close"
+     }
+    },
+    "limits_deg": {
+     "open": [
+      -2.0,
+      30.0
+     ]
+    },
+    "note": "hinge about +X through the TMJ pivot (bone head, B2 measured); see face.jaw_*"
+   },
+   "tongue": {
+    "note": "child of jaw; falls back at death (G6)",
+    "limits_deg": {
+     "flex": [
+      -15.0,
+      15.0
+     ]
+    }
+   },
+   "eye_L": {
+    "axes": {
+     "yaw": {
+      "world": [
+       0.0,
+       0.0,
+       1.0
+      ],
+      "sign": 1,
+      "pos": "look_left",
+      "neg": "look_right"
+     },
+     "pitch": {
+      "world": [
+       -1.0,
+       0.0,
+       0.0
+      ],
+      "sign": 1,
+      "pos": "look_up",
+      "neg": "look_down"
+     }
+    },
+    "limits_deg": {
+     "yaw": [
+      -40.0,
+      40.0
+     ],
+     "pitch": [
+      -40.0,
+      30.0
+     ]
+    },
+    "note": "gaze = bone -Y (body frame); B2: clamp beyond ~30 deg near the corners"
+   },
+   "lid_upper_L": {
+    "note": "rotation about +X through the eyeball centre plus the uniform scale of face.lid_table (B2)"
+   },
+   "lid_lower_L": {
+    "note": "rotation about +X through the eyeball centre plus the uniform scale of face.lid_table (B2)"
+   },
+   "eye_R": {
+    "axes": {
+     "yaw": {
+      "world": [
+       0.0,
+       0.0,
+       1.0
+      ],
+      "sign": 1,
+      "pos": "look_left",
+      "neg": "look_right"
+     },
+     "pitch": {
+      "world": [
+       -1.0,
+       0.0,
+       0.0
+      ],
+      "sign": 1,
+      "pos": "look_up",
+      "neg": "look_down"
+     }
+    },
+    "limits_deg": {
+     "yaw": [
+      -40.0,
+      40.0
+     ],
+     "pitch": [
+      -40.0,
+      30.0
+     ]
+    },
+    "note": "gaze = bone -Y (body frame); B2: clamp beyond ~30 deg near the corners"
+   },
+   "lid_upper_R": {
+    "note": "rotation about +X through the eyeball centre plus the uniform scale of face.lid_table (B2)"
+   },
+   "lid_lower_R": {
+    "note": "rotation about +X through the eyeball centre plus the uniform scale of face.lid_table (B2)"
+   }
+  },
   "face": {
-   "lid_aperture_mm_to_deg": [
-    [
-     0.0,
-     -38.0
-    ],
-    [
-     9.5,
-     0.0
-    ],
-    [
-     12.0,
-     7.5
-    ]
+   "blend_shape_meshes": [
+    "GB_Head",
+    "GB_EyeFX_L",
+    "GB_EyeFX_R",
+    "GB_BrowLash",
+    "GB_Head_LOD1"
    ],
-   "lid_table_status": "placeholder format values; B2 measures them on the head mesh",
    "blend_shapes": [
     "AU01_L",
     "AU01_R",
@@ -4045,20 +4480,305 @@
    "bone_driven": {
     "AU05": "lid_upper_*",
     "AU26": "jaw",
-    "AU43": "lid_upper_*"
+    "AU43": "lid_upper_* + lid_lower_*"
    },
-   "eye_bones": {
-    "eye_L": [
+   "cornea": {
+    "centre_offset": 0.00582,
+    "iris_plane_local_y": -0.0101,
+    "limbus_radius": 0.0059,
+    "radius": 0.0075
+   },
+   "eye_centres": {
+    "L": [
      0.032,
      -0.05,
      1.669
     ],
-    "eye_R": [
+    "R": [
      -0.032,
      -0.05,
      1.669
     ]
-   }
+   },
+   "eye_radius": 0.012,
+   "jaw_axis_world": [
+    1.0,
+    0.0,
+    0.0
+   ],
+   "jaw_incisor_mm_per_deg": 1.58,
+   "jaw_note": "opening = +rotation about +X through jaw_pivot (TMJ hinge, condyle centres); death jaw drop 10-30 mm = 6-19 deg [RB §5.6]",
+   "jaw_pivot": [
+    0.0,
+    0.0085,
+    1.645
+   ],
+   "lid_aperture_mm_to_deg": [
+    [
+     0.0,
+     -33.261
+    ],
+    [
+     1.0,
+     -30.235
+    ],
+    [
+     2.0,
+     -27.184
+    ],
+    [
+     3.0,
+     -24.337
+    ],
+    [
+     4.0,
+     -21.307
+    ],
+    [
+     5.0,
+     -18.275
+    ],
+    [
+     6.0,
+     -15.194
+    ],
+    [
+     7.0,
+     -11.932
+    ],
+    [
+     8.0,
+     -8.629
+    ],
+    [
+     9.0,
+     -5.226
+    ],
+    [
+     10.0,
+     -1.496
+    ],
+    [
+     10.45,
+     0.0
+    ],
+    [
+     11.0,
+     2.468
+    ],
+    [
+     12.0,
+     7.474
+    ]
+   ],
+   "lid_lower_deg": [
+    [
+     0.0,
+     -11.641
+    ],
+    [
+     1.0,
+     -10.582
+    ],
+    [
+     2.0,
+     -9.514
+    ],
+    [
+     3.0,
+     -8.518
+    ],
+    [
+     4.0,
+     -7.457
+    ],
+    [
+     5.0,
+     -6.396
+    ],
+    [
+     6.0,
+     -5.318
+    ],
+    [
+     7.0,
+     -4.176
+    ],
+    [
+     8.0,
+     -3.02
+    ],
+    [
+     9.0,
+     -1.829
+    ],
+    [
+     10.0,
+     -0.524
+    ],
+    [
+     10.45,
+     0.0
+    ],
+    [
+     11.0,
+     0.0
+    ],
+    [
+     12.0,
+     0.0
+    ]
+   ],
+   "lid_scale_rule": {
+    "close_scale": 0.1,
+    "full_at_deg": 18.0,
+    "note": "closing lid bones scale up so the lid rides over the cornea (apex 13.3 mm)"
+   },
+   "lid_table": {
+    "closing_path_min_gap_mm": 0.35,
+    "columns": [
+     "aperture_mm",
+     "upper_deg",
+     "lower_deg",
+     "min_globe_gap_mm",
+     "upper_scale",
+     "lower_scale"
+    ],
+    "lower_share_when_closing": 0.35,
+    "rest_aperture_mm": 10.45,
+    "rows": [
+     [
+      0.0,
+      -33.261,
+      -11.641,
+      0.427,
+      1.1,
+      1.07138
+     ],
+     [
+      1.0,
+      -30.235,
+      -10.582,
+      0.429,
+      1.1,
+      1.06305
+     ],
+     [
+      2.0,
+      -27.184,
+      -9.514,
+      0.443,
+      1.1,
+      1.05428
+     ],
+     [
+      3.0,
+      -24.337,
+      -8.518,
+      0.451,
+      1.1,
+      1.04599
+     ],
+     [
+      4.0,
+      -21.307,
+      -7.457,
+      0.412,
+      1.1,
+      1.03727
+     ],
+     [
+      5.0,
+      -18.275,
+      -6.396,
+      0.38,
+      1.1,
+      1.02891
+     ],
+     [
+      6.0,
+      -15.194,
+      -5.318,
+      0.358,
+      1.09347,
+      1.02103
+     ],
+     [
+      7.0,
+      -11.932,
+      -4.176,
+      0.35,
+      1.07357,
+      1.01365
+     ],
+     [
+      8.0,
+      -8.629,
+      -3.02,
+      0.36,
+      1.04691,
+      1.0075
+     ],
+     [
+      9.0,
+      -5.226,
+      -1.829,
+      0.371,
+      1.02039,
+      1.00289
+     ],
+     [
+      10.0,
+      -1.496,
+      -0.524,
+      0.424,
+      1.00196,
+      1.00025
+     ],
+     [
+      10.45,
+      0.0,
+      0.0,
+      0.5,
+      1.0,
+      1.0
+     ],
+     [
+      11.0,
+      2.468,
+      0.0,
+      0.497,
+      1.0,
+      1.0
+     ],
+     [
+      12.0,
+      7.474,
+      0.0,
+      0.475,
+      1.0,
+      1.0
+     ]
+    ],
+    "self_intersection_free_above_mm": 0.0,
+    "sign": "upper_deg > 0 lifts the upper margin (opens); lower_deg > 0 lowers the lower margin (opens); rotation axis = body +X (Godot +X) through the eyeball centre (bone head); upper lid world rotation = -upper_deg about +X, lower lid = +lower_deg about +X; the scale columns are uniform bone scales about the eyeball centre"
+   },
+   "rigid_parts": {
+    "GB_BrowLash brows": "head",
+    "GB_BrowLash lashes": "lid_*",
+    "GB_EyeFX occlusion": "lid_upper_*/lid_lower_*",
+    "GB_EyeFX tearline": "lid_lower_*",
+    "GB_Eye_*": "eye_*",
+    "GB_Mouth lower teeth/gum": "jaw",
+    "GB_Mouth tongue": "tongue",
+    "GB_Mouth upper teeth/gum": "head"
+   },
+   "status": "measured on GB_Head (B2)",
+   "jaw_bone_head": [
+    0.0,
+    0.0085,
+    1.645
+   ]
   },
   "kinematic_myotomes": {
    "forearm_twist": {
@@ -4098,12 +4818,354 @@
     }
    }
   },
-  "poses": [
-   "pose_idle",
-   "pose_guard",
-   "pose_cower",
-   "pose_brace"
-  ],
+  "poses": {
+   "pose_idle": {
+    "joint_angles_deg": {
+     "upper_arm": [
+      [
+       "abd",
+       -19.0
+      ],
+      [
+       "flex",
+       4.0
+      ]
+     ],
+     "forearm": [
+      [
+       "flex",
+       14.0
+      ]
+     ],
+     "hand": [
+      [
+       "flex",
+       6.0
+      ]
+     ],
+     "fingers": [
+      [
+       "flex",
+       10.0
+      ]
+     ],
+     "thumb": [
+      [
+       "flex",
+       8.0
+      ]
+     ],
+     "shin": [
+      [
+       "flex",
+       4.0
+      ]
+     ],
+     "thigh": [
+      [
+       "flex",
+       2.0
+      ]
+     ],
+     "foot": [
+      [
+       "flex",
+       2.0
+      ]
+     ],
+     "neck": [
+      [
+       "flex",
+       3.0
+      ]
+     ]
+    },
+    "hips_location_m": [
+     0.0,
+     0.00035,
+     -0.00034
+    ]
+   },
+   "pose_guard": {
+    "joint_angles_deg": {
+     "upper_arm": [
+      [
+       "abd",
+       -28.0
+      ],
+      [
+       "flex",
+       40.0
+      ],
+      [
+       "twist",
+       4.0
+      ]
+     ],
+     "forearm": [
+      [
+       "flex",
+       125.0
+      ]
+     ],
+     "hand": [
+      [
+       "flex",
+       8.0
+      ]
+     ],
+     "fingers": [
+      [
+       "flex",
+       70.0
+      ]
+     ],
+     "thumb": [
+      [
+       "flex",
+       35.0
+      ]
+     ],
+     "clavicle": [
+      [
+       "protr",
+       6.0
+      ]
+     ],
+     "neck": [
+      [
+       "flex",
+       10.0
+      ]
+     ],
+     "head": [
+      [
+       "flex",
+       4.0
+      ]
+     ],
+     "upper_chest": [
+      [
+       "flex",
+       4.0
+      ]
+     ],
+     "thigh": [
+      [
+       "flex",
+       10.0
+      ]
+     ],
+     "shin": [
+      [
+       "flex",
+       16.0
+      ]
+     ],
+     "foot": [
+      [
+       "flex",
+       6.0
+      ]
+     ]
+    },
+    "hips_location_m": [
+     0.0,
+     0.03109,
+     -0.00581
+    ]
+   },
+   "pose_cower": {
+    "joint_angles_deg": {
+     "spine": [
+      [
+       "flex",
+       16.0
+      ]
+     ],
+     "chest": [
+      [
+       "flex",
+       12.0
+      ]
+     ],
+     "upper_chest": [
+      [
+       "flex",
+       8.0
+      ]
+     ],
+     "neck": [
+      [
+       "flex",
+       22.0
+      ]
+     ],
+     "head": [
+      [
+       "flex",
+       10.0
+      ]
+     ],
+     "clavicle": [
+      [
+       "protr",
+       10.0
+      ],
+      [
+       "elev",
+       8.0
+      ]
+     ],
+     "upper_arm": [
+      [
+       "abd",
+       -18.0
+      ],
+      [
+       "flex",
+       95.0
+      ],
+      [
+       "twist",
+       -20.0
+      ]
+     ],
+     "forearm": [
+      [
+       "flex",
+       125.0
+      ]
+     ],
+     "hand": [
+      [
+       "flex",
+       15.0
+      ]
+     ],
+     "fingers": [
+      [
+       "flex",
+       45.0
+      ]
+     ],
+     "thumb": [
+      [
+       "flex",
+       25.0
+      ]
+     ],
+     "thigh": [
+      [
+       "flex",
+       34.0
+      ]
+     ],
+     "shin": [
+      [
+       "flex",
+       52.0
+      ]
+     ],
+     "foot": [
+      [
+       "flex",
+       18.0
+      ]
+     ]
+    },
+    "hips_location_m": [
+     0.0,
+     0.11682,
+     -0.08294
+    ]
+   },
+   "pose_brace": {
+    "joint_angles_deg": {
+     "upper_arm": [
+      [
+       "abd",
+       -16.0
+      ],
+      [
+       "flex",
+       75.0
+      ]
+     ],
+     "forearm": [
+      [
+       "flex",
+       12.0
+      ]
+     ],
+     "hand": [
+      [
+       "flex",
+       -50.0
+      ]
+     ],
+     "fingers": [
+      [
+       "flex",
+       -12.0
+      ]
+     ],
+     "thumb": [
+      [
+       "abd",
+       20.0
+      ]
+     ],
+     "clavicle": [
+      [
+       "protr",
+       10.0
+      ]
+     ],
+     "spine": [
+      [
+       "flex",
+       6.0
+      ]
+     ],
+     "neck": [
+      [
+       "flex",
+       -10.0
+      ]
+     ],
+     "head": [
+      [
+       "flex",
+       -6.0
+      ]
+     ],
+     "thigh": [
+      [
+       "flex",
+       12.0
+      ]
+     ],
+     "shin": [
+      [
+       "flex",
+       22.0
+      ]
+     ],
+     "foot": [
+      [
+       "flex",
+       10.0
+      ]
+     ]
+    },
+    "hips_location_m": [
+     0.0,
+     0.01738,
+     -0.01358
+    ]
+   }
+  },
   "friction": {
    "skin_cloth": [
     0.6,
@@ -4118,10 +5180,556 @@
     0.3
    ]
   },
+  "weights": {
+   "model": "territories + joint gates (rig.py module doc)",
+   "influences": 4,
+   "grid": 4096,
+   "limb_radius_m": {
+    "shoulder": 0.055,
+    "elbow": 0.04,
+    "wrist": 0.029,
+    "mcp": 0.03,
+    "hip": 0.09,
+    "knee": 0.056,
+    "ankle": 0.034,
+    "mtp": 0.03,
+    "neck": 0.06,
+    "head": 0.06,
+    "trunk": 0.14
+   },
+   "gates": {
+    "shoulder": {
+     "joint": [
+      0.18,
+      0.02,
+      1.415
+     ],
+     "axis": [
+      0.5,
+      0.0,
+      -0.86603
+     ],
+     "phi0": [
+      0.86603,
+      0.0,
+      0.5
+     ],
+     "phi90": [
+      0.0,
+      -1.0,
+      0.0
+     ],
+     "offset_m": [
+      0.01485,
+      0.0451,
+      0.08525,
+      0.05005
+     ],
+     "half_width_m": [
+      0.05005,
+      0.0649,
+      0.055,
+      0.0649
+     ],
+     "offset_axis_m": 0.02,
+     "half_width_axis_m": 0.03,
+     "axis_fade_r_m": [
+      0.02,
+      0.045
+     ]
+    },
+    "elbow": {
+     "joint": [
+      0.325,
+      0.02,
+      1.164
+     ],
+     "axis": [
+      0.5,
+      0.0,
+      -0.86603
+     ],
+     "phi0": [
+      0.0,
+      -1.0,
+      0.0
+     ],
+     "phi90": [
+      0.86603,
+      0.0,
+      0.5
+     ],
+     "offset_m": [
+      4.0,
+      -8.0,
+      -58.0,
+      -8.0
+     ],
+     "half_width_m": [
+      14.0,
+      22.0,
+      26.0,
+      22.0
+     ],
+     "offset_axis_m": -15.0,
+     "half_width_axis_m": 30.0,
+     "axis_fade_r_m": [
+      0.012,
+      0.03
+     ]
+    },
+    "wrist": {
+     "joint": [
+      0.46,
+      0.02,
+      0.93
+     ],
+     "axis": [
+      0.5,
+      0.0,
+      -0.86603
+     ],
+     "phi0": [
+      -0.86603,
+      0.0,
+      -0.5
+     ],
+     "phi90": [
+      0.0,
+      -1.0,
+      0.0
+     ],
+     "offset_m": [
+      0.00406,
+      0.0058,
+      -0.00406,
+      0.0058
+     ],
+     "half_width_m": [
+      0.01392,
+      0.01392,
+      0.01392,
+      0.01392
+     ],
+     "offset_axis_m": 0.0,
+     "half_width_axis_m": 0.014,
+     "axis_fade_r_m": [
+      0.008,
+      0.02
+     ]
+    },
+    "hip": {
+     "joint": [
+      0.087,
+      -0.015,
+      0.918
+     ],
+     "axis": [
+      0.0117,
+      0.08188,
+      -0.99657
+     ],
+     "phi0": [
+      0.00096,
+      -0.99664,
+      -0.08187
+     ],
+     "phi90": [
+      0.99993,
+      0.0,
+      0.01174
+     ],
+     "offset_m": [
+      -0.0198,
+      -0.0252,
+      0.108,
+      0.036
+     ],
+     "half_width_m": [
+      0.0198,
+      0.036,
+      0.072,
+      0.0297
+     ],
+     "offset_axis_m": 0.0,
+     "half_width_axis_m": 0.03,
+     "axis_fade_r_m": [
+      0.03,
+      0.07
+     ]
+    },
+    "knee": {
+     "joint": [
+      0.092,
+      0.02,
+      0.492
+     ],
+     "axis": [
+      0.00718,
+      0.07176,
+      -0.9974
+     ],
+     "phi0": [
+      -0.00052,
+      0.99742,
+      0.07175
+     ],
+     "phi90": [
+      0.99997,
+      0.0,
+      0.00719
+     ],
+     "offset_m": [
+      6.0,
+      -24.0,
+      -45.0,
+      -24.0
+     ],
+     "half_width_m": [
+      20.0,
+      26.0,
+      20.0,
+      26.0
+     ],
+     "offset_axis_m": -15.0,
+     "half_width_axis_m": 30.0,
+     "axis_fade_r_m": [
+      0.02,
+      0.045
+     ]
+    },
+    "ankle": {
+     "joint": [
+      0.095,
+      0.05,
+      0.075
+     ],
+     "axis": [
+      0.00718,
+      0.07176,
+      -0.9974
+     ],
+     "phi0": [
+      0.00052,
+      -0.99742,
+      -0.07175
+     ],
+     "phi90": [
+      0.99997,
+      0.0,
+      0.00719
+     ],
+     "offset_m": [
+      -0.03502,
+      0.02992,
+      -0.00986,
+      0.0221
+     ],
+     "half_width_m": [
+      0.02006,
+      0.0119,
+      0.02006,
+      0.0119
+     ],
+     "offset_axis_m": 0.0,
+     "half_width_axis_m": 0.015,
+     "axis_fade_r_m": [
+      0.015,
+      0.035
+     ]
+    },
+    "toes": {
+     "joint": [
+      0.119,
+      -0.079,
+      0.025
+     ],
+     "axis": [
+      0.28902,
+      -0.95732,
+      0.0
+     ],
+     "phi0": [
+      0.0,
+      0.0,
+      1.0
+     ],
+     "phi90": [
+      0.95732,
+      0.28902,
+      0.0
+     ],
+     "offset_m": [
+      0.006,
+      0.009,
+      0.018,
+      0.009
+     ],
+     "half_width_m": [
+      0.012,
+      0.012,
+      0.012,
+      0.012
+     ],
+     "offset_axis_m": 0.01,
+     "half_width_axis_m": 0.012,
+     "axis_fade_r_m": [
+      0.01,
+      0.025
+     ]
+    },
+    "neck": {
+     "joint": [
+      0.0,
+      0.015,
+      1.49
+     ],
+     "axis": [
+      0.0,
+      0.0,
+      1.0
+     ],
+     "phi0": [
+      0.0,
+      -1.0,
+      0.0
+     ],
+     "phi90": [
+      1.0,
+      0.0,
+      0.0
+     ],
+     "offset_m": [
+      -0.012,
+      0.0,
+      0.0252,
+      0.0
+     ],
+     "half_width_m": [
+      0.0282,
+      0.03,
+      0.03,
+      0.03
+     ],
+     "offset_axis_m": 0.0,
+     "half_width_axis_m": 0.02,
+     "axis_fade_r_m": [
+      0.02,
+      0.05
+     ]
+    },
+    "head": {
+     "joint": [
+      0.0,
+      0.015,
+      1.622
+     ],
+     "axis": [
+      0.0,
+      0.03163,
+      0.9995
+     ],
+     "phi0": [
+      0.0,
+      -0.9995,
+      0.03163
+     ],
+     "phi90": [
+      1.0,
+      0.0,
+      0.0
+     ],
+     "offset_m": [
+      -0.0498,
+      -0.036,
+      -0.0222,
+      -0.036
+     ],
+     "half_width_m": [
+      0.012,
+      0.018,
+      0.018,
+      0.018
+     ],
+     "offset_axis_m": 0.003,
+     "half_width_axis_m": 0.012,
+     "axis_fade_r_m": [
+      0.028,
+      0.06
+     ]
+    },
+    "spine": {
+     "joint": [
+      0.0,
+      0.006,
+      1.027
+     ],
+     "axis": [
+      0.0,
+      0.0,
+      1.0
+     ],
+     "phi0": [
+      0.0,
+      -1.0,
+      0.0
+     ],
+     "phi90": [
+      1.0,
+      0.0,
+      0.0
+     ],
+     "offset_m": [
+      0.04,
+      0.07,
+      0.095,
+      0.08,
+      0.05,
+      0.08,
+      0.095,
+      0.07
+     ],
+     "half_width_m": [
+      0.04,
+      0.04,
+      0.04,
+      0.04,
+      0.04,
+      0.04,
+      0.04,
+      0.04
+     ],
+     "offset_axis_m": 0.05,
+     "half_width_axis_m": 0.04,
+     "axis_fade_r_m": [
+      0.03,
+      0.07
+     ]
+    },
+    "chest": {
+     "joint": [
+      0.0,
+      0.002,
+      1.212
+     ],
+     "axis": [
+      0.0,
+      0.0,
+      1.0
+     ],
+     "phi0": [
+      0.0,
+      -1.0,
+      0.0
+     ],
+     "phi90": [
+      1.0,
+      0.0,
+      0.0
+     ],
+     "offset_m": [
+      -0.02,
+      -0.06,
+      -0.105,
+      -0.075,
+      -0.01,
+      -0.075,
+      -0.105,
+      -0.06
+     ],
+     "half_width_m": [
+      0.035,
+      0.035,
+      0.035,
+      0.035,
+      0.035,
+      0.035,
+      0.035,
+      0.035
+     ],
+     "offset_axis_m": -0.01,
+     "half_width_axis_m": 0.035,
+     "axis_fade_r_m": [
+      0.03,
+      0.07
+     ]
+    },
+    "upper_chest": {
+     "joint": [
+      0.0,
+      0.049,
+      1.353
+     ],
+     "axis": [
+      0.0,
+      0.0,
+      1.0
+     ],
+     "phi0": [
+      0.0,
+      -1.0,
+      0.0
+     ],
+     "phi90": [
+      1.0,
+      0.0,
+      0.0
+     ],
+     "offset_m": [
+      -0.118,
+      -0.098,
+      -0.078,
+      -0.053,
+      -0.013,
+      -0.053,
+      -0.078,
+      -0.098
+     ],
+     "half_width_m": [
+      0.018,
+      0.018,
+      0.018,
+      0.018,
+      0.018,
+      0.018,
+      0.018,
+      0.018
+     ],
+     "offset_axis_m": -0.013,
+     "half_width_axis_m": 0.018,
+     "axis_fade_r_m": [
+      0.03,
+      0.07
+     ]
+    }
+   },
+   "twist_handover_m": {
+    "upper_arm": [
+     0.1,
+     0.2
+    ],
+    "forearm_from_elbow": [
+     0.03,
+     0.14
+    ]
+   },
+   "jaw": "Voronoi mandible vs skull (head project SDFs), +-4 mm blend",
+   "head_near_mandible_m": [
+    0.012,
+    0.026
+   ],
+   "lids": "head_integration.face_weights (B2)",
+   "followers": [
+    "GB_BrowLash",
+    "GB_EyeFX_L",
+    "GB_EyeFX_R"
+   ]
+  },
   "notes": {
    "limits": "degrees about axes[*].world; positive = axes[*].pos direction",
    "torque_cap_nm": "per direction key, before tone/paralysis multipliers (plan §3.2)",
-   "b2g": "Godot = (x, z, -y) of every vector here"
+   "b2g": "Godot = (x, z, -y) of every vector here",
+   "twist_bones": "drive kinematic.*_twist_*.driver every frame, else they carry 100 % of the twist like their parent (no candy-wrap relief)"
   }
  }
 }

@@ -3,7 +3,7 @@
  "frame": "body_zup_m",
  "godot_mapping": "(x, z, -y)",
  "generator": "blender/gore_body/build.py",
- "build_id": "gb-c48d3182b74f",
+ "build_id": "gb-4dae8b538130",
  "data": {
   "sets": {
    "head": {
@@ -1417,10 +1417,10 @@
    "tile_m": "physical size of one tileable repeat in metres (triplanar / metre UV scale)"
   },
   "timings_s": {
-   "uvs": 0.0,
+   "uvs": 0.1,
    "sets": 311.0,
    "tileables": 80.8,
-   "painter": 32.2
+   "painter": 36.6
   },
   "files": {
    "body_albedo.png": {
@@ -1428,8 +1428,8 @@
     "sha256": "87cb8fc7e49095db"
    },
    "body_bone.png": {
-    "bytes": 121914,
-    "sha256": "cae5a9a516fb5b56"
+    "bytes": 93944,
+    "sha256": "661ba5de51f9cf6a"
    },
    "body_normal.png": {
     "bytes": 1693871,
@@ -1504,8 +1504,8 @@
     "sha256": "07b8f5398cc35b23"
    },
    "head_bone.png": {
-    "bytes": 56874,
-    "sha256": "8af5edf2467860b0"
+    "bytes": 49369,
+    "sha256": "498ade76a2cb7d6c"
    },
    "head_normal.png": {
     "bytes": 5617330,
@@ -1688,8 +1688,8 @@
     "sha256": "321aa732e321e251"
    },
    "shorts_bone.png": {
-    "bytes": 109895,
-    "sha256": "793cf55aa58fbf1e"
+    "bytes": 62126,
+    "sha256": "969d55b5e88388f4"
    },
    "shorts_normal.png": {
     "bytes": 383524,

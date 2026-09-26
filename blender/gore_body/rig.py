@@ -945,8 +945,8 @@ POSES = {
                   "shin": [("flex", 4.0)], "thigh": [("flex", 2.0)], "foot": [("flex", 2.0)],
                   "neck": [("flex", 3.0)]},
     # defensive guard: forearms up in front of the face, fists half closed, chin tucked, knees soft
-    "pose_guard": {"upper_arm": [("abd", -24.0), ("flex", 42.0), ("twist", -12.0)],
-                   "forearm": [("flex", 118.0)], "hand": [("flex", 8.0)], "fingers": [("flex", 70.0)],
+    "pose_guard": {"upper_arm": [("abd", -28.0), ("flex", 40.0), ("twist", 4.0)],
+                   "forearm": [("flex", 125.0)], "hand": [("flex", 8.0)], "fingers": [("flex", 70.0)],
                    "thumb": [("flex", 35.0)], "clavicle": [("protr", 6.0)],
                    "neck": [("flex", 10.0)], "head": [("flex", 4.0)],
                    "upper_chest": [("flex", 4.0)], "thigh": [("flex", 10.0)], "shin": [("flex", 16.0)],

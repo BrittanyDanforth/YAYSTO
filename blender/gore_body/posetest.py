@@ -536,6 +536,52 @@ def render_poses(names=None, samples=24, res=(480, 480), out_dir=gbc.RENDER_DIR)
     return paths
 
 
+KEY_VIEWS = {"front": ((0.0, -3.4, 1.05), (0.0, 0.0, 0.92), 42.0),
+             "three_q": ((2.3, -2.5, 1.25), (0.0, 0.0, 0.90), 42.0),
+             "side": ((3.4, 0.0, 1.05), (0.0, 0.0, 0.92), 42.0)}
+
+
+def render_key_poses(names=gbc.POSE_ACTIONS, views=KEY_VIEWS, samples=20, res=(360, 540), out_dir=gbc.RENDER_DIR):
+    """Full-body renders of the key-pose actions (as keyed, hips translation included)."""
+    arm = bpy.data.objects[gbc.ARMATURE]
+    mats = _render_setup()
+    assign = {"GB_Body": "skin", "GB_Head": "skin", "GB_Shorts": "shorts", "GB_Mouth": "bone",
+              "GB_Eye_L": "bone", "GB_Eye_R": "bone"}
+    saved = {}
+    for o in bpy.data.objects:
+        if o.type == 'MESH':
+            saved[o.name] = (o.hide_render, [s.material for s in o.material_slots])
+            o.hide_render = o.name not in assign and o.name != "GB_StageFloor"
+            if o.name in assign:
+                for s in o.material_slots:
+                    s.material = mats[assign[o.name]]
+    gbc.setup_stage(floor=True)
+    paths = []
+    arm.animation_data_create()
+    try:
+        for name in names + ("rest",):
+            if name == "rest":
+                arm.animation_data.action = None
+                rig.reset_pose(arm)
+            else:
+                arm.animation_data.action = bpy.data.actions[name]
+                bpy.context.scene.frame_set(1)
+            for v, (loc, tgt, lens) in views.items():
+                cam = gbc.add_camera("RIG_cam", loc, tgt, lens=lens)
+                path = os.path.join(out_dir, f"rig_{name}_{v}.png")
+                gbc.render(path, cam, samples=samples, res=res)
+                paths.append(path)
+    finally:
+        arm.animation_data.action = None
+        rig.reset_pose(arm)
+        for n, (hr, slots) in saved.items():
+            o = bpy.data.objects.get(n)
+            o.hide_render = hr
+            for s, m in zip(o.material_slots, slots):
+                s.material = m
+    return paths
+
+
 def main():
     args = gbc.script_args()
     blend = gbc.BLEND_PATH
