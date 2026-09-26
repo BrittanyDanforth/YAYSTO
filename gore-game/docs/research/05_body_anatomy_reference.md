@@ -429,12 +429,12 @@ Relative offsets are (point − head origin), with the head origin at (0, +0.020
 
 | Parameter | This model | Normal range | Unit | Source |
 |---|---|---|---|---|
-| Cervical lordosis (C2–C7 Cobb) | ~30 | 15–40 | deg | [B13] [K] (M) |
-| Thoracic kyphosis (T4–T12 Cobb) | ~36 | 20–50 (mean ~35–40) | deg | [B13] (H) |
-| Lumbar lordosis (L1–S1 Cobb) | ~60 | 40–70 | deg | [B13] [B14] (H) |
-| Sacral slope | 40 | 30–50 | deg | [B14] (H) |
-| Pelvic tilt | 13 | 5–25 | deg | [B14] (H) |
-| Pelvic incidence (= sacral slope + pelvic tilt) | 53 | 40–65 (mean ~52) | deg | [B14] (H) |
+| Cervical lordosis (C2–C7 Cobb) | ~30 | 20–40 | deg | [B13] [K] (M). ✓ verified: StatPearls gives normal 20–40° (*range was 15–40*) |
+| Thoracic kyphosis (T4–T12 Cobb) | ~36 | 20–50 (mean ~35–40) | deg | [B13] (H). ✓ verified: StatPearls normal 20–50° |
+| Lumbar lordosis (L1–S1 Cobb) | ~60 | 40–70 | deg | [B13] [B14] (H). ✓ verified: StatPearls average 60°, varying with pelvic incidence |
+| Sacral slope | 40 | 30–50 | deg | [B14] (H). Not independently re-sourced; consistent with PI − PT |
+| Pelvic tilt | 13 | 5–25 | deg | [B14] (H). ✓ consistent: StatPearls normal < 20° |
+| Pelvic incidence (= sacral slope + pelvic tilt) | 53 | 40–65 (mean ~52) | deg | [B14] (H). ✓ verified: StatPearls normal 55 ± 10° |
 | Sagittal vertical axis (C7 centre ahead of the posterosuperior corner of S1) | +1.7 | −2 to +5 | cm | [B13] [E] (M) |
 | Presacral column length along the curve, C1 to the S1 top | ~63 | 60–66 | cm | [E] (M) |
 | Total vertebral column length including sacrum and coccyx | ~72 | 70–75 (male) | cm | [K] (H) |
@@ -481,10 +481,16 @@ Relative offsets are (point − head origin), with the head origin at (0, +0.020
 
 ### 4.6 Fitting note: the cervicale conflict
 
-- Standing anthropometric surveys put the C7 spinous tip ~24–25 cm below the vertex (≈ 1.51–1.53 m for this stature) `[B1] [B35] [B36] (M)`.
-- Stacking the skeleton down from the skull base gives ≈ 1.49 m, using the skull base 14–15 cm below the vertex plus C2–C7 body and disc heights `[B10] [B33] [B38]`.
-- I used **1.500** and kept the vertebral stack. The other trunk landmarks match their standard vertebral levels at this compromise: jugular notch at T2/T3, sternal angle at T4/T5, xiphisternum at T9, subcostal plane at L3 and iliac crests at L4/L5 `[B32]`.
-- If the neck looks too long from behind, thin the cervical discs from 5 to 4 mm. That raises C7 by ~5 mm without moving anything else.
+- Standing anthropometric surveys put the C7 spinous tip ~24–25 cm below the vertex `[B1] [B35] [B36] (M)`. *Corrected: the original gave this as "≈ 1.51–1.53 m", but 1.780 − 0.24…0.25 is 1.53–1.54 m.*
+  - ✓ Verified directly in the ANSUR II male data. The 14 men of 1.77–1.79 m and 71–79 kg have a mean cervicale height of **1.532 m** (1.515–1.551).
+  - The same men's jugular notch averages 1.454 m. The C7 tip is therefore 7.8 cm higher than the notch and 24.8 cm below the vertex.
+- Stacking the skeleton down from the skull base gives ≈ 1.49–1.50 m, using the skull base 14–15 cm below the vertex plus C2–C7 body and disc heights `[B10] [B33] [B38]`.
+- The original used **1.500** for both the skin landmark and the body centre. The fact-check changed only the **skin landmark to 1.532**, because that is what the player sees.
+- **The vertebral stack was not refitted.** A later refit should do one of two things:
+  - move the cervicothoracic junction up by ~2 cm, which puts the jugular notch nearer T3 when standing (plausible, but not sourced here); or
+  - accept that the posterior skin bump sits above the C7 body.
+- The other trunk landmarks match their standard vertebral levels at this compromise: jugular notch at T2/T3, sternal angle at T4/T5, xiphisternum at T9, subcostal plane at L3 and iliac crests at L4/L5 `[B32]`. The iliac crest level ✓ matches ANSUR II.
+- The earlier advice to thin the cervical discs to raise C7 is now used instead to absorb the lowered skull base (§0.4, §4.1 C1–C4).
 
 ---
 
