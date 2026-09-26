@@ -1049,7 +1049,11 @@ def _build_slash():
     down = c.down
     low_lip = t.smooth(-0.25, 0.35, sgn * down.y / (down.x * down.x + down.y * down.y).sqrt().max(1e-4))
     q = t.vec(u - t.clamp(u, -half_len * 0.75, half_len * 0.75), vc - sgn * (open_hw - hw), c.w)
-    pool = c.pool(q, s * 0.005 * (0.5 + bleed), bleed * opened, stretch=3.8, drop=open_hw * 0.6)
+    # the blood leaves the lower lip in uneven tongues (some long, some
+    # hardly started), never as an even curtain along the whole cut
+    tongue = 0.35 + 0.65 * t.smooth(-0.35, 0.45, t.noise(t.vec(u * 45.0, c.seed * 1.9, 0.0), detail=1.0))
+    pool = c.pool(q, s * 0.005 * (0.5 + bleed) * tongue, bleed * opened * (0.45 + 0.55 * tongue),
+                  stretch=3.2 + 2.0 * tongue, drop=open_hw * 0.6)
     # a continuous wet film on the lips (thicker on the lower lip), not dots
     lip_blood = t.smooth(0.004, 0.0, d_out) * lens.gt(0.02) * opened * bleed \
         * (0.3 + 0.7 * low_lip) * (0.6 + 0.4 * t.smooth(-0.4, 0.3, t.noise(c.np * 120.0, detail=1.0)))
@@ -1471,11 +1475,11 @@ def _end_repeat(t, rout, values):
 # ---------------------------------------------------------------------------
 DRIP_STEPS = 20
 # kind: (runs per hit, angular spread around "down" (rad), rim radius, max length, half width)
-# Rivulets are 2-5 mm wide and 0.1-0.4 mm thick (REALISM_BIBLE row 19).
+# Rivulets are 3-8 mm wide and 0.1-0.4 mm thick (REALISM_BIBLE row 19, REFERENCE_NOTES).
 DRIP_KINDS = {
-    "bullet": (1.3, 0.8, 0.0034, 0.075, 0.0011),
-    "exit":   (3.5, 1.6, 0.0085, 0.105, 0.0017),
-    "slash":  (1.0, 0.0, 0.0,    0.085, 0.0015),
+    "bullet": (1.3, 0.8, 0.0034, 0.075, 0.0015),
+    "exit":   (3.5, 1.6, 0.0085, 0.105, 0.0022),
+    "slash":  (1.0, 0.0, 0.0,    0.085, 0.0019),
     "blunt":  (1.6, 0.9, 0.0085, 0.070, 0.0014),
 }
 
@@ -2590,7 +2594,7 @@ def build_gore_system(objs=None, mats=None):
     return {"node_group": ng, "modifiers": mods, "collections": cols, "controls": ctrl}
 
 
-_GROUP_VERSION = 5
+_GROUP_VERSION = 6
 
 
 # ---------------------------------------------------------------------------

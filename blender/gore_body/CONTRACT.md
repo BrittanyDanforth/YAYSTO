@@ -56,7 +56,7 @@ Options: `--quick` (coarse meshes), `--no-bake`, `--render` (renders/build_*.png
 | `neuro.py` | B4 | done | `build_cord()` -> GB_Cord + GB_Brain + GB_Brain_HR (the whole neuro stage), `build_brain()`, `spine_table()`, `brain_labels()`, `brain_region_at()`, `render_neuro()` |
 | `vascular.py` | B5 | stub (`vessel_table`, `centreline`, `mesh_for` v0 work) | `build_vessels()`, `vessel_table()` |
 | `uv.py` | B1/B2 (v0 by B0) | working v0 | `mark_seams(obj, rules)`, `unwrap(obj, method)`, `pack(obj, size, margin_px)` |
-| `lookdev.py`, `bake.py` | B7 | stub | `build_materials()`, `bake_all`, `bake_tileables`, `bake_painter_inputs` |
+| `lookdev.py`, `bake.py`, `texgen.py` | B7 | built | `build_materials()`, `lookdev_on/off`, `prepare_attributes`; `prepare_uvs`, `bake_all`, `bake_tileables`, `bake_painter_inputs`, `write_texture_manifest`; numpy texture library (tileables, iris, sclera, decals, room/props) |
 | `props.py` | B8 | done | `build_weapons(quick)`, `build_room(quick)`, `export_props(out)`, `measure_props()`, `spec_check()`, `floor_height(x, y)`, `room_bounds()`, `SPEC`, `ROOM`, `render_items()`, `render_room()` (details: "Props and room" below) |
 
 ### Stage builder contract (how a package replaces the placeholder)
@@ -173,6 +173,47 @@ Manifest `data`: `build` (ids, versions, timings, input hashes), `files` (bytes,
 (vertices, triangles, surfaces, shape keys, layer, status), `armature`, `rest_bounds`, `wound_grid`
 (Godot rest frame, 2.5 cm cells + margin), `segment_origins`, `textures` (empty until B7), `budgets`,
 `pending` (which stages are still placeholders), `import_hints`.
+
+## Look-dev and bakes (B7) → `gore-game/assets/generated/subject/textures/`
+
+`python3 build.py --stage bake` (loads every geometry cache, then bakes) or standalone on the saved
+build: `python3 bake.py [--only head,body] [--tiles] [--painter] [--quick] [--out DIR]`;
+`python3 lookdev.py --render [--baked] [--views body,head,...]` for look-dev renders.
+
+- **Look-dev materials** (`lookdev.build_materials()`, names `GBL_*`) reuse the head project's
+  `materials.py` read-only (GH_Skin, GH_Bone, GH_Brain, GH_Eye, GH_Teeth/Gums/Tongue,
+  GH_MouthInterior, GH_Muscle) with their Object coordinates shifted into the body frame; new:
+  GBL_skin_body (same noise frame as the head skin → continuous across the seam, plus regional
+  `lk_*` attributes: palms/soles, knees/elbows/knuckles/ankles, areola/nipple, sun exposure, covered
+  skin, B5's superficial veins, dorsal venous networks, moles, body hair, sebaceous areas),
+  GBL_organ (bible surface/interior colours per `gb_organ`/`gb_sub`, cavity linings via
+  `lk_interior`), GBL_cartilage, GBL_cloth, eye FX, vessels, cord. They are swapped in only during
+  bakes/renders (`lookdev_on/off`); the exported glb keeps the `GBM_*` placeholders.
+- **Inner atlases re-charted** (`bake.prepare_uvs`): GB_Skeleton, GB_Organs and GB_Brain get
+  normal-cone charts (≤ 60° from each chart's axis, planar-projected in metres → uniform texel
+  density, no folds), marrow cores/cavities at reduced density, packed with a 3–6 px margin. Cached in
+  `.cache/uv-<mesh hash>.npy`. **build.py must call `bake.prepare_uvs()` in every build that exports
+  those meshes** (it runs only in the bake stage today), otherwise the exported UVs do not match the
+  textures (`b7_textures_match_uvs` warns).
+- **Sets** (albedo sRGB, normal tangent OpenGL +Y MikkTSpace on LOD0, ORM = AO / roughness /
+  metallic / SSS mask): head 2048, body 2048, shorts 1024, mouth 1024, skeleton 2048, organs 2048,
+  brain 1024. LOD1 meshes share their LOD0 atlas. Every map is dilated 8 px and push-pull filled.
+- **Eyes**: `eye_iris_albedo.png` (1024², RGB + A height, radius 6.2 mm at the edge, pupil drawn at
+  2.2 mm), `eye_iris_normal.png`, `eye_sclera_albedo.png` (GB_Eye atlas, A = 0 in the cornea window).
+- **Tileables** 512² (`tile_<name>_{albedo,normal,orm}.png`, ORM.A = height): muscle_fibre,
+  muscle_cross, fat_lobule, bone_cut, bone_surface, diploe, blood_crust, cloth_weave, skin_micro
+  (detail map, albedo 0.5 = neutral); physical repeat size `tile_m` in textures.json.
+- **Decals**: `decal_blood_{albedo,normal,orm}.png`, 8 × 8 tiles of 256² (one row per kind:
+  round drops, angled drops, spatter, runs, smears, pools, soaked stains, crust), A = coverage,
+  ORM.A = thickness; per-tile size and direction in textures.json.
+- **Room/props**: `room_{tile,grout,epoxy,rubber,stainless,galvanised}`, `prop_{polymer_stipple,
+  walnut,hickory,g10,glove}` tileables with `tile_m`, mapped to B8's GBPM_* names in `material_map`.
+- **Painter inputs** (head, body, shorts): `<set>_position.exr` (1024², half float, RGB = rest position
+  − segment origin from manifest `segment_origins`, A = segment code, −1 outside), `<set>_rest_normal.png`,
+  `<set>_valid.png`, `<set>_bone.png` (512², R dominant bone, G second, B weight, A inside).
+  Body tissue depth / tension maps are B1's.
+- `textures/textures.json` (schema `gb.textures/1`) lists every file with channels, sizes, uv_hash,
+  bake statistics and timings; B6 should copy its `sets` into manifest `textures`.
 
 ## Verification (verify.py)
 

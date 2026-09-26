@@ -58,7 +58,7 @@ UV_MARGIN_PX = 8          # island margin of the re-charted atlases (at the set'
 
 SETS = {
     # name: target, source, size, cage extrusion (m), max ray (m), AO distance (m), surfaces
-    "head": dict(target="GB_Head", source="GB_Head_HR", size=2048, cage=0.004, ray=0.012, ao=0.03,
+    "head": dict(target="GB_Head", source="GB_Head_HR", size=2048, cage=0.003, ray=0.008, ao=0.03,
                  surfaces=["GBM_skin_head", "GBM_mouth_lining"], lod1=["GB_Head_LOD1"]),
     "body": dict(target="GB_Body", source="GB_Body_HR", size=2048, cage=0.003, ray=0.008, ao=0.06,
                  surfaces=["GBM_skin_torso", "GBM_skin_arm_L", "GBM_skin_arm_R", "GBM_skin_leg_L",
@@ -67,12 +67,14 @@ SETS = {
                    surfaces=["GBM_cloth"]),
     "mouth": dict(target="GB_Mouth", source=None, size=1024, cage=0.0, ray=0.0, ao=0.008,
                   surfaces=["GBM_teeth", "GBM_gums", "GBM_tongue"]),
-    "skeleton": dict(target="GB_Skeleton", source="GB_Skeleton_HR", size=2048, cage=0.003, ray=0.008, ao=0.02,
-                     surfaces=["GBM_bone", "GBM_cartilage"]),
-    "organs": dict(target="GB_Organs", source="GB_Organs_HR", size=2048, cage=0.003, ray=0.008, ao=0.02,
-                   surfaces=["GBM_organ"]),
-    "brain": dict(target="GB_Brain", source="GB_Brain_HR", size=1024, cage=0.003, ray=0.008, ao=0.01,
-                  surfaces=["GBM_brain"]),
+    # inner parts sit a few mm apart (nested organs, joints, 2 mm sulci): small cages plus a part-id
+    # check so a bake ray never takes a neighbour's surface
+    "skeleton": dict(target="GB_Skeleton", source="GB_Skeleton_HR", size=2048, cage=0.0015, ray=0.004, ao=0.015,
+                     surfaces=["GBM_bone", "GBM_cartilage"], id_attr="gb_piece", emit_from="target"),
+    "organs": dict(target="GB_Organs", source="GB_Organs_HR", size=2048, cage=0.0015, ray=0.004, ao=0.01,
+                   surfaces=["GBM_organ"], id_attr="gb_organ", emit_from="target"),
+    "brain": dict(target="GB_Brain", source="GB_Brain_HR", size=1024, cage=0.0008, ray=0.002, ao=0.006,
+                  surfaces=["GBM_brain"], emit_from="target"),
 }
 RECHART = {"GB_Skeleton": dict(size=2048, smooth=2, interior_scale=0.45, cone=60.0, margin=6),
            "GB_Organs": dict(size=2048, smooth=2, interior_scale=0.6, cone=60.0, margin=6),
@@ -135,14 +137,24 @@ def write_exr_half(path, rgba_top_down):
     img = bpy.data.images.new(name, w, h, alpha=True, float_buffer=True)
     img.colorspace_settings.name = 'Non-Color'
     img.pixels.foreach_set(np.ascontiguousarray(rgba_top_down[::-1], np.float32).ravel())
-    img.filepath_raw = path
-    img.file_format = 'OPEN_EXR'
-    try:
-        img.use_half_precision = True
-    except AttributeError:
-        pass
     os.makedirs(os.path.dirname(path), exist_ok=True)
-    img.save()
+    # save_render honours the half-float + ZIP settings; the view transform is overridden to
+    # Standard so the linear data is written unchanged (round trip checked to half precision)
+    s = bpy.context.scene.render.image_settings
+    keep = (s.file_format, s.color_depth, s.exr_codec, s.color_mode)
+    s.file_format, s.color_mode = 'OPEN_EXR', 'RGBA'
+    s.color_depth, s.exr_codec = '16', 'ZIP'
+    try:
+        keep_cm = s.color_management
+        s.color_management = 'OVERRIDE'
+        s.view_settings.view_transform = 'Standard'
+        s.view_settings.look = 'None'
+    except (AttributeError, TypeError):
+        keep_cm = None
+    img.save_render(path, scene=bpy.context.scene)
+    s.file_format, s.color_depth, s.exr_codec, s.color_mode = keep
+    if keep_cm is not None:
+        s.color_management = keep_cm
     bpy.data.images.remove(img)
     return path
 
@@ -772,6 +784,27 @@ def _target_material(img):
     return mat
 
 
+def _id_material(attr):
+    """Emission material showing an integer point attribute as value / 256 (part-id bake)."""
+    mat = bpy.data.materials.get("GB7_id") or bpy.data.materials.new("GB7_id")
+    if mat.node_tree is None:
+        mat.use_nodes = True
+    nt = mat.node_tree
+    nt.nodes.clear()
+    at = nt.nodes.new('ShaderNodeAttribute')
+    at.attribute_type = 'GEOMETRY'
+    at.attribute_name = attr
+    mth = nt.nodes.new('ShaderNodeMath')
+    mth.operation = 'DIVIDE'
+    mth.inputs[1].default_value = 256.0
+    nt.links.new(at.outputs['Fac'], mth.inputs[0])
+    em = nt.nodes.new('ShaderNodeEmission')
+    nt.links.new(mth.outputs[0], em.inputs['Color'])
+    out = nt.nodes.new('ShaderNodeOutputMaterial')
+    nt.links.new(em.outputs[0], out.inputs['Surface'])
+    return mat
+
+
 def _retarget(obj, img):
     """Point the bake-target image nodes of ``obj``'s materials at ``img``."""
     for m in obj.data.materials:
@@ -861,89 +894,123 @@ def _restore(st):
         me.materials[i] = m
 
 
+def _prepare_self(obj, img):
+    """Self-bake: every current material of ``obj`` gets an active image node on ``img``."""
+    for m in obj.data.materials:
+        if m is None or m.node_tree is None:
+            continue
+        nt = m.node_tree
+        tex = nt.nodes.get("GB7_target") or nt.nodes.new('ShaderNodeTexImage')
+        tex.name = "GB7_target"
+        tex.image = img
+        nt.nodes.active = tex
+
+
+def _clear_self(obj):
+    for m in obj.data.materials:
+        if m is not None and m.node_tree is not None and m.node_tree.nodes.get("GB7_target") is not None:
+            m.node_tree.nodes.remove(m.node_tree.nodes["GB7_target"])
+
+
 def bake_set(name, spec, out):
-    """Bake one mesh set (albedo, normal, ORM + SSS).  Returns its record for textures.json."""
+    """Bake one mesh set (albedo, normal, ORM + SSS).  Returns its record for textures.json.
+
+    * Albedo / roughness / SSS: emission bakes of the look-dev material's main BSDF inputs, from
+      the high-res source (``emit_from='source'``: head, body, whose masks are sharper there) or
+      evaluated directly on the LOD0 target (``'target'``: nested inner meshes, no ray misses).
+    * Normal: high-res -> LOD0 (selected to active, MikkTSpace) for the geometric detail; texels whose
+      ray missed or hit another part (part-id check) take the LOD0's own bump-only normal instead.
+    * AO: on the LOD0 geometry at half resolution (low frequency), upsampled."""
     import lookdev
     t0 = time.perf_counter()
     target = bpy.data.objects.get(spec["target"])
     if target is None:
         return None
     source = bpy.data.objects.get(spec["source"]) if spec.get("source") else None
+    emit_src = source if (source is not None and spec.get("emit_from", "source") == "source") else None
     size = _sz(spec["size"])
-    q = _quick()
-    s_emit, s_nrm, s_ao = (1, 1, 4) if q else (1, 1, 16)
+    s_emit, s_nrm, s_ao = (1, 1, 4) if _quick() else (1, 1, 16)
     visible = [target.name] + ([source.name] if source is not None else [])
-    shade = source if source is not None else target
     tri_img, _bary = rasterize(target, size)
     valid = tri_img >= 0
-    rec = {"target": target.name, "source": shade.name, "size": size, "uv_hash": uv_hash(target),
+    rec = {"target": target.name, "source": (emit_src or target).name,
+           "normal_source": (source or target).name, "size": size, "uv_hash": uv_hash(target),
            "surfaces": spec["surfaces"], "lod1": spec.get("lod1", []), "files": {}}
-    restore = []
+    maps = {}
     with Visibility(visible):
         img = _bake_image(f"GB7_{name}", size)
         tmat = _target_material(img)
-        ld_state = lookdev.lookdev_on([shade])
-        base_mats = list(shade.data.materials)
-        if source is not None:
-            restore += _swap_materials(target, lambda m: tmat)
-        else:
-            # self-bake: the same object is shaded and receives the image, so every look-dev
-            # material gets the image node as its active node
-            for m in base_mats:
-                if m is None:
-                    continue
-                nt = m.node_tree
-                tex = nt.nodes.get("GB7_target") or nt.nodes.new('ShaderNodeTexImage')
-                tex.name = "GB7_target"
-                tex.image = img
-                nt.nodes.active = tex
-        maps = {}
+        ld_state = lookdev.lookdev_on([target] + ([source] if source is not None else []))
+        shade = emit_src or target
+        base_mats = [m for m in dict.fromkeys(shade.data.materials) if m is not None]
         for what in ("albedo", "data"):
-            variants = {m.name: emission_variant(m, what) for m in base_mats if m is not None}
-            if source is None:
-                for m in variants.values():
-                    tex = m.node_tree.nodes.get("GB7_target")
-                    if tex is not None:
-                        m.node_tree.nodes.active = tex
+            variants = {m.name: emission_variant(m, what) for m in base_mats}
             st = _swap_materials(shade, lambda m: variants.get(m.name) if m is not None else None)
-            maps[what] = _bake('EMIT', target, source, img, spec, s_emit)
+            if emit_src is not None:
+                st += _swap_materials(target, lambda m: tmat)
+            else:
+                _prepare_self(target, img)
+            maps[what] = _bake('EMIT', target, emit_src, img, spec, s_emit)
             _restore(st)
             for m in variants.values():
                 bpy.data.materials.remove(m)
-        maps["normal"] = _bake('NORMAL', target, source, img, spec, s_nrm, normal_space='TANGENT',
-                               normal_r='POS_X', normal_g='POS_Y', normal_b='POS_Z')
+        if source is not None:
+            st = _swap_materials(target, lambda m: tmat)
+            maps["normal_hr"] = _bake('NORMAL', target, source, img, spec, s_nrm, normal_space='TANGENT',
+                                      normal_r='POS_X', normal_g='POS_Y', normal_b='POS_Z')
+            if spec.get("id_attr"):
+                idm = _id_material(spec["id_attr"])
+                st2 = _swap_materials(source, lambda m: idm)
+                maps["id"] = _bake('EMIT', target, source, img, spec, 1)
+                _restore(st2)
+            _restore(st)
+        _prepare_self(target, img)
+        maps["normal_self"] = _bake('NORMAL', target, None, img, spec, s_nrm, normal_space='TANGENT',
+                                    normal_r='POS_X', normal_g='POS_Y', normal_b='POS_Z')
         world = bpy.context.scene.world or bpy.data.worlds.new("GB7_world")
         bpy.context.scene.world = world
         world.light_settings.distance = spec["ao"]
-        # the target must not shadow its own source during the AO bake
-        vis_state = [(target, target.visible_diffuse, target.visible_shadow, target.visible_glossy)]
-        if source is not None:
-            target.visible_diffuse = target.visible_shadow = target.visible_glossy = False
-        # AO is low frequency: bake it at half resolution and upsample (4x cheaper)
+        vis_state = []
+        if source is not None:               # the high-res copy must not occlude the LOD0
+            vis_state.append((source, source.visible_diffuse, source.visible_shadow, source.visible_glossy))
+            source.visible_diffuse = source.visible_shadow = source.visible_glossy = False
         ao_img = _bake_image(f"GB7_{name}_ao", max(64, size // 2))
-        _retarget(target if source is not None else shade, ao_img)
-        maps["ao"] = _bake('AO', target, source, ao_img, spec, s_ao)
-        bpy.data.images.remove(ao_img)
+        _prepare_self(target, ao_img)
+        maps["ao"] = _bake('AO', target, None, ao_img, spec, s_ao)
         for o, d, s, g in vis_state:
             o.visible_diffuse, o.visible_shadow, o.visible_glossy = d, s, g
+        bpy.data.images.remove(ao_img)
+        _clear_self(target)
         lookdev.lookdev_off(ld_state)
-        _restore(restore)
-        if source is None:
-            for m in base_mats:
-                if m is not None and m.node_tree.nodes.get("GB7_target") is not None:
-                    m.node_tree.nodes.remove(m.node_tree.nodes["GB7_target"])
         bpy.data.images.remove(img)
     covered = maps["albedo"][..., 3] > 0.5
     holes = valid & ~covered
+    n_ok = np.zeros_like(valid)
+    wrong = np.zeros_like(valid)
+    if "normal_hr" in maps:
+        n_ok = maps["normal_hr"][..., 3] > 0.5
+        if "id" in maps:
+            # a ray that crossed into a neighbouring part (nested organs, touching bones) sampled the
+            # wrong surface: compare the part id it hit with the part id of the texel's own triangle
+            tid = gbc.read_point_attr(target, spec["id_attr"], 'INT')
+            _tl, tv, _tp = loop_triangles(target)
+            want = np.where(valid, tid[tv[np.maximum(tri_img, 0), 0]], -1)
+            got = np.rint(maps["id"][..., 0] * 256.0).astype(int)
+            wrong = valid & n_ok & (got != want)
+            n_ok = n_ok & ~wrong
     rec["coverage"] = {"valid_texels": int(valid.sum()), "empty_inside_islands": int(holes.sum()),
                        "empty_fraction": round(float(holes.sum()) / max(int(valid.sum()), 1), 6),
-                       "baked_outside_raster": int((covered & ~valid).sum())}
+                       "baked_outside_raster": int((covered & ~valid).sum()),
+                       "normal_from_source": round(float((n_ok & valid).sum()) / max(int(valid.sum()), 1), 4),
+                       "normal_wrong_part_rejected": int(wrong.sum())}
     if os.environ.get("GB_BAKE_DEBUG"):
-        dbg = np.stack([valid, covered, holes], -1).astype(float)
+        dbg = np.stack([valid, covered, n_ok], -1).astype(float)
         _write_png(os.path.join(os.environ["GB_BAKE_DEBUG"], f"{name}_coverage.png"), u8(dbg))
-    # holes (if any) are filled from their neighbours before dilation
     alb = finish_map(maps["albedo"][..., :3], covered)
-    nrm = finish_map(maps["normal"][..., :3], covered)
+    ns = maps["normal_self"]
+    n_raw = np.where(n_ok[..., None], maps["normal_hr"][..., :3], ns[..., :3]) if "normal_hr" in maps \
+        else ns[..., :3]
+    nrm = finish_map(n_raw, (ns[..., 3] > 0.5) | n_ok)
     nv = nrm * 2.0 - 1.0
     nv /= np.maximum(np.linalg.norm(nv, axis=-1, keepdims=True), 1e-6)
     nrm = nv * 0.5 + 0.5
@@ -965,8 +1032,8 @@ def bake_set(name, spec, out):
     rec["ao_mean"] = round(float(ao[valid].mean()), 3)
     rec["normal_mean_z"] = round(float(nv[..., 2][valid].mean()), 4)
     rec["seconds"] = round(time.perf_counter() - t0, 1)
-    _log(f"set {name}: {size}^2, empty {rec['coverage']['empty_inside_islands']} texels, "
-         f"{rec['seconds']} s")
+    _log(f"set {name}: {size}^2, empty {rec['coverage']['empty_inside_islands']} texels, normal from source "
+         f"{rec['coverage']['normal_from_source'] * 100:.1f} %, {rec['seconds']} s")
     return rec
 
 

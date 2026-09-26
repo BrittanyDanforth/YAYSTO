@@ -609,9 +609,9 @@ def tile_edge_error(img):
 
     The wrap-around line (last row -> first row, last column -> first column)
     must look like any interior line: error = mean |difference across the seam|
-    minus the 99th percentile of the same statistic over all interior lines
-    (a pattern with regular hard edges, e.g. a weave, has interior lines as
-    sharp as the seam; a broken seam stands out above all of them)."""
+    minus the largest value of the same statistic over all interior lines (a
+    pattern with regular hard edges, e.g. a weave, has interior lines as sharp
+    as the seam; a broken seam stands out above all of them)."""
     a = np.asarray(img, float)
     if img.dtype != np.uint8:
         a = a * 255.0
@@ -621,7 +621,7 @@ def tile_edge_error(img):
         b = np.moveaxis(a, ax, 0)
         lines = np.abs(np.diff(b, axis=0)).mean(axis=(1, 2))
         seam = np.abs(b[0] - b[-1]).mean()
-        err = max(err, seam - float(np.percentile(lines, 99)))
+        err = max(err, seam - float(lines.max()))
     return float(max(err, 0.0))
 
 

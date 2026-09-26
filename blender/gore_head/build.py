@@ -117,8 +117,10 @@ PRESETS = {
     ),
     "carnage": dict(
         hits=[
-            # shot from behind: entry low on the left of the back of the head, the
-            # skull blown open over the right temple (brain showing)
+            # shot from behind: entry low on the left of the back of the head, a
+            # large torn exit over the right temple (9 mm: at most ~30 mm across,
+            # pulped brain and bone chips in the opening -- a handgun does not
+            # blow the skull open; that needs a rifle or a contact shotgun)
             ("bullet", (0.050, 0.070, 0.050), dict(toward=(-0.052, -0.060, 0.075), depth=1.0,
                                                    name="GH_Hit_C_Entry_Back")),
             ("exit", (-0.052, -0.060, 0.075), dict(toward=(0.050, 0.070, 0.050), size=1.5, depth=1.0,
