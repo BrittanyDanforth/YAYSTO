@@ -601,8 +601,8 @@ BROW_H = Curve1D([(0.0, 0.0014), (0.012, 0.0036), (0.025, 0.0060), (0.040, 0.005
                   (0.050, 0.0030), (0.060, 0.0)])
 BROW_Z = Curve1D([(0.0, 0.036), (0.030, 0.0390), (0.050, 0.0355), (0.060, 0.034)])
 # face block half width and the jaw's lower border
-FACE_W = Curve1D([(0.115, 0.045), (0.09, 0.058), (0.07, 0.0625), (0.05, 0.0635), (0.03, 0.0630),
-                  (0.015, 0.0635), (0.0, 0.0640), (-0.015, 0.0632), (-0.03, 0.0615),
+FACE_W = Curve1D([(0.115, 0.045), (0.09, 0.058), (0.07, 0.0630), (0.05, 0.0650), (0.03, 0.0655),
+                  (0.015, 0.0665), (0.0, 0.0670), (-0.015, 0.0658), (-0.03, 0.0632),
                   (-0.05, 0.0590), (-0.068, 0.0545), (-0.082, 0.0470), (-0.096, 0.0370),
                   (-0.111, 0.028)])
 JAW_Z = Curve1D([(-0.095, -0.1045), (-0.075, -0.1040), (-0.06, -0.1015), (-0.045, -0.0970),
@@ -690,8 +690,10 @@ def _neck(ax, y, z):
     yc = 0.0060 + 0.0045 * tz
     top = smoothstep(-0.105, -0.045, z)          # wider under the skull (mastoids, SCM origin)
     base = smoothstep(-0.165, -0.205, z)         # trapezius / shoulders begin
-    a = 0.0470 + 0.0040 * tz * tz + 0.0055 * top + 0.0120 * base
-    b = 0.0545 + 0.0040 * tz * tz + 0.0015 * top
+    # (~100-105 mm wide, ~110 mm deep at mid-neck: narrower than the face at
+    # the cheekbones, necked in under the jaw)
+    a = 0.0500 + 0.0040 * tz * tz + 0.0050 * top + 0.0115 * base
+    b = 0.0555 + 0.0040 * tz * tz + 0.0015 * top
     return ellipse2(ax, y - yc, a, b)
 
 
@@ -717,8 +719,8 @@ def head_volume(ax, y, z):
     d = smin(d, neck, 0.024)
     d = smin(d, sd_ellipsoid(ax, y, z, (0.0500, 0.0180, -0.0400), (0.0120, 0.0220, 0.0260)), 0.020)
     # jaw angle: the masseter over the gonion gives the lower face a corner
-    d = smin(d, sd_ellipsoid(ax, y, z, (0.0545, -0.0080, -0.0760), (0.0070, 0.0150, 0.0100),
-                             rot=rot_xyz(-25, 0, 0)), 0.008)
+    d = smin(d, sd_ellipsoid(ax, y, z, (0.0470, -0.0110, -0.0735), (0.0070, 0.0190, 0.0085),
+                             rot=rot_xyz(-30, 0, 0)), 0.016)
     # sternocleidomastoid: mastoid -> sternum, standing out in front of the neck
     scm = sd_capsule(ax, y, z, (0.052, 0.012, -0.034), (0.014, -0.044, -0.198), 0.0086, 0.0072)
     d = smin(d, scm, 0.010)
@@ -1265,7 +1267,7 @@ def gum_sdf(x, y, z, upper):
 def tongue_sdf(x, y, z):
     """Tongue resting on the floor of the mouth behind the lower teeth."""
     ax = np.abs(x)
-    body = sd_ellipsoid(ax, y, z, (0.0, -0.0500, -0.0655), (0.0205, 0.0330, 0.0105))
+    body = sd_ellipsoid(ax, y, z, (0.0, -0.0490, -0.0640), (0.0215, 0.0340, 0.0128))
     tip = sd_ellipsoid(ax, y, z, (0.0, -0.0730, -0.0612), (0.0135, 0.0078, 0.0048))
     d = smin(body, tip, 0.008)
     # median sulcus along the dorsum
@@ -1283,7 +1285,7 @@ def tongue_sdf(x, y, z):
 # Skull
 # ---------------------------------------------------------------------------
 CRANIUM_C = np.array([0.0, 0.001, 0.025])
-CRANIUM_R = np.array([0.0760, 0.0970, 0.1000])   # the skin's cranium ellipsoid
+CRANIUM_R = np.array([0.0760, 0.0970, 0.0975])   # the skin's cranium ellipsoid
 SCALP = 0.0060         # skin surface -> outer table of the vault
 BONE_T = 0.0065        # vault thickness (outer + inner table)
 BRAIN_ENV_GAP = 0.0020  # inner table -> gyri crests (the sulci are carved deeper)
@@ -1341,11 +1343,60 @@ def cranial_floor(ax, y, z):
 
 
 # brain stem channel through the foramen magnum
-STEM_PTS = [(0.0, 0.002, 0.016), (0.0, 0.012, -0.010), (0.0, 0.021, -0.034), (0.0, 0.025, -0.060)]
+# (continued as the cervical spinal cord through the vertebral canal down to
+# just above the neck cut)
+STEM_PTS = [(0.0, 0.002, 0.016), (0.0, 0.012, -0.010), (0.0, 0.021, -0.034), (0.0, 0.025, -0.060),
+            (0.0, 0.0275, -0.090), (0.0, 0.0285, -0.130), (0.0, 0.0270, -0.170), (0.0, 0.0255, -0.1975)]
+STEM_R = np.array([0.0085, 0.0135, 0.0095, 0.0075, 0.0062, 0.0060, 0.0056, 0.0054])
 
 
 def _stem(ax, y, z, grow=0.0):
-    d, _ = sd_polyline(ax, y, z, STEM_PTS, np.array([0.0085, 0.0135, 0.0095, 0.0075]) + grow)
+    d, _ = sd_polyline(ax, y, z, STEM_PTS, STEM_R + grow)
+    return d
+
+
+# cervical vertebrae C2-T1: (body centre z); C1 is a ring at the skull base
+CERV_Z = (-0.0745, -0.0925, -0.1105, -0.1285, -0.1465, -0.1645, -0.1825)
+CANAL_R = 0.0080
+
+
+def cervical_sdf(x, y, z):
+    """Cervical spine: vertebral bodies with discs' gaps, the neural arch around
+    the spinal canal (cord inside), spinous and transverse processes, the atlas
+    ring under the skull base and the dens of the axis."""
+    ax = np.abs(x)
+    d = np.full_like(x, 1.0)
+    for zc in CERV_Z:
+        yb = 0.0080 + 0.0015 * smoothstep(-0.07, -0.16, zc)        # (a slight lordosis)
+        yc = STEM_PTS[4][1] if zc > -0.1 else np.interp(-zc, [0.10, 0.19], [0.0285, 0.0255])
+        body = extrude(ellipse2(ax, y - yb, 0.0085, 0.0072), z - zc, 0.0052, 0.0015)
+        ring = extrude(np.abs(ellipse2(ax, y - yc, CANAL_R + 0.0020, CANAL_R + 0.0020)) - 0.0020,
+                       z - (zc + 0.0005), 0.0042, 0.0010)
+        # (only the back of the ring and the pedicles: not in front of the canal
+        # where the body is)
+        ring = smax(ring, (yb + 0.0040) - y, 0.001)
+        ped = sd_capsule(ax, y, z, (0.0065, yb + 0.004, zc), (0.0085, yc, zc), 0.0024)
+        spin = sd_capsule(ax, y, z, (0.0, yc + CANAL_R + 0.003, zc), (0.0, yc + 0.026, zc - 0.007), 0.0030, 0.0022)
+        trans = sd_capsule(ax, y, z, (0.0090, yb + 0.006, zc + 0.001), (0.0245, yb + 0.010, zc + 0.002), 0.0026, 0.0020)
+        v = smin(smin(smin(body, ring, 0.002), ped, 0.002), smin(spin, trans, 0.002), 0.002)
+        d = np.minimum(d, v)
+    # atlas (C1): a ring with lateral masses, the dens of C2 rising into it
+    atlas = extrude(np.abs(ellipse2(ax, y - 0.017, 0.0205, 0.0160)) - 0.0026, z + 0.0555, 0.0040, 0.0012)
+    atlas = smin(atlas, sd_ellipsoid(ax, y, z, (0.0145, 0.012, -0.0555), (0.0060, 0.0075, 0.0055)), 0.003)
+    dens = sd_capsule(ax, y, z, (0.0, 0.0085, -0.069), (0.0, 0.0070, -0.0515), 0.0048, 0.0040)
+    d = np.minimum(d, smin(atlas, dens, 0.002))
+    # the canal stays open around the cord (~2 mm of epidural space)
+    return smax(d, -(_stem(ax, y, z) - 0.0022), 0.001)
+
+
+CERV_BOX = ((-0.034, -0.008, -0.199), (0.034, 0.062, -0.044))
+
+
+def airway_sdf(ax, y, z):
+    """Pharynx behind the tongue and soft palate, then larynx and trachea (air, negative inside)."""
+    pts = [(0.0, -0.050, -0.030), (0.0, -0.022, -0.036), (0.0, -0.010, -0.060), (0.0, -0.011, -0.090),
+           (0.0, -0.018, -0.115), (0.0, -0.026, -0.140), (0.0, -0.028, -0.199)]
+    d, _ = sd_polyline(ax, y, z, pts, [0.0060, 0.0075, 0.0080, 0.0075, 0.0070, 0.0078, 0.0080])
     return d
 
 
@@ -1372,7 +1423,7 @@ def _nasal(ax, y, z):
     w = 0.0050 + 0.0072 * smoothstep(0.013, -0.017, z) - 0.0030 * smoothstep(-0.020, -0.028, z)
     ap2 = smax(ax - w, np.abs(z + 0.0060) - 0.0205, 0.0045)
     ap = extrude(ap2, y + 0.100, 0.030, 0.002)
-    cav = sd_box(ax, y, z, (0.0, -0.0520, -0.0035), (0.0125, 0.0240, 0.0230), round_=0.006)
+    cav = sd_box(ax, y, z, (0.0, -0.0520, -0.0060), (0.0125, 0.0240, 0.0250), round_=0.006)
     return smin(ap, cav, 0.006)
 
 
@@ -1422,8 +1473,11 @@ def skull_sdf(x, y, z):
     # openings and air spaces, never closer than 2.5 mm to the brain case
     holes = smin(_orbit(ax, y, z), _nasal(ax, y, z), 0.002)
     # maxillary sinus: an internal air space kept 2 mm inside the bone surface
-    sinus = sd_ellipsoid(ax, y, z, (0.0250, -0.0580, -0.0100), (0.0115, 0.0150, 0.0120))
-    holes = np.minimum(holes, smax(sinus, env + 0.002, 0.002))
+    sinus = sd_ellipsoid(ax, y, z, (0.0265, -0.0575, -0.0100), (0.0130, 0.0165, 0.0135))
+    holes = np.minimum(holes, smax(sinus, env + 0.0014, 0.002))
+    # frontal sinus behind the brow ridge
+    fsin = sd_ellipsoid(ax, y, z, (0.0100, -0.0820, 0.0420), (0.0120, 0.0045, 0.0090))
+    holes = np.minimum(holes, smax(fsin, env + 0.0014, 0.002))
     holes = np.minimum(holes, sd_capsule(ax, y, z, (0.0720, 0.0, 0.0), (0.0540, 0.0, 0.0), 0.0040))
     holes = np.minimum(holes, sd_sphere(ax, y, z, (0.0500, -0.0120, -0.0010), 0.0068))
     holes = smax(holes, -(cav - 0.0025), 0.002)
@@ -1617,7 +1671,7 @@ def brain_sdf(x, y, z):
     return smax(d, cav + BRAIN_GAP, 0.001)
 
 
-BRAIN_BOX = ((-0.070, -0.090, -0.065), (0.070, 0.100, 0.115))
+BRAIN_BOX = ((-0.070, -0.090, -0.199), (0.070, 0.100, 0.115))
 
 
 # ---------------------------------------------------------------------------
@@ -1637,7 +1691,9 @@ def muscle_sdf(x, y, z):
     hard = np.minimum(env, jaw_raw(ax, y, z) - 0.0008)
     hard = np.minimum(hard, sd_sphere(ax, y, z, EYE_C, EYE_R + 0.0003))
     hard = np.minimum(hard, _stem(ax, y, z, BRAIN_GAP + 0.0005))
+    hard = np.minimum(hard, cervical_sdf(x, y, z) - 0.0004)
     d = np.maximum(d, -(hard - 0.0012))
+    d = np.maximum(d, -airway_sdf(ax, y, z))
     return apply_local(d, ax, y, z, Region((0.0, -0.10, -0.090), (0.040, -0.020, -0.025)),
                        lambda dd, a, b, c: np.maximum(dd, -(_gums_both(a, b, c) - 0.0012)))
 
@@ -1769,6 +1825,8 @@ def build_anatomy():
                                        voxel=RES["skull"], project=1, collection=col))
     timed("GH_Jaw", lambda: mesh_sdf("GH_Jaw", jaw_sdf, *JAW_BOX, RES["jaw"],
                                      voxel=RES["jaw"], project=2, collection=col))
+    timed("GH_Cervical", lambda: mesh_sdf("GH_Cervical", cervical_sdf, *CERV_BOX, 0.0008,
+                                          voxel=0.0008, project=2, collection=col))
     brain = timed("GH_Brain", lambda: mesh_sdf("GH_Brain", brain_sdf, *BRAIN_BOX, RES["brain"],
                                                voxel=RES["brain"], project=1, collection=col))
     v = get_verts(brain.data)
@@ -1790,7 +1848,7 @@ def build_anatomy():
     ANATOMY_LANDMARKS.update(_collect_landmarks(objs))
     print(f"  build_anatomy total {time.time() - t0:.1f} s")
     order = ["GH_Skin", "GH_Muscle", "GH_Skull", "GH_Jaw", "GH_Brain", "GH_Eye_L", "GH_Eye_R",
-             "GH_Teeth_Upper", "GH_Teeth_Lower", "GH_Gums", "GH_Tongue", "GH_MouthCavity"]
+             "GH_Teeth_Upper", "GH_Teeth_Lower", "GH_Gums", "GH_Tongue", "GH_MouthCavity", "GH_Cervical"]
     return {k: objs[k] for k in order}
 
 
@@ -1945,6 +2003,8 @@ def check_report(objs):
         ("GH_Tongue", "GH_Teeth_Upper"), ("GH_Tongue", "GH_Gums"), ("GH_Brain", "GH_Muscle"),
         ("GH_Skull", "GH_Skin"), ("GH_Brain", "GH_Skin"), ("GH_Gums", "GH_Skull"),
         ("GH_Gums", "GH_Jaw"), ("GH_Gums", "GH_Muscle"),
+        ("GH_Cervical", "GH_Muscle"), ("GH_Cervical", "GH_Brain"), ("GH_Cervical", "GH_Skull"),
+        ("GH_Cervical", "GH_Skin"),
     ]
     print("\nInterpenetration report (triangle-pair overlaps, min vertex->surface gap)")
     ok_all = True

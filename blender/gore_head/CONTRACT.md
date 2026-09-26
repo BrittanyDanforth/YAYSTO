@@ -40,7 +40,7 @@ at the same time.
 | Top of head (vertex) | (0, 0.005, 0.125) |
 | Back of head | (0, 0.100, 0.030) |
 | Glabella (between brows) | (0, −0.093, 0.035) |
-| Eyeball centers | (±0.032, −0.070, 0.022), radius 0.012 |
+| Eyeball centers | (±0.0315, −0.0675, 0.022), radius 0.012 (IPD 63 mm, seated under the brow) |
 | Nose tip | (0, −0.111, −0.014) |
 | Mouth center (between lips) | (0, −0.094, −0.055), lips parted 7.4 mm (measured at the mid-line), mouth width ≈ 0.048 (corners ±0.024, y −0.085) |
 | Chin bottom | (0, −0.080, −0.103) (pogonion, most forward chin point: (0, −0.094, −0.092)) |
@@ -72,6 +72,7 @@ evaluated verts; others as needed).
 | `GH_Gums` | upper and lower gums |
 | `GH_Tongue` | tongue in mouth cavity |
 | `GH_MouthCavity` | inner mouth lining (may be part of `GH_Skin` instead, then omit) |
+| `GH_Cervical` | cervical spine C1-T1 in the neck (bodies, neural arches around the canal, spinous / transverse processes, atlas ring + dens); `GH_Brain`'s stem continues as the spinal cord through its canal down to the neck cut; the muscle layer is carved around it and around the pharynx / larynx / trachea airway. Material `GH_Bone`; not a gore layer (a knife stops at bone) |
 | `GH_Controls` | empty with global gore sliders (created by `gh_common.ensure_controls()`) |
 | `GH_Eyebrows`, `GH_Eyelashes` | hair curves (materials `GH_Hair`, `GH_Hair_Lash`) grown by `build.py`; a small GN modifier (`GH_HairOnSkin`) keeps them on the wounded skin and removes strands whose root is burned or torn open |
 
@@ -90,6 +91,7 @@ One collection per wound type, under a parent collection `GH_Hits`:
 | `GH_Hits_Slash` | cut / laceration: long thin gash along the empty's local X axis, gaping edges |
 | `GH_Hits_Blunt` | blunt trauma: bruise, swelling, split skin, depressed skull fracture when deep, knocks out nearby teeth |
 | `GH_Hits_Burn` | burn: charred, blistered, peeling skin |
+| `GH_Hits_Blast` | explosive in the mouth / contact shotgun: large shredded crater of the lower-mid face, broken-off mandible segment with its teeth, soot |
 
 Each hit is an **empty** in one of those collections, so the user can drag,
 rotate and scale it in the viewport and the wound updates live:
@@ -105,7 +107,7 @@ rotate and scale it in the viewport and the wound updates live:
 
 `add_hit(kind, location, direction=None, size=1.0, elongation=1.0, depth=0.6, name=None,
 roll=0.0, muzzle_distance=None)` creates such an empty (`kind` in
-`bullet|exit|slash|blunt|burn`; `roll` turns the hit around its axis, e.g. a
+`bullet|exit|slash|blunt|burn|blast`; `roll` turns the hit around its axis, e.g. a
 slash; `muzzle_distance` sets a bullet's scale.y), `add_hits([(kind, location,
 kwargs), ...])` places several at once, and `clear_hits()` removes all of them.
 With a direction, the hit lands on the first outer surface facing the shot
@@ -124,20 +126,39 @@ REALISM_BIBLE §2.7):
   brain, teeth in the path shattered; soot / stippling / contact tear by range.
 - **exit**: 10-30 mm, shape class by chance (circular / stellate / irregular /
   slit / crescent), everted <= 4 mm, frayed margins, no collar, outward-bevelled
-  jagged bone, bone chips, herniated brain.
+  jagged bone, bone chips, herniated brain. The margin is raw torn dermis
+  (<= ~1 mm wet); no film, pool or blotches are painted on the scalp around it.
 - **slash**: an incised cut; the knife line is narrow and the lips gape apart
   (gape = length x G(angle to the skin tension lines) x depth factor, ~0.2 L
   across the lines, ~0.04 L along them), raised swollen lips, V walls of the
   skin's own tissue down to the cut depth (dermis -> fat -> muscle) meeting in
   a line (V profile, depth ~ (1 - |v|/hw)^0.8), a crisp cut skin edge, lobed
-  lips (+-25-40 % per lip), pointed ends (blunt-ish start, long tail), a blood
-  pool in the bed, a shallow scratch tail. The walls stop at the bone and at the
+  lips (+-25-40 % per lip, lip rise <= ~0.4 mm, noisy), pointed ends (blunt-ish
+  start, long tail), a blood fill that wells up in the bed, a shallow scratch tail. The walls stop at the bone and at the
   mouth lining; a throat cut goes 15-25 mm deep. Never opens bone (score mark only).
 - **blunt**: laceration over bone split along the skin lines (linear or Y),
   ragged crushed margins with a 2-4 mm abrasion rim, tissue bridges, walls to
   the bone, a clot-filled bed; swelling (5-10 mm goose egg within hours) and
   bruise develop with `wound_age`; scalp splits bleed more;
-  depressed skull fracture when deep; knocked-out teeth near the mouth.
+  depressed skull fracture when deep; knocked-out teeth near the mouth. The
+  goose egg is broad (radius ~25 mm, up to 8-12 mm high).
+  **Repeated blows accumulate** (REFERENCE_NOTES §5.13): every blunt hit sums the
+  depth of the blunt hits within ~20-45 mm of it (`hit_E`); past ~1.15 (two or
+  more heavy blows on one spot, or one hit with depth > ~1.2) the area is
+  *crushed* (crush 0..1 at hit_E 1.15..2.3): skin torn away over a large ragged
+  area with everted flaps, contour caving in 5-15 mm, a large jagged hole of
+  loose bone plates, many bone chips, the eye sinking into the broken orbit,
+  more clot and strands, much more bleeding.
+- **blast** (explosive in the mouth, contact shotgun; REFERENCE_NOTES §5.11 /
+  refs/13): crater radius ~28 mm x size, torn further up (nose, one cheek) than
+  down, shredded margins with everted flaps; muscle and gums open, the maxilla
+  breached; the mandible breaks along three jagged fracture lines and the
+  segment between them swings out and down by 22-39 degrees WITH its lower
+  teeth (`gore._blast_fragment` is the one rigid transform shared by the jaw
+  layer and the tooth islands); other teeth near the crater are blown out
+  (~55 %) or left loose and tilted; 18 bone chips in the torn tissue; the skin
+  around is soot-blackened (`gore_soot`), stippled, seared and swollen; heavy
+  bleeding (6+ runs). Use size ~1.5, depth 1.0, aimed into the open mouth.
 - **burn**: smooth lobed, flame-licked dose field (reaches further upward,
   zones interlock unevenly): red band, partial thickness (moist red, few large
   flattened blister domes that appear after 30 s-5 min and fill over hours, a few peeling
@@ -156,15 +177,33 @@ ragged (noise), wound walls have thickness so you see the layers, not paper-thin
 shells. Global controls reach the modifiers through drivers from `GH_Controls`
 (use `gh_common.drive`).
 
-Blood drips: generated by the skin layer as real geometry: flat-topped ribbons
-(3-8 mm wide, 0.1-0.4 mm thick, uneven width that thins with length) that leave
-each wound at the LOWEST point of its rim, run down the surface with gravity,
-follow the surface, end in a flat teardrop on long runs; the first run is long,
-others stop early; length grows with `drip_time` and `bleed`. Bleeding wounds
-also get a liquid blood sheet in their bed (gore.FILL_EXTENT): a cut's bed is
-flooded, a blunt split's bed is filled with clot, an entrance hole holds a ring
-of dark clot around a still-open track. No blood spatter is placed on the victim's own skin
-(back- and forward-spatter fly away from the head). Material `GH_Blood`.
+**Blood comes from the wound** (user rule, CLAUDE.md §8): no blood is painted
+on skin it did not physically travel to. `drip_time` 0..1 is 0..60 s after the
+injury. At 0 the holes are open and the blood surface lies at the bottom of the
+cavity; within ~7 s (drip_time 0.12) it wells up (gore.FILL_EXTENT: cuts and
+blunt splits; entrances hold clot blobs in the track instead of a sheet) and
+overflows at the LOWEST point of the rim: the main run starts at drip_time
+0.03 (gore.DRIP_START), further runs split off later (up to +0.4) as the flow
+goes on. Runs are real geometry on the skin: flat films (3-8 mm wide, <= 0.18
+mm thick) whose front moves fast at first (~0.5-1 cm/s) and slows, that widen
+with the volume that has come down them, follow the surface under gravity and
+carry a rounded bead only while still moving (a stopped run ends in a tapered
+film). Behind each run the skin gets a translucent stain exactly as wide as the
+run (`gore_blood` from the trail), which dries/darkens from the edges with
+`blood_age`. Scalp, exit, crushed and blast wounds get more and longer runs. The
+runs carry `gore_bthin` (1 = thin translucent edge, 0 = thick core) for the
+Beer-Lambert colour of `GH_Blood` (#A0202A thin -> #8E1420 -> #5E070C thick);
+clot blobs carry `gore_clot` = 1 (matte near-black). No spatter is placed on the
+victim's own skin (back- and forward-spatter fly away from the head).
+
+Wound walls are extruded in 6 rings with a smoothly varying ring spacing, then
+relaxed (Blur Attribute on the wall vertices) and given lumpy relief along the
+wall normal only (gore.WALL_LUMPS), so they never fold into light/dark stripes
+(the "fence plank" artefact of refs/12; `verify_gore` fails if more than 5 % of
+wall edges fold by > 60 deg). Bleeding wounds get clot blobs (flattened, lumpy,
+0.5-2 mm, gore.CLOT_DENSITY) on the walls, floor and fill, and tissue strands
+(0.25-0.6 mm, material `GH_Muscle`) bridging the gap from the second wall ring
+(gore.STRAND_P per kind).
 
 Soft-tissue layers (`GH_Skin`, `GH_Muscle`, `GH_MouthCavity`) carry a static
 point attribute `gh_bone_depth` (distance straight in to the skull / jaw -- for
@@ -181,11 +220,12 @@ paints the thin dermis line at its top.
 | `gore_wound` | 1 inside an open wound (exposed tissue), 0 on intact surface |
 | `gore_depth` | depth through the layers inside a wound: 0 = skin surface, ~0.3 fat, ~0.6 muscle, 1 = bone. Used to paint skin → fat → muscle rings on wound walls |
 | `gore_edge` | torn edge / abrasion rim around a wound |
-| `gore_blood` | blood coverage on the surface (pooled around wounds, smears, spatter) |
+| `gore_blood` | blood that physically travelled from the wound (the fill, the run stains) or tissue exposed inside the wound; never stamped around a hole |
 | `gore_bruise` | bruise strength |
 | `gore_burn` | burn / char strength |
 | `gore_fracture` | skull & jaw: cracked bone around a breach |
-| `gore_soot` | skin: gunpowder soot around close-range entrances (wipes off in reality) |
+| `gore_soot` | skin: gunpowder / blast soot around close-range entrances and blasts (wipes off in reality) |
+| `gore_bthin`, `gore_clot` | blood geometry only (see above): film thinness and clot mask for `GH_Blood` |
 
 On burns (`gore_burn` > ~0.1) the skin's `gore_edge` carries the blister fluid
 mask instead of an abrasion. Missing attributes read as 0, so every material

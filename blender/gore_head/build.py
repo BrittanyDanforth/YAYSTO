@@ -710,7 +710,8 @@ def verify(objs):
 # Cutaway
 # ---------------------------------------------------------------------------
 CUT_LAYERS = {"GH_Skin_cut": 0, "GH_Muscle": 1, "GH_Skull": 2, "GH_Jaw": 2, "GH_Eye_L": 2,
-              "GH_Gums": 2, "GH_Brain": 3, "GH_Teeth_Upper": 3, "GH_Teeth_Lower": 3, "GH_Tongue": 3}
+              "GH_Gums": 2, "GH_Brain": 3, "GH_Teeth_Upper": 3, "GH_Teeth_Lower": 3, "GH_Tongue": 3,
+              "GH_Cervical": 2}
 
 
 def _vitreous_material():
@@ -728,6 +729,33 @@ def _vitreous_material():
     bsdf.inputs['IOR'].default_value = 1.336
     nt.links.new(bsdf.outputs[0], out.inputs['Surface'])
     mat.diffuse_color = (0.8, 0.78, 0.74, 1.0)
+    return mat
+
+
+def _matter_material(white):
+    """Cut brain tissue: grey cortex (pinkish grey-brown) or white matter (cream)."""
+    name = "GH_WhiteMatterCut" if white else "GH_GreyMatterCut"
+    mat = bpy.data.materials.get(name) or bpy.data.materials.new(name)
+    if mat.node_tree is None:
+        mat.use_nodes = True
+    nt = mat.node_tree
+    nt.nodes.clear()
+    out = nt.nodes.new('ShaderNodeOutputMaterial')
+    bsdf = nt.nodes.new('ShaderNodeBsdfPrincipled')
+    noise = nt.nodes.new('ShaderNodeTexNoise')
+    noise.inputs['Scale'].default_value = 900.0
+    ramp = nt.nodes.new('ShaderNodeValToRGB')
+    lo, hi = ((0.60, 0.53, 0.46), (0.70, 0.63, 0.55)) if white else ((0.36, 0.23, 0.21), (0.44, 0.30, 0.27))
+    ramp.color_ramp.elements[0].color = (*lo, 1.0)
+    ramp.color_ramp.elements[1].color = (*hi, 1.0)
+    nt.links.new(noise.outputs['Fac'], ramp.inputs[0])
+    nt.links.new(ramp.outputs['Color'], bsdf.inputs['Base Color'])
+    bsdf.inputs['Roughness'].default_value = 0.35
+    bsdf.inputs['Subsurface Weight'].default_value = 0.4
+    bsdf.inputs['Subsurface Radius'].default_value = (1.0, 0.5, 0.4)
+    bsdf.inputs['Subsurface Scale'].default_value = 0.002
+    nt.links.new(bsdf.outputs[0], out.inputs['Surface'])
+    mat.diffuse_color = (*hi, 1.0)
     return mat
 
 
@@ -761,8 +789,24 @@ def add_cutaway(objs, x_hi=0.030, x_lo=0.003, z_step=-0.036):
     for ob in hidden:
         ob.hide_render = True
     obs = dict(objs, GH_Skin_cut=joined)
+    # white matter under a 2.5-3 mm grey cortex: an inner copy of the brain
+    # (the brain field moved 2.8 mm inward, so it follows the gyri as cores),
+    # cut a hair further out so its cap covers the grey cap except for the
+    # cortex ribbon; both caps take their colour from the cutter
+    brain = objs.get("GH_Brain")
+    white = None
+    if brain is not None:
+        white = anatomy.mesh_sdf("GH_WhiteMatter", lambda x, y, z: anatomy.brain_sdf(x, y, z) + 0.0028,
+                                 *anatomy.BRAIN_BOX, 0.0012, voxel=0.0012, project=1,
+                                 collection=ghc.get_collection("GoreHead"))
+        white.data.shade_smooth()
+        white.data.materials.append(brain.data.materials[0] if brain.data.materials else None)
+        obs["GH_WhiteMatter"] = white
     added = []
-    for name, lvl in CUT_LAYERS.items():
+    layers = dict(CUT_LAYERS)
+    if white is not None:
+        layers["GH_WhiteMatter"] = 3.4
+    for name, lvl in layers.items():
         # an L-shaped prism (profile in x/z, extruded along y); inner layers are
         # cut slightly further out so their caps step back from the outer caps
         off = 0.0006 * lvl
@@ -786,6 +830,9 @@ def add_cutaway(objs, x_hi=0.030, x_lo=0.003, z_step=-0.036):
             # the cut eye shows clear vitreous gel, not the sclera texture
             cm.materials.append(_vitreous_material())
             mod.material_mode = 'TRANSFER'
+        elif name in ("GH_Brain", "GH_WhiteMatter"):
+            cm.materials.append(_matter_material(name == "GH_WhiteMatter"))
+            mod.material_mode = 'TRANSFER'
         added.append((obs[name], mod, cutter))
 
     def cleanup():
@@ -794,6 +841,10 @@ def add_cutaway(objs, x_hi=0.030, x_lo=0.003, z_step=-0.036):
             bpy.data.objects.remove(cutter, do_unlink=True)
         bpy.data.objects.remove(joined, do_unlink=True)
         bpy.data.meshes.remove(me)
+        if white is not None:
+            wm = white.data
+            bpy.data.objects.remove(white, do_unlink=True)
+            bpy.data.meshes.remove(wm)
         for ob in hidden:
             ob.hide_render = False
     return cleanup

@@ -1144,7 +1144,10 @@ def _build_blunt():
     cut_centre = rc - c.rho + s * 0.0003 * t.noise(c.np * 1300.0) \
         + crush * s * 0.0014 * t.noise(c.np * 330.0, detail=2.0)
     # crushed, ragged margins (not a clean cut)
-    ragged = t.noise(c.np * 1500.0, detail=2.0) * 0.00045 + t.noise(c.np * 450.0, detail=2.0) * 0.0006
+    # (irregular lobes and notches at 2-6 mm; only a little fine fraying -- a
+    # strong high-frequency term reads as a saw-toothed paper edge)
+    ragged = t.noise(c.np * 1500.0, detail=1.0) * 0.00012 + t.noise(c.np * 450.0, detail=2.0) * 0.0005 \
+        + t.noise(c.np * 180.0, detail=2.0) * 0.0009
     cut_split = cut_centre.max(cut_arm) + ragged
     in_arm = cut_arm.gt(cut_centre)
     # tissue bridges: thin strands of nerves / vessels / fibrous tissue that
@@ -1766,7 +1769,9 @@ def _drip_seeds(t, pts, kind, kind_id, damage, bleed, drip):
         hwo = (0.00045 + gape * 0.5) * _slash_lens(t, tt)
         # (start on the lower lip itself: a seed inside the opening lands on the
         # wall and its glossy start shows as a white tab in the cut)
-        p0 = I + X * (tt * half_len) + Y * (sy * (hwo * 1.2 + 0.0008))
+        # (just below the lower lip's edge: the lip itself is wet; a ribbon
+        # started on the edge curls over it and its end cap shows as a pale tab)
+        p0 = I + X * (tt * half_len) + Y * (sy * (hwo * 1.1 + 0.0006))
     else:
         phi = t.math('ARCTAN2', dy, dx)
         th = phi + t.switch(first, (r1 - 0.5) * spread, 0.0)
@@ -2003,7 +2008,8 @@ def _build_fragments():
     # spongy diploe must show (fully red chips read as red gummies)
     fn = t.noise(t.pos() * 700.0, detail=2.0, signed=False)
     fn2 = t.noise(t.pos() * 1500.0 + t.vec(3.1, 0.0, 0.0), detail=1.0, signed=False)
-    g = t.store(g, "g_a", t.vec(0.3 + 0.5 * fn2, 0.0, t.smooth(0.42, 0.62, fn) * 0.85), 'FLOAT_VECTOR')
+    # (ivory outer table and broken diploe; blood on at most ~30-40 % of a chip)
+    g = t.store(g, "g_a", t.vec(0.3 + 0.5 * fn2, 0.0, t.smooth(0.55, 0.7, fn) * 0.75), 'FLOAT_VECTOR')
     # (a little crack density only: high values stain the whole chip with seeping blood)
     g = t.store(g, "g_b", (0.0, 0.0, 0.12), 'FLOAT_VECTOR')
     g = t.store(g, "g_wk", 1.0)
@@ -2126,6 +2132,9 @@ FILL_RING = 3
 # wall relaxation (Blur Attribute iterations on the wall vertices) and the
 # lumpy relief pushed along the wall normal: (scale 1/m, amplitude m)
 WALL_RELAX = 4
+# wall ring the tissue strands start from (a third of the way down: bridges
+# span the deep part of a wound, they do not hang from the lips)
+STRAND_RING = 2
 WALL_LUMPS = ((210.0, 0.00055), (650.0, 0.00018))
 # kinds whose wound bed fills with blood (skin layer, when bleeding), and how
 # far the fill reaches toward the centre line: a cut's bed is flooded; an
@@ -2137,7 +2146,7 @@ FILL_EXTENT = {"slash": 1.03, "blunt": 0.8}
 # vertex of the first wall ring starts a tissue strand across the gap
 CLOT_DENSITY = 30000.0        # blobs per m^2 of wall at factor 1
 CLOT_DENSITY_K = {"bullet": 2.5, "exit": 1.3, "slash": 0.9, "blunt": 1.2, "blast": 0.9}
-STRAND_P = {"slash": 0.010, "blunt": 0.03, "exit": 0.02, "blast": 0.02}
+STRAND_P = {"slash": 0.004, "blunt": 0.007, "exit": 0.005, "blast": 0.006}
 FILL_KINDS = tuple(FILL_EXTENT)
 MAIN_INPUTS = (
     ("Geometry", 'NodeSocketGeometry'),
@@ -2334,31 +2343,33 @@ def _build_refine():
     return t
 
 
-def _clot_blobs(t, g):
+def _clot_blobs(t, g, on_faces, factor):
     """Dark, glossy clot lumps scattered over the walls and floor of bleeding wounds.
 
     Flattened, noise-deformed ico spheres (0.7-3 mm) lying on the wall
     surface, density from g_clot (per wound kind). Real wound walls are
     clot-filled and lumpy, never a clean tissue sheet (refs 3, 4, 13, 15, 16).
     """
-    side = t.attr("g_side")
-    on_wall = t.bool('AND', side.gt(1.5), side.lt(WALL_STEPS + 1.5))
-    sel = t.bool('AND', on_wall, t.attr("g_clot").gt(0.01))
+    sel = t.bool('AND', on_faces, t.attr("g_clot").gt(0.01))
     dist = t.node('GeometryNodeDistributePointsOnFaces', {'Mesh': g, 'Selection': sel,
-                                                          'Density': t.attr("g_clot") * CLOT_DENSITY, 'Seed': 7},
+                                                          'Density': t.attr("g_clot") * (CLOT_DENSITY * factor),
+                                                          'Seed': 7},
                   distribute_method='RANDOM')
     pts, rot = t.out(dist, 'Points'), t.out(dist, 'Rotation')
     idx = t.index()
     r1, r2, r3 = (t.rand(0.0, 1.0, idx, 61 + k) for k in range(3))
-    sz = 0.0006 + 0.0024 * r1 * r1
+    sz = 0.0005 + 0.0015 * r1 * r1
     ico = t.out(t.node('GeometryNodeMeshIcoSphere', {'Radius': 1.0, 'Subdivisions': 2}))
     inst = t.node('GeometryNodeInstanceOnPoints', {'Points': pts, 'Instance': ico, 'Rotation': rot,
                                                    'Scale': t.vec(sz * (0.8 + 0.6 * r2), sz * (0.7 + 0.6 * r3),
-                                                                  sz * 0.45)})
+                                                                  sz * 0.22)})
     blobs = t.out(t.node('GeometryNodeRealizeInstances', {'Geometry': t.out(inst)}))
     # lumpy, not beads
-    jit = t.noise(t.pos() * 1300.0, detail=2.0, color=True) * 0.00035
+    jit = t.noise(t.pos() * 1300.0, detail=2.0, color=True) * 0.0003 \
+        + t.noise(t.pos() * 3500.0, detail=1.0, color=True) * 0.00012
     blobs = t.out(t.node('GeometryNodeSetPosition', {'Geometry': blobs, 'Offset': jit}))
+    # (the shader turns these into matte clot, not glossy beads)
+    blobs = t.store(blobs, "gore_clot", 1.0)
     blobs = t.store(blobs, "g_wk", float(WALL_STEPS + 2))
     blobs = t.store(blobs, "g_side", 99.0, 'FLOAT', 'FACE')
     blobs = t.out(t.node('GeometryNodeSetMaterial', {'Geometry': blobs, 'Material': t.inp("Blood Material")}))
@@ -2379,7 +2390,7 @@ def _tissue_strands(t, g, vshape):
     cdir = ctr.normalize()
     lat = cdir * wall.dot(cdir)
     dn = wall - lat
-    cum1 = t.mix(WALL_PROFILE[0], V_PROFILE[0], vshape)
+    cum1 = t.mix(WALL_PROFILE[STRAND_RING - 1], V_PROFILE[STRAND_RING - 1], vshape)
     span = (ctr - lat * cum1) * 2.0
     sl = span.length()
     ok = t.bool('AND', t.bool('AND', ring1, pick), t.bool('AND', sl.gt(0.0009), sl.lt(0.014)))
@@ -2387,7 +2398,7 @@ def _tissue_strands(t, g, vshape):
     rr = t.rand(0.0, 1.0, t.index(), 98)
     pts = t.store(pts, "s_a", t.pos(), 'FLOAT_VECTOR')
     pts = t.store(pts, "s_b", span, 'FLOAT_VECTOR')
-    pts = t.store(pts, "s_c", dn * (0.2 + 0.5 * rr) + span * ((rr - 0.5) * 0.3), 'FLOAT_VECTOR')
+    pts = t.store(pts, "s_c", dn * (0.04 + 0.16 * rr) + span * ((rr - 0.5) * 0.25), 'FLOAT_VECTOR')
     pts = t.store(pts, "s_r", 0.00025 + 0.00035 * t.rand(0.0, 1.0, t.index(), 99))
     line = t.out(t.node('GeometryNodeCurvePrimitiveLine', {'Start': (0.0, 0.0, 0.0), 'End': (1.0, 0.0, 0.0)}))
     line = t.out(t.node('GeometryNodeResampleCurve', {'Curve': line, 'Count': 10}))
@@ -2472,7 +2483,7 @@ def _build_cut():
         g = t.store(g, "g_side", float(k), 'FLOAT', 'FACE', sel=side)
         if k == FILL_RING:
             g = t.store(g, "g_fring", top, 'BOOLEAN', 'EDGE')
-        if k == 1:
+        if k == STRAND_RING:
             g = t.store(g, "g_ring1", top, 'BOOLEAN', 'POINT')
         sel_e = top
     # floor: shallow wounds close toward their centre line, a bloody bed of tissue
@@ -2506,7 +2517,7 @@ def _build_cut():
     # level about a third of the way down the wall, from where it overflows
     # the lowest point of the rim (the runs, see _build_blood).
     fill_t = t.smooth(0.0, 0.12, t.inp("Drip Time"))
-    level = t.mix(0.42, -0.12, fill_t)
+    level = t.mix(0.42, -0.26, fill_t)
     rsel = t.bool('AND', t.attr("g_fring", 'BOOLEAN'), t.attr("g_fill").gt(0.05))
     fill = t.out(t.node('GeometryNodeDuplicateElements', {'Geometry': g, 'Selection': rsel}, domain='EDGE'),
                  'Geometry')
@@ -2523,11 +2534,21 @@ def _build_cut():
     # catch the light as a row of glossy slats)
     ex = t.node('GeometryNodeExtrudeMesh', {'Mesh': fill, 'Offset': (remain - lat * level) * t.attr("g_fill")
                                             + dn * 0.2}, mode='EDGES')
-    fill = t.store(t.out(ex, 'Mesh'), "g_wk", float(WALL_STEPS + 2))
+    fill = t.out(ex, 'Mesh')
+    # (the sheet is one long thin strip per rim edge: relax it along the ring,
+    # or every strip gets its own normal and the bed shades as a row of slats;
+    # its lumps and clots are separate blobs and shader detail, never values
+    # stored on the strips' ends)
+    fblur = t.node('GeometryNodeBlurAttribute', {'Value': t.pos(), 'Iterations': 3, 'Weight': 1.0},
+                   data_type='FLOAT_VECTOR')
+    fill = t.out(t.node('GeometryNodeSetPosition', {'Geometry': fill, 'Position': t.out(fblur)}))
+    fill = t.store(fill, "g_wk", float(WALL_STEPS + 2))
     fill = t.store(fill, "g_side", 99.0, 'FLOAT', 'FACE')
     fill = t.out(t.node('GeometryNodeSetMaterial', {'Geometry': fill, 'Material': t.inp("Blood Material")}))
     fill = t.out(t.node('GeometryNodeSetShadeSmooth', {'Mesh': fill, 'Shade Smooth': True}))
-    clots = _clot_blobs(t, g)
+    side = t.attr("g_side")
+    clots = _join(t, _clot_blobs(t, g, t.bool('AND', side.gt(1.5), side.lt(WALL_STEPS + 1.5)), 1.0),
+                  _clot_blobs(t, fill, t.attr("g_fill").gt(0.05), 0.7))
     strands = _tissue_strands(t, g, vshape)
     # every wall ring gets the wall material (it paints the thin dermis line at
     # its top itself): skin's random-walk subsurface on thin, folded wall
@@ -2571,7 +2592,7 @@ def _build_attributes():
     wn2 = t.noise(p * 90.0, detail=2.0, signed=False)
     # patches of real blood (clear tissue between them), not a thin pink veil
     # over everything
-    wall_blood = t.smooth(0.42, 0.62, t.pick(layer, [0.7, 0.6, 0.3, 0.3, 0.5, 0.7, 0.3, 0.6]) * (0.5 + 0.5 * fr)
+    wall_blood = t.smooth(0.42, 0.62, t.pick(layer, [0.95, 0.7, 0.3, 0.3, 0.5, 0.7, 0.3, 0.6]) * (0.5 + 0.5 * fr)
                           + (wn - 0.5) * 0.9 + (wn2 - 0.5) * 0.5)
     vals = {
         "gore_wound": a.x.max(wallf).clamp(),

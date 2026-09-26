@@ -84,7 +84,7 @@ OBJECT_MATERIALS = {
     "GH_Skin": "GH_Skin", "GH_Muscle": "GH_Muscle", "GH_Skull": "GH_Bone", "GH_Jaw": "GH_Bone",
     "GH_Brain": "GH_Brain", "GH_Eye_L": "GH_Eye", "GH_Eye_R": "GH_Eye",
     "GH_Teeth_Upper": "GH_Teeth", "GH_Teeth_Lower": "GH_Teeth", "GH_Gums": "GH_Gums",
-    "GH_Tongue": "GH_Tongue", "GH_MouthCavity": "GH_MouthInterior",
+    "GH_Tongue": "GH_Tongue", "GH_MouthCavity": "GH_MouthInterior", "GH_Cervical": "GH_Bone",
 }
 
 GORE_ATTRS = ("gore_wound", "gore_depth", "gore_edge", "gore_blood",
@@ -925,7 +925,9 @@ def _skin_material(g, name="GH_Skin"):
     bnf = t.noise(p, 420.0, 2.0, 0.6)
     # (the dose field from the gore system is already smooth with lobed edges;
     # only a little noise here, or the zones break up into confetti)
-    jit = ((bno - 0.5) * 0.22 + (bnf - 0.5) * 0.08) * burn.smooth(0.0, 0.3) * (1.0 - burn.smooth(0.92, 1.0) * 0.5)
+    # (the same low-frequency noise shifts every zone boundary, so the zones
+    # interfinger in irregular patches instead of stacking as rings)
+    jit = ((bno - 0.5) * 0.34 + (bnf - 0.5) * 0.08) * burn.smooth(0.0, 0.3) * (1.0 - burn.smooth(0.92, 1.0) * 0.5)
     bn = (burn + jit).clamp()
     ery = bn.smooth(0.02, 0.22) * (0.6 + 0.4 * bnf)
     raw = bn.smooth(0.28, 0.42)
@@ -942,8 +944,11 @@ def _skin_material(g, name="GH_Skin"):
     on_burn = burn.smooth(0.08, 0.18)
     blister = edge * on_burn
     bm = blister.smooth(0.05, 0.6)
-    # tense, translucent yellowish fluid under a thin grey-white roof
-    col = t.mix(bm * 0.75, col, t.mix(0.55, col * (1.05, 0.72, 0.62), (0.55, 0.42, 0.25)))
+    # tense, translucent pale-yellow fluid (#E8D2A0) under a thin, wrinkled,
+    # matte grey-white roof of dead epidermis
+    roof = t.noise(p, 2600.0, 2.0).smooth(0.45, 0.62)
+    fluid = t.mix(0.5, col * (1.05, 0.78, 0.66), (0.80, 0.64, 0.36))
+    col = t.mix(bm * 0.8, col, t.mix(roof * 0.55, fluid, (0.70, 0.66, 0.60)))
     # sheets of dead epidermis peeling off: greyed skin colour, dark curled edges
     # (a few large sheets, not confetti)
     pe = t.noise(p, 55.0, 3.0, 0.6, distortion=0.4)
@@ -973,7 +978,7 @@ def _skin_material(g, name="GH_Skin"):
     col = t.mix(crack, col, t.mix(kd.smooth(0.0, 0.015), (0.03, 0.005, 0.004), (0.13, 0.018, 0.012)))
     rgh = t.mix(ery, rgh, rgh - 0.05)
     rgh = t.mix(raw, rgh, t.mix(wet, 0.35, 0.1))
-    rgh = t.mix(bm, rgh, 0.04)
+    rgh = t.mix(bm, rgh, 0.12 + roof * 0.35)
     rgh = t.mix(peel, rgh, 0.5)
     rgh = t.mix(leather, rgh, 0.38)
     rgh = t.mix(char, rgh, 0.35 + cn.smooth(0.35, 0.7) * 0.55)       # glossy tarry spots
@@ -1086,7 +1091,7 @@ def _fat_material(g):
     # the deeper, the darker (self-shadowed, blood-filled bed)
     # (the whole wall sits in the wound's shade: a wall facing the key light
     # must not come out brighter than the skin around it)
-    col = col * (0.62 - 0.42 * dj.smooth(0.12, 0.7))
+    col = col * (0.85 - 0.3 * dj.smooth(0.12, 0.8))
     # (moist, but a satin sheen: a mirror-like wall reflects the key light as
     # a white sheet that reads as a row of teeth)
     rough = t.mix(fm, f["Roughness"], mus["Roughness"]) + 0.16 - clot_m * 0.12 + (cn - 0.5) * 0.15
@@ -1212,16 +1217,17 @@ def _blood_material(g):
     # thin films dry first, from the edges inward
     a = (age + (n - 0.5) * 0.4 * age * (1.0 - age) + thin * 0.35 * age).clamp()
     fresh = (thick + (n_lo - 0.5) * 0.25).clamp().ramp([
-        (0.0, (0.33, 0.016, 0.022)), (0.3, (0.27, 0.007, 0.014)), (0.6, (0.11, 0.002, 0.004)),
-        (0.85, (0.045, 0.0015, 0.0025)), (1.0, (0.022, 0.0008, 0.0012))])
+        (0.0, (0.33, 0.016, 0.022)), (0.3, (0.27, 0.007, 0.014)), (0.65, (0.16, 0.004, 0.007)),
+        (1.0, (0.10, 0.002, 0.0035))])
     old = t.mix(n, (0.022, 0.008, 0.006), (0.045, 0.014, 0.009))
     old = t.mix(thin * 0.6, old, (0.10, 0.03, 0.02))            # dried thin film: brown stain
     col = t.mix(a, fresh, old)
     # clots: matte near-black lumps in thick blood (fresh clot forms within minutes)
     clot = t.noise(p, 900.0, 4.0).smooth(0.5, 0.7) * (a * (1.0 - a) * 4.0).clamp()
     col = t.mix(clot * 0.7, col, (0.07, 0.008, 0.006))
-    fclot = t.noise(p, 160.0, 3.0).smooth(0.56, 0.7) * (1.0 - a) * thick.smooth(0.3, 0.8)
-    col = t.mix(fclot * 0.85, col, (0.03, 0.0015, 0.002))
+    fclot = (t.noise(p, 160.0, 3.0).smooth(0.56, 0.7) * thick.smooth(0.3, 0.8)).max(t.attr("gore_clot") * 0.9) \
+        * (1.0 - a)
+    col = t.mix(fclot * 0.85, col, t.mix(n, (0.028, 0.0015, 0.002), (0.06, 0.004, 0.005)))
     # roughness broken up everywhere (0.08 wet cores .. 0.5 matte clots and
     # drying edges): no even gloss, never a chrome bar at grazing angles
     rough = t.mix(a, t.mix(wet, 0.3, 0.08), 0.32 + n * 0.2) + clot * 0.1 + fclot * 0.35 \
