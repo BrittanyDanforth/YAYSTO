@@ -195,6 +195,7 @@ def fbm3(x, y, z, scale, seed, octaves=3):
 CAGE_YC = 0.012                   # cage axis (x = 0, y = CAGE_YC): same axis B3 orients ribs about
 RIB_HALF_T = 0.0045               # rib/cartilage half thickness toward the lung (6-8 mm sections, B3 fit)
 PLEURA_GAP = 0.0022               # endothoracic fascia + parietal pleura + >= 2 mm FB-4 margin
+LUNG_CAGE_INSET = 0.0030 + PLEURA_GAP   # rib half thickness (6 mm sections) + pleural gap
 _CAGE = None
 
 
@@ -877,7 +878,9 @@ def _fissures(side):
 
 def _lung_raw(x, y, z, side):
     s = 1.0 if side == "L" else -1.0
-    d = cage_sdf(x, y, z)
+    # the lungs fill the pleural space to 2.2 mm off the ribs' inner faces (the ribs are 6 mm thick, so
+    # RIB_HALF_T's conservative 4.5 mm is not needed here): more volume toward the chest wall
+    d = cage_sdf(x, y, z, inset=LUNG_CAGE_INSET)
     zc = 1.405
     cap = ell(x, y, zc + np.maximum(z - zc, 0.0), (s * 0.048, 0.014, zc), (0.105, 0.115, 0.090))  # cupola 1.495
     d = smax(d, cap, 0.010)
@@ -1145,7 +1148,16 @@ def stomach_sub(v):
     return np.where(np.abs(l) < np.abs(o), 2, 1).astype(np.int32)
 
 
-SPLEEN_INSET = 0.010
+# The rib-table cage (egg-shaped, narrow posterolaterally) and the left dome leave no room for a 3 cm
+# thick lens AT the bible OBB centre (it lies on the inner cage wall).  The lens is therefore centred
+# 16 mm in from it along its diaphragmatic normal and 12 mm lower; clipped by the diaphragm and the
+# ribs it keeps 12-14 x 8 x 3.5 cm and ~150 g with its volume centroid at SPLEEN_CENTROID (verify
+# checks that point; CONTRACT.md records the 19 mm offset from the RB centre).
+SPLEEN_INSET = 0.016
+SPLEEN_SHIFT = np.array([0.0, -0.002, -0.012])
+SPLEEN_AB = (0.072, 0.048)          # half length / half width of the lens
+SPLEEN_T = 0.038                    # max thickness before clipping
+SPLEEN_CENTROID = (0.0987, 0.0225, 1.2233)
 
 
 def _spleen_lens(x, y, z):
@@ -1158,11 +1170,11 @@ def _spleen_lens(x, y, z):
     w = unit(np.cross(u, v))
     if w @ unit(np.array([c[0], c[1] - CAGE_YC, 0.0]) + np.array([0.0, 0.0, 0.3])) < 0:
         w = -w
-    c = c - w * SPLEEN_INSET
+    c = c - w * SPLEEN_INSET + SPLEEN_SHIFT
     q = np.stack([x - c[0], y - c[1], z - c[2]], -1)
     a, b, n = q @ u, q @ v, q @ w
-    r2 = (a / 0.061) ** 2 + ((b - 0.002) / 0.037) ** 2
-    t = 0.0325 * np.sqrt(np.clip(1.0 - r2, 0.0, None))
+    r2 = (a / SPLEEN_AB[0]) ** 2 + ((b - 0.002) / SPLEEN_AB[1]) ** 2
+    t = SPLEEN_T * np.sqrt(np.clip(1.0 - r2, 0.0, None))
     lens = np.maximum(n - 0.60 * t, -0.40 * t - n)
     d = smax(lens, (np.sqrt(r2) - 1.0) * 0.035, 0.005)
     notch = 1e9
@@ -1217,8 +1229,8 @@ def gallbladder_sdf(x, y, z):
     return smax(smin(d, hook, 0.004), under_diaphragm(x, y, z), 0.003)
 
 
-LIVER_EDGE = [(-0.150, 1.118), (-0.130, 1.126), (-0.100, 1.146), (-0.075, 1.160), (-0.040, 1.172),
-              (0.000, 1.180), (0.040, 1.196), (0.080, 1.210)]      # follows the right costal margin [R05 §11.1]
+LIVER_EDGE = [(-0.150, 1.124), (-0.130, 1.132), (-0.100, 1.152), (-0.075, 1.166), (-0.040, 1.176),
+              (0.000, 1.182), (0.040, 1.196), (0.080, 1.210)]      # follows the right costal margin [R05 §11.1]
 # (lowered 10-20 mm on the right so the liver reaches RB §7.5's 1550 g and 16 cm height with its volume
 #  centroid at (-0.055, -0.005, 1.230))
 
@@ -1226,14 +1238,14 @@ LIVER_EDGE = [(-0.150, 1.118), (-0.130, 1.126), (-0.100, 1.146), (-0.075, 1.160)
 def _liver_base(x, y, z):
     ex = np.array(LIVER_EDGE)
     zedge = np.interp(x, ex[:, 0], ex[:, 1])
-    slope = np.interp(x, [-0.10, -0.02, 0.02, 0.06], [0.08, 0.30, 0.75, 0.95])
+    slope = np.interp(x, [-0.10, -0.02, 0.02, 0.06], [0.02, 0.22, 0.75, 0.95])
     zlow = zedge + slope * np.clip(y + 0.080, 0.0, None)
     d = zlow - z
     d = smax(d, under_diaphragm(x, y, z, 0.0018), 0.004)
-    d = smax(d, cage_sdf(x, y, z, inset=RIB_HALF_T + 0.0040), 0.010)
-    d = smax(d, abdominal_cavity(x, y, z) + 0.002, 0.006)
+    d = smax(d, cage_sdf(x, y, z, inset=RIB_HALF_T + 0.0020), 0.010)
+    d = smax(d, abdominal_cavity(x, y, z) - 0.0010, 0.006)
     # left lobe tapers to a thin tip at the left MCL; nothing left-posterior (stomach/oesophagus)
-    d = smax(d, x - 0.086 - 0.20 * np.clip(-y - 0.02, 0, None), 0.012)
+    d = smax(d, x - 0.078 - 0.20 * np.clip(-y - 0.02, 0, None), 0.012)
     d = smax(d, y - (0.080 - 1.5 * np.clip(x, 0, None)), 0.010)
     # bare area / back: the liver reaches the posterior wall on the right only
     d = smax(d, y - 0.086, 0.008)
@@ -1288,23 +1300,27 @@ def bladder_sub(v):
 
 
 def omentum_sdf(x, y, z):
-    """Greater omentum: a fatty apron 5-10 mm thick hanging from the greater curvature (z ~1.12) to
-    z ~0.95, just inside the anterior abdominal wall: loose vertical drape folds, lobulated fat
-    globules, an irregular free lower edge [RB §7.5, plan §8.2 B4]."""
+    """Greater omentum: a fatty apron hanging from the greater curvature (z ~1.12) to z ~0.96, just inside
+    the anterior abdominal wall and draped over the backing mass [RB §7.5, plan §8.2 B4]: a rounded,
+    lobulated lower border (a soft U, thicker rolled edge), 6-11 mm thickness varying with fat lobules,
+    a few loose drape folds; no straight cut edges."""
     cav = abdominal_cavity(x, y, z)
-    fold = 0.0022 * np.sin(x * 95.0 + 0.8) * sstep(1.10, 1.00, z) + 0.0012 * np.sin(x * 210.0 + 2.0)
-    lob = 0.0011 * fbm3(x, y, z, 0.009, 62, 2)
-    thick = np.maximum(0.0046 + 0.0012 * fbm3(x, y, z, 0.022, 61, 2) - lob, 0.0034)
-    d = np.abs(cav + 0.0065 + fold) - thick
+    ax = np.abs(x)
+    fold = 0.0016 * np.sin(x * 70.0 + 0.8) * sstep(1.10, 1.00, z)
+    lobules = fbm3(x, y, z, 0.011, 62, 2)
+    half = 0.0031 + 0.0017 * (0.5 + 0.5 * fbm3(x, y, z, 0.030, 61, 2))
+    top = 1.118 - 0.020 * sstep(0.00, 0.10, -x) + 0.012 * sstep(0.02, 0.09, x)
+    # rounded, lobulated lower border: a soft U with 4-6 mm scallops
+    bottom = 0.962 + 0.034 * np.clip(ax / 0.104, 0.0, 1.2) ** 2.4 + 0.004 * np.sin(x * 62.0 + 1.3) \
+        + 0.0035 * fbm3(x, y, z, 0.020, 63, 1)
+    width = 0.101 + 0.008 * np.sin(np.clip((z - 0.96) / 0.16, 0.0, 1.0) * np.pi)
+    outline = smax(smax(ax - width, bottom - z, 0.022), z - top, 0.010)
+    half = half + 0.0018 * sstep(0.020, 0.0, z - bottom)            # rolled, thicker free edge
+    d = np.abs(cav + 0.0068 + fold) - half + 0.0011 * lobules
     import body_skin as BS
     _a, yf, yb, _nf, _nb = BS.torso_station(z)
     d = smax(d, y - (0.62 * yf + 0.38 * yb), 0.006)
-    width = 0.100 + 0.012 * sstep(1.10, 1.02, z)
-    d = smax(d, np.abs(x) - width, 0.010)
-    top = 1.118 - 0.020 * sstep(0.00, 0.10, -x) + 0.012 * sstep(0.02, 0.09, x)
-    bottom = 0.958 + 0.010 * np.sin(x * 48.0 + 1.3) + 0.006 * fbm3(x, y, z, 0.030, 63, 1) \
-        + 0.030 * sstep(0.06, 0.11, np.abs(x))
-    d = smax(d, np.maximum(z - top, bottom - z), 0.008)
+    d = smax(d, outline, 0.004)
     d = carve(d, _STOM(x, y, z), 0.0015, 0.004)
     d = carve(d, _GALB(x, y, z), 0.0015, 0.004)
     d = carve(d, _LIVB(x, y, z), 0.0015, 0.004)
@@ -1322,8 +1338,10 @@ def bowel_filler_sdf(x, y, z):
     # pelvic inlet / iliac fossae narrowing
     wmax = np.interp(z, [0.92, 0.99, 1.07, 1.20], [0.060, 0.085, 0.118, 0.125])
     d = smax(d, np.abs(x) - wmax, 0.010)
-    d = d + 0.0015 * fbm3(x, y, z, 0.045, 71, 2)
-    d = carve(d, _OMEB(x, y, z), 0.0030, 0.004)
+    # soft pillowed surface (2-3 cm undulations), not crumpled noise
+    pil = np.sin(x * 150.0 + 0.4) * np.sin(z * 130.0 + 1.1) + 0.6 * np.sin(y * 120.0 + x * 60.0 + 2.0)
+    d = d + 0.0018 * pil
+    d = carve(d, _OMEB(x, y, z), 0.0030, 0.006)
     d = carve(d, _LIVB(x, y, z), 0.0035, 0.008)
     d = carve(d, _STOM(x, y, z), 0.0035, 0.008)
     d = carve(d, _GALB(x, y, z), 0.0035, 0.004)
@@ -1783,6 +1801,32 @@ def airway_ids(v):
 _MESHED = {}
 
 
+# Taubin (volume-preserving) smoothing passes on the raw surface before decimation, per organ: the carved
+# impressions and the surface-net stair steps otherwise decimate into crumpled, crack-like creases.
+# Thin-walled organs (heart chambers, stomach, airway, oesophagus, bladder, diaphragm) are left exact.
+SMOOTH_ITERS = {"liver": 8, "spleen": 6, "kidney_L": 4, "kidney_R": 4, "kidney_fat_L": 6, "kidney_fat_R": 6,
+                "lung_R": 6, "lung_L": 6, "pancreas": 4, "gallbladder": 4, "thyroid": 4, "pericardium": 4,
+                "omentum": 6, "bowel_filler": 10, "adrenal_L": 2, "adrenal_R": 2}
+
+
+def taubin_arrays(v, f, iters, lam=0.50, mu=-0.53):
+    """Taubin lambda|mu smoothing of a triangle soup's vertices (uniform Laplacian); shrink-free."""
+    if iters <= 0 or len(f) == 0:
+        return v
+    e = np.concatenate([f[:, [0, 1]], f[:, [1, 2]], f[:, [2, 0]]])
+    e = np.unique(np.sort(e, axis=1), axis=0)
+    deg = np.bincount(e.ravel(), minlength=len(v)).astype(float)
+    deg = np.maximum(deg, 1.0)[:, None]
+    v = np.array(v, float)
+    for _ in range(iters):
+        for fac in (lam, mu):
+            acc = np.zeros_like(v)
+            np.add.at(acc, e[:, 0], v[e[:, 1]])
+            np.add.at(acc, e[:, 1], v[e[:, 0]])
+            v = v + fac * (acc / deg - v)
+    return v
+
+
 def mesh_organs(q=None, only=None, log=True):
     """{key: dict(v, f, organ (N,), sub (N,), hr=(v, f), lod=(v, f))} for every organ spec."""
     q = quick() if q is None else q
@@ -1795,6 +1839,7 @@ def mesh_organs(q=None, only=None, log=True):
         v, f = mesh_sdf(fn, box, hh)
         if len(f) == 0:
             raise RuntimeError(f"B4: organ {key} produced no surface (check its SDF and box)")
+        v = taubin_arrays(v, f, SMOOTH_ITERS.get(key, 0))
         hr = decimate_components(v, f, HR_FACTOR * tris)
         lod = decimate_components(*hr, tris)
         rec = dict(key=key, organ=oname, fn=fn, hr=hr, lod=lod, raw_tris=len(f),
