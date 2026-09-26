@@ -1003,7 +1003,10 @@ def _build_slash():
     # (where the opening would be thinner than ~0.3 mm the blade only scored
     # the skin: no hole, the scratch tail takes over -- a hairline hole with a
     # noisy outline would open and close in a saw-tooth)
-    cut = t.switch(opened.gt(0.5), -1.0, (hw - av).min(hw - 0.0003))
+    # (the test uses the smooth opening width, so lobes cannot pinch the cut
+    # into separate islands with skin slivers between them)
+    hw0 = (0.00055 + gape * 0.15) * lens
+    cut = t.switch(opened.gt(0.5), -1.0, (hw.max(0.00032) - av).min(hw0 - 0.0003))
     d_out = av - hw                                           # distance outside the knife line
     # gaping: the lips retract, the pull fades over W (never folds: slope < 1)
     W = (d_rim * 2.6).max(0.006)
@@ -1032,8 +1035,11 @@ def _build_slash():
     # cheekbone is the periosteum (the wall must not pierce the bone)
     vd = vd.min((t.inp("Bone Depth") - 0.0004).max(0.0012))
     open_hw = hw + d_rim
-    wall = t.vec(0.0, -sgn * open_hw, -vd)
-    center = t.vec(0.0, -sgn * (av + d_rim * fall), 0.0)
+    # near the two ends the walls also lean in along the cut, so the V closes
+    # at the tips too (walls that only move sideways leave a slot at each end)
+    end_u = -(u - t.clamp(u, -half_len * 0.8, half_len * 0.8))
+    wall = t.vec(end_u, -sgn * open_hw, -vd)
+    center = t.vec(end_u, -sgn * (av + d_rim * fall), 0.0)
     # bone under a deep cut is only scored (<= 1 mm), never opened
     zl = c.lc(LAYER_Z)
     reach = t.smooth(0.5, 0.65, D)
@@ -1547,7 +1553,9 @@ def _drip_seeds(t, pts, kind, kind_id, damage, bleed, drip):
                 best_h = best_h.min(hk)
         tt = t.switch(first, t.mix(best_t, (r1 - 0.5) * 1.6, 0.35 + 0.4 * r3), best_t)
         hwo = (0.00045 + gape * 0.5) * _slash_lens(t, tt)
-        p0 = I + X * (tt * half_len) + Y * (sy * hwo * 0.9)
+        # (start on the lower lip itself: a seed inside the opening lands on the
+        # wall and its glossy start shows as a white tab in the cut)
+        p0 = I + X * (tt * half_len) + Y * (sy * (hwo * 1.2 + 0.0008))
     else:
         phi = t.math('ARCTAN2', dy, dx)
         th = phi + t.switch(first, (r1 - 0.5) * spread, 0.0)
@@ -1642,6 +1650,9 @@ def _build_blood():
     # uneven bulges where it slowed down, and a fuller head
     rad = dw * (1.15 - 0.45 * tt + 0.28 * t.noise(t.pos() * 180.0, detail=1.0)
                 + 0.12 * t.noise(t.pos() * 520.0)) + dw * 0.35 * t.smooth(0.85, 1.0, tt)
+    # a run that stopped narrows to a rounded tip (no square-cut end); long
+    # runs get their heavy teardrop head below
+    rad = rad * (0.4 + 0.6 * t.smooth(1.0, 0.86, tt))
     curves = t.out(t.node('GeometryNodeSetCurveRadius', {'Curve': curves, 'Radius': rad}))
     profile = t.out(t.node('GeometryNodeCurvePrimitiveCircle', {'Resolution': 10, 'Radius': 1.0}, mode='RADIUS'))
     radius = t.out(t.node('GeometryNodeInputRadius'))
@@ -1837,7 +1848,7 @@ FILL_RING = 2
 # kinds whose wound bed fills with blood (skin layer, when bleeding), and how
 # far the fill reaches toward the centre line: a cut's bed is flooded; an
 # entrance hole holds a ring of dark clot around a still-open track
-FILL_EXTENT = {"slash": 1.06, "bullet": 0.62, "blunt": 0.8}
+FILL_EXTENT = {"slash": 1.03, "bullet": 0.62, "blunt": 0.8}
 FILL_KINDS = tuple(FILL_EXTENT)
 MAIN_INPUTS = (
     ("Geometry", 'NodeSocketGeometry'),
@@ -2103,7 +2114,7 @@ def _build_cut():
     # (the two lips' sheets sag a little toward the centre line and cross in a
     # shallow V there: two coplanar overlapping sheets, or jittered strips,
     # catch the light as a row of glossy slats)
-    ex = t.node('GeometryNodeExtrudeMesh', {'Mesh': fill, 'Offset': remain * t.attr("g_fill") + dn * 0.1},
+    ex = t.node('GeometryNodeExtrudeMesh', {'Mesh': fill, 'Offset': remain * t.attr("g_fill") + dn * 0.22},
                 mode='EDGES')
     fill = t.store(t.out(ex, 'Mesh'), "g_wk", float(WALL_STEPS + 2))
     fill = t.store(fill, "g_side", 99.0, 'FLOAT', 'FACE')

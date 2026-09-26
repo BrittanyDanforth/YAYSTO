@@ -3,7 +3,7 @@
  "frame": "body_zup_m",
  "godot_mapping": "(x, z, -y)",
  "generator": "blender/gore_body/build.py",
- "build_id": "gb-36622ffee38b",
+ "build_id": "gb-be448aa66c3e",
  "data": {
   "sets": {
    "head": {
@@ -45,7 +45,7 @@
     ],
     "ao_mean": 0.942,
     "normal_mean_z": 0.976,
-    "seconds": 503.8
+    "seconds": 935.2
    },
    "body": {
     "target": "GB_Body",
@@ -78,18 +78,18 @@
     },
     "rough_offset": 0.06,
     "albedo_linear_luminance": {
-     "median": 0.3245,
-     "p5": 0.2953,
-     "p95": 0.3476
+     "median": 0.3202,
+     "p5": 0.2913,
+     "p95": 0.3437
     },
     "albedo_linear_median_rgb": [
-     0.4745,
-     0.2908,
-     0.2168
+     0.4681,
+     0.287,
+     0.214
     ],
-    "ao_mean": 0.952,
-    "normal_mean_z": 0.9839,
-    "seconds": 412.4
+    "ao_mean": 0.956,
+    "normal_mean_z": 0.999,
+    "seconds": 473.3
    },
    "shorts": {
     "target": "GB_Shorts",
@@ -127,7 +127,7 @@
     ],
     "ao_mean": 0.951,
     "normal_mean_z": 0.9997,
-    "seconds": 23.4
+    "seconds": 19.5
    },
    "mouth": {
     "target": "GB_Mouth",
@@ -167,7 +167,7 @@
     ],
     "ao_mean": 0.616,
     "normal_mean_z": 0.9692,
-    "seconds": 38.2
+    "seconds": 51.1
    },
    "skeleton": {
     "target": "GB_Skeleton",
@@ -206,7 +206,7 @@
     ],
     "ao_mean": 0.846,
     "normal_mean_z": 0.9577,
-    "seconds": 235.9
+    "seconds": 314.7
    },
    "organs": {
     "target": "GB_Organs",
@@ -244,7 +244,7 @@
     ],
     "ao_mean": 0.596,
     "normal_mean_z": 0.962,
-    "seconds": 353.3
+    "seconds": 481.3
    },
    "brain": {
     "target": "GB_Brain",
@@ -282,7 +282,7 @@
     ],
     "ao_mean": 0.651,
     "normal_mean_z": 0.839,
-    "seconds": 47.7
+    "seconds": 61.2
    }
   },
   "tileables": {
@@ -1417,27 +1417,27 @@
    "tile_m": "physical size of one tileable repeat in metres (triplanar / metre UV scale)"
   },
   "timings_s": {
-   "uvs": 0.1,
-   "sets": 57.0,
-   "tileables": 83.7,
-   "painter": 33.0
+   "uvs": 0.0,
+   "sets": 2381.6,
+   "tileables": 80.8,
+   "painter": 32.2
   },
   "files": {
    "body_albedo.png": {
-    "bytes": 2283272,
-    "sha256": "29967b6d56a64e3a"
+    "bytes": 1854785,
+    "sha256": "dad93bf3f001cedc"
    },
    "body_bone.png": {
     "bytes": 121914,
     "sha256": "cae5a9a516fb5b56"
    },
    "body_normal.png": {
-    "bytes": 5035509,
-    "sha256": "e7c187f802ef2f0e"
+    "bytes": 1779616,
+    "sha256": "e520f1154a86253f"
    },
    "body_orm.png": {
-    "bytes": 3504503,
-    "sha256": "abab2fe9c6662701"
+    "bytes": 2680241,
+    "sha256": "af25ce5ba864f381"
    },
    "body_position.exr": {
     "bytes": 1400107,
@@ -1465,7 +1465,7 @@
    },
    "brain_normal.png": {
     "bytes": 2250425,
-    "sha256": "b6fe321a3a16db4a"
+    "sha256": "22d0db8be8e47cdf"
    },
    "brain_orm.png": {
     "bytes": 1024063,
@@ -1508,8 +1508,8 @@
     "sha256": "8af5edf2467860b0"
    },
    "head_normal.png": {
-    "bytes": 5617333,
-    "sha256": "2cd21510e758ae41"
+    "bytes": 5617330,
+    "sha256": "63a035056ac48635"
    },
    "head_orm.png": {
     "bytes": 3541759,
@@ -1544,8 +1544,8 @@
     "sha256": "55f4d11ea602f6e5"
    },
    "organs_normal.png": {
-    "bytes": 5289692,
-    "sha256": "49fba898ed85450f"
+    "bytes": 5289698,
+    "sha256": "29600c14ca387181"
    },
    "organs_orm.png": {
     "bytes": 5196674,

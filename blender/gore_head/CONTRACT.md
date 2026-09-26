@@ -42,7 +42,7 @@ at the same time.
 | Glabella (between brows) | (0, −0.093, 0.035) |
 | Eyeball centers | (±0.032, −0.070, 0.022), radius 0.012 |
 | Nose tip | (0, −0.111, −0.014) |
-| Mouth center (between lips) | (0, −0.094, −0.055), lips parted 6.9 mm, mouth width ≈ 0.048 (corners ±0.024, y −0.085) |
+| Mouth center (between lips) | (0, −0.094, −0.055), lips parted 7.4 mm (measured at the mid-line), mouth width ≈ 0.048 (corners ±0.024, y −0.085) |
 | Chin bottom | (0, −0.080, −0.103) (pogonion, most forward chin point: (0, −0.094, −0.092)) |
 | Ear canals | (±0.072, 0, 0) |
 | Head half-width | ≈ 0.074 |
@@ -62,7 +62,7 @@ evaluated verts; others as needed).
 
 | Object | What it is |
 |---|---|
-| `GH_Skin` | outer skin of head + neck. Eye openings with eyelids, nose with nostrils, ears, **lips slightly parted (≈6-8 mm)** leading into a mouth cavity so teeth and tongue are visible |
+| `GH_Skin` | outer skin of head + neck. Eye openings with eyelids, nose with nostrils, ears, **lips slightly parted (7.4 mm at the mid-line)** leading into a mouth cavity so teeth and tongue are visible |
 | `GH_Muscle` | soft tissue shell between skin and skull (≈3-4 mm under skin on the scalp, thicker on cheeks/jaw). Seen only through wounds |
 | `GH_Skull` | cranium + face bones with **real bone thickness** (outer + inner surface, ≈6-7 mm), orbits (eye sockets), nasal opening, cheekbones, upper jaw |
 | `GH_Jaw` | mandible |
