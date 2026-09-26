@@ -100,6 +100,32 @@ def band(x, lo, hi, soft):
     return sstep(lo - soft, lo + soft, x) * sstep(hi + soft, hi - soft, x)
 
 
+def sinterp(x, xp, fp):
+    """Shape-preserving cubic interpolation (PCHIP, Fritsch-Carlson), clamped at the ends.
+
+    Used for every station table so the skin has no slope kinks at the stations
+    (piecewise-linear tables print faint horizontal lines on a smooth-shaded body)."""
+    xp = np.asarray(xp, float)
+    fp = np.asarray(fp, float)
+    x = np.clip(np.asarray(x, float), xp[0], xp[-1])
+    h = np.diff(xp)
+    delta = np.diff(fp) / h
+    m = np.empty_like(fp)
+    m[0], m[-1] = delta[0], delta[-1]
+    if len(xp) > 2:
+        s = delta[:-1] * delta[1:] > 0
+        w1 = 2.0 * h[1:] + h[:-1]
+        w2 = h[1:] + 2.0 * h[:-1]
+        d0 = np.where(s, delta[:-1], 1.0)
+        d1 = np.where(s, delta[1:], 1.0)
+        m[1:-1] = np.where(s, (w1 + w2) / (w1 / d0 + w2 / d1), 0.0)
+    i = np.clip(np.searchsorted(xp, x) - 1, 0, len(xp) - 2)
+    t = (x - xp[i]) / h[i]
+    t2, t3 = t * t, t * t * t
+    return ((2 * t3 - 3 * t2 + 1) * fp[i] + (t3 - 2 * t2 + t) * h[i] * m[i]
+            + (-2 * t3 + 3 * t2) * fp[i + 1] + (t3 - t2) * h[i] * m[i + 1])
+
+
 def quad_radius(th, r_lat, r_ant, r_med, r_post, n):
     """Polar radius of a superellipse with a different radius in each half-axis.
 
@@ -309,7 +335,7 @@ TORSO_Z0, TORSO_Z1 = 0.862, 1.655
 def torso_station(z):
     """(half width, front y, back y, n_front, n_back) interpolated at z."""
     T = TORSO
-    return tuple(np.interp(z, T[:, 0], T[:, i]) for i in range(1, 6))
+    return tuple(sinterp(z, T[:, 0], T[:, i]) for i in range(1, 6))
 
 
 def torso_centre_y(z):
@@ -324,7 +350,7 @@ def _pec_relief(x, z):
     # lower border: level medially, sweeping up laterally into the anterior axillary fold
     z_low = 1.265 + 2.8 * np.maximum(ax - 0.060, 0.0) ** 2 + 0.035 * sstep(0.110, 0.155, ax)
     lower = sstep(z_low - 0.014, z_low + 0.030, z)
-    dome = np.interp(z, [1.26, 1.30, 1.36, 1.42, 1.455], [1.0, 1.0, 0.75, 0.35, 0.0])
+    dome = sinterp(z, [1.26, 1.30, 1.36, 1.42, 1.455], [1.0, 1.0, 0.75, 0.35, 0.0])
     medial = sstep(0.006, 0.030, ax)                                # sternal furrow between the heads
     lateral = sstep(0.180, 0.130, ax)
     bulk = 0.0085 * lower * dome * medial * lateral
@@ -349,7 +375,9 @@ def _abdomen_relief(x, z):
     # inguinal groove: ASIS skin (0.122, 0.992) -> pubic tubercle (0.022, 0.913)
     t = np.clip(((ax - 0.122) * -0.100 + (z - 0.992) * -0.079) / (0.100 ** 2 + 0.079 ** 2), 0.0, 1.2)
     px, pz = 0.122 - 0.100 * t, 0.992 - 0.079 * t
-    ing = -0.0028 * gauss(np.hypot(ax - px, z - pz), 0.016) * sstep(1.2, 0.9, t)
+    # groin crease, deepest at the mid-inguinal point [RB §7.1 (0.065, -0.068, 0.940)] where the femoral
+    # vessels pass (FB-5 depth 15-30 mm is measured from this skin)
+    ing = -(0.0028 + 0.0085 * gauss(t - 0.62, 0.22)) * gauss(np.hypot(ax - px, z - pz), 0.013) * sstep(1.2, 0.9, t)
     # costal margin: slight hollow below the ribs, epigastric fossa
     epi = -0.0022 * gauss(ax, 0.03) * gauss(z - 1.245, 0.025)
     jug = -0.004 * gauss(ax, 0.012) * gauss(z - 1.458, 0.010)
@@ -379,9 +407,9 @@ SCAPULA = [(0.072, 1.470), (0.085, 1.322), (0.150, 1.410), (0.165, 1.455)]
 def _back_relief(x, z):
     """Spinal furrow, erector columns, scapulae (+ spine of scapula), PSIS dimples, trapezius."""
     ax = np.abs(x)
-    depth = np.interp(z, [0.95, 1.00, 1.05, 1.15, 1.22, 1.30, 1.40, 1.47, 1.55],
+    depth = sinterp(z, [0.95, 1.00, 1.05, 1.15, 1.22, 1.30, 1.40, 1.47, 1.55],
                       [0.003, 0.006, 0.0090, 0.0085, 0.006, 0.0025, 0.0020, 0.002, 0.004])
-    width = np.interp(z, [0.95, 1.10, 1.25, 1.45, 1.55], [0.010, 0.016, 0.012, 0.010, 0.012])
+    width = sinterp(z, [0.95, 1.10, 1.25, 1.45, 1.55], [0.010, 0.016, 0.012, 0.010, 0.012])
     furrow = -depth * gauss(ax, width)
     erect = 0.0055 * gauss(ax - 0.036, 0.020) * band(z, 1.00, 1.30, 0.06)
     sd = _tri_sdf2(ax, z, SCAPULA)
@@ -470,7 +498,7 @@ ARM = np.array([
 
 def _arm_profile(S, TH):
     A_ = ARM
-    rl, ra, rm, rp, n = (np.interp(S, A_[:, 0], A_[:, i]) for i in range(1, 6))
+    rl, ra, rm, rp, n = (sinterp(S, A_[:, 0], A_[:, i]) for i in range(1, 6))
     R = quad_radius(TH, rl, ra, rm, rp, n)
 
     def bump(s0, th0, amp, ss, sth):
@@ -582,11 +610,11 @@ THUMB_R = [0.0135, 0.0112, 0.0098, 0.0086]
 
 def _palm_profile(S, TH):
     # hand-local tube: U = palmar (n), V = radial (f); radii palmar / radial / dorsal / ulnar
-    rp = np.interp(S, [-0.02, 0.01, 0.03, 0.06, 0.085, 0.10], [0.019, 0.018, 0.017, 0.015, 0.012, 0.010])
-    rr = np.interp(S, [-0.02, 0.01, 0.04, 0.07, 0.09, 0.10], [0.030, 0.030, 0.033, 0.036, 0.036, 0.034])
-    rd = np.interp(S, [-0.02, 0.01, 0.04, 0.08, 0.10], [0.017, 0.015, 0.012, 0.011, 0.010])
-    ru = np.interp(S, [-0.02, 0.01, 0.04, 0.07, 0.09, 0.10], [0.028, 0.029, 0.034, 0.036, 0.034, 0.030])
-    n = np.interp(S, [-0.02, 0.02, 0.06], [2.6, 3.2, 3.6])
+    rp = sinterp(S, [-0.02, 0.01, 0.03, 0.06, 0.085, 0.10], [0.019, 0.018, 0.017, 0.015, 0.012, 0.010])
+    rr = sinterp(S, [-0.02, 0.01, 0.04, 0.07, 0.09, 0.10], [0.030, 0.030, 0.033, 0.036, 0.036, 0.034])
+    rd = sinterp(S, [-0.02, 0.01, 0.04, 0.08, 0.10], [0.017, 0.015, 0.012, 0.011, 0.010])
+    ru = sinterp(S, [-0.02, 0.01, 0.04, 0.07, 0.09, 0.10], [0.028, 0.029, 0.034, 0.036, 0.034, 0.030])
+    n = sinterp(S, [-0.02, 0.02, 0.06], [2.6, 3.2, 3.6])
     return quad_radius(TH, rp, rr, rd, ru, n)
 
 
@@ -643,7 +671,7 @@ LEG_W = unit(ANKLE - HIP)
 #                                                ankle 22.5; landmarks: trochanter skin 0.178, patella skin -0.047]
 LEG = np.array([
     (1.010, -0.040, 0.070, 0.050, 0.130, 2.3),      # thigh top buried in the pelvis
-    (0.960, -0.060, 0.095, 0.020, 0.160, 2.3),      # femoral triangle below the inguinal crease
+    (0.960, -0.055, 0.095, 0.020, 0.160, 2.3),      # femoral triangle below the inguinal crease
     (0.910, -0.075, 0.108, 0.008, 0.177, 2.3),
     (0.860, -0.079, 0.116, 0.004, 0.177, 2.3),
     (0.820, -0.076, 0.118, 0.004, 0.177, 2.3),      # gluteal fold (0.090, 0.120, 0.820)
@@ -682,7 +710,7 @@ def _leg_s_to_z(S):
 def _leg_profile(S, TH):
     z = _leg_s_to_z(S)
     L_ = LEG
-    yf, yb, xm, xl, n = (np.interp(z, L_[::-1, 0], L_[::-1, i]) for i in range(1, 6))
+    yf, yb, xm, xl, n = (sinterp(z, L_[::-1, 0], L_[::-1, i]) for i in range(1, 6))
     P = leg_axis_at_z(z.ravel()).reshape(z.shape + (3,))
     px, py = P[..., 0], P[..., 1]
     R = quad_radius(TH, xl - px, py - yf, px - xm, yb - py, n)
@@ -696,7 +724,7 @@ def _leg_profile(S, TH):
     R = R + bump(0.690, -95, 0.0040, 0.090, 45)          # hamstrings
     R = R + bump(0.690, -10, -0.0020, 0.090, 12)         # iliotibial band flat
     # sartorius furrow: spirals from the front-lateral hip to the medial knee
-    th_s = np.radians(np.interp(z, [0.50, 0.62, 0.75, 0.88], [175, 150, 120, 95]))
+    th_s = np.radians(sinterp(z, [0.50, 0.62, 0.75, 0.88], [175, 150, 120, 95]))
     R = R - 0.0022 * gauss(wrap(TH - th_s), np.radians(10)) * band(z, 0.52, 0.86, 0.03)
     # knee [RB §7.1 patella skin (0.090, -0.047, 0.497)]: flat-topped patella, tendon, fat pads, tuberosity
     arc = wrap(TH - np.radians(90)) * 0.050                 # ~ metres along the front of the knee
@@ -778,7 +806,7 @@ FOOT = np.array([
 
 def _foot_profile(S, TH):
     F_ = FOOT
-    wm, wl, top, hc, n = (np.interp(S, F_[:, 0], F_[:, i]) for i in range(1, 6))
+    wm, wl, top, hc, n = (sinterp(S, F_[:, 0], F_[:, i]) for i in range(1, 6))
     # section: U = lateral, V = up; centre height hc; bottom reaches below the floor (clipped)
     return quad_radius(TH, wl, top - hc, wm, hc + 0.006, n)
 
@@ -791,7 +819,7 @@ def _foot_tube():
     if FOOT_TUBE is None:
         def off(S):
             F_ = FOOT
-            return np.zeros_like(S), np.interp(S, F_[:, 0], F_[:, 4])
+            return np.zeros_like(S), sinterp(S, F_[:, 0], F_[:, 4])
         FOOT_TUBE = StarTube(FOOT_O, FOOT_F, FOOT_L, (0, 0, 1), -0.01, 0.24, _foot_profile, offset=off,
                              ds=0.002, nth=120, cap0=0.004, cap1=0.228, cap_k=0.015)
     return FOOT_TUBE
@@ -904,7 +932,7 @@ def body_sdf(x, y, z):
 def head_clip_z(x, y):
     """Height below which the head project's skin is replaced by the body neck (body frame)."""
     ax = np.abs(x)
-    zc = np.interp(y, [-0.12, -0.030, 0.000, 0.030, 0.070, 0.12], [1.536, 1.540, 1.560, 1.590, 1.612, 1.622])
+    zc = sinterp(y, [-0.12, -0.030, 0.000, 0.030, 0.070, 0.12], [1.536, 1.540, 1.560, 1.590, 1.612, 1.622])
     return zc + 0.010 * sstep(0.04, 0.07, ax) * sstep(0.03, -0.02, y)
 
 
@@ -1183,7 +1211,7 @@ def shorts_sdf(x, y, z):
     leg = _leg_tube()(ax, y, zc)
     trunk = smin(c["torso"], c["glute"], 0.05)        # the cloth bridges the natal cleft and the creases
     base = smin(trunk, leg, 0.05)
-    ease = np.interp(z, [0.68, 0.72, 0.80, 0.88, 0.95, 1.01, 1.045], [0.016, 0.014, 0.010, 0.008, 0.007, 0.005, 0.004])
+    ease = sinterp(z, [0.68, 0.72, 0.80, 0.88, 0.95, 1.01, 1.045], [0.016, 0.014, 0.010, 0.008, 0.007, 0.005, 0.004])
     d = base - ease - _shorts_folds(ax, y, z)
     split = 0.004 - ax - 2.0 * np.maximum(z - SHORTS_GUSSET, 0.0)       # separate leg tubes below the gusset
     d = smax(d, split, 0.004)
@@ -1890,6 +1918,11 @@ def build_shorts(skin=None, quick=None):
         gg.cut_plane(obj.data, SHORTS_HEM, keep="above")
         gg.remove_loose(obj.data)
         gg.decimate_to(obj, SHORTS_OUTER_TRIS)
+        # collapse decimation parks vertices off the surface; put them back on the cloth (rim rows stay put)
+        v = gbc.get_verts(obj.data)
+        rim = (v[:, 2] > SHORTS_TOP - 1e-4) | (v[:, 2] < SHORTS_HEM + 1e-4)
+        v[~rim] = _A().project_to_surface(shorts_sdf, v[~rim], h, 3)
+        gbc.set_verts(obj.data, v)
     with T("B1: shorts solidify + UV"):
         mod = obj.modifiers.new("gb_solidify", 'SOLIDIFY')
         mod.thickness = SHORTS_THICK

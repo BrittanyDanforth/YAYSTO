@@ -967,14 +967,23 @@ def b1_checklist_rb7():
     hand = v[(v[:, 0] > 0.44)]
     tip_z = float(hand[:, 2].min())
     def nipple(sx):
-        # the vertex that stands out most from its 6-12 mm ring of neighbours near the RB §7.1 nipple
+        # the vertex standing out most from a quadratic fit to its 6-14 mm neighbourhood (removes the chest's
+        # own curvature), searched within 30 mm of the RB §7.1 nipple, on the HR mesh
         c = np.array([0.10 * sx, 1.30])
         q = vh[(np.hypot(vh[:, 0] - c[0], vh[:, 2] - c[1]) < 0.045) & (vh[:, 1] < 0)]
-        dd = np.hypot(q[:, None, 0] - q[None, :, 0], q[:, None, 2] - q[None, :, 2])
-        ring = (dd > 0.006) & (dd < 0.012)
-        mean_y = (ring * q[None, :, 1]).sum(1) / np.maximum(ring.sum(1), 1)
-        score = np.where(np.hypot(q[:, 0] - c[0], q[:, 2] - c[1]) < 0.03, mean_y - q[:, 1], -1.0)
-        return q[np.argmax(score)]
+        best, arg = -1.0, 0
+        for i in np.nonzero(np.hypot(q[:, 0] - c[0], q[:, 2] - c[1]) < 0.03)[0]:
+            du, dw = q[:, 0] - q[i, 0], q[:, 2] - q[i, 2]
+            r = np.hypot(du, dw)
+            m = (r > 0.006) & (r < 0.014)
+            if m.sum() < 8:
+                continue
+            A_ = np.stack([np.ones(m.sum()), du[m], dw[m], du[m] ** 2, dw[m] ** 2, du[m] * dw[m]], 1)
+            coef = np.linalg.lstsq(A_, q[m, 1], rcond=None)[0]
+            s = coef[0] - q[i, 1]
+            if s > best:
+                best, arg = s, i
+        return q[arg]
     nip, nip_r = nipple(1.0), nipple(-1.0)
     notch = LM.landmark("jugular_notch")
     drop = float(notch[2] - nip[2])
