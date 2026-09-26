@@ -188,7 +188,7 @@ Neurovascular bundles travel together (artery + 1–2 veins + nerve in one sheat
 |---|---|---|---|
 | 0–2 min | All surfaces wet and glossy (roughness 0.1–0.3); fresh blood film | Same, but no new ooze | `[K](M)` |
 | 2–10 min | Clot glazes small vessels; muscle surface starts to bloom brighter red | Surface film thins; specular falls | `[K](M)` |
-| 10–30 min | Muscle bloomed (`#A5362F`); fat edges matte; exposed bone chalky at edges | Muscle surface tacky; fat matte; fascia and tendon lose shine; brain surface skin forms | `[K](M)` |
+| 10–30 min | Muscle slightly brighter (weak bloom, largely masked by blood; see the §1.2 fact-check); fat edges matte; exposed bone chalky at edges | Muscle blooms to `#A5362F`, then turns tacky; fat matte; fascia and tendon lose shine; brain surface skin forms | `[K](M)` |
 | 30–120 min | Serous exudate (yellow-pink) and fibrin film start to coat the wound (living only) | Muscle darkens to brown-red; bone ivory-white and dry; exposed dura and fascia parchment-like and translucent | `[K](M)` |
 | 2–6 h | Swelling of wound margins (living only) | Exposed wound margins and abrasions dry to dark brown parchment; pulped brain forms a grey-brown crust | `[K](M)` |
 | 6–24 h | — | Deep dark-brown leathery surfaces; cracking of thin layers; corneal and scleral changes per `[R1-04 §11.6]` | `[K](M)` |
@@ -514,7 +514,7 @@ Bullet through or next to the orbit: the globe is burst by the temporary cavity;
 |---|---|---|---|
 | **Luxation** (globe pushed in front of the lids) | Eye bulges far forward; lids spasm and lock behind the globe's equator; cornea may look normal; vision may persist briefly; double vision because the eyes no longer align | Globe 10–20 mm forward of normal | `[K](M)` |
 | **Hanging globe** (muscles torn, nerve intact) | The eye hangs out of the orbit onto the cheek, attached by the optic nerve and remnants of muscle; white sclera with 1–4 red muscle stumps at the insertion distances in §5.1; white optic nerve cord 3–6 mm thick visible for 1–3 cm; orbital fat lobules protrude | **~10–15 mm of forward travel before the nerve is taut** (corrected: was "up to ~2–3 cm beyond the rim") | `[K](M)`, `[E]` |
-| *Fact-check note on the hanging globe* | The old value contradicts §5.1. The optic nerve has only ~6–10 mm of slack, and nerve tissue fails at roughly 10–30 % strain (~3–8 mm more on a 25–30 mm nerve). The globe can therefore move ~10–15 mm forward, far enough for luxation in front of the lids, before the nerve is taut. **An eye resting on the cheek means the optic nerve is stretched to failure or avulsed (then it hangs on muscle, conjunctiva and fat), or the orbital floor or rim is destroyed so the globe drops through it.** Render the "eye on the cheek" state only with nerve avulsion or orbital-wall destruction | — | — | `[K](M)` anatomy, `[E]` arithmetic |
+| *Fact-check note on the hanging globe* | The old value contradicts §5.1. The optic nerve has only ~6–10 mm of slack, and nerve tissue fails at roughly 10–30 % strain (~3–8 mm more on a 25–30 mm nerve). The globe can therefore move ~10–15 mm forward, far enough for luxation in front of the lids, before the nerve is taut. **An eye resting on the cheek means the optic nerve is stretched to failure or avulsed (then it hangs on muscle, conjunctiva and fat), or the orbital floor or rim is destroyed so the globe drops through it.** Render the "eye on the cheek" state only with nerve avulsion or orbital-wall destruction | — | `[K](M)` anatomy, `[E]` arithmetic |
 | **Enucleation** (globe detached) | Globe with a 5–20 mm optic nerve stump, muscle tags, conjunctival rags; **empty orbit**: dark red cavity, yellow fat lobules herniating, muscle stumps, bleeding that fills the socket and overflows; the lids sink inward | Globe 7–7.5 g; bleeding 10–50 mL/min (ophthalmic artery and branches, spasm reduces it within minutes) | `[K](M)`, `[E]` |
 | Detached globe over time | Cornea clouds within 1–2 h; sclera dries yellow-brown; the globe slowly softens as fluid leaks | — | `[K](M)`, `[R1-04 §11.6]` |
 
@@ -581,7 +581,7 @@ Bullet through or next to the orbit: the globe is burst by the temporary cavity;
 | Partial avulsion | Flap hinged on a pedicle (often at the temple or occiput, carrying the superficial temporal or occipital vessels); hangs down over the face or neck | — | `[K](M)` |
 | Sharp scalping (knife) | Round or oval defect 8–15 cm at the crown with incised margins, pericranium usually left on the bone | — | `[K](M)` |
 | Bleeding | Vessels are held open by fibrous septa and cannot retract (`[R1-03 §7.3]`); streams from the margins, runs into the eyes and down the face and neck | Complete avulsion **50–150 mL/min initially, falling to 20–60 mL/min over 10–30 min** (corrected: was 100–300 mL/min); Class III shock after **~15–45 min** untreated (corrected: was 10–30 min) | `[E]` from `[R1-03 §5, §11.3]` |
-| *Fact-check note on scalp bleeding* | The mechanism is ✓ verified `[K]`: vessels in the dense subcutaneous layer are tethered by septa and cannot retract. The old rate was inconsistent with round one's own per-vessel values. Round one gives ~10–30 mL/min per open superficial temporal artery, 1–2 mm branches, and ~50–100 mL/min resting flow for the whole scalp `[R1-03]`. Summing both superficial temporal, both occipital, both posterior auricular and the supraorbital/supratrochlear arteries gives ~50–160 mL/min. Also, vessels in an avulsion are **stretched and torn**, which provokes more spasm than a clean cut `[R1-03 §4.4]`. Clinical course fits the lower rate: patients with total scalp avulsion are typically still alive, but in shock, 1–3 h after injury `[K](M)`. That implies an average loss of tens of mL/min, not hundreds | — | — | `[E]`, `[K](M)` |
+| *Fact-check note on scalp bleeding* | The mechanism is ✓ verified `[K]`: vessels in the dense subcutaneous layer are tethered by septa and cannot retract. The old rate was inconsistent with round one's own per-vessel values. Round one gives ~10–30 mL/min per open superficial temporal artery, 1–2 mm branches, and ~50–100 mL/min resting flow for the whole scalp `[R1-03]`. Summing both superficial temporal, both occipital, both posterior auricular and the supraorbital/supratrochlear arteries gives ~50–160 mL/min. Also, vessels in an avulsion are **stretched and torn**, which provokes more spasm than a clean cut `[R1-03 §4.4]`. Clinical course fits the lower rate: patients with total scalp avulsion are typically still alive, but in shock, 1–3 h after injury `[K](M)`. That implies an average loss of tens of mL/min, not hundreds | — | `[E]`, `[K](M)` |
 
 ### 6.3 Degloving (limbs and trunk)
 
@@ -1467,7 +1467,7 @@ Disturbing a pool after it has gelled leaves lumps, furrows and smears that do n
 | 9 | Brain is grey chunks or solid lumps | Very soft pink-grey and cream paste that smears and strings; CSF makes it watery and pink | §1.4 | `[K](M)` |
 | 10 | Everything inside the body is red | Yellow fat, silver fascia and tendon, cream nerves, ivory bone, purple spleen, red-brown liver, pink lung; muscle turns brighter red in air and brown after death | §1.1, §1.5 | `[K](M)` |
 | 11 | Blood spatter is one generic splat decal | Arterial arcs and zigzags, cast-off lines on ceilings, radiating impact spatter, spaced drip trails, voids, footprints, smears | §15 | `[K](H)` |
-| 12 | Blood pools stay glossy and liquid forever | Gel in 3–15 min, serum ring in 1–3 h, cracked crust after 1–3 days | §15.6 | `[K](M)` |
+| 12 | Blood pools stay glossy and liquid forever | Gel in 3–15 min (default 5–15), serum ring from 30 min–3 h, cracked crust after 1–3 days | §15.6 | `[K](M)` |
 | 13 | The first hammer blow sprays blood | No exposed blood yet, so no spatter and no cast-off on the first blow | §15.3–15.4 | `[K](H)` |
 | 14 | Chest wounds are silent | Large chest wounds suck and bubble with every breath | §11.3 | `[K](H)` |
 | 15 | A victim with a cut windpipe screams | No voice below the vocal cords; air hisses from the neck; coughing sprays blood out of the wound | §14.2 | `[K](H)` |
@@ -1475,7 +1475,11 @@ Disturbing a pool after it has gelled leaves lumps, furrows and smears that do n
 | 17 | Liver and spleen hits look like muscle hits | Solid organs crack into stellate fissures and pulp; they bleed internally with little outside | §12 | `[K](H)` |
 | 18 | Tamponade looks like ordinary blood loss | Distended neck veins and a dusky face with falling BP | §10.4 | `[R1-03 §8.2]` |
 | 19 | A single knife swipe cuts the head off | The spine stops the blade; separation only through a disc space after many strokes, or with heavy chopping, blast or tearing forces | §14.5 | `[K](M)` |
-| 20 | Bloody footprints stay perfect indefinitely | Heavy smeared first prints, then tread detail, then only heel and ball, fading over ~5–15 steps | §15.7 | `[E]` |
+| 20 | Bloody footprints stay perfect indefinitely | Heavy smeared first prints, then tread detail, then only heel and ball, fading over ~6–13 visible steps (corrected: was ~5–15) | §15.7 | `[E]` |
+| 21 | A shotgun or rifle hit to the head (or anywhere) throws the body backwards | Bullet momentum moves an 80 kg body by only 0.01–0.18 m/s (`[R1-01 §1]`, verified by calculation). A body with a burst head drops **where it stands**, crumpling at the knees and hips, with a slight bias from the posture it was in. Ejecta fly; the body does not | `[R1-01]`, `[R2-02]`, `[R2-03]` | `[K](H)` (added in the fact-check) |
+| 22 | "Hydrostatic shock": any hit to the trunk injures or switches off the brain through a pressure wave | Damage is local, within the temporary cavity. The skull and heart bursts in §2–3 and §10.3 are confined-space effects at the wound, not remote shock. Do not add brain effects to trunk hits except through blood loss and circulatory failure | §1.4 | `[K](M)` (added in the fact-check) |
+| 23 | The eyes roll back at the moment of death | At death the lids are usually partly open, the eyes near mid-position or slightly divergent, the pupils dilating. Upward deviation belongs to syncope and seizure onset | §14.5, `[R1-04 §11]` | `[K](H)` (added in the fact-check) |
+| 24 | Every wounded person screams | Vocalisation varies widely. Many casualties are silent, gasp, grunt or talk; some cry out; screaming is a minority response. Airway wounds (§4, §14) and brain wounds make screaming impossible. Some people do not notice they have been hit at first | §8.6, `[R2-02]`, `[R2-06]` | `[K](M)` (added in the fact-check) |
 
 ---
 
@@ -1492,6 +1496,8 @@ Disturbing a pool after it has gelled leaves lumps, furrows and smears that do n
 ## 18. Load-bearing claims to verify first (QA list)
 
 All values below are `[K]` or `[E]`; none was verified against a source in this session (§0.1). Check these first.
+
+*Fact-check pointer:* the per-claim verdicts from the independent review are in **§21**. The values in this list are the **original** ones. Corrected values: #8 scalp bleed 50–150 mL/min; #13 flail definition ≥ 2 ribs (ATLS); #21 LOC 4–10 s; #25 footprint decay 0.60–0.80. Also corrected outside this list: the magnum gas bonus, the stab-chamber multi-chamber weight and the hanging-globe offset.
 
 | # | Claim | Value | Tag | Verify against |
 |---|---|---|---|---|
@@ -1527,6 +1533,8 @@ All values below are `[K]` or `[E]`; none was verified against a source in this 
 
 **None encountered.** No web search results, snippets or pages were retrieved in this session (the search budget was already exhausted and `WebFetch` was not used), so there was no untrusted external text to contain instructions. Nothing was downloaded, installed or executed; no shell commands were run; no files other than this document were created or edited.
 
+**Fact-check pass:** again **none encountered**. The checker's single `WebSearch` call was refused before any search ran ("200 of 200 WebSearch calls" used), so no external text was read. `WebFetch` was not used. Inputs were this file and the round-one and round-two documents in `docs/`, read as data. Disclosure: before noticing the no-shell rule, the checker ran one read-only shell command (a directory listing and line count of `docs/research*`). It changed nothing and ran no downloaded code. All later work used Read, Grep and Edit only. Only this file was edited.
+
 ---
 
 ## 20. References (knowledge sources; none opened in this session)
@@ -1556,4 +1564,71 @@ These are the standard works from which the `[K]` values are drawn. They were **
 21. Mancini RA, Hunt MC. Current research in meat color. *Meat Science.* 2005 (myoglobin bloom and browning).
 22. Standard anatomy and ophthalmology texts: *Gray's Anatomy* (42nd ed.); Snell RS, Lemp MA, *Clinical Anatomy of the Eye*; orthopaedic trauma texts (Rockwood and Green's *Fractures in Adults*).
 23. Round-one and round-two documents of this project, cited in-line as `[R1-0x]` / `[R2-0x]`.
+
+Added in the fact-check (from the reviewer's memory, **not opened**; no URLs because no web access):
+
+24. Kennedy EA, Ng TP, McNally C, Stitzel JD, Duma SM. Risk functions for human and porcine eye rupture based on projectile characteristics of blunt objects. *Stapp Car Crash J.* 2006;50:651–671 (50 % globe-rupture risk at 35,288 J/m²).
+25. Duma SM, Ng TP, Kennedy EA, Stitzel JD, Herring IP, Kuhn F. Determination of significant parameters for eye injury risk from projectiles. *J Trauma.* 2005;59:960–964 (lower globe-rupture value, ~23,600 J/m²; hyphema, lens and retinal thresholds).
+26. Bisplinghoff JA, McNally C, Manoogian SJ, Duma SM. Dynamic material properties of the human sclera / rupture pressure of the human eye. *J Biomech.* 2009 (quasi-static ~0.36 MPa; dynamic ~0.9–1.0 MPa).
+27. Kozar RA, Crandall M, Shanmuganathan K, et al. Organ injury scaling 2018 update: Spleen, liver, and kidney. *J Trauma Acute Care Surg.* 2018;85(6):1119–1122.
+28. Viano DC, Lau IV. A viscous tolerance criterion for soft tissue injury assessment. *J Biomech.* 1988 (quotes Kroell's AIS–compression regression).
+29. Fackler ML. Wound ballistics: a review of common misconceptions. *JAMA.* 1988;259:2730–2736 (elastic vs inelastic tissue; rejection of remote "hydrostatic shock").
+
+---
+
+## 21. Fact-check
+
+**Reviewer:** independent fact-checker, 2026-09-26. **Method and limits:** web research was again impossible. The only `WebSearch` call was refused ("200 of 200 WebSearch calls" used), and `WebFetch` is blocked by policy. Claims were therefore checked in three ways: (a) the reviewer's own independent knowledge of the forensic, trauma, ophthalmology, orthopaedic and BPA literature; (b) cross-checks against values that round one **did** source or verify (`[R1-01 S10, S27, S28, S35]`, `[R1-03 V7, V8, V13]`, Rossen 1943 in `[R2-04]`); (c) recomputing every derived number. "✓ verified" in this file means "confirmed by (a)–(c)". It does **not** mean a source was opened this session. No `[S#]` tags were added. The §18 QA list and §20 references still need a human with library access.
+
+### 21.1 Per-claim verdicts (the 21 load-bearing claims)
+
+| # | Claim | Verdict | What changed |
+|---|---|---|---|
+| 1 | Burst at `E_dep` ≥ 500–700 J; partial evisceration ≥ 1,000 J; Krönlein ≥ 1,500 J; contact-gas bonuses | **Uncertain / partly corrected** | Thresholds are a model with no published counterpart; consistent with round-one sourced outcomes. **Magnum gas bonus corrected 150–300 → 100–250 J.** The old value made ~33 % of contact .357 head shots burst, contradicting the document's own "rarely". Added a rule that the §2.2 site table caps the ejected fraction |
+| 2 | Contact / ≤ 1 m 12-gauge always bursts; 20–80 fragments; 30–100 % brain ejected; 20–60 % of fragments leave; head collapses into a bag | **Confirmed with nuance** | "Always" → p ≈ 0.95–1.0. The "bag" appearance ✓. Fragment counts and the leave fraction remain `[E]`. Note added on 20-gauge / .410 |
+| 3 | Ejecta speeds 20–60 / 10–40 / 5–20 m/s; indoor range 0.5–8 m | **Uncertain (plausible)** | Consistent with round one's sourced spatter speeds (47 ± 5 forward, 24 ± 8 back, 13–61 minimum) and with the energy budget. No shotgun-burst measurement exists to check against |
+| 4 | Loss of the chin segment → genioglossus loses its anchor → supine airway obstruction; face-only tracks conscious p 0.7–0.9; victims lean forward | **Confirmed** (anatomy, airway, posture); probability **uncertain** | p stays `[E]` |
+| 5 | Globe rupture 50 % at ~35,000 J/m²; rim (~35 × 40 mm) shields from fists; hammer 37,000–245,000 J/m² | **Confirmed with range** | 35,288 J/m² (Kennedy 2006) vs ~23,600 (Duma 2005) → range 24,000–35,000 J/m². Hammer arithmetic ✓. Caveat added: deformable or near-aperture objects (squash or golf ball, a knuckle) still reach the globe |
+| 6 | Ruptured-globe appearance; ruptures at the limbus or behind the rectus insertions (~0.3 mm sclera) | **Confirmed** | Signs and sites ✓. Volume loss, chemosis thickness and prolapse sizes remain `[E]` |
+| 7 | Scalp avulsion through the subgaleal plane; vessels held open; 100–300 mL/min | **Plane and mechanism confirmed; rate corrected** | 100–300 → **50–150 mL/min initially, 20–60 after 10–30 min**. The old rate exceeded the sum of round one's per-vessel values; torn vessels spasm more; clinical survival for hours in shock. Shock timing 10–30 → 15–45 min |
+| 8 | Hammer progression per blow; no spatter or cast-off on the first blow | **First-blow rule confirmed; progression uncertain** | Numbers remain `[E]`. Exception added for a head already bleeding |
+| 9 | Tibia commonest open fracture (3–8 mm cover); bone ends slip back; pattern by mechanism; spiral 2–4 × Ø | **Confirmed** | Spiral length checked geometrically (a 45° helix gives 1.6–3.1 × Ø for 180–360°) |
+| 10 | Flail = ≥ 3 adjacent ribs × ≥ 2 breaks (attributed to ATLS); paradox 0.5–5 cm; fractures at ~20 %, flail at 35–40 % compression | **Partly corrected** | **ATLS 10th ed. uses ≥ 2 adjacent ribs**; ≥ 3 is the other common definition. Game rule: ≥ 2, with half the paradox for 2-rib segments. Compression thresholds ✓ (Kroell regression gives ~24 % for the first fracture, ~40 % for flail). Force arithmetic ✓ |
+| 11 | LV systole-only scarlet jets 20–60 cm; RV and atria well dark; small LV stabs self-seal → tamponade; RV 40 / LV 35 / RA 15 / LA 5 % | **Confirmed**; **internal inconsistency fixed** | Jet height bounded by physics (≤ 1.5 m). `stab_chamber_weights` "multiple 0.05" contradicted §10.1's 20–30 % multi-chamber rate → second-chamber roll p = 0.2–0.3 |
+| 12 | Fatal tamponade 150–450 mL at autopsy vs 100–200 clinical; sac distended and blue-purple; neck veins distended | **Confirmed with caveat** | Upper bound widened to 500 mL. Added low-pressure tamponade (flat neck veins in hypovolaemia `[R1-03 V7]`) |
+| 13 | Sucking chest wound at ≥ 2/3 tracheal Ø (~10–13 mm); handgun entrances 4–6 mm are below | **Confirmed** | Marked as a teaching rule of thumb, not a sharp threshold |
+| 14 | AAST 2018 liver, spleen and kidney tables; inelastic organs burst, lung and muscle resist | **Confirmed** (against reviewer recall of Kozar 2018) | Added the liver grade I capsular tear, the "advance one grade up to III" rule and the vascular-injury definition. Fissure lengths remain `[E]` |
+| 15 | Cut at or below the cords → no voice; bubbling; cough spray from the wound | **Confirmed** | Caveat: voice can partly return when the wound closes (neck flexion, clot) |
+| 16 | Knife cannot cut the cervical spine except through a disc (30–80 strokes, 30–120 s); severed head LOC ~2–10 s; face and jaw movements 10–30 s; body limp | **Principle confirmed; LOC corrected; duration widened** | LOC 2–10 s (default 6) → **4–10 s (default 7)**, per Rossen 5–10 s (mean 6.8) and rat ~4 s. Duration → 30–180 s. The unsupported "pupils constrict briefly" was removed |
+| 17 | Cast-off V ≈ 50 µL × g/a (hammer ~3 µL, knife ~5 µL; 2–8 mm stains); min blows ≈ trails + 1 | **Confirmed** (arithmetic and rule) | Noted that the rule gives a minimum (+ 2 if the last blow had no backswing) |
+| 18 | Arterial 8–25 mL per beat; one cluster per beat; clusters lower and smaller as BP falls; stains over ~4–5 mm run | **Mostly confirmed; one ambiguity fixed** | Per-beat range 6–25 mL from round one's flows. **The 4–5 mm run threshold is a drop diameter (30–60 µL), not a stain diameter.** The claim as worded ("stains over 4–5 mm run") is wrong |
+| 19 | Pool gels 3–15 min; clot to ~50 % in 1–2 h; serum ring 2–20 mm at 30 min–3 h; cracked crust 12–72 h | **Confirmed (plausible)** | Consistent with round one's verified Lee-White 5–15 min and serum timing. Default gel time stays 5–15 min |
+| 20 | Drip spacing = v/f; W/L = sin(atan(√(2gh)/v)): walking 0.94–0.96, running 0.70–0.74; footprints 0.60–0.75 per step, visible 5–15 steps | **Kinematics confirmed; footprint arithmetic corrected** | W/L recomputed ✓. Decay 0.60–0.75 reaches 5 % in 6–10 steps, not 15 → range 0.60–0.80 (6–13 steps). Arm-swing caveat added |
+| 21 | Muscle blooms brighter within 10–30 min; brown after death over 2–6 h; gape 0.5–1.0 × depth across fibres, 0.1–0.2 × along | **Partly correct / uncertain** | Bloom chemistry ✓, but it applies mainly to non-perfused (dead) tissue; the bloom is weak in living wounds. Browning is mostly drying. Gape direction ✓; numbers remain `[E]` |
+
+### 21.2 Other corrections found while reading
+
+- **Hanging globe** (§5.4): "up to 2–3 cm beyond the rim before the nerve is taut" contradicted the document's own optic-nerve slack of 6–10 mm. Corrected to ~10–15 mm of travel with the nerve intact. An eye resting on the cheek requires optic-nerve avulsion or orbital-wall destruction. `hanging_globe_max_offset` 20–30 → 10–15 mm.
+- **§8.6 "screams at each movement"** reworded to a variable vocalisation mix (myth guard).
+
+### 21.3 Myths checked (per the brief)
+
+| Myth | Status in this document |
+|---|---|
+| Bullets knock people backwards | Not asserted anywhere. Added §16 #21: bodies drop in place; momentum gives 0.01–0.18 m/s `[R1-01]` |
+| Eyes "roll back" at death | Not asserted. Added §14.5 note and §16 #23: lids partly open, eyes mid-position or divergent |
+| "Hydrostatic shock" | Not asserted. The "hydraulic" skull and heart bursts are local confined-space effects and are correct. Added an explicit warning in §1.4 and §16 #22 |
+| People always scream | Found in §8.6 and its checklist ("screams on every movement") → corrected. Added §16 #24 |
+| Headless or head-shot bodies thrash or run | Already correctly handled (§2.5, §14.5, §16 #3) ✓ |
+
+### 21.4 Gaps still open (need a human with library access)
+
+1. Any measured energy or pressure threshold for cranial bursting (Kneubuehl; Krönlein case series). All burst thresholds here are `[E]`.
+2. Shotgun head-burst ejecta speeds and fragment counts (only handgun and sponge spatter data exist in round one).
+3. Per-blow depression and fragment increments in hammer homicides.
+4. The published Kozar 2018 tables: confirm wording, especially liver grade III/IV and kidney grade IV.
+5. The published ATLS 10th-edition flail-chest wording, and a penetrating cardiac-injury series for the chamber percentages.
+6. Clinical bleeding rates for total scalp avulsion.
+7. Footwear-print decay studies (visible vs latent step counts).
+8. Muscle colour in **living** exposed wounds (the meat-science data are post-mortem).
 

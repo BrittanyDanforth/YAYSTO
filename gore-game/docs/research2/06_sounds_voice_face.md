@@ -174,7 +174,7 @@ All written for this document `[E]`; none is copied from any source.
 | Parameter | Value / range | Unit | Notes | Tag |
 |---|---|---|---|---|
 | `contact_tau` | `π √(m/k)` | s | Per body part and surface (§4) | [K] (H) |
-| `impact_band_limit` | `LP` at ~`0.6/τc` (−3 dB), 12 dB/oct, or a half-sine force pulse filtered directly | Hz | Applied to the "force" layer of every impact. **Corrected: was `LP` at `1.5/τc`** (that is the first zero, where the level is already −∞; the −3 dB corner is ~0.6/τc) | [K] (H) ✓ verified (arithmetic) |
+| `impact_band_limit` | `LP` at ~`0.6/τc` (−3 dB), 12 dB/oct, or a half-sine force pulse filtered directly | Hz | Applied to the "force" layer of every impact. **Corrected: was `LP` at `1.5/τc`** (that is the first spectral zero; a corner there leaves the band around 1/τc ~9 dB brighter than the real pulse; the −3 dB corner of a half-sine is ~0.6/τc) | [K] (H) ✓ verified (arithmetic) |
 | `skull_mode1` / `zeta` | 0.8–1.5 kHz (default 1.0) / 0.03–0.10 (default 0.06) | Hz / — | Intact, living. At the defaults τ = 2.7 ms, T60 = 18 ms | [K; M1] (M) ✓ consistent with recall, not re-opened |
 | `long_bone_mode1` | 200–1,000 | Hz | Tibia/femur lower; ribs, clavicle, facial bones higher (1–4 kHz) | [K; M33] (L), [E] |
 | `soft_tissue_ring` | none | — | No resonant modes on flesh layers | [K] (H) |
@@ -313,12 +313,12 @@ The same blow sounds different as the skull fails. This progression is the most 
 | `impact_stylisation` | 0 (physical) – 1 (film) | — | Default 0 | [E] |
 | `gsw_impact_spl_1m` | handgun torso 75–95; rifle 85–105; rifle/contact head 95–110 | dB peak | Calibrate against gel/meat foley | [E] (L) |
 | `gsw_cavity_life` / `pulses` | 5–10 / 2–4 | ms / — | Rifle cavity large; handgun small | [K; M22] (M) |
-| `impact_delay_at_shooter` | `d/v_bullet + d/343` | s | Makes the "whop" audible beyond ~20 m | [K] (H) |
+| `impact_delay_at_shooter` | `d/v_bullet + d/343` | s | Makes the "whop" audible beyond ~20 m | [K] (H) ✓ verified (arithmetic) |
 | `bone_crack_spl_1m` | 75–95 | dB peak | +6–10 dB over the flesh layer | [E] (L) |
 | `crunch_grains` | 3–10 in 5–30 ms | — | Nasal, orbital, comminuted, repeat blows | [E] |
 | `skin_puncture_force` | 10–50 (sharp knife) | N | Tick at the give; clothing adds 10–50 % | [K] (L–M) |
 | `skin_puncture_spl_0.5m` | 35–55 | dB peak | Near-silent in practice | [E] |
-| `punch_contact_time` | ~12 (8–20) | ms | From [S14] impulse and force | [S14] [E] |
+| `punch_contact_time` | gloved ~12 (8–20); **bare knuckle 5–10** | ms | From [S14] impulse and force (gloved punches). Corrected: was "~12 (8–20)" for all punches | [S14] [E] ✓ arithmetic |
 | `punch_face_spl_1m` | 70–85 | dB peak | | [E] (L) |
 | `skull_modes_intact` | 1.0, 1.7, 2.8, 4.2 kHz; ζ 0.06–0.10 | Hz | ×0.6–0.8 and ζ ×2–3 once cracked | [K; M1] (M), [E] |
 | `hammer_ring` | 2–6 kHz, 10–40 ms, −15 to −25 dB | — | Only on bone contact | [E] (L) |
@@ -339,8 +339,12 @@ The same blow sounds different as the skull fails. This progression is the most 
 ### 3.1 The physics that decides whether blood makes a sound
 
 - **Blood jets never hiss.** The exit speed of a liquid jet is at most `√(2P/ρ)`. At 120 mmHg (16 kPa) and ρ = 1,060 kg/m³ that is **≤ 5.5 m/s**; real arterial jets leave at **3.3–4.4 m/s** `[R1-06 §8.1]`. A liquid jet this slow produces no audible flow noise `[K] (H)`. **The sound of arterial bleeding comes from where the jet lands** (spatter patter on surfaces, splashing into a pool, soaking into cloth), not from the wound. Where round one says "hiss" `[R1-03 §6.4]`, read it as spray patter at the landing point.
-- **Bubbles make the "plink".** A drop falling into deep liquid can trap an air bubble. The bubble rings at the **Minnaert frequency** `f0 = (1 / 2πa) √(3γp₀/ρ)` `[K; M3] (H)`. In blood this is **`f0 ≈ 3.2 / a`** (a = radius in m): a 0.5 mm bubble rings at ~6.4 kHz, 1 mm at ~3.2 kHz, 2 mm at ~1.6 kHz, 5 mm at ~640 Hz. The frequency rises slightly as the bubble rises (a short upward chirp), and the dripping-tap "plink" is this bubble oscillation driving the surface `[K; M3] (M)`. Thermal and radiation damping dominate at these sizes; blood's higher viscosity (3–4 mPa·s) adds little, so blood bubbles ring much like water bubbles `[K] (M)`.
+  - ✓ verified (arithmetic): √(2 × 15,996 Pa / 1,060) = 5.49 m/s. **Corrected (upper bound)**: a frightened, injured person often has a systolic pressure of 140–180 mmHg in the first minutes, giving **≤ 5.9–6.7 m/s**; the conclusion (no orifice noise) is unchanged. The 3.3–4.4 m/s "typical" value is itself an estimate (velocity coefficient 0.6–0.8); no measured human jet speeds were found in round one `[R1-03 §6.2]`.
+  - Exceptions `[K] (M)`: blood driven out **with air** (open airway, sucking chest wound, jugular air entry) bubbles and sputters at the wound (§3.2, §5.4–§5.5); a jet forced through a small hole in tight clothing can "spit" faintly.
+- **Bubbles make the "plink".** A drop falling into deep liquid can trap an air bubble. The bubble rings at the **Minnaert frequency** `f0 = (1 / 2πa) √(3γp₀/ρ)` `[K; M3] (H)`. In blood this is **`f0 ≈ 3.2 / a`** (a = radius in m): a 0.5 mm bubble rings at ~6.4 kHz, 1 mm at ~3.2 kHz, 2 mm at ~1.6 kHz, 5 mm at ~640 Hz. ✓ verified (arithmetic): √(3 × 1.4 × 101,325 / 1,060) / 2π = 3.19 (water: 3.28); surface tension adds < 1 % above a = 0.1 mm. The frequency rises slightly as the bubble rises (a short upward chirp), and the dripping-tap "plink" is this bubble oscillation driving the surface `[K; M3] (M)`. Thermal and radiation damping dominate at these sizes; blood's higher viscosity (3–4 mPa·s) adds little, so blood bubbles ring much like water bubbles `[K] (M)`.
 - **Floor pools are too shallow to plink.** Blood pools spread to **~2.5 mm** `[R1-03 §10]`. A 3.9–4.9 mm drop (30–60 µL `[R1-06 §7]`) falling into a 2.5 mm film hits the floor through it and cannot trap a freely ringing bubble. **Drips into a floor pool make a wet "pat", not a "plink"** `[K] (M)`, `[E]`. Plinks occur only where blood collects deeper than ~1–2 cm (a basin, bath, bucket, hollow).
+  - ✓ consistent (physics, not tested): a sessile puddle's maximum height is `2√(σ/ρg)·sin(θ/2)`; with blood σ ≈ 0.055 N/m the capillary length is ~2.3 mm, giving **~2.3–3.3 mm** for contact angles 60–90°, which matches the 2.5 mm pool. The crater of a 4–5 mm drop at 3–5 m/s is deeper than that, so it bottoms out on the floor instead of pinching off a bubble. Even in deep liquid, large drops entrain a ringing bubble only in some impacts (hence `p(bubble)` < 1).
+  - **Corrected (bubble ring time)**: a mm-sized bubble has a total damping constant δ ≈ 0.03–0.06 (radiation + thermal; viscosity negligible), i.e. Q ≈ 15–35, so the amplitude time constant is `τ = Q/(π f0)`: **~1 ms at a = 0.5 mm, ~2–3 ms at 1 mm, ~4–7 ms at 2 mm, ~15–20 ms at 5 mm** `[K]` (M). The recipes below used τ 3–15 ms for 0.5–2 mm bubbles, which rings 2–3× too long.
 - **Once the pool gels (5–15 min `[R1-03 §10]`)** drops land on a gel: an even duller, softer "pat".
 
 ### 3.2 Event catalogue
@@ -350,7 +354,7 @@ The same blow sounds different as the skull fails. This progression is the most 
 | **Drip on hard dry floor** | 1–15 mL/min; rate = `Q / 50 µL` (20 drops/min per mL/min) `[R1-03 §6.4]`; drops hit at ~3–5 m/s from wound heights 0.5–1.5 m | "Tick"/"tap" | `GRAIN(1–3 ms, BP 1.5–5 kHz)` + a tiny splash `CLOUD(λ 2,000/s, T 5 ms)` | 30–45 dB peak |
 | **Drip into a floor pool** | As above, on a fresh pool | Wet "pat" | `GRAIN(2–5 ms, BP 500–2,000 Hz)` + satellite ticks (1–4 mm drops, `[R1-03 §10]`) at −12 dB, 5–30 ms later | 30–45 dB peak |
 | Drip onto gelled pool | Pool older than 5–15 min | Soft "pat" | As above, `LP(1.2 kHz)`, −6 dB | 25–40 dB |
-| **Drip into deep liquid** | ≥ 1–2 cm deep | "Plink" | Impact `GRAIN(1 ms)` + `BUBBLE(a 0.5–2 mm, τ 3–15 ms, σ +0.1–0.3)` with p(bubble) 0.1–0.5 per drop | 35–50 dB peak |
+| **Drip into deep liquid** | ≥ 1–2 cm deep | "Plink" | Impact `GRAIN(1 ms)` + `BUBBLE(a 0.5–2 mm, τ = Q/(π f0) ≈ 1–7 ms, σ +0.1–0.3)` with p(bubble) 0.1–0.5 per drop. Corrected: was τ 3–15 ms | 35–50 dB peak |
 | Drip on cloth, skin, carpet | — | Nearly silent | `GRAIN(2 ms, LP 1 kHz)` at −20 dB | < 25 dB |
 | **Stream** (15–300 mL/min) | Continuous thin stream to the floor | Trickle and splash | `NOISE(pink) → BP(300–4,000 Hz)`; level `∝ 10·log10(Q) + 20·log10(v_impact)`; slow random AM 2–8 Hz | 35–55 dBA |
 | **Arterial spurting** | Pulsed jet at HR `[R1-03 §6]` | A patter burst per beat where the jet lands | Per beat: spray `CLOUD(λ 2,000–8,000/s, GRAIN(0.2–1 ms, BP 1.5–6 kHz))` whose rate and level follow the pressure waveform (upstroke 0.1 s, peak 0.15 s, decay) `[R1-03 §6]`. Spectral centroid ~3–5 kHz at MAP 90, ~1.5–2.5 kHz at MAP 40 as drops slow. Stops below `jet_min_map` 25–30 mmHg | 45–65 dBA at the landing point |
@@ -368,11 +372,11 @@ The same blow sounds different as the skull fails. This progression is the most 
 
 | Parameter | Value / range | Unit | Notes | Tag |
 |---|---|---|---|---|
-| `minnaert_blood` | `f0 = 3.2 / a` | Hz (a in m) | 1 mm → 3.2 kHz | [K; M3] (H) |
-| `plink_min_depth` | 10–20 | mm | Floor pools (2.5 mm) never plink | [K] (M), [E] |
+| `minnaert_blood` | `f0 = 3.2 / a` | Hz (a in m) | 1 mm → 3.2 kHz | [K; M3] (H) ✓ verified (arithmetic) |
+| `plink_min_depth` | 10–20 | mm | Floor pools (2.5 mm) never plink | [K] (M), [E] ✓ consistent (capillary-length check) |
 | `bubble_p_per_drop` | 0.1–0.5 | p | Deep liquid only | [E] |
-| `bubble_tau` / `chirp` | 3–15 / +10–30 % | ms / — | | [K; M3] (M), [E] |
-| `jet_orifice_noise` | none | — | Jet speed ≤ 5.5 m/s | [K] (H) |
+| `bubble_tau` / `chirp` | `Q/(π f0)`, Q 15–35 (≈ 1 ms at 0.5 mm … 15–20 ms at 5 mm) / +10–30 % | ms / — | **Corrected: was 3–15 ms** for all sizes | [K] (M), [E] |
+| `jet_orifice_noise` | none | — | Jet speed ≤ 5.5 m/s at 120 mmHg (≤ 6.7 m/s at 180 mmHg) | [K] (H) ✓ verified (arithmetic) |
 | `spurt_centroid` | 3–5 kHz at MAP 90 → 1.5–2.5 kHz at MAP 40 | Hz | Follows droplet energy | [E] |
 | `drip_rate` | `20 × Q` (Q in mL/min) | drops/min | Stream above 15–30 mL/min | `[R1-03 §6.4]` |
 | `drip_spl_1m` | 30–45 | dB peak | | [E] (L) |
@@ -467,12 +471,12 @@ The physiology (when each pattern happens, rates, probabilities, gasps, rattle, 
 
 ### 5.1 Acoustic basis
 
-- **Breath noise is turbulence** at the glottis, pharynx, nose and lips. Its power rises steeply with flow: tracheal sound power grows roughly with **flow^1.75–2** (about +10–12 dB per doubling of flow) `[K; M4] (M)`. Quiet breathing is nearly silent at 1 m; panting is clearly audible.
-- **Spectrum**: tracheal breath sound spans ~100–1,500 Hz with energy to ~2 kHz `[K; M4] (M)`. What a listener at 1 m hears is shaped by the exit route:
+- **Breath noise is turbulence** at the glottis, pharynx, nose and lips. Its power rises steeply with flow: tracheal sound power grows roughly with **flow^1.75–2** (about **+5–6 dB per doubling of flow**) `[K; M4] (M)`. **Corrected: was "about +10–12 dB per doubling of flow"**: a power law `P ∝ Q^n` gives `10·n·log10(2)` = 3.0·n dB per doubling, i.e. 5.3 dB (n = 1.75) to 6.0 dB (n = 2); +10–12 dB would need n ≈ 3.5–4. The exponent itself ✓ matches the checker's recall of the tracheal-sound literature (Gavriely & Cugell; exponents ~1.5–2 reported) `[K]` (M), not re-opened. The §5.3 recipe (amplitude ∝ flow, power ∝ flow²) was already consistent with the exponent. Quiet breathing is nearly silent at 1 m; panting is clearly audible (a 4–6× rise in flow is +12–16 dB).
+- **Spectrum**: tracheal breath sound spans ~100–1,500 Hz with energy to ~2 kHz `[K; M4] (M)`. ✓ verified [K] (M): the usual textbook range for normal tracheal sounds is 100–1,500 Hz, with a steep fall above ~800–1,000 Hz; chest-wall (vesicular) sounds are narrower (100–1,000 Hz, power falling above ~200 Hz). What a listener at 1 m hears is shaped by the exit route:
   - **nose**: a narrower, higher hiss (1–4 kHz), quiet;
   - **open mouth**: noise shaped by the vocal tract, with broad peaks at the open-vowel formants (F1 ~600–900 Hz, F2 ~1,100–1,500 Hz), louder.
 - **Route rule** `[K] (M)`, `[E]`: nose at rest; mouth when tidal volume > ~1 L, RR > ~25/min, in pain or panic, when the nose is blocked (blood, fracture) or when unconscious with the jaw open.
-- **Standard names and definitions of adventitious sounds** (CORSA) `[K; M5] (H)` unless marked:
+- **Standard names and definitions of adventitious sounds** (CORSA) `[K; M5] (H)` unless marked. ✓ verified [K] (H) for crackle (< 20 ms; fine 2CD < 10 ms, coarse 2CD > 10 ms), wheeze (continuous, musical, ≥ 100 ms, dominant frequency > 100 Hz) and rhonchus (low-pitched, ≤ ~200 Hz); CORSA not re-opened. Stridor site rule ✓ [K] (H): extrathoracic narrowing (larynx, upper trachea) → inspiratory; intrathoracic tracheal → expiratory; fixed or severe → biphasic. ⚠ Stridor frequency: many descriptions put the dominant frequency above ~500 Hz; keep 250–1,000 Hz but default to 500–800 Hz.
 
 | Sound | Definition | Typical frequency | Game use |
 |---|---|---|---|
@@ -531,12 +535,12 @@ Per breath, generate a flow curve and derive every layer from it.
 
 ### 5.4 Sucking chest wound
 
-`[R1-04 §9]`: air enters preferentially through a chest-wall defect larger than about two-thirds of the tracheal diameter (≳ 10–13 mm). The **sound depends on the size of the hole** because the air speed through it does `[K] (H)` physics, `[E]` values:
+`[R1-04 §9]`: air enters preferentially through a chest-wall defect larger than about two-thirds of the tracheal diameter (≳ 10–13 mm). ✓ verified [K] (H): this is the standard ATLS teaching (a teaching rule of thumb, not a measured threshold). The **sound depends on the size of the hole** because the air speed through it does `[K] (H)` physics, `[E]` values. ⚠ The hiss/whistle-versus-slurp split is physics-derived; clinical descriptions mention "sucking", hissing and bubbling but no measured spectra were found:
 
 | Defect | Air speed through it | Heard on inspiration | Heard on expiration | Level at 1 m |
 |---|---|---|---|---|
-| **Small or slit-like, flap acting as a valve** (≲ 5–8 mm) | High: pleural pressure stays strongly negative (−10 to −40 cmH₂O in distress), giving **~20–50 m/s** | **Hiss or whistle**: broadband peak 1–5 kHz; a tonal whistle when the edge is sharp (`f ≈ 0.2 × v / d`: 30 m/s through 5 mm → ~1.2 kHz) | Bubbling as air and blood are pushed back out; fine froth | 40–60 dBA |
-| **Large** (≳ 10–15 mm; shotgun, rifle exit) | Low: ~5–10 m/s, pressure equalises | Little turbulence; the sound is **sucking and slurping** of blood and air: bubble grains (a 2–8 mm) 400–1,600 Hz | Wet bubbling, blood spray, froth welling from the hole | 35–55 dBA |
+| **Small or slit-like, flap acting as a valve** (≲ 5–8 mm) | High: the hole limits inflow, so a pressure difference of **~2–15 cmH₂O** builds across it, giving **~20–50 m/s** (Bernoulli `v = √(2ΔP/ρ_air)`: 2 cmH₂O → 18 m/s, 15 cmH₂O → 50 m/s). **Corrected: was "pleural pressure stays strongly negative (−10 to −40 cmH₂O in distress), giving ~20–50 m/s"**: −10 to −40 cmH₂O would give 40–80 m/s (internal inconsistency). Flow check: 0.5 L/s through 5 mm (19.6 mm²) ≈ 25 m/s | **Hiss or whistle**: broadband peak 1–5 kHz; a tonal whistle when the edge is sharp (`f ≈ 0.2 × v / d`: 30 m/s through 5 mm → ~1.2 kHz) | Bubbling as air and blood are pushed back out; fine froth | 40–60 dBA |
+| **Large** (≳ 10–15 mm; shotgun, rifle exit) | Low: **~1–9 m/s**, falling with hole size (0.5–1 L/s through 12 mm ≈ 4–9 m/s, 15 mm ≈ 3–6 m/s, 25 mm ≈ 1–2 m/s; part of the flow still goes through the trachea); pressure equalises. **Corrected: was ~5–10 m/s** (arithmetic) | Little turbulence; the sound is **sucking and slurping** of blood and air: bubble grains (a 2–8 mm) 400–1,600 Hz | Wet bubbling, blood spray, froth welling from the hole | 35–55 dBA |
 | Sealed by a hand or dressing | — | Sound stops; a partial seal can squeak or flutter on expiration | — | — |
 
 - Breath rate 30–40/min, shallow, grunting; the victim can say 1–4 words per breath (§6.6).
@@ -544,29 +548,29 @@ Per breath, generate a flow curve and derive every layer from it.
 
 ### 5.5 Open airway in the neck (cut throat, laryngeal or tracheal wound)
 
-- **All the tidal air passes through the wound**: 0.5–2 L/s through 1–5 cm² gives **2–30 m/s**, heard as a **rushing or hissing** 0.5–3 kHz on both phases `[K] (H)` physics, `[E]` values.
+- **All the tidal air passes through the wound**: 0.5–2 L/s through 1–5 cm² gives **1–20 m/s**, heard as a **rushing or hissing** 0.5–3 kHz on both phases `[K] (H)` physics, `[E]` values. **Corrected: was 2–30 m/s** (arithmetic: 0.5 L/s ÷ 5 cm² = 1 m/s; 2 L/s ÷ 1 cm² = 20 m/s). A wide, gaping cut throat (≥ 3–5 cm²) therefore mostly bubbles and sucks rather than hisses; a narrow stab into the trachea hisses.
 - Blood is always present: loud **bubbling and sucking**, frothy pink blood sprayed from the wound with each cough or forced expiration (0.5–1.5 m) `[R2-04 §2.5]`.
-- **Voice** (§7.2): a wound below the vocal cords makes the victim **aphonic** (mouths words; air bubbles and hisses at the neck instead). A wound above the cords (through the thyrohyoid membrane or pharynx) lets a weak, wet, bubbly voice out through the wound.
-- Aspiration of blood killed **36.5 %** of the cut-throat victims in one 74-case autopsy series (exsanguination ~50 %) `[S8]`. Expect gurgling and wet coughing from the first breaths.
+- **Voice** (§7.2): a wound below the vocal cords makes the victim **aphonic** (mouths words; air bubbles and hisses at the neck instead). A wound above the cords (through the thyrohyoid membrane or pharynx) lets a weak, wet, bubbly voice out through the wound. ✓ verified [K] (H) for an **open** (gaping) wound: the air leaves before it reaches the glottis, exactly as with an uncapped tracheostomy. Nuance added: a small or partly closed tracheal puncture leaks only part of the air and leaves a **weak, breathy voice** plus crackling surgical emphysema in the neck; occluding the hole (a hand, the chin flexed onto it, clot) restores a weak voice.
+- Aspiration of blood killed **36.5 %** of the cut-throat victims in one 74-case autopsy series (exsanguination ~50 %) `[S8]`. Expect gurgling and wet coughing from the first breaths. ⚠ Not re-verified (paper unreachable in this session and in the R2-04 fact-check); arithmetic consistent (27/74 = 36.5 %, 37/74 = 50 %). A fatal autopsy series over-represents deep cuts through the airway, so do not read it as the risk for every neck cut.
 
 ### Simulation parameters (breathing sounds)
 
 | Parameter | Value / range | Unit | Notes | Tag |
 |---|---|---|---|---|
-| `breath_gain_exp` | 1.0 (0.9–1.0) | exponent on flow (amplitude) | Power ∝ flow^1.75–2 | [K; M4] (M) |
+| `breath_gain_exp` | 1.0 (0.9–1.0) | exponent on flow (amplitude) | Power ∝ flow^1.75–2 → **+5–6 dB per doubling of flow** | [K; M4] (M) ✓ consistent with recall |
 | `breath_ref_level` | nose 20; mouth 25 at 0.5 L/s | dBA at 1 m | | [E] (M) |
 | `route_mouth_when` | tidal > 1 L OR RR > 25 OR pain OR nose blocked OR unconscious with jaw open | rule | | [K] (M), [E] |
 | `F1_from_jaw` | `300 + 17 × jaw_mm` (250–1,000) | Hz | Also used by VoiceSynth | [E] |
 | `snore_f0` | 30–120 | Hz | Palatal; tongue-base adds 0.5–2 kHz noise | [K] (M–L) |
-| `stridor_f` | 250–1,000, ×(0.8–1.2) with flow | Hz | 3–6 harmonics | [K] (M–L), [E] |
+| `stridor_f` | 250–1,000 (default 500–800), ×(0.8–1.2) with flow | Hz | 3–6 harmonics. Default added by the fact-check | [K] (M–L), [E] |
 | `gurgle_lambda` | `40 × flow × min(fluid/20 mL, 1)` | bubbles/s | Audible from 5–10 mL | [E] |
 | `gurgle_bubble_radius` | 1–5 (rattle 3–8) | mm | | [E] |
-| `crackle_2cd` | fine < 10; coarse > 10 | ms | | [K; M5] (H) |
+| `crackle_2cd` | fine < 10; coarse > 10 | ms | | [K; M5] (H) ✓ verified [K] |
 | `splint_cutoff` | 40–70 % of planned volume; catch 50–150 ms | — | Rib or abdominal pain | [E] |
 | `sob_hitches` | 3–6 at 4–8/s, 60–150 ms each | — | | [K] (M), [E] |
-| `sucking_small_v` / `large_v` | 20–50 / 5–10 | m/s | Hiss/whistle vs slurp/bubble | [K] (H), [E] |
+| `sucking_small_v` / `large_v` | 20–50 / **1–9** | m/s | Hiss/whistle vs slurp/bubble. Corrected: large was 5–10 | [K] (H), [E] |
 | `whistle_f` | `0.2 × v / d` | Hz | Strouhal ~0.2 | [K] (H) |
-| `neck_airway_v` | 2–30 | m/s | Rushing 0.5–3 kHz + bubbling | [E] |
+| `neck_airway_v` | **1–20** | m/s | Rushing 0.5–3 kHz + bubbling. Corrected: was 2–30 | [E] (arithmetic) |
 | `cough_spl_1m` | 65–85 | dB peak | | [E] (L) |
 
 ### Visual/behavioural checklist (breathing sounds)
@@ -587,9 +591,9 @@ Per breath, generate a flow curve and derive every layer from it.
 | Parameter | Normal adult values | Change with pain, fear, exhaustion | Tag |
 |---|---|---|---|
 | **F0** | Male 85–155 Hz (mean ~115); female 165–255 Hz (mean ~200) | Rises with arousal and pain (screams 300–1,000+ Hz male; §6.3); falls and narrows with exhaustion | [K] (H), `[R2-02 §9.2]` |
-| F0 vs subglottal pressure | +2–6 Hz per cmH₂O | Loud voice is higher-pitched | [K; M7] (M) |
-| **Subglottal pressure `Ps`** | Threshold ~3; soft 3–5; conversational 5–10; loud 10–20; shouting 20–40; screaming 30–60 cmH₂O | Limited by respiratory muscle power, lung injury and perfusion (§6.5) | [K; M7] (M) |
-| **SPL vs `Ps`** | **+8–9 dB per doubling of `Ps`** | — | [K; M7] (M) |
+| F0 vs subglottal pressure | +2–6 Hz per cmH₂O | Loud voice is higher-pitched | [K; M7] (M) ✓ consistent with recall |
+| **Subglottal pressure `Ps`** | Threshold ~3; soft 3–5; conversational 5–10; loud 10–20; shouting 20–40; screaming 30–60 cmH₂O | Limited by respiratory muscle power, lung injury and perfusion (§6.5) | [K; M7] (M). ✓ plausible [K] (M): phonation threshold ~3 cmH₂O and conversational 5–10 cmH₂O are textbook; loud singing reaches 40–60 cmH₂O; no direct measurement of screaming was located. Note: healthy maximal expiratory pressure is ~100–200+ cmH₂O, so the 30–60 cmH₂O a scream needs is a small fraction of it |
+| **SPL vs `Ps`** | **+8–9 dB per doubling of `Ps`** | — | [K; M7] (M) ✓ verified [K] (M–H): the Titze & Sundberg figure of roughly 8–9 dB per doubling (SPL ∝ Ps^~1.5 in pressure) is the standard value; not re-opened |
 | Open quotient (OQ) | 0.5–0.7 (modal) | Breathy 0.7–0.8; pressed (effort, strain) 0.3–0.4 | [K] (M) |
 | Source spectral tilt | ~−12 dB/oct (modal) | Breathy −15 to −18; loud or pressed −6 to −9 (loud voices are brighter) | [K] (M) |
 | Jitter / shimmer | < 1 % / < 3–5 % | Up to 3–5 % / 10 % in pain, fear, fatigue, hoarseness | [K] (M) |
@@ -605,9 +609,9 @@ Per breath, generate a flow curve and derive every layer from it.
 - **biphonation**: two independent pitches at once;
 - **deterministic chaos**: voiced but irregular and noisy ("harsh", "rasping");
 - **frequency jumps**: sudden F0 breaks by 20–50 %;
-- **roughness**: fast amplitude modulation at **30–150 Hz**, the acoustic signature that makes screams alarming (normal speech modulates at 4–5 Hz) `[S2]`.
+- **roughness**: fast amplitude modulation at **30–150 Hz**, the acoustic signature that makes screams alarming (normal speech modulates at 4–5 Hz) `[S2]`. ✓ verified [K] (H): Arnal et al. 2015 define the scream-specific "roughness" niche as temporal modulations of ~30–150 Hz (also used by alarm signals), versus the ~4–5 Hz syllabic modulation of speech; the same value was fact-checked in `[R2-02 §9.2]`.
 
-NLP become more frequent as **emotional intensity** rises (rather than with negative valence as such) `[K; M15] (M)`; in pain vocalisations, F0, F0 range, loudness and NLP all rise with pain intensity `[S3]`. A person's pitch is individual and is preserved from speech through screams, roars and pain cries `[S3]`.
+NLP become more frequent as **emotional intensity** rises (rather than with negative valence as such) `[K; M15] (M)`; in pain vocalisations, F0, F0 range, loudness and NLP all rise with pain intensity `[S3]`. A person's pitch is individual and is preserved from speech through screams, roars and pain cries `[S3]`. ✓ verified [K] (M) (Raine, Pisanski, Simner & Reby, *Bioacoustics*; Pisanski, Raine & Reby, *R Soc Open Sci* 2020, whose title states the pitch-preservation finding). **Caveat added:** both studies used **acted (simulated)** pain vocalisations and screams by volunteers, and pitch is preserved as a **correlation across people** (a higher-voiced person tends to scream higher), not as a fixed ratio for each person. The childbirth study `[S3]` is the only real-pain sample among them.
 
 ### 6.2 Vocalisation catalogue
 
@@ -640,7 +644,7 @@ With pain `p` on 0–10 (as `[R2-02]`), speaking F0 `F0s` and a per-character `e
 
 | Output | Formula / rule | Notes |
 |---|---|---|
-| P(vocalise) per pain spike | `clamp(0.15 × (p − 2), 0, 0.95) × x` | × 0.5 in "fighter" mode; × 0.5 at shock class III; × 0.2 at class IV; 0 when winded or apnoeic |
+| P(vocalise) per pain spike | `clamp(0.15 × (p − 2), 0, 0.95) × x` | × 0.5 in "fighter" mode; × 0.5 at shock class III; × 0.2 at class IV; 0 when winded or apnoeic. **Gap added (myth guard "everyone screams when shot")**: × 0 while the character is **unaware of the hit** (`unaware_p` 0.3–0.5 under high arousal for gunshots, 0.3–0.6 for stabs to the torso `[R2-02 §2.4]`), and the pain spike of a gunshot or stab is applied **when the wound is discovered**, not at impact. Many shot people are silent, grunt, or say "I'm hit"; screaming is most likely with fractures under load, burns, eye or genital wounds and after the wound is seen `[R2-02 §14 row 15]` |
 | Type | p < 4: hiss, grunt, moan · 4–7: yell, cry, moan, whimper · ≥ 7 with high arousal: scream · ≥ 7 with low arousal (shock, exhaustion): moan, whimper · burns: prolonged screaming | Arousal from `[R2-02]` |
 | Peak F0 | `F0s × (1.3 + 0.45 × p)`, cap ×9 | p = 10 → ×5.8 (male ~670 Hz) |
 | NLP fraction | `0.05 + 0.06 × p` | p = 10 → 0.65 |
@@ -664,6 +668,8 @@ With pain `p` on 0–10 (as `[R2-02]`), speaking F0 `F0s` and a per-character `e
 ### 6.5 Physiology limits: the voice budget `[E]` unless tagged
 
 A voice needs airflow, pressure and a working larynx. The budget caps every vocalisation.
+
+⚠ Fact-check note on the mechanism `[K]` (M): the class III–IV caps below are sound as game values, but the limit is **not mainly the subglottal pressure**. Even a shocked adult's expiratory muscles can briefly exceed the 30–60 cmH₂O a scream needs. What removes loud screaming in haemorrhage is falling consciousness and drive (class III anxious-confused, class IV lethargic), air hunger with short breath groups, and weakness from hypoperfusion. Keep the caps; gate them on consciousness and breath budget as well as blood loss.
 
 | Condition | Max level (dB SPL at 1 m) | Max duration per breath | Other changes | Tag |
 |---|---|---|---|---|
@@ -705,12 +711,12 @@ A voice needs airflow, pressure and a working larynx. The budget caps every voca
 
 | Parameter | Value / range | Unit | Notes | Tag |
 |---|---|---|---|---|
-| `spl_per_ps_doubling` | 8–9 | dB | | [K; M7] (M) |
+| `spl_per_ps_doubling` | 8–9 | dB | | [K; M7] (M) ✓ verified [K] |
 | `f0_per_cmH2O` | 2–6 | Hz | | [K; M7] (M) |
 | `ps_by_effort` | soft 3–5; talk 5–10; loud 10–20; shout 20–40; scream 30–60 | cmH₂O | | [K; M7] (M) |
 | `scream_f0_male` / `female` | 500–1,000+ / 800–2,000 peak | Hz | Derived from own F0 | `[R2-02 §9.2]` [S3] [E] |
-| `scream_roughness` | 30–150 | Hz AM | | [S2] |
-| `scream_spl_1m` | 90–105 (default 98) | dB | | [K] (L–M) |
+| `scream_roughness` | 30–150 | Hz AM | | [S2] ✓ verified [K] (H) |
+| `scream_spl_1m` | 90–105 (default 98; rare characters to 110) | dB | | [K] (L–M) ⚠ plausible |
 | `moan_f0_male` / `spl` | 90–180 / 45–70 | Hz / dB | | [K] (M), [E] |
 | `whimper_f0_male` / `spl` | 250–600 / 35–60 | Hz / dB | | [K] (M), [E] |
 | `grunt_dur` / `f0` | 80–250 / 90–150 | ms / Hz | | [K] (M) |
@@ -735,7 +741,7 @@ A voice needs airflow, pressure and a working larynx. The budget caps every voca
 
 ### 7.1 Brain injury: acoustic profile per vocal state
 
-States as in `[R2-01 §5.2]`. Normal speech runs at **4–6 syllables/s** (≈ 150–190 words/min) with phrase pauses of 0.2–0.8 s `[K] (H)`.
+States as in `[R2-01 §5.2]`. Normal speech runs at **4–6 syllables/s** (≈ 150–190 words/min) with phrase pauses of 0.2–0.8 s `[K] (H)`. ⚠ Clarified: 150–190 words/min at ~1.4 syllables per word is **~3.5–4.5 syll/s overall** (pauses included); 4–6 syll/s is the **articulation rate** within runs of speech. Use 4–6 for the synthesiser within phrases and the words/min figure for overall pacing.
 
 | Vocal state | Rate | Pauses | Prosody | Articulation | Voice | Other | Tag |
 |---|---|---|---|---|---|---|---|
@@ -743,7 +749,7 @@ States as in `[R2-01 §5.2]`. Normal speech runs at **4–6 syllables/s** (≈ 1
 | `DYSARTHRIC_UMN` (bilateral, spastic) | 2–3 | Short phrases | **Monopitch, low pitch** (F0 range ×0.4) | Imprecise | **Strained-strangled** (pressed, low HNR); hypernasal | — | [K; M9] (H) |
 | `DYSARTHRIC_CEREBELLAR` (ataxic) | 3–4 | Irregular | **Scanning: excess and equal stress** on every syllable | **Irregular articulatory breakdowns** | **Explosive loudness** (±6–10 dB syllable to syllable) | Vowels prolonged | [S10] [K; M9] (H) |
 | `DYSARTHRIC_BULBAR` (flaccid) | 3–4 | Frequent breaths | Reduced | Weak consonants; **audible nasal air escape** on /p b s/ | **Breathy** (HNR < 10 dB), hypernasal, wet | Weak cough; 3–5 syllables per breath | [K; M9] (H) |
-| `NONFLUENT` (Broca) | **0.5–2 syll/s** (≈ 10–50 words/min) | **Long, 1–5 s**, with groping ("uh… m-m…") | Flattened | Phonetic distortions, effortful | Normal | **Telegraphic**; automatic phrases (swearing, "yes", "no") at normal speed | [S12] [K] (H) |
+| `NONFLUENT` (Broca) | **≈ 10–50 words/min overall (≈ 0.25–1.2 syll/s including pauses)**; within short runs ~1–3 syll/s | **Long, 1–5 s**, with groping ("uh… m-m…") | Flattened | Phonetic distortions, effortful | Normal | **Telegraphic**; automatic phrases (swearing, "yes", "no") at normal speed | [S12] [K] (H). ✓ verified [K] (H) for the words/min figure (the classic fluent/non-fluent boundary is < 50 words/min for non-fluent speech). **Corrected: was "0.5–2 syll/s (≈ 10–50 words/min)"**, which did not convert: 10–50 words/min × ~1.4 syll/word = 0.23–1.2 syll/s |
 | `JARGON` (Wernicke) | 4–6+ (can be pressured) | Normal | **Normal intonation** | Fluent; neologisms and paraphasias | Normal | Does not stop or self-correct; does not follow commands | [S11] (H) |
 | `GLOBAL` | — | — | Expressive intonation on a stereotypy | — | — | Mute, or one **recurring utterance** of 1–3 syllables | [K] (H) |
 | `MUTE_AKINETIC` | — | — | — | — | — | Silent; rarely a whispered monosyllable after 5–30 s | [S16] [E] |

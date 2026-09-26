@@ -587,4 +587,370 @@ Values read from `gore.py` (size s = 1, damage = 1). Fix targets use §2.1–2.6
 
 What the current head gets right: layered wounds with correct order (skin → muscle → skull → brain), thick wound walls showing the layers, outward eversion at exits, inward bevel direction, hammer-face-sized depressed fracture, scalp and face wounds that bleed and run downhill, knocked-out teeth for blunt hits to the mouth.
 
-<!-- CONTINUE-3 -->
+---
+
+## 3. Circulatory model
+
+### 3.1 Blood volume and blood as a material
+
+- **BV0 (procedural)**: Nadler formula [R03 §1.1, V]: men `BV = 0.3669·H³ + 0.03219·W + 0.6041` L; women `0.3561·H³ + 0.03308·W + 0.1833` L (H in m, W in kg). Reference male (1.78 m, 75 kg) → **5.09 L** (68 mL/kg). Obese bodies: 50–60 mL/kg of actual weight.
+  - **Resolved:** R03 used 5.0 L and R04 5.25 L (70 mL/kg) for convenience; both are within Nadler ± 5 %. All thresholds are fractions of BV0, so the choice does not change behaviour.
+- Distribution: systemic veins ~64 %, arteries ~13 %, capillaries ~7 %, pulmonary ~9 %, heart ~7 %; stressed volume 25–30 % [R03 §1.2, C].
+- Material constants [R03 §1.3]: density 1,060 kg/m³; viscosity 3.5 mPa·s (jets), 4–10 mPa·s (films, pools, low shear, cooling); surface tension 0.056 N/m; capillary length 2.3 mm; haematocrit 41–50 % (M). Hb/Hct do **not** fall for 8–12 h after acute bleeding (keep baseline during a session) [R03 §3.2, V].
+
+### 3.2 Haemodynamic core
+
+**Baseline** [R03 §2, C/V]: HR 70 bpm, BP 120/80 (MAP 93), CO 5.0 L/min, CVP 4 mmHg, RR 14/min, SaO₂ 0.97–0.99, SvO₂ 0.70–0.75, ICP 10 mmHg, core 37.0 °C.
+
+**Compensated shock table** (supine, loss over minutes; interpolate linearly on `loss = 1 − V/BV0`) [R03 §3.3, G fitted to ATLS classes (V, Marino) and shock-index classes]:
+
+| Loss | HR | SBP/DBP | MAP | PP | CO (L/min) | CVP | RR | Cap refill (s) | Skin perfusion × | Mental state | ATLS class |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| 0.00 | 70 | 120/80 | 93 | 40 | 5.0 | 4 | 14 | 1.5 | 1.00 | Normal | — |
+| 0.10 | 80 | 121/82 | 95 | 39 | 4.7 | 4 | 16 | 1.8 | 0.90 | Normal / slightly anxious | I |
+| 0.15 | 92 | 119/84 | 96 | 35 | 4.4 | 3 | 18 | 2.0 | 0.80 | Anxious | I/II |
+| 0.20 | 104 | 116/85 | 95 | 31 | 4.1 | 3 | 21 | 2.5 | 0.65 | Anxious, restless, thirsty | II |
+| 0.25 | 114 | 110/83 | 92 | 27 | 3.8 | 2 | 24 | 3.0 | 0.55 | Restless, thirsty, nauseated | II |
+| 0.30 | 122 | 99/76 | 84 | 23 | 3.4 | 2 | 28 | 3.5 | 0.45 | Anxious → confused | II/III |
+| 0.35 | 130 | 88/68 | 75 | 20 | 3.0 | 1 | 32 | 4.0 | 0.35 | Confused, agitated or apathetic | III |
+| 0.40 | 138 | 75/57 | 63 | 18 | 2.5 | 1 | 36 | 5.0 | 0.25 | Lethargic, slurred | III/IV |
+| 0.45 | 146 | 60/45 | 50 | 15 | 1.9 | 0 | 38, irregular | absent | 0.20 | Obtunded (unconscious if upright) | IV |
+| 0.50 | agonal, slowing | 45/32 | 36 | 13 | 1.2 | 0 | gasping 4–10 | absent | 0.10 | Unconscious | IV |
+| 0.55 | PEA, slowing | 30/20 | 23 | 10 | 0.6 | 0 | agonal gasps | absent | 0.05 | Unconscious, pre-arrest | IV |
+| ≥ 0.60 | arrest | — | < 15 | — | ~0 | — | apnoea | — | 0 | Cardiac arrest | — |
+
+**Realism modifiers** [R03 §3.2, R04 §7.3]:
+- `hr_response_scale` 0.8 (0.6–1.0): HR = 70 + 0.8·(HR_table − 70) ± 15 % per victim (real patients are less tachycardic than ATLS) [C].
+- **Resolved (bradycardia):** R03 (corrected from a 1,194-patient series: pulse < 100 in 35 % with SBP < 100 and 46 % with SBP < 90, [R03 V2]) and R04 (0.10–0.30 "sudden faint") describe two different things. Implement both: `relative_brady_p = 0.40` — a per-victim trait: HR capped at 90–100 during hypotension; and `sudden_faint_p = 0.20` — one event between 20 % and 35 % loss: HR → 50–70 and MAP −20–30 mmHg for 30–120 s (LOC if upright), then partial recovery.
+- Posture: brain-level pressure is ~23 mmHg lower upright (head ~30 cm above the heart); an upright victim faints at **20–30 % loss**; lying flat gives brief partial recovery ("gets up, collapses again") [R03 §3.2, E].
+- Slow bleeds (> 60 min for the loss) shift every row by +5 % loss (compensation, refill) [R03 §3.4, G].
+- The sight of blood or pain can trigger a vasovagal faint at 0 % loss (p 0.02–0.05 per major wound seen, G) [R03 §3.2 V3].
+- SBP stays near normal until ~30 % loss; narrowing pulse pressure and rising HR come first.
+
+**Compensation dynamics** [R03 §3.4, C/G]: table values are targets; state follows with first-order lags — HR τ 3 s (baroreflex onset 1–5 s), SVR τ 15 s, venoconstriction τ 30 s (mobilises 10–15 % of BV). **Stress surge** at injury: SBP +20 (10–30), HR +30 (20–40), decaying τ 120 s — early spurts are stronger. **Transcapillary refill**: 0 at 0 % loss → 4–8 mL/min at ≥ 20 % loss, decaying τ 60 min, cumulative cap **1,000 mL** (**Resolved:** R03/Marino 250–500 mL in the first hour, V, preferred over R04's 50–150 mL/h).
+
+**Arterial-wound shunt solve** (one closed-form step per tick) [R03 §4.1, §5.1, V arithmetic]:
+```
+CO_avail = CO_table(loss) * pump_fraction * tamponade_mult * tension_mult
+G_sys    = CO_table(loss) / MAP_table(loss)                     # systemic conductance (L/min per mmHg)
+K        = Σ_arterial_wounds k_i ,  k_i = 0.01805 * A_eff_i[mm²] * tissue_factor_i    # L/min per √mmHg
+x        = (-K + sqrt(K² + 4*G_sys*CO_avail)) / (2*G_sys)       # x = √MAP
+MAP      = x²  ;  SBP = MAP + PP·2/3 ;  DBP = MAP − PP/3        # PP from the table, scaled by MAP/MAP_table
+```
+Example (V): 7 mm carotid hole, tissue factor 0.5 → MAP ≈ 48 mmHg and wound flow ≈ 2.4 L/min at once; tissue factor 0.2 → MAP ≈ 71, 1.2 L/min. This single effect produces the near-instant collapse of aortic and carotid wounds.
+
+**Special states that override the table**:
+
+| State | Effect | Source |
+|---|---|---|
+| Heart destroyed | CO_avail = 0 at once; arterial pressure decays (τ ≈ 2–4 s) | [R04 §8] C |
+| Myocardial damage | `pump_fraction` 0–1 by destroyed wall fraction | G |
+| Tamponade | CO × 1 below V_t, linear to 0 at 250 mL; V_t = 150 mL (100–200), ×0.5–0.7 when loss > 20 %; CVP = 4 + P_peri (neck veins distend unless hypovolaemic) | [R03 §8.2] V |
+| Tension pneumothorax | CO × (1 − 0.6·severity); CVP up; hypotension late | [R04 §9.2] C |
+| Neurogenic shock (complete cord ≥ T6; trigger SBP < 100 with HR < 80) | HR 40–60, SBP 70–90, warm pink skin below the level; compensation capped (HR ≤ +10, vasoconstriction ≤ 40 %) → decompensates earlier | [R04 §6.5] C |
+| Medulla destroyed (vasomotor loss) | MAP → 40–60 within 30–60 s; HR = intrinsic 118.1 − 0.57·age (≈ 101 bpm at 30 y) until hypoxic bradycardia | [R04 §2.4] C |
+| Catecholamine surge after brainstem/head hit | p 0.5: HR 120–160, SBP +20–60 for 10–60 s | [R04 §2.6] L/G |
+| Cushing reflex (ICP within 10–20 of MAP) | SBP 160–220, HR 40–60, irregular breathing for 5–30 min before apnoea | [R04 §5.3] C/G |
+| Hypoxia | SpO₂ < 0.5 → HR falls toward 30 over 120 s; SpO₂ < 0.4 for > 150 s → PEA | [R04 §1], E (calibrated to apnoea → arrest ≈ 6 min) |
+| Circulatory arrest | Arterial pressure decays to mean systemic filling pressure **10 mmHg (7–20)** with τ ≈ 20 s (0–5 mmHg if exsanguinated); only hydrostatic drainage afterwards | [R03 §1.2, §6.3] V/C |
+
+### 3.3 Vessel graph
+
+**Topology** [R03 §11.6]: Tier 1 (default) = one global arterial pressure (above) + one CVP; each vessel segment is a labelled capsule (Ø, parent, waypoints, depth, kind) used for hit tests, flow caps, distal ischaemia and VFX. Tier 2 (optional) = ~60–80 arterial + 40–60 venous Poiseuille conduits and ~20 capillary beds solved at 10–20 Hz (sparse, ~150 unknowns, microseconds).
+
+**Scaling**: Ø × (H/1.78)^0.5 and × 0.9 for female bodies [R03 §11, G]. Waypoints are **body frame, metres, left side** unless ±x or R is given; mirror x for the right. Kind: **E** elastic artery (little spasm, never self-seals), **M** muscular artery (spasm, can self-seal ≤ 3–4 mm), **V** vein. Waypoints are from R05 §10.4/§7.2 where listed; limb and head waypoints marked (E) are this document's fit to R03/R05 landmarks (±10–20 mm).
+
+**Central and neck**
+
+| ID | Vessel | Kind | Ø mm | Rest flow mL/min | Parent | Waypoints (body frame, m) | Landmarks / depth | Initial bleed at normal BP (mL/min) → LOC / death untreated, supine | Self-stop · compress |
+|---|---|---|---|---|---|---|---|---|---|
+| A01 | Ascending aorta | E | 32 (28–36) V | 5,000 | LV | (0.008,−0.038,1.360) → (−0.008,−0.048,1.405) | Behind left sternal half, 3rd ICS; inside pericardium; 4–6 cm deep | 3,000–6,000 → 5–15 s / 1–3 min | No · no |
+| A02 | Aortic arch | E | 27 (25–30) V | 5,000→3,600 | A01 | (−0.008,−0.048,1.405) → (0,−0.020,1.428) → (0.022,0.030,1.418) | Top 2–3 cm below the jugular notch; ends at T4 | as A01 | No · no |
+| A03 | Brachiocephalic trunk | E | 12 V | 650–800 | A02 | (−0.002,−0.035,1.430) → (−0.025,−0.030,1.455) | Splits behind the right SC joint | 1,000–2,500 → 30–90 s | No · no |
+| A04 | Common carotid L (R from A03, mirrored) | E | 6.5 (6–8; F 6.1) V | 350–450 | A02 / A03 | (0.010,−0.025,1.432) → (0.028,−0.018,1.515) → bifurcation (0.030,−0.012,1.558) | Beside trachea/larynx under the SCM anterior border, IJV lateral; bifurcation at upper thyroid cartilage (C3–C4); 1.5–4 cm deep | **1,000–2,500 (+100–300 distal backflow) → LOC 20–90 s / death 2–5 min** | No · partly (finger) |
+| A05 | Internal carotid (cervical) | E→M | 4.8 (4–5.5) V | 220–300 | A04 | (0.030,−0.012,1.558) → (0.024,0.012,1.625) (E) | No neck branches; enters the carotid canal in front of the jugular foramen; 2–4 cm | 500–1,000 → 1–3 min / 3–8 min | No · partly |
+| A06 | External carotid | M | 4 (3.5–5) | 100–150 | A04 | (0.030,−0.012,1.558) → (0.050,0.000,1.630) (E) | Ends in the parotid behind the mandibular neck | 200–600 → 3–10 min / 5–20 min | Rarely · yes |
+| A07 | Superficial temporal | M | 2.0 (1.5–2.5); branches 1.2–1.8 | 10–30 (per branch 16–18 V) | A06 | (0.050,0.000,1.630) → (0.068,0.002,1.650) → split (0.070,0.000,1.680) → frontal br. (0.055,−0.060,1.720); parietal br. (0.065,0.030,1.740) (E) | ~1 cm in front of the tragus over the zygomatic root (palpable); 3–6 mm deep in scalp connective tissue | 20–60 (both ends), pulsatile jet → scalp-wound course | Poorly (tethered) · yes |
+| A08 | Facial | M | 2.5 → 1.5 | 20–40 | A06 | (0.035,−0.012,1.570) → mandible at masseter front edge (0.046,−0.032,1.565) → mouth angle +1.5 cm (0.035,−0.078,1.592) → angular at medial canthus (0.016,−0.072,1.662) (E) | Palpable notch 2.5–3 cm in front of the jaw angle; 5–10 mm deep; labial branches 1–1.5 mm inside the lips | 10–40 (facial/labial, into mouth too) | Partially · yes |
+| A09 | Occipital | M | 2.0 | 10–20 | A06 | → (0.032,0.105,1.650) → (0.030,0.105,1.700) (E) | Pierces fascia 2.5–4 cm lateral to the inion at the superior nuchal line; 4–8 mm | 20–60 (scalp) | Poorly · yes |
+| A10 | Vertebral | M | 3.5 (3–4) | 70–120 | A14 (subclavian 1st part) | (0.030,−0.008,1.440) → C6 transverse foramen (0.015,0.004,1.518) → foramina up to C1 → loop (0.028,0.035,1.622) → foramen magnum (0.008,0.030,1.630) | In bone canal; 4–7 cm deep | 100–400 → 5–20 min (often contained) | Often contained · no |
+| A11 | Basilar | M | 3.5 | ~150–200 | A10 ×2 | (0,−0.004,1.645) → (0,−0.004,1.690) | Front of the pons on the clivus | Intracranial (§3.9) | — |
+| A12 | Middle meningeal | M | 1.5–2 | — | Maxillary | → under the pterion (0.058,−0.008,1.682) (E) | Pterion ~3.5 cm above the midpoint of the zygomatic arch; inside the skull | Epidural haematoma 0.3–2 mL/min (§4.7) | — |
+| A13 | Coronaries: left main → LAD, circumflex; RCA | M | LM 4.5, LAD 3.5, RCA 3.8 | 225–250 total | Aortic sinuses | LM (0.010,−0.035,1.365) → LAD toward apex (0.082,−0.068,1.285); RCA along right AV groove (−0.035,−0.045,1.330) (E) | Epicardium | Spurts in systole **and** diastole; downstream muscle turns dusky and stops contracting in 1–5 min | No |
+| A14 | Subclavian L (R from A03) | E | 8.5 (7–10) | 200–350 | A02 | (0.020,−0.008,1.430) → over 1st rib behind mid-clavicle (0.065,−0.015,1.462) → (0.090,−0.015,1.450) | 1.5–2 cm above mid-clavicle; behind anterior scalene; 3–5 cm deep | 1,000–2,000 → 1–3 min / 3–10 min | No · poor |
+| A15 | Internal thoracic | M | 2.5 (2–3) | 20–50 | A14 | (0.030,−0.060,1.440) → (0.030,−0.060,1.290) (E) | 1–2 cm lateral to the sternal edge behind the cartilages | 50–150 into pleura, systemic pressure → LOC 20–60 min | No · no |
+| A16 | Intercostals (×11 per side) | M | 1.5–2.5 | 5–15 each | Aorta / A15 | Along the lower inner border of each rib (§7.4 rib table) | Costal groove (vein–artery–nerve top to bottom) | 50–150 → hours | No · no |
+| V01 | Internal jugular L (R larger) | V | 14 (10–20) V | 300–700 | → V03 | jugular foramen (0.030,0.030,1.625) → lateral to CCA at C6 (0.040,−0.018,1.515) → behind SC joint (0.028,−0.030,1.448) | Line earlobe → medial clavicle; < 20 mm deep; **collapses when upright; tethered at the root → air entry** | Supine 200–1,000 → 5–20 min / 10–40 min | No · yes |
+| V02 | External jugular | V | 5 (4–7) | 20–60 | → V04 | below jaw angle (0.050,0.000,1.570) → across SCM → (0.085,−0.020,1.485) → (0.075,−0.020,1.455) (E) | 3–6 mm under the skin (platysma); visible when distended | 50–200 dark steady; air risk | Sometimes · yes |
+| V03 | Brachiocephalic veins | V | 14 (12–16) | — | → V05 | L (0.028,−0.030,1.448) → (−0.020,−0.035,1.440); R (−0.028,−0.030,1.448) → (−0.028,−0.035,1.438) | Behind the manubrium | into mediastinum | No |
+| V04 | Subclavian vein | V | 10 (7–12) V | 150–300 | → V03 | (0.090,−0.025,1.450) → (0.028,−0.030,1.448) | In front of anterior scalene; ~5 mm above the apical pleura; held open → air | 200–800 (+ air) → 5–20 min | No · poor |
+| V05 | SVC | V | 20 (18–22) V | 1,300–1,700 | → RA | (−0.028,−0.035,1.438) → (−0.028,−0.028,1.378) | Right sternal border; lower half intrapericardial | 500–2,000 → tamponade or mediastinum, 1–5 min | No · no |
+| P01 | Pulmonary trunk; L/R pulmonary arteries | E (low P) | 27; 18–22 | 5,000 | RV | (0.022,−0.058,1.378) → (0.012,−0.030,1.405); RPA → (−0.060,0.005,1.385); LPA → (0.055,0.015,1.395) | Mean pressure 15 mmHg | Hilar hit 1,000–4,000 → 30 s–2 min | No |
+| P02 | Pulmonary veins ×4 | V | 10–15 | 5,000 total | → LA (0.008,−0.008,1.365) | Hila (±0.050, 0.020–0.025, 1.380–1.388) → LA | | as P01 | No |
+
+**Trunk, abdomen, pelvis**
+
+| ID | Vessel | Kind | Ø mm | Rest flow | Parent | Waypoints (m) | Landmarks / depth | Initial bleed → LOC / death | Self-stop · compress |
+|---|---|---|---|---|---|---|---|---|---|
+| A20 | Descending thoracic aorta | E | 24 (20–26) V | 3,600 | A02 | (0.022,0.030,1.418) → (0.020,0.030,1.329) → hiatus T12 (0.006,−0.012,1.227) | Left front of vertebral bodies; isthmus = blunt-rupture site | 2,000–5,000 into left pleura → 10–30 s / 1–5 min | No |
+| A21 | Abdominal aorta | E | 21 → 18 (F 16.7) V | 3,600 → 1,000 | A20 | (0.006,−0.012,1.227) → renal level (0.008,−0.030,1.180) → bifurcation L4 (0.010,−0.045,1.085) | Just left of midline on the vertebral bodies; bifurcation 1–2 cm below-left of the navel; ~7–8 cm under navel skin (lean ~6) | Free: 1,500–4,000 → 20–60 s / 2–10 min; contained retroperitoneal 100–500 → 5–30 min / hours | No |
+| A22 | Coeliac trunk → splenic, common hepatic | M | 7; splenic 4–6; hepatic 4–5 | 800–1,100 | A21 (T12) | (0.006,−0.020,1.215) → splenic along pancreas to hilum (0.095,0.030,1.225); hepatic → porta (−0.030,−0.020,1.230) (E) | Deep | 300–1,000 intraperitoneal | No |
+| A23 | Superior mesenteric | M | 7 | 500–700 | A21 (L1) | (0.008,−0.030,1.195) → (0.010,−0.060,1.120) (E) | Behind pancreatic neck | 300–1,000 | No |
+| A24 | Renal L / R | M | 5.5 (4–7) | 500–600 each | A21 (L1/L2) | → hila (0.048,0.010,1.180) / (−0.048,0.010,1.160) | Right passes behind IVC | 300–1,000 retroperitoneal (Gerota may contain) → 5–20 min | Partly |
+| A25 | Common iliac | E | 10 (8.8–9.9 V) | 350–500 | A21 | (0.010,−0.045,1.085) → (±0.040,−0.030,1.035) | To the SI joint (L5/S1) | 1,000–2,500 retroperitoneal → 2–6 min / 5–15 min | No |
+| A26 | Internal iliac | M | 6 (5–7) | 100–150 | A25 | (0.040,−0.030,1.035) → (0.050,0.020,0.980) (E) | Pelvis, gluteal | pelvic | No |
+| A27 | External iliac | M | 8 (7–9) | 250–350 | A25 | (0.040,−0.030,1.035) → mid-inguinal point (0.065,−0.068,0.940) | Along the pelvic brim, medial to psoas | 1,000–2,500 | No |
+| A28 | Common femoral | M | 9.0 M / 8.2 F V | 250–400 | A27 | (0.065,−0.068,0.940) → profunda origin (0.068,−0.060,0.895) | Mid-inguinal point (midway ASIS–pubic symphysis); NAV lateral→medial; pulse palpable; 2–4 cm deep | **800–2,000 → LOC 2–5 min / death 3–10 min** | No · poor–moderate (junctional) |
+| A29 | Profunda femoris | M | 5.5 (5–6) | 100–150 | A28 | (0.068,−0.060,0.895) → (0.090,−0.010,0.800) → (0.095,0.010,0.700) (E) | Posterolateral, deep (4–8 cm) | 400–1,000 → 4–10 min / 8–20 min | Rarely · yes (proximal) |
+| A30 | Superficial femoral | M | 6 (5–7) | 150–250 | A28 | (0.068,−0.060,0.895) → under sartorius (0.075,−0.030,0.760) → adductor hiatus (0.080,0.030,0.610) | Anteromedial thigh; 3–6 cm deep | 400–1,000 | Rarely · yes |
+| A31 | Popliteal | M | 5.5 (5–7) | 80–150 | A30 | (0.080,0.030,0.610) → (0.092,0.055,0.497) → (0.092,0.055,0.440) | Deepest in the popliteal fossa, on the capsule; 3–5 cm | 300–800 → 5–12 min / 10–30 min | Rarely · yes |
+| A32 | Anterior tibial → dorsalis pedis | M | 3 (2.5–3.5) → 2–3 | 30–50 | A31 | (0.092,0.055,0.440) → (0.105,0.020,0.420) → (0.100,−0.005,0.250) → front of ankle (0.097,0.012,0.080) → dorsum (0.105,−0.030,0.050) (E) | DP pulse lateral to the EHL tendon; ankle ~5 mm deep | 50–200 → 20–60+ min / 1–3 h | Often · yes |
+| A33 | Posterior tibial | M | 3 (2.5–3.5) | 30–50 | A31 | (0.092,0.055,0.440) → (0.088,0.060,0.250) → between medial malleolus and Achilles (0.075,0.075,0.080) (E) | ~1 cm deep at the ankle | 50–200 | Often · yes |
+| A34 | Peroneal | M | 2.5 | 20–40 | A33 | (0.095,0.060,0.420) → (0.120,0.055,0.200) (E) | Along the fibula, deep | 50–150 | Often |
+| V10 | IVC | V | 17 (13–21) V | 3,000–3,500 | → RA | L5 (−0.020,−0.035,1.050) → retrohepatic (−0.022,−0.015,1.260) → T8 hiatus (−0.022,−0.010,1.325) → RA (−0.025,−0.015,1.315) | Right of the aorta; retrohepatic part embedded in liver | Infrarenal 500–2,000 (50–200 tamponaded); retrohepatic/hepatic veins 1,000–3,000 → 1–5 min | Partly / no |
+| V11 | Hepatic veins ×3 | V | 8–12 | ~1,350 | → V10 | into IVC ~(−0.022,−0.012,1.300) | Just below the diaphragm | 1,000–3,000 | No |
+| V12 | Renal veins | V | L 9, R 7 | ~550 each | → V10 | L (0.048,0.010,1.180) → in front of aorta (0.008,−0.045,1.178) → IVC (−0.020,−0.030,1.175); R (−0.048,0.010,1.160) → (−0.022,−0.025,1.165) (E) | Left crosses in front of the aorta below the SMA | retroperitoneal | Partly |
+| V13 | Portal vein | V | 11 (10–13) | 1,000–1,200 | SMV + splenic | (−0.005,−0.045,1.175) → porta hepatis (−0.030,−0.020,1.235) (E) | Hepatoduodenal ligament | 500–1,500 → 5–15 min / 10–40 min | No |
+| V14 | Common iliac veins | V | 14 (12–16) | ~500 each | → V10 | (−0.020,−0.035,1.050) → (±0.045,−0.020,1.030) (E) | Behind and right of the arteries | pelvic | No |
+| V15 | Common femoral vein | V | 12 (10–14) V | 250–400 | → V14 | (0.045,−0.020,1.030) → medial to CFA (0.055,−0.066,0.940) → (0.060,−0.058,0.895) (E) | Medial to the artery, 2–4 cm deep; ~80–90 mmHg at the foot when standing still | 200–600 (more if the leg hangs) → 10–30 min | Sometimes · yes |
+| V16 | Femoral / popliteal veins | V | 8–12 / 6–10 | — | → V15 | Alongside A30 / A31 | Deep veins | 100–400 | Sometimes · yes |
+| V17 | Great saphenous | V | 4 (3–5; 6–8 at junction) | — | → V15 | in front of medial malleolus (0.060,0.030,0.085) → behind medial femoral condyle (0.060,0.050,0.500) → anteromedial thigh → SFJ 3–4 cm below-lateral pubic tubercle (0.050,−0.065,0.885) (E) | Just under the skin | 20–100 | Yes · yes |
+
+**Upper limb** (A-pose; limb direction d = (0.5, 0, −0.866); medial (palm-side) normal n_m = (−0.866, 0, −0.5); radial side = −Y) (E):
+
+| ID | Vessel | Kind | Ø mm | Rest flow | Parent | Waypoints (m) | Landmarks / depth | Initial bleed → course | Self-stop · compress |
+|---|---|---|---|---|---|---|---|---|---|
+| A40 | Axillary | M | 6.5 (5–8) | 100–200 | A14 | (0.090,−0.015,1.450) → (0.140,0.000,1.410) → (0.188,0.015,1.350) | Behind pectoralis minor, among plexus cords; 3–5 cm | 600–1,500 → 2–5 min / 5–15 min | No · poor (junctional) |
+| A41 | Brachial | M | 4.2 (3.5–5) V | 50–120 | A40 | (0.188,0.015,1.350) → medial bicipital groove (0.231,0.015,1.277) → cubital fossa (0.328,0.005,1.148) | With the median nerve; 1–2 cm deep mid-arm, ~1 cm at the elbow; divides 1–2 cm below the elbow crease | Side laceration ~400 → Class II 3 min, LOC 10–15 min, arrest 15–30 min; transected 200–600 | Sometimes (spasm) · yes |
+| A42 | Radial | M | 2.5 (2.2–3.0) | 20–40 | A41 | (0.328,0.005,1.148) → (0.385,0.005,1.043) → wrist (0.447,0.005,0.923) | At the wrist between the FCR tendon and radial styloid, **3–7 mm deep** | 100–300 first min → 20–60 after spasm; stops in 5–20 min after 200–500 mL | **Usually** · yes |
+| A43 | Ulnar | M | 2.4 (2.0–3.0) | 20–40 | A41 | → wrist (0.450,0.035,0.924) (E) | Lateral to the FCU tendon/pisiform; 5–10 mm | as radial | Usually · yes |
+| A44 | Palmar arches, digital | M | arch 1.5–2; digital 0.8–1.6 | 1–5 per digit | A42/A43 | superficial arch ~(0.475,0.020,0.881) (E) | Arch at the distal border of the extended thumb | 5–30 | Yes · yes |
+| V20 | Cephalic / basilic / median cubital | V | 2–5 / 3–6 / 2–5 | — | → axillary | Lateral arm (deltopectoral groove) / medial arm / cubital fossa | Visible; **flatten and vanish in shock** | 5–30 | Yes · yes |
+
+**Capillary beds** (Tier 2 resistance targets: `R_bed = (P_art − P_ven) / Q_rest`) [R03 §2.3, C]: brain 750, coronary 225–250, kidneys 1,100–1,250, liver 1,350 (portal ~1,050 + arterial ~300), skeletal muscle 750–1,000, skin 250–450 (drops 70–90 % in shock), bone 250, spleen 150–300, scalp ~50–100 mL/min.
+
+**Collaterals for distal-stump backflow** (stump pressure 0.3–0.8 × MAP; high for radial/ulnar/carotid, low for end arteries) [R03 §4.4, §11.6]: palmar arches (radial ↔ ulnar); circle of Willis (complete in only 20–50 %: unilateral carotid tolerance varies); external ↔ internal carotid via facial/angular and STA/supraorbital; geniculate network; profunda ↔ popliteal. Scalp and face arteries bleed from **both** cut ends.
+
+**Distal ischaemia**: a bed downstream of a transected artery without collaterals → flow 0; limb pale, cold, pulseless over minutes; irreversible muscle damage at 4–6 h warm ischaemia [R03 §11.6, C].
+
+### 3.4 Bleeding-rate formula for a damaged vessel
+
+Per wound on vessel segment s (Tier 1) [R03 §4, V arithmetic, G factors]:
+```
+# local pressure
+P_art(t)   = DBP + (SBP − DBP) * pulse_wave(phase(t − delay_s))        # §3.5; arteries only
+P_local    = arterial: P_art(t) − 0.78 * Δh_cm                         # Δh = wound height above right atrium
+             venous:   CVP + 0.78 * (−Δh_cm) + resp_mod(t) + valsalva(t)
+             distal stump: stump_frac(s) * MAP − 0.78 * Δh_cm
+P_ext      = 0 if open to air, else compartment pressure (haematoma, pericardium, pleura: 0–30 mmHg)
+ΔP         = max(P_local − P_ext, 0)
+# effective hole
+A0         = side laceration: π/4 * hole_d²  (hole_d ≈ min(track_d, 1.2·vessel_d))
+             transection:     π/4 * vessel_d²   (both ends; distal end uses stump pressure)
+spasm      → target: muscular transected 0.4–0.6 (τ 1–3 min); side laceration 1.1–1.3 (spasm pulls the hole open);
+             elastic 0.9; scalp/face tethered 1.0 (fixed)
+A_eff      = A0 * spasm * (1 − clot) * (1 − compress)
+# three limits; the smallest wins
+Q_orif     = 0.6 * A_eff[mm²] * 0.5015 * sqrt(ΔP) * 60                 # mL/min   (v = √(2ΔP·133.3/1060) m/s)
+Q_supply   = (MAP − P_hole) / R_upstream                               # Poiseuille, R = 8μL/(πr⁴); matters for Ø ≤ 3 mm
+Q          = min(Q_orif * tissue_factor, Q_supply)                     # cardiac limit enforced by the shunt solve (§3.2)
+# arrest
+if circulatory_arrest: Q = passive_drain(Δh) only (§3.8, §6)
+```
+- **tissue_factor** [R03 §4.8, G]: 1.0 gaping incised wound exposing the vessel; 0.4–0.6 incised wound under muscle; 0.15–0.3 narrow stab/bullet track > 3 cm deep (blood fills tissue: **expanding pulsatile haematoma**, or drains into a cavity); 0.05–0.1 victim lying on the wound.
+- **compress**: reflex clutching 0.3–0.7; firm direct pressure 0.8–0.95 on compressible sites; tourniquet 1.0 (limbs); 0 on non-compressible (trunk, junctional partial 0.3–0.6) [R03 §4.5, G].
+- **Pressure dependence**: holes > ~3 mm are orifice-limited (Q ∝ √ΔP); small vessels and ooze are resistance-limited (Q ∝ ΔP). **Critical closing pressure 20–40 mmHg**: small arteries stop in deep shock and **rebleed** when MAP recovers above ~60–65 mmHg (SBP 90–95) [R03 §4.6, C].
+- **Heart beating vs not**: pulsatile P_art only while the rhythm produces output; PEA/VF/asystole → arterial pressure decays to MSFP within ~30–90 s, then gravity drainage only.
+- **Partial lacerations bleed more than complete transections** of the same muscular artery (no retraction, spasm widens the hole) [R03 §4.4, C].
+- Worked example (V): radial 2.5 mm, fully transected, 20 cm feed → orifice pressure ~40 mmHg, ~550 mL/min theoretical; spasm and tissue bring it to 100–300 mL/min in minute 1 and 20–60 mL/min after a few minutes.
+
+**Validation scenarios the model must reproduce** (supine, untreated) [R03 §5.1, R04 §7.5 corrected, E]:
+
+| Scenario | Expected course |
+|---|---|
+| A. One radial artery cut clean | 100–300 mL/min for ~1 min → spasm → 20–60 mL/min → clot by 10–20 min; total 200–500 mL (Class I); survives |
+| B. Brachial side laceration | ~400 mL/min declining; Class II ~3 min, Class III ~5–7 min, LOC 10–15 min, arrest 15–30 min |
+| C. Common femoral transection, standing | ~1.2 L/min; Class III ~1.5 min; collapse ~2 min; arrest 4–8 min |
+| D. Unilateral carotid, open neck | MAP 50–70 at once (shunt); LOC 20–60 s; arrest 2–5 min |
+| E. Many small wounds 30–50 mL/min | Class II 15–30 min; Class III 35–50 min; LOC 60–90 min |
+| F. Scalp laceration 20 mL/min | Class II after 40–60 min; Class III possible after ~1.5 h |
+| G. Heart stab with tamponade | A few mL externally; rising HR, distended neck veins, falling BP over 5–30 min; PEA |
+| H. 1 L/min constant-source check | LOC 2.4–2.8 min, PEA 2.9–4.0 min (R04 corrected, V arithmetic) |
+| I. 100 mL/min | LOC 24–28 min, PEA 29–40 min (R04 corrected, V arithmetic) |
+
+### 3.5 Pulsatile arterial spurting
+
+- **Jet exists** only if: vessel kind E/M (or LV/coronary), wound open to air (tissue_factor ≥ 0.5 and skin gap ≥ vessel Ø), and **P_local ≥ 25–30 mmHg**. Spurting is gated by **pressure, not flow**: a small cut artery (digital, radial after spasm, STA) still spurts visibly [R06 §8.1, V/C].
+- **Exit speed** `v = Cv · √(2·P·133.3/1060) = 0.351·√P m/s` with Cv = 0.7 (0.6–0.8). **Height** `h = Cv²·P·0.01282 m` (ideal 1.54 m at 120 mmHg; real 0.35–0.65 × ideal) [R03 §6.2, V arithmetic; Cv is a tuning value, no measured human jets exist].
+
+| Local BP (sys/dia) | Vertical jet at systole | At diastole | Horizontal throw from 1.4 m (standing neck) | Look |
+|---|---|---|---|---|
+| 140/90 (stress surge) | 0.65–1.15 m | 0.4–0.7 m | 1.9–2.5 m | Strong throbbing |
+| 120/80 | 0.55–1.0 m (default 0.75) | 0.35–0.65 m | 1.8–2.3 m | Throbbing, never fully stops between beats |
+| 100/70 | 0.45–0.8 m | 0.3–0.55 m | 1.6–2.1 m | Faster pulses, lower |
+| 80/55 | 0.35–0.65 m | 0.25–0.45 m | 1.4–1.9 m | Clearly weaker |
+| 60/40 | 0.25–0.5 m | 0.15–0.3 m | 1.2–1.7 m | Arcs, dribbling between beats |
+| 45/30 | 0.15–0.35 m | 0.1–0.2 m | 1.1–1.4 m | Pumping surges, 5–20 cm |
+| MAP < 25–30 | — | — | — | No jet: welling with faint pulsation |
+| Arrest | — | — | — | Stops within 1–2 beats; gravity drainage only |
+
+- **Local pressure**: apply the hydrostatic term. Standing, a neck wound (~30 cm above the heart) sees SBP ~97 (jet ~0.6 m); an ankle wound gains ~94 mmHg.
+- **Waveform per beat** [R03 §6.2, C]: upstroke ~0.1 s, peak at ~0.15 s after pulse arrival, dicrotic notch at 0.30–0.35 s, exponential diastolic decay to the next beat; modulation depth 0.5–0.8 × mean. LV wall wounds jet in **systole only** (0.1–0.35 s after R; 20–60 cm through an open chest); RV/atria well dark blood (RA double swell per beat) [R2-05 §10.2].
+- **Pulse delay** after the ECG R-wave / heart-sound "lub" (S1 at 20–60 ms): pre-ejection 60–100 ms + path/PWV (aorta 6 m/s, peripheral 9 m/s): carotid 90–140 ms, femoral 150–220 ms, radial 170–250 ms, dorsalis pedis 220–300 ms [R03 §2.4, E].
+- **Breakup**: the column breaks into drops ~1.9 × jet Ø (typically 4–6 mm, 35–110 µL) within 5–20 cm; pulsing bunches drops into one cluster per beat; stains on walls form a zig-zag, one peak per beat [R03 §6.2].
+- As shock deepens the pulses get **faster and weaker at the same time** — the most readable bleed-out cue.
+
+### 3.6 Venous flow and air embolism
+
+- **Look**: dark maroon `#8E1420`, steady, non-pulsatile dome over the wound: height 12.8 cm per 10 mmHg × 0.25–0.5 (3–6 cm at 10 mmHg) [R03 §6.1, E].
+- **Posture**: + 0.78 mmHg per cm below the right atrium. Limb venous bleeding increases strongly when the limb hangs and nearly stops when raised above the heart; arterial jets barely change (−8 mmHg per 10 cm).
+- **Neck veins**: pulse with respiration (inspiration lowers pressure; upright neck veins ≤ 0 mmHg and collapse); **expiration, coughing, screaming, straining (+20–40 mmHg Valsalva) cause dark surges** [R03 §4.7, C].
+- **Air embolism** [R03 §5, V; R02 §2.4, C/G]: condition = an open tethered vein (IJV root, subclavian, dural sinus with open skull) ≥ ~5 cm above the right atrium with P_local < 0. Roll `air_path_open` p = 0.15 per qualifying wound (fits ~10–15 % of fatal throat cuts). If open: entrainment **20–100 mL/s during inspiration** (≥ 100 mL/s possible through a large tear); lethal when **3–5 mL/kg (200–300 mL) enters within seconds** → sudden collapse (CO → 0 "air lock"), gasp, frothy blood, audible hiss/gurgle/sucking at the wound.
+
+### 3.7 Capillary and tissue ooze (wounds without a named vessel)
+
+Rates at MAP 93; scale by `clamp((MAP − 20)/73, 0, 1)` (resistance-limited, stops below critical closing pressure); clot per §3.8.
+
+| Tissue / wound | Initial rate | Clot τ / course | Source |
+|---|---|---|---|
+| Abrasion (epidermis–papillary dermis) | 0.01–0.1 mL/min per cm²; pinpoint beads in 10–60 s, serum glaze 5–30 min | Stops 2–10 min (bleeding time 1–9 min) | [R02 §2.6], [R03 §6] C |
+| Dermal cut, face (no named vessel) | 1–5 mL/min per 3 cm (0.3–1.7 per cm) | Mostly stops 5–15 min | [R02 §2.6] E |
+| **Scalp laceration 5–10 cm through the galea** | **5–30 mL/min** sheet ooze + small branches (default 20); **+20–60 per named artery cut (STA/occipital)** → up to 100 | Poor: vessels tethered, spasm fixed 1.0, clot τ × 3–5; 500–1,500 mL over 30–60 min possible; rebleeds as BP recovers | [R02 §2.6], [R03 §5] **Resolved** C/E |
+| Subcutaneous fat | 0.02–0.1 mL/min per cm² | 3–10 min | G |
+| Skeletal muscle cut surface | 0.2–1 mL/min per cm² (10 cm² → 2–10 mL/min) | τ 5–10 min | G (no measured source) |
+| Cancellous bone / red marrow cut (sternum, vertebra, pelvis, rib, skull diploë) | 0.3–1 mL/min per cm², clots poorly | τ 10–20 min | G, [R05 §8.5] C (keeps oozing) |
+| Liver laceration | Moderate (1–3 cm deep) 20–100 total; severe 200–1,000 | Moderate often slows; severe does not | [R03 §5] C/E |
+| Spleen | Moderate 20–100; shattered/hilar 200–800 | Delayed rupture possible | [R03 §5] C/E |
+| Kidney parenchyma | 5–50 (contained in Gerota's fascia) | Usually survives | [R03 §5] C/E |
+| Lung parenchyma | Peripheral 5–50; handgun through-track 20–100 | Decays τ 10–30 min (low pulmonary pressure) | [R03 §5], [R04 §9.5] **Resolved** C/E |
+| Brain surface / open skull | 1–10 mL/min of blood, CSF and pulp; surges × 2–5 on Valsalva | Continues while ICP high | [R2-05 §7.4] E |
+| Nose (anterior epistaxis) | 2–10 mL/min, from both nostrils after nasal fracture | Stops 5–15 min | G |
+| Tooth socket | 0.5–2 mL/min | Clot 5–15 min; ooze ~60 min; clot can dislodge | [R02 §4.7] C/G |
+| Burned (D ≥ 2) tissue | 0 | Vessels ≤ 1–2 mm cauterised | [R02 §6.7] K |
+
+### 3.8 Haemostasis (clotting over time)
+
+| Parameter | Value | Source |
+|---|---|---|
+| Vascular spasm | seconds; lasts 20–30 min; strongest in muscular arteries | [R03 §7.1] C |
+| Platelet plug | seconds to 1–3 min (capillaries, tiny vessels) | [R03 §7.1] C |
+| Skin bleeding time | Ivy 2–7 min (upper 8–9) | [R03 §7.1] C |
+| Whole-blood (pool/container) clotting | **5–15 min** (Lee-White) | [R03 §7.1] V |
+| Clot update | `clot += dt_sim / τ_eff`, `τ_eff = τ · (1 + (P_local/30)²)` | [R03 §7] G |
+| τ: capillary / vessel < 1 mm / 2–3 mm artery | 2–5 / 3–10 / 10–20 min (only after spasm reduces flow) | [R03 §7] C/G |
+| Clot ceiling | Arteries > 3–4 mm: clot ≤ 0.5 unless MAP < 50 | [R03 §7] G |
+| Scalp/face | τ × 3–5, spasm fixed 1.0 | [R03 §7.3] C/G |
+| Coagulopathy | τ × 1.5–3 when core < 35 °C, pH < 7.2 or loss > 0.30–0.35 (every wound oozes more) | [R03 §7.4] C |
+| Rebleed | MAP rises > 20–30 mmHg above the value at clot formation, or > 60–65, or wound manipulated → clot × 0–0.5 | [R03 §7] C/G |
+| Serum separation | starts 30–60 min (yellow rim `#E6D08A`), largely complete 12–24 h | [R03 §7.1] C |
+| Post-mortem blood | stays liquid after sudden death (fibrinolysis); soft "currant jelly"/"chicken fat" clots in slow deaths; no active clotting in wounds | [R03 §6.3] C |
+
+### 3.9 Internal bleeding compartments
+
+| Compartment | Normal | Critical / effects | Capacity | Source |
+|---|---|---|---|---|
+| **Pericardium** | 15–50 mL fluid | J-shaped P–V: P ≈ 0 to 50 mL, ~15 mmHg at 150, ≥ 25 at 200+. **Tamponade at 100–200 mL acute (default 150)**; CO × 1 → 0 by ~250 mL; ×0.5–0.7 V_t in hypovolaemia (low-pressure tamponade, neck veins may stay flat). Beck's triad (hypotension, distended neck veins, muffled heart sounds), pulsus paradoxus > 10 mmHg, dusky face. Draining 20–50 mL restores pressure transiently | ~200–250 acute before arrest; autopsy 150–450 | [R03 §8], [R2-05 §10] V/C |
+| **Pleura (each)** | 10–20 mL | Haemothorax: that lung's ventilation × (1 − V/2,000); RR up, SpO₂ down; massive ≥ 1,500 mL (or ≥ ⅓ BV) or > 200–250 mL/h × 2–4 h; mediastinal shift > 1,500 mL; blood partly defibrinated (stays liquid) | 2,500–3,000 mL (~40 % BV) | [R03 §8], [R04 §9] V/C |
+| **Peritoneum** | < 50 mL | Little external sign; FAST-detectable from ~200–250 mL; visible distension only > 1,500–2,000 mL (belly blend shape starts there); Kehr's sign (left shoulder pain) with spleen; Cullen/Grey Turner bruising at 24–72 h | > 5,000 (never limiting) | [R03 §8] C |
+| **Retroperitoneum / pelvis** | — | Self-tamponade slows bleeding (Gerota's fascia, retroperitoneal IVC); pelvic fracture 1.5–4 L | Several L | [R03 §8] C |
+| Thigh (femur fracture) | — | 1,000–1,500 mL; thigh swells +2–3 cm girth per litre | 1.5–2 L | [R03 §8], [R2-05 §8.5] C/E |
+| Tibia / humerus fracture | — | 500–750 mL; each rib ~100–125 mL | — | [R03 §8] C |
+| **Cranial vault** | Brain ~1,400 mL, CSF ~150, blood ~150 | Monro–Kellie: compensated for ΔV ≤ V_c = 30–60 mL (default 40): ICP 10 → 20 linearly; beyond: `ICP = 20·10^((ΔV − V_c)/25)` (PVI 25 mL); ICP ≥ MAP → cerebral circulatory arrest. EDH > 30 mL is surgical; posterior fossa tolerates much less. CSF absorption offsets ≤ 0.35 mL/min | V_c + ~20 mL to lethal | [R04 §5.1] C, V arithmetic |
+| Subgaleal space | — | Boggy spreading scalp swelling; drains into both eyelids over 24–48 h | Hundreds of mL | [R02 §5.4] C |
+| Orbit (retrobulbar) | — | 0.1–2.4 mL → proptosis 0–5 mm; high pressure → fixed dilated pupil, lids swollen shut | small | [R01 §5.6] C |
+
+Rule of thumb for external loss display: a clot the size of a clenched adult fist ≈ 400–500 mL [R03 §8.1].
+
+### 3.10 Blood colour by oxygenation
+
+- Deoxyhaemoglobin absorbs ~5–10× more red light (600–700 nm) than oxyhaemoglobin; the difference is obvious in thin films, subtle in thick pools [R03 §9, V against Prahl's table].
+- Shader absorption μa per mm (R, G, B): **arterial (0.4, 28, 34)**, **deoxygenated (3.0, 26, 50)**; lerp by saturation. Film transmittance `T = exp(−2·μa·h)`; shaded albedo = skin·T + (1 − T)·blood body colour [R06 §6.6, E].
+- Saturation: arterial 0.97–0.99; venous 0.70–0.75, falling to 0.40–0.50 in Class IV (lerp by loss) — late in shock every wound bleeds darker and more purple.
+
+| Material / state | Hex | Source |
+|---|---|---|
+| Arterial thin film (≤ 0.2 mm) | `#C0141E` | [R03 §9.3] |
+| Arterial 1 mm layer / pool ≥ 2 mm | `#8C0A12` / `#5E070C` + strong wet specular | [R03 §9.3] |
+| Venous thin film / pool | `#8E1420` / `#3E0509` | [R03 §9.3] |
+| Deeply deoxygenated (shock, post-mortem) film / pool | `#6A1026` / `#2C040A` | [R03 §9.3] |
+| Capillary beads | `#B01820` | [R03 §9.3] |
+| Fresh clot | `#4A060C` glossy | [R03 §7.6] |
+| Frothy lung blood | `#D8404C`–`#E04A56` with white/pink foam `#F4C9CC` | [R03 §9.3], [R04 §9.5] |
+| Diluted 1:10 / 1:100 | `#D04858` / `#F0B0B4` | [R03 §9.3] |
+| Specular | wet F0 0.02–0.025, roughness 0.05–0.15; tacky 0.3–0.45; dry 0.6–0.8 | [R06 §6.6] |
+
+### 3.11 Blood on surfaces: drops, rivulets, pools, drying
+
+| Item | Value | Source |
+|---|---|---|
+| Free-falling drip | ~50 µL (13–160), Ø 4.6 mm; hair tips / sharp edges 10–20 µL | [R03 §10.1] V/C |
+| Terminal velocity | 8 m/s (7.5–9); ~4.1–4.3 m/s after 1 m of fall | [R03 §10.1] corrected |
+| Stain size | 3–5.5 × drop Ø (4.6 mm drop from 1 m → 15–22 mm); L/W = 1/sin α | [R03 §10.1] V |
+| Drip rate | Q / 50 µL (1 mL/min ≈ 20 drops/min); continuous thin stream above 15–30 mL/min | [R03 §10.2] E |
+| Rivulets on skin | 2–5 mm wide, 0.1–0.4 mm thick; 1–5 cm/s (2–3.5 on vertical skin), stop–go pinning (p 0.1–0.3 per step, 0.2–1.5 s); residue 5–15 µL/cm (a 50 µL drop runs 3–10 cm); a 1–10 mL/min trickle keeps a rivulet alive; pendant drops release at 30–60 µL at low points (standing: chin, nose tip, earlobe, elbow, fingertips; supine: occiput, ears, neck sides) | [R03 §10.2], [R06 §7.1] E |
+| Old trails | Keep their original direction when the body is moved (forensic clue) | [R03 §10.2] C |
+| Pool thickness | **2.5 mm** (1.6–3.3); area = V/h: 100 mL → Ø 23 cm, 500 mL → 50 cm, 1 L → 71 cm, 2 L → 1.0 m; continuous source radius R = √(Q·t/(π·h)) | [R03 §10.3] V |
+| Pool gel | Spreading stops at **5–15 min**; new blood flows over/around, lobed layered outline; serum rim from 30 min–2 h; clot retracts to ~50 % in 1–2 h | [R03 §10.3], [R2-05] C |
+| Absorbent surfaces | Stain area 2–4 × pool area, duller, browner | [R03 §10.3] G |
+
+**Drying and colour timeline** (thin stains move along the ramp faster than thick ones; warm skin ×2 evaporation; airflow ×2–4) [R03 §10.4; chemistry oxyHb → metHb → hemichrome V, timings C/E]:
+
+| Deposit | Tacky | Touch-dry | Fully dry |
+|---|---|---|---|
+| Smear on skin (< 0.05 mm) | 30–60 s | 1–3 min | 5–10 min |
+| Rivulet on skin (0.1–0.3 mm) | 2–5 min | 10–20 min | 30–60 min |
+| Spatter on steel (1–4 mm stains) | ~1 min (edge ring ~50 s) | 5–15 min | 15–30 min |
+| Drip stain (50 µL) on tile | 5–15 min | 20–60 min | 1–2 h |
+| Pool 100 mL–2 L | Gels 5–15 min | Surface skin 1–2 h; edges 2–6 h | 24–72 h, mud-crack plates |
+
+| Age | Thin stain | Thick stain / pool |
+|---|---|---|
+| 0 | `#C0141E` arterial / `#8E1420` venous | `#5E070C` glossy |
+| 10–30 min | `#9A1418` | `#4A060C` gel |
+| 1–2 h | `#7A2016` red-brown | `#3A0808` |
+| 6–24 h | `#5C2414` | `#2A0C0A` near-black, dull |
+| Days | `#4A2618` brown | `#24100C` |
+| Weeks | `#33201A` dark brown-black, flaking | black-brown |
+
+Store the **deposit timestamp** (sim minutes, fp16) per texel/stain, not an age; the shader derives colour, roughness and crust [R06 §6.4].
+
+### Simulation parameters (circulation)
+
+| Parameter | Value / range | Unit | Notes | Source |
+|---|---|---|---|---|
+| `bv0` | Nadler(H, W, sex); ref 5.09 L | mL | Thresholds are fractions | [R03 §1.1] V |
+| `shock_table` | §3.2 | — | Interpolate on loss | [R03 §3.3] G/V |
+| `hr_response_scale` | 0.8 (0.6–1.0), ±15 % per victim | × | | [R03 §3.2] C |
+| `relative_brady_p / sudden_faint_p` | 0.40 / 0.20 | p | Resolved split | [R03 V2], [R04 §7.3] C/G |
+| `upright_brain_offset` | −23 | mmHg | | [R03 §3.2] E |
+| `hr_tau / svr_tau / veno_tau` | 3 / 15 / 30 | s | | [R03 §3.4] G |
+| `stress_surge` | SBP +20, HR +30, τ 120 s | — | At injury | [R03 §3.4] G |
+| `refill` | 4–8 mL/min at ≥ 20 % loss, τ 60 min, cap 1,000 mL | — | Resolved | [R03 §3.4] V |
+| `k_orifice` | 0.01805 · A[mm²] · tf | L/min per √mmHg | Shunt solve | [R03 §4] V |
+| `cd_orifice / cv_jet` | 0.6 / 0.7 (0.6–0.8) | — | | [R03 §4, §6] V/G |
+| `tissue_factor` | 1.0 / 0.4–0.6 / 0.15–0.3 / 0.05–0.1 | — | Gaping / under muscle / deep track / lying on wound | [R03 §4.8] G |
+| `spasm_target` | muscular transected 0.4–0.6 (τ 1–3 min); side lac 1.1–1.3; elastic 0.9; scalp 1.0 | × area | | [R03 §4.8] G |
+| `compress` | clutch 0.3–0.7; firm pressure 0.8–0.95; tourniquet 1.0 | — | | [R03 §4.5] G |
+| `critical_closing_p / rebleed_map` | 20–40 / 60–65 | mmHg | | [R03 §4.6] C |
+| `jet_min_p` | 25–30 | mmHg | Pressure-gated | [R03 §6.2], [R06 §8.1] |
+| `jet_pulse_depth` | 0.5–0.8 | × mean | | [R06 §8.1] G |
+| `pwv_aorta / peripheral / pre_ejection` | 6 / 9 / 60–100 ms | m/s | Spurt delay | [R03 §2.4] E |
+| `msfp / msfp_exsanguinated / decay_tau` | 10 (7–20) / 0–5 / 20 s | mmHg | After arrest | [R03 §1.2] V/C |
+| `air_path_open_p / entrain / lethal` | 0.15 / 20–100 mL/s inspiratory / 3–5 mL/kg in seconds | — | Tethered open vein above heart | [R03 §5] V, G |
+| `valsalva_surge` | +20–40 | mmHg | Venous | [R03 §4.7] C |
+| `pericardium_tamponade_v` | 150 (100–200), ×0.5–0.7 hypovolaemic; CO → 0 at 250 | mL | | [R03 §8] V |
+| `pleura_capacity / massive` | 2,500–3,000 / ≥ 1,500 or > 200–250 mL/h | mL | | [R03 §8] V/C |
+| `icp_vc / pvi` | 40 (30–60) / 25 | mL | | [R04 §5.1] C |
+| `mu_a_arterial / deoxy` | (0.4, 28, 34) / (3.0, 26, 50) | 1/mm | | [R03 §9.2] V |
+| `pool_thickness / gel_time` | 2.5 / 5–15 min | mm | | [R03 §10.3] V |
+| `drop_volume / terminal_v` | 50 µL / 8 m/s | — | | [R03 §10.1] |
+
+### Visual/behavioural checklist (circulation)
+- An exposed cut artery spurts bright scarlet in time with the pulse, a fraction of a second after the heartbeat sound; the jet never fully stops between beats while BP is normal, gets faster and lower as shock deepens, becomes a pulsing well below MAP ~25–30 and stops within a beat or two of cardiac arrest.
+- Venous bleeding is dark maroon, domed and steady, surging when the victim screams or strains; raising a bleeding limb above the heart nearly stops venous bleeding but not an arterial jet.
+- Small trunk bullet wounds barely bleed outside while the victim goes pale, breathes faster and becomes confused (internal bleeding).
+- Scalp wounds keep bleeding long after small cuts elsewhere have clotted; hair mats and drips from the tips.
+- A floor pool spreads as a 2.5 mm sheet (1 L ≈ 70 cm across), stops spreading after ~10 min, later shows a yellow serum rim and darkens from the edges.
+- Late in shock all wounds bleed darker and more purple.
+
+<!-- CONTINUE-4 -->
