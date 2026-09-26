@@ -144,7 +144,9 @@ const BLOOD_RULE = `BLOOD MUST COME FROM THE WOUND (user, verbatim: "VERY UNREAL
 - Flow rate follows the injury: scalp/head wounds bleed heavily and keep pouring; arterial = pulsing surges; after cardiac arrest only slow gravity drainage.
 - Look: thick blood is dark maroon to near-black, glossy, with clots; thin films are translucent red; never uniform bright-red tubes.
 - Test: render a time sequence (at least 6 moments from 0 to 60 s) — the blood must visibly originate in the wound and travel outward/downward; any blood appearing somewhere without a path from the wound is a HIGH-severity failure.`
-const fb = r => (r >= 3 ? USER_FEEDBACK + '\n' + BLOOD_RULE : USER_FEEDBACK)
+const REFS_RULE = `
+MANDATORY VISUAL REFERENCES (user is angry nobody looked at them): open EVERY image in /home/user/YAYSTO/refs/ with the Read tool before judging or changing any wound, and compare your renders side by side against them. Per-image notes: /home/user/YAYSTO/gore-game/docs/REFERENCE_NOTES.md §5 (esp. §5.10-5.13). refs/12_our_render_wall_stripes.png shows OUR current cut wall: the regular vertical stripe/fence-plank banding and hard orange lip line are a HIGH-severity artefact — real wound walls (refs 13, 15, 16) are irregular, lumpy, torn, wet, clot-filled with strands and pits and no repeating pattern. Use the refs for injury/tissue/blood properties only, never faces or identities.`
+const fb = r => (r >= 3 ? USER_FEEDBACK + '\n' + BLOOD_RULE + '\n' + REFS_RULE : USER_FEEDBACK)
 
 const CRITICS = [
   {
@@ -220,6 +222,7 @@ const FINAL = `${PRE}
 YOUR TASK: finalize. You may edit any project file in ${DIR}.
 ${USER_FEEDBACK}
 ${BLOOD_RULE}
+${REFS_RULE}
 Before finishing, re-render every wound type close-up at 3 angles and confirm none reads as a sticker; fix it if any does. Review history:
 ${JSON.stringify(history, null, 1)}
 1. Delete stale/throwaway files from ${DIR} and ${DIR}/renders (keep only renders the README uses plus module look-dev renders that are current). Remove __pycache__.

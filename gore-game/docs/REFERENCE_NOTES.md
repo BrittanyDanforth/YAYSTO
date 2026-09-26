@@ -204,6 +204,40 @@ BLOOD MUST COME FROM THE WOUND (user, verbatim: "VERY UNREALISTIC BLOOD WOULD PO
 - Look: thick blood is dark maroon to near-black, glossy, with clots; thin films are translucent red; never uniform bright-red tubes.
 - Test: render a time sequence (at least 6 moments from 0 to 60 s) — the blood must visibly originate in the wound and travel outward/downward; any blood appearing somewhere without a path from the wound is a HIGH-severity failure.
 
+## 5.10 Wound-wall artefact in OUR render (`refs/12_our_render_wall_stripes.png`) — HIGH priority
+Our cut walls show regular vertical stripes like fence planks or corrugated card: evenly spaced parallel bands of
+alternating dark/light red running down the wall, plus a hard orange lip line. This is a CG artefact (extruded ring
+quads + a straight fibre texture), not tissue. Real wound walls (refs 13, 15, 16, 3, 4, 6) are irregular: lumpy torn
+muscle, ragged fascia sheets, clot blobs, strands, pits, glistening wet highlights broken up everywhere, with no
+repeating pattern at all. Fix: break up wall geometry with multi-octave noise displacement and random tears/strands/clot
+blobs, randomise ring spacing, drop the straight stripe texture (fibres only where muscle is cut along the grain, and
+then irregular), and cover the wall and lip in wet dark clot and pooled blood.
+
+## 5.11 Explosive in the mouth (`refs/13_blast_face_mouth_explosive.png`, cleaned at autopsy)
+- The lower-mid face is blown open from the mouth outward: a large central crater of shredded, bright-to-dark red muscle
+  and soft tissue running from the lips up through the nose and cheek into the orbit area on one side.
+- The mandible is fractured: a bone segment WITH TEETH STILL IN IT is broken off and displaced, hanging in the wound;
+  other teeth are loose or missing; pale bone fragments sit in the tissue.
+- Torn skin flaps with ragged, irregular margins; the unaffected skin around is intact but blackened/soot-speckled and
+  burned (powder tattooing, searing) and swollen; one eye half-closed and swollen.
+- No regular structure anywhere: everything is lumpy, stringy, torn. In life this is covered in a lot of blood.
+
+## 5.12 Body position and pooling (`refs/14_body_position_pool.png`)
+- Body supine on a hard floor, legs straight and slightly apart, feet turned outward, arms limp at the sides; clothing
+  soaked from the head/shoulder down.
+- A large dark-red pool spreads from the head/upper body across the floor, thick and glossy near the body, thinner and
+  brighter at the edges, with smears and splash marks; blood also on nearby objects.
+
+## 5.13 Repeated heavy blunt impacts to the face (`refs/15_...`, `refs/16_...`)
+- The face is crushed and collapsed: the facial skeleton is broken into pieces so the contours cave in; the eyes look
+  SUNKEN into the head (orbit floor/walls broken); lids swollen or torn.
+- Large areas of skin are torn away in flaps with pale fatty undersides, exposing bright orange-red muscle, yellow fat,
+  pale bone fragments and teeth; tissue is pulpy and lumpy.
+- Remaining skin is waxy pale-yellow (blood loss / post-mortem), strongly contrasting with the raw red tissue.
+- Thick dark blood pools beneath; clots and strands everywhere.
+- For our game: repeated hammer/blunt hits on one area accumulate into this (contour collapse, sunken eyes, flaps, bone
+  and teeth exposed), not into neat stacked dents.
+
 ## 6. What to change in our assets (actionable)
 
 | Where | Change |

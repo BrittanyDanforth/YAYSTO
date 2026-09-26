@@ -444,27 +444,49 @@ def _head_sdfs():
     return _HEAD_SDF
 
 
-# head / jaw box: outside it the head project's skull and mandible are far away
-_HJ_LO = np.array([-0.090, -0.120, 1.500])
+# head / jaw box: outside it the head project's skull and mandible are far away (the box reaches down
+# to the lower neck for the throat sheet)
+_HJ_LO = np.array([-0.090, -0.120, 1.440])
 _HJ_HI = np.array([0.090, 0.070, 1.710])
-MANDIBLE_NEAR = (0.012, 0.026)      # skin within 12 mm of the mandible is head/jaw, beyond 26 mm neck
+MANDIBLE_NEAR = (0.012, 0.022)      # skin within 12 mm of the mandible is head/jaw, beyond 22 mm neck
+# Throat sheet (submental + anterior neck skin and everything under it on the same ray from the neck
+# axis): the share of the jaw rises from 0 low on the neck to 1 at the chin, so opening the mouth
+# stretches / compresses the whole front of the neck smoothly instead of tearing a 1-2 cm band under
+# the chin.  Columns are rays from the neck axis (x = 0, y = NECK_AXIS_Y): skin, fat and muscle shell
+# on one ray share the weight; the fade toward the axis keeps the spine, cord and deep vessels on the
+# neck bone.
+JAW_THROAT = {"z_m": (1.470, 1.548), "sector_deg": (45.0, 80.0), "axis_r_m": (0.030, 0.048),
+              "neck_axis_y": 0.015}
+
+
+def _throat(p):
+    """Jaw share of the throat sheet (0..1) for body-frame points (see JAW_THROAT)."""
+    c = JAW_THROAT
+    dy = c["neck_axis_y"] - p[:, 1]
+    r = np.hypot(p[:, 0], dy)
+    psi = np.degrees(np.arctan2(np.abs(p[:, 0]), dy))
+    return (_sstep(c["sector_deg"][1], c["sector_deg"][0], psi) * _sstep(c["axis_r_m"][0], c["axis_r_m"][1], r)
+            * _sstep(c["z_m"][0], c["z_m"][1], p[:, 2]))
 
 
 def _head_jaw(p, g_axial):
-    """(head gate, jaw gate) inside the neck territory.
+    """(head gate, jaw gate, throat sheet) inside the neck territory.
 
     The head gate is the axial gate (face, occiput, under the ears) united with the skin near the
-    mandible (chin, jaw line, submental skin: the mandible lies right under it, so it must go with
-    the jaw); the jaw gate is the Voronoi cell of the head project's mandible against its skull
-    (lower lip, chin, mouth floor, skin over the mandible -> jaw; upper lip, palate -> head)."""
+    mandible (chin, jaw line: the mandible lies right under it, so it must go with the jaw); the jaw
+    gate is the Voronoi cell of the head project's mandible against its skull (lower lip, chin,
+    mouth floor, skin over the mandible -> jaw; upper lip, palate -> head).  The throat sheet moves
+    the front of the neck part of the way with the jaw (``JAW_THROAT``)."""
     n = len(p)
     gh = np.array(g_axial, float, copy=True)
     gj = np.zeros(n)
+    th = np.zeros(n)
     m = np.all((p >= _HJ_LO) & (p <= _HJ_HI), axis=1)
     if not m.any():
-        return gh, gj
+        return gh, gj, th
     skull, jaw = _head_sdfs()
     q = p[m]
+    th[m] = _throat(q)
     dj = jaw(q[:, 0], q[:, 1], q[:, 2])
     near = _sstep(MANDIBLE_NEAR[1], MANDIBLE_NEAR[0], dj)
     gh[m] = np.maximum(gh[m], near)
@@ -474,7 +496,7 @@ def _head_jaw(p, g_axial):
         qq = q[need]
         ds[need] = skull(qq[:, 0], qq[:, 1], qq[:, 2])
     gj[m] = _sstep(-0.004, 0.004, ds - dj)
-    return gh, gj
+    return gh, gj, th
 
 
 def dense_weights(points):
@@ -514,10 +536,10 @@ def dense_weights(points):
         for base, val in _leg_split(q, g).items():
             W[:, BONE_INDEX[f"{base}_{side}"]] += leg[side] * val
     # --- neck, head, jaw
-    gh, gj = _head_jaw(p, g["head"](p))
-    W[:, BONE_INDEX["neck"]] += neck * (1.0 - gh)
+    gh, gj, th = _head_jaw(p, g["head"](p))
+    W[:, BONE_INDEX["neck"]] += neck * (1.0 - gh) * (1.0 - th)
     W[:, BONE_INDEX["head"]] += neck * gh * (1.0 - gj)
-    W[:, BONE_INDEX["jaw"]] += neck * gh * gj
+    W[:, BONE_INDEX["jaw"]] += neck * (gh * gj + (1.0 - gh) * th)
     W = np.clip(W, 0.0, None)
     W /= np.maximum(W.sum(1, keepdims=True), 1e-12)
     return W
@@ -892,11 +914,28 @@ def apply_pose(arm, pose, twist_drivers=True):
                 if abs(ang) > 1e-9:
                     arm.pose.bones[tb].rotation_quaternion = _local_quat(arm, tb, axes[tb]["twist"],
                                                                           math.degrees(factor * ang))
+    jaw_open = sum(deg for axis, deg in per.get("jaw", []) if axis == "open")
+    if jaw_open > 0.0:
+        pb = arm.pose.bones["jaw"]
+        m = arm.data.bones["jaw"].matrix_local.to_3x3()
+        pb.location = m.inverted() @ Vector(jaw_glide(jaw_open))
     if "_hips_loc" in pose:
         pb = arm.pose.bones["hips"]
         m = arm.data.bones["hips"].matrix_local.to_3x3()
         pb.location = m.inverted() @ Vector(pose["_hips_loc"])
     bpy.context.view_layer.update()
+
+
+# TMJ glide (K: the condyle slides forward and down the articular eminence as the mouth opens: about
+# 15-20 mm at a full 45-50 mm opening, less early in the opening).  Without it a pure hinge swings the
+# chin straight back into the throat.  Body-frame metres per degree of "open"; closing (< 0) has none.
+JAW_GLIDE_M_PER_DEG = (0.0, -0.00045, -0.00025)
+
+
+def jaw_glide(open_deg):
+    """Jaw bone translation (body frame, m) for an opening angle in degrees (rig.json kinematic.jaw)."""
+    k = max(float(open_deg), 0.0)
+    return tuple(c * k for c in JAW_GLIDE_M_PER_DEG)
 
 
 # (twist bone, driver source bone, source axis, factor): twist bone local rotation about its own
@@ -1085,6 +1124,10 @@ def _kinematic_table():
     out["toes_L"]["note"] = out["toes_R"]["note"] = "kinematic toe curl/extension (EHL L5, FHL S1-S2)"
     out["jaw"] = {"axes": {"open": {"world": [1.0, 0.0, 0.0], "sign": 1, "pos": "open", "neg": "close"}},
                   "limits_deg": {"open": [-2.0, 30.0]},
+                  "glide_m_per_deg": list(JAW_GLIDE_M_PER_DEG),
+                  "rule": "open = rotation about axes.open.world through the bone head (TMJ hinge) PLUS a "
+                          "bone translation of glide_m_per_deg x max(open, 0) in body-frame metres (condyle "
+                          "sliding down the articular eminence); the weights assume both",
                   "note": "hinge about +X through the TMJ pivot (bone head, B2 measured); see face.jaw_*"}
     out["tongue"] = {"note": "child of jaw; falls back at death (G6)", "limits_deg": {"flex": [-15.0, 15.0]}}
     for side, sx in (("L", 1.0), ("R", -1.0)):
@@ -1115,7 +1158,8 @@ def weight_model_table():
     return {"model": "territories + joint gates (rig.py module doc)", "influences": MAX_INF, "grid": QUANT,
             "limb_radius_m": R_J, "gates": rows,
             "twist_handover_m": {"upper_arm": [0.10, 0.20], "forearm_from_elbow": [0.03, 0.14]},
-            "jaw": "Voronoi mandible vs skull (head project SDFs), +-4 mm blend",
+            "jaw": "Voronoi mandible vs skull (head project SDFs), +-4 mm blend; throat sheet JAW_THROAT",
+            "jaw_throat": {k: list(v) if isinstance(v, tuple) else v for k, v in JAW_THROAT.items()},
             "head_near_mandible_m": list(MANDIBLE_NEAR),
             "lids": "head_integration.face_weights (B2)",
             "followers": list(FOLLOWERS)}

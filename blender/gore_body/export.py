@@ -702,6 +702,12 @@ func _set_pose(pname: String) -> void:
 		var ax := Vector3(item[1][0], item[1][1], item[1][2])
 		var ax_local := (grest.basis.inverse() * ax).normalized()
 		sk.set_bone_pose_rotation(bi, sk.get_bone_pose_rotation(bi) * Quaternion(ax_local, deg_to_rad(item[2])))
+		if item.size() > 3:
+			# bone translation given in world (Godot) axes, e.g. the TMJ glide of kinematic.jaw
+			var t := Vector3(item[3][0], item[3][1], item[3][2])
+			var par := sk.get_bone_parent(bi)
+			var pbasis: Basis = sk.get_bone_global_rest(par).basis if par >= 0 else Basis()
+			sk.set_bone_pose_position(bi, sk.get_bone_rest(bi).origin + pbasis.inverse() * t)
 
 func _bake(pname: String) -> Dictionary:
 	var info := {}
@@ -738,8 +744,14 @@ def _godot_poses():
     axes = rig.world_axes()
     out = {}
     for name, pose in GODOT_POSES.items():
-        out[name] = [[b, [float(c) for c in gbc.b2g(np.asarray(axes[b][ax]))], float(deg)]
-                     for b, rots in pose.items() for ax, deg in rots]
+        rows = []
+        for b, rots in pose.items():
+            for ax, deg in rots:
+                row = [b, [float(c) for c in gbc.b2g(np.asarray(axes[b][ax]))], float(deg)]
+                if b == "jaw" and ax == "open":            # rig.json kinematic.jaw: hinge + TMJ glide
+                    row.append([float(c) for c in gbc.b2g(np.asarray(rig.jaw_glide(deg)))])
+                rows.append(row)
+        out[name] = rows
     return out
 
 
