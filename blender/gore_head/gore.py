@@ -3338,6 +3338,9 @@ TEST_SCENES = {
                   dist=0.12, tilt=0.1, offset=(0.0, 0.0, -0.006)),
     "burn": dict(hits=[("burn", (-0.062, -0.04, 0.058), dict(depth=0.5, elongation=1.25))],
                  dist=0.13, tilt=0.08, offset=(0.0, 0.0, 0.0)),
+    # explosive / contact blast in the open mouth (REFERENCE_NOTES §5.11)
+    "blast": dict(hits=[("blast", (0.0, -0.12, -0.056), dict(direction=(0.0, 1.0, 0.0), size=1.5, depth=1.0))],
+                  dist=0.24, tilt=0.05, offset=(0.0, 0.0, -0.01)),
 }
 
 
@@ -3433,6 +3436,73 @@ def _set_control(name, value):
     bpy.context.evaluated_depsgraph_get().update()
 
 
+def _wall_fold_stats(ob, wall_mat_prefix="GH_Fat"):
+    """Fold statistics of the evaluated wound walls (faces with the wall material).
+
+    Returns (wall edges, edges folded > 60 degrees, fraction). Folded walls
+    shade as light/dark stripes (the artefact of refs/12_our_render_wall_stripes).
+    """
+    import bmesh
+    dg = bpy.context.evaluated_depsgraph_get()
+    ev = ob.evaluated_get(dg)
+    me = ev.to_mesh()
+    idx = {i for i, m in enumerate(me.materials) if m and m.name.startswith(wall_mat_prefix)}
+    bm = bmesh.new()
+    bm.from_mesh(me)
+    ev.to_mesh_clear()
+    n = folded = 0
+    for e in bm.edges:
+        lf = e.link_faces
+        if len(lf) != 2 or lf[0].material_index not in idx or lf[1].material_index not in idx:
+            continue
+        n += 1
+        if lf[0].normal.angle(lf[1].normal, 0.0) > math.radians(60.0):
+            folded += 1
+    bm.free()
+    return n, folded, folded / max(n, 1)
+
+
+def _stray_blood(ob, reach=0.004):
+    """Skin vertices carrying blood (gore_blood > 0.3) that are farther than
+    `reach` from any wound vertex and not part of the blood geometry itself:
+    blood that appeared on the skin without a path from a wound."""
+    import numpy as np
+    from mathutils.kdtree import KDTree
+    dg = bpy.context.evaluated_depsgraph_get()
+    ev = ob.evaluated_get(dg)
+    me = ev.to_mesh()
+    n = len(me.vertices)
+    co = np.empty(n * 3)
+    me.vertices.foreach_get("co", co)
+    co = co.reshape(-1, 3)
+
+    def att(name):
+        a = me.attributes.get(name)
+        v = np.zeros(n, np.float32)
+        if a is not None and a.domain == 'POINT':
+            a.data.foreach_get("value", v)
+        return v
+    blood, wound, depth = att("gore_blood"), att("gore_wound"), att("gore_depth")
+    # vertices of blood-material faces (runs, fills, clots) are the blood itself
+    bidx = {i for i, m in enumerate(me.materials) if m and m.name.startswith("GH_Blood")}
+    on_blood = np.zeros(n, bool)
+    for poly in me.polygons:
+        if poly.material_index in bidx:
+            on_blood[list(poly.vertices)] = True
+    ev.to_mesh_clear()
+    src = np.where((wound > 0.3) | (depth > 0.02))[0]
+    cand = np.where((blood > 0.3) & ~on_blood & (wound < 0.05) & (depth < 0.01))[0]
+    if len(cand) == 0:
+        return 0
+    if len(src) == 0:
+        return len(cand)
+    kd = KDTree(len(src))
+    for k, i in enumerate(src):
+        kd.insert(co[i], k)
+    kd.balance()
+    return sum(1 for i in cand if kd.find(co[i])[2] > reach)
+
+
 def verify_gore(objs=None):
     """Self-test of the live gore system. Prints a report, returns True if all checks pass."""
     objs = dict(objs or {})
@@ -3525,6 +3595,25 @@ def verify_gore(objs=None):
     d1 = _mesh_signature(skin)
     check("drip_time 0 vs 1 changes the drips", d0 != d1 and d1[3] > d0[3],
           f"blood faces {d0[3]} -> {d1[3]}, verts {d0[0]} -> {d1[0]}")
+    # blood only where it physically got to: at drip_time 0 nothing has run
+    # out of the wounds yet, so no skin away from a wound may carry blood
+    _set_control("drip_time", 0.0)
+    stray0 = _stray_blood(skin)
+    _set_control("drip_time", 1.0)
+    check("no blood on intact skin at drip_time 0 (blood comes from the wound)", stray0 == 0,
+          f"{stray0} stray blood vertices farther than 4 mm from any wound")
+    # the blood grows over time (monotonic: 0 -> 0.25 -> 1)
+    counts = []
+    for dt_ in (0.0, 0.25, 1.0):
+        _set_control("drip_time", dt_)
+        counts.append(_mesh_signature(skin)[3])
+    _set_control("drip_time", 1.0)
+    check("blood grows with drip_time", counts[0] <= counts[1] <= counts[2] and counts[2] > counts[0],
+          f"blood faces at drip_time 0 / 0.25 / 1: {counts}")
+    # wound walls are smooth enough not to fold into stripes
+    nw, nf, frac = _wall_fold_stats(skin)
+    check("wound walls have no accordion folds (< 5 % of wall edges > 60 deg)", nw > 0 and frac < 0.05,
+          f"{nf} of {nw} wall edges folded ({frac * 100:.1f} %)")
     # bleed 0 removes the drips
     _set_control("bleed", 0.0)
     b0 = _mesh_signature(skin)

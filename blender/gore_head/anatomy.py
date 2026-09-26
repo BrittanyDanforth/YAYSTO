@@ -60,7 +60,9 @@ COLLECTION = "GoreHead"
 # ---------------------------------------------------------------------------
 # Landmarks (metres).  Mirrored features are given for the left (+X) side.
 # ---------------------------------------------------------------------------
-EYE_C = np.array([0.032, -0.070, 0.022])
+# (IPD 63 mm; seated deep in the orbit under the brow ridge -- FACE_FEEDBACK:
+# the first head read as bug-eyed)
+EYE_C = np.array([0.0315, -0.0675, 0.022])
 EYE_R = 0.012
 
 # Design values; build_anatomy() replaces them with values measured on the meshes.
@@ -71,7 +73,7 @@ ANATOMY_LANDMARKS = {
     "mouth_center": (0.0, -0.094, -0.055), "lip_gap": 0.0074,
     "mouth_corner_L": (0.0238, -0.0848, -0.0552), "mouth_width": 0.0476,
     "pogonion": (0.0, -0.094, -0.092), "chin_bottom": (0.0, -0.080, -0.103),
-    "eye_L": (0.032, -0.070, 0.022), "eye_R": (-0.032, -0.070, 0.022), "eye_radius": 0.012,
+    "eye_L": (0.0315, -0.0675, 0.022), "eye_R": (-0.0315, -0.0675, 0.022), "eye_radius": 0.012,
     "ear_canal_L": (0.072, 0.0, 0.0), "ear_canal_R": (-0.072, 0.0, 0.0),
     "head_half_width": 0.074, "neck_radius": 0.055, "neck_center_y": 0.015,
     "neck_cut_z": -0.20, "gonion_L": (0.050, -0.004, -0.075),
@@ -595,8 +597,8 @@ NOSE_W = Curve1D([(0.030, 0.0085), (0.014, 0.0095), (0.000, 0.0110), (-0.011, 0.
                   (-0.020, 0.0140), (-0.034, 0.0140)])
 NOSE_P = Curve1D([(0.030, 1.5), (0.012, 1.2), (0.000, 1.0), (-0.013, 0.85), (-0.034, 0.85)])
 # brow ridge height and the height of its crest, along x
-BROW_H = Curve1D([(0.0, 0.0010), (0.012, 0.0026), (0.025, 0.0044), (0.040, 0.0042),
-                  (0.050, 0.0020), (0.060, 0.0)])
+BROW_H = Curve1D([(0.0, 0.0014), (0.012, 0.0036), (0.025, 0.0060), (0.040, 0.0058),
+                  (0.050, 0.0030), (0.060, 0.0)])
 BROW_Z = Curve1D([(0.0, 0.036), (0.030, 0.0390), (0.050, 0.0355), (0.060, 0.034)])
 # face block half width and the jaw's lower border
 FACE_W = Curve1D([(0.115, 0.045), (0.09, 0.058), (0.07, 0.0625), (0.05, 0.0635), (0.03, 0.0630),
@@ -629,9 +631,12 @@ def face_height(ax, z, nose=True):
     # malar fullness under the eye and cheek lateral of the nasolabial fold
     cx, cz = (ax - 0.0420) / 0.0150, (z + 0.0010) / 0.0120
     Y = Y - 0.0040 * np.exp(-(cx * cx + cz * cz))
-    # soft hollow under the cheekbone, in front of the masseter
-    cx, cz = (ax - 0.0450) / 0.0110, (z + 0.0380) / 0.0150
-    Y = Y + 0.0016 * np.exp(-(cx * cx + cz * cz))
+    # zygomatic prominence: the cheekbone stands out below and lateral of the eye
+    cx, cz = (ax - 0.0500) / 0.0110, (z + 0.0040) / 0.0085
+    Y = Y - 0.0038 * np.exp(-(cx * cx + cz * cz))
+    # hollow under the cheekbone, in front of the masseter
+    cx, cz = (ax - 0.0450) / 0.0110, (z + 0.0360) / 0.0140
+    Y = Y + 0.0030 * np.exp(-(cx * cx + cz * cz))
     cx, cz = (ax - 0.0385) / 0.0120, (z + 0.0330) / 0.0190
     Y = Y - 0.0028 * np.exp(-(cx * cx + cz * cz))
     # soft nasolabial fold
@@ -685,21 +690,21 @@ def _neck(ax, y, z):
     yc = 0.0060 + 0.0045 * tz
     top = smoothstep(-0.105, -0.045, z)          # wider under the skull (mastoids, SCM origin)
     base = smoothstep(-0.165, -0.205, z)         # trapezius / shoulders begin
-    a = 0.0515 + 0.0040 * tz * tz + 0.0060 * top + 0.0100 * base
-    b = 0.0560 + 0.0040 * tz * tz + 0.0015 * top
+    a = 0.0470 + 0.0040 * tz * tz + 0.0055 * top + 0.0120 * base
+    b = 0.0545 + 0.0040 * tz * tz + 0.0015 * top
     return ellipse2(ax, y - yc, a, b)
 
 
 def head_volume(ax, y, z):
     """Cranium, face block with the jaw floor, cheekbones, neck and its muscles."""
-    d = sd_ellipsoid(ax, y, z, (0.0, 0.001, 0.025), (0.0740, 0.0990, 0.1000))
+    d = sd_ellipsoid(ax, y, z, CRANIUM_C, CRANIUM_R)
     # face block: rounded box in plan, width varying with height, jaw floor below
     blk = box2(ax, y + 0.055, FACE_W(z), 0.064, 0.030)
     blk = smax(blk, z - 0.115, 0.03)
     blk = smax(blk, JAW_Z(y) - z, 0.012)
     d = smin(d, blk, 0.020)
     # cheekbone (zygomatic body) and arch running back to the ear
-    zyg = sd_ellipsoid(ax, y, z, (0.0525, -0.0555, 0.0025), (0.0130, 0.0200, 0.0120),
+    zyg = sd_ellipsoid(ax, y, z, (0.0545, -0.0545, 0.0005), (0.0140, 0.0200, 0.0115),
                        rot=rot_xyz(0, 0, -38))
     arch = sd_capsule(ax, y, z, (0.0585, -0.0440, 0.0030), (0.0625, -0.0150, 0.0020), 0.0060, 0.0052)
     d = smin(d, smin(zyg, arch, 0.01), 0.012)
@@ -711,6 +716,9 @@ def head_volume(ax, y, z):
     # (a tighter blend under the jaw: the jaw's lower border casts a shadow)
     d = smin(d, neck, 0.024)
     d = smin(d, sd_ellipsoid(ax, y, z, (0.0500, 0.0180, -0.0400), (0.0120, 0.0220, 0.0260)), 0.020)
+    # jaw angle: the masseter over the gonion gives the lower face a corner
+    d = smin(d, sd_ellipsoid(ax, y, z, (0.0545, -0.0080, -0.0760), (0.0070, 0.0150, 0.0100),
+                             rot=rot_xyz(-25, 0, 0)), 0.008)
     # sternocleidomastoid: mastoid -> sternum, standing out in front of the neck
     scm = sd_capsule(ax, y, z, (0.052, 0.012, -0.034), (0.014, -0.044, -0.198), 0.0086, 0.0072)
     d = smin(d, scm, 0.010)
@@ -725,14 +733,14 @@ def head_volume(ax, y, z):
 # its bottom edge; the outer corner sits ~2-3 mm higher than the inner one.
 LID_UM, LID_VM = -1.22, -0.05
 LID_UL, LID_VL = 1.18, 0.14
-LID_UP, LID_LO = 0.335, 0.465        # lid arc heights (rad) above/below the canthal line
+LID_UP, LID_LO = 0.305, 0.455        # lid arc heights (rad) above/below the canthal line
 LID_R = 0.0145                        # outer radius of the eyelid shell (~2 mm thick lids)
 CORNEA_R = 0.0075                     # cornea sphere radius
 CORNEA_OFF = 0.00582                  # cornea sphere centre, in front of eye centre
 EYE_GAP = 0.0005                      # clearance between eyeball and lids
 
 # Ear frame: origin near the concha, u = backward along the ear, v = up, w = out
-EAR_O = np.array([0.0725, 0.0015, 0.0010])
+EAR_O = np.array([0.0740, 0.0015, 0.0010])
 
 
 def _ear_frame(protrude=24.0, tilt=12.0):
@@ -745,7 +753,7 @@ def _ear_frame(protrude=24.0, tilt=12.0):
     return u, v, w
 
 
-EAR_U, EAR_V, EAR_W = _ear_frame()
+EAR_U, EAR_V, EAR_W = _ear_frame(protrude=17.0, tilt=17.0)
 
 
 def _lid_curves(u):
@@ -797,7 +805,7 @@ def _nose(d, ax, y, z):
     rad = np.interp(np.linspace(0, 1, len(pts)), np.linspace(0, 1, len(ALA_R)), ALA_R)
     ala, _ = sd_polyline(ax, y, z, pts, rad)
     d = smin(d, ala, 0.0028)
-    nos = sd_ellipsoid(ax, y, z, (0.0060, -0.0978, -0.0258), (0.0028, 0.0052, 0.0034),
+    nos = sd_ellipsoid(ax, y, z, (0.0062, -0.0978, -0.0262), (0.0034, 0.0060, 0.0038),
                        rot=rot_xyz(10, 0, -25))
     nos = smin(nos, sd_capsule(ax, y, z, (0.0064, -0.0968, -0.0245), (0.0080, -0.0930, -0.0150),
                                0.0022, 0.0018), 0.002)
@@ -885,7 +893,7 @@ def _ear(ax, y, z):
     t = px * EAR_V[0] + py * EAR_V[1] + pz * EAR_V[2]
     n = px * EAR_W[0] + py * EAR_W[1] + pz * EAR_W[2]
     outline = smin(ellipse2(s - 0.0115, t - 0.0045, 0.0142, 0.0262),
-                   ellipse2(s - 0.0088, t + 0.0200, 0.0085, 0.0095), 0.006)
+                   ellipse2(s - 0.0090, t + 0.0170, 0.0080, 0.0078), 0.006)
     nm = 0.0022 * np.clip(s / 0.024, 0.0, 1.2) ** 2      # plate cups outward toward the rim
     plate = np.maximum(outline + 0.0012, np.abs(n - nm) - 0.0016)
     block = sd_ellipsoid(s, t, n, (0.0065, 0.0005, -0.0045), (0.0100, 0.0125, 0.0070))
@@ -910,7 +918,7 @@ def _ear(ax, y, z):
     e = smin(e, smin(a1, a2, 0.001), 0.0014)
     trag = sd_ellipsoid(s, t, n, (-0.0030, -0.0012, 0.0006), (0.0036, 0.0048, 0.0034))
     anti = sd_ellipsoid(s, t, n, (0.0108, -0.0092, 0.0010), (0.0034, 0.0027, 0.0026))
-    lobe = sd_ellipsoid(s, t, n, (0.0088, -0.0205, 0.0002), (0.0082, 0.0090, 0.0030))
+    lobe = sd_ellipsoid(s, t, n, (0.0090, -0.0172, 0.0002), (0.0078, 0.0072, 0.0032))
     e = smin(e, trag, 0.0015)
     e = smin(e, anti, 0.0015)
     e = smin(e, lobe, 0.004)
@@ -1275,7 +1283,7 @@ def tongue_sdf(x, y, z):
 # Skull
 # ---------------------------------------------------------------------------
 CRANIUM_C = np.array([0.0, 0.001, 0.025])
-CRANIUM_R = np.array([0.0740, 0.0990, 0.1000])   # the skin's cranium ellipsoid
+CRANIUM_R = np.array([0.0760, 0.0970, 0.1000])   # the skin's cranium ellipsoid
 SCALP = 0.0060         # skin surface -> outer table of the vault
 BONE_T = 0.0065        # vault thickness (outer + inner table)
 BRAIN_ENV_GAP = 0.0020  # inner table -> gyri crests (the sulci are carved deeper)

@@ -146,6 +146,28 @@ PRESETS = {
         ],
         controls=dict(bleed=1.0, bruising=0.8, swelling=0.4),
     ),
+    "blast": dict(
+        hits=[
+            # explosive / contact blast in the open mouth (REFERENCE_NOTES §5.11,
+            # refs/13): the lower-mid face torn open, a mandible segment with
+            # its teeth hanging out, loose and missing teeth, soot and searing
+            ("blast", (0.0, -0.12, -0.056), dict(direction=(0.0, 1.0, 0.0), size=1.5, depth=1.0,
+                                                 name="GH_Hit_Blast_Mouth")),
+        ],
+        controls=dict(bleed=1.0, bruising=0.6, swelling=0.5, wound_age=0.1),
+    ),
+    "crushed": dict(
+        hits=[
+            # repeated heavy blows to the right mid-face (REFERENCE_NOTES §5.13,
+            # refs/15-16): the blows' energy adds up, the cheek and orbit cave
+            # in, skin tears away in flaps, bone plates and the eye sink
+            ("blunt", (-0.036, -0.080, 0.012), dict(size=1.2, depth=0.95, name="GH_Hit_Crush_1")),
+            ("blunt", (-0.030, -0.085, -0.002), dict(size=1.2, depth=0.95, name="GH_Hit_Crush_2")),
+            ("blunt", (-0.042, -0.074, 0.020), dict(size=1.1, depth=0.9, name="GH_Hit_Crush_3")),
+            ("blunt", (-0.014, -0.100, -0.018), dict(size=1.0, depth=0.9, name="GH_Hit_Crush_Nose")),
+        ],
+        controls=dict(bleed=1.0, bruising=0.9, swelling=0.7, wound_age=0.3),
+    ),
 }
 PRESET_NAMES = tuple(PRESETS)
 
@@ -817,6 +839,10 @@ def render_all(objs, presets, out_dir, samples=40, res=640, only=None):
         closeup_light(cam, hit.matrix_world.translation)
         times["closeup_exit"] = _render(os.path.join(out_dir, "closeup_exit.png"), cam, samples, res)
         remove_closeup_light()
+    if want("sequence"):
+        times.update(render_blood_sequence(out_dir, samples, min(res, 480)))
+    if want("contact_sheet"):
+        times.update(render_contact_sheet(out_dir, samples, res))
     if want("cutaway"):
         apply_preset("intact")
         cleanup = add_cutaway(objs)
@@ -824,6 +850,82 @@ def render_all(objs, presets, out_dir, samples=40, res=640, only=None):
         times["cutaway"] = _render(os.path.join(out_dir, "cutaway.png"), cam, samples, res)
         cleanup()
     bpy.context.scene.camera = cams["front"]
+    return times
+
+
+# blood-source time sequence: seconds after the shot (drip_time = s / 60)
+SEQ_SECONDS = (0, 5, 10, 20, 40, 60)
+
+
+def _hit_camera(name, hit, dist, side=0.55, up=0.25, lens=85.0):
+    """Camera looking at a hit from outside, turned `side` toward its local X and tilted up."""
+    m = hit.matrix_world.to_3x3().normalized()
+    z = (m @ Vector((0.0, 0.0, 1.0))).normalized()
+    x = (m @ Vector((1.0, 0.0, 0.0))).normalized()
+    view = (z + x * side + Vector((0.0, 0.0, up))).normalized()
+    target = hit.matrix_world.translation + Vector((0.0, 0.0, -0.015))
+    return ghc.add_camera(name, target + view * dist, target, lens)
+
+
+def render_blood_sequence(out_dir, samples=40, res=480):
+    """Entry and exit of the gunshot preset at 0/5/10/20/40/60 s: the blood must
+    visibly start in the wound and travel from it (CLAUDE.md §8 blood rule)."""
+    times = {}
+    apply_preset("gunshot")
+    ctrl = ghc.ensure_controls()
+    for tag, hit_name in (("entry", "GH_Hit_Entry"), ("exit", "GH_Hit_Exit")):
+        hit = bpy.data.objects[hit_name]
+        cam = _hit_camera(f"GH_Cam_seq_{tag}", hit, 0.19 if tag == "entry" else 0.22)
+        for sec in SEQ_SECONDS:
+            ctrl["drip_time"] = sec / 60.0
+            ctrl.update_tag()
+            key = f"seq_{tag}_{sec:02d}s"
+            times[key] = _render(os.path.join(out_dir, key + ".png"), cam, samples, res)
+    ctrl["drip_time"] = 1.0
+    ctrl.update_tag()
+    return times
+
+
+# close-ups for the reviewers' side-by-side comparison with the reference
+# photos (refs/ is never committed; the sheet only holds our renders)
+SHEET = (("gunshot", "GH_Hit_Entry", 0.09, "entry"), ("gunshot", "GH_Hit_Exit", 0.11, "exit"),
+         ("slash", "GH_Hit_Slash_Cheek", 0.12, "cheek slash"), ("blunt", "GH_Hit_Blunt_Cranium", 0.12, "scalp split"),
+         ("blast", "GH_Hit_Blast_Mouth", 0.26, "blast"), ("crushed", "GH_Hit_Crush_1", 0.22, "crushed"))
+
+
+def render_contact_sheet(out_dir, samples=40, res=640):
+    """One image with close-ups of every major wound type (3 x 2 panels)."""
+    import numpy as np
+    times = {}
+    cell = res // 3
+    panels = []
+    tmp = os.path.join(out_dir, ".sheet_tmp")
+    for preset, hit_name, dist, _label in SHEET:
+        apply_preset(preset)
+        hit = bpy.data.objects[hit_name]
+        cam = _hit_camera(f"GH_Cam_sheet_{hit_name}", hit, dist, side=0.35, up=0.2)
+        p = os.path.join(tmp, f"{hit_name}.png")
+        t = time.time()
+        bpy.context.scene.view_settings.exposure = materials.STAGE_EXPOSURE
+        ghc.render(p, cam, samples, (cell, cell))
+        times[f"sheet_{hit_name}"] = time.time() - t
+        img = bpy.data.images.load(p)
+        panels.append(np.array(img.pixels[:], dtype=np.float32).reshape(cell, cell, 4))
+        bpy.data.images.remove(img)
+        os.remove(p)
+    try:
+        os.rmdir(tmp)
+    except OSError:
+        pass
+    rows = [np.concatenate(panels[i:i + 3], axis=1) for i in (0, 3)]
+    # (image rows run bottom-up in Blender: the first row goes on top)
+    sheet = np.concatenate(rows[::-1], axis=0)
+    out = bpy.data.images.new("contact_sheet", cell * 3, cell * 2, alpha=True)
+    out.pixels[:] = sheet.ravel()
+    out.filepath_raw = os.path.join(out_dir, "contact_sheet_wounds.png")
+    out.file_format = 'PNG'
+    out.save()
+    bpy.data.images.remove(out)
     return times
 
 
@@ -876,7 +978,8 @@ def parse_args(argv=None):
     p.add_argument("--out", default=os.path.join(HERE, BLEND_NAME), help=".blend output path")
     p.add_argument("--samples", type=int, default=40)
     p.add_argument("--res", type=int, default=640)
-    p.add_argument("--only", default=None, help="comma list: preset names, cutaway, closeup_exit")
+    p.add_argument("--only", default=None,
+                   help="comma list: preset names, cutaway, closeup_exit, sequence, contact_sheet")
     p.add_argument("--render-dir", default=ghc.RENDER_DIR)
     p.add_argument("--force", action="store_true", help="render and save even if verification fails")
     return p.parse_args(argv)
