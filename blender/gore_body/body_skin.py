@@ -377,7 +377,7 @@ def _abdomen_relief(x, z):
     px, pz = 0.122 - 0.100 * t, 0.992 - 0.079 * t
     # groin crease, deepest at the mid-inguinal point [RB §7.1 (0.065, -0.068, 0.940)] where the femoral
     # vessels pass (FB-5 depth 15-30 mm is measured from this skin)
-    ing = -(0.0028 + 0.0085 * gauss(t - 0.62, 0.22)) * gauss(np.hypot(ax - px, z - pz), 0.013) * sstep(1.2, 0.9, t)
+    ing = -(0.0028 + 0.0140 * gauss(t - 0.60, 0.22)) * gauss(np.hypot(ax - px, z - pz), 0.013) * sstep(1.2, 0.9, t)
     # costal margin: slight hollow below the ribs, epigastric fossa
     epi = -0.0022 * gauss(ax, 0.03) * gauss(z - 1.245, 0.025)
     jug = -0.004 * gauss(ax, 0.012) * gauss(z - 1.458, 0.010)
