@@ -365,7 +365,7 @@ def _lash_strands(bvh, rng, sign, upper=True):
     """Eyelashes of one lid: rooted on the lid margin, curling away from the eye."""
     ec = Vector((sign * anatomy.EYE_C[0], anatomy.EYE_C[1], anatomy.EYE_C[2]))
     # ~90 upper / 50 lower lashes in two or three staggered rows, as on a real lid
-    count = 90 if upper else 50
+    count = 80 if upper else 50
     strands = []
     for k in range(count):
         t = (k + rng.uniform(0.0, 0.9)) / count
@@ -390,7 +390,7 @@ def _lash_strands(bvh, rng, sign, upper=True):
         stf = float(st[0])
         # longest at the middle and a little toward the outer corner
         if upper:
-            length = (0.0030 + 0.0040 * stf ** 0.7) * (1.0 + 0.2 * (t - 0.5))
+            length = (0.0026 + 0.0032 * stf ** 0.7) * (1.0 + 0.2 * (t - 0.5))
         else:
             length = 0.0011 + 0.0013 * stf
         length *= rng.uniform(0.75, 1.15)

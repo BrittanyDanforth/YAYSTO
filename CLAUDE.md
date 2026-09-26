@@ -42,6 +42,11 @@ integration stage and becomes the head of the full body.
     and teeth"). Everything visual is generated from code.
   - Tools/engines only from official sources, verified against published checksums (Godot 4.5.1 was verified with
     Godot's official SHA512-SUMS; Blender's Python module came from PyPI). Tell them before any new download.
+  - **Standing rule (user, verbatim advice):** "Use only the official Godot download. Don't install plugins, run downloaded
+    scripts, or download third-party assets without showing me the source first." Downloads so far (all official):
+    bpy 5.0.1 (PyPI), Godot 4.5.1 Linux (godotengine GitHub release, SHA512 verified), mesa-vulkan-drivers (Ubuntu repo),
+    three/three-mesh-bvh (npm, scratch folder only, dropped browser prototype); a MakeHuman CC0 OBJ + wheel were
+    downloaded and deleted, never run. No plugins, add-ons, scripts or assets from anywhere.
 - **Audio is REMOVED.** Verbatim: "REMOVE audio FROM THE PLAN". No sound code, no sound files, no audio package (G8).
   Audio was stripped from FULL_BODY_PLAN.md, REALISM_BIBLE.md and BEHAVIOUR_BIBLE.md (G8 removed, ~254 engineer-days
   total now; BB §7 is a "Removed" stub; vocal words like "scream" mean visible mouth/jaw/face movement only).

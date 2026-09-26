@@ -715,7 +715,7 @@ def head_volume(ax, y, z):
     scm = sd_capsule(ax, y, z, (0.052, 0.012, -0.034), (0.014, -0.044, -0.198), 0.0086, 0.0072)
     d = smin(d, scm, 0.010)
     # laryngeal prominence (Adam's apple)
-    d = smin(d, sd_ellipsoid(ax, y, z, (0.0, -0.0520, -0.1330), (0.0085, 0.0065, 0.0110)), 0.008)
+    d = smin(d, sd_ellipsoid(ax, y, z, (0.0, -0.0452, -0.1330), (0.0105, 0.0075, 0.0140)), 0.012)
     return d
 
 

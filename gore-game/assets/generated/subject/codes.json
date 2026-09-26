@@ -3,7 +3,7 @@
  "frame": "body_zup_m",
  "godot_mapping": "(x, z, -y)",
  "generator": "blender/gore_body/build.py",
- "build_id": "gb-7038256d11c1",
+ "build_id": "gb-d063a4a97319",
  "data": {
   "segment": {
    "0": "head_neck",
@@ -65,7 +65,8 @@
    "2": "vertebra",
    "3": "skull",
    "4": "cartilage",
-   "5": "tooth"
+   "5": "tooth",
+   "6": "marrow"
   },
   "bone_piece": {
    "1": "skull",

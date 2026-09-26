@@ -729,7 +729,8 @@ def _expression_lines(t, pm):
         * (-y).smooth(0.055, 0.075)
     arch = z - x * x * 4.0
     fore = t.ridge(t.noise(t.vec(x * 0.06, y * 0.06, arch), 140.0, 2.0, 0.4), 0.035)
-    fore = fore * fmask * t.noise(pm, 45.0).smooth(0.3, 0.55)
+    # short segments of varied depth, not rings around the head
+    fore = fore * fmask * t.noise(pm, 45.0).smooth(0.3, 0.55) * t.noise(pm + (2.1, 0.7, 1.3), 110.0).smooth(0.35, 0.62)
     # crow's feet: lines radiating from the outer eye corner
     d = pm - (0.047, -0.066, 0.021)
     dx, dy, dz = t.sep(d)
@@ -814,11 +815,25 @@ def _skin_material(g, name="GH_Skin"):
     mid = t.noise(p, 160.0, 2.0)
     wrinkles = _expression_lines(t, pm)
     col = col * (1.0 - wrinkles * 0.08)
+    # shaved scalp and beard stubble: tiny dark hair stumps and follicles
+    x_, y_, z_ = t.sep(p)
+    ax_ = x_.abs()
+    scalp_m = (z_.smooth(0.055, 0.075) + y_.smooth(0.0, 0.03) * z_.smooth(-0.045, -0.02)).clamp() \
+        * (1.0 - (ax_ - 0.066).smooth(0.0, 0.012) * (1.0 - z_.smooth(0.03, 0.05)))
+    beard_m = (1.0 - z_.smooth(-0.022, -0.010)) * (1.0 - y_.smooth(-0.025, -0.005)) \
+        * z_.smooth(-0.125, -0.105) * (1.0 - lip) * (1.0 - t.gauss(pm, (0.0, -0.098, -0.020), 0.012))
+    beard_m = beard_m.max((1.0 - z_.smooth(-0.045, -0.03)) * t.gauss(pm, (0.012, -0.096, -0.040), 0.013) * (1.0 - lip))
+    sd_, scol_, _ = t.voronoi(t.warp(p, 800.0, 0.0002), 2600.0)
+    stub = (1.0 - sd_.smooth(0.05, 0.3)) * t.sep(scol_)[0].smooth(0.35, 0.45)
+    hair_m = (scalp_m * 0.8 + beard_m).clamp()
+    col = t.mix(stub * hair_m * 0.55, col, (0.035, 0.028, 0.025))
+    # the shadow of the hair under the skin (bluish-grey on the beard area)
+    col = t.mix(beard_m * 0.22 + scalp_m * 0.10, col, col * (0.78, 0.80, 0.86))
     h_skin = (-pore * 0.9 - groove * 0.4) * (1.0 - lip) + fine * 0.25 - lip_lines * 1.6 + mid * 0.5 \
-        - wrinkles * 3.0
+        - wrinkles * 1.6 + stub * hair_m * 0.6
     h_lite = mid * 0.5 - pore * 0.6              # cheaper relief for the damage branch
     rough = 0.44 + (m_fine - 0.5) * 0.14 + (fine - 0.5) * 0.12 - oily * 0.1 - lip * 0.12 - wet * 0.04 \
-        + pore * 0.1
+        + pore * 0.1 + scalp_m * 0.06
 
     skin_sss = {'IOR': 1.4, 'Specular IOR Level': 0.5, 'Subsurface Radius': (1.0, 0.40, 0.22),
                 'Subsurface Scale': 0.0035, 'Subsurface IOR': 1.4, 'Subsurface Anisotropy': 0.8,
@@ -826,7 +841,8 @@ def _skin_material(g, name="GH_Skin"):
     n_skin = t.bump(h_skin, 0.0001)              # the oily coat follows the pores too
     healthy = t.principled(dict(skin_sss, **{
         'Base Color': skin_col, 'Roughness': rough, 'Subsurface Weight': 1.0,
-        'Coat Weight': 0.10 + oily * 0.1 + lip * 0.15, 'Coat Roughness': 0.32 - lip * 0.1, 'Coat IOR': 1.45,
+        'Coat Weight': (0.10 + oily * 0.1 + lip * 0.15) * (1.0 - scalp_m * 0.6),
+        'Coat Roughness': 0.32 - lip * 0.1 + scalp_m * 0.12, 'Coat IOR': 1.45,
         'Coat Normal': n_skin, 'Sheen Weight': 0.06, 'Normal': n_skin}), sss_method='RANDOM_WALK_SKIN')
 
     # ==== damage (only evaluated where some gore attribute is non-zero) =======
@@ -980,6 +996,10 @@ def _muscle_material(g):
     p, wet = t.coord(), t.control("wetness")
     m = t.group(g["muscle"], {"Vector": p, "Wetness": wet})
     col, rough = m["Color"], m["Roughness"]
+    # over the crown the layer is the galea aponeurosis: tough whitish fascia
+    mx, my, mz = t.sep(p)
+    galea = mz.smooth(0.05, 0.075) * (1.0 - (-my).smooth(0.065, 0.085))
+    col = t.mix(galea * 0.85, col, t.mix(t.noise(p, 400.0), (0.52, 0.40, 0.36), (0.64, 0.54, 0.49)))
     # deepest part of a wound wall: periosteum / bone showing through
     bone = t.group(g["bone"], {"Vector": p, "Wetness": wet})
     fb = (t.attr("gore_depth") + (t.noise(p, 300.0) - 0.5) * 0.06).smooth(0.96, 0.99)

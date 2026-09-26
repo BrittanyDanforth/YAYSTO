@@ -1,0 +1,40 @@
+{
+ "schema": "gb.body_maps/1",
+ "frame": "body_zup_m",
+ "godot_mapping": "(x, z, -y)",
+ "generator": "blender/gore_body/build.py",
+ "build_id": "gb-d063a4a97319",
+ "data": {
+  "mesh": "GB_Body",
+  "uv": "atlas (UV0)",
+  "size": 512,
+  "origin": "top-left row = v 1",
+  "tissue_depth": {
+   "file": "body_tissue_depth.png",
+   "channels": {
+    "r": "skin_mm",
+    "g": "fat_mm",
+    "b": "muscle_mm",
+    "a": "coverage"
+   },
+   "scale_mm_per_255": [
+    8.0,
+    40.0,
+    80.0
+   ],
+   "fat_reference_pct": 15.0,
+   "body_fat_pct": 15.0,
+   "source": "RB \u00a77.6"
+  },
+  "tension": {
+   "file": "body_tension.png",
+   "channels": {
+    "rg": "Langer line direction in UV space, (c/127.5 - 1)",
+    "b": "anisotropy weight",
+    "a": "coverage"
+   },
+   "source": "RB \u00a72.3.1 (Langer / RSTL, K)"
+  },
+  "coverage_fraction": 0.5359
+ }
+}

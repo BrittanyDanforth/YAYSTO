@@ -293,15 +293,15 @@ TORSO = np.array([
     (1.340, 0.154, -0.100, 0.125, 3.0, 2.9),     # T7 spinous skin 0.122
     (1.400, 0.145, -0.081, 0.117, 3.0, 2.9),     # sternal angle -0.075 (bone) + skin
     (1.430, 0.150, -0.068, 0.108, 2.6, 2.6),     # shoulder girdle: clavicles in front, scapular spines behind
-    (1.455, 0.148, -0.050, 0.097, 2.3, 2.4),     # jugular notch -0.048
-    (1.470, 0.104, -0.050, 0.090, 2.2, 2.3),
+    (1.455, 0.148, -0.050, 0.099, 2.3, 2.6),     # jugular notch -0.048
+    (1.470, 0.112, -0.050, 0.095, 2.2, 2.8),     # scapular superior angles under trapezius
     (1.485, 0.063, -0.054, 0.082, 2.1, 2.2),     # seam plane (plan D19)
     (1.515, 0.0595, -0.057, 0.069, 2.1, 2.2),    # neck 38 cm: 12 x 11.7 (front -0.055 / back +0.063)
     (1.540, 0.058, -0.054, 0.072, 2.1, 2.2),     # C7 spinous skin 0.075 at 1.532 (bump added)
     (1.565, 0.058, -0.047, 0.077, 2.1, 2.2),
-    (1.595, 0.059, -0.033, 0.084, 2.1, 2.2),
-    (1.625, 0.060, -0.020, 0.089, 2.1, 2.2),
-    (1.660, 0.058, -0.010, 0.090, 2.1, 2.2),
+    (1.595, 0.059, -0.033, 0.089, 2.1, 2.3),     # nape: suboccipital mass under the occiput
+    (1.625, 0.060, -0.020, 0.098, 2.1, 2.4),
+    (1.660, 0.058, -0.010, 0.100, 2.1, 2.4),
 ])
 TORSO_Z0, TORSO_Z1 = 0.862, 1.655
 
@@ -389,7 +389,7 @@ def _back_relief(x, z):
     t = np.clip(((ax - 0.075) * 0.095 + (z - 1.428) * 0.030) / (0.095 ** 2 + 0.030 ** 2), 0.0, 1.0)
     ridge = 0.0025 * gauss(np.hypot(ax - (0.075 + 0.095 * t), z - (1.428 + 0.030 * t)), 0.006)
     fossa = -0.002 * gauss(np.hypot(ax - 0.115, z - 1.448), 0.012)            # supraspinous hollow
-    psis = -0.0045 * gauss(np.hypot(ax - 0.045, z - 1.010), 0.008)            # [RB §7.1 psis_dimple]
+    psis = -0.0030 * gauss(np.hypot(ax - 0.045, z - 1.010), 0.008)            # [RB §7.1 psis_dimple]
     lat = 0.003 * gauss(ax - 0.12, 0.03) * band(z, 1.18, 1.36, 0.05)
     trap = 0.004 * gauss(ax - 0.035, 0.03) * band(z, 1.40, 1.52, 0.04)         # upper trapezius mass
     return furrow + erect + scap + ridge + fossa + psis + lat + trap
@@ -522,7 +522,7 @@ def _shoulder(ax, y, z):
     # upper trapezius: broad slope from the nape to the acromion
     # the lateral neck point sits at z ~1.49 (between the jugular notch 1.455 and C7 1.532) and the
     # shoulder line falls ~11 deg to the acromion; below the seam plane beyond |x| 0.075 (plan D19 ring)
-    trap = sd_polyline(ax, y, z, [(0.035, 0.050, 1.459), (0.100, 0.038, 1.4525), (0.186, 0.020, 1.446)],
+    trap = sd_polyline(ax, y, z, [(0.035, 0.056, 1.459), (0.100, 0.046, 1.4525), (0.186, 0.022, 1.446)],
                        [0.022, 0.0235, 0.016], k=0.02)
     clav = sd_polyline(ax, y, z, [np.array(p) + np.array([0.0, -0.001, 0.001]) for p in
                                   ((0.022, -0.040, 1.451), (0.070, -0.050, 1.453), (0.125, -0.021, 1.463),
@@ -660,10 +660,10 @@ LEG = np.array([
     (0.330, 0.008, 0.119, 0.043, 0.145, 2.3),
     (0.280, 0.016, 0.116, 0.048, 0.141, 2.3),
     (0.220, 0.023, 0.101, 0.055, 0.135, 2.35),
-    (0.160, 0.024, 0.092, 0.061, 0.129, 2.4),
-    (0.120, 0.019, 0.091, 0.0625, 0.1275, 2.4),     # ankle 22.5 cm
-    (0.090, 0.016, 0.089, 0.062, 0.128, 2.4),
-    (0.050, 0.018, 0.090, 0.062, 0.128, 2.4),
+    (0.160, 0.024, 0.092, 0.061, 0.130, 2.4),
+    (0.120, 0.019, 0.091, 0.0625, 0.1315, 2.4),     # ankle 22.5 cm (subcutaneous distal fibula laterally)
+    (0.090, 0.016, 0.089, 0.062, 0.132, 2.4),
+    (0.050, 0.018, 0.090, 0.062, 0.130, 2.4),
 ])
 
 
@@ -764,9 +764,9 @@ FOOT = np.array([
     (0.000, 0.020, 0.020, 0.050, 0.032, 2.2),
     (0.020, 0.029, 0.029, 0.070, 0.036, 2.3),
     (0.045, 0.031, 0.031, 0.086, 0.042, 2.4),
-    (0.075, 0.031, 0.033, 0.084, 0.042, 2.5),
-    (0.110, 0.033, 0.038, 0.072, 0.036, 2.7),     # navicular / cuneiforms: instep
-    (0.145, 0.038, 0.045, 0.058, 0.030, 2.9),
+    (0.075, 0.034, 0.033, 0.084, 0.042, 2.5),
+    (0.110, 0.042, 0.038, 0.072, 0.036, 2.7),     # navicular tuberosity medially, cuneiforms: instep
+    (0.145, 0.043, 0.045, 0.058, 0.030, 2.9),
     (0.175, 0.045, 0.051, 0.045, 0.024, 3.0),
     (0.200, 0.049, 0.052, 0.036, 0.020, 3.0),     # ball of the foot (MTP row): breadth 10.2 cm
     (0.220, 0.046, 0.047, 0.030, 0.017, 3.0),
@@ -1806,7 +1806,62 @@ def build_body_skin(quick=None):
     hr.data.materials.append(gbc.placeholder_material("GBM_skin_torso"))
     with T("B1: tissue-depth + tension maps (512^2)"):
         bake_body_maps(body, os.path.join(gbc.SUBJECT_OUT, "textures"))
-    return {"GB_Body": body, "GB_Body_HR": hr, "GB_Body_LOD1": lod}
+    out = {"GB_Body": body, "GB_Body_HR": hr, "GB_Body_LOD1": lod}
+    with T("B1: fit a placeholder head to the canonical ring"):
+        out.update(adapt_placeholder_head(ring))
+    return out
+
+
+def adapt_placeholder_head(ring):
+    """Keep FB-1 true while B2 has not built the head: the B0 placeholder GB_Head was zipped to the
+    placeholder mannequin's ring, so its neck is projected onto this body's ``skin_sdf`` and re-zipped
+    to the canonical ring (shape keys and codes rebuilt, LOD1 re-decimated).  No-op for B2's head."""
+    import bpy
+    import bmesh
+    import gb_geom as gg
+    import head_integration as hi
+    import placeholder
+    head = bpy.data.objects.get("GB_Head")
+    if head is None or head.get("gb_status") != "placeholder":
+        return {}
+    me = head.data
+    if me.shape_keys is not None:
+        head.shape_key_clear()
+    v = gbc.get_verts(me)
+    low = v[:, 2] < 1.62
+    A = _A()
+    q = A.project_to_surface(skin_sdf, v[low], 0.012, 6)
+    w = sstep(1.62, 1.58, v[low, 2])[:, None]
+    v[low] = (1 - w) * v[low] + w * q
+    gbc.set_verts(me, v)
+    bm = bmesh.new()
+    bm.from_mesh(me)
+    kill = [f for f in bm.faces if any(abs(p.co.z - SEAM_Z) < 1e-6 for p in f.verts)]
+    bmesh.ops.delete(bm, geom=kill, context='FACES')
+    bmesh.ops.delete(bm, geom=[p for p in bm.verts if not p.link_faces], context='VERTS')
+    bm.to_mesh(me)
+    bm.free()
+    me.update()
+    hi.zip_to_ring(head, ring, side="above")
+    me.shade_smooth()
+    placeholder.set_skin_codes(head, body_segment="head_neck")
+    gg.smart_uv(head, margin=0.004)
+    placeholder.finish_uvs(head)
+    status = "placeholder (neck fitted to the B1 ring)"
+    out = {"GB_Head": head}
+    lod = bpy.data.objects.get("GB_Head_LOD1")
+    if lod is not None:
+        new = gbc.new_object("GB_Head_LOD1", me.copy())          # copied before the shape keys exist
+        _protect_ring_decimate(new, gbc.tri_count(me) // 2)
+        placeholder.set_skin_codes(new, body_segment="head_neck")
+        gbc.set_material_slots(new)
+        placeholder.finish_uvs(new)
+        placeholder.tag(new)
+        new["gb_status"] = status
+        out["GB_Head_LOD1"] = new
+    placeholder.add_shape_keys(head, placeholder.face_shape_fields(gbc.get_verts(me)), gbc.SHAPE_KEYS["GB_Head"])
+    head["gb_status"] = status
+    return out
 
 
 def _face_to_vertex(me, face_vals):
