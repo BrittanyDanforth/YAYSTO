@@ -39,6 +39,7 @@ This document builds on the earlier files and does not repeat them:
   It is still marked (M) until someone opens `[S1]`.
 - **Godot and Jolt API names and defaults are `[K]`** (knowledge up to 2025). Verify them against the Godot 4.5 documentation and Project Settings before hard-coding. §12 lists the checks in priority order.
 - Every derivation marked `[E]` shows its arithmetic, so it can be redone with other inputs.
+- **Independent fact-check (§15).** A second session re-derived every `[E]` number in §1, §3.4, §5.1 and §6, compared the `[K]` tables with the checker's own recall of the literature and with the fact-checked round-two document 02, and edited the file in place. Corrections are marked "corrected: was X"; confirmed rows are marked "✓ verified". The fact-check session also had **no web access** (its searches returned the same budget notice), so "✓ verified" means arithmetic or independent recall, not a re-read source.
 
 ### 0.2 Tags
 
@@ -79,7 +80,7 @@ This document builds on the earlier files and does not repeat them:
 
 | Dataset | Subjects | Method | Known bias | Use in game |
 |---|---|---|---|---|
-| **Dempster 1955**, via Winter's textbook tables | 8 male cadavers, mean age ~69, lean (~60 kg) | Segmented cadavers; pendulum MOI | Elderly and lean: **thigh too light (10.0 %)**, trunk too heavy (49.7 %) | Cross-check only |
+| **Dempster 1955**, via Winter's textbook tables | 8 male cadavers, aged ~52–83 (mean ~69), lean (~60 kg) | Segmented cadavers; pendulum MOI | **Thigh 10.0 %, trunk 49.7 %** ✓ verified [K] (H). **Corrected (reason): was "elderly and lean: thigh too light, trunk too heavy".** The gap comes mostly from **different segment boundaries** (where the thigh–trunk and head–trunk cuts are made, and Dempster's trunk runs from the greater trochanter to the glenohumeral joint), and only partly from the elderly, lean cadaver sample and embalming-era methods | Cross-check only |
 | **Zatsiorsky–Seluyanov**, adjusted by **de Leva 1996** `[S1]` | 100 young living men (mean ~24 y, ~73 kg) and 15 women | Gamma-ray mass scanning; de Leva moved the endpoints to joint centres | Athletic young adults | **Primary table** |
 
 Where the tables disagree, **use de Leva** `[K] (H)`. It comes from living, young, normal-weight adults, its endpoints are joint centres (which matches a skeleton rig), and it splits the trunk into three parts, which a three-body spine needs. The largest disagreements are the thigh (10.0 vs 14.16 %), the trunk (49.7 vs 43.46 %) and the head+neck (8.1 vs 6.94 %). Those gaps shift the standing CM by ~2–3 cm and change leg-swing inertia by ~40 %.

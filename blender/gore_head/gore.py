@@ -954,9 +954,11 @@ def _build_blunt():
     hema = t.smooth(rsw * 1.1, rsw * 0.3, c.rho) * c.lc([0.0, 0.85, 0.35, 0.35, 0.0, 0.7, 0.0, 0.8])
     contusion = t.smooth(rd * 1.3, rd * 0.4, c.rho + nl * 0.002) * is_brain * t.smooth(0.5, 0.8, D)
     # bloodied teeth must still read as teeth: streaks and smears, not a coat
-    streaks = t.noise(t.vec(c.np.x * 1400.0, c.np.y * 1400.0, c.np.z * 260.0), detail=2.0)
+    # a few vertical runs of blood down the teeth near the blow (the loosened
+    # ones also bleed from the gum line, see GH_Gore_Teeth)
+    runs = t.noise(t.vec(c.np.x * 520.0, c.np.y * 520.0, c.np.z * 55.0), detail=2.0, signed=False)
     teeth_blood = t.smooth(s * 0.03, s * 0.01, c.rho) * c.is_layer(LAYER_TEETH) * t.smooth(0.2, 0.4, D) \
-        * 0.6 * t.smooth(0.05, 0.55, streaks)
+        * t.smooth(0.56, 0.66, runs)
     blood = (pool * is_skin).max(hema * t.smooth(0.2, 0.5, D)).max(contusion).max(teeth_blood)
     blood = blood.max(t.smooth(0.0008, 0.0, -cut_split) * split_on * 0.8)
     # abraded, crushed margins follow the tears
@@ -1498,9 +1500,12 @@ def _build_teeth():
     p = t.pos()
     moved = pivot + t.out(t.node('FunctionNodeRotateVector', {'Vector': p - pivot, 'Rotation': rot})) - h.Z * (0.0016 * r2 * f)
     gg = t.out(t.node('GeometryNodeSetPosition', {'Geometry': gg, 'Selection': f.gt(0.01), 'Position': moved}))
-    # blood runs down the loosened teeth in streaks (a full coat hides the enamel)
-    streaks = t.noise(t.vec(p.x * 1400.0, p.y * 1400.0, p.z * 260.0), detail=2.0)
-    gg = t.store(gg, "g_tb", t.attr("g_tb").max(t.smooth(0.0, 0.3, f) * 0.6 * t.smooth(0.0, 0.5, streaks)))
+    # loosened teeth bleed from the torn gum: blood at the neck of the tooth
+    # and a few runs down the crown (a full coat would hide the enamel)
+    toward_root = (p - c).dot(root)
+    runs = t.noise(t.vec(p.x * 520.0, p.y * 520.0, p.z * 55.0), detail=2.0, signed=False)
+    tb = t.smooth(-0.0022, 0.0006, toward_root).max(t.smooth(0.52, 0.62, runs))
+    gg = t.store(gg, "g_tb", t.attr("g_tb").max(t.smooth(0.0, 0.3, f) * tb))
     g = _end_repeat(t, rout, [("Geometry", gg)])["Geometry"]
     g = t.out(t.node('GeometryNodeDeleteGeometry', {'Geometry': g, 'Selection': t.attr("g_kill").gt(0.5)},
                      domain='POINT'))

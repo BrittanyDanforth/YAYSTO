@@ -169,7 +169,8 @@ All values are in metres in the §0.4 frame. "Bone" means the point on the skele
 
 **How the table was fitted** `[E]`:
 - **Heights** come from the ANSUR stature ratios `[B1] [B2]` and the Drillis–Contini segment fractions `[B3] [B4]`, scaled to H = 1.78 m. Examples: acromion 0.819 H, chest 0.72–0.73 H, elbow 0.63 H, wrist 0.485 H, trochanter 0.52–0.53 H, knee 0.28 H, ankle 0.04 H.
-  - *Fact-check*: the rows were compared with the raw ANSUR II male public data. The subsample was the 14 men with stature 1.772–1.786 m (mean 1.781) and mass 71.4–79.1 kg (mean 75.0), i.e. this reference body.
+  - *Fact-check*: the rows were compared with the raw ANSUR II male public data. The subsample was 14 men with stature 1.772–1.786 m (mean 1.781) and mass 71.4–79.1 kg (mean 75.0), i.e. this reference body.
+  - These were the first 14 records in file order that met those criteria; more exist. Treat the subsample means as ±5–10 mm estimates.
   - Subsample means: cervicale 1.532, suprasternale 1.454, acromion 1.449, chest (nipple) 1.305, omphalion 1.072, iliocristale 1.071, trochanterion 0.920, crotch 0.860, lateral femoral epicondyle 0.490, tibiale 0.480, wrist (stylion) 0.848, lateral malleolus 0.073, tragion–top of head 0.134.
   - The trochanter ratio in ANSUR II is **0.513 H**, not the Drillis–Contini 0.53 H.
 - **Front-to-back positions** come from the ideal standing plumb line `[B8]`. It passes through the ear canal, the cervical bodies and the shoulder joint, just behind the hip centre (1.5 cm), just in front of the knee axis (2 cm) and 5 cm in front of the ankle. Everything else is placed from bone and organ depths (§4–§11).
@@ -962,7 +963,7 @@ The cord is shorter than the spine, so its segments sit above the vertebra of th
 |---|---|---|---|---|---|
 | Midbrain | (0, +0.010, 1.690) | (0, −0.010, +0.035) | 15–20 × 30 (peduncles) × 25 | Passes through the tentorial notch; top joins the thalamus | [K] [D04] (M) |
 | Pons | (0, +0.014, 1.667) | (0, −0.006, +0.012) | 25–27 × 35–38 × 25 | Front (basis) at y ≈ +0.001 on the clivus / basilar artery; back = floor of the 4th ventricle at y ≈ +0.026 | [K] [D04] (M) |
-| **Pontomedullary junction** | (0, +0.020, 1.655) | **(0, 0.000, 0.000)** | — | CN VI, VII, VIII exit here | [K] [E] (M) |
+| **Pontomedullary junction** | (0, +0.020, 1.647) *(corrected: was 1.655)* | **(0, 0.000, 0.000)** | — | CN VI, VII, VIII exit here | [K] [E] (M) |
 | Medulla oblongata | (0, +0.025, 1.641) | (0, +0.005, −0.014) | 30 × 20 (at the olives) → 12 × 12–13 | Respiratory and vasomotor centres (doc 04) | [K] [D04] (M) |
 | Cervicomedullary junction | (0, +0.030, 1.627) | (0, +0.010, −0.028) | 11 × 9 | Just below the basion–opisthion plane | [K] [E] (M) |
 | Cord at C1 | (0, +0.024, 1.618) | (0, +0.004, −0.037) | 11.5 × 8.5 | Behind the dens | [K] [E] (M) |
@@ -1597,26 +1598,26 @@ S1,0.014,1.012,30,50,30,0,15,30,0,0.035,0,0
 
 ## 16. QA priority list (verify these first against the cited sources)
 
-| # | Claim | Value used | Check against |
-|---|---|---|---|
-| 1 | Vertex → ear canal vertical distance | 12.5 cm | ANSUR "tragion–top of head" [B1]; Farkas [B37] |
-| 2 | C7 spinous tip (cervicale) height | 1.500 (surveys ~1.51–1.53) | ANSUR cervicale height [B1]; §4.6 |
-| 3 | Jugular notch / sternal angle / xiphisternal levels | T2/3 / T4/5 / T9 | Mirjalili 2012 CT surface anatomy [B32] |
-| 4 | Hip-joint-centre offsets from the ASIS | 30 % down, 19 % back, 36 % lateral of W | Bell 1990 [B9] |
-| 5 | Long-bone lengths (femur 47, tibia 41, humerus 33.5, radius 25.5, ulna 27.5 cm) | | Trotter & Gleser [B7]; ANSUR segment lengths [B1] |
-| 6 | Heart mass and size | 320 g; 12.5 × 9 × 6.5 cm | Molina & DiMaio [B17]; ICRP 89 [B43] |
-| 7 | Apex position | 5th left ICS, MCL (~9 cm from the midline) | Gray's [B15]; Mirjalili [B32] (CT shows variation: 4th–6th ICS) |
-| 8 | Conus tip level | L1/L2 (T12–L3) | Saifuddin 1998 [B28] |
-| 9 | Cord dimensions (C5 13.5 × 7.7; T7 8 × 6.3 mm) | | Kameyama 1994 [B27]; Fradet 2014 [B26] |
-| 10 | Pontomedullary junction ≈ ear-canal level | | Any MRI atlas, midsagittal plus the Frankfort plane |
-| 11 | Chest-wall thickness at 2nd ICS MCL / 5th ICS AAL | ~42 / ~32 mm | Givens 2004 [B20]; Inaba 2012 [B21] |
-| 12 | Liver span and mass | 14.5 cm MCL; 1,550 g | Kratzer 2003 [B23]; Molina [B17] |
-| 13 | Spleen size | 12 × 7 × 4 cm, 150 g | Chow 2016 [B25] |
-| 14 | Kidney size and level | 11.5 cm; T12–L3; right 2 cm lower | Emamian 1993 [B24] |
-| 15 | Lung volumes | TLC 7.1, FRC 3.35 L | Quanjer 1993 [B19] |
-| 16 | Vertebral body dimensions (§4.1) | | Panjabi 1991/1992 [B10–B12] |
-| 17 | Segment mass fractions | | Winter 2009 Table 4.1 [B3] |
-| 18 | Spinal curvature norms | | Roussouly 2005 [B13]; Legaye 1998 [B14] |
+| # | Claim | Value used | Check against | Fact-check status (§19) |
+|---|---|---|---|---|
+| 1 | Vertex → ear canal vertical distance | 12.5 cm | ANSUR "tragion–top of head" [B1]; Farkas [B37] | **Corrected → 13.3 cm** (ANSUR II) |
+| 2 | C7 spinous tip (cervicale) height | 1.500 (surveys ~1.51–1.53) | ANSUR cervicale height [B1]; §4.6 | **Corrected → 1.532** (ANSUR II); vertebral stack not refitted |
+| 3 | Jugular notch / sternal angle / xiphisternal levels | T2/3 / T4/5 / T9 | Mirjalili 2012 CT surface anatomy [B32] | Jugular-notch **height** ✓ (ANSUR II). Vertebral levels unverified |
+| 4 | Hip-joint-centre offsets from the ASIS | 30 % down, 19 % back, 36 % lateral of W | Bell 1990 [B9] | Coefficients ✓. **ASIS/HJC height corrected** (HJC 0.918) |
+| 5 | Long-bone lengths (femur 47, tibia 41, humerus 33.5, radius 25.5, ulna 27.5 cm) | | Trotter & Gleser [B7]; ANSUR segment lengths [B1] | ✓ except **radius → 26.0**; humerus TG value corrected to 34.6 |
+| 6 | Heart mass and size | 320 g; 12.5 × 9 × 6.5 cm | Molina & DiMaio [B17]; ICRP 89 [B43] | ✓ |
+| 7 | Apex position | 5th left ICS, MCL (~9 cm from the midline) | Gray's [B15]; Mirjalili [B32] (CT shows variation: 4th–6th ICS) | ✓ (Wikipedia/Moore: 8–9 cm) |
+| 8 | Conus tip level | L1/L2 (T12–L3) | Saifuddin 1998 [B28] | ✓ (StatPearls) |
+| 9 | Cord dimensions (C5 13.5 × 7.7; T7 8 × 6.3 mm) | | Kameyama 1994 [B27]; Fradet 2014 [B26] | Transverse ✓; C2 corrected; AP partly unverified |
+| 10 | Pontomedullary junction ≈ ear-canal level | | Any MRI atlas, midsagittal plus the Frankfort plane | Unverified (plausible) |
+| 11 | Chest-wall thickness at 2nd ICS MCL / 5th ICS AAL | ~42 / ~32 mm | Givens 2004 [B20]; Inaba 2012 [B21] | Unverified (matches memory of Laan 2016) |
+| 12 | Liver span and mass | 14.5 cm MCL; 1,550 g | Kratzer 2003 [B23]; Molina [B17] | Mass ✓; span unverified |
+| 13 | Spleen size | 12 × 7 × 4 cm, 150 g | Chow 2016 [B25] | **Corrected → 12 × 7 × 3**; mass ✓ |
+| 14 | Kidney size and level | 11.5 cm; T12–L3; right 2 cm lower | Emamian 1993 [B24] | ✓ (StatPearls) |
+| 15 | Lung volumes | TLC 7.1, FRC 3.35 L | Quanjer 1993 [B19] | ✓ (equations) |
+| 16 | Vertebral body dimensions (§4.1) | | Panjabi 1991/1992 [B10–B12] | Unverified |
+| 17 | Segment mass fractions | | Winter 2009 Table 4.1 [B3] | ✓ |
+| 18 | Spinal curvature norms | | Roussouly 2005 [B13]; Legaye 1998 [B14] | ✓ (StatPearls ranges) |
 
 ---
 
@@ -1625,6 +1626,10 @@ S1,0.014,1.012,30,50,30,0,15,30,0,0.035,0,0
 - **None encountered.** No external page content was retrieved in this session: every WebSearch call was refused for budget and every WebFetch was blocked by egress policy, so the only responses were those error messages.
 - There was therefore nothing to screen for injected instructions.
 - No commands were run, nothing was downloaded, and no code was copied from the web. The only file written is this document.
+- **Fact-check pass (2026-09-26): none encountered.**
+  - The fact-checker read GitHub-hosted files only: raw file views and GitHub code search. These included the ANSUR II public CSV, the Godot and glTF-Blender-IO sources, the BMClab notebook, StatPearls and Wikipedia text mirrors, and a physiology-lab reference table.
+  - None of that content contained instructions to act (run, install, fetch, change files or reveal information).
+  - One WebFetch saved a copy of the ANSUR II CSV to the session's tool-results cache. It was treated as data and only searched with a read-only pattern tool. Nothing was executed and no code was copied into the project.
 
 ---
 
@@ -1675,3 +1680,99 @@ All cited **from memory**; none re-opened in this session (§0.1).
 - **[B40]** Kemper AR, McNally C, Kennedy EA, et al. Material properties of human rib cortical bone from dynamic tension coupon testing. *Stapp Car Crash J* 2005;49:199–230.
 - **[B43]** ICRP. *Basic Anatomical and Physiological Data for Use in Radiological Protection: Reference Values.* ICRP Publication 89. *Ann ICRP* 2002;32(3–4). (Reference Adult Male 176 cm / 73 kg; organ masses.) See also ICRP Publication 110 (2009), Adult Reference Computational Phantoms.
 - Sibling documents: `01_gunshot_wounds.md` [D01], `02_sharp_blunt_burn.md` [D02], `03_bleeding_vessels.md` [D03], `04_neuro_death_eyes.md` [D04], in this folder.
+
+**Sources used by the fact-check pass (§19)**. All were reached as GitHub-hosted copies, because every other domain was blocked.
+- ANSUR II male public data (Gordon et al. 2014), raw CSV copy in github.com/hkair/anthropometric-stats (`data/ansur/ANSUR II MALE Public.csv`). Also a derived summary (median stature 1.755 m, trochanterion 0.899 m, tragion–top of head 0.131 m, mass 85.5 kg, BMI 27.7) in github.com/GhostDragonAlpha/Chimera (`research_references/human/ansur_anchors.json`).
+- Godot `Vector3` class reference: github.com/godotengine/godot, `doc/classes/Vector3.xml`.
+- Khronos glTF-Blender-IO exporter: github.com/KhronosGroup/glTF-Blender-IO, `addons/io_scene_gltf2/blender/exp/nodes.py`, function `__convert_swizzle_location`.
+- Dempster/Winter 2009 segment table: github.com/BMClab/BMC, `notebooks/BodySegmentParameters.ipynb`.
+- de Leva 1996 Table 4 (male segment lengths), as transcribed in github.com/Akira-TL/reme (`.scratch/posture-classifier-theory/scripts/com_bias.py`). This is secondary; the paper itself was not read.
+- Bell et al. 1990 HJC coefficients, as implemented in github.com/cdolynski/biomechanics-motion-analysis and github.com/jeremydwong/bonelab_inverse_dynamics.
+- Trotter & Gleser regression equations, as tabulated in a Knight's Forensic Pathology chapter translation, github.com/mortemdulcem/katip (`scripts/kfp_cache/ch03_chunk08.md`). The 1952 femur equation (2.38 F + 61.41) was cross-checked in github.com/giodl73-repo/MAXIM.
+- ECSC/Quanjer 1993 lung-volume coefficients: github.com/drsrennie-stack/human-physiology-Fa26, `pulmonary-function-lab.html`.
+- StatPearls chapters mirrored as text in github.com/clint-llm/clint-llm.github.io (`db/documents/...`): spinal cord, splenectomy anatomy, kidney, diaphragm, posterior abdominal wall, cervical lordosis/sagittal balance, sternum/xiphoid.
+- Wikipedia (Heart, Lung, Liver, Spinal cord) text copies in github.com/edgolyakova/wiki and github.com/LluisV/Z-Anatomy.
+- Spinal-cord MRI normative values (spine-generic, 203 adults): github.com/valosekj/PAM50-normalized-metrics-paper, `paper.md`.
+- Molina & DiMaio 2012 heart mean 331 g, as quoted in github.com/opencobra/COBRA.papers (`2020_WholeBodyModelling/MethodSection3.m`).
+- Echocardiography normal wall thickness (IVS and PW 0.6–1.0 cm) and male LVIDd (42–58 mm) from ASE-based teaching tables: github.com/skolyn/skolyn-web and github.com/erikagodin6-jpg/NurseNest. These are secondary.
+
+---
+
+## 19. Fact-check (independent verification pass, 2026-09-26)
+
+### 19.1 How this pass was done, and its limits
+
+- **Tooling**:
+  - `WebSearch` was unavailable (session budget exhausted).
+  - `WebFetch` was blocked for every non-GitHub domain tried: NCBI/PubMed, Europe PMC, Radiopaedia, Wikipedia, docs.godotengine.org, Crossref, OpenAlex, Semantic Scholar, PLOS, Frontiers, arXiv and Zenodo.
+  - The only reachable sources were **GitHub-hosted files**, through raw file fetch and GitHub code search.
+- **The strongest evidence found is the raw ANSUR II male dataset.** It was used to check this body directly: the 14 soldiers with stature 1.772–1.786 m (mean 1.781) and mass 71.4–79.1 kg (mean 75.0), i.e. the reference body itself. Averages were computed by hand from the 14 records.
+- **Other evidence is secondary**: StatPearls and Wikipedia text mirrors, published equations as implemented in open-source gait and physiology code, and the Godot and Blender source trees.
+- **"Unverified"** means that no independent source could be reached. In those cases the fact-checker's own knowledge is stated and labelled as such.
+
+### 19.2 What changed
+
+1. **Head origin / vertex-to-ear-canal** (§0.4, §1.1, §2.3, §3.2, §3.3, §9.4, §13):
+   - Vertex → ear canal changed from 12.5 cm to **13.3 cm**, based on ANSUR II tragion–top of head: 131 mm all-male median; 134 mm in the matched subsample.
+   - The head origin moves from z 1.655 to **1.647**. Head-internal absolute z values drop 8 mm; relative offsets are unchanged.
+   - C1–C4 were lowered by 8 → 2 mm to absorb this.
+2. **C7 cervicale**: changed from 1.500 to **1.532** (ANSUR II subsample, 1.515–1.551).
+   - The original's survey arithmetic was also wrong: 24–25 cm below a 1.780 vertex is 1.53–1.54, not 1.51–1.53.
+   - The vertebral body stack was **not** refitted, so there is a known ~2–3 cm conflict in the C4–T3 region (§4.6).
+   - `neck_length_back` changed from 0.16 to 0.12 m.
+3. **Hip centre and pelvis** (§1.2, §7.1, §7.2, §7.5, §10.4, §11.4, §13):
+   - Bell's coefficients are verified.
+   - The ASIS height was too high: 1.009 → **0.992**. This moves the HJC from 0.935 to **0.918**, matching ANSUR II trochanterion (0.513 H, 0.920 m in the subsample).
+   - The pubic symphysis, ischium, trochanters, bladder, prostate and femoral-artery groin point move with it (−0.017).
+   - Crotch height changed from 0.840 to **0.860** (ANSUR II).
+4. **Knee**: centre changed from 0.505 to **0.492** and joint line from 0.487 to **0.480** (ANSUR II lateral femoral epicondyle 0.490, tibiale 0.480). The patella, tibial tuberosity and fibular head move −0.013. Thigh and shank are now 0.428 / 0.418 m.
+5. **Arm**: upper arm changed from 0.300 to **0.290 m** and forearm from 0.250 to **0.270 m** (de Leva 1996; ANSUR II radiale–stylion 272 mm).
+   - A-pose elbow is now (0.325, 0.020, 1.164), wrist (0.460, 0.020, 0.930), MCP (0.508, 0.020, 0.848), fingertip (0.553, 0.020, 0.770).
+   - Hanging elbow and wrist are now 1.125 / 0.855.
+6. **Envelope** (ANSUR II subsample):
+   - Chest girth 98 → **100**, chest breadth 31.5 → **28.7**, hip breadth 35 → **33**, upper thigh 56 → **58**, biacromial 40.5 → **42**, bideltoid 47 → **49**, bicristal 28.5 → **27.0**.
+   - Chest girth-to-ellipse ratio 1.16 → 1.22.
+   - Verified unchanged: neck 38, waist at navel 84, hips 97, calf 37.5, chest depth 23.
+7. **Long bones**:
+   - Radius 25.5 → **26.0** cm. The humerus Trotter–Gleser prediction was misquoted (34.9 ± 1.3) and is now **34.6**. The femur "± 1.4" SE was replaced with the published 3.27 cm.
+   - Verified: femur 47 (TG 48.5–49.0), tibia 41 (TG 39.4–39.7, which excludes the malleolus), fibula 39.5, ulna 27.5.
+8. **Spinal cord**:
+   - C2 section 11.5 × 8.5 → **11.9 × 7.9 mm** (spine-generic MRI norms).
+   - Conus segments at L1: S1–S5 → **S2–S5 + Co**, with the epiconus L4–S1 at T12/L1. The T12 row is now L3–S1.
+   - A ±1-segment disagreement between sources at T10–T12 is now noted.
+9. **Heart**:
+   - LV wall 9–11 (≤ 12) → **8–10 mm** (echo normal 6–10 mm); parameter changed from 10 to 9.
+   - The LV EDV range attributed to ASE ("100–190") was wrong. It now reads echo 106 ± 22 (62–150) and CMR ~150–160; the value of 140 is kept.
+10. **Lungs**: the autopsy mass ranges were replaced with Molina & DiMaio male reference ranges (right 155–720 g, left 110–675 g). Game values 550 / 480 kept.
+11. **Spleen**: 12 × 7 × 4 → **12 × 7 × 3 cm** (StatPearls), in the tables and the CSV OBB.
+12. **Liver**: mass range widened to 970–1,860 g (Molina via Wikipedia). 1,550 g kept.
+13. **Curvature**: the cervical lordosis normal range was changed from 15–40 to **20–40°** (StatPearls). The other curvature values are verified.
+
+### 19.3 Verified without change
+
+- **Coordinate convention**: Blender glTF Y-up swizzle (x, z, −y); Godot `MODEL_FRONT = +Z`, `MODEL_LEFT = +X`.
+- **Segment masses**: Dempster/Winter mass fractions, COM fractions and radii of gyration; head+neck COM at the ear canal.
+- **Landmark heights** (ANSUR II subsample): jugular notch 1.455 (1.454), acromion 1.458 (1.449), nipple 1.300 (1.305), navel 1.075 (1.072), iliac crest 1.070 (1.071), ankle 0.075 (0.073). Menton 1.550 is the Drillis–Contini value; ANSUR II has no menton height.
+- **Lung volumes**: ECSC/Quanjer 1993 TLC, FRC and RV equations and the resulting 7.1 / 3.35 / 1.76 L.
+- **Spinal cord**: length 45 cm (men), conus at L1–L2, C5 and T8 transverse cord diameters.
+- **Diaphragm and great vessels**: diaphragm openings T8/T10/T12; aortic bifurcation L4; IVC formed at L5; iliac split L5/S1.
+- **Heart**: mass ~320–331 g, size ~12 × 8–9 × 6 cm, apex 8–9 cm from the midline at the 5th ICS, RV wall ≤ 5 mm, LVIDd 42–58 mm.
+- **Kidneys**: 10–12 × 5–7 × 3–5 cm, T12–L3, right lower.
+- **Spleen**: 150 g, under ribs 9–11. **Liver**: ~1.5 kg. **Xiphoid**: 2–5 cm.
+- **Curvatures**: thoracic kyphosis 20–50°, lumbar lordosis ~60°, PI ~55 ± 10°, PT < 20°.
+
+### 19.4 Could not be verified (kept, confidence stated in place)
+
+- **Vertebral body positions and sizes**: the §4.1 table; Panjabi not reachable. The jugular notch T2/T3, sternal angle T4/T5 and xiphisternum T9 levels are unverified.
+- **Cortical thicknesses** of all bones. The rib citation to Kemper 2005 is weak.
+- **Brainstem**: the brainstem–head-origin fit and the component positions.
+- **Cord mass**: 30 g.
+- **Depths**: chest-wall-to-pleura depths (they match the fact-checker's memory of the Laan 2016 meta-analysis: ~43 / 40 / 34 mm), RV depth behind the sternum, renal depth from the back, and aorta depth at the navel.
+- **Diaphragm dome heights**; **liver span and width**; **aortic arch height** relative to the jugular notch.
+- **Inter-ASIS width**: 24.5 cm.
+
+### 19.5 Gaps worth adding later
+
+- **A full refit of the cervical and upper-thoracic vertebral stack** to the ANSUR II cervicale (1.532) and tragion (~1.646–1.650). This should include the standing jugular-notch vertebral level; upright CT suggests it is lower than in supine textbooks, but that is unverified here.
+- **ANSUR II-derived percentile bodies** (5th/50th/95th) for the procedural generator. The raw data make this straightforward, and it would replace the √(mass) girth scaling in §14.3.
+- **Standing pelvic tilt**: the ASIS–PSIS angle, ~7–13° anterior, should become an explicit rig parameter, now that the ASIS sits below the PSIS.
