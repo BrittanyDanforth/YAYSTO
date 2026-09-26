@@ -1224,6 +1224,9 @@ def _build_blunt():
     # (only the torn margin itself is wet, <= ~1.5 mm)
     blood = blood.max(t.smooth(0.0015, 0.0, -cut_split) * split_on * (0.55 + 0.45 * bleed))
     blood = blood.max(t.smooth(0.002, 0.0, d_cr) * cr * soft_cr * (0.6 + 0.4 * bleed))
+    # the broken plates of a crushed area lie in blood and pulp
+    blood = blood.max(is_bone * cr * t.smooth(R_cr * 1.8 + 0.006, R_cr * 0.8, c.rho)
+                      * (0.55 + 0.4 * t.smooth(-0.3, 0.3, t.noise(c.np * 180.0, detail=2.0))))
     # blood seeps into the sclera of a crushed orbit
     blood = blood.max(c.is_layer(LAYER_EYE) * cr * 0.7 * t.smooth(0.05, 0.02, c.rho + nl * 0.006))
     # abraded, crushed margins (2-4 mm, dry brown-red, patchy)
@@ -1445,7 +1448,8 @@ def _build_blast():
     # soot, searing and powder stippling on the skin around the crater
     soot = is_skin * on * t.smooth(R * 2.2, R * 0.9, c.rho + t.noise(c.np * 80.0, detail=2.0) * R * 0.5) \
         * (0.45 + 0.55 * t.noise(c.np * 500.0, detail=2.0, signed=False))
-    sear = is_skin * on * t.smooth(R * 0.35, 0.0, d_out + t.noise(c.np * 200.0) * 0.003) * 0.5
+    sear = is_skin * on * t.smooth(R * 0.3, 0.0, d_out + t.noise(c.np * 200.0) * 0.004) * 0.3 \
+        * (0.4 + 0.6 * t.smooth(-0.3, 0.4, t.noise(c.np * 120.0, detail=2.0)))
     vd = t.voronoi(c.np, 2200.0, 'F1', 1.0)
     dcell = t.sep(t.vmath('ADD', t.out(vd, 'Color'), (0, 0, 0)))[0]
     dots = t.smooth(0.34, 0.12, t.out(vd, 'Distance')) * dcell.lt(0.35 * t.smooth(R * 1.9, R, c.rho)).max(0.0)
@@ -1907,6 +1911,7 @@ def _build_blood():
     # runs get their heavy teardrop head below
     rad = rad * (0.4 + 0.6 * t.smooth(1.0, 0.86, tt))
     curves = t.out(t.node('GeometryNodeSetCurveRadius', {'Curve': curves, 'Radius': rad}))
+    curves = t.store(curves, "d_rad", rad)
     profile = t.out(t.node('GeometryNodeCurvePrimitiveCircle', {'Resolution': 10, 'Radius': 1.0}, mode='RADIUS'))
     radius = t.out(t.node('GeometryNodeInputRadius'))
     # (open ends: the ribbon is flattened onto the skin, a cap at its start
@@ -1928,6 +1933,7 @@ def _build_blood():
     beads = t.out(t.node('GeometryNodeRealizeInstances', {'Geometry': t.out(beads)}))
     beads = t.out(t.node('GeometryNodeSetPosition', {'Geometry': beads, 'Offset': t.vec(0.0, 0.0, -1.0) * (dw * 0.8)}))
     beads = t.store(beads, "d_flat", 0.3)
+    beads = t.store(beads, "d_rad", bead_s * 1.2)
     beads = t.store(beads, "d_cap", 0.00032)
     blood = _join(t, tubes, beads)
     # flatten onto the skin: blood runs as a flat ribbon 0.1-0.4 mm thick with
@@ -1938,10 +1944,14 @@ def _build_blood():
     n = _nearest_normal(t, surface, p)
     d = p - q
     hn = d.dot(n)
-    h_new = (hn.max(0.0) * t.attr("d_flat")).min(t.attr("d_cap"))
+    # a domed film: height = cap x (height in the tube / tube radius), so the
+    # cross-section is a low rounded lens thinning to nothing at the edges
+    # (a flat top with a hard edge reads as red tape)
+    rel = (hn.max(0.0) / t.attr("d_rad").max(0.0002)).clamp()
+    h_new = t.attr("d_cap") * rel ** 0.8
     # film thickness for the shader (Beer-Lambert colour): the edges of a run
     # are a thin translucent film, its middle and its head thick and dark
-    blood = t.store(blood, "gore_bthin", 1.0 - (h_new / 0.00022).clamp())
+    blood = t.store(blood, "gore_bthin", 1.0 - (h_new / 0.00022).clamp() ** 0.7)
     flat = q + (d - n * hn) + n * (h_new + 0.00004)
     blood = t.out(t.node('GeometryNodeSetPosition', {'Geometry': blood, 'Position': flat}))
     blood = t.out(t.node('GeometryNodeSetMaterial', {'Geometry': blood, 'Material': t.inp("Material")}))
@@ -2016,7 +2026,7 @@ def _build_fragments():
         sz = s.sqrt() * (sz0 + (sz1 - sz0) * rs ** 2.5)
         rot = t.out(t.node('FunctionNodeEulerToRotation',
                            {'Euler': t.rand((0, 0, 0), (TAU, TAU, TAU), idx, 15 + kid, 'FLOAT_VECTOR')}))
-        chip = t.out(t.node('GeometryNodeMeshIcoSphere', {'Radius': 1.0, 'Subdivisions': 2}))
+        chip = t.out(t.node('GeometryNodeMeshIcoSphere', {'Radius': 1.0, 'Subdivisions': 1}))
         # plates of both tables: ~2-4 mm thick however wide the chip is
         thick = (sz * 0.45).min(0.0018)
         inst = t.node('GeometryNodeInstanceOnPoints', {'Points': g, 'Instance': chip, 'Rotation': rot,
@@ -2027,7 +2037,10 @@ def _build_fragments():
         t.links.new(p.s, jn.inputs[0])
     g = t.out(t.node('GeometryNodeRealizeInstances', {'Geometry': t.out(jn)}))
     # break up the ico-sphere facets: irregular broken plates
-    jit = t.noise(t.pos() * 900.0, detail=2.0, color=True) * 0.0003
+    # (angular, broken plates: a low-poly base and a strong jitter; smooth
+    # ellipsoids read as almonds)
+    jit = t.noise(t.pos() * 900.0, detail=2.0, color=True) * 0.0005 \
+        + t.noise(t.pos() * 2600.0, detail=1.0, color=True) * 0.00015
     g = t.out(t.node('GeometryNodeSetPosition', {'Geometry': g, 'Offset': jit}))
     g = t.out(t.node('GeometryNodeSetShadeSmooth', {'Mesh': g, 'Shade Smooth': False}))
     g = t.out(t.node('GeometryNodeSetMaterial', {'Geometry': g, 'Material': t.inp("Material")}))
@@ -2177,7 +2190,7 @@ CLOT_DENSITY = 30000.0        # blobs per m^2 of wall at factor 1
 CLOT_DENSITY_K = {"bullet": 2.5, "exit": 1.3, "slash": 0.9, "blunt": 1.2, "blast": 0.9}
 # (none in incised cuts: a knife divides everything in its path -- tissue
 # bridges are the forensic sign of a blunt laceration, not of a cut)
-STRAND_P = {"blunt": 0.007, "exit": 0.005, "blast": 0.006}
+STRAND_P = {"blunt": 0.007, "exit": 0.0025, "blast": 0.006}
 # extra blood on the wound walls per kind: a bullet track is a narrow tube
 # lined with blood and clot (no clean yellow fat), an exit is soaked
 WALL_BLOOD = {"bullet": 0.85, "exit": 0.6, "blast": 0.6}

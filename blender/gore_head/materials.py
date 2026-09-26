@@ -1217,8 +1217,8 @@ def _blood_material(g):
     # thin films dry first, from the edges inward
     a = (age + (n - 0.5) * 0.4 * age * (1.0 - age) + thin * 0.35 * age).clamp()
     fresh = (thick + (n_lo - 0.5) * 0.25).clamp().ramp([
-        (0.0, (0.33, 0.016, 0.022)), (0.3, (0.27, 0.007, 0.014)), (0.65, (0.16, 0.004, 0.007)),
-        (1.0, (0.10, 0.002, 0.0035))])
+        (0.0, (0.33, 0.016, 0.022)), (0.3, (0.24, 0.006, 0.012)), (0.65, (0.12, 0.003, 0.005)),
+        (1.0, (0.07, 0.0015, 0.0025))])
     old = t.mix(n, (0.022, 0.008, 0.006), (0.045, 0.014, 0.009))
     old = t.mix(thin * 0.6, old, (0.10, 0.03, 0.02))            # dried thin film: brown stain
     col = t.mix(a, fresh, old)
@@ -1235,7 +1235,9 @@ def _blood_material(g):
     h = clot * 0.3 * (1.0 - a) + t.noise(p, 4000.0) * a * 0.3 + fclot * t.noise(p, 700.0, 2.0) * 0.6
     bsdf = t.principled({
         'Base Color': col, 'Roughness': rough.max(0.06), 'IOR': 1.36, 'Specular IOR Level': 0.5,
-        'Subsurface Weight': (1.0 - a) * 0.45 * (0.4 + 0.6 * thin), 'Subsurface Radius': (1.0, 0.02, 0.02),
+        # (thick blood barely scatters: a strong red subsurface glow makes
+        # dark pooled blood read as bright red wax)
+        'Subsurface Weight': (1.0 - a) * (0.08 + 0.4 * thin), 'Subsurface Radius': (1.0, 0.02, 0.02),
         'Subsurface Scale': 0.001, 'Subsurface IOR': 1.36,
         'Coat Weight': (1.0 - a * 0.85) * (0.3 + 0.7 * wet) * (1.0 - fclot * 0.92), 'Coat IOR': 1.36,
         'Coat Roughness': 0.06 + (1.0 - wet) * 0.2 + a * 0.3 + fclot * 0.2,
