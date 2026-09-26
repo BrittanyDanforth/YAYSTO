@@ -1103,7 +1103,8 @@ def _build_blunt():
     # a broad goose egg: radius ~25 mm, 8-12 mm high at full swelling, with
     # a soft falloff (reads from the front as a changed contour)
     rsw = s * 0.025
-    swell = t.inp("Swelling") * (0.007 + 0.009 * s.min(1.3)) * f_sw \
+    # (the face swells less than the scalp's goose egg: lips and cheeks 3-6 mm)
+    swell = t.inp("Swelling") * (0.007 + 0.009 * s.min(1.3)) * f_sw * (1.0 - 0.45 * t.inp("Region").y) \
         * t.math('EXPONENT', -(c.rho / rsw) ** 2.0) * (1.0 + nl * 0.25) * soft
     # accumulated blows (several hits on one area, see _build_hit_points):
     # the facial skeleton breaks into pieces and the contour caves in
@@ -1165,7 +1166,7 @@ def _build_blunt():
     tears_c = c.tears(6, first=10, width=(0.12, 0.35), length=(0.3, 1.0), sharp=1.4, wobble=0.25)
     R_cr = s * (0.004 + 0.02 * cr) * soft_cr
     r_cr = R_cr * (0.55 + 0.6 * lf_c + 0.55 * tears_c) \
-        + t.noise(c.np * 420.0, detail=2.0) * 0.0012 + t.noise(c.np * 1500.0, detail=1.0) * 0.0004
+        + t.noise(c.np * 150.0, detail=2.0) * 0.0015 + t.noise(c.np * 420.0, detail=1.0) * 0.0004
     cut_cr = t.switch(t.bool('AND', cr.gt(0.08), soft_cr.gt(0.5)), -1.0, r_cr - c.rho)
     cut_soft = cut_soft.max(cut_cr)
     d_cr = c.rho - r_cr                                   # distance outside the crushed opening
@@ -1203,6 +1204,9 @@ def _build_blunt():
     # the margins are pushed apart a little and bulge (crushed, swollen lips)
     mg = t.smooth(0.003, 0.0, -cut_split) * split_on * is_skin
     swell = swell + mg * 0.0006 - cave
+    # pulped muscle exposed in the crushed area: lumpy, torn
+    swell = swell + is_muscle * cr * t.smooth(R_cr * 1.6 + 0.004, R_cr * 0.5, c.rho) \
+        * (t.noise(c.np * 200.0, detail=3.0, rough=0.6) * 0.0025 + t.noise(c.np * 600.0, detail=2.0) * 0.0008)
     # blood: from the split (via the fill and the runs, nothing painted on the
     # skin), hematoma under the skin, contusion on the brain
     bleed = t.inp("Bleed")
@@ -1237,7 +1241,7 @@ def _build_blunt():
     # walls of the crushed opening drop steeply (a crater, not a V)
     in_cr = cut_cr.gt(cut_split)
     center = t.switch(in_cr, center, c.center, 'VECTOR')
-    wall = t.switch(in_cr, wall, t.vec(0.0, 0.0, -wl * 1.2) + c.center * 0.1, 'VECTOR')
+    wall = t.switch(in_cr, wall, t.vec(0.0, 0.0, -wl * 0.8) + c.center * 0.25, 'VECTOR')
     _finish_kind(t, cut, disp=disp, dispn=swell, wall=wall, center=center, wound=wound, edge=edge,
                  blood=blood, bruise=bruise, fracture=frac)
     return t
@@ -1335,7 +1339,7 @@ def _build_burn():
 # one, hinged at its lower edge and swung outward and down, WITH the teeth in
 # it (the same rigid transform is applied to the tooth islands).
 BLAST_R = 0.028               # crater radius (m) per unit of size
-BLAST_ANGLE = (0.38, 0.68)    # hinge rotation of the jaw segment (rad, ~22-39 deg)
+BLAST_ANGLE = (0.6, 1.05)     # hinge rotation of the jaw segment (rad, ~35-60 deg)
 BLAST_SLOT = 0.0011           # half width of the fracture gaps in the jaw (m)
 
 
@@ -1348,9 +1352,10 @@ def _blast_fragment(t, s, hk, u, v, wT):
     position (u', v', wT') of the point, and the signed distance to the nearest
     fracture line (< 0 inside a fracture gap).
     """
-    u1 = s * (-0.020 - 0.008 * hk(21))
-    u2 = s * (0.008 + 0.010 * hk(22))
-    vp = s * (-0.026 - 0.008 * hk(23))          # hinge line (lower fracture)
+    # (a segment of ~25-40 mm: the incisors, a canine and a premolar or two)
+    u1 = s * (-0.013 - 0.006 * hk(21))
+    u2 = s * (0.004 + 0.006 * hk(22))
+    vp = s * (-0.024 - 0.006 * hk(23))          # hinge line (lower fracture)
     wp = -0.014
     a = BLAST_ANGLE[0] + (BLAST_ANGLE[1] - BLAST_ANGLE[0]) * hk(24)
     # the fracture lines are jagged, not ruler-straight
@@ -1425,6 +1430,12 @@ def _build_blast():
     lift = flap * flap * s * 0.0042 * curl
     # surrounding tissue swollen, a ring 1-2 R out
     swell = is_skin * s * 0.0035 * t.smooth(R * 2.4, R * 1.1, c.rho) * t.smooth(0.0, R * 0.3, d_out) * on
+    # the exposed soft tissue inside the crater (muscle, mouth lining, tongue,
+    # gums) is pulped: lumpy, shredded, never a smooth lining
+    pulp_on = c.lc([0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0]) * on * t.smooth(R * 1.15, R * 0.55, c.rho)
+    pulp = (t.noise(c.np * 180.0, detail=3.0, rough=0.6) * 0.0028 + t.noise(c.np * 520.0, detail=2.0) * 0.0009) \
+        * pulp_on * s.min(1.6)
+    swell = swell + pulp
     disp = t.vec(0.0, 0.0, lift) + c.radial * (lift * 0.7) + frag_disp
     # soot, searing and powder stippling on the skin around the crater
     soot = is_skin * on * t.smooth(R * 2.2, R * 0.9, c.rho + t.noise(c.np * 80.0, detail=2.0) * R * 0.5) \
@@ -1439,6 +1450,11 @@ def _build_blast():
     wound = (t.smooth(0.0015, 0.0, d_out) * on).max(exposed).max(t.smooth(0.001, -0.0005, slot) * frag_on)
     blood = (t.smooth(0.0015, 0.0, d_out) * on * 0.85).max(exposed * 0.9) \
         .max(frag_on * t.smooth(0.004, 0.0, slot) * 0.8)
+    # the broken-off segment and the bone around the crater are bloody (the
+    # bone must still read in patches)
+    bone_bl = is_bone * on * t.smooth(R * 1.2, R * 0.4, c.rho) \
+        * (0.35 + 0.6 * t.smooth(-0.2, 0.4, t.noise(c.np * 150.0, detail=2.0)))
+    blood = blood.max(bone_bl).max(in_frag * frag_on * (0.45 + 0.5 * t.smooth(-0.3, 0.3, t.noise(c.np * 200.0))))
     frac = (t.smooth(0.004, 0.0, slot) * frag_on).max(is_bone * on * t.smooth(0.004, 0.0, d_out))
     bruise = is_skin * on * t.smooth(R * 2.0, R * 0.8, c.rho) * 0.6 * t.inp("Bruising")
     # walls: the crater drops straight in; the fracture gaps close along their line

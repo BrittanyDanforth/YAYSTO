@@ -745,7 +745,7 @@ def _matter_material(white):
     noise = nt.nodes.new('ShaderNodeTexNoise')
     noise.inputs['Scale'].default_value = 900.0
     ramp = nt.nodes.new('ShaderNodeValToRGB')
-    lo, hi = ((0.60, 0.53, 0.46), (0.70, 0.63, 0.55)) if white else ((0.36, 0.23, 0.21), (0.44, 0.30, 0.27))
+    lo, hi = ((0.50, 0.44, 0.37), (0.58, 0.51, 0.43)) if white else ((0.34, 0.21, 0.19), (0.42, 0.28, 0.25))
     ramp.color_ramp.elements[0].color = (*lo, 1.0)
     ramp.color_ramp.elements[1].color = (*hi, 1.0)
     nt.links.new(noise.outputs['Fac'], ramp.inputs[0])

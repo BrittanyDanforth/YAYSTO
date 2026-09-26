@@ -1413,6 +1413,14 @@ def _wet_mucosa(g, name, base_lo, base_hi, extra=None, sss=0.8, view=(0.6, 0.2, 
     rough_add, coat_k = 0.0, 1.0
     if extra is not None:
         col, h, rough_add, coat_k = extra(t, p, col, h)
+    # torn / pulped mucosa (a blast through the mouth, a split lip): raw,
+    # lumpy dark-red to bright red-orange tissue
+    wd = (t.attr("gore_wound") + (t.noise(p, 400.0) - 0.5) * 0.3).smooth(0.3, 0.6)
+    pn = t.noise(p, 300.0, 3.0, 0.6)
+    pulp = pn.ramp([(0.2, (0.10, 0.006, 0.008)), (0.45, (0.26, 0.02, 0.018)), (0.7, (0.42, 0.07, 0.04)),
+                    (0.9, (0.50, 0.16, 0.10))])
+    col = t.mix(wd, col, pulp)
+    h = t.mix(wd, h, t.noise(p, 700.0, 3.0) * 2.0)
     bl = _blood_layer(t, g, col, t.mix(wet, 0.5, 0.2) + rough_add, t.attr("gore_blood"), p)
     nrm = t.bump(t.mix(bl["Height Mask"], h, bl["Height"]), 0.0001)
     bsdf = t.principled({
