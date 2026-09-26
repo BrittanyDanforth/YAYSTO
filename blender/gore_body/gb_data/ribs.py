@@ -5,6 +5,7 @@ head -> posterior angle -> lateral (~MAL) -> CCJ (costochondral junction), and
 its cartilage from the CCJ to its sternal end (ribs 1-7), to the cartilage above
 (8-10, forming the costal margin) or as a short cap (11-12, floating).
 """
+import numpy as np
 
 # rib: (type, head, posterior_angle, lateral, ccj, cartilage_end, cartilage_joins, arc_mm, cartilage_mm)
 # Rib 8: the lateral point and CCJ sit 2-4 mm more medial than R05's fit (flank depth, RB §7.6).  Ribs 9-11
@@ -65,10 +66,32 @@ CAGE = dict(width_at_rib_cm={4: 23.6, 6: 26.6, 8: 27.8, 10: 27.2}, ap_depth_t7_c
             front_height_cm=33)
 
 
+CAGE_AXIS_Y = 0.012      # the cage axis (x = 0, y = 0.012) the ribs curve about (B3 and B4 use the same)
+
+
+def _arc_mid(p, q):
+    """Point halfway between rib points p and q ON the rib's curve: same polar angle as the straight
+    midpoint about the cage axis, radius = mean of the two radii (the ribs are round, not polygons; the
+    table's 4 points joined straight flattened the posterolateral and anterolateral cage by 8-10 mm)."""
+    p, q = (np.asarray(v, float) for v in (p, q))
+    rp = np.hypot(p[0], p[1] - CAGE_AXIS_Y)
+    rq = np.hypot(q[0], q[1] - CAGE_AXIS_Y)
+    m = 0.5 * (p + q)
+    a = np.arctan2(m[1] - CAGE_AXIS_Y, m[0])
+    r = 0.5 * (rp + rq)
+    return (float(r * np.cos(a)), float(CAGE_AXIS_Y + r * np.sin(a)), float(m[2]))
+
+
 def rib_points(n, include_cartilage=False):
-    """Ordered control points of rib ``n`` (left), optionally continued through its cartilage."""
+    """Ordered control points of rib ``n`` (left), optionally continued through its cartilage.
+
+    head -> posterior angle -> (arc midpoint) -> lateral -> (arc midpoint) -> CCJ: the two arc midpoints
+    keep the curve round between the table's points (``_arc_mid``)."""
     kind, head, angle, lateral, ccj, cart_end, joins, arc, cart = RIB_TABLE[n]
-    pts = [head, angle] + ([lateral] if lateral is not None else []) + [ccj]
+    if lateral is not None:
+        pts = [head, angle, _arc_mid(angle, lateral), lateral, _arc_mid(lateral, ccj), ccj]
+    else:
+        pts = [head, angle, ccj]
     if include_cartilage and cart_end is not None:
         pts.append(cart_end)
     return pts

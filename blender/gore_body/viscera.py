@@ -1116,7 +1116,8 @@ def _stomach_outer_raw(x, y, z):
     d = d - 0.002 * pyl                                                        # pyloric sphincter ring
     d = smax(d, under_diaphragm(x, y, z), 0.006)
     d = smax(d, abdominal_cavity(x, y, z) + 0.002, 0.006)
-    return d
+    # the fundus is moulded by the spleen behind and lateral to it (gastric impression of the spleen)
+    return carve(d, _spleen_lens(x, y, z), 0.0030, 0.006)
 
 
 def stomach_outer(x, y, z):
@@ -1144,40 +1145,40 @@ def stomach_sub(v):
     return np.where(np.abs(l) < np.abs(o), 2, 1).astype(np.int32)
 
 
-SPLEEN_INSET = 0.012
+SPLEEN_INSET = 0.010
 
 
-def spleen_sdf(x, y, z):
-    """Spleen 12 x 7 x 3 cm in the posterolateral recess under ribs 9-11 [R05 §11.2, RB §7.5 OBB centre
-    (0.105, 0.040, 1.228), long axis along the 10th rib]: a lens with a convex diaphragmatic surface
-    against the diaphragm/ribs and a flatter visceral surface (gastric and renal impressions), notched
-    superior border.  Placed by the bible OBB itself (it used to be a shell grown from the diaphragm,
-    which put it 17 mm forward and medial and 25 % light), then kept under the diaphragm and inside
-    the cage."""
+def _spleen_lens(x, y, z):
+    """The spleen's own shape (no neighbours): a 12 x 7.4 x 3.2 cm lens on the bible OBB [RB §7.5] with a
+    convex diaphragmatic surface (+w, up-out-back) and a flatter visceral surface, notched superior border.
+    The bible centre sits against the rib-table cage wall, so the lens is centred SPLEEN_INSET along -w."""
     p = OR.PRIMITIVES["spleen"]
     c = np.array(p["c"])
     u, v = unit(p["u"]), unit(p["v"])
     w = unit(np.cross(u, v))
-    # w must point to the diaphragm / ribs (up-out-back): flip if it points into the abdomen
     if w @ unit(np.array([c[0], c[1] - CAGE_YC, 0.0]) + np.array([0.0, 0.0, 0.3])) < 0:
         w = -w
-    # the bible centre sits against the rib-table cage wall; the lens is centred SPLEEN_INSET along -w so
-    # the whole 3 cm thickness fits under the diaphragm inside ribs 9-11
     c = c - w * SPLEEN_INSET
     q = np.stack([x - c[0], y - c[1], z - c[2]], -1)
     a, b, n = q @ u, q @ v, q @ w
     r2 = (a / 0.061) ** 2 + ((b - 0.002) / 0.037) ** 2
     t = 0.0325 * np.sqrt(np.clip(1.0 - r2, 0.0, None))
-    # convex diaphragmatic side (+w) takes 60 % of the thickness, visceral side flatter
     lens = np.maximum(n - 0.60 * t, -0.40 * t - n)
     d = smax(lens, (np.sqrt(r2) - 1.0) * 0.035, 0.005)
     notch = 1e9
     for aa in (-0.030, -0.008, 0.016):
         notch = np.minimum(notch, ell(a, b, n, (aa, 0.037, 0.000), (0.0030, 0.0080, 0.0200)))
-    d = smax(d, -notch, 0.002)
+    return smax(d, -notch, 0.002)
+
+
+def spleen_sdf(x, y, z):
+    """Spleen 12 x 7 x 3 cm in the posterolateral recess under ribs 9-11 [R05 §11.2, RB §7.5 OBB centre
+    (0.105, 0.040, 1.228), long axis along the 10th rib] (``_spleen_lens``), kept under the diaphragm
+    and inside the cage, with its renal impression; the stomach's fundus yields to it (it used to be a
+    shell grown from the diaphragm and squeezed by the fundus: 17 mm forward and medial, 25 % light)."""
+    d = _spleen_lens(x, y, z)
     d = smax(d, under_diaphragm(x, y, z, 0.0025), 0.004)
     d = smax(d, cage_sdf(x, y, z, inset=RIB_HALF_T + 0.0035), 0.006)
-    d = carve(d, _STOM(x, y, z), 0.0025, 0.004)
     d = carve(d, _KFAT["L"](x, y, z), 0.0020, 0.004)
     d = carve(d, _KID["L"](x, y, z), 0.0030, 0.004)
     return d
