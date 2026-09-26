@@ -1,0 +1,484 @@
+{
+ "schema": "gb.textures/1",
+ "frame": "body_zup_m",
+ "godot_mapping": "(x, z, -y)",
+ "generator": "blender/gore_body/build.py",
+ "build_id": "gb-7480f7e98c3d",
+ "data": {
+  "sets": {
+   "head": {
+    "target": "GB_Head",
+    "source": "GB_Head_HR",
+    "normal_source": "GB_Head_HR",
+    "size": 2048,
+    "uv_hash": "0c97241b8e2b5900",
+    "surfaces": [
+     "GBM_skin_head",
+     "GBM_mouth_lining"
+    ],
+    "lod1": [
+     "GB_Head_LOD1"
+    ],
+    "files": {
+     "albedo": "head_albedo.png",
+     "normal": "head_normal.png",
+     "orm": "head_orm.png"
+    },
+    "coverage": {
+     "valid_texels": 2527224,
+     "empty_inside_islands": 2360,
+     "empty_fraction": 0.00093,
+     "baked_outside_raster": 11,
+     "normal_from_source": 0.9991,
+     "normal_wrong_part_rejected": 0
+    },
+    "rough_offset": 0.06,
+    "albedo_linear_luminance": {
+     "median": 0.3216,
+     "p5": 0.2935,
+     "p95": 0.3376
+    },
+    "albedo_linear_median_rgb": [
+     0.4712,
+     0.2884,
+     0.2159
+    ],
+    "ao_mean": 0.942,
+    "normal_mean_z": 0.976,
+    "seconds": 503.8
+   },
+   "body": {
+    "target": "GB_Body",
+    "source": "GB_Body_HR",
+    "normal_source": "GB_Body_HR",
+    "size": 2048,
+    "uv_hash": "b75fa2a4f5034b3a",
+    "surfaces": [
+     "GBM_skin_torso",
+     "GBM_skin_arm_L",
+     "GBM_skin_arm_R",
+     "GBM_skin_leg_L",
+     "GBM_skin_leg_R"
+    ],
+    "lod1": [
+     "GB_Body_LOD1"
+    ],
+    "files": {
+     "albedo": "body_albedo.png",
+     "normal": "body_normal.png",
+     "orm": "body_orm.png"
+    },
+    "coverage": {
+     "valid_texels": 2203783,
+     "empty_inside_islands": 25,
+     "empty_fraction": 1e-05,
+     "baked_outside_raster": 15,
+     "normal_from_source": 1.0,
+     "normal_wrong_part_rejected": 0
+    },
+    "rough_offset": 0.06,
+    "albedo_linear_luminance": {
+     "median": 0.3245,
+     "p5": 0.2953,
+     "p95": 0.3476
+    },
+    "albedo_linear_median_rgb": [
+     0.4745,
+     0.2908,
+     0.2168
+    ],
+    "ao_mean": 0.952,
+    "normal_mean_z": 0.9839,
+    "seconds": 412.4
+   },
+   "shorts": {
+    "target": "GB_Shorts",
+    "source": "GB_Shorts",
+    "normal_source": "GB_Shorts",
+    "size": 1024,
+    "uv_hash": "534b000f07efceec",
+    "surfaces": [
+     "GBM_cloth"
+    ],
+    "lod1": [],
+    "files": {
+     "albedo": "shorts_albedo.png",
+     "normal": "shorts_normal.png",
+     "orm": "shorts_orm.png"
+    },
+    "coverage": {
+     "valid_texels": 447499,
+     "empty_inside_islands": 46,
+     "empty_fraction": 0.0001,
+     "baked_outside_raster": 50,
+     "normal_from_source": 0.0,
+     "normal_wrong_part_rejected": 0
+    },
+    "rough_offset": 0.0,
+    "albedo_linear_luminance": {
+     "median": 0.0278,
+     "p5": 0.0247,
+     "p95": 0.0376
+    },
+    "albedo_linear_median_rgb": [
+     0.0277,
+     0.0277,
+     0.0295
+    ],
+    "ao_mean": 0.942,
+    "normal_mean_z": 0.982,
+    "seconds": 14.4
+   },
+   "mouth": {
+    "target": "GB_Mouth",
+    "source": "GB_Mouth",
+    "normal_source": "GB_Mouth",
+    "size": 1024,
+    "uv_hash": "f46d42582533b440",
+    "surfaces": [
+     "GBM_teeth",
+     "GBM_gums",
+     "GBM_tongue"
+    ],
+    "lod1": [],
+    "files": {
+     "albedo": "mouth_albedo.png",
+     "normal": "mouth_normal.png",
+     "orm": "mouth_orm.png"
+    },
+    "coverage": {
+     "valid_texels": 333798,
+     "empty_inside_islands": 39,
+     "empty_fraction": 0.00012,
+     "baked_outside_raster": 24,
+     "normal_from_source": 0.0,
+     "normal_wrong_part_rejected": 0
+    },
+    "rough_offset": 0.0,
+    "albedo_linear_luminance": {
+     "median": 0.1857,
+     "p5": 0.1375,
+     "p95": 0.6006
+    },
+    "albedo_linear_median_rgb": [
+     0.4317,
+     0.118,
+     0.1229
+    ],
+    "ao_mean": 0.616,
+    "normal_mean_z": 0.9692,
+    "seconds": 38.2
+   },
+   "skeleton": {
+    "target": "GB_Skeleton",
+    "source": "GB_Skeleton",
+    "normal_source": "GB_Skeleton_HR",
+    "size": 2048,
+    "uv_hash": "8dd93ab1ad01c220",
+    "surfaces": [
+     "GBM_bone",
+     "GBM_cartilage"
+    ],
+    "lod1": [],
+    "files": {
+     "albedo": "skeleton_albedo.png",
+     "normal": "skeleton_normal.png",
+     "orm": "skeleton_orm.png"
+    },
+    "coverage": {
+     "valid_texels": 1187027,
+     "empty_inside_islands": 170,
+     "empty_fraction": 0.00014,
+     "baked_outside_raster": 161,
+     "normal_from_source": 0.9676,
+     "normal_wrong_part_rejected": 34307
+    },
+    "rough_offset": 0.0,
+    "albedo_linear_luminance": {
+     "median": 0.5065,
+     "p5": 0.4365,
+     "p95": 0.5689
+    },
+    "albedo_linear_median_rgb": [
+     0.5784,
+     0.4989,
+     0.3617
+    ],
+    "ao_mean": 0.846,
+    "normal_mean_z": 0.9577,
+    "seconds": 235.9
+   },
+   "organs": {
+    "target": "GB_Organs",
+    "source": "GB_Organs",
+    "normal_source": "GB_Organs_HR",
+    "size": 2048,
+    "uv_hash": "4c9638a37bb3e2b1",
+    "surfaces": [
+     "GBM_organ"
+    ],
+    "lod1": [],
+    "files": {
+     "albedo": "organs_albedo.png",
+     "normal": "organs_normal.png",
+     "orm": "organs_orm.png"
+    },
+    "coverage": {
+     "valid_texels": 1829568,
+     "empty_inside_islands": 85,
+     "empty_fraction": 5e-05,
+     "baked_outside_raster": 79,
+     "normal_from_source": 0.9021,
+     "normal_wrong_part_rejected": 90554
+    },
+    "rough_offset": 0.0,
+    "albedo_linear_luminance": {
+     "median": 0.2979,
+     "p5": 0.0144,
+     "p95": 0.6171
+    },
+    "albedo_linear_median_rgb": [
+     0.5228,
+     0.2364,
+     0.1167
+    ],
+    "ao_mean": 0.596,
+    "normal_mean_z": 0.962,
+    "seconds": 353.3
+   },
+   "brain": {
+    "target": "GB_Brain",
+    "source": "GB_Brain",
+    "normal_source": "GB_Brain_HR",
+    "size": 1024,
+    "uv_hash": "6d965963b6debb48",
+    "surfaces": [
+     "GBM_brain"
+    ],
+    "lod1": [],
+    "files": {
+     "albedo": "brain_albedo.png",
+     "normal": "brain_normal.png",
+     "orm": "brain_orm.png"
+    },
+    "coverage": {
+     "valid_texels": 342631,
+     "empty_inside_islands": 84,
+     "empty_fraction": 0.00024,
+     "baked_outside_raster": 64,
+     "normal_from_source": 0.8886,
+     "normal_wrong_part_rejected": 0
+    },
+    "rough_offset": 0.0,
+    "albedo_linear_luminance": {
+     "median": 0.1782,
+     "p5": 0.0593,
+     "p95": 0.2847
+    },
+    "albedo_linear_median_rgb": [
+     0.3,
+     0.1476,
+     0.1339
+    ],
+    "ao_mean": 0.651,
+    "normal_mean_z": 0.839,
+    "seconds": 47.7
+   }
+  },
+  "tileables": {},
+  "eyes": {
+   "iris": {
+    "files": {
+     "albedo_height": "eye_iris_albedo.png",
+     "normal": "eye_iris_normal.png"
+    },
+    "size": 1024,
+    "radius_m": 0.0062,
+    "iris_r_m": 0.0058,
+    "pupil_r_m": 0.0022,
+    "limbus_r_m": 0.0059,
+    "mapping": "image centre = gaze axis; edge (uv radius 0.5) = radius_m; +u = eye-local +X, +v = eye-local +Z; pupil drawn at pupil_r_m, remap rn = (r - pupil) / (iris_r - pupil) for dilation",
+    "height_range_mm": [
+     -0.105,
+     0.088
+    ]
+   },
+   "sclera": {
+    "file": "eye_sclera_albedo.png",
+    "size": 1024,
+    "uv": "atlas of GB_Eye_L and GB_Eye_R",
+    "uv_hash": "b7e3650caa0ea54f",
+    "alpha": "1 sclera, 0 cornea/iris window"
+   }
+  },
+  "decals": {},
+  "painter": {},
+  "room": {},
+  "uv": {
+   "GB_Skeleton": {
+    "charts": 2198,
+    "coverage_before": 0.04,
+    "coverage": 0.283,
+    "overlap": 0.009,
+    "texel_mm_at_set_size": 1.13
+   },
+   "GB_Organs": {
+    "charts": 638,
+    "coverage_before": 0.174,
+    "coverage": 0.436,
+    "overlap": 0.01112,
+    "texel_mm_at_set_size": 0.815
+   },
+   "GB_Brain": {
+    "charts": 2489,
+    "coverage_before": 0.058,
+    "coverage": 0.327,
+    "overlap": 0.01453,
+    "texel_mm_at_set_size": 0.616
+   }
+  },
+  "material_map": {
+   "GBM_skin_head": "head",
+   "GBM_mouth_lining": "head",
+   "GBM_skin_torso": "body",
+   "GBM_skin_arm_L": "body",
+   "GBM_skin_arm_R": "body",
+   "GBM_skin_leg_L": "body",
+   "GBM_skin_leg_R": "body",
+   "GBM_cloth": "shorts",
+   "GBM_teeth": "mouth",
+   "GBM_gums": "mouth",
+   "GBM_tongue": "mouth",
+   "GBM_bone": "skeleton",
+   "GBM_cartilage": "skeleton",
+   "GBM_organ": "organs",
+   "GBM_brain": "brain",
+   "GBM_eye": "eyes (iris + sclera)",
+   "GBM_muscle_*": "tile_muscle_fibre / tile_muscle_cross (triplanar)",
+   "GB_Frac_* GBM_bone": "tile_bone_surface outside, tile_bone_cut / tile_diploe on fracture faces (triplanar)",
+   "GBM_hair_card": "hair_cards.png (B2)"
+  },
+  "conventions": {
+   "rows": "top to bottom, v = 1 at the top (Godot image origin)",
+   "albedo": "sRGB PNG (import as BC7 sRGB)",
+   "normal": "tangent space, OpenGL/Godot +Y, MikkTSpace on the LOD0 mesh (import as RGTC normal map)",
+   "orm": "R ambient occlusion, G roughness, B metallic, A SSS mask (mesh sets) or height 0-1 (tileables); linear (BC7 linear)",
+   "painter": "lossless, uncompressed import (position EXR half)",
+   "tile_m": "physical size of one tileable repeat in metres (triplanar / metre UV scale)"
+  },
+  "timings_s": {
+   "uvs": 47.8,
+   "sets": 1696.9
+  },
+  "files": {
+   "body_albedo.png": {
+    "bytes": 2283272,
+    "sha256": "29967b6d56a64e3a"
+   },
+   "body_normal.png": {
+    "bytes": 5035509,
+    "sha256": "e7c187f802ef2f0e"
+   },
+   "body_orm.png": {
+    "bytes": 3504503,
+    "sha256": "abab2fe9c6662701"
+   },
+   "body_tension.png": {
+    "bytes": 158759,
+    "sha256": "42884affbab2f7fd"
+   },
+   "body_tissue_depth.png": {
+    "bytes": 142853,
+    "sha256": "d4d99a349ce769dc"
+   },
+   "brain_albedo.png": {
+    "bytes": 1767595,
+    "sha256": "6596b83af9d9b111"
+   },
+   "brain_normal.png": {
+    "bytes": 2250425,
+    "sha256": "b6fe321a3a16db4a"
+   },
+   "brain_orm.png": {
+    "bytes": 1024063,
+    "sha256": "31ba9d68f660eaf6"
+   },
+   "eye_iris_albedo.png": {
+    "bytes": 1665423,
+    "sha256": "563dae0af2eab591"
+   },
+   "eye_iris_normal.png": {
+    "bytes": 1220854,
+    "sha256": "1816d070c85b6623"
+   },
+   "eye_sclera_albedo.png": {
+    "bytes": 454874,
+    "sha256": "9d6fa7e7769f35bd"
+   },
+   "hair_cards.png": {
+    "bytes": 277071,
+    "sha256": "ebe53beef9f19797"
+   },
+   "head_albedo.png": {
+    "bytes": 1876278,
+    "sha256": "07b8f5398cc35b23"
+   },
+   "head_normal.png": {
+    "bytes": 5617333,
+    "sha256": "2cd21510e758ae41"
+   },
+   "head_orm.png": {
+    "bytes": 3541759,
+    "sha256": "3d25637ed368a441"
+   },
+   "mouth_albedo.png": {
+    "bytes": 766851,
+    "sha256": "d1c8fb703636734f"
+   },
+   "mouth_normal.png": {
+    "bytes": 1276134,
+    "sha256": "5f7dfe3f5aaa8942"
+   },
+   "mouth_orm.png": {
+    "bytes": 982763,
+    "sha256": "3d275ea2af0bb253"
+   },
+   "organs_albedo.png": {
+    "bytes": 2495048,
+    "sha256": "55f4d11ea602f6e5"
+   },
+   "organs_normal.png": {
+    "bytes": 5289692,
+    "sha256": "49fba898ed85450f"
+   },
+   "organs_orm.png": {
+    "bytes": 5196674,
+    "sha256": "2677f42cb6cd8dce"
+   },
+   "shorts_albedo.png": {
+    "bytes": 584239,
+    "sha256": "869b41ea38ec57ce"
+   },
+   "shorts_normal.png": {
+    "bytes": 1397600,
+    "sha256": "d21ecca3348226d5"
+   },
+   "shorts_orm.png": {
+    "bytes": 383153,
+    "sha256": "0afce82b44fc3c63"
+   },
+   "skeleton_albedo.png": {
+    "bytes": 3334020,
+    "sha256": "9eb72852d95e4135"
+   },
+   "skeleton_normal.png": {
+    "bytes": 5880637,
+    "sha256": "7d6b74ad5d405014"
+   },
+   "skeleton_orm.png": {
+    "bytes": 4520249,
+    "sha256": "ad44c646b27db61c"
+   }
+  }
+ }
+}
