@@ -2078,19 +2078,20 @@ def foot_parts():
 # Skull and mandible: the head project's bones (6.5 mm vault with outer/inner tables),
 # re-imported read-only at every build and moved into the body frame
 # ===========================================================================
-def _alveolar(A, ax, y, z, upper, crest_mm=6.6, depth=0.030):
-    """Alveolar process (head frame): a band of bone around the tooth roots along the dental arch,
-    starting just beyond the gum band (``crest_mm`` from the gum margin toward the roots) and running
-    ``depth`` toward the base of the jaw / the maxilla, with socket walls thickening away from the crest."""
+def _alveolar(A, ax, y, z, upper, depth=0.030):
+    """Alveolar process (head frame): bone around the tooth roots along the dental arch.  The crest sits
+    2.5 mm beyond the gum margin (under the attached gingiva, kept >= 0.7 mm inside the gum band so the
+    gum always covers it); beyond the gum band the socket walls thicken toward the base of the jaw /
+    the maxilla over ``depth``."""
     ca = A._cerv(upper)
     s, q = ca.arch.project(ax, y)
     zc, D, pap = ca.props(s)
     sgn = 1.0 if upper else -1.0
     margin = zc - sgn * (0.0006 + 0.0027 * pap)
     hr = (z - margin) * sgn
-    w = 0.5 * D + 0.0017 + 0.0024 * A.smoothstep(0.008, 0.020, hr)
+    w = 0.5 * D + 0.0010 + 0.0012 * A.smoothstep(0.0025, 0.0060, hr) + 0.0024 * A.smoothstep(0.008, 0.020, hr)
     d = np.abs(q + 0.0004) - w
-    d = smax(d, crest_mm / 1e3 - hr, 0.0015)
+    d = smax(d, 0.0025 - hr, 0.0012)
     d = smax(d, hr - depth, 0.004)
     return smax(d, s - (ca.s_end + 0.0045), 0.004)
 
@@ -2112,36 +2113,31 @@ def _skull_head(x, y, z):
     import body_skin as BS
     A = _A()
     ax = np.abs(x)
-    d = A.skull_sdf(x, y, z)
+    base = A.skull_sdf(x, y, z)
     # mastoid process: a stout cone behind and below the ear canal [RB mastoid tip 1.612 -> head -0.035]
-    mast = A.sd_ellipsoid(ax, y, z, (0.0515, 0.0120, -0.0285), (0.0090, 0.0115, 0.0165), rot=A.rot_xyz(18, 0, 0))
-    d = smin(d, mast, 0.006)
+    add = A.sd_ellipsoid(ax, y, z, (0.0515, 0.0120, -0.0285), (0.0090, 0.0115, 0.0165), rot=A.rot_xyz(18, 0, 0))
     # zygomatic arch (from the zygomatic body to the root in front of the ear) + articular tubercle
-    arch = A.sd_capsule(ax, y, z, (0.0535, -0.0520, 0.0000), (0.0650, -0.0150, 0.0015), 0.0048, 0.0040)
-    d = smin(d, arch, 0.004)
-    tub = A.sd_ellipsoid(ax, y, z, (0.0560, -0.0200, -0.0050), (0.0080, 0.0045, 0.0040))
-    d = smin(d, tub, 0.004)
+    add = smin(add, A.sd_capsule(ax, y, z, (0.0535, -0.0520, 0.0000), (0.0650, -0.0150, 0.0015), 0.0048,
+                                 0.0040), 0.004)
+    add = smin(add, A.sd_ellipsoid(ax, y, z, (0.0560, -0.0200, -0.0050), (0.0080, 0.0045, 0.0040)), 0.004)
     # styloid process: thin spike down and forward from under the ear canal
-    sty = A.sd_capsule(ax, y, z, (0.0360, 0.0030, -0.0300), (0.0310, -0.0110, -0.0560), 0.0021, 0.0008)
-    d = smin(d, sty, 0.002)
+    add = smin(add, A.sd_capsule(ax, y, z, (0.0360, 0.0030, -0.0300), (0.0310, -0.0110, -0.0560), 0.0021,
+                                 0.0008), 0.002)
     # occipital base: rounded (posterior cranial fossa) from the inion down and forward to the foramen
-    # magnum, instead of a flat shelf; kept clear of the atlas/axis (checked below) and the foramen
+    # magnum instead of a flat shelf; the foramen and the atlas stay clear
     occ = A.sd_ellipsoid(ax, y, z, (0.0, 0.0500, -0.0260), (0.0520, 0.0400, 0.0200))
     occ = smax(occ, -A.sd_ellipsoid(ax, y, z, (0.0, 0.0200, -0.0380), (0.0160, 0.0190, 0.0150)), 0.003)
-    d = smin(d, occ, 0.010)
+    add = smin(add, occ, 0.006)
     # maxillary alveolar process around the upper roots
-    d = smin(d, _alveolar(A, ax, y, z, True, crest_mm=6.6, depth=0.022), 0.003)
+    add = smin(add, _alveolar(A, ax, y, z, True, depth=0.022), 0.003)
+    # the additions stay 4 mm inside the (combined head + neck) skin, 1 mm off the brain case and the eyes
+    bx, by, bz = x + HEAD_OFFSET[0], y + HEAD_OFFSET[1], z + HEAD_OFFSET[2]
+    add = np.maximum(add, BS.skin_sdf(bx, by, bz) + 0.004)
+    add = np.maximum(add, -(A.cranial_cavity(ax, y, z) - 0.0010))
+    add = np.maximum(add, -(A.sd_sphere(ax, y, z, A.EYE_C, A.EYE_R) - 0.0015))
+    d = smin(base, add, 0.004)
     # glenoid fossa: seats the condyle with a 2 mm articular disc space
-    d = smax(d, -(_condyle(A, ax, y, z) - 0.0022), 0.0015)
-    # never through the skin (4 mm soft tissue; the combined head+neck skin of B1) or into the brain,
-    # the eyes, the gums, the tongue or the air of the mouth outside the alveolar band
-    hx, hy, hz = x, y, z
-    bx, by, bz = hx + HEAD_OFFSET[0], hy + HEAD_OFFSET[1], hz + HEAD_OFFSET[2]
-    d = np.maximum(d, BS.skin_sdf(bx, by, bz) + 0.004)
-    d = np.maximum(d, -(A.cranial_cavity(ax, y, z) - 0.0025))
-    d = np.maximum(d, -(A.sd_sphere(ax, y, z, A.EYE_C, A.EYE_R) - 0.0015))
-    d = np.maximum(d, -(A.gum_sdf(ax, y, z, True) - 0.0008))
-    return d
+    return smax(d, -(_condyle(A, ax, y, z) - 0.0022), 0.0015)
 
 
 def skull_sdf():
@@ -2166,7 +2162,7 @@ def _mandible_head(x, y, z):
     A = _A()
     ax = np.abs(x)
     d = A.jaw_raw(ax, y, z)
-    alv = _alveolar(A, ax, y, z, False, crest_mm=6.6, depth=0.034)
+    alv = _alveolar(A, ax, y, z, False, depth=0.034)
     d = smin(d, alv, 0.004)
     # chin: mental protuberance and tubercles
     d = smin(d, A.sd_ellipsoid(ax, y, z, (0.0090, -0.0840, -0.0935), (0.0080, 0.0050, 0.0060)), 0.005)
@@ -2176,7 +2172,8 @@ def _mandible_head(x, y, z):
     void = A.oral_void(ax, y, z)
     d = np.maximum(d, np.minimum(-(void + 0.0012), alv))
     d = np.maximum(d, -(A.tongue_sdf(ax, y, z) - 0.0010))
-    d = np.maximum(d, -(A.gum_sdf(ax, y, z, False) - 0.0008))
+    # outside the alveolar band nothing enters the gum band (the band itself is covered by the gum)
+    d = np.maximum(d, np.minimum(-(A.gum_sdf(ax, y, z, False) - 0.0008), alv))
     d = np.maximum(d, -(_skull_head(x, y, z) - 0.0012))
     return d
 
@@ -2321,6 +2318,7 @@ def piece_table():
 CORE_TRIS = {"humerus_L": 50, "radius_L": 40, "ulna_L": 40, "femur_L": 60, "tibia_L": 50, "fibula_L": 30,
              "clavicle_L": 30}
 HR_FACTOR = 18                    # GB_Skeleton_HR keeps ~18x the LOD0 triangles (bake source)
+LOD_SCALE = 0.965                 # the piece targets sum to ~37k with the marrow cores; the plan §4.1 budget is 36k
 
 
 def _mirror_bone(b):
@@ -2356,7 +2354,7 @@ def mesh_pieces(quick=False, only=None, log=True):
         tot = sum(len(m["hr"][1]) for m in meshed)
         for m in meshed:
             share = len(m["hr"][1]) / max(tot, 1)
-            m["lod"] = decimate_manifold(*m["hr"], max(24, int(round(lod * share))))
+            m["lod"] = decimate_manifold(*m["hr"], max(24, int(round(LOD_SCALE * lod * share))))
             m["hr"] = decimate_manifold(*m["hr"], max(200, int(round(HR_FACTOR * lod * share))))
             if m["core_fn"] is not None:
                 vc, fc = mesh_sdf(m["core_fn"], m["box"], h * scale)

@@ -1019,7 +1019,7 @@ def head_clip_z(x, y):
     """Height below which the head project's skin is replaced by the body neck (body frame).
 
     In front the clip follows the inferior border of the head's mandible (measured on
-    ``gore_head.anatomy.jaw_sdf``: menton 1.550 -> body 1.551-1.555 -> angle 1.571-1.573) 6 mm below
+    ``gore_head.anatomy.jaw_sdf``: menton 1.550 -> body 1.551-1.555 -> angle 1.571-1.573) 8.5 mm below
     the bone (skin + platysma + submental fat), so the head keeps its whole jaw and chin and the
     body neck forms the submental / submandibular surface under it (cervicomental angle) instead
     of the head project's own neck column (which hung below the jaw as a pouch).  Behind the
@@ -1029,7 +1029,7 @@ def head_clip_z(x, y):
     # the angle (gonion), > 90 deg = behind the ramus, under the ear, nape
     ang = np.degrees(np.arctan2(ax, -(y - 0.004)))
     return sinterp(ang, [0.0, 25.0, 50.0, 70.0, 85.0, 100.0, 125.0, 150.0, 180.0],
-                   [1.544, 1.545, 1.549, 1.554, 1.562, 1.572, 1.598, 1.614, 1.622])
+                   [1.5415, 1.5425, 1.5465, 1.5515, 1.5595, 1.570, 1.598, 1.614, 1.622])
 
 
 def _head_part(x, y, z):

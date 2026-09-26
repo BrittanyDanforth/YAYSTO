@@ -37,3 +37,15 @@ BLOOD MUST COME FROM THE WOUND (user, verbatim: "VERY UNREALISTIC BLOOD WOULD PO
 - Test: render a time sequence (at least 6 moments from 0 to 60 s) — the blood must visibly originate in the wound and travel outward/downward; any blood appearing somewhere without a path from the wound is a HIGH-severity failure.
 
 In gore.py: drop the stamped gore_blood pools/rings around wounds; add a blood-fill surface inside each wound cavity; seed streams only at the lowest rim point(s); drive stream length/width/branching and the trailing stain by drip_time and bleed; keep impact spatter only as flung droplets (exits spray away from the head).
+
+## Status after fix round 3 (anatomy.py)
+
+Done: eye centres at (±0.0315, −0.0675, 0.022) (IPD 63 mm, 2.5 mm deeper in the orbit), brow ridge ~40 % stronger,
+upper lid lower over the iris (LID_UP 0.305); zygomatic prominence (Gaussian at x 0.050) with a deeper sub-malar
+hollow and a wider cheekbone body; face block ~3 mm wider at the mid-face; a soft jaw-angle (gonion) mass; neck
+necked in under the jaw (~100 mm wide mid-neck); cranium broader and less egg-shaped (radii 0.076 / 0.097 / 0.0975);
+ears stand off less (17°) and lean back more (17°) with a shorter lobe (~14 mm); nostrils opened larger. All 30
+layer overlap checks pass (`python3 anatomy.py`). Also new for the cutaway: cervical spine (`GH_Cervical`), the
+spinal cord continuing the brain stem down the canal, an airway (pharynx → trachea) carved in the muscle layer,
+a frontal sinus, a larger maxillary sinus, a thinner palate and a domed tongue.
+Not done: a full sculpt-level rebuild of the auricle (helix roll / antihelix Y are the round-1 ones).

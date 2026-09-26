@@ -807,6 +807,8 @@ def add_cutaway(objs, x_hi=0.030, x_lo=0.003, z_step=-0.036):
     if white is not None:
         layers["GH_WhiteMatter"] = 3.4
     for name, lvl in layers.items():
+        if obs.get(name) is None:
+            continue
         # an L-shaped prism (profile in x/z, extruded along y); inner layers are
         # cut slightly further out so their caps step back from the outer caps
         off = 0.0006 * lvl
@@ -908,13 +910,14 @@ def render_all(objs, presets, out_dir, samples=40, res=640, only=None):
 SEQ_SECONDS = (0, 5, 10, 20, 40, 60)
 
 
-def _hit_camera(name, hit, dist, side=0.55, up=0.25, lens=85.0):
-    """Camera looking at a hit from outside, turned `side` toward its local X and tilted up."""
+def _hit_camera(name, hit, dist, side=0.55, up=0.25, lens=85.0, drop=0.015):
+    """Camera looking at a hit from outside, turned `side` toward its local X and
+    tilted up, aimed `drop` metres below the hit (where the blood runs)."""
     m = hit.matrix_world.to_3x3().normalized()
     z = (m @ Vector((0.0, 0.0, 1.0))).normalized()
     x = (m @ Vector((1.0, 0.0, 0.0))).normalized()
     view = (z + x * side + Vector((0.0, 0.0, up))).normalized()
-    target = hit.matrix_world.translation + Vector((0.0, 0.0, -0.015))
+    target = hit.matrix_world.translation + Vector((0.0, 0.0, -drop))
     return ghc.add_camera(name, target + view * dist, target, lens)
 
 
@@ -954,7 +957,7 @@ def render_contact_sheet(out_dir, samples=40, res=640):
     for preset, hit_name, dist, _label in SHEET:
         apply_preset(preset)
         hit = bpy.data.objects[hit_name]
-        cam = _hit_camera(f"GH_Cam_sheet_{hit_name}", hit, dist, side=0.35, up=0.2)
+        cam = _hit_camera(f"GH_Cam_sheet_{hit_name}", hit, dist, side=0.35, up=0.2, drop=0.004)
         p = os.path.join(tmp, f"{hit_name}.png")
         t = time.time()
         bpy.context.scene.view_settings.exposure = materials.STAGE_EXPOSURE
