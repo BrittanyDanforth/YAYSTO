@@ -1237,7 +1237,7 @@ def _blood_material(g):
         'Base Color': col, 'Roughness': rough.max(0.06), 'IOR': 1.36, 'Specular IOR Level': 0.5,
         'Subsurface Weight': (1.0 - a) * 0.45 * (0.4 + 0.6 * thin), 'Subsurface Radius': (1.0, 0.02, 0.02),
         'Subsurface Scale': 0.001, 'Subsurface IOR': 1.36,
-        'Coat Weight': (1.0 - a * 0.85) * (0.3 + 0.7 * wet) * (1.0 - fclot * 0.75), 'Coat IOR': 1.36,
+        'Coat Weight': (1.0 - a * 0.85) * (0.3 + 0.7 * wet) * (1.0 - fclot * 0.92), 'Coat IOR': 1.36,
         'Coat Roughness': 0.06 + (1.0 - wet) * 0.2 + a * 0.3 + fclot * 0.2,
         'Coat Tint': t.mix(a, (0.9, 0.4, 0.4), (1, 1, 1)),
         'Normal': t.bump(h, 0.0001)})

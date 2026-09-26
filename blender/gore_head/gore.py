@@ -2157,7 +2157,9 @@ WALL_LUMPS = ((210.0, 0.00055), (650.0, 0.00018))
 # entrance hole holds a ring of dark clot around a still-open track
 # (bullet entrances have no fill sheet: converging strips read as a camera
 # iris; clot blobs sit in the track instead)
-FILL_EXTENT = {"slash": 1.03, "blunt": 0.8}
+# (< 1: the two lips' sheets must never cross -- two sheets crossing along a
+# jagged line alternate which one is on top and the bed reads as a dashed strip)
+FILL_EXTENT = {"slash": 0.95, "blunt": 0.8}
 # clot blobs per wall area (relative to CLOT_DENSITY) and the chance that a
 # vertex of the first wall ring starts a tissue strand across the gap
 CLOT_DENSITY = 30000.0        # blobs per m^2 of wall at factor 1
@@ -2468,6 +2470,16 @@ def _build_cut():
     step = gr * (-t.attr("g_cut") / gr.dot(gr).max(1e-6))
     snap = step * (0.0008 / step.length().max(0.0008))
     g = t.out(t.node('GeometryNodeSetPosition', {'Geometry': g, 'Selection': t.attr("g_rim").gt(0.0), 'Offset': snap}))
+    # smooth the rim along itself (only rim vertices take part): the snap onto
+    # the noisy outline leaves a vertex-scale zig-zag whose facets catch the
+    # light one by one (a row of glints / saw teeth along the cut edge); the
+    # lobes and notches of the outline (mm scale) are kept
+    rim_v = F(t, t.node('GeometryNodeFieldOnDomain', {'Value': t.attr("g_rim")}, domain='POINT',
+                        data_type='FLOAT').outputs[0]).gt(0.0)
+    rim_w = t.switch(rim_v, 0.0, 1.0)
+    rblur = t.node('GeometryNodeBlurAttribute', {'Value': t.pos(), 'Iterations': 2, 'Weight': rim_w},
+                   data_type='FLOAT_VECTOR')
+    g = t.out(t.node('GeometryNodeSetPosition', {'Geometry': g, 'Selection': rim_v, 'Position': t.out(rblur)}))
     for name in ("g_grad", "g_disp", "g_cut", "g_nowall"):
         g = t.out(t.node('GeometryNodeRemoveAttribute', {'Geometry': g, 'Pattern Mode': 'Exact', 'Name': name}))
     g = t.store(g, "g_wk", 0.0)
