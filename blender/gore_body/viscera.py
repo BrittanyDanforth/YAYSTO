@@ -731,7 +731,10 @@ def _larynx_parts(x, y, z):
     ax = np.abs(x)
     # thyroid cartilage: two laminae meeting in front at ~90 deg (the prominence), 2.5 mm plates
     yp, zc = -0.058, 1.531
-    dpl = np.abs(0.7071 * ax - 0.7071 * (y - yp) + 0.0015) - 0.0015  # 3 mm plates, outer face on the line
+    # the anterior angle is most prominent above (the Adam's apple) and recedes ~6 mm toward the inferior
+    # border, where the cricothyroid membrane and the cricoid arch lie deeper still
+    ypz = yp + 0.006 * sstep(1.531, 1.516, z)
+    dpl = np.abs(0.7071 * ax - 0.7071 * (y - ypz) + 0.0015) - 0.0015  # 3 mm plates, outer face on the line
     back = (y - (yp + 0.028))                                   # laminae ~30 mm deep
     lam = np.maximum(dpl, back)
     lam = np.maximum(lam, np.abs(z - zc) - 0.0150)              # 30 mm tall
@@ -752,7 +755,8 @@ def _larynx_parts(x, y, z):
     soft_o = chain(x, y, z, [(0.0, -0.0325, 1.505), (0.0, -0.0350, 1.528), (0.0, -0.036, 1.550)],
                    [0.0115, 0.0140, 0.0135])
     soft_o = smax(soft_o, np.maximum(1.5062 - z, z - 1.552), 0.002)
-    epig = ell(x, y, z, (0.0, -0.045, 1.551), (0.010, 0.0035, 0.008))
+    # epiglottis: a leaf rising behind the hyoid body (hyoid 0, -0.030, 1.556), behind the tongue base
+    epig = ell(x, y, z, (0.0, -0.027, 1.555), (0.010, 0.0030, 0.0085))
     soft_o = smin(soft_o, epig, 0.003)
     # airway: subglottis -> glottis slit (rima ~ 8 x 16 mm) -> vestibule; closed at the inlet
     lz = np.clip((z - 1.505) / 0.050, 0, 1)

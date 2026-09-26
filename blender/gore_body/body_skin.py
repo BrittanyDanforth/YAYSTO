@@ -327,8 +327,8 @@ TORSO = np.array([
     (1.470, 0.102, -0.050, 0.100, 2.2, 2.8),     # scapular superior angles under trapezius
     (1.485, 0.063, -0.054, 0.085, 2.1, 2.2),     # seam plane (plan D19)
     (1.515, 0.0595, -0.057, 0.069, 2.1, 2.2),    # neck 38 cm: 12 x 11.7 (front -0.055 / back +0.063)
-    (1.540, 0.058, -0.044, 0.072, 2.1, 2.2),     # C7 spinous skin 0.075 at 1.532 (bump added); the front
-    (1.565, 0.058, -0.032, 0.077, 2.1, 2.2),     # recedes under the jaw: submental surface / cervicomental
+    (1.540, 0.057, -0.044, 0.069, 2.1, 2.2),     # C7 spinous skin 0.075 at 1.532 (bump added); the front
+    (1.565, 0.057, -0.032, 0.075, 2.1, 2.2),     # recedes under the jaw: submental surface / cervicomental
     (1.595, 0.059, -0.024, 0.089, 2.1, 2.3),     # angle ~110 deg with the chin (menton -0.068, 1.550)
     (1.625, 0.060, -0.014, 0.098, 2.1, 2.4),     # nape: suboccipital mass under the occiput
     (1.660, 0.058, -0.006, 0.100, 2.1, 2.4),
@@ -1061,7 +1061,9 @@ def _neck_parts(ax, y, z):
     The prominence sits 10 mm below RB §7.1's 1.537 (C5 level instead of C4-C5) so it lies 2.3 cm
     under the menton with a real cervicomental angle between them (gb_data.landmarks, CONTRACT.md)."""
     scm = sd_capsule(ax, y, z, (0.017, -0.046, 1.463), (0.058, 0.022, 1.600), 0.0080, 0.0130)
-    lar = sd_oellipsoid(ax, y, z, (0.0, -0.049, 1.520), (0.0105, 0.0125, 0.0140), np.eye(3))
+    # over the thyroid cartilage (B4 organ: prominence y -0.058 over z 1.516-1.538): skin 3 mm in front of it,
+    # ending above the cricoid (skin -0.055 at 1.515)
+    lar = sd_oellipsoid(ax, y, z, (0.0, -0.0490, 1.534), (0.0175, 0.0128, 0.0155), np.eye(3))
     return scm, lar
 
 

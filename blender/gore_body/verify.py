@@ -984,6 +984,31 @@ def _b1_skip(name="GB_Body"):
     return None if _b1_obj(name) is not None else (True, f"{name} is not built by B1 yet (placeholder)")
 
 
+def neck_tape(v, t, front=(0.0, -0.055, 1.515), tilts=range(0, 17, 2)):
+    """Neck circumference like the anthropometric tape (ISO 7250-1 / ANSUR 'neck circumference'): anchored just
+    below the laryngeal prominence (the RB §7.1 cricoid point) and perpendicular to the neck, i.e. a snug tape
+    that settles at its smallest circumference; the back of the tape rides above the C7 / T1 prominence.  A
+    horizontal cut at 1.515 m is the 'neck base' measure instead (it runs through the trapezius and below C7,
+    whose skin landmark lies at y 0.075, z 1.532 - so the RB table's 0.063 back point cannot be horizontal).
+    Returns the minimum hull perimeter (m) over tape tilts of 0-16 deg (back side up)."""
+    import body_skin as BS
+    p0 = np.asarray(front, float)
+    best = None
+    for deg in tilts:
+        a = np.radians(deg)
+        n = np.array([0.0, -np.sin(a), np.cos(a)])
+        e1 = np.array([1.0, 0.0, 0.0])
+        e2 = np.cross(n, e1)
+        P = BS.mesh_section(v, t, p0, n)
+        if P is None or len(P) < 8:
+            continue
+        q = np.stack([(P - p0) @ e1, (P - p0) @ e2], 1)
+        q = q[np.abs(q[:, 0]) < 0.09]
+        per = BS.hull_perimeter(q)
+        best = per if best is None else min(best, per)
+    return best
+
+
 @check("scene", owner="B1")
 def b1_girths_fb3():
     """FB-3: girths within +-2 cm (neck, calf +-1.5) of RB §7.1, measured like a tape (convex hull)."""
@@ -998,9 +1023,7 @@ def b1_girths_fb3():
         v = np.vstack([gbc.get_verts(body.data), gbc.get_verts(head.data)])
         t1 = BS._tris(body)[1]
         t2 = BS._tris(head)[1] + len(body.data.vertices)
-        P = BS.mesh_section(v, np.vstack([t1, t2]), np.array([0, 0, 1.515]), np.array([0, 0, 1.0]))
-        P = P[np.abs(P[:, 0]) < 0.09]
-        g["neck"] = (round(100 * BS.hull_perimeter(P[:, :2]), 2),) + g["neck"][1:]
+        g["neck"] = (round(100 * neck_tape(v, np.vstack([t1, t2])), 2),) + g["neck"][1:]
     bad = {k: v for k, v in g.items() if abs(v[0] - v[1]) > v[2]}
     return not bad, "cm (measured, target, tol): " + ", ".join(f"{k} {v[0]:.1f}/{v[1]:.1f}" for k, v in g.items()) + \
         f"; out of tolerance {bad}"

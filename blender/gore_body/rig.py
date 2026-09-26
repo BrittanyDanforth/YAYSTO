@@ -455,7 +455,7 @@ MANDIBLE_NEAR = (0.012, 0.022)      # skin within 12 mm of the mandible is head/
 # the chin.  Columns are rays from the neck axis (x = 0, y = NECK_AXIS_Y): skin, fat and muscle shell
 # on one ray share the weight; the fade toward the axis keeps the spine, cord and deep vessels on the
 # neck bone.
-JAW_THROAT = {"z_m": (1.460, 1.548), "sector_deg": (55.0, 95.0), "axis_r_m": (0.030, 0.048),
+JAW_THROAT = {"z_m": (1.528, 1.572), "sector_deg": (55.0, 95.0), "axis_r_m": (0.030, 0.048),
               "neck_axis_y": 0.015}
 
 
