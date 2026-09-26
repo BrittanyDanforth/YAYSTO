@@ -485,6 +485,9 @@ KIND_INPUTS = (
     ("Bone Depth", 'NodeSocketFloat', 0.008, None, None, "Soft tissue thickness over the bone here (m)"),
     ("Crush", 'NodeSocketFloat', 0.0, 0.0, 1.0,
      "Accumulated blunt energy of this hit and its neighbours (0 = single blow, 1 = crushed face)"),
+    ("Axis W", 'NodeSocketFloat', 0.0, None, None,
+     "Depth of this layer's impact below the hit empty along the hit axis (m, <= 0): Local.z + Axis W "
+     "is the same point on every layer"),
 )
 KIND_OUTPUTS = (
     ("Cut", 'NodeSocketFloat'),        # signed distance to the hole outline (m), > 0 inside the hole
@@ -515,6 +518,7 @@ class _KindCtx:
         self.e = t.inp("Elongation")
         self.D = t.inp("Depth")
         self.seed = t.inp("Seed")
+        self.wT = self.w + t.inp("Axis W")            # depth below the hit empty (same on every layer)
         self.layer = t.inp("Layer")
         self.down = t.inp("Down")
         self.rho = (self.u * self.u + self.v * self.v).sqrt()
@@ -1204,8 +1208,12 @@ def _build_blunt():
     # blood from the split lip and torn gum coats the teeth behind it
     teeth_blood = t.smooth(s * 0.03, s * 0.008, c.rho + t.noise(c.np * 200.0) * 0.004) \
         * (c.is_layer(LAYER_TEETH) + c.is_layer(LAYER_GUMS)) * t.smooth(0.2, 0.4, D) * 0.75
-    blood = (pool * is_skin).max(hema * t.smooth(0.2, 0.5, D)).max(contusion).max(teeth_blood)
+    blood = (hema * t.smooth(0.2, 0.5, D)).max(contusion).max(teeth_blood)
+    # (only the torn margin itself is wet, <= ~1.5 mm)
     blood = blood.max(t.smooth(0.0015, 0.0, -cut_split) * split_on * (0.55 + 0.45 * bleed))
+    blood = blood.max(t.smooth(0.002, 0.0, d_cr) * cr * soft_cr * (0.6 + 0.4 * bleed))
+    # blood seeps into the sclera of a crushed orbit
+    blood = blood.max(c.is_layer(LAYER_EYE) * cr * 0.7 * t.smooth(0.05, 0.02, c.rho + nl * 0.006))
     # abraded, crushed margins (2-4 mm, dry brown-red, patchy)
     en = t.noise(c.np * 800.0, detail=2.0)
     edge = t.smooth(s * 0.0035, 0.0, -cut_split + en * 0.0009) * split_on * is_skin
@@ -1214,6 +1222,8 @@ def _build_blunt():
     edge = edge.max(scrape * t.smooth(0.2, 0.5, D) * is_skin * 0.75)
     wound = (t.smooth(s * 0.0009, 0.0, -cut_split) * split_on).max(contusion * 0.5).max(frac * 0.4)
     wound = wound.max(t.smooth(s * 0.006, s * 0.0045, c.rho) * breach)
+    wound = wound.max(t.smooth(0.0015, 0.0, d_cr) * cr * soft_cr)
+    bruise = bruise.max(cr * t.smooth(s * 0.05, s * 0.01, c.rho) * c.lc([1.0, 1.0, 0.0, 0.0, 0.0, 0.6, 0.0, 1.0]))
     tw = c.lc(LAYER_WALL)
     # skin walls run down to the bone (the floor of a blunt split is the
     # bruised periosteum); the arms close in a V toward their mid line
@@ -1221,6 +1231,10 @@ def _build_blunt():
     wl = t.mix(tw * t.mix(0.55, 1.0, crush), (bd * 0.95).min(0.012).max(0.002), is_skin)
     center = t.switch(in_arm, c.center, to_line, 'VECTOR')
     wall = t.vec(0.0, 0.0, -wl) + center * t.switch(in_arm, 0.75 - 0.6 * crush, 0.9)
+    # walls of the crushed opening drop steeply (a crater, not a V)
+    in_cr = cut_cr.gt(cut_split)
+    center = t.switch(in_cr, center, c.center, 'VECTOR')
+    wall = t.switch(in_cr, wall, t.vec(0.0, 0.0, -wl * 1.2) + c.center * 0.1, 'VECTOR')
     _finish_kind(t, cut, disp=disp, dispn=swell, wall=wall, center=center, wound=wound, edge=edge,
                  blood=blood, bruise=bruise, fracture=frac)
     return t
@@ -1312,12 +1326,138 @@ def _build_burn():
     return t
 
 
+# Blast (explosive in the mouth / contact shotgun, REFERENCE_NOTES §5.11):
+# crater radius per size unit and the broken-off mandible segment. The segment
+# is a block of the jaw between two vertical fracture lines and a horizontal
+# one, hinged at its lower edge and swung outward and down, WITH the teeth in
+# it (the same rigid transform is applied to the tooth islands).
+BLAST_R = 0.028               # crater radius (m) per unit of size
+BLAST_ANGLE = (0.38, 0.68)    # hinge rotation of the jaw segment (rad, ~22-39 deg)
+BLAST_SLOT = 0.0011           # half width of the fracture gaps in the jaw (m)
+
+
+def _blast_fragment(t, s, hk, u, v, wT):
+    """Broken-off mandible segment of a blast, in the hit frame.
+
+    s: hit size, hk(k): per-hit random stream, (u, v, wT): hit-frame position
+    with wT measured from the hit empty (same on every layer).
+    Returns (in_frag, moved, slot): 1 inside the segment, the rigidly moved
+    position (u', v', wT') of the point, and the signed distance to the nearest
+    fracture line (< 0 inside a fracture gap).
+    """
+    u1 = s * (-0.020 - 0.008 * hk(21))
+    u2 = s * (0.008 + 0.010 * hk(22))
+    vp = s * (-0.026 - 0.008 * hk(23))          # hinge line (lower fracture)
+    wp = -0.014
+    a = BLAST_ANGLE[0] + (BLAST_ANGLE[1] - BLAST_ANGLE[0]) * hk(24)
+    # the fracture lines are jagged, not ruler-straight
+    jag = t.noise(t.vec(v * 300.0, hk(25) * 7.0, 0.0), detail=2.0) * 0.0012
+    jag_h = t.noise(t.vec(u * 300.0, hk(26) * 7.0, 3.0), detail=2.0) * 0.001
+    uu = u + jag
+    vv = v + jag_h
+    in_u = t.bool('AND', uu.gt(u1), uu.lt(u2))
+    in_frag = t.switch(t.bool('AND', in_u, vv.gt(vp)), 0.0, 1.0)
+    # distance to the three fracture lines (only along the segment's extent)
+    d1 = t.math('ABSOLUTE', uu - u1) + (vp - vv).max(0.0) * 4.0
+    d2 = t.math('ABSOLUTE', uu - u2) + (vp - vv).max(0.0) * 4.0
+    d3 = t.math('ABSOLUTE', vv - vp) + (u1 - uu).max(0.0) * 4.0 + (uu - u2).max(0.0) * 4.0
+    slot = d1.min(d2).min(d3) - BLAST_SLOT
+    cos_a, sin_a = a.cos(), a.sin()
+    dv, dw = v - vp, wT - wp
+    v2 = vp + dv * cos_a - dw * sin_a - s * 0.004
+    w2 = wp + dv * sin_a + dw * cos_a + s * 0.003
+    # a slight twist about the jaw's vertical axis (one side hangs lower)
+    twist = (hk(27) - 0.5) * 0.35
+    u2_ = u + (w2 - wp) * twist * 0.3 + (u - (u1 + u2) * 0.5) * (-0.04)
+    v2 = v2 + (u - (u1 + u2) * 0.5) * twist * 0.25
+    return in_frag, (u2_, v2, w2), slot
+
+
+def _build_blast():
+    """Explosive in the mouth / contact shotgun blast (REFERENCE_NOTES §5.11, ref 13).
+
+    The lower-mid face is blown open from the mouth outward: a large crater
+    (radius ~BLAST_R * size) of shredded skin and muscle with torn, everted
+    flaps, reaching further up toward the nose and one cheek; the maxilla is
+    breached; the mandible breaks along jagged fracture lines and a segment
+    WITH TEETH swings out and down, hanging in the wound (see _build_teeth for
+    the teeth and the loose, missing ones); bone chips lie in the tissue. The
+    surrounding skin is seared, soot-blackened, stippled and swollen.
+    """
+    t = _kind_tree("GH_Gore_Blast", "Blast crater fields")
+    c = _KindCtx(t)
+    s, D = c.s, c.D
+    is_skin = c.is_layer(LAYER_SKIN)
+    is_jaw = c.is_layer(LAYER_JAW)
+    is_bone = c.lc(LAYER_IS_BONE)
+    R = s * BLAST_R
+    # per layer: crater scale (skin widest, the maxilla only locally, the jaw
+    # through its fragment and a small blown-out part)
+    #                 skin  muscle skull jaw   brain eye  teeth gums
+    k_lay = c.lc([1.0, 0.93, 0.5, 0.36, 0.0, 0.0, 0.0, 1.0])
+    ring = t.vec(c.theta.cos() * 1.3, c.theta.sin() * 1.3, c.seed * 13.0)
+    lf = t.noise(ring, detail=3.0, signed=False)
+    star = c.tears(7, first=20, width=(0.1, 0.3), length=(0.25, 1.0), sharp=1.3, wobble=0.3)
+    # the blast tears further up (nose, one cheek) than down
+    phi_up = math.pi * 0.5 + (c.hash(31) - 0.5) * 1.2
+    up = t.smooth(-0.3, 1.0, (c.theta - phi_up).cos())
+    r = R * (0.5 + 0.35 * lf + 0.35 * star + 0.35 * up) * k_lay
+    # shredded margin: large lobes and fine tears
+    r = r + (t.noise(c.np * 260.0, detail=2.0) * 0.0025 + t.noise(c.np * 900.0, detail=2.0) * 0.0008) \
+        * (1.0 - is_bone * 0.5)
+    on = t.smooth(0.3, 0.5, D) * k_lay.gt(0.05)
+    cut_crater = t.switch(on.gt(0.5), -1.0, r - c.rho)
+    # the mandible segment: fracture gaps separate it, it is moved rigidly
+    in_frag, moved, slot = _blast_fragment(t, s, c.hash, c.u, c.v, c.wT)
+    frag_on = is_jaw * t.smooth(0.5, 0.7, D)
+    cut_slot = t.switch(frag_on.gt(0.5), -1.0, -slot)
+    # (the jaw's own crater never eats the segment)
+    cut_crater = t.switch(t.bool('AND', is_jaw.gt(0.5), in_frag.gt(0.5)), cut_crater, -1.0)
+    cut = cut_crater.max(cut_slot)
+    frag_disp = t.vec(moved[0] - c.u, moved[1] - c.v, moved[2] - c.wT) * (in_frag * frag_on)
+    d_out = c.rho - r
+    # torn, everted flaps curling outward (fatty undersides show), shredded
+    flap = t.smooth(R * 0.4, 0.0, d_out) * on * c.lc([1.0, 0.6, 0.0, 0.0, 0.0, 0.0, 0.0, 0.5])
+    curl = 0.5 + 0.8 * t.noise(c.np * 120.0, detail=2.0, signed=False)
+    lift = flap * flap * s * 0.0042 * curl
+    # surrounding tissue swollen, a ring 1-2 R out
+    swell = is_skin * s * 0.0035 * t.smooth(R * 2.4, R * 1.1, c.rho) * t.smooth(0.0, R * 0.3, d_out) * on
+    disp = t.vec(0.0, 0.0, lift) + c.radial * (lift * 0.7) + frag_disp
+    # soot, searing and powder stippling on the skin around the crater
+    soot = is_skin * on * t.smooth(R * 2.2, R * 0.9, c.rho + t.noise(c.np * 80.0, detail=2.0) * R * 0.5) \
+        * (0.45 + 0.55 * t.noise(c.np * 500.0, detail=2.0, signed=False))
+    sear = is_skin * on * t.smooth(R * 0.35, 0.0, d_out + t.noise(c.np * 200.0) * 0.003) * 0.5
+    vd = t.voronoi(c.np, 2200.0, 'F1', 1.0)
+    dcell = t.sep(t.vmath('ADD', t.out(vd, 'Color'), (0, 0, 0)))[0]
+    dots = t.smooth(0.34, 0.12, t.out(vd, 'Distance')) * dcell.lt(0.35 * t.smooth(R * 1.9, R, c.rho)).max(0.0)
+    edge = (dots * is_skin * on).max(t.smooth(0.0015, 0.0, d_out) * on * (1.0 - is_skin))
+    # raw pulped tissue and blood in and at the crater
+    exposed = t.smooth(R * 0.9, R * 0.4, c.rho) * on * c.lc([0.0, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0])
+    wound = (t.smooth(0.0015, 0.0, d_out) * on).max(exposed).max(t.smooth(0.001, -0.0005, slot) * frag_on)
+    blood = (t.smooth(0.0015, 0.0, d_out) * on * 0.85).max(exposed * 0.9) \
+        .max(frag_on * t.smooth(0.004, 0.0, slot) * 0.8)
+    frac = (t.smooth(0.004, 0.0, slot) * frag_on).max(is_bone * on * t.smooth(0.004, 0.0, d_out))
+    bruise = is_skin * on * t.smooth(R * 2.0, R * 0.8, c.rho) * 0.6 * t.inp("Bruising")
+    # walls: the crater drops straight in; the fracture gaps close along their line
+    tw = c.lc(LAYER_WALL)
+    in_gap = t.bool('AND', frag_on.gt(0.5), (-slot).gt(cut_crater))
+    crater_wall = t.vec(0.0, 0.0, -tw * 1.6) + c.center * 0.12
+    gap_wall = t.vec(0.0, 0.0, -tw * 0.6)
+    wall = t.switch(in_gap, crater_wall, gap_wall, 'VECTOR')
+    center = c.center
+    fr_ = soot * 0.9
+    _finish_kind(t, cut, disp=disp, dispn=swell, wall=wall, center=center, wound=wound, edge=edge,
+                 blood=blood, bruise=bruise, burn=sear, fracture=fr_.max(frac))
+    return t
+
+
 KIND_BUILDERS = {
     "bullet": _build_bullet,
     "exit": _build_exit,
     "slash": _build_slash,
     "blunt": _build_blunt,
     "burn": _build_burn,
+    "blast": _build_blast,
 }
 
 
@@ -1404,11 +1544,24 @@ def _build_hit_points():
                           ("hit_Y", Y, 'FLOAT_VECTOR'), ("hit_Z", Z, 'FLOAT_VECTOR'),
                           ("hit_S", S, 'FLOAT_VECTOR'), ("hit_N", N, 'FLOAT_VECTOR'),
                           ("hit_T", tension, 'FLOAT_VECTOR'), ("hit_R", region, 'FLOAT_VECTOR'),
-                          ("hit_seed", seed, 'FLOAT'), ("hit_ok", ok, 'FLOAT')):
+                          ("hit_seed", seed, 'FLOAT'), ("hit_ok", ok, 'FLOAT'),
+                          ("hit_P", T, 'FLOAT_VECTOR'), ("hit_W", (I - T).dot(Z), 'FLOAT')):
         inst = t.store(inst, name, val, dt, 'INSTANCE')
     pts = t.out(t.node('GeometryNodeInstancesToPoints', {'Instances': inst}))
     count = t.out(t.node('GeometryNodeAttributeDomainSize', {'Geometry': pts}, component='POINTCLOUD'),
                   'Point Count')
+    # accumulated energy: repeated blows on one area add up (REFERENCE_NOTES
+    # §5.13). hit_E = sum over the hits of this collection of depth * falloff
+    # (full within 20 mm, none beyond 45 mm), including the hit itself.
+    pts = t.store(pts, "hit_E", 0.0)
+    rin, rout, cur = _repeat(t, count, [("Geometry", 'GEOMETRY', pts)])
+    j = F(t, rin.outputs['Iteration'])
+    g = cur["Geometry"]
+    pj = t.sample(g, t.attr("hit_P", 'FLOAT_VECTOR'), j, 'FLOAT_VECTOR')
+    sj = t.sample(g, t.attr("hit_S", 'FLOAT_VECTOR'), j, 'FLOAT_VECTOR')
+    contrib = sj.z * t.smooth(0.045, 0.02, (t.attr("hit_P", 'FLOAT_VECTOR') - pj).length())
+    g = t.store(g, "hit_E", t.attr("hit_E") + contrib)
+    pts = _end_repeat(t, rout, [("Geometry", g)])["Geometry"]
     t.result("Points", pts)
     t.result("Count", count)
     t.layout()
@@ -1426,10 +1579,14 @@ class _Hit:
         S = smp("hit_S")
         self.seed = smp("hit_seed", 'FLOAT')
         self.N, self.T, self.R = smp("hit_N"), smp("hit_T"), smp("hit_R")
+        self.W = smp("hit_W", 'FLOAT')
         # damage grows the wounds; at damage 0 the whole system is bypassed
         self.s = S.x * (0.3 + 0.7 * damage)
         self.e = S.y.max(0.004)
         self.D = S.z * damage
+        # crushing: summed depth of the blows on this area (a single blow of
+        # depth <= 1 never crushes; three heavy blows on one spot do)
+        self.crush = t.smooth(1.15, 2.3, smp("hit_E", 'FLOAT') * damage)
         P = P if P is not None else t.pos()
         d = P - self.I
         self.u, self.v, self.w = d.dot(self.X), d.dot(self.Y), d.dot(self.Z)
@@ -1449,10 +1606,13 @@ class _Hit:
         t = self.t
         tol_in = t.pick(layer, LAYER_TOL_IN) + self.rho * self.rho * 6.25
         tol_out = t.pick(layer, LAYER_TOL_OUT)
-        if kind == "burn":
+        if kind in ("burn", "blast"):
             # (the face curves away from the hit plane: nose, brow, jaw)
             tol_in = tol_in + 0.012 + self.rho * 0.9
             tol_out = tol_out + 0.02 + self.rho * 0.6
+        if kind == "blast":
+            # (the mandible and teeth lie 10-40 mm behind the lips)
+            tol_in = tol_in + 0.03
         return t.smooth(-tol_in - 0.003, -tol_in, self.w) * t.smooth(tol_out + 0.003, tol_out, self.w)
 
     def within(self, kind, reach=False, layer=None):
@@ -1472,9 +1632,15 @@ class _Hit:
                 return rr.lt(s * 0.022 * 1.55 + 0.004)
             # only the skin blisters / peels, other layers keep their mesh
             return t.bool('AND', rr.lt(s * 0.026 + 0.002), t.compare('EQUAL', layer, LAYER_SKIN, 'INT'))
+        if kind == "blast":
+            if reach:
+                # (soot, stippling and swelling reach ~2.4 crater radii)
+                return self.rho.lt(s * BLAST_R * 2.6 + 0.004)
+            return self.rho.lt(s * BLAST_R * 1.6 + 0.003)
         if kind == "blunt" and not reach:
             # skin/muscle only split near the centre, bone fractures further out
-            rad = s * t.pick(layer, [0.02, 0.018, 0.021, 0.021, 0.0, 0.01, 0.0, 0.012])
+            # (a crushed area opens far wider)
+            rad = s * t.pick(layer, [0.02, 0.018, 0.021, 0.021, 0.0, 0.03, 0.0, 0.012]) * (1.0 + 1.3 * self.crush)
             return self.rho.lt(rad + 0.002)
         if reach:
             # skin and muscle carry the long blood pools, bone only cracks, brain only craters
@@ -1482,7 +1648,8 @@ class _Hit:
             per = {"bullet": [0.034, 0.02, 0.014, 0.014, 0.012, 0.02, 0.03, 0.03],
                    "exit": [0.07, 0.04, 0.045, 0.045, 0.02, 0.03, 0.03, 0.03],
                    "blunt": [0.058, 0.04, 0.045, 0.045, 0.025, 0.04, 0.04, 0.04]}[kind]
-            return self.rho.lt(s * t.pick(layer, per) + 0.002)
+            grow = (1.0 + 0.6 * self.crush) if kind == "blunt" else 1.0
+            return self.rho.lt(s * t.pick(layer, per) * grow + 0.002)
         radius = {"bullet": 0.011, "exit": 0.035, "blunt": 0.021}[kind]
         return self.rho.lt(s * radius + 0.002)
 
@@ -1868,20 +2035,32 @@ def _build_teeth():
 # ---------------------------------------------------------------------------
 # The shared main group
 # ---------------------------------------------------------------------------
-WALL_STEPS = 4
+WALL_STEPS = 6
 # cumulative share of the sideways wall movement reached after each ring
-WALL_PROFILE = (0.07, 0.24, 0.52, 1.0)
+# (x^1.9: walls drop steeply at the lip and converge lower down)
+WALL_PROFILE = tuple(round((k / WALL_STEPS) ** 1.9, 4) for k in range(1, WALL_STEPS + 1))
 # V-shaped incised wounds: depth(v) = D (1 - |v|/hw)^0.8, i.e. the lateral share
 # after each ring is (ring depth fraction)^1.25 -- straight-ish V walls that
 # meet in a line, not a flat-bottomed U
-V_PROFILE = (0.18, 0.42, 0.70, 1.0)
+V_PROFILE = tuple(round((k / WALL_STEPS) ** 1.25, 4) for k in range(1, WALL_STEPS + 1))
 VSHAPE_KINDS = ("slash",)
 # ring from which the blood fill of a bleeding wound spans the wound bed
-FILL_RING = 2
+FILL_RING = 3
+# wall relaxation (Blur Attribute iterations on the wall vertices) and the
+# lumpy relief pushed along the wall normal: (scale 1/m, amplitude m)
+WALL_RELAX = 4
+WALL_LUMPS = ((210.0, 0.00055), (650.0, 0.00018))
 # kinds whose wound bed fills with blood (skin layer, when bleeding), and how
 # far the fill reaches toward the centre line: a cut's bed is flooded; an
 # entrance hole holds a ring of dark clot around a still-open track
-FILL_EXTENT = {"slash": 1.03, "bullet": 0.62, "blunt": 0.8}
+# (bullet entrances have no fill sheet: converging strips read as a camera
+# iris; clot blobs sit in the track instead)
+FILL_EXTENT = {"slash": 1.03, "blunt": 0.8}
+# clot blobs per wall area (relative to CLOT_DENSITY) and the chance that a
+# vertex of the first wall ring starts a tissue strand across the gap
+CLOT_DENSITY = 30000.0        # blobs per m^2 of wall at factor 1
+CLOT_DENSITY_K = {"bullet": 2.5, "exit": 1.3, "slash": 0.9, "blunt": 1.2, "blast": 0.9}
+STRAND_P = {"slash": 0.010, "blunt": 0.03, "exit": 0.02, "blast": 0.02}
 FILL_KINDS = tuple(FILL_EXTENT)
 MAIN_INPUTS = (
     ("Geometry", 'NodeSocketGeometry'),
@@ -1897,9 +2076,11 @@ MAIN_INPUTS = (
     ("Slash Hits", 'NodeSocketCollection'),
     ("Blunt Hits", 'NodeSocketCollection'),
     ("Burn Hits", 'NodeSocketCollection'),
+    ("Blast Hits", 'NodeSocketCollection'),
     ("Wall Material", 'NodeSocketMaterial'),
     ("Blood Material", 'NodeSocketMaterial'),
     ("Bone Material", 'NodeSocketMaterial'),
+    ("Strand Material", 'NodeSocketMaterial'),
     ("Detail", 'NodeSocketInt', 2, 0, 4, "Subdivision level of the refined patch around wounds (render)"),
     ("Viewport Detail", 'NodeSocketInt', 1, 0, 4,
      "Refinement level in the viewport: lower = faster live dragging of the hit empties"),
@@ -1972,7 +2153,7 @@ def _build_wound_step(kind, kind_group):
                               "Bruising": t.inp("Bruising"), "Bleed": t.inp("Bleed"),
                               "Tension": t.vec(h.T.dot(h.X), h.T.dot(h.Y), h.T.dot(h.Z)),
                               "Normal": t.vec(h.N.dot(h.X), h.N.dot(h.Y), h.N.dot(h.Z)),
-                              "Region": h.R, "Age": t.inp("Age"),
+                              "Region": h.R, "Age": t.inp("Age"), "Crush": h.crush, "Axis W": h.W,
                               "Bone Depth": t.switch(t.attr("gh_bone_depth").gt(0.0005), 0.008,
                                                      t.attr("gh_bone_depth"))})
 
@@ -2011,6 +2192,17 @@ def _build_wound_step(kind, kind_group):
         fill = t.switch(t.bool('AND', t.compare('EQUAL', layer, LAYER_SKIN, 'INT'), t.inp("Bleed").gt(0.05)),
                         0.0, FILL_EXTENT[kind])
     g = t.store(g, "g_fill", t.switch(better, t.attr("g_fill"), fill), sel=sel)
+    # clot blobs on the walls and tissue strands across the gap (skin and
+    # muscle walls of bleeding wounds; see _build_cut)
+    soft = t.bool('OR', t.compare('EQUAL', layer, LAYER_SKIN, 'INT'), t.compare('EQUAL', layer, LAYER_MUSCLE, 'INT'))
+    clot = t.switch(soft, 0.0, CLOT_DENSITY_K.get(kind, 0.0)) * t.smooth(0.02, 0.2, t.inp("Bleed"))
+    strand = t.switch(soft, 0.0, STRAND_P.get(kind, 0.0))
+    if kind == "blunt":
+        # a crushed area is pulp: more clot, more strands
+        clot = clot * (1.0 + h.crush)
+        strand = strand * (1.0 + 1.5 * h.crush)
+    g = t.store(g, "g_clot", t.switch(better, t.attr("g_clot"), clot), sel=sel)
+    g = t.store(g, "g_strand", t.switch(better, t.attr("g_strand"), strand), sel=sel)
     g = t.store(g, "g_vshape", t.switch(better, t.attr("g_vshape"), 1.0 if kind in VSHAPE_KINDS else 0.0), sel=sel)
     g = t.store(g, "g_disp", t.attr("g_disp", 'FLOAT_VECTOR') + t.vec(p[7], p[8], p[9]), 'FLOAT_VECTOR', sel=sel)
     g = t.store(g, "g_a", t.vmath('MAXIMUM', t.attr("g_a", 'FLOAT_VECTOR'), t.vec(p[10], p[11], p[12])),
@@ -2065,10 +2257,88 @@ def _build_refine():
     return t
 
 
+def _clot_blobs(t, g):
+    """Dark, glossy clot lumps scattered over the walls and floor of bleeding wounds.
+
+    Flattened, noise-deformed ico spheres (0.7-3 mm) lying on the wall
+    surface, density from g_clot (per wound kind). Real wound walls are
+    clot-filled and lumpy, never a clean tissue sheet (refs 3, 4, 13, 15, 16).
+    """
+    side = t.attr("g_side")
+    on_wall = t.bool('AND', side.gt(1.5), side.lt(WALL_STEPS + 1.5))
+    sel = t.bool('AND', on_wall, t.attr("g_clot").gt(0.01))
+    dist = t.node('GeometryNodeDistributePointsOnFaces', {'Mesh': g, 'Selection': sel,
+                                                          'Density': t.attr("g_clot") * CLOT_DENSITY, 'Seed': 7},
+                  distribute_method='RANDOM')
+    pts, rot = t.out(dist, 'Points'), t.out(dist, 'Rotation')
+    idx = t.index()
+    r1, r2, r3 = (t.rand(0.0, 1.0, idx, 61 + k) for k in range(3))
+    sz = 0.0006 + 0.0024 * r1 * r1
+    ico = t.out(t.node('GeometryNodeMeshIcoSphere', {'Radius': 1.0, 'Subdivisions': 2}))
+    inst = t.node('GeometryNodeInstanceOnPoints', {'Points': pts, 'Instance': ico, 'Rotation': rot,
+                                                   'Scale': t.vec(sz * (0.8 + 0.6 * r2), sz * (0.7 + 0.6 * r3),
+                                                                  sz * 0.45)})
+    blobs = t.out(t.node('GeometryNodeRealizeInstances', {'Geometry': t.out(inst)}))
+    # lumpy, not beads
+    jit = t.noise(t.pos() * 1300.0, detail=2.0, color=True) * 0.00035
+    blobs = t.out(t.node('GeometryNodeSetPosition', {'Geometry': blobs, 'Offset': jit}))
+    blobs = t.store(blobs, "g_wk", float(WALL_STEPS + 2))
+    blobs = t.store(blobs, "g_side", 99.0, 'FLOAT', 'FACE')
+    blobs = t.out(t.node('GeometryNodeSetMaterial', {'Geometry': blobs, 'Material': t.inp("Blood Material")}))
+    return t.out(t.node('GeometryNodeSetShadeSmooth', {'Mesh': blobs, 'Shade Smooth': True}))
+
+
+def _tissue_strands(t, g, vshape):
+    """Tissue bridges: sagging strands of fibrous tissue / vessels spanning the gap.
+
+    Started from random vertices of the first wall ring (chance g_strand) and
+    running across the wound's centre line to the opposite wall, sagging
+    down into the wound. 0.25-0.6 mm thick, a little thinner in the middle.
+    """
+    ring1 = t.attr("g_ring1", 'BOOLEAN')
+    pick = t.rand(0.0, 1.0, t.index(), 97).lt(t.attr("g_strand"))
+    ctr = t.attr("g_ctr", 'FLOAT_VECTOR')
+    wall = t.attr("g_wall", 'FLOAT_VECTOR')
+    cdir = ctr.normalize()
+    lat = cdir * wall.dot(cdir)
+    dn = wall - lat
+    cum1 = t.mix(WALL_PROFILE[0], V_PROFILE[0], vshape)
+    span = (ctr - lat * cum1) * 2.0
+    sl = span.length()
+    ok = t.bool('AND', t.bool('AND', ring1, pick), t.bool('AND', sl.gt(0.0009), sl.lt(0.014)))
+    pts = t.out(t.node('GeometryNodeMeshToPoints', {'Mesh': g, 'Selection': ok}, mode='VERTICES'))
+    rr = t.rand(0.0, 1.0, t.index(), 98)
+    pts = t.store(pts, "s_a", t.pos(), 'FLOAT_VECTOR')
+    pts = t.store(pts, "s_b", span, 'FLOAT_VECTOR')
+    pts = t.store(pts, "s_c", dn * (0.2 + 0.5 * rr) + span * ((rr - 0.5) * 0.3), 'FLOAT_VECTOR')
+    pts = t.store(pts, "s_r", 0.00025 + 0.00035 * t.rand(0.0, 1.0, t.index(), 99))
+    line = t.out(t.node('GeometryNodeCurvePrimitiveLine', {'Start': (0.0, 0.0, 0.0), 'End': (1.0, 0.0, 0.0)}))
+    line = t.out(t.node('GeometryNodeResampleCurve', {'Curve': line, 'Count': 10}))
+    inst = t.node('GeometryNodeInstanceOnPoints', {'Points': pts, 'Instance': line})
+    cur = t.out(t.node('GeometryNodeRealizeInstances', {'Geometry': t.out(inst)}))
+    f = t.out(t.node('GeometryNodeSplineParameter'), 'Factor')
+    bell = f * (1.0 - f) * 4.0
+    wob = t.noise(t.attr("s_a", 'FLOAT_VECTOR') * 900.0 + t.vec(f * 3.0, 0.0, 0.0), detail=1.0, color=True)
+    pos = t.attr("s_a", 'FLOAT_VECTOR') + t.attr("s_b", 'FLOAT_VECTOR') * f \
+        + t.attr("s_c", 'FLOAT_VECTOR') * bell + wob * (0.0003 * bell)
+    cur = t.out(t.node('GeometryNodeSetPosition', {'Geometry': cur, 'Position': pos}))
+    cur = t.out(t.node('GeometryNodeSetCurveRadius', {'Curve': cur, 'Radius': t.attr("s_r") * (1.0 - 0.4 * bell)}))
+    prof = t.out(t.node('GeometryNodeCurvePrimitiveCircle', {'Resolution': 8, 'Radius': 1.0}, mode='RADIUS'))
+    mesh = t.out(t.node('GeometryNodeCurveToMesh', {'Curve': cur, 'Profile Curve': prof,
+                                                    'Scale': t.out(t.node('GeometryNodeInputRadius')),
+                                                    'Fill Caps': True}))
+    for name in ("s_a", "s_b", "s_c", "s_r"):
+        mesh = t.out(t.node('GeometryNodeRemoveAttribute', {'Geometry': mesh, 'Pattern Mode': 'Exact', 'Name': name}))
+    mesh = t.store(mesh, "g_wk", 3.0)
+    mesh = t.store(mesh, "g_side", 99.0, 'FLOAT', 'FACE')
+    return t.out(t.node('GeometryNodeSetShadeSmooth', {'Mesh': mesh, 'Shade Smooth': True}))
+
+
 def _build_cut():
     """Displace, delete the holes, snap the rims and extrude thick walls."""
     t = NodeTree("GH_Gore_Cut", (("Geometry", 'NodeSocketGeometry'), ("Layer", 'NodeSocketInt', 0),
-                                 ("Wall Material", 'NodeSocketMaterial'), ("Blood Material", 'NodeSocketMaterial')),
+                                 ("Wall Material", 'NodeSocketMaterial'), ("Blood Material", 'NodeSocketMaterial'),
+                                 ("Strand Material", 'NodeSocketMaterial'), ("Drip Time", 'NodeSocketFloat', 1.0)),
                  (("Geometry", 'NodeSocketGeometry'),), description="Holes and wound walls")
     layer = t.inp("Layer")
     # gradient of the hole field from the edges around each vertex (before
@@ -2108,14 +2378,16 @@ def _build_cut():
     dn = wall - lat
     prev = 0.0
     vshape = t.attr("g_vshape")
+    # (no per-ring random jitter: sideways jitter larger than the spacing of
+    # the columns folds the wall like an accordion, and every fold shades as
+    # a light/dark stripe -- the "fence plank" artefact of refs/12. The ring
+    # spacing varies smoothly along the rim instead, and the relief is added
+    # afterwards along the wall normal only.)
     for k in range(1, WALL_STEPS + 1):
         cum = t.mix(WALL_PROFILE[k - 1], V_PROFILE[k - 1], vshape)
-        # torn tissue: every ring down the wall is a little more ragged
-        # (two scales, growing down the wall: shredded tissue, not a pleated curtain)
-        jit = t.noise(t.pos() * 320.0 + t.vec(k * 0.37, 0.0, 0.0), detail=2.0, color=True) * (0.0006 * k / WALL_STEPS) \
-            + t.noise(t.pos() * 1100.0 + t.vec(0.0, k * 0.53, 0.0), detail=1.0, color=True) * (0.0003 * k / WALL_STEPS)
+        sp = t.noise(t.pos() * 150.0 + t.vec(1.3, 2.9, 0.7 + 0.37 * k), detail=1.0)
         ex = t.node('GeometryNodeExtrudeMesh', {'Mesh': g, 'Selection': sel_e,
-                                                'Offset': dn * (1.0 / WALL_STEPS) + lat * (cum - prev) + jit},
+                                                'Offset': dn * ((1.0 + 0.3 * sp) / WALL_STEPS) + lat * (cum - prev)},
                     mode='EDGES')
         prev = cum
         g, top, side = t.out(ex, 'Mesh'), t.out(ex, 'Top'), t.out(ex, 'Side')
@@ -2123,17 +2395,41 @@ def _build_cut():
         g = t.store(g, "g_side", float(k), 'FLOAT', 'FACE', sel=side)
         if k == FILL_RING:
             g = t.store(g, "g_fring", top, 'BOOLEAN', 'EDGE')
+        if k == 1:
+            g = t.store(g, "g_ring1", top, 'BOOLEAN', 'POINT')
         sel_e = top
     # floor: shallow wounds close toward their centre line, a bloody bed of tissue
     k = WALL_STEPS + 1
     fsel = t.bool('AND', sel_e, t.attr("g_floor").gt(0.5))
-    jit = t.noise(t.pos() * 500.0, detail=2.0, color=True) * 0.0003
     ex = t.node('GeometryNodeExtrudeMesh', {'Mesh': g, 'Selection': fsel,
-                                            'Offset': (ctr - lat) * 0.92 + jit}, mode='EDGES')
+                                            'Offset': (ctr - lat) * 0.92}, mode='EDGES')
     g = t.store(t.out(ex, 'Mesh'), "g_wk", float(k), sel=t.out(ex, 'Top'))
     g = t.store(g, "g_side", float(k), 'FLOAT', 'FACE', sel=t.out(ex, 'Side'))
+    # relax the wall: the rim outline is ragged (it follows the noisy hole
+    # field), and without this every zig-zag of the rim would run straight
+    # down the wall as a crease. The rim itself (g_wk = 0) stays put.
+    wallv = t.attr("g_wk").gt(0.5)
+    blur = t.node('GeometryNodeBlurAttribute', {'Value': t.pos(), 'Iterations': WALL_RELAX, 'Weight': 1.0},
+                  data_type='FLOAT_VECTOR')
+    g = t.out(t.node('GeometryNodeSetPosition', {'Geometry': g, 'Selection': wallv, 'Position': t.out(blur)}))
+    # lumpy torn tissue: multi-octave 3D noise pushed along the wall normal
+    # only (neighbouring columns move together, so nothing can fold), growing
+    # with depth; no pattern repeats along the rim or down the wall
+    p = t.pos()
+    fr_w = (t.attr("g_wk") / float(WALL_STEPS)).clamp()
+    lump = None
+    for sc, amp in WALL_LUMPS:
+        term = t.noise(p * sc + t.vec(0.7, 3.1, 1.9), detail=2.0, rough=0.55) * amp
+        lump = term if lump is None else lump + term
+    g = t.out(t.node('GeometryNodeSetPosition', {'Geometry': g, 'Selection': wallv,
+                                                 'Offset': t.normal() * (lump * (0.35 + 0.65 * fr_w))}))
     # blood filling the bed of a bleeding cut: a separate liquid sheet spanning
-    # the bed from a ring part-way down the wall (the blood wells up to there)
+    # the bed. It WELLS UP with time: at drip_time 0 it lies at the bottom of
+    # the wound, within the first ~7 s (drip_time 0.12) it rises to its final
+    # level about a third of the way down the wall, from where it overflows
+    # the lowest point of the rim (the runs, see _build_blood).
+    fill_t = t.smooth(0.0, 0.12, t.inp("Drip Time"))
+    level = t.mix(0.42, -0.12, fill_t)
     rsel = t.bool('AND', t.attr("g_fring", 'BOOLEAN'), t.attr("g_fill").gt(0.05))
     fill = t.out(t.node('GeometryNodeDuplicateElements', {'Geometry': g, 'Selection': rsel}, domain='EDGE'),
                  'Geometry')
@@ -2141,18 +2437,21 @@ def _build_cut():
     # edge extrudes into its own glossy slat with its own normal)
     fill = t.out(t.node('GeometryNodeMergeByDistance', {'Geometry': fill, 'Distance': 1e-6}))
     remain = ctr - lat * t.mix(WALL_PROFILE[FILL_RING - 1], V_PROFILE[FILL_RING - 1], vshape)
-    # start a little inside the wall so the liquid meets it without a gap, and
-    # overshoot the centre line so the sheets of both lips overlap
-    fill = t.out(t.node('GeometryNodeSetPosition', {'Geometry': fill, 'Offset': -remain * 0.06 + dn * 0.03}))
+    # start a little inside the wall so the liquid meets it without a gap
+    # (moving the level up also moves the sheet's edge out with the wall)
+    fill = t.out(t.node('GeometryNodeSetPosition', {'Geometry': fill,
+                                                    'Offset': -remain * 0.06 + dn * (0.03 + level) + lat * level}))
     # (the two lips' sheets sag a little toward the centre line and cross in a
     # shallow V there: two coplanar overlapping sheets, or jittered strips,
     # catch the light as a row of glossy slats)
-    ex = t.node('GeometryNodeExtrudeMesh', {'Mesh': fill, 'Offset': remain * t.attr("g_fill") + dn * 0.22},
-                mode='EDGES')
+    ex = t.node('GeometryNodeExtrudeMesh', {'Mesh': fill, 'Offset': (remain - lat * level) * t.attr("g_fill")
+                                            + dn * 0.2}, mode='EDGES')
     fill = t.store(t.out(ex, 'Mesh'), "g_wk", float(WALL_STEPS + 2))
     fill = t.store(fill, "g_side", 99.0, 'FLOAT', 'FACE')
     fill = t.out(t.node('GeometryNodeSetMaterial', {'Geometry': fill, 'Material': t.inp("Blood Material")}))
     fill = t.out(t.node('GeometryNodeSetShadeSmooth', {'Mesh': fill, 'Shade Smooth': True}))
+    clots = _clot_blobs(t, g)
+    strands = _tissue_strands(t, g, vshape)
     # every wall ring gets the wall material (it paints the thin dermis line at
     # its top itself): skin's random-walk subsurface on thin, folded wall
     # strips leaks light and shows as glowing white tabs
@@ -2170,7 +2469,8 @@ def _build_cut():
                          data_type='FLOAT').outputs[0])
     g = t.out(t.node('GeometryNodeSetShadeSmooth', {'Mesh': g, 'Selection': t.bool('AND', side_e.gt(0.3), side_e.lt(0.7)),
                                                     'Shade Smooth': False}, domain='EDGE'))
-    t.result("Geometry", _join(t, g, fill))
+    strands = t.out(t.node('GeometryNodeSetMaterial', {'Geometry': strands, 'Material': t.inp("Strand Material")}))
+    t.result("Geometry", _join(t, g, fill, clots, strands))
     t.layout()
     return t
 
@@ -2262,7 +2562,8 @@ def build_gore_node_group():
     is_teeth = t.compare('EQUAL', layer, LAYER_TEETH, 'INT')
     tn = t.group(teeth_g, {"Geometry": geo_in, "Blunt": hits["blunt"][0], "Count": hits["blunt"][1],
                            "Damage": damage, "Tooth Root": t.inp("Tooth Root"),
-                           "Bullet": hits["bullet"][0], "Bullet Count": hits["bullet"][1]})
+                           "Bullet": hits["bullet"][0], "Bullet Count": hits["bullet"][1],
+                           "Blast": hits["blast"][0], "Blast Count": hits["blast"][1]})
     g = t.switch(is_teeth, geo_in, t.out(tn), 'GEOMETRY')
     # 1. refine where wounds need resolution
     g = t.store(g, "g_n", t.normal(), 'FLOAT_VECTOR')
@@ -2274,6 +2575,8 @@ def build_gore_node_group():
     g = t.store(g, "g_cut", -1.0)
     g = t.store(g, "g_floor", 0.0)
     g = t.store(g, "g_fill", 0.0)
+    g = t.store(g, "g_clot", 0.0)
+    g = t.store(g, "g_strand", 0.0)
     g = t.store(g, "g_vshape", 0.0)
     for name in ("g_disp", "g_wall", "g_ctr", "g_a", "g_b"):
         g = t.store(g, name, (0.0, 0.0, 0.0), 'FLOAT_VECTOR')
@@ -2282,7 +2585,8 @@ def build_gore_node_group():
     g = t.out(t.node('GeometryNodeRemoveAttribute', {'Geometry': g, 'Pattern Mode': 'Exact', 'Name': "g_n"}))
     # 3. holes and walls
     g = t.out(t.group(cut_g, {"Geometry": g, "Layer": layer, "Wall Material": t.inp("Wall Material"),
-                              "Blood Material": t.inp("Blood Material")}))
+                              "Blood Material": t.inp("Blood Material"),
+                              "Strand Material": t.inp("Strand Material"), "Drip Time": t.inp("Drip Time")}))
     # 4. extra geometry: blood on the skin, bone chips on skull and jaw
     is_skin = t.compare('EQUAL', layer, LAYER_SKIN, 'INT')
     is_bone = t.bool('OR', t.compare('EQUAL', layer, LAYER_SKULL, 'INT'), t.compare('EQUAL', layer, LAYER_JAW, 'INT'))
@@ -2293,16 +2597,24 @@ def build_gore_node_group():
     near_hits = t.out(t.node('GeometryNodeProximity', {'Target': all_hits}, target_element='POINTS'), 'Distance').lt(0.12)
     crop = t.out(t.node('GeometryNodeSeparateGeometry', {'Geometry': g, 'Selection': near_hits}, domain='FACE'))
     bn = t.group(blood_g, {"Surface": crop, "Bullet": hits["bullet"][0], "Exit": hits["exit"][0],
-                           "Slash": hits["slash"][0], "Blunt": hits["blunt"][0], "Damage": damage,
+                           "Slash": hits["slash"][0], "Blunt": hits["blunt"][0], "Blast": hits["blast"][0],
+                           "Damage": damage,
                            "Bleed": bleed, "Drip Time": t.inp("Drip Time"), "Material": t.inp("Blood Material")})
-    prox = t.node('GeometryNodeProximity', {'Target': t.out(bn, 'Trail')}, target_element='EDGES')
+    trail = t.out(bn, 'Trail')
+    prox = t.node('GeometryNodeProximity', {'Target': trail}, target_element='EDGES')
+    # the stain a run leaves behind it is as wide as the run itself (the
+    # width of the nearest trail point), a thin translucent film that is only
+    # where the blood actually travelled
     # (an empty trail reports distance 0 everywhere, hence Is Valid)
-    trail_cov = t.smooth(0.0014, 0.0003, t.out(prox, 'Distance')) * t.out(prox, 'Is Valid') * 0.45 * bleed.gt(0.02)
+    ni = t.out(t.node('GeometryNodeSampleNearest', {'Geometry': trail, 'Sample Position': t.pos()}, domain='POINT'))
+    dw_n = t.sample(trail, t.attr("d_w"), ni).max(0.0005)
+    trail_cov = t.smooth(dw_n * 1.45, dw_n * 0.55, t.out(prox, 'Distance') + t.noise(t.pos() * 900.0) * dw_n * 0.25) \
+        * t.out(prox, 'Is Valid') * 0.5 * bleed.gt(0.02)
     a = t.attr("g_a", 'FLOAT_VECTOR')
     g_sk = t.store(g, "g_a", t.vec(a.x, a.y, a.z.max(trail_cov)), 'FLOAT_VECTOR', sel=near_hits)
     g = t.switch(is_skin, g, g_sk, 'GEOMETRY')
     fn = t.group(frag_g, {"Exit": hits["exit"][0], "Blunt": hits["blunt"][0], "Bullet": hits["bullet"][0],
-                          "Damage": damage,
+                          "Blast": hits["blast"][0], "Damage": damage,
                           "Material": t.inp("Bone Material")})
     g = _join(t, g, t.switch(is_bone, empty, t.out(fn), 'GEOMETRY'))
     # 5. contract attributes
@@ -2608,6 +2920,7 @@ def build_gore_system(objs=None, mats=None):
     ident = {it.name: it.identifier for it in ng.interface.items_tree
              if it.item_type == 'SOCKET' and it.in_out == 'INPUT'}
     walls, blood, bone = _wall_materials(mats)
+    strand = (mats or {}).get("GH_Muscle") or bpy.data.materials.get("GH_Muscle") or walls[LAYER_MUSCLE]
     mods = {}
     for name, layer in LAYERS.items():
         ob = objs.get(name)
@@ -2631,6 +2944,7 @@ def build_gore_system(objs=None, mats=None):
         mod[ident["Wall Material"]] = wall
         mod[ident["Blood Material"]] = blood
         mod[ident["Bone Material"]] = bone
+        mod[ident["Strand Material"]] = strand
         mod[ident["Tooth Root"]] = -1.0 if name.endswith("Lower") else 1.0
         # drivers from the global controls
         for prop, sock in (("damage", "Damage"), ("bleed", "Bleed"), ("drip_time", "Drip Time"),
@@ -2640,7 +2954,7 @@ def build_gore_system(objs=None, mats=None):
     return {"node_group": ng, "modifiers": mods, "collections": cols, "controls": ctrl}
 
 
-_GROUP_VERSION = 6
+_GROUP_VERSION = 7
 
 
 # ---------------------------------------------------------------------------
