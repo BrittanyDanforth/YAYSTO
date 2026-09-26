@@ -3,32 +3,69 @@
 Every material is built from Blender's procedural shader nodes only (noise,
 Voronoi, gradients, maths): no image textures, no downloads.  All textures are
 driven by *object* coordinates in metres, so feature sizes are physical
-(pores ~0.45 mm, muscle fascicles ~2.5 mm, fat lobules ~1.5 mm) and nothing
+(pores ~0.45 mm, muscle fibres ~0.4 mm, fat lobules ~1.5-4 mm) and nothing
 needs UVs.
 
 Public API (see CONTRACT.md):
 
-* ``build_materials() -> dict[str, bpy.types.Material]``
-* ``assign_materials(objs, mats)``
+* ``build_materials() -> dict[str, bpy.types.Material]`` builds (or rebuilds in
+  place) GH_Skin, GH_Lips, GH_Muscle, GH_Fat, GH_Bone, GH_Brain, GH_Blood,
+  GH_Eye, GH_Teeth, GH_Gums, GH_Tongue, GH_MouthInterior.
+* ``assign_materials(objs, mats)`` puts them on the anatomy objects
+  (OBJECT_MATERIALS); missing objects are skipped.
 
-Shared building blocks are shader node groups so every tissue looks the same
+Shared building blocks are shader node groups, so a tissue looks the same
 wherever it appears (skin wound rings, the muscle layer, the fat wall ...):
 
 =================  =========================================================
-``GHS_BloodFilm``  wet/dried blood layered over any base (colour, gloss coat,
-                   thickness, dried cracks).  Used by every material.
-``GHS_Muscle``     dark red striated muscle, fascicle seams, fascia, wet sheen
+``GHS_BloodFilm``  wet/dried blood over any base: semi-transparent thin films,
+                   dark glossy pools with clots and darker rims, spatter, dried
+                   cracks.  Used by every material.
+``GHS_Muscle``     dark red muscle, fibres along object Z, fascia, marbling
 ``GHS_Fat``        yellow lobular fat with red septa and capillaries
-``GHS_Bone``       ivory bone with pores, foramina, periosteal vessels, and a
-                   spongy (diploe) variant for broken bone faces
+``GHS_Bone``       ivory bone (pores, foramina, vessels) + spongy diploe
 =================  =========================================================
 
-Global controls: every material has Value nodes named ``GH_wetness``,
-``GH_blood_age``, ``GH_skin_tone`` and ``GH_pallor`` (only those it uses),
-driven from the ``GH_Controls`` empty through ``gh_common.drive``.
+Attributes read (Attribute node, type GEOMETRY; missing = 0 = intact):
+
+=================  =========================================================
+GH_Skin / GH_Lips  gore_wound + gore_depth (dermis 0-0.12, fat -0.55, muscle
+                   -0.95, bone), gore_edge (abrasion), gore_bruise, gore_burn
+                   (erythema, blisters, peeling, leather, char), gore_blood,
+                   gh_lip (anatomy's vermilion mask)
+GH_Fat             gore_depth (top of a skin wall = dermis), gore_blood
+GH_Muscle          gore_depth (>0.96 bone showing), gore_bruise, gore_burn,
+                   gore_blood
+GH_Bone            gore_wound (broken spongy face), gore_fracture (crack
+                   density: lines or zones both work), gore_blood
+GH_Brain           gh_sulcus (anatomy), gore_wound (contusion), gore_blood
+GH_Eye             gore_blood (bloodshot, hemorrhage, film), gore_wound
+GH_Teeth           tooth_id (anatomy, per-tooth shade), gore_blood
+Gums/Tongue/Mouth  gore_blood
+GH_Blood           nothing (colour from blood_age / wetness only)
+=================  =========================================================
+
+Global controls: Value nodes named ``GH_wetness`` and ``GH_blood_age`` (every
+material) and ``GH_skin_tone`` / ``GH_pallor`` (skin, lips), driven from the
+``GH_Controls`` empty through ``gh_common.drive``.
+
+Conventions the other modules rely on:
+
+* Object space = the contract's head space (metres, face toward -Y); the skin,
+  mouth and teeth shaders use landmark positions (FACE_REGIONS, OCCLUSAL_Z),
+  so those objects must keep an identity transform.
+* Eyes: origin at the eyeball centre, local -Y = gaze, radius EYE_R, limbus at
+  |xz| = LIMBUS_R.  The iris is found by refracting the view ray through the
+  cornea onto a plane at y = IRIS_PLANE_Y, so any rotation/scale is fine.
+* Muscle fibres run along object Z.
+* GH_Skin mixes a cheap healthy BSDF with the full damage BSDF by "any gore
+  attribute > 0"; Cycles skips the damage branch on intact skin.
+* setup_stage() is ~1.5 stops hot for these (physically based) albedos: render
+  with ``scene.view_settings.exposure = STAGE_EXPOSURE`` (-1.5).
 
 Run ``python3 materials.py`` for look-dev renders (``renders/materials_*.png``).
-Options: ``--only lookdev,gore,dried,eye,head`` and ``--no-head``.
+Options: ``--only lookdev,gore,dried,close,eye,head``, ``--no-head``,
+``--samples N``, ``--res N``, ``--out DIR``.
 """
 import math
 import os
@@ -685,13 +722,13 @@ def _expression_lines(t, pm):
     side = t.vec(dx, dy, 0.0).length()
     ray = t.vec(side, dz, 0.0).normalize()
     rx, ry, _ = t.sep(ray)
-    crow = t.ridge(t.noise(t.vec(rx * 6.0, ry * 6.0, d.length() * 60.0), 1.0, 2.0, 0.5), 0.04)
+    crow = t.ridge(t.noise(t.vec(rx * 6.0, ry * 6.0, d.length() * 60.0), 1.0, 2.0, 0.5), 0.03)
     crow = crow * t.gauss(pm, (0.055, -0.060, 0.020), 0.011) * dx.smooth(-0.002, 0.004)
     # under the lower lids: fine lines following the lid curve
     ue = t.gauss(pm, (0.032, -0.081, 0.006), 0.009)
     und = t.ridge(t.noise(t.vec(x * 0.08, y * 0.08, z + (x - 0.032) * (x - 0.032) * 12.0), 420.0, 2.0),
                   0.05) * ue
-    return (fore + crow * 0.8 + und * 0.6).clamp()
+    return (fore + crow * 0.45 + und * 0.5).clamp()
 
 
 def _skin_material(g, name="GH_Skin", lips=False):
