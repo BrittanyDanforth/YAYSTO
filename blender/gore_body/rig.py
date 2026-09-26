@@ -348,7 +348,7 @@ def _gates():
     g["neck"] = Gate(NK, (0.0, 0.0, 1.0), ANT, LEFT,
                      o=_k("neck", -0.20, 0.0, 0.42, 0.0), w=_k("neck", 0.47, 0.50, 0.50, 0.50),
                      o_axis=0.0, w_axis=0.020, r_att=(0.020, 0.050),
-                     contain=((0.075, 0.072, 0.075, 0.072), (0.100, 0.097, 0.100, 0.097)), contain_a=(0.04, 0.07),
+                     contain=((0.068, 0.066, 0.068, 0.066), (0.112, 0.108, 0.112, 0.108)), contain_a=(0.04, 0.07),
                      contain_far=(0.5, 0.6))
     u_head = _unit(np.array(bm["head"]["tail"]) - HD)
     g["head"] = Gate(HD, u_head, ANT, LEFT,
@@ -496,7 +496,11 @@ def _head_jaw(p, g_axial, layer="skin"):
     superficial = layer in SUPERFICIAL_LAYERS
     th[m] = _throat(q) if superficial else 0.0
     dj = jaw(q[:, 0], q[:, 1], q[:, 2])
-    near = _sstep(MANDIBLE_NEAR[1], MANDIBLE_NEAR[0], dj) if superficial else _sstep(0.006, 0.002, dj)
+    # the same 12-22 mm band around the mandible joins the HEAD for every layer (turning / nodding the head
+    # moves the skin and what lies under it together); only superficial layers and deep points within
+    # 2-6 mm of the bone also take the JAW share (opening the mouth moves the skin over the mandible, not
+    # the vessels and glands under the jaw line)
+    near = _sstep(MANDIBLE_NEAR[1], MANDIBLE_NEAR[0], dj)
     gh[m] = np.maximum(gh[m], near)
     ds = np.full(len(q), 1.0)
     need = gh[m] > 1e-6
@@ -504,6 +508,8 @@ def _head_jaw(p, g_axial, layer="skin"):
         qq = q[need]
         ds[need] = skull(qq[:, 0], qq[:, 1], qq[:, 2])
     gj[m] = _sstep(-0.004, 0.004, ds - dj)
+    if not superficial:
+        gj[m] *= _sstep(0.006, 0.002, dj)
     return gh, gj, th
 
 
