@@ -3,7 +3,7 @@
  "frame": "body_zup_m",
  "godot_mapping": "(x, z, -y)",
  "generator": "blender/gore_body/build.py",
- "build_id": "gb-f941df51dc85",
+ "build_id": "gb-e10f72d92e84",
  "data": {
   "bones": [
    {
@@ -4346,9 +4346,15 @@
     "limits_deg": {
      "open": [
       -2.0,
-      30.0
+      26.0
      ]
     },
+    "glide_m_per_deg": [
+     0.0,
+     -0.00045,
+     -0.00025
+    ],
+    "rule": "open = rotation about axes.open.world through the bone head (TMJ hinge) PLUS a bone translation of glide_m_per_deg x max(open, 0) in body-frame metres (condyle sliding down the articular eminence); the weights assume both",
     "note": "hinge about +X through the TMJ pivot (bone head, B2 measured); see face.jaw_*"
    },
    "tongue": {
@@ -5219,20 +5225,23 @@
       -1.0,
       0.0
      ],
-     "offset_m": [
+     "mode": "axial",
+     "unit": "m (axial)",
+     "r0_m": null,
+     "offset": [
       0.01485,
       0.0451,
       0.08525,
       0.05005
      ],
-     "half_width_m": [
+     "half_width": [
       0.05005,
       0.0649,
       0.055,
       0.0649
      ],
-     "offset_axis_m": 0.02,
-     "half_width_axis_m": 0.03,
+     "offset_axis": 0.02,
+     "half_width_axis": 0.03,
      "axis_fade_r_m": [
       0.02,
       0.045
@@ -5259,20 +5268,23 @@
       0.0,
       0.5
      ],
-     "offset_m": [
+     "mode": "ray",
+     "unit": "deg (elevation angle from the joint centre)",
+     "r0_m": 0.024,
+     "offset": [
       4.0,
       -8.0,
       -58.0,
       -8.0
      ],
-     "half_width_m": [
+     "half_width": [
       14.0,
       22.0,
       26.0,
       22.0
      ],
-     "offset_axis_m": -15.0,
-     "half_width_axis_m": 30.0,
+     "offset_axis": -15.0,
+     "half_width_axis": 30.0,
      "axis_fade_r_m": [
       0.012,
       0.03
@@ -5299,20 +5311,23 @@
       -1.0,
       0.0
      ],
-     "offset_m": [
+     "mode": "axial",
+     "unit": "m (axial)",
+     "r0_m": null,
+     "offset": [
       0.00406,
       0.0058,
       -0.00406,
       0.0058
      ],
-     "half_width_m": [
+     "half_width": [
       0.01392,
       0.01392,
       0.01392,
       0.01392
      ],
-     "offset_axis_m": 0.0,
-     "half_width_axis_m": 0.014,
+     "offset_axis": 0.0,
+     "half_width_axis": 0.014,
      "axis_fade_r_m": [
       0.008,
       0.02
@@ -5339,20 +5354,23 @@
       0.0,
       0.01174
      ],
-     "offset_m": [
+     "mode": "axial",
+     "unit": "m (axial)",
+     "r0_m": null,
+     "offset": [
       -0.0198,
       -0.0252,
       0.108,
       0.036
      ],
-     "half_width_m": [
+     "half_width": [
       0.0198,
       0.036,
       0.072,
       0.0297
      ],
-     "offset_axis_m": 0.0,
-     "half_width_axis_m": 0.03,
+     "offset_axis": 0.0,
+     "half_width_axis": 0.03,
      "axis_fade_r_m": [
       0.03,
       0.07
@@ -5379,20 +5397,23 @@
       0.0,
       0.00719
      ],
-     "offset_m": [
+     "mode": "ray",
+     "unit": "deg (elevation angle from the joint centre)",
+     "r0_m": 0.0336,
+     "offset": [
       6.0,
       -24.0,
       -45.0,
       -24.0
      ],
-     "half_width_m": [
+     "half_width": [
       20.0,
       26.0,
       20.0,
       26.0
      ],
-     "offset_axis_m": -15.0,
-     "half_width_axis_m": 30.0,
+     "offset_axis": -15.0,
+     "half_width_axis": 30.0,
      "axis_fade_r_m": [
       0.02,
       0.045
@@ -5419,20 +5440,23 @@
       0.0,
       0.00719
      ],
-     "offset_m": [
+     "mode": "axial",
+     "unit": "m (axial)",
+     "r0_m": null,
+     "offset": [
       -0.03502,
       0.02992,
       -0.00986,
       0.0221
      ],
-     "half_width_m": [
+     "half_width": [
       0.02006,
       0.0119,
       0.02006,
       0.0119
      ],
-     "offset_axis_m": 0.0,
-     "half_width_axis_m": 0.015,
+     "offset_axis": 0.0,
+     "half_width_axis": 0.015,
      "axis_fade_r_m": [
       0.015,
       0.035
@@ -5459,20 +5483,23 @@
       0.28902,
       0.0
      ],
-     "offset_m": [
+     "mode": "axial",
+     "unit": "m (axial)",
+     "r0_m": null,
+     "offset": [
       0.006,
       0.009,
       0.018,
       0.009
      ],
-     "half_width_m": [
+     "half_width": [
       0.012,
       0.012,
       0.012,
       0.012
      ],
-     "offset_axis_m": 0.01,
-     "half_width_axis_m": 0.012,
+     "offset_axis": 0.01,
+     "half_width_axis": 0.012,
      "axis_fade_r_m": [
       0.01,
       0.025
@@ -5499,20 +5526,23 @@
       0.0,
       0.0
      ],
-     "offset_m": [
+     "mode": "axial",
+     "unit": "m (axial)",
+     "r0_m": null,
+     "offset": [
       -0.012,
       0.0,
       0.0252,
       0.0
      ],
-     "half_width_m": [
+     "half_width": [
       0.0282,
       0.03,
       0.03,
       0.03
      ],
-     "offset_axis_m": 0.0,
-     "half_width_axis_m": 0.02,
+     "offset_axis": 0.0,
+     "half_width_axis": 0.02,
      "axis_fade_r_m": [
       0.02,
       0.05
@@ -5539,20 +5569,23 @@
       0.0,
       0.0
      ],
-     "offset_m": [
+     "mode": "axial",
+     "unit": "m (axial)",
+     "r0_m": null,
+     "offset": [
       -0.0498,
       -0.036,
       -0.0222,
       -0.036
      ],
-     "half_width_m": [
+     "half_width": [
       0.012,
       0.018,
       0.018,
       0.018
      ],
-     "offset_axis_m": 0.003,
-     "half_width_axis_m": 0.012,
+     "offset_axis": 0.003,
+     "half_width_axis": 0.012,
      "axis_fade_r_m": [
       0.028,
       0.06
@@ -5579,7 +5612,10 @@
       0.0,
       0.0
      ],
-     "offset_m": [
+     "mode": "axial",
+     "unit": "m (axial)",
+     "r0_m": null,
+     "offset": [
       0.04,
       0.07,
       0.095,
@@ -5589,7 +5625,7 @@
       0.095,
       0.07
      ],
-     "half_width_m": [
+     "half_width": [
       0.04,
       0.04,
       0.04,
@@ -5599,8 +5635,8 @@
       0.04,
       0.04
      ],
-     "offset_axis_m": 0.05,
-     "half_width_axis_m": 0.04,
+     "offset_axis": 0.05,
+     "half_width_axis": 0.04,
      "axis_fade_r_m": [
       0.03,
       0.07
@@ -5627,7 +5663,10 @@
       0.0,
       0.0
      ],
-     "offset_m": [
+     "mode": "axial",
+     "unit": "m (axial)",
+     "r0_m": null,
+     "offset": [
       -0.02,
       -0.06,
       -0.105,
@@ -5637,7 +5676,7 @@
       -0.105,
       -0.06
      ],
-     "half_width_m": [
+     "half_width": [
       0.06,
       0.05,
       0.035,
@@ -5647,8 +5686,8 @@
       0.035,
       0.05
      ],
-     "offset_axis_m": -0.01,
-     "half_width_axis_m": 0.035,
+     "offset_axis": -0.01,
+     "half_width_axis": 0.035,
      "axis_fade_r_m": [
       0.03,
       0.07
@@ -5675,7 +5714,10 @@
       0.0,
       0.0
      ],
-     "offset_m": [
+     "mode": "axial",
+     "unit": "m (axial)",
+     "r0_m": null,
+     "offset": [
       -0.118,
       -0.098,
       -0.078,
@@ -5685,7 +5727,7 @@
       -0.078,
       -0.098
      ],
-     "half_width_m": [
+     "half_width": [
       0.035,
       0.03,
       0.018,
@@ -5695,8 +5737,8 @@
       0.018,
       0.03
      ],
-     "offset_axis_m": -0.013,
-     "half_width_axis_m": 0.018,
+     "offset_axis": -0.013,
+     "half_width_axis": 0.018,
      "axis_fade_r_m": [
       0.03,
       0.07
@@ -5713,10 +5755,25 @@
      0.14
     ]
    },
-   "jaw": "Voronoi mandible vs skull (head project SDFs), +-4 mm blend",
+   "jaw": "Voronoi mandible vs skull (head project SDFs), +-4 mm blend; throat sheet JAW_THROAT",
+   "jaw_throat": {
+    "z_m": [
+     1.46,
+     1.548
+    ],
+    "sector_deg": [
+     55.0,
+     95.0
+    ],
+    "axis_r_m": [
+     0.03,
+     0.048
+    ],
+    "neck_axis_y": 0.015
+   },
    "head_near_mandible_m": [
     0.012,
-    0.026
+    0.022
    ],
    "lids": "head_integration.face_weights (B2)",
    "followers": [

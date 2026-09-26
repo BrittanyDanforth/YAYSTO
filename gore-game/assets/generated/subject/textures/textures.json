@@ -3,7 +3,7 @@
  "frame": "body_zup_m",
  "godot_mapping": "(x, z, -y)",
  "generator": "blender/gore_body/build.py",
- "build_id": "gb-f941df51dc85",
+ "build_id": "gb-e10f72d92e84",
  "data": {
   "sets": {
    "head": {
@@ -1420,7 +1420,7 @@
    "uvs": 0.0,
    "sets": 311.0,
    "tileables": 80.8,
-   "painter": 37.1
+   "painter": 36.0
   },
   "files": {
    "body_albedo.png": {
@@ -1428,8 +1428,8 @@
     "sha256": "87cb8fc7e49095db"
    },
    "body_bone.png": {
-    "bytes": 95368,
-    "sha256": "e0415ac5320cf8e5"
+    "bytes": 95243,
+    "sha256": "a79e738fa0a091ae"
    },
    "body_normal.png": {
     "bytes": 1693871,
@@ -1504,8 +1504,8 @@
     "sha256": "07b8f5398cc35b23"
    },
    "head_bone.png": {
-    "bytes": 49369,
-    "sha256": "498ade76a2cb7d6c"
+    "bytes": 49246,
+    "sha256": "9ed4999cffd01d31"
    },
    "head_normal.png": {
     "bytes": 5617330,

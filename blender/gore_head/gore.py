@@ -39,7 +39,7 @@ from mathutils import Vector
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import gh_common as ghc  # noqa: E402
 
-KINDS = ("bullet", "exit", "slash", "blunt", "burn")
+KINDS = ("bullet", "exit", "slash", "blunt", "burn", "blast")
 HITS_ROOT = "GH_Hits"
 HIT_COLLECTIONS = {k: f"GH_Hits_{k.capitalize()}" for k in KINDS}
 GROUP_NAME = "GH_Gore"
@@ -483,6 +483,8 @@ KIND_INPUTS = (
     ("Region", 'NodeSocketVector', None, None, None, "Region weights (scalp, face, neck) at the impact"),
     ("Age", 'NodeSocketFloat', 0.2, 0.0, 1.0, "Wound age (hours = 48 * age^2)"),
     ("Bone Depth", 'NodeSocketFloat', 0.008, None, None, "Soft tissue thickness over the bone here (m)"),
+    ("Crush", 'NodeSocketFloat', 0.0, 0.0, 1.0,
+     "Accumulated blunt energy of this hit and its neighbours (0 = single blow, 1 = crushed face)"),
 )
 KIND_OUTPUTS = (
     ("Cut", 'NodeSocketFloat'),        # signed distance to the hole outline (m), > 0 inside the hole
@@ -765,11 +767,16 @@ def _build_bullet():
     phi_s = t.math('ARCTAN2', -N.y, -N.x)
     ecc = (1.0 / nz - 1.0).min(7.0)
     toward = t.math('COSINE', c.theta - phi_s).max(0.0) ** 1.5
-    w_c = s * 0.002 * (1.0 + 0.15 * t.noise(c.np * 400.0)) * (1.0 + ecc * toward)
-    # (a slightly soft, irregular outer edge: the mesh is ~0.45 mm, a razor
-    # edge would show its stair-steps)
+    # (the width wanders +-30 % around the hole in 4-6 lobes: a real collar is
+    # never a machined ring)
+    lobe_dir = t.vec(c.theta.cos() * 0.8, c.theta.sin() * 0.8, c.seed * 9.0)
+    w_c = s * 0.002 * (1.0 + 0.3 * t.noise(lobe_dir, detail=1.0) + 0.08 * t.noise(c.np * 900.0)) \
+        * (1.0 + ecc * toward)
+    # crisp outer edge (~0.2-0.3 mm of falloff, the mesh is ~0.45 mm): no soft
+    # brown halo beyond it -- a blurred ring reads as a coffee stain
     # (the collar begins AT the hole margin: no band of clean skin between)
-    collar = t.smooth(r + w_c * 1.15, r + w_c * 0.35, c.rho + t.noise(c.np * 380.0) * w_c * 0.25)
+    collar = t.smooth(r + w_c * 1.05 + 0.00015, r + w_c * 1.05 - 0.00015,
+                      c.rho + t.noise(c.np * 380.0) * w_c * 0.12)
     edge = collar * is_skin * (1.0 - contact) + t.smooth(r + 0.0009, r, c.rho) * (1.0 - is_skin)
     # range of fire: stippling (burnt powder grains, abrasions that do not
     # wipe off) and soot (grey-black, wipes off) around close shots
@@ -797,10 +804,10 @@ def _build_bullet():
     exposed = t.smooth(r_above * 1.2, r_above * 0.8, c.rho) * c.opened(c.lc(ABOVE_OPEN_AT))
     # (on the skin the raw margin is the wall itself: the collar reaches the hole)
     wound = (t.smooth(r + 0.0005, r, c.rho) * opened * (1.0 - is_skin)).max(exposed)
-    # blood: a small pool running down from the lower rim
-    bleed = t.inp("Bleed")
-    pool = c.pool(c.L, s * 0.0065 * (0.5 + bleed), bleed * opened, stretch=3.8, drop=r0 * 1.6)
-    blood = (pool * is_skin).max(exposed * 0.9)
+    # blood: none is painted on the skin around the hole (it only gets there by
+    # the traced runs that overflow the wound, see _build_blood); only the
+    # tissue exposed inside the wound is bloody
+    blood = exposed * 0.9
     # brain: permanent track ~11 mm across, haemorrhagic tissue out to r = 18 mm
     crat = t.smooth(0.88, 0.97, D) * is_brain
     rc = s * 0.0055
@@ -905,13 +912,11 @@ def _build_exit():
     lines, _plate = c.cracks(R, n_around=8.0, width=0.00045)
     frac = lines * t.smooth(R * 3.0, R * 1.1, c.rho) * is_bone * opened
     frac = frac.max(t.smooth(s * 0.004, 0.0, d_out) * is_bone * opened)
-    bleed = t.inp("Bleed")
-    pool = c.pool(c.L, R * (0.5 + bleed), bleed * opened, drop=R * 0.6)
-    flap_blood = flap * (0.35 + 0.5 * bleed) * t.smooth(-0.35, 0.35, t.noise(c.np * 330.0))
-    # a wet blood film spreading 10-20 mm around the margin before the runs start
-    film = t.smooth(0.017, 0.004, d_out + t.noise(c.np * 90.0, detail=2.0) * 0.005) * bleed * opened \
-        * (0.55 + 0.35 * t.smooth(-0.3, 0.4, t.noise(c.np * 160.0))) * is_skin
-    blood = (pool * is_skin).max(flap_blood).max(film).max(exposed * (1.0 - is_brain * 0.6)).max(brain_blood)
+    # (no painted pool, film or blotches on the scalp around the exit: blood
+    # only reaches the skin by the runs that overflow the wound; the torn
+    # margin itself is raw, wet tissue -- at most ~1 mm of it)
+    margin = t.smooth(0.0012, 0.0, d_out + t.noise(c.np * 700.0) * 0.0004) * opened * is_skin * 0.7
+    blood = (exposed * (1.0 - is_brain * 0.6)).max(brain_blood).max(margin)
     tw = c.lc(LAYER_WALL)
     # walls: the core narrows toward the axis, the narrow tears of a stellate
     # exit close in a V toward their own line (their two sides never cross)
@@ -1013,9 +1018,12 @@ def _build_slash():
     fall = t.smooth(W, 0.0, d_out)
     gap_v = sgn * d_rim * fall * opened
     # swollen, slightly everted lips; a broad low swelling around the cut
-    lipn = t.noise(c.np * 420.0, detail=2.0)
-    raise_ = ((0.0003 + 0.0005 * D) * t.smooth(0.0035, 0.0, d_out) * (1.0 + 0.35 * lipn)
-              + 0.00025 * t.smooth(0.010, 0.0, d_out)) * (lens ** 0.5) * opened
+    # (at most ~0.4 mm, varying +-50 % along the lip at 3-8 mm: the cut edge
+    # shows its thin dermis line and sits flush or slightly everted, never a
+    # rolled, sausage-like lip)
+    lipn = t.noise(t.vec(u * 190.0, c.seed * 2.9 + sgn * 1.7, 0.0), detail=2.0)
+    raise_ = ((0.00012 + 0.00022 * D) * t.smooth(0.0028, 0.0, d_out) * (1.0 + 0.5 * lipn)
+              + 0.00012 * t.smooth(0.009, 0.0, d_out)) * (lens ** 0.5) * opened
     # superficial scratch tail past the end of the stroke (5-30 mm)
     tail_len = s * (0.005 + 0.02 * c.hash(3))
     ut = u - half_len * 0.72
@@ -1050,23 +1058,16 @@ def _build_slash():
     disp = t.vec(0.0, gap_v, raise_ - score * 0.0008) + t.vec(0.0, 0.0, groove)
     # the cut skin margin itself: raw dermis only right at the edge
     wound = (t.smooth(0.00035, 0.0, d_out) * opened * lens.gt(0.01)).max(exposed).max(score).max(scratch * 0.35)
-    # blood: welling over the lower lip and running down, pooled in the V
+    # blood: the bed fills (the blood-fill sheet, see _build_cut) and overflows
+    # the LOWEST point of the lower lip into the traced runs (_build_blood).
+    # Nothing is painted on the skin beside the cut; the cut dermis edge itself
+    # is wet (<= ~1 mm) and the scratch tail beads a little.
     bleed = t.inp("Bleed")
-    down = c.down
-    low_lip = t.smooth(-0.25, 0.35, sgn * down.y / (down.x * down.x + down.y * down.y).sqrt().max(1e-4))
-    q = t.vec(u - t.clamp(u, -half_len * 0.75, half_len * 0.75), vc - sgn * (open_hw - hw), c.w)
-    # the blood leaves the lower lip in uneven tongues (some long, some
-    # hardly started), never as an even curtain along the whole cut
-    tongue = 0.35 + 0.65 * t.smooth(-0.35, 0.45, t.noise(t.vec(u * 45.0, c.seed * 1.9, 0.0), detail=1.0))
-    pool = c.pool(q, s * 0.005 * (0.5 + bleed) * tongue, bleed * opened * (0.45 + 0.55 * tongue),
-                  stretch=3.2 + 2.0 * tongue, drop=open_hw * 0.6)
-    # a continuous wet film on the lips (thicker on the lower lip), not dots
-    lip_blood = t.smooth(0.004, 0.0, d_out) * lens.gt(0.02) * opened * bleed \
-        * (0.3 + 0.7 * low_lip) * (0.6 + 0.4 * t.smooth(-0.4, 0.3, t.noise(c.np * 120.0, detail=1.0)))
+    lip_wet = t.smooth(0.0009, 0.0, d_out) * lens.gt(0.02) * opened * bleed \
+        * (0.5 + 0.5 * t.smooth(-0.4, 0.3, t.noise(c.np * 260.0, detail=1.0)))
     # bone reached by the cut lies in a pool of blood (periosteum, not white bone)
     bone_bed = reach * is_bone * t.smooth(open_hw * 1.3, open_hw * 0.6, av) * lens.gt(0.02)
-    blood = (pool * is_skin * (0.35 + 0.65 * low_lip)).max(lip_blood).max(exposed * 0.9).max(bone_bed) \
-        .max(scratch * 0.3 * bleed)
+    blood = lip_wet.max(exposed * 0.9).max(bone_bed).max(scratch * 0.3 * bleed)
     _finish_kind(t, cut, disp=disp, wall=wall, center=center, wound=wound, edge=scratch, blood=blood)
     return t
 
@@ -1095,9 +1096,14 @@ def _build_blunt():
     # swelling: some at once, most within the first hours (peak ~24 h)
     # (a goose egg of 5-10 mm is visible within the first hours)
     f_sw = 0.35 + 0.65 * t.smooth(0.02, 3.0, hours)
-    rsw = s * 0.017
-    swell = t.inp("Swelling") * (0.005 + 0.0075 * s.min(1.3)) * f_sw \
+    # a broad goose egg: radius ~25 mm, 8-12 mm high at full swelling, with
+    # a soft falloff (reads from the front as a changed contour)
+    rsw = s * 0.025
+    swell = t.inp("Swelling") * (0.007 + 0.009 * s.min(1.3)) * f_sw \
         * t.math('EXPONENT', -(c.rho / rsw) ** 2.0) * (1.0 + nl * 0.25) * soft
+    # accumulated blows (several hits on one area, see _build_hit_points):
+    # the facial skeleton breaks into pieces and the contour caves in
+    cr = t.inp("Crush")
     # bruise: immediate redness only, a bruise over 30-60 min, deep after hours
     f_br = 0.18 + 0.47 * t.smooth(0.05, 1.0, hours) + 0.35 * t.smooth(3.0, 24.0, hours)
     rb = s * 0.024 * (0.75 + 0.25 * t.smooth(0.2, 24.0, hours))
