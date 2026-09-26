@@ -287,6 +287,7 @@ def _brow_angle(ax, rel):
 
 
 def _hair_bvh(skin):
+    """BVH of the undeformed skin (object space = head space)."""
     from mathutils.bvhtree import BVHTree
     me = skin.data
     verts = [v.co.copy() for v in me.vertices]
@@ -328,7 +329,8 @@ def _brow_strands(bvh, rng, sign, count=330):
         ang = _brow_angle(ax, rel) + rng.normal(0.0, 0.14)
         d = Vector((sign * math.cos(ang), 0.0, math.sin(ang)))
         d = (d - n * d.dot(n)).normalized()
-        length = np.interp(ax, [0.011, 0.02, 0.035, 0.058], [0.0055, 0.0075, 0.0085, 0.0055]) * rng.uniform(0.75, 1.15)
+        length = np.interp(ax, [0.011, 0.02, 0.035, 0.058], [0.0055, 0.0075, 0.0085, 0.0055]) \
+            * rng.uniform(0.75, 1.15)
         lift = 0.28 + rng.uniform(-0.08, 0.1)
         root = loc + n * 0.00005
         pts = []

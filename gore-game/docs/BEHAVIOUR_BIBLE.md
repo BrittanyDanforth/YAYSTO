@@ -1495,4 +1495,1092 @@ Two controls per bone chain `[E]` on R2-02 §13, R2-03 §7–§8, RB §4.10:
 - A limp body folded at the hips bends its knees; a limp arm dropped over the face hits the face.
 - A living unconscious body keeps breathing (chest moves 5–10 mm); a dead one is completely still.
 
-<!-- CONTINUE: section 5 -->
+---
+
+## 5. Involuntary movement layer
+
+Time origins as R2-04 §0.3:
+- `t_inj`: the injury;
+- `t_LOC`: loss of consciousness;
+- `t_apn`: apnoea;
+- `t_arr`: circulatory arrest (last effective beat);
+- `t_dead` = `t_arr` + 300 s.
+
+### 5.1 Generator gating (each sign needs living tissue)
+
+| Sign | Needs working | Abolished by | Window | Tag |
+|---|---|---|---|---|
+| Purposeful movement, protection, speech | Consciousness | LOC (≤ 100 ms) | Until `t_LOC` | `[K] (H)` |
+| Moan, groan, scream | Medulla + breathing | Apnoea, medullary destruction, GCS V1 | Until coma deepens | `[K] (H)` |
+| Fear tremor | Consciousness | LOC | Conscious phase | `[K] (M)` |
+| Shivering, teeth chattering | Hypothalamus, brainstem, cord, muscle; core > 30–32 °C; perfusion > 0.5 | Deep shock, hypoxia, coma, cord lesion (below it) | Stops before or at LOC | `[K] (M)` |
+| Syncopal / anoxic jerks | Brainstem alive, cortex failing | Brainstem destruction | `t_LOC` → +30 s | `[S R2-04:S1]` |
+| Anoxic tonic spasm | Brainstem | Medullary destruction | 10–40 s after flow stops | `[K⚠] (L–M)` |
+| Epileptic seizure | **Perfused cortex** (perfusion > 0.3 for the last 10 s) | Flat EEG (15–30 s after flow stops); cortical destruction | Not after ~30 s of no flow | `[K] (H)` |
+| Posturing | Lower pons/medulla + cord | Medullary failure (becomes flaccid) | Hours of coma | `[S R2-04:S10]` (H) |
+| Agonal gasping | **Medulla** + phrenic nerves (C3–C5) | Medullary destruction; C1–C3 section (face and neck "gasps" without air) | Mostly 10 s – 5 min after `t_arr` | `[K] (M)` |
+| Snoring, gurgling | Spontaneous breathing | Apnoea | Unconscious and breathing | `[K] (H)` |
+| Cough, active vomiting, hiccup | Medulla | Deep coma, brain death | Living | `[K] (M)` |
+| Passive regurgitation | Nothing | — | Living, dying and **dead** (when moved) | `[K] (M)` |
+| Spinal reflexes ("Lazarus") | Perfused cord with the brain dead | Cord ischaemia | Brainstem death → `t_arr` + 60–180 s | `[S R2-04:S11]` |
+| Fasciculations | Living motor axons | Axonal failure | Living, and sparse to 10–20 min after `t_arr` | `[K] (L)` |
+| Idiomuscular bulge | Muscle fibre only | Muscle death | Visible to ~1.5–2.5 h after death, when struck | `[K] (L) RB §6.7` |
+| Roving eyes, doll's eyes, pupil reflex, blink | Pons + midbrain | Brainstem failure | Coma with an intact brainstem | `[S R2-04:S16,S17]` |
+| Sweating | Hypothalamus → sympathetic chain → perfusion | `t_arr`; below a cord lesion | Stops at `t_arr` | `[K] (M)` |
+
+**Debug assertions** `[K] R2-04 §12`:
+- `assert_no_gasp_if_medulla_dead`
+- `assert_no_rattle_before` 30 min unconscious
+- `assert_no_mottling_before` 10 min of shock
+- `assert_no_cyanosis_if_hb_below` 5 g/dL
+- `assert_no_spontaneous_motion_after` `t_arr` + 20 min
+- `assert_no_upgaze_in_dead`
+
+### 5.2 Breathing, airway noise and agonal gasps
+
+**Unconscious airway by posture** `[K] (M)`, `[E] R2-04 §2.1`:
+
+| Posture | P(snoring) / P(complete obstruction) | Fluids |
+|---|---|---|
+| Supine, head neutral | 0.6–0.8 / 0.1–0.2 | Pool in the pharynx: gurgling, aspiration |
+| Supine, head extended | 0.2–0.3 / < 0.05 | Pool |
+| Slumped, chin on chest | 0.5–0.7 / 0.2–0.3 | Run out onto the chest |
+| On the side | 0.1–0.2 / < 0.05 | **Drain from the lower mouth corner and nostril** |
+| Prone | 0.1–0.2 / 0.05–0.1 (higher on soft surfaces) | Pool under the face; bubbling |
+
+- **Complete obstruction**: effort without air. See-saw chest and belly, suprasternal tugging, no sound, hands to the throat if conscious. Lips blue in 60–120 s; heart arrest in 4–8 min `[K] (M)`.
+
+**Agonal gasping** `[K] (M)` / `[E] R2-04 §2.2`:
+
+| Quantity | Value | Tag |
+|---|---|---|
+| P(gasps) | Destroyed heart / VF 0.45; exsanguination to PEA 0.4; asphyxia with a beating heart 0.7 (0.7–0.9); **medulla destroyed 0**; × exp(−t_onset / 300 s) for late rolls | `[K]` ✓ (33–40 % literature band) |
+| First gasp | 5–120 s after `t_arr` (default 30; 15–30 equally defensible) | `[K⚠]` |
+| Interval | Starts at 10 s (6–20), each × 1.3 (1.15–1.5) → 10, 13, 17, 22, 29, 37, 48 s | `[E]` |
+| Count / phase | 8 (3–30) / 1–5 min; the eight defaults end at ~206 s | `[E]` ✓ arithmetic |
+| Amplitude | × 0.85 per gasp | `[E]` |
+| False last breath | p 0.3: 1–2 more gasps after a 30–120 s silence | `[E]` |
+| One gasp | Inspiration **0.2–0.6 s**, short and violent: head and neck extend 5–30°; **jaw drops 15–35 mm**; lips pull back; nostrils flare; shoulders lift 5–15 mm; upper belly out 10–30 mm (see-saw if obstructed). Early gasps come with a small arm or shoulder jerk, p 0.2–0.4 per gasp in the first minute (then 0.05). Expiration passive 1–3 s; the jaw half-closes. Limp and silent between gasps | `[K] (M)` `[E]` |
+| Eyes during gasps | Move with the head (no counter-rotation); pupils keep dilating | `[K]` |
+| Meaning | A brainstem reflex, **not recovery**; without circulation no gasp keeps the brain alive | `[K] (H)` |
+
+- **C1–C3 section, awake**: silent gasping attempts (mouth opening, neck straining, shoulder shrugs) at 10–30 /min, slowing with hypoxia and stopping at LOC after 90–180 s. No airflow, no sound `[E]`.
+- **Brain-death pseudo-gasps**: shoulders elevate and adduct, back arches, intercostals pull in. No airflow, no sound; only inside the spinal-reflex window `[K] (M)`.
+- **Pontine and medullary patterns** (apneustic, cluster, ataxic): §1.7.4.
+- **Slow deaths only (hours)** `[K] (L–M) R2-04 §2.3–2.4`:
+  - **death rattle**: p 0 if unconscious < 30 min; 0.3–0.5 if unconscious and not swallowing > 60 min;
+  - **mandibular breathing**: the jaw drops 5–20 mm with every breath, ~2–3 h before death;
+  - final breaths shallow and 30–120 s apart, often ending with a gasp or a passive sigh.
+
+**Airway fluids** `[K] R2-04 §2.5–2.7`:
+- **Conscious with blood in the airway**: sits up, leans forward, refuses to lie back; spits every 5–30 s; coughs in bouts of 1–5 every 10–60 s (head and trunk jerk 5–15° forward per cough); swallowed blood is vomited 10–60 min later as dark clots.
+- **Unconscious supine**: gurgling with every breath; bubbles at the lips and nostrils.
+- **Aspiration**: ~1–3 mL/kg impairs oxygenation; ~10 mL/kg or a clot at the larynx asphyxiates within minutes `[E] (L)`.
+- **Vomiting sequence** (conscious or lightly unconscious):
+  1. nausea 10–120 s: pallor, sweat, salivation, repeated swallowing, yawning;
+  2. retching: 2–10 heaves at ~1 /s;
+  3. expulsion: 0.5–2 s, 50–500 mL, a jet up to 0.5–1.5 m when upright;
+  4. recovery: gasp, cough, spit.
+
+  Unconscious supine: aspiration p 0.5–0.8 per episode (on the side 0.1–0.2).
+- **Neurogenic pulmonary oedema** (massive head injury surviving > 15 min): visible white-to-pink froth at the nose and mouth, p 0.2 (0.2–0.3); onset 15 min – 4 h (default 45 min); reforms within minutes when wiped `[E]`.
+- **Dead body moved roughly**: regurgitation p 0.05–0.15 per movement; a passive groan when the chest is pressed (p 0.3 per heavy press in the first 12 h, RB §6.8).
+
+### 5.3 Anoxic sequences
+
+**Convulsive syncope and circulatory LOC** `[S R2-04:S1,S2]` ✓:
+
+| Feature | Value |
+|---|---|
+| LOC (faint that recovers) | 12.1 ± 4.4 s |
+| Myoclonic jerks | 90 % of induced faints (game: 0.8 for sudden cardiac or haemorrhagic LOC, 0.5 for slow onset) |
+| Jerk count | 1–10 (median ~3–5, rarely ~20), irregular, multifocal, proximal and distal, **no slowing pattern**, over 5–15 s (never > 30 s) |
+| Automatisms | Head turning, lip smacking, chewing, righting attempts: 79 % |
+| Eyes | Open; transient upgaze (§2.3) |
+| Brief tonic stiffening | p 0.1–0.2 for 1–5 s (opisthotonus, arms extended) |
+| Moan | p 0.2–0.4 |
+| Urine | p 0.1–0.25 |
+| Tongue bite | Rare (< 0.05), at the **tip** |
+| Colour | **Pale** |
+| Recovery lying flat | Oriented within ~30 s; hallucinations reported afterwards in ~60 % ("I saw lights") |
+
+**Complete circulatory arrest, second by second** (destroyed heart, VF, asystole) `[K] (H)` Rossen 1943 ✓, R2-04 §3.2:
+
+| t after `t_arr` | Body | Eyes | Breathing / sound |
+|---|---|---|---|
+| 0–4 s | Nothing visible | Normal | Normal |
+| 3–7 s | Vision greys and tunnels; action continues | Unfocused | May gasp a word |
+| **5–10 s (cuff); 8–15 s for a destroyed heart** (× 0.85 upright, × 1.2 supine) | **LOC**; tone gone; fall 0.6–1.2 s | Open, fixed stare | Air forced out on impact |
+| LOC + 0–3 s | Collapse | Upgaze 10–30° begins (p 0.6–0.9) | — |
+| LOC + 1–15 s | Jerks (p 0.6–0.9, 1–10); head turns; lip smacking | Up, then drifting back | Snoring possible |
+| 15–30 s | Anoxic tonic spasm (p 0.15–0.3): arms extended and turned in, legs extended, back and neck arched, jaw clenched, 5–20 s, then limp; urine p 0.1–0.2; EEG flat | Mid-position; lids start to droop | Irregular, then stops or becomes gasping |
+| 20–60 s | First gasp (p ~0.45) | No movement relative to the head | Snort, gurgle |
+| 30–45 s | — | Pupils start to dilate | — |
+| 60–120 s | Face grey-blue with full blood volume; waxy white if exsanguinated | 6–8 mm, fixed, slightly divergent | Gasps every 10–30 s |
+| 1–5 min | Gasps weaken and stop; faint twitches of fingers, face or calves | Lids half-open | A final passive sigh |
+| 5 min | `t_dead` | — | — |
+
+**Brain cut off while the heart still beats** (neck compression; brainstem compression at the end of herniation; C1–C3 after LOC, whose times stretch 5–10× before LOC because the insult is hypoxic, not ischaemic) `[K] (M) R2-04 §3.3` ✓ recall:
+
+| Event | Time from the onset of cerebral ischaemia |
+|---|---|
+| LOC | ~10–15 s |
+| Generalised convulsive jerks | ~15 s |
+| Decerebrate extension | ~20 s |
+| Rhythmic abdominal breathing movements | From ~15–20 s |
+| Decorticate flexion | ~40 s |
+| Loss of tone | ~1–1.5 min |
+| Last respiratory movement | ~1–2 min |
+| Last isolated twitches | ~2–7.5 min (default 4 min) |
+
+**Order: jerks → extension → flexion → limp.**
+
+### 5.4 Seizure sequence
+
+**Generalised tonic–clonic seizure (GTC) master schedule**, t = 0 at generalisation. Mean total **62 s** (30–120); only 27 % of seizures show every phase `[S R2-04:S3]` ✓ (M).
+
+| Phase | t (s) | Body | Eyes / face | Jaw / tongue | Breathing / sound | Skin / autonomic |
+|---|---|---|---|---|---|---|
+| Focal onset (wound-related, optional) | −10 to 0 | Contra hand and face clonic jerks 1–3 Hz; head turns **away** from the wounded hemisphere 30–90° over 1–3 s | Eyes forced away from the focus | Mouth pulled to one side | — | — |
+| Pre-tonic clonic (p 0.2–0.3) | 0–5 | 2–6 bilateral irregular jerks at 1–3 Hz | — | — | — | — |
+| Onset | 0–1 | Sudden LOC; stiff topple (B) or crumple | **Eyes open wide** (p 0.9–0.97), deviate up or sideways | Mouth opens | **Epileptic cry** (p 0.3–0.5): a forced groan through closed cords, 0.5–3 s | Pupils 6–8, unreactive within 1–3 s |
+| Tonic flexion | 0–3 (≤ 5) | Shoulders up and abducted, elbows half-flexed, **arms rise**, trunk flexes slightly | Up | Opens, then clamps | Air pushed out | HR rising |
+| Tonic extension | 3–15 (tonic total 10–20; range 2–40) | **Back and neck arch**; legs extend and adduct; feet plantarflex; arms extend and turn in, or stay flexed; **figure-of-4** after a focal onset (extended elbow contra to the focus, p 0.3–0.5) | Open, deviated; face contorted | **Clenched**: lateral tongue-bite risk | **Apnoea**; grunt | **Cyanosis from ~10–20 s**; HR 120–160+; bladder may void |
+| Vibratory transition | 15–20 (2–5 s) | Fine fast quiver, 8–12 Hz, 0.5–2° (additive animation) | — | — | — | — |
+| Clonic | 20–60 (30–60; ≤ 90) | **Bilateral synchronous flexor jerks** (elbow 20–50°, knee 10–30°, trunk 5–15°), each 100–250 ms of contraction. **Frequency falls from 3–4 Hz to 0.5–1 Hz; gaps lengthen**; ~60–70 jerks in total | Lids jerk with each beat; eyes nystagmoid | **Jaw snaps shut with each jerk** (5–15 mm); froth (pink if the tongue is bitten) | Grunt or snort on each jerk | Cyanosis peaks, then eases |
+| End | ~60 | Last jerks 1–3 s apart; sometimes a final tonic spasm; **completely limp** | Drift; lids partly close | Slack | Deep sighing breath | Sweaty |
+
+- **Clonic frequency** `[E]` ✓ qualitatively: f(t) = f_end + (f_start − f_end)·exp(−(t − t_c0)/τ), with f_start 3–4 Hz, f_end 0.5–1 Hz, τ 10–20 s. Stop when the next interval would exceed 2–3 s.
+- **Probabilities per GTC** `[K] (L–M) R2-04 §4.2`: eyes open 0.9–0.97; cry 0.3–0.5; **lateral** tongue bite 0.2–0.35 (specific for GTC); froth 0.2–0.4; cyanosis 0.6–0.9; urine 0.2–0.4; faeces 0.02–0.05; vomiting afterwards 0.05–0.1; facial petechiae 0.05–0.15.
+
+**Post-ictal state** `[K] (M) R2-04 §4.3`:
+
+| t after the last jerk | Body | Eyes | Breathing | Response |
+|---|---|---|---|---|
+| 0–30 s | Totally limp where it fell | Half-closed 2–5 mm or open; roving or still deviated; pupils large and sluggish | Pause 5–20 s, then **deep, loud, snoring breaths** 20–30 /min, gurgling saliva, froth | None |
+| 0.5–5 min | Limp; Todd's paresis of the seizing side (mean 173 s, 11 s – 22 min) | Pupils return to normal and reactive | Snoring fades over 1–5 min; colour from blue to pale | Withdraws and moans to pain |
+| 5–15 min | Stirs, rolls, pulls at clothes; combative if restrained | Opens to voice | Normal | Confused words |
+| 15–60 min | Sits up; headache, sore muscles, sleepy | Normal | Normal | Oriented by 30–60 min |
+
+**Focal and other seizures** `[S R2-01:S107,S108,S109]` `[E]`:
+
+| Type | Rhythm and amplitude | Duration | Consciousness |
+|---|---|---|---|
+| Focal clonic (hand, face) | 1–4 Hz, regular; finger/wrist 10–40° per jerk; mouth corner 3–8 mm; eyelid closure | 10 s – 2 min | Often kept |
+| Versive | Head 30–90° away from the focus over 1–3 s; eyes 20–40° | 5–30 s | Lost at the end |
+| Jacksonian march | Spreads in homunculus order, hand → forearm → arm → face (or foot → leg → arm → face), **5–30 s per segment** | 10 s – 2 min | Kept until it generalises |
+| Frontal / SMA | Abrupt, asymmetric tonic posture (fencing-like arm, leg "bicycling"), loud vocalisation | 10–40 s | Quick recovery |
+| Epilepsia partialis continua | One part at 0.5–3 Hz | > 1 h | Kept |
+| Subtle status in coma (massive head injury > 30 min, p 0.05–0.1) | Rhythmic twitches of an eyelid, mouth corner, finger or toe at 0.5–3 Hz, 1–5 mm; nystagmoid eye jerks | Minutes–hours | Coma |
+| Todd's paralysis | Weakness of the seizing side after the seizure | Mean 173 s (11 s – 22 min; case reports to 36–48 h); adds to the lesion deficit | — |
+
+**Telling the collapses apart** (for animators) `[K] R2-04 §3.4`:
+
+| Feature | Convulsive syncope / anoxic | GTC seizure | Anoxic tonic spasm | Knockout (fencing) |
+|---|---|---|---|---|
+| First | Fall, then jerks | Stiffening (often a cry), then the fall | Stiffening 10–30 s after flow stops | Instant tonic arm posture at impact |
+| Jerks | 1–10, irregular, multifocal | Dozens, rhythmic, synchronous, **slowing** 3–4 → ~1 Hz | None or a few | None |
+| Duration | 5–20 s | ~60 s (30–120) | 5–20 s | 2–10 s (≤ 20) |
+| Colour | **Pale** | **Blue, congested** | Pale-grey | Normal |
+| Afterwards | Awake < 30 s (if circulation returns) | Snoring stupor, confused 5–30 min | Follows the underlying process | Wakes within seconds to minutes, dazed |
+| Tongue | Tip, rarely | **Side**, p 0.2–0.35 | — | — |
+
+### 5.5 Twitches, release movements, spinal reflexes
+
+| Movement | When | Look | Probability / rate | Tag |
+|---|---|---|---|---|
+| Fasciculations (living) | Exhaustion, cold, adrenaline, hypoxia, shock | A 30–100 ms flicker under the skin; a finger or toe twitches 1–5 mm; calves, thighs, deltoids, face, eyelids | 0.1–2 /s per active site | `[K] (L)` |
+| Eyelid myokymia | Same | Rippling of the lid | Bursts of 10–30 s | `[K] (M)` |
+| **Release after upper-brainstem destruction** (midbrain / upper pons, medulla spared) | 0–60 s after the hit | Tonic extension (decerebrate-like) 5–30 s; then 2–8 irregular bursts of hip/knee flexion–extension of 10–40° over 10–60 s (human kicking is rarer, shorter and smaller than in animal footage); finger or face twitches | Tonic p 0.3–0.6; kicking p 0.1–0.2; twitches p 0.3 | `[E] (L) R2-04 §5.3` |
+| Release after medullary / cervicomedullary destruction | 0–60 s | Flaccid at once; spinal-only kicks | Kicks p 0.05–0.15; twitches p 0.2 | `[E] (L)` |
+| Massive bihemispheric destruction, brainstem intact | 0–60 s | Posturing | p 0.3–0.5 | `[E]` |
+| **Spinal reflexes after brainstem death** | Brainstem death → `t_arr` + 60–180 s (the cord still perfused) | Undulating toe flexion (toes 2 → 5, 1–3 s waves); triple flexion (hip, knee, ankle) to a foot pinch, 1–5 s; brief finger or toe flexion; pronation–extension of an arm on neck flexion; respiratory-like shoulder heaves without air | Any movement p 0.2–0.4; **stimulus-triggered** (player flexes the neck or stamps on a foot) p 0.3–0.5 per stimulus | `[S R2-04:S11]` `[K]` ✓ (13–79 % across series; ~39 % Saposnik) |
+| **Lazarus sign** | Same window; triggered by hypoxia or moving the body | Both elbows flex 90–130°, shoulders adduct 10–30° and flex 20–60°, hands rise to the chest, neck or chin, sometimes crossing; fingers flex; trunk flexes 10–40° as if sitting up; drive 30–50 %. **A slow target change, never an impulse**: rise 2–5 s, hold 3–10 s, fall 5–15 s; gooseflesh and sweating may accompany it | p 0.03–0.05 | `[K] (M)` |
+| Post-mortem fine twitches | 1–15 min after `t_arr` | Fingers, eyelids, lips, calves | p 0.2–0.4 per body; 0.5–5 /min decaying with τ 3–5 min; none after 15–20 min | `[E] (L)` |
+| Post-anoxic myoclonic status | Circulation continues or returns after > 5 min of brain hypoxia | Repetitive jerks of face, eyelids, trunk and limbs, **triggered by touch, noise or movement**, 0.5–2 bursts/s; the eyes may open and deviate up | p 0.2; hours | `[K] (M) R2-04 §5.2` |
+| Idiomuscular bulge | Dead ≤ ~2 h; a direct hit on a muscle belly | A 5–20 mm local bulge; no joint motion > 5° | p 0.1–0.3 per hit | `[K] (M)` |
+| Hemiballismus | STN roll (§1.2) | Violent flinging of one arm and leg: shoulder 40–120°, hip 20–60° per excursion; irregular bursts of 0.2–1.0 s at 0.5–2 movements/s; continues when lying down | Minutes–weeks | `[S R2-01:S25,S26]` |
+| Intention tremor | Cerebellar hemisphere | 3–5 Hz, 1–5 cm at the fingertip, rising in the last 10–20 cm of a reach | While reaching | `[S R2-01:S44]` ✓ |
+| Titubation | Vermis | Head and trunk 2–4 Hz, 1–3 cm | Sitting or standing | `[K] (L)` |
+| Holmes (rubral) tremor | Midbrain, weeks later | < 4.5 Hz; rest + posture + intention | Time skips only | `[S R2-01:S44]` ✓ |
+| Cadaveric spasm | Death during intense activity | A grip frozen at the moment of death; **hands only, never the face** | ≤ 0.01 | `[K] RB §6.6` |
+
+**A dead body never** shivers, trembles, breathes rhythmically, postures, blinks, tracks or flinches at a sound `[K] (H) R2-04 §5.5`.
+
+### 5.6 Tremor, shivering and chattering (visual only: additive bone offsets after physics)
+
+| Type | Frequency | Amplitude | When | Stops | Tag |
+|---|---|---|---|---|---|
+| Fear / adrenaline tremor | 8–12 Hz | 0.5–3 mm at the fingertip (0.2–1.5° at wrist and fingers); severe 5–10 mm; jaw, lips, voice | During and after a violent event; lasts **5–30 min** | At LOC | `[K] (M) R2-04 §6.1` |
+| Injured or exhausted leg under load | 4–8 Hz | Visible knee shake | Standing or kneeling | When unloaded | `[K] (L–M)` |
+| Shivering | Bursts 4–8 per minute, each a 5–10 Hz visible shake | BSAS 1: neck and chest; 2: + arms (hands 5–20 mm); 3: whole body (shoulders 0.5–2°) | Core 35.5–36 °C (earlier with cold skin); peaks at 34–35 °C. After a major bleed: onset 10–40 min in a conscious class II–III casualty, p 0.3–0.5 | Obtundation, class IV, SpO₂ < 80 %, GCS ≤ 8, core < 30–32 °C, below a cord lesion | `[K] (M) R2-04 §6.2` ✓ |
+| Teeth chattering | 5–12 Hz | Jaw 1–5 mm | Often the first sign of shivering; follows the bursts | With shivering; clenching stops it | `[E] (L)` |
+| Gooseflesh | — | Bumps 0.5–1 mm on forearms, thighs, shoulders (normal map) | Living: cold or fear, onset 10–60 s. **Dead: hours** (rigor of the arrector pili) | — | `[K] (M)` |
+
+- Shivering behaviour when conscious: hunched, arms folded, hands in the armpits, knees drawn up, stuttering voice, "I'm so cold" `[K] (H)`.
+
+### 5.7 Posturing episodes (timing)
+
+| Quantity | Value | Tag |
+|---|---|---|
+| Latency from a noxious stimulus (pain, being moved, loud noise, chest pressure) | 0.2–1 s | `[E]` on `[K]` |
+| Build-up / hold / release | 0.5–2 s / stimulus duration + 2–10 s (spontaneous episodes 5–60 s) / 1–3 s | `[E] R2-01 §18.2` |
+| Refractory period | 5–20 s | `[E]` |
+| During plateau waves | Bursts every 30 s – 5 min for 5–20 min | `[S R2-01:S86]` |
+| Accompaniment | Moan or grunt at onset (V2), jaw clenching (decerebrate), sweating, HR and BP rise | `[K] (M)` |
+| Progression | Decorticate → decerebrate → flaccid. Stopping at medullary failure is a bad sign | `[K] (H)` |
+
+### 5.8 Implementation mapping
+
+| Movement class | How to drive it | Parameters | Tag |
+|---|---|---|---|
+| Myoclonic jerks, gasp jerks, release kicks | Brief target offset of 10–30° for 80–200 ms at high stiffness, or an off-centre linear impulse J / r at distance r from the joint | Peak ω 1–8 rad/s; excursion 5–30° (fast but small; nothing flails across the room) | `[E] R2-04 §11.3` |
+| Clonic seizure jerks | Synchronous bilateral target offsets at f(t) (§5.4) | Clonic tone state (§4.4) | `[E]` |
+| Tonic phases, posturing, Lazarus | Joint targets with ramp, hold and release | §4.4 posture table | `[E]` |
+| Tremor, shivering, chattering, vibratory phase | **Additive bone rotation after the physics step** (the 60 Hz tick undersamples them) | 0.2–2°, band-limited noise, burst envelopes | `[E]` |
+| Fasciculations | Shader "twitch spots" (≤ 4 active per character) | Radius 10–30 mm; displacement 0.3–1.5 mm; rise 20–40 ms; decay 60–150 ms | `[E]` |
+| Breathing and gasps | Additive chest and belly blendshapes or spine bones; neck and jaw as 20–40 % drive targets when limp, so gravity wins between gasps | §5.2 | `[E]` |
+| Irregular events (jerks, twitches, coughs, spits) | Poisson scheduling: next event after −ln(u) / rate | — | `[E]` |
+| Structured sequences (gasps, clonic phase, Lazarus, shivering bursts) | Explicit schedules, rolled once on state entry | — | `[G]` |
+
+**Angular impulses for visible jerks** `[E] R2-04 §11.3`:
+
+| Segment (about) | I (kg·m²) | Peak ω (rad/s) | J = I·ω (N·m·s) |
+|---|---|---|---|
+| Hand (wrist) | 0.0035 | 3–8 | 0.01–0.03 |
+| Forearm + hand (elbow) | ~0.08 | 2–5 | 0.16–0.4 |
+| Whole arm (shoulder) | ~0.45 | 1–3 | 0.45–1.35 |
+| Shank + foot (knee) | ~0.40 | 1–3 | 0.4–1.2 |
+| Whole leg (hip) | ~2.6 | 0.5–2 | 1.3–5.2 |
+| Head | 0.03–0.10 | 1–4 | 0.03–0.4 |
+
+### 5.9 Probability summary (defaults for tuning)
+
+| Event | Default p | Condition |
+|---|---|---|
+| Agonal gasps | 0.45 / 0.4 / 0.7 / **0** | Destroyed heart or VF / exsanguination to PEA / asphyxia with a beating heart / medulla destroyed |
+| Anoxic myoclonus at LOC | 0.8 / 0.5 | Sudden / slow onset |
+| Upgaze at LOC | 0.6–0.9 | Circulatory LOC |
+| Anoxic tonic spasm | 0.15–0.3 | Arrest ≥ 15 s |
+| Release extension / kicking | 0.3–0.6 / 0.1–0.2 | Midbrain or upper pons destroyed |
+| Spinal reflex / Lazarus | 0.2–0.4 / 0.03–0.05 | Brainstem dead, heart beating (C-09) |
+| Post-mortem twitches | 0.2–0.4 | First 15–20 min after `t_arr` |
+| GTC cry / lateral tongue bite / froth / urine | 0.3–0.5 / 0.2–0.35 / 0.2–0.4 / 0.2–0.4 | GTC |
+| Vomiting | 0.07 / 0.28 / 0.2–0.35 / 0.2–0.4 | Minor head injury / skull fracture / comatose massive head injury / abdominal or groin wound |
+| Visible neurogenic-oedema froth | 0.2 | Massive head injury surviving > 15 min |
+| Death rattle | 0.3–0.5 | Unconscious > 60 min |
+| Shivering | 0.3–0.5 | Conscious, class II–III, 10–40 min |
+| Urine at death | 0.2–0.3 | — |
+| False last breath | 0.3 | If gasping |
+
+### Simulation parameters (involuntary movement)
+
+| Parameter | Value / range | Unit | Notes | Tag |
+|---|---|---|---|---|
+| `gate_*` | §5.1 | bool | Checked on every event | `[K] (H)` |
+| `gasp_schedule` | first 30 s; interval 10 × 1.3ⁿ; 8 gasps; amplitude × 0.85 | s | False last breath p 0.3 | `[E]` |
+| `gasp_pose` | neck extension 5–30°; jaw 15–35 mm; shoulders 5–15 mm; inspiration 0.2–0.6 s; expiration 1–3 s | — | | `[E]` |
+| `syncope_jerks` | 1–10 over 5–15 s, irregular | — | | `[S R2-04:S1]` ✓ |
+| `anoxic_tonic` | p 0.15–0.3; 5–20 s; starts 15–30 s after `t_arr` | — | | `[K⚠]` |
+| `cerebral_arrest_loc` | 5–10 (cuff) / 8–15 (heart); × 0.85 upright, × 1.2 supine | s | | `[K] (H)` ✓ |
+| `ischaemic_beating_heart_seq` | LOC 10–15; jerks 15; extension 20; flexion 40; limp 60–90; last breath 60–120; last twitch 110–450 (240) | s | | `[K] (M)` ✓ recall |
+| `gtc_total` / `tonic` / `clonic` | 62 (30–120) / 10–20 / 30–60 | s | | `[S R2-04:S3]` ✓ |
+| `gtc_clonic_f` | 3–4 → 0.5–1 Hz, τ 10–20 s | — | Stop when the interval exceeds 2–3 s | `[E]` |
+| `vibratory` | 8–12 Hz, 0.5–2°, 2–5 s | — | Additive | `[K] (L)` |
+| `postictal_stertor` / `confused` | 1–5 / 10–60 | min | | `[K] (M)` |
+| `todd_duration` | 173 (11–1,320) | s | | `[S R2-01:S110]` ✓ |
+| `jackson_segment_time` | 5–30 | s | Full march p 0.1 | `[E]` |
+| `release_tonic_p` / `kick_p` | 0.3–0.6 / 0.1–0.2 | p | Midbrain or upper pons | `[E] (L)` |
+| `spinal_reflex_p` / `lazarus_p` / `stim_p` | 0.2–0.4 / 0.03–0.05 / 0.3–0.5 | p | Window `t_arr` + 60–180 s | `[S R2-04:S11]` `[K]` |
+| `pm_twitch` | p 0.2–0.4; 0.5–5 /min; τ 3–5 min; none after 15–20 min | — | | `[E] (L)` |
+| `fear_tremor` | 8–12 Hz; 0.5–3 mm; 5–30 min | — | | `[K] (M)` |
+| `shiver` | bursts 4–8 /min; 5–10 Hz visible; onset 10–40 min after a major bleed | — | | `[K] (M)` |
+| `posture_trigger_latency` / `refractory` | 0.2–1 / 5–20 | s | | `[E]` |
+
+### Visual/behavioural checklist (involuntary movement)
+- A heart-shot or bled-out body is not still after it falls: eyes up for a few seconds, a handful of irregular jerks, maybe a brief rigid arch, then snorting gasps with the head jerking back and the mouth gaping, spaced further and further apart for a few minutes.
+- A medullary (lower brainstem) hit: **no breathing movement at all**, no gasps, no cough. Lips turn blue over a minute or two while the heart still beats.
+- A seizure starts stiff (with a cry, eyes open, face turning blue), then jerks rhythmically, **slowing down** over about a minute, then loud snoring stupor with froth.
+- A faint shows few, irregular jerks and a pale face, and the person wakes in about 12–30 s.
+- Minutes after a brainstem shot the toes may curl in a wave; rarely both arms slowly rise to the chest and sink back.
+- A frightened survivor's hands and jaw shake finely for many minutes; a cold bleeding casualty shivers in waves, jaw first, until it drifts toward unconsciousness.
+- Nothing in this layer looks voluntary, and nothing responds to the player the way a conscious person would.
+
+---
+
+## 6. Severe trauma visuals addendum
+
+Source: R2-05. Its values are `[K]`/`[E]`; no web source was reachable in that session. RB §2 already covers entrances, exits, ranges of fire, the burst energy rule (`E_dep`) and ordinary wounds. This section lists what each **destructive** injury looks like, which render layers it needs, and what the behaviour and audio systems do with it.
+
+### 6.0 Layer codes
+
+| Code | Layer | Notes |
+|---|---|---|
+| `SDF` | Rest-space wound SDFs in the skin and tissue shaders | ≤ 64 per character, 3 × vec4 each (RB §2.0) |
+| `TEX` | Texture-space damage and paint layer | Bruise, soot, blood film, drying, blanching |
+| `MESH` | Authored damage-state meshes or fracture variants | Burst vault, plates, destroyed jaw, bone ends |
+| `CAP` | Cross-section cap shader | Layered skin / fat / muscle / bone at cut or torn surfaces |
+| `BS` | Blendshapes | Swelling, globe deflation, head collapse, chemosis, tongue swelling, flail paradox |
+| `SB` | Soft-body or short bone chains | Tongue, scalp flaps, hanging globe, bowel loops, skin sleeves |
+| `RB` | Rigid debris | Bone plates and chips, teeth, hemisphere masses, fragments |
+| `PART` | GPU particles | Mist, droplets, froth, bubbles, fat globules, brain clumps |
+| `FLUID` | Blood emitters, rivulets, pools | RB §3.11 |
+| `DEC` | World decals | Spatter, cast-off, pools, smears, prints, voids |
+| `SH` | Tissue material by tissue ID with an ageing lerp | §6.1 |
+| `JNT` | Fracture joint inserted in the ragdoll | §4.2 |
+| `EYE` | Eye mode switch | intact / ruptured / luxated / hanging / enucleated |
+
+### 6.1 Exposed tissue palette (condensed; full table R2-05 §1.1)
+
+| Tissue | Fresh | Living 30–60 min | Dead, drying 2–6 h | Roughness (wet → dry) | SSS (mm) | Signature |
+|---|---|---|---|---|---|---|
+| Dermis, cut edge | `#E3B7A6` | `#D9A796` | `#A8745E` | 0.45 → 0.75 | 1.0 | Pink-white band 1–4 mm |
+| Subcutaneous fat | `#EBD27E` | `#E2C56C` | `#CDAA55` | 0.30 → 0.55 | 3–5 | Lobules 3–10 mm bulging 2–10 mm from a fresh cut |
+| Galea / fascia / tendon | `#E0DAD2` / `#E4E2DC` / `#ECE8DE` | — | Translucent amber `#C9B98E` | 0.20 → 0.50; tendon anisotropic | 0.5 | Silvery; tendon "watered silk" banding |
+| Skeletal muscle | `#8E2A2A` | Weak bloom toward `#A5362F` (≤ 30–50 % in the living) | `#6B3A2E` (brown, drying) | 0.25 → 0.60 | 1–2 | Cut across fibres: stippled end-grain, wide gape. Along: streaks, narrow gape |
+| Cortical bone | `#E9DFCC` | `#EFE7D6` (chalky) | `#F1EBDF` | 0.50 → 0.80 | 0.3 | Matte, granular fracture face |
+| Red / yellow marrow | `#B5524A` / `#E4C36A` | — | `#5E2A22` / `#B8923E` | 0.40–0.70 | 1–3 | Yellow beads 0.5–3 mm float on the blood |
+| Grey / white matter; pulped brain | `#B79C94` / `#E6DACA`; `#9E5A55` | — | `#8A6E66` / `#BFAE98`; crust `#6A3A34` | 0.15 → 0.55 | 2–3 | The softest tissue: sags, smears, strings; pulp yield stress 50–200 Pa |
+| Liver / spleen / kidney | `#6E2C22` / `#5E4A5C` capsule, `#5A1624` pulp / `#7B3B2E` | darker | `#4E2219` / `#463444` / `#5A2C22` | 0.15 → 0.50 | 0.5–1 | Inelastic: stellate cracks and pulp |
+| Lung (aerated / collapsed / contused) | `#D9A5A0` + black lines / `#8A3A4A` / `#5A1A2A` | — | `#9A6A68` | 0.30 → 0.55 | 1–2 | Spongy; exudes pink froth |
+| Myocardium | `#7A2A28` | `#6E2624` | `#5A2220` | 0.30 → 0.55 | 1 | Coarse spiral bundles under a glossy epicardium |
+| Artery / vein / nerve | Pale ring `#E8D2C8` / `#4E3A5E` / `#EDE6D2` | — | — | 0.25–0.35 | 0.5–1 | Artery pulsates 5–10 % per beat; the vein is a flat ribbon; the nerve is a white string that does not bleed |
+| Sclera / uvea / vitreous | `#F2EEE6` / `#3A2420` / clear gel (IOR 1.336) | — | Sclera `#D8CFC0` | 0.15 | 1.5 | §6.2 row 13 |
+
+**Ageing** `[K] (M) R2-05 §1.5`:
+
+| Time | Living (perfused) | Dead |
+|---|---|---|
+| 0–2 min | Everything wet and glossy (roughness 0.1–0.3) | Same, no new ooze |
+| 10–30 min | Fat edges go matte | Muscle blooms, then turns tacky |
+| 30–120 min | Yellow-pink exudate and fibrin film | Muscle browns; bone chalks |
+| 2–6 h | Margins swell | Parchment-brown edges; brain crust |
+| 6–24 h | — | Dark leathery surfaces |
+
+Living tissue ages at 0.3–0.5 × the dead rate.
+
+### 6.2 Injury recipes
+
+**Head (bursts, blunt destruction, scalp)**
+
+| # | Injury | Trigger rule | What the player sees | Dynamics and timing | Layers | Behaviour / audio hand-off |
+|---|---|---|---|---|---|---|
+| 1 | **Contact or ≤ 1 m shotgun to the head** (vault burst) | `E_dep` ≥ 500–700 J (p 0.95–1.0 for 12-gauge at contact to 1 m); ejected fraction capped by site | Entrance 3–5 cm stellate with soot and muzzle stamp. Far-side crater 8–20 cm, or the upper vault missing. Scalp split into 3–8 radial flaps (50–150 mm) with torn, everted margins and matted hair. The **face stays as a loose sagging mask**: eyes at different heights, bulging or ruptured (p 0.3–0.6 per eye). Intraoral: lips split at the corners (p 0.3–0.6), cheeks torn; ceiling deposits. **The head collapses into a soft "bag"** (20–60 % of 20–80 fragments leave, the rest stay under the scalp) | Burst 0–1 ms; ejection 1–10 ms; plume 10–100 ms; fallout 0.2–1.5 s; ceiling drips 1–60 s. Ejecta: fine 20–60 m/s, clumps 10–40 m/s, plates 5–20 m/s, in a 20–40° cone plus a slow 60–90° component. The heart pumps blood out of the defect for 1–10 min | `MESH` (burst vault, flaps) `BS` (collapse 0.3–0.8 when resting) `RB` (plates, chips) `PART` `FLUID` `DEC` (cone, ceiling) `SH` | Instant flaccid collapse **where it stands** (no throw); a single jerk or extensor stiffening in 0–2 s; twitches ≤ 5–20 s; apnoea if the brainstem is destroyed. Audio: shot + wet crack, patter 30–300 ms, dripping |
+| 2 | Buckshot to the head at 1–3 m | 9 pellets in a 3–8 cm group | Separate or confluent 6–9 mm holes; radial cracks linking them; 0–30 % of the brain ejected; partial burst only at the near end | — | `SDF` `MESH` (cracks) `PART` | As the track resolves (§1) |
+| 3 | **Rifle burst / Krönlein shot** | `E_dep` ≥ 1,000 J partial; ≥ 1,500 J Krönlein (intact hemispheres p 0.2–0.4) | Small entrance (5–8 mm skin), massive exit (40–120 mm). The vault splits into 4–30 plates **along sprung sutures** (gaps 2–20 mm); 2–6 scalp burst lacerations (30–150 mm) over the vertex. The brain is ejected as a large mass or as recognisable hemispheres (400–600 g) lying 0.5–5 m down-range; the posterior fossa contents often remain. Soft-point bullets leave a "lead snowstorm" of fragments. 5.56 mm varies from a clean perforation to a full burst | As row 1 | `MESH` (suture-aware split) `RB` (hemisphere soft-rigid meshes that slide 0.1–0.5 m) `PART` `DEC` | As row 1 |
+| 4 | **Hammer at one site, progression** | Blow energy 30–120 J; fracture logistic (frontal 23 J, temporal 10 J, parietal 30 J, occipital 40 J) | **Blow 1**: crescent or stellate laceration 10–40 mm, bump and bruise, **no spatter**. **Blows 2–3**: depressed fracture 25–40 mm across, 5–15 mm deep, 2–6 inner-table fragments driven in; dural tear p 0.3–0.6; impact spatter and cast-off start. **Blows 4–8**: ragged 40–80 mm defect; **comminuted mosaic** of 10–30 fragments (5–25 mm) with concentric rings and radial lines to 50–150 mm; fragments driven 10–30 mm into the brain; pulped brain and chips extrude. **> 8**: a 60–120 mm cavity; loss of vault shape; skull-base fractures | Per blow: +3–10 mm depression, +2–6 fragments. Oblique blows: terraced depressions. Exception: if the head is already bleeding, the first blow at a new site does spatter | `SDF` `MESH` (depression, mosaic) `BS` `RB` (chips) `PART` `DEC` (impact spatter 20–300 stains per blow; cast-off trails) | Coup stun under the site; M1/S1 deficits if over the strip; seizure risk (§1.8). Audio: knock → crack → crunch-squelch (§7) |
+| 5 | Crushed head (stomp on a hard floor, heavy object) | 50–200 J per stomp; repeated | Flattened perpendicular to the load (height −20–60 %) and widened; eggshell comminution (10–60 fragments); **bursting scalp lacerations** at the sides (30–120 mm) with tissue bridges; brain at the ears, nose and orbits; eyes pushed forward or out; jaw dislocated | Crepitus when moved | `MESH` `BS` (flatten) `RB` `PART` | Immediate death with brief terminal twitches. Audio: dull thuds, cracks, wet crunching |
+| 6 | **Brain herniating through a skull defect** (living victim) | Open skull + rising ICP | The brain bulges 5–30 mm above the bone edge, growing over minutes to hours; surface purple-red and congested, with a dark haemorrhagic collar `#5A1A22` where the edge strangles it; **pulses 1–3 mm with each heartbeat** and 0.5–2 mm with breathing; pulp, CSF and blood ooze 1–10 mL/min, surging × 2–5 with coughs and screams; through a 10–20 mm gap it extrudes as a soft ribbon | Pulsation stops at the last effective beats; the surface dulls within minutes | `BS` (bulge) `SB` `SH` `FLUID` (CSF-diluted: pinker, spreads 1.5–2 × wider, does not clot) | ICP model §1.7 |
+| 7 | **Scalp avulsion** | Traction on bundled hair; tangential blow; knife scalping | A thick hairy flap (5–7 mm) with a **glistening white-grey galea underside**, separating through the subgaleal plane. Underneath: pink membrane (`#E6CFC4`) with pinpoint bleeding, or bare ivory bone with red pinpoints and wavy sutures. Margins torn and curled, retracted 5–10 mm. Partial avulsion: a flap hinged at the temple or occiput hangs over the face or neck. Knife scalping: an oval 8–15 cm crown defect with incised edges | Bleeding **50–150 mL/min**, falling to 20–60 mL/min over 10–30 min (the vessels are held open); class III shock after 15–45 min | `MESH` / `SB` (flap) `CAP` `SH` `FLUID` | Conscious: blood in the eyes, blinks, wipes, pushes the flap back; exposed bone itself is not painful |
+
+**Face and jaw**
+
+| # | Injury | Trigger rule | What the player sees | Dynamics and timing | Layers | Behaviour / audio hand-off |
+|---|---|---|---|---|---|---|
+| 8 | **Lower-face / mandible avulsion** | `E_dep` ≥ 400–700 J in the lower face (submental rifle or shotgun) | Lower lip and chin gone; **the tongue hangs 5–10 cm below the upper teeth** (swells +20–50 % over 10–60 min); the floor of the mouth is open into the neck (pale submandibular glands `#D8B8A0`); the remaining rami hang with a few teeth; ropes of blood and saliva | Bleeding 100–300 → 30–100 mL/min after 5–10 min; swallowed blood (> 150 mL) is vomited dark 10–30 min later | `MESH` (destroyed jaw) `SB` (tongue, 4–6 joints) `BS` (swelling) `PART` `FLUID` | **Often conscious** (p 0.7–0.9 if the track stays in front of the skull base): leans forward, gurgling grunts, spits teeth; **supine → the tongue falls back → obstruction** (LOC 1–3 min). Voice: vowels only, fixed open F1 700–900 Hz; can still moan and scream |
+| 9 | Mid-face avulsion | Tangential rifle; close shotgun to the mid-face | Open nasal cavity: septum, dark red scroll-shaped **turbinates** (bleed heavily), pale-lined sinus cavities; upper teeth lost; globes sag 2–10 mm when the orbital floors are gone | Bleeding 50–200 mL/min, mostly backward into the throat | `MESH` `SH` `FLUID` | Coughs blood; hypernasal speech; airway risk |
+| 10 | Transfacial (cheek to cheek) / bilateral mandible fracture | Handgun or rifle across the face; hammer | Teeth visible through the cheek defect; the front jaw segment pulled down and back ("flail"); the mouth hangs open | Tongue falls back when supine | `SDF` `JNT` (jaw) `BS` | Drools; no /p b m/ sounds; airway risk when supine |
+
+**Eye**
+
+| # | Injury | Trigger rule | What the player sees | Dynamics and timing | Layers | Behaviour / audio hand-off |
+|---|---|---|---|---|---|---|
+| 11 | **Ruptured globe** (blunt or penetrating) | Normalised energy ≥ 24,000–35,000 J/m² for 50 % risk (a hammer face gives 37,000–245,000; a fist is stopped by the rim; a thumb or pellet at 40–75 m/s reaches the globe) | **Soft, deflated, wrinkled globe** (volume −20–80 %); the corneal highlight breaks into patches; **360° dark red ballooned chemosis** (`#7A0A14`, 2–6 mm); peaked "teardrop" pupil; a dark uveal bead 1–5 mm at the wound; clear-to-pink vitreous strands 1–3 cm draping over the lid; hyphema ≤ 0.25 mL with a level ("eight-ball" when full); lens dislocated or extruded, clouding over minutes to hours; lids swell shut in 10–60 min | Blood-tinged tears | `EYE` (ruptured) `BS` (deflation, chemosis) `SB` (vitreous strands) `PART` `SH` | Blepharospasm, hand over the eye, tearing; oculocardiac reflex (HR −20–40 %, nausea, faint); misreaches (loss of depth perception) |
+| 12 | Luxation / hanging globe / enucleation | Thumb gouge, orbital burst | **Luxated**: the globe 10–20 mm forward, lids locked behind its equator. **Hanging** (needs optic-nerve avulsion or orbital-wall destruction to reach the cheek; with the nerve intact, travel is only ~10–15 mm): white sclera with 1–4 red muscle stumps and a white nerve cord 3–6 mm thick. **Enucleated**: dark red socket, yellow fat herniating, lids sinking; the detached globe clouds in 1–2 h and dries yellow-brown | Socket bleeding 10–50 → 5–15 mL/min after 5 min | `EYE` `SB` (hanging chain) `RB` (detached globe) `SH` | Double vision if the luxated eye still sees |
+
+**Neck**
+
+| # | Injury | Trigger rule | What the player sees | Dynamics and timing | Layers | Behaviour / audio hand-off |
+|---|---|---|---|---|---|---|
+| 13 | **Cut throat through the trachea** | Knife depth reaches the airway | Gape 10–30 mm (skin), 30–50 mm through the trachea with the head extended (× 0.3–0.5 flexed); cartilage rings and pink mucosa; the lower trachea retracts 1–3 cm; exhaled air **bubbles through the blood** (2–15 mm bubbles, pink foam); inspiration sucks blood in and the cough **sprays out of the neck wound** (1–3 coughs per 10 s) | Aspiration caused 36.5 % of deaths in a 74-case autopsy series ⚠ | `SDF` `CAP` `PART` (bubbles, foam, spray) `FLUID` | **Aphonic below the cords** (mouths words); weak wet voice above them; `HOLD_NECK` |
+| 14 | Carotid / jugular cut | Track or blade reaches the carotid sheath | Scarlet pulsing jet 0.5–1.5 m from the carotid; dark welling from the jugular that surges on expiration and screaming and sucks air on inspiration (hiss, frothy dark blood) | Jet shortens as MAP falls; stops at `t_arr` | `FLUID` `DEC` (arterial arcs, one cluster per beat) | §8 scenario 5 |
+| 15 | Near-decapitation (close shotgun to the neck) | Contact–1 m shotgun to the neck | Gape 5–15 cm; vertebra or disc visible; trachea and oesophagus open; carotid stumps jetting; **the head hangs back or sideways on a bridge of skin and posterior muscle** | Cord transected: immediate flaccid collapse and apnoea | `MESH` `JNT` (neck limits removed) `CAP` `FLUID` | Cut strings |
+| 16 | Complete decapitation | Heavy chop or tearing force; **a knife only through a disc space after 30–80 strokes (30–180 s)** | Body stump: skin retracted 1–3 cm; muscles retracted unevenly (SCM 2–4 cm); open tracheal ring; carotid stumps jetting 20–60 cm and fading to welling in 10–30 s; flat jugular stumps; white disc annulus or red cancellous bone; the cord as a white 10–13 mm cylinder with a grey butterfly in section | Body stump external loss 500–1,500 mL over 1–3 min. Head: LOC **4–10 s (default 7)**; eyes open; facial twitches, jaw and lip movements, gasp-like mouth opening for 10–30 s; pupils dilate over 30–90 s; **eyes never rolled back** | `MESH` `CAP` `RB` (head) `FLUID` | The body drops flaccid; brief limb jerks in the first seconds; no running |
+
+**Limbs**
+
+| # | Injury | Trigger rule | What the player sees | Dynamics and timing | Layers | Behaviour / audio hand-off |
+|---|---|---|---|---|---|---|
+| 17 | **Open long-bone fracture** | Fracture + open probability (tibia 0.25–0.4; ulna 0.15–0.3; radius 0.1–0.2; humerus 0.05–0.15; femur 0.05–0.1 blunt; gunshot 1.0) | **Inside-out**: a 0.5–3 cm slit wound with a bone spike protruding 1–8 cm: an **ivory cortical ring 2–7 mm thick around a yellow greasy marrow plug** (shaft) or red sponge (bone end), a torn glossy periosteal collar, clinging muscle fibres, fat beads on the blood. The spike **slips back under the skin when the limb straightens** (visible only while angulated > 15–20°). Patterns: transverse (direct blow), butterfly, **spiral with long spear-like points** (torsion; 2–4 × shaft diameter), comminuted (high energy) | Femur: shortening 2–5 cm, foot turned out 45–90°; tibia angulation 10–45°; thigh swells +2–3 cm per litre of blood | `MESH` (fracture variant) `JNT` (±30–90° bend, ±20–60° twist, 0.05–0.2 × stiffness) `CAP` `SH` `PART` (fat beads) | §3.4 rows 13, 20–24; crepitus audio; the sight of their own bone can trigger a faint (p 0.02–0.05) |
+| 18 | Rifle through a long-bone shaft | Rifle | 3–10 cm of shaft pulverised; 20–100+ fragments driven 2–10 cm into the muscle; exit 5–15 cm with bone protruding; satellite exits (2–5 mm) 1–5 cm around it (p 0.3–0.7) | — | `MESH` `RB`/ray-cast secondary tracks `SDF` | Secondary fragments cut vessels they cross (§6.2 row 26) |
+| 19 | Near-amputation | Close shotgun, rifle, heavy crush | The limb hangs on a bridge of skin and muscle; ragged bone ends; distal limb pale and cold if the artery is cut | — | `MESH` `JNT` `CAP` | Arm or leg fails completely |
+| 20 | Degloving | Open: shear (close tangential shotgun, heavy tangential blow). Closed: stomp with sliding | **Open**: a skin sleeve rolled back like a sock; yellow fat on its underside with perforator stumps bleeding every 2–4 cm; silvery fascia over the muscle; the flap goes pale, then dusky purple `#6A4A6A` over hours. **Closed**: a soft sloshing swelling (50–500 mL) under loose, bruised, intact skin | — | `SB`/`MESH` (sleeve) `CAP` `BS` (fluctuant swelling) | Pain at the margins |
+
+**Chest**
+
+| # | Injury | Trigger rule | What the player sees | Dynamics and timing | Layers | Behaviour / audio hand-off |
+|---|---|---|---|---|---|---|
+| 21 | Rib fractures, **flail chest**, sternum | Compression ≥ 20–25 % of chest depth (fracture), 35–40 % (flail); hammer on the lateral chest p 0.5–0.8; punch 0.02–0.1 | Direct-blow ends driven inward; a flail segment (≥ 2 adjacent ribs × ≥ 2 breaks) **sinks on inspiration and bulges on expiration**: 5–10 mm quiet, 10–30 mm laboured, up to 50 mm in distress (half for 2-rib segments), masked by muscle splinting for 5–120 min; sternal step 5–15 mm | Paradox grows as the muscles tire | `BS` (paradox, driven by the breath flow) `MESH` | RR 25–40 shallow with an end-inspiratory grunt; holds the side; leans toward it; refuses to lie flat |
+| 22 | Subcutaneous emphysema / traumatic asphyxia | Lung or airway injury / sustained compression ≥ ~body weight for 1–5 min | Emphysema: swelling that **crackles under a pressing hand**, spreading chest → neck (10–60 min) → face (30–180 min), eyelids swelling shut, nasal voice. Traumatic asphyxia: **deep purple-blue face, neck and upper chest `#5A3A6A` sharply cut off at the compression line**, with petechiae and bilateral subconjunctival haemorrhage | Persists after release | `BS` `TEX` `SH` | Crackle audio on contact (§7) |
+| 23 | **Sucking chest wound** | Chest-wall defect ≥ 10–13 mm (≥ ⅔ of the tracheal diameter; a rule of thumb) | Inspiration: blood at the wound is drawn in, edges pull inward. Expiration: **pink froth bubbles and builds around the hole**, fine droplets spray. Through a large wound the lung shrinks into a dusky rubbery mass in 2–10 s; pink lung may bulge 1–5 cm out on a cough | A tension variant (valve-like wound, p 0.1–0.3 of lung wounds) evolves over minutes: that side stops moving, neck veins distend, grey-blue collapse | `SDF` `PART` (froth 0.1–1 mm, bubbles 2–10 mm) `BS` | Small hole hisses or whistles; large hole slurps and bubbles (§7) |
+| 24 | **Heart wounds** (open chest or large defect) | Track or blade into the heart | **LV**: scarlet jets in systole only, 20–60 cm through an open wound. **RV**: dark surges 5–30 cm. **Atria**: continuous dark welling with a double swell per beat. **Coronary**: continuous spurting; the downstream muscle turns dusky and stops within 1–5 min. **Tamponade**: a tense, domed, **dark blue-purple sac** (`#3A1A2E`) with a small, fast, feeble heart inside (autopsy volume 150–500 mL). **Rifle or close shotgun**: ragged stellate bursts 3–8 cm, a flooded chest. **VF**: surface shimmering "bag of worms" at 4–8 Hz, finer over minutes | Stab chamber: RV 0.42, LV 0.37, RA 0.16, LA 0.05; second chamber p 0.2–0.3. Self-seal p: LV < 1 cm oblique 0.3–0.5, RV 0.2–0.4, atria 0.05–0.1 | `MESH` (beating heart states) `FLUID` `SH` | §8 scenario 4 |
+
+**Abdomen**
+
+| # | Injury | Trigger rule | What the player sees | Dynamics and timing | Layers | Behaviour / audio hand-off |
+|---|---|---|---|---|---|---|
+| 25 | Liver / spleen / kidney (AAST 2018 grades) | Knife II–III; handgun III (+ 1–3 cm stellate fissures); rifle or close shotgun IV–V (**stellate bursting**, fissures 3–10+ cm, 3–15 loose fragments); blunt I–III (delayed splenic rupture p 0.02–0.1, 30 min – 48 h) | Liver: glossy capsule over dark red-brown friable tissue, green bile staining. Spleen: dark purple pulp welling, or shattered in a clot. Kidney: radial splits toward the hilum; red urine. Tense blue-black subcapsular haematomas (10–100 mm) | Drive bleeding from the vessels hit (RB §3), not from the grade alone | `MESH`/`SDF` (organ states) `SH` `FLUID` | Little external blood, progressive pallor; Kehr's sign (left shoulder pain) |
+| 26 | Evisceration | Abdominal wall wound ≥ 30–50 mm (omentum) or ≥ 50–80 mm (bowel) | Yellow fatty omentum first; glistening pink-grey small bowel (2.5–3 cm) with **slow peristaltic waves** (8–12 /min, 1–2 cm/s); greyer colon; mesentery with pulsating arcades; protrusion grows with coughing and screaming; a trapped loop turns dusky `#6A3A5A` over 30–120 min | — | `SB` (bowel loops) `SH` | The victim holds the bowel in with the hands and bends forward |
+
+**Secondary missiles and bloodstains**
+
+| # | Injury | Trigger rule | What the player sees | Dynamics and timing | Layers | Behaviour / audio hand-off |
+|---|---|---|---|---|---|---|
+| 27 | Bone and teeth as secondary missiles | A bullet striking bone | Handgun through the skull: 3–15 inner-table chips (1–10 mm) driven 1–5 cm into the brain in a 20–40° cone. Rifle through a long bone: 20–100+ fragments at 50–300 m/s. Teeth: 2–30 pieces embedded 5–30 mm in the tongue and cheeks. Fragments below 50–75 m/s at the skin stay as lumps | — | Ray-cast secondary tracks (not rigid bodies) `SDF` | A bullet near the spine can paralyse through fragments alone |
+| 28 | Scene bloodstains | Every blood event | See §6.3 | RB §3.11 | `DEC` `FLUID` | — |
+
+### 6.3 Bloodstain events → patterns (condensed from R2-05 §15)
+
+| Event | Patterns to spawn | Key numbers |
+|---|---|---|
+| Gunshot, head | Back-spatter (30–320 drops within ~0.5 m on the gun side), denser forward cone (2–5 ×), burst ejecta, pool | RB §2.1.3 |
+| Gunshot, trunk or limb | Little at the entrance; forward spatter at the exit; drips; pool | — |
+| Knife, first stab / repeated stabs | Almost nothing / backswing cast-off trails (5–60 stains of 2–8 mm per trail, 0.3–2 m), cessation cast-off, soaked hand and sleeve | Cast-off needs blood already on the weapon |
+| Neck cut | Arterial arcs and zigzags (6–25 mL per beat, 5–30 mm stains, one cluster per beat, lower and smaller as MAP falls); expirated spray; heavy flows down the chest; large pool | Stains from drops > 4–5 mm (30–60 µL) run on walls |
+| Hammer, first blow / later blows | **None** / impact spatter 20–300 stains (0.5–4 mm, within 0.5–1.5 m) per blow, a cast-off line on the ceiling per backswing, brain and bone particles once the skull is open | — |
+| Punching a bleeding face | Small impact spatter on fist, forearm and floor; nose and mouth drips; expirated spray on coughs | — |
+| Victim walking or crawling | Drip trail (spacing = walking speed / drip rate; round drops when walking, elongated drops with tails when running), hand prints, slide marks on walls, knee and hand smears | — |
+| Coughing blood | Small pink stains (0.1–4 mm) with vacuole rings in 30–60 % | — |
+| Body dragged / stepped in | Drag trail / footprints fading over 6–13 steps (× 0.60–0.80 per step) | — |
+| Time | Pool gels in 5–15 min (3 min for thin films); clot shrinks to ~50 % in 1–2 h; serum ring (2–20 mm) from 30 min – 3 h; cracked crust at 12–72 h | — |
+| Objects in the spray | A clean silhouette (void) | — |
+
+### Simulation parameters (severe trauma visuals)
+
+| Parameter | Value / range | Unit | Notes | Tag |
+|---|---|---|---|---|
+| `burst_E_dep` / `partial` / `kronlein` | 600 (500–700) / 1,000 / 1,500 | J | Contact-gas bonus: handgun 50–150, magnum 100–250, rifle 300–600, shotgun 400–800 | `[E] R2-05 §2.1` |
+| `vault_fragments` / `leave_fraction` | contact 12-gauge 20–80; slug 15–50; buck at 1–3 m 3–20 / 0.2–0.6 | count / — | | `[E]` |
+| `head_collapse_blend` | 0.3–0.8 | — | Scales with the fragmented fraction | `[E]` |
+| `ejecta_v` fine / clump / mass | 20–60 / 10–40 / 5–20 | m/s | Cone 20–40° + slow 60–90° | `[E]` |
+| `kronlein_hemisphere_p` | 0.2–0.4 above 1,500 J | p | | `[E]` |
+| `hammer_per_blow` | +3–10 mm depression; +2–6 fragments; dural tear 0.3–0.6 (blows 2–3), 0.9 after | — | | `[E]` |
+| `herniation_bulge` / `pulse` / `ooze` | 5–30 over 10–120 min / 1–3 / 1–10 (surges × 2–5) | mm / mm / mL/min | Living only | `[E]` |
+| `scalp_avulsion_bleed` | 50–150 → 20–60 | mL/min | Corrected in R2-05 | `[E]` |
+| `tongue_hang` / `swelling` | 50–100 / +20–50 % over 10–60 min | mm / — | | `[E]` |
+| `globe_rupture_50` | 35,000 (24,000–35,000) | J/m² | Impactor width vs the 35 × 40 mm rim | `[K] (M)` |
+| `hanging_globe_max` | 10–15 (nerve intact) | mm | | `[E]` |
+| `open_fracture_p` | tibia 0.25–0.4 … femur 0.05–0.1; gunshot 1.0 | p | | `[E]` |
+| `bone_spike_visible_if_angle_gt` | 15–20 | ° | | `[E]` |
+| `flail_paradox` | 5–10 / 10–30 / ≤ 50 | mm | Quiet / laboured / distress | `[E]` |
+| `open_ptx_threshold` | 10–13 | mm | Rule of thumb | `[K] (H)` |
+| `lv_jet_height_open` / `rv` | 200–600 / 50–300 | mm | Systole only for the LV | `[E]` |
+| `severed_head_loc` | 4–10 (7) | s | | `[K] (M)` |
+| `peristalsis` | 8–12 /min, 1–2 cm/s | — | | `[K] (M)` |
+| `impact_spatter_per_blow` | 20–300 stains, 0.5–4 mm | — | Only with exposed blood | `[E]` |
+
+### Visual/behavioural checklist (severe trauma visuals)
+- A close shotgun blast to the head **splits** it rather than popping it: a far-side crater, radial scalp flaps, a sagging face mask, a soft misshapen head that grates when moved; the body drops where it stood and the heart keeps pumping blood out of the head for minutes.
+- A handgun never bursts a head. A 5.56 mm head shot is sometimes a clean hole and sometimes a burst.
+- Hammer blows escalate visibly: split scalp and lump → punched-in depression → a mosaic of loose pieces with brain and chips coming out; no spatter from the first blow.
+- A victim with the lower jaw gone is often awake, leaning forward, the tongue hanging, spitting teeth, fighting to sit up if laid back.
+- A ruptured eye is a soft, wrinkled globe in ballooned dark red conjunctiva with jelly at the wound, not a neat hole.
+- An open shin fracture shows an ivory ring of bone around a yellow greasy core that disappears back under the skin when the leg is straightened.
+- A large chest wound sucks on inspiration and blows pink froth on expiration; a cut windpipe bubbles and hisses while the victim mouths words.
+- Everything inside the body has its own colour: yellow fat, silvery fascia, ivory bone, purple spleen, red-brown liver, pink lung.
+
+---
+
+## 7. Audio design spec
+
+Source: R2-06, unless tagged otherwise. Physics-derived values are `[K] (H)`. Levels of real injuries are `[E] (L)`: **calibrate them against the game's own foley** (meat, bone, gelatin, body-weight drops) with a sound level meter at 1 m before hard-coding any dB value.
+
+### 7.1 Architecture
+
+| Item | Specification | Tag |
+|---|---|---|
+| Mouth emitter | `AudioStreamPlayer3D` on a `BoneAttachment3D` at the mouth. `AudioStreamGenerator` for BreathSynth + VoiceSynth (24 kHz while only breathing, 48 kHz while vocalising; buffer ~0.1 s), or `AudioStreamPolyphonic` for sample-based voice | `[E] R2-06 §14.1` |
+| Airway-wound emitter | At a sucking chest wound or open neck airway, only while one exists | `[E]` |
+| Fluid emitters | At the **landing point** of jets and drips, not at the wound; 4–6 per character | `[K] (H)` physics |
+| Global pool | 24–32 `AudioStreamPlayer3D` for impacts and falls, each with an `AudioStreamRandomizer` over baked variants | `[E]` |
+| Buses | Impacts, Fluids, Breath, Voice, World → Master with a limiter; room reverb via `Area3D` | `[E]` |
+| Loudness mapping | Author one-shots peak-normalised; `volume_db = SPL_1m − 100`. A "realism dynamic range" setting maps SPL 40–110 dB to −60…0 dB by default (`realism_range_db` 60; 40–80) | `[E]` |
+| Distance | −6 dB per doubling. Set the `AudioStreamPlayer3D` attenuation filter to 10–12 kHz and about −6 dB (the default 5 kHz / −24 dB is far stronger than real air absorption below ~30 m). Occlusion: LP 1–2 kHz and −6 to −15 dB | `[K] (H)`, `[E]` |
+| Baking | Render every impact, fall, drip and crunch recipe to 8–16 variants per material state and region (16-bit, 48 kHz, mono; ≈ 460 KB per recipe at 16 variants); play with pitch ±3–8 % and level ±1–3 dB | `[E]` |
+| Real-time generators | Only continuous, physiology-coupled sound: breathing (snore, stridor, gurgle, rattle layers), moans, whimpers, grunts, spurting patter, streams. Budget **1–2 real-time voices in GDScript**; more need a GDExtension or mixing of pre-rendered grains | `[E] (M)` |
+| Audio LOD | Beyond ~15 m: no quiet breathing. Beyond ~30 m: only screams, shots, falls and clatter. Dead characters have no generator (passive huffs are baked one-shots) | `[E]` |
+| Style switch | `impact_stylisation` 0 (physical, default) – 1 (film-style layering) | `[E]` |
+
+### 7.2 Physics rules and synthesis primitives
+
+**Physics rules:**
+- **Contact duration sets the brightness** `[K] (H)` ✓. τc = π√(m / k).
+  - The force spectrum is within 3 dB up to ~0.6/τc, about −9.5 dB at 1/τc, with a first zero at 1.5/τc.
+  - Band-limit every impact's "force" layer with LP at 0.6/τc, 12 dB/oct.
+  - Examples: gloved punch ~12 ms (bare knuckle 5–10 ms) → a thud; head on concrete 2–8 ms; trunk on the floor 20–80 ms; steel on bone 0.7–2 ms through skin, 0.2–0.5 ms on teeth or bare bone → a click or crack.
+- **Soft tissue does not ring.** Bone rings briefly: the living skull's first mode is ~0.8–1.5 kHz with ζ 0.03–0.10, so τ is 1–7 ms and the audible ring 10–40 ms, masked by the thud after ~20 ms `[K] (M)`.
+- **Percussion analogy** for any blow or bullet strike: lung is resonant (hollow), stomach tympanic (drum-like), liver, thigh and heart dull, a blood-filled chest stony dull `[K] (H)`.
+
+**Primitives** (written for R2-06; none copied from any source):
+
+| Primitive | Meaning |
+|---|---|
+| `NOISE(c)` | White, pink or brown noise |
+| `ENV(A, H, τ)` | Attack, hold, exponential decay |
+| `MODE(f, ζ, a)` | Decaying sine with τ = 1/(2πfζ) |
+| `MODAL(bank)` | Sum of `MODE`s |
+| `GRAIN(d, spec)` | Windowed 0.2–5 ms burst |
+| `CLOUD(λ, grain, T)` | Poisson grains; ±30 % level, ±20 % frequency |
+| `BUBBLE(a, τ, σ)` | Minnaert sine at f0 = 3.2 / a (a in m), rising by σ |
+| `GLOTTAL(F0, OQ, tilt)` | Glottal source |
+| `FORMANTS(F1…F5, B1…B5)` | Vocal-tract filter |
+| `AM(r, d)` | Amplitude modulation |
+| `PITCHDROP(ratio, T)` | Frequency glide |
+| `FLOW(t)` | Breath flow curve |
+
+### 7.3 Event catalogue
+
+**Impacts**
+
+| Event | Trigger | Recipe | Level at 1 m | Variation / gate |
+|---|---|---|---|---|
+| `GSW_FLESH` | Bullet into the trunk or a limb | `slap`: NOISE(white) → BP(600–1,200 Hz, Q 0.8) → ENV(0.3 ms, 0, τ 4 ms), 0 dB. `body`: MODE(120–250 Hz, ζ 0.3) with PITCHDROP(0.7, 20 ms) + brown noise LP 400 Hz, τ 15 ms, −3 dB. `cavity`: 2–4 half-sine pulses of LP 500 Hz noise (periods 2, 3, 4.5 ms; rifle × 1.5), −10 dB handgun / 0 dB rifle. `wet`: CLOUD(300–1,000 /s, 0.3–1 ms grains at BP 1–4 kHz, 20–40 ms), −15 dB. `cloth`: HP 2 kHz click, −10 dB. Region modifier: thorax modes × 0.8 in frequency, τ × 1.4, +3 dB at 150–300 Hz; stomach + a 200–400 Hz mode; liver or thigh τ × 0.7; haemothorax: remove the resonance, τ × 0.5 | Handgun torso 75–95 dB peak; rifle 85–105 | Mode frequencies ±15 %, level ±3 dB per hit. **Arrives at the shooter d/v_bullet + d/343 s after the report**: 20 m handgun 115 ms, 30 m 173 ms; a separate "whop" from ~20 m |
+| `GSW_HEAD_BURST` | `E_dep` ≥ burst threshold | Sharp crack co-timed with a wet burst (5–30 ms, 200 Hz – 8 kHz), then fragment and droplet patter 30–300 ms later | 95–110 dB peak | The loudest impact in the game |
+| `BONE_CRACK` | Long bone, rib or mandible fracture | 2–4-sample impulse → HP 800 Hz; MODAL 3–5 modes at 0.3–1 kHz (long bone) or 1.2–4.5 kHz (rib, face), ζ 0.05–0.15; 1–3 micro-cracks at +2–15 ms, −6 dB each; plus the blow's body layer | 75–95 dB peak | +6–10 dB over the flesh layer |
+| `BONE_CRUNCH` | Nasal, orbital or comminuted bone; a repeat blow on a fractured bone | CLOUD(200–600 /s, 0.2–0.8 ms grains at BP 1.5–6 kHz, 5–30 ms) + a low wet body; no ring | 65–85 dB peak | 3–10 clicks in 5–30 ms |
+| `TEETH_CLACK` / `TOOTH_BREAK` | Jaw snapped shut / tooth fractured | 2–3 clicks 2–10 ms apart at BP 2–6 kHz, Q 3 / one BP 3–8 kHz click, τ 1 ms + fragment patter | 65–80 / 60–75 dB peak | — |
+| `CREPITUS` | Moving a fractured limb | CLOUD(10–60 /s × joint speed in rad/s, 0.3–1 ms grains at BP 1–5 kHz) | 35–50 dBA | Mostly felt; audible only close up |
+| `EMPHYSEMA_CRACKLE` | Pressing air-filled tissue | CLOUD(100–400 /s, 0.1–0.5 ms grains, HP 2 kHz) | 25–40 dBA | Within ~0.3 m |
+| `SKULL_KNOCK(state)` | Blow or fall onto the head | **Intact**: scalp thud LP 400 Hz, τ 5 ms + MODAL 1.0 / 1.7 / 2.8 / 4.2 kHz (ζ 0.06–0.10; 0, −4, −8, −14 dB), bank LP 3 kHz while in contact ("coconut knock"). **Fracturing blow**: + BONE_CRACK, +6 dB. **Cracked**: modes × 0.6–0.8, ζ × 2–3, AM 40–120 Hz buzz. **Comminuted**: BONE_CRUNCH + wet cloud, no modes. **Open**: wet slaps; 20 % chance of a fragment click | 80–100 dB peak | State progression is the hammer's key cue |
+| `PUNCH_FACE` | Bare knuckle to the face | body MODE(90–160 Hz, ζ 0.4) + LP 300 Hz noise, τ 8–15 ms; slap BP 1.5–4 kHz, τ 2–4 ms, −8 dB; + BONE_CRUNCH (nose), + TEETH_CLACK | 70–85 dB peak | Dull smack, not a film "crack" |
+| `PUNCH_BODY` / `KICK` | Blow to the trunk | body MODE(70–130 Hz), τ 12–25 ms; cloth BP 1–5 kHz at −12 dB / kick: level × 1.3, τ × 1.2 + sole slap BP 1–3 kHz; rib crack if a rib breaks | 65–80 / 75–90 dB peak | Winded: a short "ugh", then a silent breath-hold |
+| `STAMP_HEAD` | Stamp on a head resting on a hard floor | Shoe on head, then head on floor, 1–5 ms apart | 80–100 dB peak | — |
+| `HAMMER_MUSCLE` / `HAMMER_BONE` | Hammer blow | body τ 5–10 ms; steel ring MODAL 2–6 kHz at −25 dB / MODAL 1–3 kHz (ζ 0.05), τ 5–15 ms + BONE_CRACK on fracture; ring −15 dB, 10–40 ms on rebound only | 70–85 / 80–95 dB peak | — |
+| `KNIFE_PUNCTURE` | Skin gives at 10–50 N | GRAIN(1 ms, BP 800–2,000 Hz) "tick"; through clothing + a 20–100 ms tear (BP 2–8 kHz with 100–300 Hz granular AM) | 35–55 dB at 0.5 m | **Knife attacks are near-silent; the victim is the loud part** |
+| `KNIFE_TISSUE` / `KNIFE_BONE` | Blade moving in tissue / hitting bone | CLOUD(100–400 /s, 0.5–2 ms grains at BP 300–1,500 Hz) at −30 dB / MODAL(1–4 kHz, ζ 0.1), τ 3–8 ms; drag along a rib: stick-slip 200–1,000 Hz | — | Withdrawal usually silent; a chest stab hisses or bubbles on the next breaths |
+| `BURN_*` | Flame on skin | Steam hiss: HP 3 kHz → BP 4–10 kHz, level ∝ flux, onset 0.3–0.8 s. Sizzle: CLOUD(50–400 /s, 0.1–0.5 ms, HP 2 kHz). Fat pops: CLOUD(0.5–5 /s, 1–3 ms, BP 1–5 kHz) at +10 dB. Char crackle: 2–20 clicks/s at BP 2–6 kHz | Flesh layers 10–20 dB under the torch roar | — |
+
+**Blood** (blood jets never hiss; the sound is where the blood lands)
+
+| Event | Trigger | Recipe | Level at 1 m | Notes |
+|---|---|---|---|---|
+| `DRIP_DRY` | 1–15 mL/min; drop rate = 20 × Q (mL/min) per minute | GRAIN(1–3 ms, BP 1.5–5 kHz) + a tiny 5 ms splash | 30–45 dB peak | "Tick" |
+| `DRIP_POOL` | Onto a fresh floor pool (~2.5 mm deep) | GRAIN(2–5 ms, BP 0.5–2 kHz) + satellite ticks −12 dB at 5–30 ms | 30–45 dB peak | **"Pat", never "plink"** |
+| `DRIP_GEL` | Pool older than 5–15 min | As above, LP 1.2 kHz, −6 dB | 25–40 dB | — |
+| `DRIP_DEEP` | Blood ≥ 1–2 cm deep (basin, bath) | Impact + BUBBLE(a 0.5–2 mm, τ ≈ 1–7 ms, σ +0.1–0.3), p(bubble) 0.1–0.5 per drop | 35–50 dB peak | The only "plink" |
+| `STREAM` | 15–300 mL/min | Pink noise BP 300–4,000 Hz; level ∝ 10·log Q + 20·log v; slow AM 2–8 Hz | 35–55 dBA | — |
+| `SPURT_PATTER` | Arterial jet at HR | Per beat: CLOUD(2,000–8,000 /s, 0.2–1 ms grains at BP 1.5–6 kHz) following the pressure waveform (upstroke 0.1 s); spectral centroid 3–5 kHz at MAP 90 → 1.5–2.5 kHz at MAP 40; stops below MAP 25–30 | 45–65 dBA at the landing point | Faster, softer and duller as the victim bleeds out; stops at the last effective beat |
+| `JET_ON_CLOTHES` | Jet onto the victim's own clothes | As `SPURT_PATTER`, LP 1 kHz, −12 dB | 30–45 dBA | Muffled pulsing |
+| `GURGLE_SPURT` | Blood forced with air through a narrow track | 1–3 BUBBLE(a 2–6 mm, τ 5–15 ms) per beat | 40–55 dBA | — |
+| `VENOUS_POUR` | Steady venous flow | Stream at −6 dB; 20–40 % AM at the respiratory rate (neck) | 30–45 dBA | — |
+| `NECK_AIR_ENTRY` | Open jugular above heart level, on inspiration | BP 1–4 kHz for 0.3–1 s + bubble cloud (a 1–3 mm) | 35–50 dBA | Frothy dark blood |
+| `EXIT_SPRAY` | Gunshot exit droplets | CLOUD(5,000–20,000 /s, 0.1–0.5 ms, HP 2 kHz, 20–100 ms), delayed 30–300 ms | 40–60 dB peak | "Shhk" |
+| `LIP_BUBBLING` | Blood or froth in the airway | Film pops 0.2–1 ms (BP 1–8 kHz) at 5–40 /s on expiration + BUBBLE (a 1–3 mm) | 25–40 dBA | — |
+| `SPIT` | Conscious, oral blood | Lip burst BP 1–3 kHz, 20–40 ms + a splat | 50–65 dB peak | Every 5–30 s |
+| `STEP_IN_BLOOD` / `DRAG_IN_BLOOD` | Walking through or dragging through blood | Wet slap GRAIN(3–8 ms, BP 0.3–2 kHz); sticky peel once tacky (CLOUD 200–800 /s, 50–150 ms) / pink friction noise BP 200–1,500 Hz ∝ speed + wet grains | 45–60 dB peak / 40–55 dBA | — |
+
+**Falls**
+
+| Event | Trigger | Recipe | Level at 1 m | Notes |
+|---|---|---|---|---|
+| `FALL_THUD(part, v, surface)` | Every Jolt contact above 0.5 m/s | L_peak = L_ref + 20·log(v / v_ref) + 10·log(m / m_ref); L_ref: head 88 dB at 5 m/s (uses `SKULL_KNOCK`), trunk 82 dB at 3 m/s and 30 kg; band-limited at 0.6/τc | Head 80–95; trunk 75–90; hip 70–85; knees 70–85; palms 70–85; flopping limbs 55–70 dB peak | Limp drop = 3–6 thuds over 0.4–1.2 s, ending in the head knock, then the arms 50–400 ms later |
+| `CHEST_HUFF` | First trunk impact (0.2–0.6 L expelled in 50–150 ms); pressing a dead chest | Voiceless: NOISE BP 300–2,000 Hz, 100–250 ms. Voiced "uhh" at F0 80–150 Hz with p 0.6–0.8 conscious / 0.2–0.4 unconscious / 0.1–0.3 dead | — | **Not produced by bullets**: a bullet's ~3 N·s cannot compress the chest |
+| `CLATTER` | Dropped weapon, keys, phone | Metallic MODAL at 1–8 kHz with bounces | 70–95 dB peak | Often the loudest part of a fall |
+| Floors | — | Concrete: reference. Tile: +3 dB above 2 kHz; hollow tile: clack 0.5–2 kHz, T60 30–80 ms. Wood: boom 50–200 Hz, T60 100–300 ms, +6 dB below 200 Hz, rattle. Carpet: −10 to −20 dB, LP 0.8–1.2 kHz. Grass: −10 dB, LP 500 Hz. Metal: ring 0.3–3 kHz, T60 0.3–1 s. Water: splash | — | — |
+
+**Breathing (BreathSynth)**. Each breath generates a flow curve and every layer derives from it. Noise gain ∝ flow (power ∝ flow², about +5–6 dB per doubling of flow), referenced to 20 dBA (nose) or 25 dBA (mouth) at 0.5 L/s. Route through the mouth when tidal > 1 L, RR > 25, in pain or panic, with the nose blocked, or when unconscious with the jaw open. F1 = 300 + 17 × jaw_mm Hz.
+
+| State | RR / pattern | What is heard | Level (dBA at 1 m) | Recipe notes |
+|---|---|---|---|---|
+| Quiet | 12–20 | Nasal hiss | 15–25 | BP 1–4 kHz |
+| Aroused | 18–30 | Mouth breathing | 35–50 | Formant noise |
+| Acute pain | Hold 1–5 s, then forced exhalation | **Hiss through the teeth** (3–8 kHz, 0.5–2 s); catching inspirations; grunts | 40–65 | — |
+| Panic | 30–50 | "Huh-huh", voiced expirations | 50–65 | Voicing at F0 150–300 |
+| Splinting (ribs, abdomen) | 25–35 | The inspiration is cut off with a catch, "uh!"; expiratory grunt | 35–55 | Stop at 40–70 % of the planned volume; 50–150 ms glottal catch |
+| Shock II–III | 25–40 shallow | Dry mouth; lip and tongue clicks; sighs every 15–60 s | 35–50 | LP 3 kHz |
+| Shock IV | Irregular | Faint; occasional sigh or moan | 25–40 | — |
+| Air hunger | 30–45 | Loud straining inspirations of 0.4–0.8 s; 1–4 words per breath | 50–65 | — |
+| Stertor (unconscious, supine) | 10–25 | Rhythmic snore on inspiration | 45–70 | Pulse train 30–120 Hz ± 15 %, amplitude ∝ max(0, flow − 0.2 L/s), LP 800 Hz |
+| Stridor | Any | Crowing, musical, inspiratory (biphasic when severe); **goes quiet as the airway closes** | 50–75 | Harmonic tone 250–1,000 Hz (default 500–800), f × (0.8 + 0.4 × flow / peak flow), 3–6 harmonics |
+| Complete obstruction | Effort without air | **Silence**, a squeak at most | < 30 | — |
+| Gurgling | Any, with fluid | Wet bubbling on both phases; bubbles at the lips | 45–65 | λ = 40 × flow × min(fluid / 20 mL, 1) bubbles/s (a 1–5 mm); audible from 5–10 mL |
+| Wet chest | 25–40 | Coarse crackles | 30–45 | Grains with 2CD 10–20 ms, 5–40 per breath |
+| Death rattle | Slow (hours-long dying only) | Coarse wet rattle in time with breathing; −6 dB on the side | 40–60 | Bubbles a 3–8 mm, 10–25 Hz AM |
+| **Agonal gasp** | 3–10 /min, slowing | **Snort / "huh"** in a 0.2–0.6 s inspiration; gurgle; sometimes a groan on the passive expiration | 50–70 | Pharyngeal noise 200–1,500 Hz with **30–80 Hz flutter**; groan F0 70–110 Hz; flow rises to 1–5 L/s in 50–100 ms |
+| Mandibular breathing | Slow (hours) | Faint; jaw clicks | 20–35 | — |
+| Sob / sniff | Crying | 3–6 inspiratory hitches at 4–8 /s (60–150 ms each), then a voiced expiration / a 100–300 ms nasal hiss (wet snort with a nosebleed) | 50–75 / 35–50 | — |
+| Cough | Airway blood | Explosive phase 30–50 ms broadband (200 Hz – 6 kHz), noisy phase 100–300 ms, optional voiced end | 65–85 peak | Bouts of 1–5; wet: crackle + bubbles + spray |
+| Hiccup | Medullary lesion, gastric distension | Diaphragm jerk; glottal click ~35 ms later + 30–80 ms voiced "hic" | 50–65 | 4–60 /min in bouts |
+| Sucking wound, small (≲ 5–8 mm) | With RR | **Hiss or whistle** on inspiration (air 20–50 m/s; whistle f ≈ 0.2 × v / d, ~1.2 kHz for 30 m/s through 5 mm); bubbling on expiration | 40–60 | Gain ∝ (v / 30)³ |
+| Sucking wound, large (≳ 10–15 mm) | With RR | **Slurping and bubbling** (air 1–9 m/s); froth welling | 35–55 | Bubble grains a 2–8 mm at 400–1,600 Hz |
+| Open airway in the neck | With RR | Rushing (narrow stab) or bubbling and sucking (gaping cut, 1–20 m/s) at 0.5–3 kHz on both phases | 40–60 | Voice aphonic below the cords |
+| Dead | — | Silence; a passive huff or groan only when moved or pressed | — | — |
+
+**Voice catalogue** (male values; female F0 × 1.7–2 of her own speaking F0; formants × 1.15–1.2):
+
+| Vocalisation | Trigger | Duration | F0 contour | Quality | Level (dB SPL at 1 m) |
+|---|---|---|---|---|---|
+| Startle yelp | Sudden unexpected hit or pain | 150–400 ms | 150 → 300–600 Hz in 30–80 ms, then falls | Tense | 75–95 |
+| Impact grunt ("oof") | Blow to the trunk, landing, **not** a bullet's push | 80–250 ms | 90–150 Hz, often creaky | Abrupt onset | 65–85 |
+| Effort grunt | Pushing up, crawling, pressing a wound | 0.2–1.5 s | 100–200 Hz | Pressed | 55–75 |
+| Hiss through the teeth | A wound touched, bone moved | 0.3–2 s | Voiceless | Sibilant 3–8 kHz | 45–65 |
+| Pain cry | Severe acute pain | 0.5–2 s | 200–350 → 400–700 Hz, falling 30–50 % at the end | 10–40 % nonlinear phenomena | 85–100 |
+| **Scream** | Extreme pain (burns, bone, eye), terror | 0.8–3 s; one per breath with a 0.3–0.8 s gasp between | 300–500 → 500–1,000+ Hz | **Roughness AM 30–150 Hz**; nonlinear phenomena 30–70 % | 90–105 (default 98; rare 110) |
+| Roar | Fighting back | 0.5–2 s | 180–350 Hz | Harsh; formants −10–15 % | 85–100 |
+| Wail | Sustained severe pain, despair | 1–4 s | 250–450 Hz, falling, 4–7 Hz fluctuation | Breathy | 70–90 |
+| Moan / groan | Sustained pain; stupor (V2) | 0.5–2.5 s | 90–180 Hz, falling at the end | Breathy; "mmm" or "uhh" | 45–70 |
+| Whimper | Moderate pain, fear | 0.1–0.5 s bursts, 2–6 per breath | 250–600 Hz, rise and fall | Breathy, nasal | 35–60 |
+| Pleading speech | Conscious, threat present | Breath groups of 3–8 syllables | F0 +20–60 %, range × 1.5 | Tremor, breaks | 65–85 |
+| Gasping speech | Lung, airway, class III | 1–4 words per breath | Raised | Breathy | 55–75 |
+| Wet voice | Fluid in the larynx | — | Unstable | HNR < 5 dB; bubbling AM | −3 to −6 dB |
+| Epileptic cry | GTC onset | 0.5–3 s | 150–400 Hz | Strangled | 70–90 |
+| Passive (agonal) groan | Expiration past relaxed cords | 0.3–1.5 s | 70–110 Hz | Very breathy, vocal fry | 40–60 |
+| Retch ("hurk") | Nausea | 0.3–0.8 s per cycle | Strained | Gagging | 60–80 |
+
+### 7.4 Voice rules
+
+| Output | Rule | Tag |
+|---|---|---|
+| P(vocalise) per pain spike | clamp(0.15 × (pain − 2), 0, 0.95) × expressivity (0.3–1.5, lognormal, median 1). × 0.5 fighter; × 0.5 class III; × 0.2 class IV; **× 0 unaware**; 0 when winded, apnoeic or unconscious. **The gunshot or stab spike fires at discovery** | `[E] R2-06 §6.3` |
+| Type | Pain < 4: hiss, grunt, moan. 4–7: yell, cry, moan, whimper. ≥ 7 with high arousal: scream. ≥ 7 with low arousal (shock, exhaustion): moan, whimper. Burns: prolonged screaming. Movement of a fractured limb: silent or breath-hold 0.3–0.4, groan 0.3–0.4, cry 0.15–0.25, scream 0.05–0.15 | `[E] R2-05 §8.6, R2-06 §6.3` |
+| Peak F0 | F0_speech × (1.3 + 0.45 × pain), capped × 9 (pain 10 → × 5.8, male ~670 Hz) | `[E]` |
+| Nonlinear fraction | 0.05 + 0.06 × pain | `[E]` on `[S R2-06:S3]` |
+| Roughness | depth 0.6 × max(0, (pain − 5)/5); rate 30–150 Hz (default 70) | `[S R2-06:S2]` ✓ |
+| Level before the budget | 60 + 4.5 × pain dB SPL at 1 m | `[E]` |
+| Duration | 0.3 + 0.2 × pain s, capped by the breath budget | `[E]` |
+| Repetition | One per breath; the next inhalation is a gasp if the previous utterance lasted ≥ 1 s at ≥ 85 dB | `[E]` |
+| Per-character traits | Speaking F0 male N(115, 17) Hz, female N(200, 25) Hz; vocal-tract length 16–18 / 14–15 cm; "vocabulary" (moaner, yeller, hisser, silent) | `[K] (H)` `[E]` |
+
+**Voice budget** (caps level and duration) `[E] R2-06 §6.5`:
+
+| Condition | Max level (dB) | Max duration per breath | Changes |
+|---|---|---|---|
+| Uninjured, aroused | 105 | 3 s | — |
+| Class II (15–30 % blood loss) | 100 | 2.5 s | F0 slightly raised |
+| Class III (30–40 %) | 85–90 | 1–1.5 s | Breathy; slurred, repetitive; 2.5–4 syll/s |
+| Class IV (> 40 %) | ≤ 65 | 0.5–1 s | Single words, then moans |
+| LOC, apnoea | 0 | — | Passive groans only |
+| SpO₂ < 85 % / < 75 % | −10 / −20 dB | × 0.6 / × 0.4 | Slurred |
+| Open pneumothorax, haemothorax, flail | −6 to −12 dB | 0.3–1 s | Grunting; 1–4 words |
+| C3–C5 diaphragm weakness | −10 to −20 dB | 1–3 words | — |
+| C1–C3 cord, trachea open below the cords | 0 (aphonic) | — | Mouths words |
+| Winded | 0 for 3–15 s | — | Then gasping speech |
+| > 60–180 s of screaming within 10 min | −3 to −6 dB | — | Hoarse: jitter × 3, HNR −6 dB, voice breaks p 0.1–0.3 |
+| Shivering / fear | — | — | Voice trembles with the bursts / F0 tremor 4–8 Hz ±2–5 % |
+
+- The voice fades in shock mainly through falling consciousness, drive and breath budget, not because a scream's pressure becomes unreachable (C-10).
+- **Hybrid recommendation** `[E]`: synthesise grunts, moans, groans, whimpers, sobs, hisses, gasps, snoring and gurgling procedurally (VoiceSynth: glottal source with jitter, shimmer and nonlinear-phenomena injection → 5 cascade formants → +6 dB/oct radiation → budget clip → damage chain). **Record** screams, crying and words with actors (never from real incidents) and process them from physiology: ±3 semitones to the character's F0, formant shift, level and tilt, breathiness, roughness, wetness, tremor, time-stretch 0.7–1.3 ×, truncation by the breath budget.
+
+### 7.5 Speech after injury (processing chains)
+
+| Condition | Vocal state or chain | Tag |
+|---|---|---|
+| UMN dysarthria, shock, hypoxia | Slurred: time-stretch 1.2–2.0 ×; soften consonant bursts (−6 dB, LP 3 kHz on transients); F2 20–40 % toward neutral; breathiness | `[E]` |
+| Bilateral UMN | Strained-strangled: tilt −6 dB/oct, HNR −6 dB, F0 range × 0.4, rate × 0.6 | `[K] (H)` |
+| Cerebellar | Scanning: syllables equalised to 250–400 ms; loudness ±6–10 dB per syllable | `[S R2-06:S10]` ✓ |
+| Broca | Drop function words; 1–5 s pauses with groping; swear words and stock phrases intact and fluent; 10–50 words/min | `[S R2-06:S12]` ✓ |
+| Wernicke | Replace 30–70 % of content words with pseudo-words; keep prosody and speed | `[S R2-06:S11]` ✓ |
+| Confused | Repeat the same question every 30–120 s; response latency 1–5 s | `[E]` |
+| Mandible fracture / flail jaw / jaw destroyed | F1 capped at ~600 Hz (opening 10–25 mm) / bilabials /p b m f v/ weak or absent, vowels centralised / vowels only, F1 fixed 700–900 Hz; **can still moan and scream** | `[K] (H)` |
+| Tongue swelling (peaks 30–120 min) | "Hot potato": LP 2–2.5 kHz, F2 × 0.8, F1 +10 % | `[K] (M)` |
+| Front teeth lost | Lisp: /s/ peak shifted ~40 % down and broadened | `[K] (M)` |
+| Nose blocked with blood | Hyponasal: notch 250–300 Hz; /m n/ → /b d/ | `[K] (H)` |
+| Midface or palate split | Hypernasal with air escape on plosives | `[K] (H)` |
+| Larynx fracture or haematoma | Hoarse → breathy → aphonic over 10–60 min, with rising stridor | `[K] (H)`, `[E]` timing |
+| Unilateral recurrent laryngeal nerve cut | Breathy, weak, sometimes two pitches (diplophonia) | `[K] (H)` |
+| Tracheal wound below the cords | **Aphonic**: whisper-noise at −20 dB plus neck hiss; covering the hole restores a weak voice | `[K] (H)` ✓ |
+| Blood in the mouth | Wet: bubble cloud following the syllable envelope; F0 perturbation 5 %; spit or cough every 5–30 s | `[K] (H)` |
+
+### 7.6 Hearing effects (optional "realistic hearing" setting)
+
+- After an unsuppressed indoor shot near the listener (150–165 dB peak): LP 2–4 kHz and −10 to −20 dB on everything else for 2–10 s, recovering over 10–60 s, plus a faint 4–8 kHz tinnitus tone `[K] (M)`, `[E]`.
+- **Auditory exclusion** under stress is common in people involved in shootings (84 % of officers reported diminished sound) `[S R2-02:S18]` ✓.
+
+### 7.7 Audio myths
+
+| Myth | Fix |
+|---|---|
+| Blood jets hiss at the wound | A jet leaves at ≤ 5.5 m/s (≤ 6.7 m/s at 180 mmHg), which is silent; play patter at the landing point |
+| Drips "plink" on the floor | Floor pools are ~2.5 mm deep and cannot trap a ringing bubble; they "pat". A plink needs ≥ 1–2 cm of liquid |
+| An audible heartbeat from the victim | A heartbeat is inaudible at a distance; show jets and pulses instead |
+| A film "crack-smack" on every punch | Real blows are dull thuds; cracks need bone, teeth or a fracture |
+| The bullet hit is heard at the same instant as the shot | Delay = d/v + d/343 |
+| A bullet forces an "oof" from the chest | Only blunt blows and falls expel air; a gunshot "oof" is a startle or pain vocalisation |
+| Loud screaming while bled out | Voice budget by class, SpO₂ and consciousness |
+| Everyone screams | Awareness gate, expressivity, fighter mode, airway state |
+| Clean sung screams | Roughness AM 30–150 Hz and nonlinear phenomena |
+| Death rattle in a fast death | Needs hours of unconsciousness |
+
+Sources: `[K] (H) R2-06 §3.1, §16`.
+
+### Simulation parameters (audio)
+
+| Parameter | Value / range | Unit | Notes | Tag |
+|---|---|---|---|---|
+| `spl_to_volume_db` | SPL_1m − 100 | dB | Peak-normalised assets | `[E]` |
+| `realism_range_db` | 60 (40–80) | dB | SPL 40–110 → −60…0 | `[E]` |
+| `contact_tau` | π√(m/k) | s | Band LP at 0.6/τc | `[K] (H)` ✓ |
+| `skull_modes` | 1.0 / 1.7 / 2.8 / 4.2 kHz, ζ 0.06–0.10 | Hz | Cracked × 0.6–0.8, ζ × 2–3 | `[K] (M)` |
+| `gsw_impact_spl` | handgun torso 75–95; rifle 85–105; head burst 95–110 | dB peak | Calibrate | `[E] (L)` |
+| `impact_delay_at_shooter` | d/v_bullet + d/343 | s | | `[K] (H)` ✓ |
+| `minnaert_blood` | f0 = 3.2 / a | Hz | Bubble τ = Q/(π f0), Q 15–35 | `[K] (H)` ✓ |
+| `plink_min_depth` | 10–20 | mm | | `[K] (M)` |
+| `drip_rate` | 20 × Q | drops/min | Q in mL/min | RB |
+| `fall_L_ref` | head 88 dB at 5 m/s; trunk 82 dB at 3 m/s, 30 kg | dB | | `[E]` |
+| `breath_gain` | amplitude ∝ flow (+5–6 dB per doubling) | — | | `[K] (M)` ✓ |
+| `stridor_f` | 250–1,000 (default 500–800) | Hz | | `[K] (M–L)` |
+| `gasp_flutter` / `groan_f0` | 30–80 / 70–110 | Hz | | `[E]` |
+| `scream` | F0 500–1,000+ (male); roughness 30–150 Hz; 90–105 dB | — | | `[S R2-06:S2,S3]` ✓ |
+| `voice_budget_by_class` | I 105 / II 100 / III 85–90 / IV ≤ 65 / LOC 0 | dB | | `[E]` |
+| `aphonic_if` | tracheal wound below the cords OR C1–C3 OR apnoea | rule | | `[K] (H)` |
+| `realtime_voices_gdscript` | 1–2 | — | | `[E] (M)` |
+| `baked_variants` | 8–16 | per recipe × state | | `[E]` |
+
+### Visual/behavioural checklist (audio)
+- A shot at 30 m: the report, then 0.12 s (rifle) to 0.17 s (handgun) later a separate dull "whop" from the target. A bone hit adds a crack at the same instant.
+- Punches thud; only bone, teeth and hard floors crack or click. A broken nose crunches on the blow and again, fainter, when touched.
+- Hammer on a head: the first blows knock hollowly, the fracturing blow cracks, later blows crunch and squelch without any ring.
+- An arterial wound is heard where the blood lands: rhythmic patter in time with the pulse that gets faster, softer and duller, then stops.
+- Drips tick on a bare floor and pat into a pool; nothing plinks unless blood collects in a container.
+- A limp body falling is 3–6 heavy dull thuds ending in the sharp knock of the head; a dropped pistol clatters louder than the body.
+- Unconscious and supine: snoring; with blood in the throat, gurgling and bubbles. Agonal gasps are snorts, not sighs.
+- Screams are rough, harsh and breath-limited, with a ragged gasp between them; the same character's screams, moans and speech share a pitch. As blood is lost the voice goes from shouting to breathy phrases to moans to silence.
+- A cut windpipe: air roaring and bubbling at the neck while the lips move without a voice.
+
+---
+
+## 8. Timelines: eight scenarios, second by second
+
+**How to read the scenarios:**
+- Times are **real time** from t = 0 (contact). The game plays the first 60 s after any critical event, and the 60 s either side of cardiac arrest, at 1×; the rest runs at the RB §1.3 band scale ("game").
+- Each scenario lists its **setup** and the **rolls** used (seeded; the main line is one legal outcome) and ends with its main **variants**.
+- Every event cites the section that specifies it. Tags are in those sections.
+- Reviewers replay each scenario at 1× and check the order and timing of events (§9).
+
+### 8.1 Brainstem shot
+
+**Setup.**
+- 9 mm FMJ from 3 m behind a standing, relaxed man holding a pistol in the right hand.
+- Entrance at the midline of the skull base, just below the external occipital protuberance. The track runs forward and slightly upward through the vermis, **medulla** and lower pons, the clivus and the nasopharynx, and exits beside the nose.
+
+**Rolls.**
+- Medulla destroyed (variant a).
+- Catecholamine surge: yes (p 0.5).
+- Small twitches in the first 30 s: yes (p 0.2–0.3).
+- Spinal reflex: yes (p 0.2–0.4).
+- Lazarus: no (p 0.03–0.05).
+- Post-mortem twitches: yes.
+- Lids at death: open.
+
+| t (real) | Body / motor | Eyes and face | Breathing and voice | Other sound | Physiology / notes |
+|---|---|---|---|---|---|
+| 0 ms | Head nods 1–3° forward (bullet exits, f_ret 0.1–0.3); **no startle** (the brainstem is destroyed) | Expression frozen; lids stay where they are | Breath stops (medulla) | Report; skull crack co-timed | Tone lost from 0 s (§3.4 row 1) |
+| 1–10 ms | — | — | — | — | Forward spatter cone from the face exit (1–4 m); back-spatter ≤ 0.5 m toward the shooter; bone chips and a little brain at the exit |
+| 0–100 ms | Tone ramps to 0 (τ 60–100 ms); ≤ 1–2 cm sag | — | — | — | §4.4 off-switch |
+| 100–250 ms | Knees go forward, hips flex, head lags; the **grip opens** | Jaw starts to drop | — | — | §4.5 A |
+| 0.3 s | The pistol leaves the hand | — | — | — | §3.4 row 1 |
+| 0.35–0.50 s | Knees hit the floor at 2–3 m/s; the arms seem to float up | — | — | Knee thuds; pistol clatter (often the loudest part) | — |
+| 0.8–1.0 s | The trunk pitches forward; **face and forehead strike the floor at 3–5 m/s with no hand in front**; the head rebounds 1–5 cm; the arms slap down 50–150 ms later | Lids drop 2–4 mm over 1–3 s; **no blink ever again** | Voiceless chest huff on trunk impact | `SKULL_KNOCK` (knock), trunk thud | §4.6: head last and hardest |
+| 1–2 s | Settles prone; the head rolls onto its cheek (p 0.85); arms beside the body palms up; feet flat | Eyes slightly divergent / skewed and motionless; pupils normal size at first | **No chest movement at all** | Silence | — |
+| 4 s, 11 s | A single finger twitch; a small foot twitch | — | — | — | §5.5 release after medullary destruction |
+| 0–60 s | Still | Doll's eyes absent (pons involved) | No breathing, **no gasps, no cough** | Drips from the nose and exit wound "pat" into a spreading pool | Catecholamine surge: HR 120–160, SBP +20–60 for ~40 s; then vasomotor loss, MAP 40–60 by 30–60 s. Face and exit wounds bleed in pulses at falling pressure |
+| 60–120 s | — | Pupils begin to dilate | — | Drip rate falls | **Lips and tongue turn dusky blue** (Hb intact) |
+| 3:10 | **Toes of the right foot curl one after another (2 → 5)**, twice, over 6 s | — | Silence | — | Spinal reflex window (§5.5). Moving the body or flexing the neck retriggers it with p 0.3–0.5 |
+| 3–5 min | Still | Pupils 5–7 mm | — | — | Hypoxic bradycardia < 40–50; bleeding weakens |
+| **6:00** | — | — | — | Pulsing ooze stops | **`t_arr`** (PEA → asystole); gravity drainage only |
+| 6–20 min | 3 faint twitches (an eyelid, the left calf, a finger) by 12 min, then none | Pupils 6–8 fixed; tear film gone; gloss fading | — | Silence | §5.5 post-mortem twitches |
+| **11:00** | — | — | — | — | Dead flag (`t_arr` + 300 s); post-mortem clocks (RB §6) |
+
+- **Game time**: 0–60 s at 1×; 1–5 min at 4×; 5–7 min at 1× around `t_arr`; then POSTMORTEM. About 3 min of play.
+- **Variants**:
+  - (b) Pons destroyed with the medulla spared: pinpoint pupils (1–1.5 mm), ocular bobbing, apneustic or cluster breaths for 0–5 min, then terminal gasps (p 0.3–0.5).
+  - (c) Midbrain destroyed: mid-position fixed pupils 4–6 mm, CN III eye down and out; **decerebrate stiffening (p 0.3–0.6) makes it a plank topple (B)** with arms straight and turned in, head impact 5–7 m/s; breathing continues (central neurogenic hyperventilation) and then fails; 2–8 irregular leg kicks over 10–60 s (p 0.1–0.2).
+
+### 8.2 Frontal-lobe pistol shot (dominant hemisphere, conscious survivor)
+
+**Setup.**
+- 9 mm FMJ from 5 m into a surprised, unarmed bystander facing the shooter.
+- Entrance in the left forehead, 3 cm above the brow and 3 cm left of the midline. The track runs laterally and slightly downward through the left dorsolateral prefrontal cortex and the inferior frontal gyrus (`Broca_ext`) and exits at the left temple.
+- Destroyed fraction: `PFC_dl_L` 0.45, `Broca_ext` 0.35, plus stun within 18 mm (0.7, decaying).
+
+**Rolls.**
+- Concussive collapse: yes (p 0.7–0.9).
+- Impact apnoea: yes, 40 s (p 0.6).
+- Seizure in the first hour: no (p 0.05–0.10).
+- Orbital-roof fracture: yes (p 0.82).
+- Vomiting: yes at ~4 min.
+- Left-dominant: yes (p 0.90).
+
+| t (real) | Body / motor | Eyes and face | Breathing and voice | Other sound | Physiology / notes |
+|---|---|---|---|---|---|
+| 0 ms | Head nods 1–2° back | — | — | Report; crack | Entrance ~7.5 mm with a 2 mm collar; exit 10–30 mm stellate at the temple with bone chips and brain; back-spatter ≤ 0.5 m toward the shooter; forward cone on the wall to the left |
+| 40–60 ms | — | Startle blink begins | — | — | L1 fires before the concussive collapse |
+| 100–200 ms | **Concussive LOC**: tone lost; the startle hunch had tipped the body forward | Lids stay part-open | — | — | Row 2 of §3.4 |
+| 0.35–1.1 s | Forward crumple (A), a quarter-turn left; no hands; forehead and nose strike the floor at ~4 m/s | — | — | Thuds, head knock | — |
+| 1–2 s | Prone, head on the right cheek (wound side up) | Pupils equal and reactive; doll's eyes present | **Impact apnoea**: no breathing | Silence | Catecholamine surge: HR 140, SBP +40 for ~30 s |
+| 5–40 s | Flaccid | Eyes slightly divergent, roving slowly | Apnoea continues | Blood from the exit pats into a pool; brain oozes from the exit (2–30 mL over 10–120 s) | Lips not yet blue (cyanosis needs 60–120 s) |
+| 40 s | — | — | **Breathing resumes**: irregular, 8–30 /min, bubbling into the blood under the face (prone: little snoring) | Bubbling | Impact apnoea ends |
+| 40–75 s | A withdrawal of the left leg when the player steps on it (GCS M4) | Roving | Moans to pain (V2) | Moan | GCS ~7 → 9 |
+| 75 s | **Wakes**: pushes up on both hands (arms are not paralysed), rolls onto the side, sits slumped | **Blank, vacant stare**; slow blinks; no gaze deviation (FEF spared) | Groans | — | Stun decaying (half-life 30 s – 10 min) |
+| 1.5–3 min | Right hand goes to the forehead; looks at the bloody hand (wound check 1–2 s, delayed × `rt_mult` 2); tries to stand, sinks back, **tries again the same way** (perseveration p ~0.5) | Blood from the forehead runs into the left eye within 5–30 s of sitting up → blinking and wiping; mild pain face (PSPI ~5) | **Non-fluent aphasia**: "uh… m-m… no… no"; **swearing fluent and intact**; screaming possible but absent (low arousal after the collapse) | Wet sniffing; spitting | `vocal_state` NONFLUENT (sev ≈ 0.8 residual); obeys simple commands p 0.7 |
+| 4 min | Retches 3 times, vomits 150 mL forward | Nausea face (9B 10B 15B) | Retch "hurk" ×3, then a gasp and a cough | Splash | Vomit p 0.2–0.4 after head injury |
+| 5–15 min | Stands with a hand on a wall; wide-based steps (+50–100 %), sway × 2–3; walks toward the exit, stops, turns back (perseveration); laughs once at nothing (disinhibition 0.3) | Response latency 3–6 s; follows the player with the eyes | 1–3-word utterances; repeats "no" | Footsteps, scuffs | Stable GCS 13–14 |
+| 10–30 min | Sits; holds cloth to the forehead | **Faint left periorbital purple (raccoon eye) appearing from ~10 min**; blood trickles from the left nostril | Headache moans | — | Anterior skull-base fracture (p 0.82); raccoon eyes clear at 1–6 h, beyond the scenario |
+| 30–60 min | Unchanged; fatigue | Blinks 10–15 /min | Non-fluent speech persists | — | Track haematoma 10 mL + 0.3 mL/min = 28 mL at 60 min: below the 60 mL reserve, no herniation |
+
+- **Game time**: 0–60 s at 1×; then 4× until the scenario is ended. About 8–10 min of play for the hour.
+- **Variants**:
+  - (A) No collapse (p 0.1–0.3): startle, stagger 1–2 steps, both hands to the forehead, wound check, a psychological stop (sits down), aphasia audible at once.
+  - (B) Seizure (p 0.05–0.10 in the first hour): the head and eyes wrench to the **right** (away from the left frontal focus) → GTC (§5.4) → Todd's paresis.
+  - (C) Larger track bleed (1 mL/min): drowsy from ~45 min, right arm drift, left pupil changes, herniation (§1.7.3).
+  - (D) The track crosses the precentral gyrus: right lower-face droop, right hand drop, right leg buckle, and the fall goes toward the right side.
+
+### 8.3 Temporal shot with a blown pupil later (talk and die)
+
+**Setup.**
+- .22 LR from 4 m into the right temple of an unarmed man, alert, low arousal.
+- The bullet is **retained** in the right temporal lobe (non-dominant): `temporal_lat_R` destroyed 0.35, contusion.
+- Track haematoma 15 mL growing at 1.0 mL/min.
+- Herniation triggers use effective volume × 1.3 (temporal mass).
+
+**Rolls.**
+- Concussive collapse: yes, 20 s.
+- Seizure: no (p 0.075–0.15).
+- Kernohan: no.
+- Neurogenic pulmonary oedema: no.
+- Gasps at the end: no (the medulla fails first).
+
+| t (real) | Body / motor | Eyes and face | Breathing and voice | Other sound | Physiology / notes |
+|---|---|---|---|---|---|
+| 0–60 ms | Startle begins | Blink | — | Small crack | Entrance 4–5.6 mm over bone; no exit |
+| 0.1–1.0 s | Concussive collapse, crumpling forward-right, no hands | — | — | Thud, head knock | §3.4 row 2 |
+| 1–20 s | Flaccid, snoring on its side | Open, then roving; pupils equal 3.5 mm | Snoring (lateral p 0.1–0.2 → light) | — | GCS 7 → 12 |
+| 20 s | Wakes, confused; the left hand goes to the right temple | Dazed stare; slow saccades | "What… what happened?" | — | GCS 13 |
+| 1–5 min | Sits up; asks the same question every ~60 s; holds the head | Normal pupils; **does not notice objects in the upper left** (left upper quadrantanopia, Meyer's loop) | Talks; complains of headache | Sniffing | Amnesia for the event |
+| ~6 min | Vomits once | Nausea face | Retching | — | Vomit roll |
+| 5–25 min | **Lucid**: stands, walks with a hand on the wall, argues, refuses help | Normal | Normal speech, irritable | — | Mass 20 → 40 mL (effective 52); MLS 4 mm |
+| 25–35 min | Lies down; yawns; second vomit; left arm drifts down and palm-down within 3–10 s when raised; left foot drags | Heavy lids (5–7 mm); slow blinks | Slurred, sleepy (GCS 13 → 11) | Sighing | Drowsy per Ropper (3–4 mm MLS) |
+| ~35 min (U1) | Stuporous; opens the eyes only to pain | **Right pupil**: a brief constriction (missed), then **4.5 vs 3.5 mm, sluggish, slightly oval** | Moans; breathing waxing and waning (Cheyne–Stokes) | Moans | Uncal stage U1 |
+| ~45 min (U2) | Coma (GCS 6–7); **left hemiparesis**; decorticate spasms when touched (5–60 s), then decerebrate | **Right pupil 7–8 mm fixed**; right lid drooping; right eye down and out | Snoring or gurgling on the back; a moan with each spasm | Snore | **Cushing**: SBP 190–220, HR 50–60, irregular breathing; flushed face |
+| ~55 min (M) | Decerebrate spasms on any stimulus; jaw clenched | Both pupils mid-to-wide and fixed (right 7, left 5 mm); doll's eyes weak and dysconjugate | Central hyperventilation 30–40 /min | Harsh fast breathing | Stage M |
+| ~65 min (P) | **Flaccid**; spasms stop | Doll's eyes absent; left pupil widening | Ataxic: irregular rate and depth with pauses | — | Posturing stopping is a bad sign |
+| ~72 min (X) | — | Both 6–8 mm fixed | Slow irregular gasps → **apnoea** | Silence | Tonsillar compression |
+| 72–78 min | Heart beating; brainstem dead | Fixed, slightly divergent; eyes move with the head | None | Silence | Lips blue from ~73–74 min; HR < 40–50 by ~76 min |
+| **~78 min** | — | — | — | — | `t_arr` (6 min after apnoea); dead flag ~83 min |
+
+- **Game time**: ACUTE for the first minute, MINUTES/LONG bands (4–15×) for the lucid interval and the decline, 1× around `t_arr`. About 8–12 min of play.
+- **What the player learns**: the eyes and the breathing announce the herniation long before the body stops moving.
+- **Variants**:
+  - Seizure (p 0.075–0.15): versive to the left, then GTC; it raises ICP by +10–20 mmHg and speeds up the decline.
+  - Kernohan (p 0.1–0.2): the hemiparesis is on the right (same side as the mass).
+  - False-side pupil (p 0.10–0.15): the left pupil dilates first.
+  - A left temple (dominant side) adds jargon or non-fluent aphasia and right hemiparesis.
+
+### 8.4 Heart shot
+
+**Setup.**
+- 9 mm FMJ from 7 m into a **committed attacker** walking toward the shooter at 1.4 m/s with a knife raised.
+- The bullet crosses the left lung, the right and left ventricles and the septum, and exits the back. The heart is effectively destroyed: `t_arr` ≈ 0.
+
+**Rolls.**
+- Arousal 0.8.
+- Psychological stop: no (p 0.35–0.45).
+- Aware at 1.5 s.
+- LOC at 11 s (upright × 0.85).
+- Anoxic myoclonus: yes, 5 jerks (p 0.8).
+- Tonic spasm: yes (p 0.15–0.3).
+- Gasps: yes (p 0.45).
+- Lung froth: yes (p 0.3–0.5).
+- False last breath: yes (p 0.3).
+
+| t (real) | Body / motor | Eyes and face | Breathing and voice | Other sound | Physiology / notes |
+|---|---|---|---|---|---|
+| 0 ms | **No knock-back** (0.038 m/s); the shirt ripples | — | — | Report; no audible impact from 7 m | BP falls over 2–4 beats |
+| 40–250 ms | A small hunch (startle × 0.6 for arousal) | Blink | Silent (startle grunt not rolled) | — | §3.3 `FLINCH` |
+| 0.3–1.5 s | Keeps walking and raises the knife | Wide, fixed on the shooter; pupils +1 mm | Shouts | Footsteps | Unaware for 1.5 s |
+| 1.5 s | Glances down at the chest for 0.5 s, then back up | Brief look | — | — | Committed: no wound check |
+| 1.5–5 s | **Full function**: closes to ~3 m, still advancing | Fixed on the target | Shouting | — | Brain O₂ reserve 8 s + ~4 s residual pressure (§3.8) |
+| 5–10 s | Stride shortens and weaves; knife arm sags; left hand reaches for a table edge | **Vacant, unfocused**; pupils dilating; face pales | Speech slurs; gasping breaths | Scuffing feet | Grey-out |
+| **11.0 s** | **LOC**: hypoperfusion sag with a final "crash" (0.2–0.5 s) | Lids stay open | — | — | §4.5 G |
+| 11.2–12.5 s | Knees buckle; slumps forward and sideways; the right hand opens (knife drops at ~11.3 s); **no protective arms**; head strikes the floor at 2–4 m/s at ~12.4 s | **Eyes roll up 20°** (starts 11.5 s, held ~6 s) | Voiceless chest huff | Knife clatter; knee and trunk thuds; head knock | — |
+| 12–22 s | **5 irregular myoclonic jerks** (right arm, face, left leg, both shoulders, right hand) spread over 10 s; head turns; lip smacking | Lid flutter with jerks; eyes drift back to near straight ahead by ~20–40 s | Snoring breaths for a few seconds | — | Not a seizure: few, irregular, pale |
+| 26–36 s | **Anoxic tonic spasm**: arms straighten and turn in, back arches, jaw clenches, 10 s; then limp | Mid-position | Breathing stops | — | EEG flat by 15–30 s |
+| **30 s** | First **agonal gasp**: head jerks back 20°, jaw gapes 30 mm, shoulders lift, a small right-arm jerk | Eyes move with the head | **Snort** + gurgle; **pink froth** at the lips | — | Gasp schedule (§5.2): 30, 40, 53, 70, 92, 120, 158, 206 s |
+| 30–45 s | Limp between gasps | **Pupils begin to dilate** | — | — | — |
+| 60–120 s | — | Pupils **6–8 mm fixed**; lids settle half-open (4 mm) | Gasps weaker, 17–38 s apart | — | Face grey; lips dusky (the blood is in the chest, not outside) |
+| 3.4 min | Last scheduled gasp | — | Weak snort, passive sigh | Silence | — |
+| **4.8 min** | **False last breath** after a 90 s silence | — | One more small gasp | — | p 0.3 |
+| 5 min | — | Gloss fading | — | — | Dead flag |
+| 5–15 min | 3 faint twitches (fingers, eyelid) | — | — | — | Post-mortem twitches |
+
+- **Game time**: 1× for the first 60 s and around `t_arr` (here the whole first 2 min); then 4× to the dead flag. About 2 min of play.
+- **External blood**: little. The 5–18 mm back exit soaks the clothes and pools under the back; there are no arterial jets outside.
+- **Variants**:
+  - Non-combatant (psychological stop p 0.7–0.9): at 0.4–0.8 s the hand goes to the chest, then kneels and sits (C), still conscious until the same ~11 s.
+  - Supine at the time of the hit: LOC × 1.2.
+  - Stab wound with tamponade: activity for minutes, distended neck veins, grey sweating breathlessness (RB §4.4).
+
+### 8.5 Carotid cut
+
+**Setup.**
+- Knife slash across the **left** side of the neck of a standing, unarmed man.
+- Transects the left common carotid and the internal jugular vein; the airway is intact.
+- Uncompressed arterial flow 1.0 L/min; own-hand compression × 0.4–0.7.
+
+**Rolls.**
+- Poor collaterals → left-hemisphere ischaemia: yes (p 0.2–0.3), onset 12 s.
+- Scream: no, a shout instead (p 0.3–0.5).
+- Myoclonus at LOC: yes (p 0.5, slow onset).
+- Gasps: yes, 5 (p 0.4).
+
+| t (real) | Body / motor | Eyes and face | Breathing and voice | Other sound | Physiology / notes |
+|---|---|---|---|---|---|
+| 0–50 ms | Blade contact | — | — | Faint skin "tick", fabric | — |
+| ~100 ms | Flinch away from the blade: head turns right, shoulders up | Blink | Sharp inhalation | — | Withdrawal / startle |
+| 0.2–1 s | — | — | — | — | Wound gapes 10–30 mm in < 1 s; a **scarlet pulsing jet** of 0.5–1.5 m, one burst per beat (HR 110 → 130); dark welling from the jugular beneath |
+| 0.3–0.8 s | **Both hands clamp the neck**; blood wells between the fingers | Eyes wide (11–12 mm), fear face | — | **Spurt patter** on the wall and floor where the jet lands | Flow × 0.5 |
+| 1–10 s | Backs away, turns toward the door | Scanning | Panting; a shouted "help!" | Patter continues | Airway intact, voice normal |
+| **12 s** | **Right arm weakens**: the right hand slips from the neck and the arm sinks and pronates; right leg weakens | **Eyes and head turn 20° left** (toward the ischaemic hemisphere); **right lower face droops** 3–5 mm | Speech breaks down: "uh… uh… help… no" (non-fluent) | — | Left MCA territory ischaemia (§1.3); onset 5–30 s |
+| 15 s | The right knee buckles under load; falls **toward the right** (D); the left arm catches, then returns to the neck | — | Grunt | Palm slap, hip thud | Compression now × 0.7 (left hand only) |
+| 15–60 s | Lying on the right side; left hand pressing; tries to push up with the left arm | Fear face lopsided (right side weak); pupils 5–6 mm | Fast breathing 25–30 /min; moans; single words | Patter weakens | — |
+| 30–90 s (10–20 % loss) | Restless | **Pale; sweat beads on the forehead and upper lip** | Sighs | Jet shorter, faster | Class I–II |
+| 90–150 s (20–30 %) | Pushing attempts stop | Heavy lids; slow blinks | Slurred moans | — | Confusion |
+| **~3 min** (40–50 %) | **LOC**: the left hand falls away from the neck → the flow rises again | Eyes up briefly, then half-open | Quiet (lying on the side); blood drains from the neck | Jet becomes a **welling pulse** | Myoclonus: 3 jerks over 8 s |
+| 3–5 min | Limp | Pupils dilating | Irregular shallow breaths | — | Waxy grey-white; **lips grey-lilac, not blue** |
+| **~5 min** | — | — | — | Welling stops pulsing | **`t_arr`** (PEA) |
+| 5–8 min | Small gasp jerks | Pupils wide and fixed by 1–2 min after arrest | **5 agonal gasps** | Snorts | — |
+| 10 min | — | — | — | — | Dead flag; very faint, late livor (exsanguinated) |
+
+- **Game time**: the first 60 s at 1×; then 4×; 1× from 4 to 6 min. About 3 min of play.
+- **Scene**: arterial arcs and zigzag clusters on the wall (one per beat, lower and smaller over time); flows down the chest; a large pool; hand smears on the floor.
+- **Variants**:
+  - Airway cut below the cords: **no voice at all**; hissing and bubbling at the neck; coughs spray blood from the wound; aspiration (the cause of death in 36.5 % of a fatal series).
+  - Good collaterals (p 0.7–0.8): no hemispheric signs; the clamp holds with both hands until LOC at 2.5–4 min.
+  - Upright victim: faints at 20–30 % loss (60–120 s) with convulsive jerks.
+  - Both carotids and jugulars cut: LOC 5–20 s, arrest 1–3 min.
+
+### 8.6 Femur shot
+
+**Setup.**
+- 9 mm FMJ from 10 m through the **right mid-thigh** of a committed attacker walking toward the shooter, holding a pistol, with the right leg in stance.
+- Femoral shaft fracture (comminuted with a butterfly fragment); femoral artery intact.
+
+**Rolls.**
+- Aware at once (a bone hit: unaware ≤ 0.05).
+- Hop: no.
+- Vocalisation on the fracture: a cry (pain 8).
+- Psychological stop at 8 s: yes (committed 0.4 × 1.3 for the limb).
+- Keeps the pistol for 3 s.
+
+| t (real) | Body / motor | Eyes and face | Breathing and voice | Other sound | Physiology / notes |
+|---|---|---|---|---|---|
+| 0 ms | The thigh flicks slightly | — | — | Report; `BONE_CRACK` co-timed | Femur shatters; 3–10 fragments; exit 2–5 cm with bone chips |
+| 30–250 ms | Startle | Blink | — | — | — |
+| **100–300 ms** | **The right leg folds at mid-thigh** (10–30° angulation); pelvis drops 10° on the right; the trunk rotates right | Pain face begins (~300 ms) | — | — | §3.4 row 21, §4.5 D |
+| 200 ms | **Arms thrown out** (burst ~100 ms after balance loss) | — | — | — | CatchFall pre-armed |
+| 240 ms | Short rescue step with the left leg | — | — | — | Fails |
+| **0.6–0.9 s** | Lands on the right hip and the heels of both hands; the pistol still in the right hand | Eyes squeezed | Air forced out ("uh") | Palm slaps, hip thud | Hands first |
+| 0.5–1.5 s | — | PSPI 13–16 at the apex | **Cry**, 1.2 s, F0 ~450 Hz, rough; gasping inhalation | — | Pain spike (aware at once) |
+| 1–3 s | Rolls onto the back; the right thigh bends visibly mid-shaft; **the foot lies turned out 60–90°** | — | Hissing through the teeth | Faint crepitus as the leg moves | Shortening 2–5 cm |
+| 3 s | Drops the pistol; **both hands clamp the thigh** above the fracture | Pupils +1 mm | Groans with each movement | Clatter | Weapon drop |
+| 8 s | **Psychological stop**: raises one hand toward the shooter | Pleading face (oblique brows) | "Don't— don't shoot, I'm done" in breath groups of 3–8 syllables | — | Surrender |
+| 10–60 s | Any movement → pain spike (vocal mix: silent 0.35, groan 0.35, cry 0.2, scream 0.1) | Tears | Panting 25 /min | — | — |
+| 1–10 min | Tries to drag itself backward with the arms; the broken leg drags, rotating outward and bending at the fracture | Pale lips | Breathless speech | Scraping; crepitus | Closed blood loss 1–1.5 L into the thigh over tens of minutes; the thigh swells 2–3 cm per litre; fat beads glisten in the exit wound |
+| 5–20 min | Fear tremor in the hands and jaw; hunched | Sweat on the forehead | "I'm cold" | Teeth chatter from ~15 min (shiver p 0.3–0.5) | Class II (15–30 %) |
+
+- **Game time**: the first 60 s at 1×; then 4×. Survives the scenario window.
+- **Variants**:
+  - Femoral artery also transected (p from the track): a pulsing jet from the entrance and exit wounds, a fast-growing pool; LOC 2–5 min, arrest 3–10 min (RB §4.7); `HOLD_NECK`-like clamping of the groin with both hands.
+  - Hop (p 0.3–0.5): 1–3 hops on the left leg before the fall.
+  - Rifle (7.62×39): 3–10 cm of the shaft pulverised, near-amputation look, exit 5–15 cm with protruding bone.
+  - Unloaded leg at the time of the hit: stays up until the next right stance (0.2–0.5 s), then the same fall.
+
+### 8.7 Punches to knockout
+
+**Setup.**
+- An unarmed man, aware of the fight, guard up (braced) at the start.
+- The attacker is a trained puncher (straights 2,800 N; hooks 3,500 N).
+
+**Rolls.** Every P(LOC) is computed with §3.7.
+
+| t (real) | Body / motor | Eyes and face | Breathing and voice | Other sound | Physiology / notes |
+|---|---|---|---|---|---|
+| 0.00 s | **Punch 1**: straight right to the nose (α ≈ 5,200 × 0.5 = 2,600; braced midpoint 7,750 → P(LOC) ≈ 0.01) | — | — | Smack + **nasal crunch** | Nasal fracture (threshold 111–334 N) |
+| 0.05–0.10 s | Head snaps back 20–30° | Blink, eyes squeeze | Forced exhalation | — | Head excursion peaks at 50–100 ms |
+| 0.3–0.6 s | Left hand to the nose | **Eyes glisten within 1–5 s**; pain face (PSPI ~8) | Grunt; hiss | — | Reflex tearing |
+| 0.5–2 s | Steps back 1 step; guard re-forms | Tears run by ~10–30 s | Wet sniff | Blood drips from the nose | — |
+| **2.00 s** | **Punch 2**: left hook to the right jaw (α ≈ 6,500; midpoint 7,750 × 0.95 = 7,360 → **P(LOC) 0.33 → no**) | — | — | Dull thud | — |
+| 2.05–2.10 s | Head whips 40–60° to the left | — | — | — | — |
+| 2.1–4 s | **Rocked**: knees dip 20° and recover; 3 wide lurching steps; the hands grab the attacker (clinch) | **Blank stare**; horizontal nystagmus (2 Hz, 4°) | Grunts | Feet scuffing | `rt_mult` 1.5; guard dropped; flinch p 0.3–0.6 |
+| **4.20 s** | **Punch 3**: right hook to the left jaw while rocked (α 6,500; unbraced 6,000 × 0.95² × 0.8 = 4,330 → **P(LOC) 0.86 → yes**) | — | — | Smack + teeth clack | — |
+| 4.25–4.30 s | Head rotates to the right; **tone lost** (≤ 100 ms) **before the head comes back** | Eyes glaze | — | — | — |
+| 4.3 s | **Fencing**: the right arm (face side) shoots up and forward, stiff (shoulder flexion ~100°, elbow ~10°); the left arm flexes | Open (p 0.8); **tonic upgaze** 5 s | — | — | p 0.66; ω 12–16 |
+| 4.3–5.2 s | Crumples with a quarter-turn to the right, following the head; **no protective hands**; lands on the right side and back | — | Voiceless huff | Thuds; **head knock at 3–5 m/s** | Fencing crumple (0.5 of the mix) |
+| 5.2–6.0 s | **Two more punches land on the downed head**: purely passive bounces; no guard, no flinch | — | — | Dull thuds, head-on-floor knocks | Post-knockout strikes |
+| 4.3–9.5 s | The raised right arm stays up ~5 s, then drops over 0.8 s | Eyes back to near neutral, slightly divergent; pupils equal and reactive | — | — | — |
+| 6–40 s | Limp on the back | Doll's eyes present | **Snoring**, then **gurgling** as nose blood runs back into the throat | Snore, gurgle | LOC; concussive convulsion not rolled (p 0.014) |
+| **~40 s** | Wakes | **Eyes open first**; blank stare for 20 s | Groans | — | — |
+| ~60 s | Tries to rise; **falls back** | Unfocused | — | Thud | Fall-back p 0.3–0.6 |
+| ~90 s | Sits up; **hand to the head** | Slow saccades (0.5 /s) | "What happened? … What happened?" (repeats every 30–120 s) | Spitting blood | Amnesic for the event |
+| 2–10 min | Stands unsteadily with feet wide; sways; sits again | Hyponasal voice (nose blocked); periorbital swelling beginning | Mouth breathing; wet sniffing | — | Confusion 5–30 min |
+
+- **Game time**: 1× throughout the fight and the first minute after the knockout; then 4×.
+- **Variants**:
+  - Punch 3 lands with locked knees: **plank topple** (1.0–1.6 s), occipital impact 5–7 m/s; risk of a skull fracture and EDH → the §8.3 pattern.
+  - Concussive convulsion (p 0.014): tonic stiffening within 2 s, lasting ≤ 20 s, then jerks up to 150 s; recovers.
+  - Heavy blows while unconscious and supine: aspiration of nose blood → gurgling, blue lips.
+
+### 8.8 Hammer depressed fracture with a seizure
+
+**Setup.**
+- Claw hammer (0.6 kg head) striking the **left parietal** region of a standing, unarmed man, 3–4 cm left of the midline and ~2 cm behind the vertex, over the left hand and arm motor area.
+- The victim is left-dominant (speech in the left hemisphere).
+
+**Rolls.**
+- Blow 1: no fracture; no LOC (0.1–0.3).
+- Blow 2: depressed fracture and dural tear (0.3–0.6); no LOC (0.3–0.6).
+- Seizure: yes (p 0.06–0.12: blunt with fragments through the dura × 2, motor cortex × 1.5), onset at 3:10, focal → bilateral.
+- Figure-of-4: yes.
+- Tongue bite: yes.
+- Urine: yes.
+
+| t (real) | Body / motor | Eyes and face | Breathing and voice | Other sound | Physiology / notes |
+|---|---|---|---|---|---|
+| 0.00 s | **Blow 1** (60 J) | — | — | **Hollow "coconut" knock** | Crescent scalp laceration 25 mm; bump; **no spatter** (no exposed blood yet) |
+| 0.04–0.3 s | Startle; head ducks; stumbles one step | Blink; eyes squeeze | "Ah!" | — | Coup stun under the site 0.3–0.6: right hand weak (transient) |
+| 0.4–1.2 s | Left hand to the back of the head; turns toward the attacker; **forearms up** (the right arm lags, weak) | Terror face, eyes wide | **Shout: "Stop!"** | — | `SHIELD` p 0.5–0.8 |
+| **1.80 s** | **Blow 2** (70 J), same site, past the raised left forearm | — | — | **Crack + crunch** | **Depressed fracture** 30 mm across, 8 mm deep; 4 inner-table fragments driven in; dural tear; `M1_hand_L` / `M1_arm_L` destroyed 0.35 + stun; `M1_leg_L` stun 0.3 |
+| 1.85–2.3 s | **The right arm drops as dead weight** and swings; the right hand is limp | Dazed | Scream (0.9 s, rough) | Impact spatter begins (blood now exposed); cast-off on the backswing | Right hand and arm sev ≈ 1 / 0.8 |
+| 2.3–2.8 s | The right knee buckles under load; **falls toward the right** (D); the left arm catches; lands on the right shoulder | — | Grunt | Palm slap, shoulder thud | Leg sev ~0.4 (MRC 3) |
+| 3–60 s | On the ground, conscious (GCS 13–14); tries to push up with the left arm only; the right arm lies where it fell | Mild right lower-face droop; blood from the scalp runs over the forehead into the eyes → blinking and wiping with the left hand | Screams in breath-paced bursts, then moans; speech slightly slurred (dysarthric), words intact | Drips pat | Pain spikes on each movement |
+| 1–3 min | Sits against the wall; holds the head with the left hand | Pale; sweat | "My arm… I can't feel my arm" | — | Seizure clock running |
+| **3:10** | **Focal seizure**: the paralysed **right fingers and wrist start jerking at ~2 Hz** (10–40° per jerk) | Stares at the hand; fear face | "No, no, no" (conscious) | — | Irritative cortex beside the destroyed tissue (§1.8) |
+| 3:25 | **Jacksonian march**: the jerking spreads to the forearm and then the whole arm (~15 s per segment) | — | Panting | — | — |
+| 3:40 | The **right face** joins: mouth corner pulled 3–8 mm, right eyelid twitching | Right hemiface clonic | Speech stops | — | — |
+| 3:50 | **Head and eyes wrench to the right** (forced version 30–45°, away from the left focus) over 2 s | Eyes forced right | — | — | LOC |
+| 3:52 | **Generalisation**: epileptic cry (1.5 s); tonic flexion 3 s (arms rise) | **Eyes open wide**, pupils 7 mm, unreactive | **Epileptic cry** | — | — |
+| 3:55–4:07 | **Tonic extension** with a **figure-of-4**: right elbow straight (contra to the focus), left arm flexed across the chest; back arched; legs extended; feet pointed; slides from the wall onto the floor | Face congested, **turning blue from ~4:05** | **Apnoea**; strained grunt | — | Urine released; ICP +10–20 mmHg |
+| 4:07–4:10 | Fine 10 Hz quiver of the rigid body | — | — | — | Vibratory transition |
+| 4:10–4:55 | **Clonic**: bilateral synchronous flexor jerks at 3.5 Hz, **slowing to ~0.8 Hz** (~60 jerks); the gaps lengthen | Eyelids jerk with each beat; eyes nystagmoid | Grunt or snort with each jerk; **jaw snaps**; **pink froth** (lateral tongue bite) | Jaw clacks; knocks of the limbs on the floor | Cyanosis peaks, then eases |
+| 4:55 | Last jerks 2 s apart; **completely limp** | Lids half-close | A deep sighing breath | — | — |
+| 4:55–5:25 | Limp where it lies | Half-closed; pupils large and sluggish | 10 s pause, then **loud stertorous breathing** 25 /min, gurgling froth | Snoring, bubbling | Colour returns from blue to pale over 1–5 min |
+| 5–8 min | **Todd's paresis**: the right leg is now also flaccid (on top of the arm lesion); withdraws the left limbs and moans to pain | Pupils back to normal and reactive | Moans | — | GCS 8–9; Todd lasts 173 s here |
+| 8–25 min | Stirs; rolls; pulls at clothes; combative when touched; the right leg recovers to MRC 3; **the right arm stays paralysed** (lesion) | Confused gaze | Confused, slurred words | — | Post-ictal confusion 10–60 min |
+| 25–60 min | Sits; headache; nausea | Drowsy | Slurred but oriented by ~45 min | — | Watch for EDH (parietal fracture near the middle meningeal branches) |
+
+- **Game time**: 1× for the attack and the first minute; 4× from 1–3 min; **1× again for the 60 s after the seizure starts** (a critical event); then 4×.
+- **Variants**:
+  - Status epilepticus (p 0.02–0.05): the convulsions continue or recur without recovery beyond 5 min.
+  - EDH from a torn meningeal branch (1 mL/min): lucid for ~60 min, then the §8.3 decline with the **left** pupil blowing and a right hemiplegia.
+  - More blows (4–8): comminuted mosaic, extruding brain, LOC, posturing (§6.2 row 4).
+  - A blow over the left temple instead: aphasia (non-fluent or jargon) and a much higher EDH risk (thin temporal bone, fracture threshold ~10 J).
+
+### Simulation parameters (scenario defaults)
+
+| Parameter | Value | Unit | Notes | Tag |
+|---|---|---|---|---|
+| `scenario_brainstem_t_arr` | 6 (4–10) | min | Medulla variant | `[K] R1-04 §2.4` |
+| `scenario_frontal_transient_loc` | 75 (5–120) | s | Impact apnoea 40 s | `[G]` on `[K]` |
+| `scenario_temporal_mass` | 15 mL + 1.0 mL/min; herniation effective volume × 1.3 | — | Apnoea ~72 min, `t_arr` ~78 min | `[E]` |
+| `scenario_heart_loc` | 11 (8–15 × 0.85 upright) | s | Gasps from 30 s | `[K]` `[E]` |
+| `scenario_carotid_flow` | 1.0 uncompressed; × 0.5 two hands; × 0.7 one hand | L/min | LOC ~3 min; `t_arr` ~5 min | `[E] R2-04 §10.3` |
+| `scenario_femur_giveway` | 0.1–0.3 | s | Contact 0.6–0.9 s | `[E]` |
+| `scenario_ko_forces` | straight 2,800 N; hooks 3,500 N | N | §3.7 | `[S R2-02:S28,S29]` `[E]` |
+| `scenario_hammer_energy` | 60 / 70 | J | Seizure onset 3:10 | `[E]` |
+
+### Visual/behavioural checklist (scenarios)
+- In every scenario the order is: impulse → blink and flinch (if the brainstem works) → mechanical failure → protective limbs (if conscious) → hand to the wound → looking → the emotional reaction → physiological collapse.
+- Nothing is thrown by a bullet. Unconscious bodies never protect themselves. Heart-shot characters stay capable for several seconds.
+- The brainstem victim never breathes again; the heart-shot victim gasps; the carotid victim goes white; the temporal victim talks for half an hour before one pupil blows; the knocked-out man wakes up asking the same question; the hammer victim's paralysed hand starts jerking before the whole body convulses.
+
+<!-- CONTINUE: section 9 -->
