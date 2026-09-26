@@ -281,6 +281,14 @@ then irregular), and cover the wall and lip in wet dark clot and pooled blood.
   irregular tissue, not a smooth sleeve.
 - Keep: loose teeth and the broken jaw in the mouth blast (they sell it).
 
+## 5.17 Blood stream DISCONNECTED from the wound (our render, `refs/25_...`, `refs/26_...`) — HIGH priority
+The user spotted it: the blood stream starts BELOW the hole with a visible gap of clean skin between the wound rim and
+the top of the stream, so it looks stuck on under the hole instead of pouring OUT of it. Required: the blood must be
+one continuous body from INSIDE the wound cavity (a blood surface filling the hole) over the lowest point of the rim
+(the lip itself wet and covered) and down the skin — no gap, no separate object starting under the hole, the stream's
+top merges into the pooled blood in the wound. Test: close-up at the rim from straight on and 45°: zero skin visible
+between wound blood and stream.
+
 ## 6. What to change in our assets (actionable)
 
 | Where | Change |

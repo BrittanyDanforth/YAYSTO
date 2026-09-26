@@ -220,7 +220,7 @@ phase('Finalize')
 const FINAL = `${PRE}
 
 YOUR TASK: finalize. You may edit any project file in ${DIR}.
-TOP PRIORITY FOR THIS PASS (latest user feedback): ALSO apply REFERENCE_NOTES §5.15 (blast zone: gums/palate/tongue/lining destroyed, nothing intact) and §5.16 (material separation: bone matte and pale, tissue darker and softer, only wet blood mirror-glossy; break up smooth edges and blood streams; wound walls THIN and ragged like real skin/fat/muscle, not thick smooth moulded sleeves).
+TOP PRIORITY FOR THIS PASS (latest user feedback): ALSO apply REFERENCE_NOTES §5.15 (blast zone: gums/palate/tongue/lining destroyed, nothing intact) and §5.16 (material separation: bone matte and pale, tissue darker and softer, only wet blood mirror-glossy; break up smooth edges and blood streams; wound walls THIN and ragged like real skin/fat/muscle, not thick smooth moulded sleeves). AND §5.17 (HIGH): blood streams currently start BELOW the hole with a gap of clean skin (see refs/25_our_blood_disconnected.png, refs/26_...): make the blood one continuous body from the pool inside the wound over the wet lowest lip down the skin, zero gap.
 ${USER_FEEDBACK}
 ${BLOOD_RULE}
 ${REFS_RULE}
