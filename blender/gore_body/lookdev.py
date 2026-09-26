@@ -157,15 +157,22 @@ def _body_skin_material():
 
     base = tone.ramp([(0.0, (0.61, 0.43, 0.35)), (0.25, (0.48, 0.30, 0.225)), (0.5, (0.30, 0.16, 0.10)),
                       (0.75, (0.13, 0.062, 0.038)), (1.0, (0.05, 0.026, 0.018))])
+    # body-only terms fade out over the 4 cm below the neck seam, where the colour must equal the head's
+    body_k = (gbc.SEAM_Z - p.z).smooth(0.0, 0.04)
     m_low = t.noise(ph, 22.0, 3.0, 0.55)
     m_red = t.noise(ph + (7.3, 1.1, 3.7), 30.0, 3.0, 0.55)
     m_fine = t.noise(ph, 190.0, 3.0, 0.6)
-    redness = (m_red.smooth(0.5, 0.8) * 0.26 + (m_fine - 0.5) * 0.2 + joint * 0.30 + palm * 0.22
-               + nipple * 0.3).clamp()
+    # (the head's formulas and constants, then the regional additions)
+    redness = (m_red.smooth(0.5, 0.8) * 0.28 + (m_fine - 0.5) * 0.22
+               + (joint * 0.30 + palm * 0.22 + nipple * 0.3) * body_k).clamp()
     redness = redness * (1.0 - pallor)
     col = t.mix(redness, base, base * (1.04, 0.64, 0.66))
-    col = col * (0.84 + 0.30 * m_low)
+    col = col * (0.82 + 0.34 * m_low)
     col = t.mix((m_fine - 0.5).abs() * 0.5, col, col * (1.0, 0.92, 0.80))           # sallow / olive
+    sun = sun * body_k
+    covered = covered * body_k
+    oily = oily * body_k
+    hair = hair * body_k
     # sun-exposed skin (dorsal forearms, hands, shoulders): a little darker and warmer
     col = t.mix(sun * 0.55, col, col * (0.90, 0.78, 0.68))
     # skin that is always covered (under the shorts): paler, a touch pinker
@@ -177,10 +184,13 @@ def _body_skin_material():
     jl = t.ridge(t.noise(t.vec(p.x * 0.15, p.y * 0.15, p.z), 700.0, 2.0, 0.5), 0.06) * joint
     col = t.mix(joint * 0.45, col, col * (0.80, 0.66, 0.62))
     col = col * (1.0 - jl * 0.18)
-    # freckles and melanin spots (more on sun-exposed skin)
-    fd, fcol, _ = t.voronoi(t.warp(ph, 300.0, 0.0006), 260.0)
-    frk = (1.0 - fd.smooth(0.0, 0.3)) * t.sep(fcol)[0].smooth(0.82 - sun * 0.1, 0.95) * (0.25 + sun * 0.35)
-    col = t.mix(frk * (1.0 - palm), col, col * (0.72, 0.58, 0.48))
+    # freckles and melanin spots (the head's, a few more on sun-exposed skin)
+    fd, fcol, _ = t.voronoi(t.warp(ph, 300.0, 0.0006), 380.0)
+    frk = (1.0 - fd.smooth(0.0, 0.3)) * t.sep(fcol)[0].smooth(0.72 - sun * 0.08, 0.9) * (0.4 + sun * 0.2)
+    col = t.mix(frk * (1.0 - palm), col, col * (0.70, 0.57, 0.47))
+    # the head's faint superficial vein network (pallor makes it stronger)
+    hvein = t.ridge(t.noise(t.warp(ph, 20.0, 0.01), 38.0, 3.0), 0.022) * t.noise(ph, 12.0).smooth(0.45, 0.62)
+    col = t.mix(hvein * (0.12 + 0.4 * pallor), col, col * (0.62, 0.74, 0.95))
     # areola and nipple (with Montgomery tubercles)
     ar_col = t.mix(m_fine, (0.20, 0.085, 0.065), (0.27, 0.12, 0.09))
     col = t.mix(areola * 0.9, col, ar_col)
@@ -199,23 +209,23 @@ def _body_skin_material():
     strand = (1.0 - hd.smooth(0.0, 0.16)) * t.sep(hcol)[1].smooth(0.92 - hair * 0.35, 0.95 - hair * 0.35)
     col = t.mix(strand * hair * 0.45, col, (0.030, 0.020, 0.014))
     # micro relief (body pores are smaller and fainter than on the face)
-    pd, _, _ = t.voronoi(p, 2600.0)
-    pore = 1.0 - pd.smooth(0.0, 0.26)
-    gd, _, _ = t.voronoi(p * (1.0, 1.0, 1.5), 1100.0, 'DISTANCE_TO_EDGE', rand=0.9)
+    pd, _, _ = t.voronoi(ph, 2200.0)
+    pore = 1.0 - pd.smooth(0.0, 0.30)
+    gd, _, _ = t.voronoi(ph * (1.0, 1.0, 1.5), 1000.0, 'DISTANCE_TO_EDGE', rand=0.9)
     groove = (1.0 - gd.smooth(0.0, 0.12)) * m_fine.smooth(0.3, 0.7) * 0.45
-    fine = t.noise(p, 6000.0, 2.0)
-    col = col * (1.0 - pore * 0.05 - groove * 0.03)
+    fine = t.noise(ph, 6000.0, 2.0)
+    col = col * (1.0 - pore * 0.10 - groove * 0.03)
     lum = t.luminance(col)
     skin_col = t.mix(pallor * 0.72, col, t.vec(lum, lum, lum) * (0.97, 1.0, 1.06) * 1.08)
-    mid = t.noise(p, 160.0, 2.0)
-    h = -pore * 0.6 - groove * 0.5 + fine * 0.2 + mid * 0.4 - jl * 1.2 + mont * 1.5 + mole * 0.6 \
+    mid = t.noise(ph, 160.0, 2.0)
+    h = -pore * 0.9 - groove * 0.5 + fine * 0.2 + mid * 0.4 - jl * 1.2 + mont * 1.5 + mole * 0.6 \
         + vv * 0.8 * (1.0 - pallor * 0.5) + strand * hair * 0.3
-    rough = 0.47 + (m_fine - 0.5) * 0.12 + (fine - 0.5) * 0.10 - oily * 0.08 + joint * 0.08 + palm * 0.05 \
-        + pore * 0.06
+    rough = 0.44 + (m_fine - 0.5) * 0.14 + (fine - 0.5) * 0.12 - oily * 0.1 - t.control("wetness") * 0.04 \
+        + pore * 0.1 + (joint * 0.08 + palm * 0.05) * body_k
     n_skin = t.bump(h, 0.0001)
     bsdf = t.principled(dict(SKIN_SSS, **{
         'Base Color': skin_col, 'Roughness': rough, 'Subsurface Weight': 1.0 - palm * 0.15,
-        'Coat Weight': 0.06 + oily * 0.08, 'Coat Roughness': 0.35, 'Coat IOR': 1.45, 'Coat Normal': n_skin,
+        'Coat Weight': 0.10 + oily * 0.1, 'Coat Roughness': 0.32, 'Coat IOR': 1.45, 'Coat Normal': n_skin,
         'Sheen Weight': 0.05 + hair * 0.05, 'Normal': n_skin}), sss_method='RANDOM_WALK_SKIN')
     t.output(bsdf)
     return _finish(mat, t, (0.47, 0.28, 0.19), 0.47)
@@ -732,27 +742,35 @@ TURNTABLE = {
     "inner": [((0.0, -1.5, 1.15), (0, 0, 1.1), 50), ((-1.05, -1.05, 1.2), (0, 0, 1.1), 50)],
     "organs": [((0.0, -0.75, 1.22), (0, -0.02, 1.2), 50), ((-0.55, -0.5, 1.25), (0, -0.02, 1.2), 50)],
     "brain": [((-0.35, -0.42, 1.74), (0, 0.01, 1.68), 85)],
+    "shoulder": [((-0.45, -0.55, 1.62), (-0.14, 0.0, 1.45), 60), ((0.0, -0.9, 1.75), (0.0, 0.0, 1.45), 50)],
     "spine": [((-0.9, 0.9, 1.0), (0, 0.03, 1.0), 50)],
 }
 
 
 def _studio():
     scene = gbc.setup_stage(floor=True)
+    scene.view_settings.exposure = -1.0          # the stage lights are ~1 stop hot for albedo-correct skin
     return scene
 
 
 def render_views(prefix, views, objs_visible, out_dir=gbc.RENDER_DIR, samples=32, res=(480, 640)):
-    """Render named TURNTABLE views with only ``objs_visible`` visible."""
+    """Render named TURNTABLE views with only ``objs_visible`` visible (plus the stage floor)."""
     _studio()
+    cams = []
+    for key in views:
+        for i, (loc, tgt, lens) in enumerate(TURNTABLE[key]):
+            cams.append((key, i, gbc.add_camera(f"GBL_cam_{key}_{i}", loc, tgt, lens)))
+    # (gbc.add_camera -> gbc.collections() re-hides GB_HighRes, so visibility is set after the cameras)
     shown = set(objs_visible)
     for o in bpy.data.objects:
         if o.type in ('MESH', 'CURVE'):
             o.hide_render = o.name not in shown and o.name != "GB_StageFloor"
+            if not o.hide_render:
+                for c in o.users_collection:
+                    c.hide_render = False
     paths = []
-    for key in views:
-        for i, (loc, tgt, lens) in enumerate(TURNTABLE[key]):
-            cam = gbc.add_camera(f"GBL_cam_{key}_{i}", loc, tgt, lens)
-            paths.append(gbc.render(os.path.join(out_dir, f"{prefix}_{key}_{i}.png"), cam, samples, res))
+    for key, i, cam in cams:
+        paths.append(gbc.render(os.path.join(out_dir, f"{prefix}_{key}_{i}.png"), cam, samples, res))
     return paths
 
 

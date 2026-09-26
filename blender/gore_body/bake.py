@@ -55,12 +55,13 @@ gbc.SCHEMAS.setdefault(SCHEMA, ("sets", "tileables", "eyes", "decals", "painter"
 
 DILATE_PX = 8
 UV_MARGIN_PX = 8          # island margin of the re-charted atlases (at the set's resolution)
+UV_VERSION = 3            # bump when the charting algorithm changes (part of the UV cache key)
 
 SETS = {
     # name: target, source, size, cage extrusion (m), max ray (m), AO distance (m), surfaces
-    "head": dict(target="GB_Head", source="GB_Head_HR", size=2048, cage=0.003, ray=0.008, ao=0.03,
+    "head": dict(target="GB_Head", source="GB_Head_HR", size=2048, cage=0.003, ray=0.008, ao=0.03, rough_offset=0.06,
                  surfaces=["GBM_skin_head", "GBM_mouth_lining"], lod1=["GB_Head_LOD1"]),
-    "body": dict(target="GB_Body", source="GB_Body_HR", size=2048, cage=0.003, ray=0.008, ao=0.06,
+    "body": dict(target="GB_Body", source="GB_Body_HR", size=2048, cage=0.003, ray=0.008, ao=0.06, rough_offset=0.06,
                  surfaces=["GBM_skin_torso", "GBM_skin_arm_L", "GBM_skin_arm_R", "GBM_skin_leg_L",
                            "GBM_skin_leg_R"], lod1=["GB_Body_LOD1"]),
     "shorts": dict(target="GB_Shorts", source=None, size=1024, cage=0.0, ray=0.0, ao=0.05,
@@ -668,7 +669,7 @@ def prepare_uvs(objs=None, force=False):
         lv = np.empty(len(me.loops), np.int64)
         me.loops.foreach_get("vertex_index", lv)
         h = hashlib.sha256(np.rint(v * 1e5).astype(np.int64).tobytes() + lv.tobytes()
-                           + open(__file__, "rb").read()).hexdigest()[:16]
+                           + f"{UV_VERSION}{sorted(cfg.items())}".encode()).hexdigest()[:16]
         path = os.path.join(gbc.CACHE_DIR, f"uv-{name}-{h}.npy")
         if os.path.exists(path) and not force:
             uv = np.load(path)
@@ -1015,7 +1016,10 @@ def bake_set(name, spec, out):
     nv /= np.maximum(np.linalg.norm(nv, axis=-1, keepdims=True), 1e-6)
     nrm = nv * 0.5 + 0.5
     data = finish_map(maps["data"][..., :3], covered)
-    rough, sss = data[..., 0], data[..., 1]
+    # game roughness: the Cycles skin adds a separate glossy coat on top of its base roughness; a single
+    # GGX lobe in the game needs the base raised to read as skin rather than wet plastic
+    rough, sss = np.clip(data[..., 0] + spec.get("rough_offset", 0.0), 0.0, 1.0), data[..., 1]
+    rec["rough_offset"] = spec.get("rough_offset", 0.0)
     ao_half = finish_map(maps["ao"][..., :1], maps["ao"][..., 3] > 0.5)
     ao = _upsample(ao_half, size)[..., 0]
     orm = np.stack([ao, rough, np.zeros_like(ao), sss], -1)
