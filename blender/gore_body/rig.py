@@ -469,7 +469,14 @@ def _throat(p):
             * _sstep(c["z_m"][0], c["z_m"][1], p[:, 2]))
 
 
-def _head_jaw(p, g_axial):
+# Layers that ride on the skin surface (the throat sheet and the 12-22 mm mandible band apply to them).
+# Every deeper layer (bone, organs, vessels, nerves, cord, brain) never takes the throat sheet and joins
+# the jaw only within 2-6 mm of the mandible: opening the mouth must not drag the larynx, the carotids,
+# the IJV or the vertebral arteries out of the neck (they hang from the skull base and the spine).
+SUPERFICIAL_LAYERS = ("skin", "cloth", "muscle", "hair", "eye", "eye_fx", "mouth")
+
+
+def _head_jaw(p, g_axial, layer="skin"):
     """(head gate, jaw gate, throat sheet) inside the neck territory.
 
     The head gate is the axial gate (face, occiput, under the ears) united with the skin near the
@@ -486,9 +493,10 @@ def _head_jaw(p, g_axial):
         return gh, gj, th
     skull, jaw = _head_sdfs()
     q = p[m]
-    th[m] = _throat(q)
+    superficial = layer in SUPERFICIAL_LAYERS
+    th[m] = _throat(q) if superficial else 0.0
     dj = jaw(q[:, 0], q[:, 1], q[:, 2])
-    near = _sstep(MANDIBLE_NEAR[1], MANDIBLE_NEAR[0], dj)
+    near = _sstep(MANDIBLE_NEAR[1], MANDIBLE_NEAR[0], dj) if superficial else _sstep(0.006, 0.002, dj)
     gh[m] = np.maximum(gh[m], near)
     ds = np.full(len(q), 1.0)
     need = gh[m] > 1e-6
@@ -499,8 +507,9 @@ def _head_jaw(p, g_axial):
     return gh, gj, th
 
 
-def dense_weights(points):
-    """(N, 39) analytic weights before the 4-influence cut (rows sum to 1)."""
+def dense_weights(points, layer="skin"):
+    """(N, 39) analytic weights before the 4-influence cut (rows sum to 1); ``layer`` only changes the
+    jaw/throat share of deep layers (``SUPERFICIAL_LAYERS``)."""
     p = np.asarray(points, float).reshape(-1, 3)
     g = _gates()
     n = len(p)
@@ -536,7 +545,7 @@ def dense_weights(points):
         for base, val in _leg_split(q, g).items():
             W[:, BONE_INDEX[f"{base}_{side}"]] += leg[side] * val
     # --- neck, head, jaw
-    gh, gj, th = _head_jaw(p, g["head"](p))
+    gh, gj, th = _head_jaw(p, g["head"](p), layer)
     W[:, BONE_INDEX["neck"]] += neck * (1.0 - gh) * (1.0 - th)
     W[:, BONE_INDEX["head"]] += neck * gh * (1.0 - gj)
     W[:, BONE_INDEX["jaw"]] += neck * (gh * gj + (1.0 - gh) * th)
@@ -558,7 +567,8 @@ def weights_at(points, layer="skin"):
     Returns ``(idx, w)`` with shapes (N, 4): bone indices into ``BONE_NAMES`` and weights on a
     1/4096 grid that sum exactly to 1 (unused slots: weight 0).  The lid regions of B2's face
     rig are part of the function.  ``layer="head_rigid"`` gives 100 % head (kept for callers
-    that need a rigid head attachment); every other layer value gives the shared function."""
+    that need a rigid head attachment); every other layer uses the shared function, where deep
+    layers (not in ``SUPERFICIAL_LAYERS``) skip the throat sheet and the wide mandible band."""
     p = np.asarray(points, dtype=float).reshape(-1, 3)
     n = len(p)
     if n == 0:
@@ -570,7 +580,7 @@ def weights_at(points, layer="skin"):
     chunk = 40000
     for s in range(0, n, chunk):
         q = p[s:s + chunk]
-        idx, w = _top4(dense_weights(q))
+        idx, w = _top4(dense_weights(q, layer))
         idx, w = _face(q, idx, w)
         out_i[s:s + chunk] = idx
         out_w[s:s + chunk] = w
@@ -739,9 +749,56 @@ def read_weights(obj):
 FOLLOWERS = ("GB_BrowLash", "GB_EyeFX_L", "GB_EyeFX_R")
 
 
+# meshes whose weights are transferred from the nearest body skin (and smoothed over their own surface)
+TRANSFERRED = ("GB_Shorts",)
+TRANSFER_SMOOTH_ITERS = 6
+
+
+def transfer_weights(obj, src_names=("GB_Body",)):
+    """Cloth weights: every vertex takes the analytic skin weights at its nearest point on the body skin
+    (not at its own position: a loose leg tube 1-3 cm off the thigh used to fall outside the thigh territory
+    and stayed on the pelvis, so hip flexion tore the hem off), then the dense weights are smoothed over
+    the cloth's own edges so the leg opening and the crotch deform as one sheet."""
+    from mathutils import Vector
+    from mathutils.bvhtree import BVHTree
+    V, T = [], []
+    off = 0
+    for n in src_names:
+        o = bpy.data.objects.get(n)
+        if o is None:
+            continue
+        v, t = gbc.mesh_arrays(o.data)
+        V.append(v)
+        T.append(t + off)
+        off += len(v)
+    me = obj.data
+    pv = gbc.get_verts(me)
+    if not V:
+        return weights_at(pv)
+    bvh = BVHTree.FromPolygons(np.vstack(V).tolist(), np.vstack(T).tolist())
+    near = np.array([tuple(bvh.find_nearest(Vector(p))[0]) for p in pv])
+    W = np.zeros((len(pv), NB))
+    for s0 in range(0, len(pv), 40000):
+        W[s0:s0 + 40000] = dense_weights(near[s0:s0 + 40000], "skin")
+    ev = np.empty(len(me.edges) * 2, np.int64)
+    me.edges.foreach_get("vertices", ev)
+    e = ev.reshape(-1, 2)
+    deg = np.maximum(np.bincount(e.ravel(), minlength=len(pv)).astype(float), 1.0)[:, None]
+    for _ in range(TRANSFER_SMOOTH_ITERS):
+        acc = np.zeros_like(W)
+        np.add.at(acc, e[:, 0], W[e[:, 1]])
+        np.add.at(acc, e[:, 1], W[e[:, 0]])
+        W = 0.5 * W + 0.5 * acc / deg
+    W /= np.maximum(W.sum(1, keepdims=True), 1e-12)
+    return _quantise(*_top4(W))
+
+
 def object_weights(obj, layer="skin"):
-    """(idx, w) for a mesh: rigid parts (``gb_rigid_bone``), followers (skin anchors) or analytic."""
+    """(idx, w) for a mesh: rigid parts (``gb_rigid_bone``), followers (skin anchors), cloth transferred from
+    the body skin (``TRANSFERRED``) or analytic."""
     n = len(obj.data.vertices)
+    if obj.name in TRANSFERRED:
+        return transfer_weights(obj)
     if obj.name in FOLLOWERS and _has_anchors(obj):
         # B2 followers: the weights of the skin at each vertex's anchor (weights_at includes the lid regions,
         # so this is head_integration.follower_weights without blending the lids in twice)

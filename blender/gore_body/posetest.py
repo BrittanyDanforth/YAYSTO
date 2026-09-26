@@ -322,9 +322,67 @@ def run_test(md, arm, name, spec, rest=None):
             res["shorts_inside"] = int((signed < 0).sum())
     if name in NO_VOLUME:
         res["vol_loss"] = None
-    res["ok"] = bool(res["poke_frac"] == 0.0 and res["exposed"] == 0 and (res["vol_loss"] or 0.0) < VOL_LIMIT)
+    if name.startswith("jaw_open"):
+        res["deep_drag"] = deep_drag(md, mats)
+    # every level has the same limits: no poke, nothing newly exposed, volume change (loss OR gain) < 15 %,
+    # shorts >= 1 mm off the skin in the hip poses, no deep structure dragged by the jaw
+    vol_ok = abs(res["vol_loss"] or 0.0) < VOL_LIMIT
+    shorts_ok = not (name.startswith("hip_") and res.get("shorts_mm") is not None and res["shorts_mm"] < SHORTS_MIN_MM)
+    deep_ok = not res.get("deep_drag", {}).get("over", 0)
+    res["ok"] = bool(res["poke_frac"] == 0.0 and res["exposed"] == 0 and vol_ok and shorts_ok and deep_ok)
     res["seconds"] = round(time.perf_counter() - t0, 2)
     return res
+
+
+SHORTS_MIN_MM = 1.0             # B1: the shorts stay >= 1 mm off the skin at 90 deg hip flexion
+DEEP_LAYERS = ("GB_Vessels_Art", "GB_Vessels_Ven", "GB_Organs", "GB_Cord", "GB_Brain")
+DEEP_DRAG_MM = 2.0
+
+
+def deep_drag(md, mats):
+    """Jaw poses: deep neck/head structures (vessels, organs, cord, brain above z 1.40) must move with the bone
+    they hang from - the nearest skull / vertebra piece (the mandible excluded; points within 8 mm of it may
+    follow the jaw).  Returns {"over": n > 2 mm, "worst_mm": .., "by_layer": {...}}."""
+    from mathutils.kdtree import KDTree
+    sk = md.get("GB_Skeleton")
+    if sk is None:
+        return {"over": 0, "note": "no skeleton"}
+    rigid = gbc.read_point_attr(bpy.data.objects["GB_Skeleton"], "gb_rigid_bone", 'INT')
+    jaw_i = rig.BONE_INDEX["jaw"]
+    keep = (sk.v[:, 2] > 1.38) & (rigid != jaw_i)
+    kd = KDTree(int(keep.sum()))
+    kv, kr = sk.v[keep], rigid[keep]
+    for i, p in enumerate(kv):
+        kd.insert(p.tolist(), i)
+    kd.balance()
+    jv = sk.v[rigid == jaw_i]
+    kj = KDTree(len(jv))
+    for i, p in enumerate(jv):
+        kj.insert(p.tolist(), i)
+    kj.balance()
+    over, worst, by = 0, 0.0, {}
+    for n in DEEP_LAYERS:
+        m = md.get(n)
+        if m is None:
+            continue
+        sel = np.nonzero(m.v[:, 2] > 1.40)[0]
+        if not len(sel):
+            continue
+        P = rig.lbs(m.v[sel], m.idx[sel], m.w[sel], mats)
+        cnt, wmm = 0, 0.0
+        for k, i in enumerate(sel):
+            if kj.find(m.v[i].tolist())[2] < 0.008:
+                continue
+            _co, j, _d = kd.find(m.v[i].tolist())
+            Q = (mats[int(kr[j])] @ np.append(m.v[i], 1.0))[:3]
+            d = float(np.linalg.norm(P[k] - Q)) * 1000.0
+            wmm = max(wmm, d)
+            if d > DEEP_DRAG_MM:
+                cnt += 1
+        by[n] = {"over": cnt, "worst_mm": round(wmm, 2)}
+        over += cnt
+        worst = max(worst, wmm)
+    return {"over": over, "worst_mm": round(worst, 2), "by_layer": by}
 
 
 _REST_OUT = {}

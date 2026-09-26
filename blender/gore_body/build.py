@@ -283,7 +283,12 @@ def run(stages, opts):
             gbc.render_views("build", samples=24)
     if opts["save"]:
         with gbc.Timer("save .blend"):
-            blend = os.path.join(QUICK_OUT, "gore_body_quick.blend") if opts["quick"] else gbc.BLEND_PATH
+            if os.environ.get("GB_OUTPUT_ROOT"):
+                blend = os.path.join(gbc.GAME_OUT, "gore_body.blend")
+            elif opts["quick"]:
+                blend = os.path.join(QUICK_OUT, "gore_body_quick.blend")
+            else:
+                blend = gbc.BLEND_PATH
             bpy.ops.wm.save_as_mainfile(filepath=blend, compress=True)
     res = None
     if opts["verify"]:

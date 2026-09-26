@@ -626,7 +626,7 @@ def finger_polyline(name):
 
 
 THUMB_PTS = [(0.012, 0.020, 0.006), (0.050, 0.037, 0.017), (0.078, 0.046, 0.024), (0.100, 0.049, 0.028)]
-THUMB_R = [0.0135, 0.0112, 0.0098, 0.0086]
+THUMB_R = [0.0135, 0.0108, 0.0090, 0.0088]    # CMC (in the thenar) -> MCP -> IP waist -> tip
 
 
 def _palm_profile(S, TH):
@@ -650,22 +650,131 @@ def _palm_tube():
     return PALM_TUBE
 
 
+def _nail(ax, y, z, A, B, rho_a, rho_b, dorsal, width=0.62, start=0.30, lift=0.00025, raised=True):
+    """Nail plate on the dorsal surface of a distal phalanx A -> B (tip centre), finger radii rho_a/rho_b.
+
+    Returns (plate SDF, fold groove SDF, 2-D outline SDF on the surface) in metres: a curved plate
+    0.9 mm thick over ``width`` x radius on each side of the dorsal line, from ``start`` x length to the
+    free edge just past the tip, and the lateral / proximal nail folds as a 1.2 mm groove along its edges
+    (the plate stands proud of the fold, the free edge overhangs the pulp)."""
+    A = np.asarray(A, float)
+    B = np.asarray(B, float)
+    d = B - A
+    L = float(np.linalg.norm(d))
+    d = d / L
+    u = np.asarray(dorsal, float) - (np.asarray(dorsal, float) @ d) * d
+    u = u / np.linalg.norm(u)
+    v = np.cross(d, u)
+    px, py, pz = ax - A[0], y - A[1], z - A[2]
+    s = px * d[0] + py * d[1] + pz * d[2]
+    w = px * u[0] + py * u[1] + pz * u[2]
+    a = px * v[0] + py * v[1] + pz * v[2]
+    t = np.clip(s / L, 0.0, 1.0)
+    rho = rho_a + (rho_b - rho_a) * t
+    rr = np.sqrt(w * w + a * a)
+    ang = np.arctan2(a, np.maximum(w, 1e-9))
+    half = np.arcsin(np.clip(width, 0.0, 0.99))
+    # outline on the surface: angular half width, proximal fold (rounded), free edge just past the tip
+    e_ang = (np.abs(ang) - half) * rho
+    s0, s1 = start * L, L + 0.35 * rho_b
+    e_s = np.maximum(s0 - s, s - s1)
+    prox = np.hypot(np.maximum(s0 + 0.35 * rho - s, 0.0), np.abs(ang) * rho) - 0.35 * rho      # round lunula end
+    outline = np.maximum(np.maximum(e_ang, e_s), np.where(s < s0 + 0.35 * rho, prox, -1.0))
+    shell = np.abs(rr - (rho + lift)) - 0.00045
+    plate = np.maximum(shell, outline)
+    plate = np.where(w > 0.0, plate, 1.0)
+    groove = np.hypot(np.minimum(np.abs(outline), 0.004), rr - rho) - 0.0006
+    groove = np.where((w > 0.0) & (s < s1 - 0.5 * rho_b), groove, 1.0)
+    return plate, groove, np.where(w > 0.0, outline, 1.0)
+
+
+def _finger_frames(name):
+    """(points MCP, PIP, DIP, tip; radii; palmar direction per segment) of a left finger."""
+    P = finger_polyline(name)
+    _r0, _s0, _L, rb, rt, _sp = FINGERS[name]
+    radii = [rb, rb * 0.93, rt * 1.03, rt * 0.92]
+    pal = []
+    for i in range(3):
+        dseg = unit(P[i + 1] - P[i])
+        n = HAND_N - (HAND_N @ dseg) * dseg
+        pal.append(unit(n))
+    return P, radii, pal
+
+
+THUMB_DORSAL = unit(0.90 * np.array([0.0, -1.0, 0.0]) - 0.45 * np.asarray(ARM_NM))
+
+
 def _hand(ax, y, z):
     d = _palm_tube()._eval(ax, y, z)
     ax3 = frame(ARM_D, HAND_F)
-    then = sd_oellipsoid(ax, y, z, hand_point(0.036, 0.021, 0.013), (0.030, 0.016, 0.012), ax3)
+    then = sd_oellipsoid(ax, y, z, hand_point(0.034, 0.024, 0.015), (0.032, 0.018, 0.014), ax3)
     hypo = sd_oellipsoid(ax, y, z, hand_point(0.045, -0.026, 0.011), (0.035, 0.011, 0.009), ax3)
     d = smin(d, then, 0.010)
     d = smin(d, hypo, 0.010)
     fingers = None
-    for name, (_r0, _s0, _L, rb, rt, _sp) in FINGERS.items():
-        P = finger_polyline(name)
-        f = sd_polyline(ax, y, z, P, [rb, rb * 0.93, rt * 1.03, rt * 0.92], k=0.003)
-        # finger pads (palmar fullness of each phalanx)
+    nails, grooves = [], []
+    for name in FINGERS:
+        P, rad, pal = _finger_frames(name)
+        f = sd_polyline(ax, y, z, P, rad, k=0.003)
+        # knuckles (dorsal MCP and PIP heads) and the palmar pads of each phalanx
+        f = smin(f, sd_oellipsoid(ax, y, z, P[0] - pal[0] * rad[0] * 0.45, (rad[0] * 0.75, rad[0] * 0.62,
+                                                                             rad[0] * 0.62), np.eye(3)), 0.004)
+        f = smin(f, sd_oellipsoid(ax, y, z, P[1] - pal[1] * rad[1] * 0.40, (rad[1] * 0.62, rad[1] * 0.55,
+                                                                             rad[1] * 0.55), np.eye(3)), 0.003)
+        for i in range(3):
+            c = 0.5 * (P[i] + P[i + 1]) + pal[i] * 0.35 * rad[i + 1]
+            f = smin(f, sd_oellipsoid(ax, y, z, c, (0.40 * np.linalg.norm(P[i + 1] - P[i]), rad[i + 1] * 0.62,
+                                                   rad[i + 1] * 0.62), frame(P[i + 1] - P[i], pal[i])), 0.003)
+        pl, gr, _o = _nail(ax, y, z, P[2], P[3], rad[2], rad[3], -pal[2])
+        nails.append(pl)
+        grooves.append(gr)
         fingers = f if fingers is None else smin(fingers, f, 0.0035)
     d = smin(d, fingers, 0.007)
-    th = sd_polyline(ax, y, z, [hand_point(*p) for p in THUMB_PTS], THUMB_R, k=0.004)
-    return smin(d, th, 0.009)
+    # thumb: two phalanges on the metacarpal, joint waists, knuckles, pulp and a broad nail
+    tp = [hand_point(*p) for p in THUMB_PTS]
+    th = sd_polyline(ax, y, z, tp, THUMB_R, k=0.004)
+    tpal = -THUMB_DORSAL
+    th = smin(th, sd_oellipsoid(ax, y, z, tp[1] + THUMB_DORSAL * 0.004, (0.0085, 0.0070, 0.0070), np.eye(3)), 0.004)
+    th = smin(th, sd_oellipsoid(ax, y, z, 0.55 * tp[2] + 0.45 * tp[3] + tpal * 0.0035,
+                                (0.0105, 0.0072, 0.0072), frame(tp[3] - tp[2], tpal)), 0.003)
+    d = smin(d, th, 0.009)
+    pl, gr, _o = _nail(ax, y, z, tp[2], tp[3], THUMB_R[2], THUMB_R[3], THUMB_DORSAL, width=0.66, start=0.28)
+    nails.append(pl)
+    grooves.append(gr)
+    plate = np.min(np.stack(nails), axis=0)
+    groove = np.min(np.stack(grooves), axis=0)
+    d = smax(d, -groove, 0.0006)
+    return smin(d, plate, 0.0005)
+
+
+def nail_mask(points, hands=True, feet=True):
+    """(nail 0..1, lunula 0..1) per body-frame point from the nail outlines (left side authored, |x|)."""
+    p = np.asarray(points, float)
+    x, y, z = np.abs(p[:, 0]), p[:, 1], p[:, 2]
+    nail = np.zeros(len(p))
+    lun = np.zeros(len(p))
+    outl = []
+    if hands:
+        for name in FINGERS:
+            P, rad, pal = _finger_frames(name)
+            outl.append((_nail(x, y, z, P[2], P[3], rad[2], rad[3], -pal[2])[2], P[2], P[3], rad[2]))
+        tp = [hand_point(*q) for q in THUMB_PTS]
+        outl.append((_nail(x, y, z, tp[2], tp[3], THUMB_R[2], THUMB_R[3], THUMB_DORSAL, width=0.66,
+                           start=0.28)[2], tp[2], tp[3], THUMB_R[2]))
+    if feet:
+        for A, B, ra, rb in _toe_nail_segments():
+            outl.append((_nail(x, y, z, A, B, ra, rb, (0.0, 0.0, 1.0), width=0.60, start=0.35)[2], A, B, ra))
+    for o, A, B, ra in outl:
+        near = np.linalg.norm(p - np.where(p[:, :1] < 0, -1.0, 1.0) * 0.0 - 0.0, axis=1) >= 0.0
+        m = 1.0 - np.clip(o / 0.0006, 0.0, 1.0)
+        # lunula: the pale crescent over the proximal fifth of the nail
+        dd = unit(np.asarray(B) - np.asarray(A))
+        s = (np.stack([x, y, z], 1) - np.asarray(A)) @ dd
+        L = float(np.linalg.norm(np.asarray(B) - np.asarray(A)))
+        lu = m * (1.0 - np.clip((s - 0.45 * L) / (0.08 * L), 0.0, 1.0))
+        nail = np.maximum(nail, m * near)
+        lun = np.maximum(lun, lu)
+    return nail, lun
 
 
 HAND_BOX = None

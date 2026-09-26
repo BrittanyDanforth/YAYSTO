@@ -523,33 +523,49 @@ def _outside_fraction(bvh, pts, tol):
     return out / max(len(pts), 1)
 
 
-def _nesting(names, tol=0.0005):
+def _nesting(names, tol=0.0):
+    """{mesh: (vertices outside the skin by more than ``tol``, worst mm, worst point)} over ALL vertices.
+
+    Outside = the nearest skin point's outward normal side (signed nearest-surface test)."""
     bpy = _bpy()
     bvh = _skin_bvh()
-    rng = gbc.rng("verify")
+    from mathutils import Vector
     res = {}
     for n in names:
         o = bpy.data.objects.get(n)
         if o is None:
             continue
         v = gbc.get_verts(o.data)
-        pts = v[rng.choice(len(v), min(3000, len(v)), replace=False)]
-        res[n] = round(_outside_fraction(bvh, pts, tol), 4)
+        cnt, worst, wp = 0, 0.0, None
+        for p in v:
+            loc, nrm, _i, _d = bvh.find_nearest(Vector(p))
+            if loc is None:
+                continue
+            s = (Vector(p) - loc).dot(nrm)
+            if s > tol:
+                cnt += 1
+                if s > worst:
+                    worst, wp = s, [round(float(c), 4) for c in p]
+        res[n] = (cnt, round(worst * 1000, 2), wp)
     return res
 
 
-@check("scene")
+@check("scene", quick_ok=False)
 def nesting_inside_skin():
-    """FB-4 style: inner layers stay inside the skin (sampled vertices, 0.5 mm tolerance, <= 1 %)."""
-    res = _nesting(("GB_MuscleShell", "GB_Skeleton", "GB_Organs", "GB_Brain", "GB_Cord"))
-    return all(v <= 0.01 for v in res.values()), f"fraction of sampled vertices outside the skin: {res}"
+    """FB-4: inner layers inside the skin, EVERY vertex: bone at 0 mm tolerance, muscle shell / organs / brain /
+    cord at 0.5 mm (the skin tessellation); zero allowed outside."""
+    res = _nesting(("GB_Skeleton",), 0.0)
+    res.update(_nesting(("GB_MuscleShell", "GB_Organs", "GB_Brain", "GB_Cord"), 0.0005))
+    bad = {k: v for k, v in res.items() if v[0]}
+    return not bad, f"(vertices outside, worst mm, worst point): {res}"
 
 
-@check("scene", owner="B5", severity="warn")
+@check("scene", owner="B5", quick_ok=False)
 def vessels_inside_skin():
-    """FB-5 precursor: vessel tubes inside the skin (B5 fits the waypoints to the final skin)."""
-    res = _nesting(("GB_Vessels_Art", "GB_Vessels_Ven"))
-    return all(v <= 0.01 for v in res.values()), f"fraction of sampled tube vertices outside the skin: {res}"
+    """FB-5 precursor: every vessel tube vertex >= 1 mm under the skin (a tube wall under the dermis)."""
+    res = _nesting(("GB_Vessels_Art", "GB_Vessels_Ven"), -0.001)
+    bad = {k: v for k, v in res.items() if v[0]}
+    return not bad, f"tube vertices shallower than 1 mm (count, worst mm above -1 mm, worst point): {res}"
 
 
 @check("scene")
@@ -2369,7 +2385,7 @@ def b6_weights_function():
     bad, checked = [], 0
     for o in _exported():
         rb = gbc.read_point_attr(o, "gb_rigid_bone", 'INT')
-        if o.name in rig.FOLLOWERS or (rb is not None and np.all(rb >= 0)):
+        if o.name in rig.FOLLOWERS or o.name in rig.TRANSFERRED or (rb is not None and np.all(rb >= 0)):
             continue
         idx, w = rig.read_weights(o)
         n = len(o.data.vertices)
@@ -2377,7 +2393,7 @@ def b6_weights_function():
         if rb is not None:
             sel = sel[rb[sel] < 0]
         v = gbc.get_verts(o.data)[sel]
-        ia, wa = rig.weights_at(v)
+        ia, wa = rig.weights_at(v, layer=rig.SKIN_LAYER.get(o.name, gbc.LAYER_OF.get(o.name, "skin")))
         dense_a = np.zeros((len(sel), rig.NB))
         dense_s = np.zeros((len(sel), rig.NB))
         rows = np.repeat(np.arange(len(sel)), 4)
@@ -2467,7 +2483,7 @@ def b6_deformation_fb2():
     return not bad and len(acc) >= 5, f"failing {bad}; {s}"
 
 
-@check("scene", owner="B6", severity="warn")
+@check("scene", owner="B6", quick_ok=False)
 def b6_deformation_quality():
     """Every other deformation test (twist, wrist, fist, ankle, toes, neck, trunk, jaw, FB-2 maxima): reported."""
     if not _b6_ready():
@@ -2480,7 +2496,7 @@ def b6_deformation_quality():
     return not bad, f"over 3 mm, newly exposed or >= 15 % loss: {bad}; {s}"
 
 
-@check("scene", owner="B6", severity="warn")
+@check("scene", owner="B6", quick_ok=False)
 def b6_rest_pose_nesting():
     """Inner-layer vertices > 3 mm outside the skin already in the REST pose (geometry of B1/B3/B4/B5, not
     deformation): listed so their owners can fix them."""

@@ -961,7 +961,7 @@ def vessel_table():
         n_fit += bool(props)
         sa = _arc(P)
         t = sa / max(sa[-1], 1e-9)
-        idx, w = rig.weights_at(P)
+        idx, w = rig.weights_at(P, layer=gbc.LAYER_OF.get(mesh_for(s) or "", "vessel_art"))
         dom = idx[np.arange(len(idx)), np.argmax(w, axis=1)]
         rec = {k: s[k] for k in ("id", "vessel", "branch", "name", "side", "kind", "circuit", "d_mm", "d_end_mm",
                                  "d_range_mm", "rest_flow_ml_min", "parent", "extra_parents", "children", "root",
@@ -987,7 +987,7 @@ def vessel_table():
             P, r = got[0], got[1]
         else:
             P, r, _t = nerve_centreline(nv)
-        idx, w = rig.weights_at(P)
+        idx, w = rig.weights_at(P, layer="nerve")
         dom = idx[np.arange(len(idx)), np.argmax(w, axis=1)]
         nerves.append({"id": nv["id"], "nerve": nv["nerve"], "side": nv["side"], "roots": nv["roots"],
                        "radius": nv["radius"], "points": [list(p) for p in P],
