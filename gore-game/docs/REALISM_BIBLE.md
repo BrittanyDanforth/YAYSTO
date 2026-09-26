@@ -105,7 +105,8 @@ Real haemorrhage, herniation and post-mortem processes take minutes to days. The
 
 **Band selector** (evaluated at 1 Hz) [G]:
 ```
-t_pred = (V - V_pea) / max(Q_loss_total - Q_refill, 1e-3)     # sim seconds to PEA by volume
+q_net  = max(Q_loss_total - Q_refill, 1e-3)                  # mL per sim second
+t_pred = min(V - V_loc, V - V_pea) / q_net                    # sim seconds to the next of LOC or PEA (ignore passed ones)
 if seconds_since_last_critical_event_real < 60 or t_pred/scale_current < 60: band = ACUTE
 elif dead_flag or seconds_since_arrest_real > 60:                           band = POSTMORTEM
 elif t_pred <= 1800:                                                         band = MINUTES
@@ -953,4 +954,1081 @@ Store the **deposit timestamp** (sim minutes, fp16) per texel/stain, not an age;
 - A floor pool spreads as a 2.5 mm sheet (1 L ≈ 70 cm across), stops spreading after ~10 min, later shows a yellow serum rim and darkens from the edges.
 - Late in shock all wounds bleed darker and more purple.
 
-<!-- CONTINUE-4 -->
+---
+
+## 4. Physiology state machine
+
+### 4.1 State variables (per character)
+
+| Group | Variable | Unit / type | Initial | Notes |
+|---|---|---|---|---|
+| Circulation | `V` (blood volume), `loss = 1 − V/BV0` | mL, fraction | BV0 | §3.1 |
+| | `hr`, `sbp`, `dbp`, `map`, `cvp`, `co` | bpm, mmHg, L/min | 70, 120, 80, 93, 4, 5.0 | §3.2 |
+| | `rhythm` | enum {sinus, tachy, brady, VF, PEA, asystole} | sinus | |
+| | `pump_fraction`, `tamponade_mL`, `neurogenic`, `vasomotor_ok` | 0–1, mL, bool, bool | 1, 0, false, true | |
+| | `stress_surge`, `refill_total` | 0–1, mL | 0, 0 | |
+| | `t_arrest` | sim s | none | Post-mortem clock start |
+| Respiration | `resp_drive` | enum {normal, tachypnoea, cheyne_stokes, cnh, apneustic, cluster, ataxic, gasping, none} | normal | §4.2 |
+| | `resp_capacity` | 0–1 | 1 | From cord level (§4.6) |
+| | `airway` | enum {open, stertor, blood_flooded, obstructed} | open | |
+| | per lung: `state` {ok, pneumo, open_pneumo, tension}, `haemothorax_mL`, `collapse` | —, mL, 0–1 | ok, 0, 0 | |
+| | `rr`, `o2_lung`, `o2_blood`, `spo2` | /min, mL, mL, 0–1 | 14, 400, 0.98·cap, 0.98 | §4.2 |
+| Brain | `brain_o2_reserve` | s (real) | 8 | §4.2 |
+| | `icp`, `cpp`, `haematoma_mL` | mmHg, mmHg, mL | 10, 83, 0 | §3.9 |
+| | damage 0–1: `frontal_L/R`, `motor_L/R`, `parietal_L/R`, `temporal_L/R`, `occipital_L/R`, `capsule_L/R`, `thalamus`, `cerebellum_L/R`, `vermis`, `midbrain`, `pons_teg`, `pons_basis`, `medulla` | fraction destroyed | 0 | Include concussive radius (18 mm handgun) as partial damage |
+| | `concussion_timer`, `ko_timer`, `seizure` {none, tonic, clonic, postictal}, `herniation_stage` {0, uncal/central 1–4} | s, s, enum, enum | 0 | |
+| | `consciousness` {alert, confused, stupor, unconscious}, `gcs_e/v/m` | enum, 1–6 | alert, 4/5/6 | §4.3 |
+| Cord | `cord_level` (C1…S5 or none), `cord_complete`, `cord_syndrome` {complete, brown_sequard_L/R, central, anterior, cauda, concussion} | enum, bool | none | §4.6 |
+| Sensation / stress | `pain`, `stress`, `fear` | 0–1 | 0 | §4.2 |
+| Motor | per limb/body: `tone` {voluntary, weak, flaccid, decorticate, decerebrate, fencing, tonic, clonic, rigor} | enum | voluntary | §4.10 |
+| Metabolic | `core_temp`, `vo2_mult` | °C, × | 37.0, 1.0 | Struggling 1.5–2 |
+| Eyes (per eye) | `lid_mm, yaw, pitch, pupil_mm, pupil_reactive, corneal_reflex, doll_gain, blink_on, gloss, corneal_opacity, dry_band, tache_noire, iop, subconj, petechiae, proptosis_mm` | mm, °, bool, 0–1 | §5 | |
+| Skin | `pallor`, `cyanosis`, `mottling`, `sweat`, `flush_below_level` | 0–1 | 0 | ≤ 1 Hz mask update |
+| Post-mortem | `pm_h`, `livor_intensity`, `livor_fixation`, `rigor_s[group]`, `rectal_temp` | h, 0–1, °C | 0 | §6 |
+
+### 4.2 Update order and rules (20 Hz alive, 2–5 Hz dead) [R04 §13.5]
+
+```
+1  apply_new_injuries()       # wound records → vessel/organ/cord/brain damage, lung states, tamponade flags
+2  circulation(dt_sim)        # §3: bleeding per wound (pressure from previous tick), V, refill, shock table targets,
+                              #     lags, stress surge, special states, shunt solve → MAP/SBP/DBP/HR, rhythm & arrest rules
+3  respiration(dt_sim)        # drive × capacity × airway × lungs → E_vent; O2 stores → SpO2; RR target
+4  brain(dt_real for reserve, dt_sim for ICP)   # ICP/CPP, brain O2 reserve, consciousness resolver, seizure/posture timers
+5  sensation_stress(dt_sim)   # pain, stress, analgesia
+6  motor()                    # tone per body from cord map, lesion level, consciousness, posture → ragdoll PD targets (§4.10)
+7  eyes()                     # §5 → material uniforms + bones (cosmetic oscillators in real time)
+8  skin(≤ 1 Hz)               # pallor, cyanosis, mottling, sweat, neurogenic flush
+9  postmortem(dt_sim)         # if arrested: livor, rigor, algor, eye surface (§6)
+```
+
+**Respiration and SpO₂ proxy** [R04 §1, E; calibrated: apnoea at rest → SpO₂ < 90 % at ~1.9 min, hypoxic LOC ~3 min, arrest ~6 min]:
+```
+E_vent  = drive_eff * resp_capacity * airway_f * lung_f            # 0–1
+          drive_eff: normal/tachypnoea/cnh 1.0; cheyne_stokes 0.6 (cycle-averaged); apneustic 0.5; cluster 0.4;
+                     ataxic 0.3; gasping 0.05 (moves almost no air); none 0
+          airway_f:  open 1.0; stertor 0.8; blood_flooded 0.2–0.6; obstructed 0
+          lung_f:    mean over lungs of (1 − collapse) × (1 − haemothorax_mL/2000); open_pneumo side 0.1; tension side 0
+cap_b   = 850 mL * (V/BV0)                                          # blood O2 store shrinks with blood loss
+VO2     = 250 mL/min * vo2_mult (rest 1.0; struggling/seizure/shivering 1.5–2.0; unconscious 0.8)
+supply  = E_vent * 350 mL/min
+o2_lung = clamp(o2_lung + (supply − draw)·dt, 0, 400);  draw = min(VO2, o2_lung/dt + supply)
+o2_blood = clamp(o2_blood − (VO2 − draw)·dt, 0, cap_b)
+if E_vent ≥ 0.6 and o2_lung > 360: o2_blood → 0.98·cap_b with τ 10 s (0.95 if one lung is down)
+spo2    = o2_blood / cap_b
+RR      = shock_table_RR(loss) + 4–8·stress + hypoxic drive (+10 when spo2 < 0.9), overridden by resp_drive patterns
+```
+Cyanosis (render): `cyanosis = skin_perfusion × clamp((deoxyHb − 3)/4, 0, 1)`, deoxyHb = 15 g/dL × (1 − spo2). **An exsanguinated body turns white-grey, not blue** (skin perfusion → 0); an apnoeic body with full volume turns blue-grey in 60–120 s. Lips lag arterial desaturation by 5–15 s, fingers by 15–30 s [R04 §1, R2-06 §17, C].
+
+**Brain oxygen reserve** (integrated in **real** seconds; inputs from sim state) [R04 §13.2, E]:
+```
+map_brain = MAP − 0.78 × (head height above heart, cm)          # upright ≈ −23 mmHg
+cpp       = map_brain − ICP
+perf      = clamp((map_brain − 20)/40, 0, 1) × clamp(cpp/50, 0, 1) × clamp((spo2 − 0.5)/0.3, 0, 1)
+if perf < 0.5: reserve −= (1 − perf)·dt   else: reserve = min(8, reserve + dt)
+reserve ≤ 0 → loss of consciousness (syncope pattern on first entry)
+```
+Starts at 8 s; a destroyed heart adds ~4 s of residual pressure decay → reproduces **10–15 s of possible action** and **LOC 5–10 s after complete cerebral flow arrest** [R04 §8, C]. The band selector (§1.3) must also enter ACUTE when predicted LOC is < 60 s away.
+
+**Orthostatic faint**: if upright and `loss ≥ faint_upright_loss` (per victim 0.20–0.30): MAP −25 for 20–60 s → reserve drains → collapse; once supine, partial recovery (can try to rise again) [R04 §7.3, C/G].
+
+**Consciousness resolver** (every tick, first match wins) [R04 §13.2, extended with GCS]:
+
+| # | Condition | Result | GCS (E/V/M) |
+|---|---|---|---|
+| 1 | `medulla, pons_teg, midbrain or thalamus > 0.5`, or both hemispheres > 0.6 | Coma; motor by lowest level destroyed: medulla/lower pons → flaccid (M1); midbrain/upper pons → decerebrate episodes (M2); thalamus/bilateral hemispheres → decorticate (M3) | 1/1/1–3 |
+| 2 | `brain_o2_reserve ≤ 0` | Unconscious (syncope/anoxia); first entry: eyes up 10–30° for 2–10 s, myoclonus p 0.9 (1–10 irregular jerks < 15 s) | 1/1/1–2 |
+| 3 | `seizure ≠ none` | Unconscious | 1/1/1 |
+| 4 | `ko_timer > 0` | Unconscious; fencing p 0.66 on entry | 1/1/1–4 |
+| 5 | `cpp < 30` or `spo2 < 0.6` or `loss > 0.45` (supine) | Coma | 1/1/2–4 |
+| 6 | `loss > 0.40` or `cpp < 40` or herniation stage ≥ 2 | Stupor (responds to pain only) | 2/2/4–5 |
+| 7 | `loss > 0.30` or `cpp < 50` or `spo2 < 0.8` or concussion_timer > 0 | Confused | 3–4/4/6 |
+| 8 | else | Alert, with focal deficits (§4.5) | 4/5/6 |
+
+**Pain and stress** [G, anchored to R02 §6, R2-02]:
+```
+pain_raw  = Σ_wounds w_type × severity × sensory_intact(site)
+            sensory_intact = 0 below a complete cord level; 0 for full-thickness burn texels; ×0.5 in hemisensory loss
+            w_type: superficial-partial burn 1.0 per 1 % BSA (very painful); fracture 0.6; incised 0.3; laceration 0.4;
+                    gunshot track 0.3–0.5; bruise 0.1; full-thickness burn 0
+pain      = clamp(pain_raw, 0, 1) × analgesia ;  analgesia 0.3–0.7 during the first 5–15 min under high stress
+stress    = clamp(0.5·pain + 0.4·fear + 0.4·loss/0.3, 0, 1)
+effects   : HR +30·stress and SBP +20·stress (inside the surge), pupils +1–2 mm, lid retraction to 11–12 mm (fear),
+            RR +4–8, vocalisation level, clutching/withdrawal
+```
+Withdrawal reflex ~100 ms; heat withdrawal 190–280 ms (fast fibres) and 1.2–1.5 s (slow second pain); whole-body startle flinch within 200 ms of a gunshot (blink 30 ms, SCM 62 ms, biceps 85–100 ms, legs 100–140 ms); the first startle is the largest and habituates [R2-02 §15, C]. Stress-induced analgesia is real: only 32 % of severely wounded soldiers at Anzio asked for narcotics [R2-02 §15, C].
+
+### 4.3 Thresholds
+
+| Event | Trigger | Source |
+|---|---|---|
+| Upright faint | loss 0.20–0.30 (per victim) while upright | [R04 §7.4] C |
+| Confusion | loss 0.30–0.40, or MAP < 65, or CPP < 50 | [R04 §7.4] C |
+| **LOC supine** | **loss 0.45 (0.40–0.50)**, or MAP < 40–45 (SBP < 60) for > 5–8 s | [R04 §7.4] C (ATLS > 50 %, Guyton 40–45 % bracket it) |
+| **PEA** | **loss 0.45–0.50 if total bleed > 500 mL/min, else 0.55**; or MAP < 20 for > 30 s; or (DBP − CVP) < 15 for > 60 s; or tamponade/tension end-stage; or SpO₂ < 0.4 for > 150 s | [R04 §7.4], [R03 §3.5] C/G |
+| VF | direct ventricular hit p 0.3; commotio p 0.01–0.03 | [R04 §13.3] G |
+| PEA → asystole / VF → asystole | 2–10 min / 10–20 min | [R04 §10.3] C |
+| EEG silent | 10–40 s after cerebral perfusion stops | [R04 §1] C |
+| Irreversible brain injury | perf < 0.2 accumulated 4–6 min (normothermic) | [R04 §1] C |
+| Herniation start | ICP ≥ 30–40 or CPP < 50 | [R04 §5.6] C/G |
+| Cerebral circulatory arrest | ICP ≥ MAP | [R04 §5.1] C |
+| Apnoea → arrest | 4–10 min (default 6) | [R04 §1] C |
+
+### 4.4 Organ-hit effects
+
+| Organ / structure | Hit type | Physiology effect | Time course (untreated) | Visible / audible | Source |
+|---|---|---|---|---|---|
+| **Heart destroyed** | Shotgun ≤ 1 m, large exit, burst | CO = 0 | Action 10–15 s; LOC 8–15 s; agonal gasps p 0.3–0.5; dead flag +5 min | Collapse with eyes open and up, jerks; small external bleeding, chest fills | [R04 §8] C |
+| LV perforation | Bullet, pericardium torn | 1,000–4,000 mL/min into pleura; pump_fraction 0.3–0.7; VF p 0.3 | LOC 10–60 s; death 1–5 min | Systole-only jets if exposed | [R03 §5], [R2-05 §10] C |
+| RV / atrium perforation | Pericardium open | 500–2,000 mL/min | LOC 30 s–3 min; death 2–10 min | Dark welling | [R03 §5] C |
+| Heart stab, pericardium intact | Knife | 100–200 mL into the sac → tamponade; self-seal p: LV < 1 cm 0.3–0.5, RV 0.2–0.4, atria 0.05–0.1 | LOC 5–60 min; arrest 5 min–2 h (default 20 min) | Distended neck veins, dusky face, muffled heart | [R03 §8.2], [R2-05 §10] C/E |
+| Coronary artery | Any | Downstream myocardium stops in 1–5 min (pump_fraction −) | | Dusky patch | [R2-05 §10] C |
+| Commotio cordis | Hard blow to the precordium | VF (p 0.01–0.03) | Collapse within seconds, pulseless, agonal gasps | | [R04 §8.3] G |
+| **Lung parenchyma** | Any penetration | 20–100 mL/min (τ 10–30 min) into pleura; haemoptysis onset 5–60 s (2–30 mL per cough) | Usually survivable | Bright frothy pink blood from mouth and nose, wet gurgling breaths | [R04 §9] C |
+| Chest wall defect > 10–13 mm | Shotgun, big exit, big knife wound | Open pneumothorax: that lung → collapse in 2–10 s; air in/out through the wound | | Sucking on inspiration, bubbling pink froth on expiration; small holes hiss/whistle, large ones slurp | [R04 §9.2], [R2-06 §17] C |
+| Valve-like lung wound | p 0.1–0.3 of lung wounds [G] | Tension: onset 5 min–hours (default 20 min); RR > 30, HR > 120, SpO₂ falling; hypotension and tracheal deviation late | → PEA | Hyperexpanded silent side, neck veins distend, lips blue | [R04 §9.2] C |
+| Lung hilum / pulmonary artery | Bullet | 1,000–4,000 mL/min; airway flooding asphyxia 1–5 min | LOC 30 s–2 min | Drowning in blood | [R03 §5] C |
+| **Liver** | Moderate / severe / retrohepatic IVC | 20–100 / 200–1,000 / 1,000–3,000 mL/min intraperitoneal | Hours / LOC 10–30 min / 1–5 min | Little external blood, progressive pallor; knife: clean oozing cut; handgun: 1–2 cm track + 1–3 cm stellate fissures | [R03 §5], [R2-05 §12] C |
+| **Spleen** | Moderate / shattered or hilar | 20–100 / 200–800 mL/min | Hours / LOC 10–40 min; delayed rupture 30 min–48 h (p 0.02–0.1 after blunt grade I–III) | Kehr's sign (left shoulder pain) | [R03 §5], [R2-05 §12.4] C/E |
+| **Kidney** | Parenchyma / hilum | 5–50 contained / 300–1,000 retroperitoneal | Survives / LOC 5–20 min | Haematuria | [R03 §5] C |
+| Stomach, bowel | Penetration | Minor bleeding; spillage | Peritonitis outside the game window | Sour gastric content; bowel through wounds ≥ 50–80 mm | [R2-05 §12.5] C |
+| Great vessels | Any | §3.3 table | §3.3 table | | [R03 §5] |
+| Trachea below cords | Cut or shot | Aphonia; aspiration (airway blood_flooded) | Aspiration killed 36.5 % of cut-throat victims | Bubbling at the wound, cough spray | [R02 §2.4] C |
+
+### 4.5 Brain regions
+
+**Core rule** [R04 §3.1, C]: consciousness needs the brainstem reticular system plus working cortex; **a lesion confined to one hemisphere does not by itself cause coma**. It usually causes an immediate concussive collapse (impact apnoea p 0.3–0.6, transient LOC 5–120 s) from which the victim may wake with focal deficits. Probability of being awake 10 s after a unilateral low-energy wound not crossing the midline: 0.10–0.30; purposeful capacity to act after a low-energy frontal track: 0.05–0.15 (retained-capacity cases: > 70 % slow light bullets) [R04 §3.7, R01 §6.3].
+
+| Region (damage = fraction destroyed; "visible / full" = deficit onset / complete) | Deficit | Side | What the player sees | Source |
+|---|---|---|---|---|
+| Prefrontal | Planning, inhibition, drive (unilateral 0.30/0.90; bilateral 0.20/0.60) | Bilateral effects | Blank stare, slowed or absent responses, perseveration, grasping; may keep walking/talking; vomiting possible | [R2-01 §1], [R04 §3.3] C/E |
+| Motor strip / internal capsule (capsule 0.05/0.30: a 10 mm lesion gives dense hemiplegia) | Contralateral hemiplegia, flaccid at first (face, arm, leg) | Contra | Arm hangs, leg buckles, **falls toward the paralysed side**, mouth droops; **eyes and head deviate 15–40° toward the lesion** | [R2-01 §1], [R04 §3.3] C |
+| Frontal eye field (0.30/0.70) | Voluntary gaze to the opposite side | Eyes toward lesion | Eyes and head turned toward the wound | [R2-01 §1] C |
+| Left (dominant) language areas (Broca/Wernicke 0.20/0.70) | Aphasia | — | Broca: grunts, single effortful words (10–50 words/min, 1–5 s pauses); Wernicke: fluent nonsense, ignores commands | [R2-01 §1], [R2-06 §17] C |
+| Right parietal | Left neglect | Contra | Ignores the left side, no reaction to hits on the left | [R2-01 §1] C |
+| Occipital | Contralateral field loss; bilateral → cortical blindness | Contra field | Bumps into things; bilateral: eyes open, pupils react, no tracking | [R2-01 §1] C |
+| Temporal | Memory, comprehension (left); seizures; expanding haematoma → uncal herniation | — | Repetitive questions, confusion; later ipsilateral blown pupil | [R04 §3.3] C |
+| Thalamus / diencephalon (unilateral 0.10/0.50; bilateral paramedian 0.10/0.30) | Coma likely | — | Eyes deviated down and in, small reactive pupils | [R04 §3.3], [R2-01] C |
+| **Cerebellar hemisphere** (0.10/0.50) | Ipsilateral limb ataxia, intention tremor 3–5 Hz (1–5 cm at the fingertip, rising in the last 10–20 cm of a reach), dysmetria overshoot 3–10 cm | **Ipsi** | Staggers and falls **toward the lesion** (60–80 % of falls), wide steps 15–30 cm, nystagmus p 0.75, vomiting p 0.6–0.8 in the first hour, cannot walk p 0.7 if severity > 0.3, scanning speech | [R2-01 §12] C/E |
+| Vermis (0.10/0.50) | Truncal ataxia | Midline | Cannot sit or stand unsupported; titubation 2–4 Hz, 1–3 cm | [R2-01 §12] C/E |
+| Cerebellar track with bleeding | Posterior-fossa haematoma compresses the 4th ventricle/medulla | — | Talking → sudden apnoea within minutes–48 h (not the 3-day oedema clock) | [R2-01 §12.1] C |
+| **Midbrain** (0.02/0.20) | Coma at once; CN III | — | Mid-position fixed pupils 4–6 mm; eye down-and-out with ptosis; vertical gaze lost; decerebrate episodes p 0.3–0.6 (5–60 s); may topple stiffly | [R04 §2.2] C |
+| **Pons, tegmentum** | Coma; horizontal gaze lost | — | **Pinpoint 1–2 mm pupils**, ocular bobbing, corneal reflex lost; apneustic/cluster/ataxic breathing then apnoea within 0–5 min | [R04 §2.2] C |
+| Pons, ventral basis only (low energy, p ≤ 0.05) | Locked-in | — | Awake; quadriplegic; only vertical eye movements and blinks | [R04 §2.2] G |
+| **Medulla** (0.02/0.15) | Breathing and vasomotor centres | — | **Immediate apnoea, no gasps**; MAP 40–60 within 30–60 s; flaccid; heart continues ~100 bpm, hypoxic arrest 4–10 min | [R04 §2.2] C |
+| Near-miss within 10–20 mm of the brainstem (handgun) | Concussive brainstem dysfunction | — | Immediate LOC, impact apnoea, high apnoea chance | [R04 §2.5] C/G |
+
+**Herniation sequences** [R04 §5.2, C]: *Uncal* (temporal mass, e.g. EDH): ipsilateral pupil enlarges, sluggish then fixed 6–9 mm, ptosis, eye down-and-out → consciousness falls → contralateral hemiparesis → decerebrate → both pupils fixed → breathing Cheyne–Stokes → hyperventilation → ataxic → apnoea. *Central*: small reactive pupils, Cheyne–Stokes, decorticate → mid-fixed pupils, decerebrate, central hyperventilation → flaccid, ataxic, apnoea. *Tonsillar* (posterior fossa): sudden apnoea and collapse with little warning.
+**Breathing patterns**: Cheyne–Stokes period 40–90 s with 10–30 s apnoea; central neurogenic hyperventilation 25–40/min; apneustic 2–3 s inspiratory hold; ataxic 4–12/min random; agonal 2–10/min [R04 §5.5].
+**Seizures** [R04 §4.2, R2-04 §14, C]: early post-traumatic seizure p 0.10–0.15 severe blunt, 0.2 penetrating (impact seizure 0.02–0.05). GTC: tonic 10–20 s (epileptic cry, apnoea, jaw clench), clonic 30–60 s slowing from 3–4 Hz to ~1 Hz, total ~62 s; eyes open 90–97 %; lateral tongue bite 0.2–0.35; HR 120–160; postictal 2–20 min stertorous, confusion 10–30 min.
+
+### 4.6 Spinal cord level → paralysis map
+
+**Vertebra → cord segment**: cervical +1, upper thoracic +2, lower thoracic +3; T10 → T11–L1; T11 → L1–L3; **T12 → L3–S1**; **L1 → conus S2–S5** (bladder/bowel); L2–S2 = cauda equina roots (lower motor neuron, patchy, asymmetric). Conus tip at the L1/L2 disc, body frame (0, +0.017, 1.180) [R05 §9, V level]. Complete-injury probability for a bullet through the canal 0.7–0.9; fragment or cavitation only 0.3–0.5 [R04 §6.7, G].
+
+| Level (complete) | Resp. capacity (fraction of VC) | Ragdoll bodies with voluntary tone | Flaccid bodies | Autonomic | What the player sees | Without help |
+|---|---|---|---|---|---|---|
+| **C1–C3** | 0–0.1 (apnoea) | Head/neck weak (CN XI shrug/turn), face, eyes, jaw | All limbs, trunk | Neurogenic shock | Instant flaccid collapse **but awake**: eyes wide and darting, mouth opening silently, neck straining, chest still; lips blue by 1–2 min; LOC 90–180 s | Arrest 4–10 min (default 6) |
+| C4 | 0.25 | + shoulder shrug | Arms, trunk, legs | Neurogenic shock likely | Paradoxical "see-saw" breathing (belly rises, upper chest sinks), short breathy phrases | Fatigue over hours |
+| C5 | 0.3 | upper_arm (abduction), forearm flexion only | hands, trunk, legs | Neurogenic shock common | Elbows flex with limp supinated hands; slow pulse 40–60, warm pink skin | Survives acutely |
+| C6 | 0.4 | + wrist extension (tenodesis finger curl) | fingers, trunk, legs | | Can lift the wrists | Survives |
+| C7 | 0.5 | + elbow and finger extension | intrinsic hand, trunk, legs | | Pushes up weakly | Survives |
+| C8 | 0.5 | + grip | hand intrinsics, trunk, legs | Less often shock | Grasps | Survives |
+| T1 | 0.6 | Arms fully | Trunk, legs | Horner's (ptosis 1–2 mm, pupil 0.5–1 mm smaller) | No trunk balance | Survives |
+| T2–T6 | 0.6 | Arms | Poor trunk, legs | **≤ T6: neurogenic shock possible** | Falls, props up on the arms, cannot sit unsupported | Survives |
+| T7–T12 | 0.8 | Arms, better trunk | Legs | Mild | **Legs fold instantly, arms break the fall, drags itself on the elbows**, legs trailing and externally rotated | Survives |
+| L1–L2 (conus) | 1.0 | Upper body | Legs (hip flexors weak/absent), bladder/bowel | | As T12 | Survives |
+| L3–S1 (cauda) | 1.0 | Partial legs by root: L3 quads, L4 dorsiflexion, L5 big-toe extension, S1 plantarflexion | Patchy, asymmetric, permanently flaccid; foot drop | | Limps, foot slaps, one leg worse | Survives |
+
+- **Incomplete syndromes** [R04 §6.3, C]: *Brown-Séquard* (knife to the side of the back/neck; 0.3–0.5 of knife cord injuries): same-side paralysis and loss of position sense; opposite side loses pain/temperature from 1–2 segments below — one leg paralysed, the other moves but ignores the torch. *Central cord*: arms much weaker than legs. *Anterior cord*: paralysis and pain loss with position sense kept. *Cord concussion* (hammer/fist to the neck): complete paralysis resolving in 2 min–48 h (default 10 min).
+- **Spinal shock** (0–24 h, the whole game window): everything below the level is flaccid, areflexic, with **no withdrawal** and no flinch to cutting or burning [R04 §6.4, C].
+- **Neurogenic shock** incidence in isolated cord injury: cervical 0.19, thoracic 0.07, lumbar 0.03; complete cervical 0.7–1.0 (bradycardia essentially always; primary arrest ~16 %) [R04 §6.5, C]. Poikilothermia: core drifts toward ambient at 0.3–1 °C/h.
+
+### 4.7 Time to incapacitation (canonical injuries, supine unless stated)
+
+| Injury | LOC / incapacitation (real) | Arrest (real) | Signature | Game length (auto bands) | Source |
+|---|---|---|---|---|---|
+| Medulla / pons gunshot | 0 s (collapse 0.6–1.2 s) | 4–10 min (hypoxic) | Cut-strings drop, no breathing, eyes fixed open, pinpoint or mid pupils | ~2–3 min | [R04 §13.4] C |
+| Heart destroyed | 8–15 s (action possible 10–15 s) | 0 s | Brief action, collapse, eyes up, jerks, gasps | ~1.5–2 min to dead flag | [R04 §8] C |
+| Heart stab (tamponade) | 5–60 min | 5 min–2 h (20 min default) | Distended neck veins, grey, breathless; purposeful activity for minutes common (4/7 cardiac-stab suicides active 2–10 min) | 3–8 min | [R04 §8.3], [R2-02 §15] C |
+| Ascending aorta / arch | 5–15 s | 1–3 min | | ~1.5 min | [R03 §5] C |
+| Throat cut (both carotids + jugulars) | 5–20 s | 1–3 min | Aspiration, air hiss | ~1.5 min | [R03 §5] C |
+| Unilateral carotid (open) | 20–90 s | 2–5 min | Tall pulsing jet, hand to the neck | ~2 min | [R03 §5] C |
+| Common femoral transection | 2–5 min (standing collapse ~2 min) | 3–10 min | Fast-growing pool | 2–3 min | [R03 §5] C |
+| Brachial | 10–15 min | 15–30 min | | 4–6 min | [R03 §5] C |
+| Lung + haemothorax/tension | 10–60 min | 15–90 min | Frothy haemoptysis, sucking wound, blue lips | 4–8 min | [R04 §13.4] C |
+| Liver severe / spleen shattered | 10–30 / 10–40 min | 20–90 / 30–120 min | Little external blood | 4–8 min | [R03 §5] C |
+| Slow multi-wound bleed 100 mL/min | 24–28 min | 29–40 min | Full stage progression | ~5–6 min | [R04 §7.5] V arithmetic |
+| C1–C3 cord | 1.5–3 min (awake until then) | 4–10 min | Awake, silent, eyes pleading, blue lips | ~3 min | [R04 §13.4] C |
+| C5 cord / T8 cord | none | none | Belly breathing; dragging with arms | Persistent | [R04 §13.4] C |
+| Unilateral frontal low-energy | 0–60 s (often transient) | Hours or none | Staggers, talks confusedly | Persistent/slow | [R04 §3] C |
+| Temporal hammer blow → EDH | Brief, then lucid (p 0.2–0.5) | 1–6 h (default 2 h) | Talk and die: blown pupil, Cushing | 8–12 min | [R04 §5.4] C |
+| Punch knockout | 0 s; recovers in 5–60 s | none | Fencing arms, snoring | Real time | [R04 §3.6] C |
+| Contact shotgun to the head | 0 s | 1–10 min (heart continues) | Burst head, pulsatile bleeding from the defect | ~2 min | [R2-05 §2.5] C/E |
+| Handgun body hits (stopping) | ~2 hits to stop on average; 47 % stop after the first 9 mm hit; 13–17 % never stop; "psychological stops" cannot be counted on | — | | — | [R2-02 §15] C |
+
+### 4.8 Death criteria
+
+1. **Circulatory arrest** = rhythm ∈ {VF, PEA, asystole} or effective CO < 0.3 L/min. Sets `t_arrest`; **the post-mortem clock starts here**. Pulsatile flow ends with the last effective beat.
+2. **Dead flag** = arrest + 300 s (autoresuscitation window: p 0.1 of a brief return of a few beats in the first 5 min, never with consciousness) [R04 §10.1, C].
+3. **Irreversible brain injury** begins after perf < 0.2 for 4–6 min (normothermic); cortex first, brainstem more tolerant.
+4. **Death by neurologic criteria** (brainstem destroyed or herniation complete): coma, pupils fixed 4–9 mm (mean 5.0 ± 0.85), no corneal/oculocephalic/gag/cough reflexes, **no breathing effort even as CO₂ rises**; the heart then stops 4–10 min later from hypoxia [R04 §10.1, R2-04 §14, C].
+5. After the dead flag, only post-mortem processes run (§6); spinal reflex movements are possible only while the cord is still perfused (p 0.1–0.2 after brainstem destruction, 1–10 min; full "Lazarus" arm raise rare) [R04 §10.4, R2-04 §14].
+
+### 4.9 What the player sees and hears, stage by stage
+
+**Haemorrhage progression** [R04 §7.2, R03 §3.6, C]:
+
+| Stage (loss) | Behaviour | Face / skin | Eyes (§5) | Breathing / sounds | Pulse / jets |
+|---|---|---|---|---|---|
+| 0–0.15 | Normal, maybe anxious | Normal | Normal, blinks 12–20/min | 14–18/min, quiet | HR ≤ 100; strong jets |
+| 0.15–0.30 | Anxious, restless, **thirsty**, dizzy upright (may faint), pleads | Pale (desaturate 20 %), cool hands, sweat beginning; hand and forearm veins flatten | Blinks more | 20–30/min; voice anxious but coherent | HR 100–120, narrow pulse pressure; jets faster |
+| 0.30–0.40 | Confused, agitated **or** oddly quiet, air hunger, nausea, sense of doom, fumbling, complains of cold and "going dark"; yawning, sighing, shivering | Grey-white `#D9D2CC`, cold clammy sweat beads, **pale lips** `#C9A09E`, mottled knees `#8C5A70` (after ≥ 10–20 min of shock) | Sunken, dull, unfocused; pale conjunctivae `#EBCFCB`; pupils normal–large, sluggish; blinks 5–10/min, slow 300–500 ms | 30–40/min, sighing; voice weak, slurred, repetitive | HR 120–140, thready radial pulse; SBP 70–90; jets clearly lower |
+| 0.40–0.50 | Lethargic → unresponsive (LOC ~0.45) | **Waxy white-grey** `#E3DCD3`; lips grey-lilac `#A99AA4`, **not blue** | Lids half-closed or fixed open, vacant, pupils dilating | Shallow and fast → slowing, irregular; moans then silence | HR > 140 or paradoxically slowing; radial pulse gone; jets become welling surges |
+| 0.50–0.60 | Unconscious, agonal | White, no capillary refill | Pupils wide and fixed, no blink | **Agonal gasps** 2–10/min (p 0.3–0.5), gurgles | PEA → asystole; jets stop |
+| Arrest | — | Pallor extreme; livor faint/late | §5.4 | Final passive exhalation (sigh or rattle) at the last gasp or 5–30 s after arrest | Gravity drainage only |
+
+**Breathing and airway sound catalogue** [R04 §5.5, §10, R2-04 §14, R2-06 §17, C/E]:
+
+| State | Look | Sound |
+|---|---|---|
+| Normal | Belly then chest rise, 12–20/min | Near silent |
+| Pain / fear | Fast, gasping inhalations, breath holding | Audible panting, moaning; screams 90–105 dB at 1 m (normal speech 62, shout 82); voice fades as shock lowers subglottal pressure (−8–9 dB per halving) |
+| Air hunger (Class III) | Deep, fast, suprasternal and intercostal tugging | Sighs, yawns |
+| Unconscious, supine | Tongue falls back | **Stertor** (snoring); head tilt changes it |
+| Blood in the airway | Coughing, spraying fine pink droplets; bubble-ring stains | Wet gurgling on each breath |
+| Upper-airway narrowing | Tugging | Stridor: loud, high-pitched, inspiratory |
+| Chest-wall hole > 10–13 mm | Suck in / froth out | Small holes hiss or whistle, large holes slurp and bubble, in time with RR |
+| C1–C3 awake apnoea | Mouth and neck strain, chest still | Silent (no airflow) |
+| C4–C6 | Paradoxical belly breathing | Breathy whisper, weak ineffective cough |
+| Cheyne–Stokes | Crescendo–decrescendo cycles 40–90 s | Sighs then 10–30 s silence |
+| Agonal gasping | 0.2–0.6 s inspiration with **neck extension and jaw opening**, 1–3 s passive expiration; intervals grow from ~10 s to ~1 min; lasts 1–5 min; absent after medullary destruction | Snort, snore, gurgle, sometimes a moan |
+| Death rattle | Pooled secretions | **Only in deaths lasting hours** (median 16–23 h onset-to-death); never in fast violent deaths |
+| After death | Chest still | Moving/pressing the chest can push a groan or sigh past the cords (p 0.3 per heavy press, first 12 h) |
+
+**Death-type choreography** (first 60 s always 1×) [R04 §8.2, §2, R2-04]:
+- **Brainstem hit**: 0–1.2 s cut-strings collapse (no protective arm reaction, head strikes the floor, weapon drops in 0.1–0.5 s); no breathing (medulla) or a few strange breaths (pons); brief myoclonic twitches possible in the first seconds (p 0.2); rare transient decerebrate stiffening (midbrain); wounds keep pulsing for minutes, weakening; lips dusky blue over 1–2 min unless exsanguinated.
+- **Heart destroyed**: 0–5 s normal action (can run, shout); 5–10 s grey-out, stumbles; 8–15 s collapse with eyes open, upgaze 2–10 s, myoclonic jerks (p 0.9, 1–10 irregular jerks); 15–40 s EEG flat, pupils start dilating at 30–45 s, fixed wide by 1–2 min; agonal gasps (p 0.3–0.5).
+- **Anoxic sequence with a beating heart** (C1–C3, airway obstruction): LOC ~10–15 s after brain O₂ runs out, convulsive jerks ~15 s, extension ~20 s, flexion ~40 s, loss of tone ~1–1.5 min, last respiratory movement ~1–2 min, last isolated muscle movement up to ~4–7 min [R2-04 §14, L–M].
+- **Destructive head wound**: instant flaccid collapse, a single jerk or extensor stiffening in 0–2 s, irregular twitches ≤ 5–20 s, no coordinated movement.
+- **Post-arrest twitches**: fine fasciculations in the first ~15 min only; supravital contraction only when a muscle is struck (≤ 1.5–2.5 h).
+
+### 4.10 Motor tone → powered ragdoll (Jolt)
+
+PD torque per `PhysicalBone3D` in `_integrate_forces`: `τ = kp·θ_err − kd·ω_rel`, `kp = I·ω²`, `kd = 2ζ·I·ω`, equal and opposite torque on the parent; explicit torque caps (Godot 4.5 exposes no joint motors; 6DOF springs are uncapped) [R06 §10.4, R2-03 §11, V/E].
+
+| Tone state | ω (rad/s) | ζ | Cap × | Target pose | Source |
+|---|---|---|---|---|---|
+| Voluntary | 10–12 (arms 6–8) | 0.8–1.0 | 1.0 | Animation | [R2-03 §11] E |
+| Dazed | 5–8 | 1.0 | 0.6 | Animation with sag | [R2-03] E |
+| Weak (Class III, hemiparesis) | 2–4 | 1.0 | 0.3–0.5 | Animation with gravity sag | [R2-03] E |
+| Flaccid | 0 | — | 0 | None ("cut strings") | [R04 §2.3] C |
+| Decorticate | 8–12 | 0.9 | 0.6 | Shoulders adducted, elbows 90–120° flexed, wrists 60–80° flexed, fists; legs extended, ankles 30–45° plantarflexed | [R04 §4.3] C/G |
+| Decerebrate | 10–14 | 0.9 | 0.8 | Elbows 0–10°, forearms fully pronated, wrists 60–80° flexed; knees 0°, ankles 30–45° plantarflexed and inverted; neck 10–30° extended; jaw clenched; episodes 5–60 s, repeating every 30 s–5 min or on stimulus | [R04 §4.3] C/G |
+| Fencing | 8–12 | 0.9 | 0.6 | Arm on the face side extended (often raised), other flexed; 2–10 s | [R04 §3.6] C |
+| Tonic (seizure) | 12–15 | 0.7 | 1.0 | Extension rigidity, back arched | [R04 §4.2] G |
+| Clonic | Oscillate ±10–25° about the tonic pose at 3–4 Hz slowing to ~1 Hz | 0.5 | 0.8 | Rhythmic jerks, gaps lengthening | [R2-04 §14] C |
+| Rigor | Kinematic lock ramp (§6) | — | — | Current pose | [R04 §12.6] C |
+
+- Stability: ω·Δt ≤ 0.5 (ω ≤ 30 rad/s at 60 Hz physics; use 120 Hz for close-ups); adjacent mass ratio ≤ 10:1 (neck ≥ 1–1.5 kg) [R2-03 §11, R06 §10.2].
+- Torque caps (strong adult): neck 20–40 N·m, lumbar 200–300, shoulder 60–100, elbow 50–80, wrist 8–15, hip 200–300, knee 200–250, ankle 100–150 [R06 §10.4, C].
+- **Tone loss speed**: ≤ 100 ms for off-switch injuries (brainstem, high cord, knockout); 0.5–2 s for faints and bleeding [R2-03 §11].
+- **Collapse timing** [R04 §2.3, R2-03 §11, E]: centre-of-mass free fall ≥ 0.41 s; cut-strings collapse (knees and hips buckle) → first contact 0.35–0.55 s, head contact 0.7–1.2 s at 3–5 m/s; a rigid plank topple takes 1.0–1.6 s and is **wrong** for flaccid collapse. Falls follow the existing lean; unconscious falls have **no protective arm reaction**; conscious falls do (arm burst ~100 ms; hands land in 74 % of real falls, the head still hits in 37 %) [R2-02 §15].
+- **Behaviours**: clutch wound (conscious, hand not paralysed; flow × 0.3–0.7); writhing (0.3–1 Hz procedural targets at weak tone); crawling/dragging with paralysed legs; agonal gasp (jaw and neck extension torque each gasp); partial-ragdoll flinch on every hit (influence 0.3–0.6 → 0 over 0.2–0.5 s) [R06 §10.3–10.5].
+- Joint limits (living active ROM, add ~10 % passive when dead): neck flexion 45–50°, extension 45–60°, rotation 60–80°; elbow 0–145°; knee 0–135°; hip flexion 120°; dead key limits neck flex 70 / ext 85 / rot 90, knee −10 → 158, elbow −10 → 155 [R06 §10.1, R2-03 §11, C].
+- Surface: friction 0.6–0.9 (skin/cloth on floor), **0.1–0.25 on wet blood**; restitution 0.1–0.3 (bounce setting 0) [R2-03 §11].
+
+### Simulation parameters (physiology)
+
+| Parameter | Value / range | Unit | Notes | Source |
+|---|---|---|---|---|
+| `o2_lung_max / cap_blood` | 400 / 850·(V/BV0) | mL | O₂ stores | [R04 §1] E |
+| `vo2` | 250 × (0.8–2.0) | mL/min | | [R04 §1] C |
+| `vent_supply_max` | 350 | mL/min O₂ | × E_vent | E |
+| `brain_o2_reserve_max` | 8 (5–10) | s | Real time | [R04 §13.2] E |
+| `loc_supine_loss / pea_loss` | 0.45 / 0.45–0.50 fast, 0.55 slow | fraction | | [R04 §7.4] C |
+| `faint_upright_loss` | 0.20–0.30 | fraction | Per victim | [R04 §7.4] C |
+| `hypoxic_arrest` | SpO₂ < 0.4 for > 150 s | — | Apnoea → arrest ≈ 6 min | E |
+| `arrest_to_dead_flag / autoresus_p` | 300 s / 0.1 | — | | [R04 §10.6] C |
+| `pea_to_asystole / vf_to_asystole` | 2–10 / 10–20 | min | | [R04 §10.3] C |
+| `brain_irreversible` | perf < 0.2 for 4–6 min | — | | [R04 §1] C |
+| `hemi_conscious_p / capacity_to_act_p` | 0.10–0.30 / 0.05–0.15 | p | Low-energy unilateral / frontal | [R04 §3.7] G |
+| `impact_apnoea_p` | KO 0.1; moderate 0.3; severe/penetrating 0.6 | p | 5–30 s KO; 30 s–5 min severe | [R04 §3.7] G |
+| `gaze_deviation_hemi` | 15–40 toward lesion | ° | | [R04 §3.7] C |
+| `cord_complete_p` | 0.7–0.9 bullet through canal; 0.3–0.5 fragment | p | | [R04 §6.7] G |
+| `resp_capacity_by_level` | C1–3 0–0.1; C4 .25; C5 .3; C6 .4; C7–8 .5; T1–6 .6; T7–12 .8; L+ 1.0 | fraction | | [R04 §6.7] C/L |
+| `neurogenic_p` | cervical complete 0.7–1.0; cervical 0.19; thoracic 0.07; lumbar 0.03 | p | Trigger SBP < 100 & HR < 80 | [R04 §6.5] C |
+| `seizure_early_p` | severe blunt 0.10–0.15; penetrating 0.2 | p | GTC ~62 s | [R04 §4.3] C |
+| `posture_episode` | 5–60 s, every 30 s–5 min or on stimulus | — | | [R04 §4.3] G |
+| `pd_omega` | voluntary 10–12 (arms 6–8), dazed 5–8, weak 2–4, flaccid 0 | rad/s | ω·Δt ≤ 0.5 | [R2-03 §11] E |
+| `tone_loss_time` | ≤ 0.1 off-switch; 0.5–2 faint/bleed | s | | [R2-03 §11] C |
+| `collapse_first_contact / head_contact` | 0.35–0.55 / 0.7–1.2 | s | Cut strings | [R2-03 §11] E |
+
+### Visual/behavioural checklist (physiology)
+- Bleeding victims progress visibly: restless and thirsty → grey, sweaty, confused, fast-breathing → lethargic with vacant half-open eyes → unconscious with gasps → still. A standing victim may faint at 20–30 % loss, recover briefly lying down, then collapse again.
+- A brainstem or high-cord hit drops the body like a puppet in under a second, no arm reaction; a high-cord victim stays awake, silent and unable to breathe.
+- A heart shot never drops the target instantly: ~10 s of possible action, then collapse with eyes open and briefly rolled up, a few jerks.
+- Unilateral brain wounds can leave the character awake with a paralysed side, eyes and head turned toward the wound.
+- Paralysed limbs below a cord lesion never flinch, withdraw or react to cutting or burning.
+- Posturing, seizures, knockouts and agonal gasps look distinct and only appear under their conditions.
+- No death rattle in fast deaths; no breathing at all after a medullary hit.
+
+---
+
+## 5. Eyes and face
+
+### 5.1 Reference geometry [R04 §11.1, C/H]
+
+| Quantity | Value |
+|---|---|
+| Globe diameter / axial length | ~24 / 23–24 mm (contract head: radius 0.012 m ✓) |
+| Cornea (H × V), central thickness | 11.5–12 × 10.5–11 mm, 0.50–0.55 mm |
+| Palpebral fissure (height × width) | 9–10 (8–11) × 28–30 mm; upper lid covers the top 1–2 mm of the cornea; lower lid at the lower limbus |
+| Intraocular pressure | 10–21 mmHg (mean 15–16) |
+| Colours | Sclera `#F1ECE2`, palpebral conjunctiva `#D98C87`, fine bulbar vessels `#B8424A`, pupil `#0A0A0A` |
+
+### 5.2 Living eye behaviour (models)
+
+**Blinks** [R04 §11.1, R2-06 §17, C/G]:
+- Rate (Poisson, minimum interval 1 s [G]): alert 12–20/min (conversation up to 25; concentration 3–8); shock 5–10/min; unconscious 0–2; dead 0.
+- Duration 250–400 ms: closing 70–100 ms, closed 0–50 ms, reopening 150–250 ms [K]; in shock slow blinks 300–500 ms (lids may shut and struggle open in lethargy).
+- Bell's phenomenon: eyes roll up and slightly out behind closing lids.
+- Stress: a burst of blinks, then staring with lid retraction.
+
+**Gaze** [R2-06 §17, K]:
+- Saccade duration **21 ms + 2.2 ms/°** (10° ≈ 43 ms); peak velocity 400–700 °/s; typical amplitude 2–15°, head joins shifts > ~20°.
+- Fixations 200–400 ms; microsaccades < 1° about 1–2 per second [K]; smooth pursuit ≤ ~30 °/s [K].
+- Upper lid tracks vertical gaze (gain ≈ 1 in rotation) [K].
+- Targets while conscious: the attacker/weapon (fear), the own wound (pain), scanning (stress).
+- Doll's eyes (vestibulo-ocular counter-rotation) gain 1.0 while the brainstem is intact — suppressed by fixation when awake, obvious when unconscious.
+
+**Pupils** [R04 §11.1, §11.2, C/K]:
+- Normal room light 3–4 mm; bright 2–4; dark 4–8.
+- Light reflex: latency 200–250 ms, constriction ~1 s, redilation 2–4 s [K]; consensual (both eyes).
+- Hippus ±0.2–0.5 mm at 0.2–0.5 Hz [K].
+- Pain/fear: +1–2 mm within 0.5–2 s.
+- Tears: basal 1–2 µL/min; the sac overflows beyond ~25–30 µL; a blow to the nose makes the eyes water within seconds [R2-06 §17].
+
+### 5.3 Eye state table (drives the eye system) [R04 §11.2]
+
+| State | Lid aperture | Gaze | Pupils | Reflexes | Blink | Surface |
+|---|---|---|---|---|---|---|
+| Alert | 9–10 mm | Fixations and saccades on targets | 3–4 mm, reactive | Corneal + | 12–20/min | Glossy |
+| Pain / fear | **11–12 mm** (white above the iris) in fear; eyes squeezed shut in pain (AU43) | Rapid scanning, then fixed on the threat | +1–2 mm | + | Burst, then staring | Glossy, tearing |
+| Shock III–IV | Heavy, 5–8 mm; eyes **sunken** | Vacant, slow saccades, poor tracking | Normal to large, **sluggish** | + | 5–10/min, slow | Pale conjunctiva `#EBCFCB` |
+| Syncope / heart destroyed / sudden loss of brain perfusion | **Stay open** | **Conjugate upward deviation 10–30° for 2–10 s** (p 0.6–0.8), then drift to midline over 10–60 s | Dilating | Lost within tens of seconds | Stops | Glossy at first |
+| Knockout | Open or closed (≈ 50/50) | Vacant, may briefly roll up | Equal, reactive | + | Absent while out | Glossy |
+| Generalised seizure | Open (90–97 %), flutter | Deviated up or **away** from a cortical focus; nystagmoid jerks | Dilated, unreactive | Absent | None | Tearing |
+| Postictal | Half-closed | Roving, slightly divergent | Sluggish | Returning | Rare | — |
+| Coma, brainstem intact | Closed or part-open; a lifted lid closes again over 1–2 s | Slightly divergent, slow roving; **doll's eyes present** | Small–normal, reactive | Corneal + | Rare | Glossy |
+| Destructive hemisphere lesion | Any | **Conjugate deviation toward the lesion** 15–40° | Normal | + | — | — |
+| Thalamus | Any | Down and in | Small, reactive | + | — | — |
+| Pons | Any | No horizontal movement; **ocular bobbing** (fast down, slow up, a few–10/min); skew; "wrong-way" deviation | **Pinpoint 1–2 mm** | Corneal lost | None | — |
+| Midbrain | Any; ptosis with CN III | Dysconjugate, down-and-out, vertical gaze lost | **Mid-position 4–6 mm, fixed** | Lost | None | — |
+| Uncal herniation | Ipsilateral ptosis | Ipsilateral eye down-and-out | **Ipsilateral blown 6–9 mm, fixed**, then both | Lost progressively | — | — |
+| Locked-in | Open | Only vertical movements and blinks | Normal | + | Voluntary | Glossy |
+| C1–C3 cord, awake apnoea | Wide | Darting, pleading | Normal, then dilate as SpO₂ falls | + until LOC | Normal/rapid, tears | Glossy |
+| Brain death / death | **Stay where they were when tone was lost** (§5.4) | Neutral or slightly divergent; **no movement; move rigidly with the head (doll's eyes absent)** | **4–9 mm fixed** (mean 5.0 ± 0.85) | All absent | **None** | Gloss fades (§5.5) |
+
+Brainstem signs in the living [R04 §11.7]: skew deviation 2–10° (medullary lesion: lesion-side eye lower; pontine/midbrain: opposite eye lower); Horner's (lateral medulla, T1 cord, carotid injury): ptosis 1–2 mm, pupil 0.5–1 mm smaller; internuclear ophthalmoplegia; nystagmus (cerebellar, vestibular).
+
+### 5.4 Dying and death
+
+**Lids at death** [R04 §11.3; no prevalence study exists — distribution G]:
+
+| Death type | Open (aperture 6–10 mm) | Half-open (2–6 mm) | Closed (0–2 mm) |
+|---|---|---|---|
+| Sudden, awake victim (brainstem, heart, high cord) | 0.55 | 0.35 | 0.10 |
+| Slow death through lethargy/coma (bleeding out, raised ICP) | 0.20 | 0.45 | 0.35 |
+| After seizure or knockout progressing to death | 0.30 | 0.45 | 0.25 |
+
+- At the moment tone fails an open lid **drops 2–4 mm over 1–3 s** (levator and Müller's tone lost); it **never blinks shut**. Closing is an active movement; "inability to close the eyelids" is a sign of death within days in palliative series [R04 §11.3, C].
+- Manually closed lids of a dead character creep back open 1–3 mm over 1–5 min in ~50 % of cases before rigor; after rigor (≥ 2–4 h) they stay put. A living unconscious lid lifted by the player slowly closes again; a dead one stays up.
+- Swelling overrides everything: orbital haematoma or raccoon eyes can push the lids shut in the living.
+
+**Gaze** [R04 §11.4]: the dramatic upward roll belongs to syncope and seizures, not to death. After tone is lost, drift over 10–60 s to rest: **each eye 3–10° abducted, 0–5° elevated**; dysconjugate rest (one eye skewed or out) common after brainstem or CN III injury. No saccades, micro-movements or nystagmus after death. Turning a dead head: eyes move with it (doll gain 0).
+
+**Pupils** [R04 §11.5, C]: global ischaemia → dilation begins 30–45 s after cerebral flow stops, **6–8+ mm and fixed by 1–2 min**; over 2–6 h after death they relax to **4–6 mm** with random anisocoria ≤ 1 mm and slight irregularity (iris rigor). Pinpoint pupils in a dead body only after a pontine lesion (or drugs). Pupil reads black until the cornea clouds, then grey `#6E7274`. Ripault's sign from ~30 min: squeezing the globe makes the pupil oval and it stays oval.
+
+**Choreography by death type** (real time) [R04 §11.9]:
+- *Brainstem gunshot*: lids flinch then stay open; blinking stops forever; pupils pinpoint (pons) / mid-fixed (midbrain) / normal (pure medulla); lids drop 2–4 mm in 1–3 s; eyes slightly divergent or skewed; pupils dilate with hypoxia at 60–180 s (unless midbrain-fixed); gloss fades over minutes.
+- *Heart destroyed*: 0–5 s wide eyes, pupils dilating with fear, fixed on the wound or attacker; 5–10 s blank stare; 8–15 s LOC, eyes open and up 10–30° for 2–10 s with lid flutter during jerks; 15–60 s drift to near straight ahead, lids half-open; 30–120 s pupils 6–8 mm, fixed; agonal gasps move the head and the eyes move with it.
+- *Slow exsanguination*: sunken, dull, pale conjunctivae, slow blinks, wandering gaze; lids close in lethargy; half-closed at LOC; pupils dilate and fix during the final gasps.
+- *C1–C3*: wide, darting, pleading eyes with tears for 0–60 s; gaze slows, pupils widen at 60–120 s; LOC at 90–180 s, eyes stay open and drift up/out; then as heart-destroyed from the pupil stage.
+- *Herniation*: one pupil enlarges, same-side ptosis and down-and-out eye; then the other pupil fixes; dysconjugate, doll's eyes lost; both wide and fixed at apnoea, lids part-open.
+
+### 5.5 Post-mortem eye surface (sim time; open eyes unless stated) [R04 §11.6, C]
+
+| Change | Onset | Appearance / shader target |
+|---|---|---|
+| Blink and corneal reflex lost | At brainstem failure | — |
+| Tear film breaks up | 10–30 s after the last blink | `gloss` 1.0 → 0.8; corneal highlight irregular |
+| Loss of lustre | minutes → 1 h | `gloss` 0.4 at 1 h, 0.15 at 6 h (closed eyes ×0.25 rate) |
+| Corneal clouding | Begins 1–2 h, obvious 3–6 h, opaque 12–24 h; **closed eyes begin ~12 h, obvious ~24 h** | `corneal_opacity` 0.3 at 6 h, 0.7 at 24 h; tint `#C9CFCF`; iris and pupil fade |
+| Scleral drying → *tache noire* | Yellow parchment triangles 1–3 h, **brown-black at 3–6 h** (range 1–12 h; ×1.5 faster warm/dry); exposed strip only, horizontal triangles each side of the cornea, base toward the cornea | `dry_band` `#CDB48C` → `tache_noire` `#5B3F2E` → `#30231B` |
+| Loss of IOP | Steep in 1–2 h; globe soft by 2–4 h; cornea may wrinkle | `iop` 15 → < 5 mmHg by 2 h |
+| Sunken globes | 12–24 h | Push the globe back 1–3 mm |
+| Retinal "boxcarring" | Minutes, lasting 1–2 h | Forensic close-up only |
+| Vitreous K⁺ (forensic readout) | +0.19 mmol/L/h; PMI (h) ≈ 5.26·K⁺ − 30.9 | Show ± 20 h (95 %) error band |
+
+Haemorrhagic signs [R04 §11.8]: petechiae 0.1–2 mm `#8E1520` only from neck/chest compression, violent coughing or seizures, never from bleeding out; direct-trauma subconjunctival haemorrhage `#C0141E` bright, flat, sharply bordered, persists after death, resolves 7–14 d in the living; skull-base subconjunctival haemorrhage has no posterior border; hyphaema settles into a level; orbital haematoma proptosis 2–10 mm (living); conjunctival hypostasis (face-down bodies, hours) `#6E2D4E` with Tardieu dots.
+
+### 5.6 Face behaviour
+
+| State | Face | Source |
+|---|---|---|
+| Pain | Brow lowered (AU4), orbital tightening (AU6/7), nose wrinkle/upper lip raise (AU9/10), **eyes closed (AU43)**; grimace intensity with pain | [R2-06 §17] C |
+| Fear | AU1+2+4+5+7+20+26: brows up and together, **eyes wide**, lips stretched, jaw drop | [R2-06 §17] C |
+| Shock | Slack, grey-white, sweaty, sunken eyes, pale lips; nasolabial folds flatten late | [R04 §7.2] C |
+| Hemisphere lesion (central facial palsy) | Contralateral lower-face droop; **forehead and eye closure spared**; emotional smile may be spared | [R2-06 §17] C |
+| Temporal-bone fracture (peripheral palsy) | Whole half-face flaccid, incomplete eye closure with Bell's phenomenon | [R2-06 §17] C |
+| Unconscious, supine | Jaw slack, mouth slightly open, snoring | [R04 §3.6] C |
+| Near death (hours) | Drooping nasolabial folds, neck hyperextension, grunting, inability to close the lids | [R2-04 §14] C |
+| Dead | **Jaw drops 10–30 mm within 5–30 s** (supine; less prone or on the side); expression relaxes — **the face does not keep its last expression** (cadaveric spasm is rare and affects the hands); tongue falls back; lips dry to brown parchment `#6E2E2E` over hours | [R04 §12.1], [R2-06 §17] C |
+
+**Skin colour progression** (light–medium skin; lerp by loss) [R04 §7.7, G]:
+
+| Region | Normal | 15–30 % | 30–40 % | > 40 % / dead from bleeding |
+|---|---|---|---|---|
+| Face | base | desaturate 20 % | desaturate 40 %, grey `#D9D2CC` | waxy `#E3DCD3` |
+| Lips | `#B35E62` | `#BF8583` | `#C9A09E` | grey-lilac `#A99AA4` (not blue) |
+| Palpebral conjunctiva | `#D98C87` | `#E2AAA5` | `#EBCFCB` | `#EFDCD8` |
+| Nail beds | `#E2A9A6` | — | refill > 3 s | white `#EEE0DC` |
+| Knees/thighs | — | — | lacy mottling `#8C5A70` 20–40 % | fades to pallor |
+| Cyanosis (apnoea, full volume) | — | lips blue-grey in 60–120 s | — | — |
+| Neurogenic flush below the lesion | warm pink `#E7A897` at 20–30 % | | | |
+
+### Simulation parameters (eyes and face)
+
+| Parameter | Value / range | Unit | Notes | Source |
+|---|---|---|---|---|
+| `lid_aperture` alert / fear / shock | 9–10 / 11–12 / 5–8 | mm | | [R04 §11.10] C/G |
+| `blink_rate` alert / shock / unconscious / dead | 12–20 / 5–10 / 0–2 / 0 | /min | Poisson, min interval 1 s | [R04 §11.10] C |
+| `blink_duration` normal / shock | 250–400 / 300–500 | ms | | [R04 §11.1], [R2-06] C |
+| `saccade_duration` | 21 + 2.2·amplitude(°) | ms | Peak 400–700 °/s | [R2-06 §17] C |
+| `fixation` | 200–400 | ms | | [R04 §11.1] C |
+| `pupil_alert / light_latency / constrict_time` | 3–4 mm / 200–250 ms / ~1 s | — | | [R04 §11.1] C |
+| `pupil_stress_delta` | +1–2 within 0.5–2 s | mm | | [R04 §11.2] C |
+| `pupil_hypoxic_dilation` | start 30–45 s, 6–8+ mm by 60–120 s | — | | [R04 §11.5] C |
+| `pupil_pontine / midbrain / blown` | 1–2 / 4–6 fixed / 6–9 fixed | mm | | [R04 §2.6, §5.6] C |
+| `pupil_brain_death` | 4–9 (mean 5.0 ± 0.85) | mm | | [R04 §11.5], [R2-04 §14] C |
+| `pupil_postmortem_relax` | → 4–6 over 2–6 h, anisocoria ≤ 1 | mm | | [R04 §11.5] C/L |
+| `syncope_upgaze` | 10–30° for 2–10 s, p 0.6–0.8 | — | | [R04 §11.10] C |
+| `gaze_drift_to_rest / rest_dead` | 10–60 s / 3–10° abducted, 0–5° up | — | | [R04 §11.4] G/C |
+| `lid_drop_at_death` | 2–4 over 1–3 s | mm | | [R04 §11.3] G |
+| `lid_state_at_death` | §5.4 table | p | | G |
+| `doll_gain` | 1 (brainstem intact, unconscious) / 0 (dead, brainstem destroyed) | — | | [R04 §11.7] C |
+| `gloss_curve` | 1.0 → 0.8 (1 min) → 0.4 (1 h) → 0.15 (6 h) | — | Closed ×0.25 | [R04 §11.10] G |
+| `corneal_opacity` | 0 → 0.3 (6 h) → 0.7 (24 h); closed from 12 h | — | | [R04 §11.6] C |
+| `tache_noire_onset` | 3–6 h (1–12), open eyes only | — | | [R04 §11.6] C |
+| `jaw_drop` | 10–30 within 5–30 s | mm | Supine | [R04 §12.1] C/G |
+| Instance uniforms (≤ 16/shader) | pupil_mm, pupil_reactive, gloss, corneal_opacity, dry_band, tache_noire, subconj_haem, petechiae | — | Lids and gaze through bones/LookAtModifier3D | [R06 §10.6] V |
+
+### Visual/behavioural checklist (eyes and face)
+- Living eyes blink 12–20 times a minute, dart in fast saccades, fixate on the attacker or the wound, and the pupils narrow within a quarter-second when a light hits them.
+- At death the eyes do **not** close and do **not** roll back: they stay open or half-open, look roughly straight ahead or slightly outward, and never move again; they look "through" the player.
+- Seconds before a sudden loss of consciousness the eyes may roll up briefly, then settle.
+- Pupils go wide and black within a minute or two of arrest; hours later mid-sized, sometimes unequal; never pinpoint unless the pons was hit.
+- Turn a dead head and the eyes turn with it; turn an unconscious living head and the eyes lag behind.
+- Over hours the shine goes, the corneas haze grey, brown-black triangles form on the exposed whites, the globes soften and sink.
+- A pained face squeezes the eyes shut; a frightened face opens them wide; a dead face relaxes and the jaw sags open.
+
+---
+
+## 6. Post-mortem changes (compressed timings)
+
+All clocks start at circulatory arrest (`t_arrest`) and run in sim time (§1.3). Defaults are Mallach's data as tabulated by Henssge & Madea (mean, range) [R04 §12, C — every mean recall-consistent in the fact-check].
+
+### 6.1 Primary flaccidity, jaw, settling
+- All skeletal muscle goes limp at death until rigor (typically 1–3 h, range 0.5–7 h). Tone → 0 in ≤ 0.1–2 s depending on the death type (§4.10).
+- Jaw drops 10–30 mm (supine) within 5–30 s; tongue falls back; lids per §5.4; sphincters may relax (urine release p 0.2–0.3, 50–200 mL over 1–5 min).
+- Flaccid limbs settle to the lowest position; a supine head rolls to one side.
+
+### 6.2 Blood after the heart stops
+- Spurting stops at the last effective beat; arterial pressure → MSFP (~10 mmHg) within ~30–90 s; afterwards **gravity drainage only**, from wounds below the blood column: 50–500 mL total per dependent wound, decaying τ 20–40 min (more from a dependent large-vein wound, e.g. neck wound with the head down).
+- Sudden deaths: blood often stays liquid for hours (drainage continues). Slow deaths: soft post-mortem clots.
+- Moving the body squeezes blood and froth from the mouth and dependent wounds.
+- Exposed wound edges, abrasions and lips dry to brown parchment over hours (`#8A5A3C`, lips `#6E2E2E`).
+
+### 6.3 Pallor mortis
+Skin pales within minutes to ~30 min as capillaries empty: desaturate and lighten 20–40 % over 15–30 min (face, lips, nail beds first); already extreme after exsanguination.
+
+### 6.4 Livor mortis (hypostasis)
+
+| Stage | Mean (range) |
+|---|---|
+| First patches | **0.75 h (0.25–3)** |
+| Confluent | 2.5 h (1–4) |
+| Maximum | 9.5 h (3–16) |
+| Blanches completely under thumb pressure until | 5.5 h (1–20) |
+| Blanches incompletely until | 17 h (10–30) |
+| Shifts completely to the new lowest side if turned, until | 3.75 h (2–6) |
+| Shifts partly (old and new both visible), until | 11 h (4–24) |
+
+- Pattern: dependent areas relative to gravity when the body came to rest, with **contact pallor** where the body presses on the floor (supine: shoulder blades, buttocks, calves, back of the head) and pale lines from clothing folds/straps. Face-down bodies: facial and conjunctival congestion, Tardieu spots (0.5–2 mm `#3E1330`) after hours.
+- Colour ramp: early `#CC8A8F` at 20–30 % opacity → established `#9A4E6B` 50–70 % → intense/fixed `#6E2D4E` 70–85 %. Exsanguinated bodies: opacity × (1 − 1.5·loss), minimum 0.1 (faint, patchy, late).
+- Recompute the livor mask only when the body comes to rest and when it is moved; ≤ 1 Hz.
+
+### 6.5 Algor mortis (Henssge double exponential, rectal temperature)
+```
+Ta ≤ 23.2 °C:  Q = (Tr − Ta)/(37.2 − Ta) = 1.25·exp(B·t) − 0.25·exp(5·B·t)
+Ta > 23.2 °C:  Q = 1.11·exp(B·t) − 0.11·exp(10·B·t)
+B = −1.2815·(c·m)^(−0.625) + 0.0284  (per h); c = 1.0 naked/still air, 1.1–1.4 clothed/covered, < 1 wet or moving air
+```
+Reference (75 kg, c = 1, 20 °C; B = −0.0579/h) [R04 §12.5, V arithmetic]: 1 h 37.1 °C · 2 h 36.7 · 4 h 35.7 · 6 h 34.4 · 8 h 33.1 · 12 h 30.6 · 18 h 27.6 · 24 h 25.4 · 36 h 22.7 · 48 h 21.3. Plateau of 0.1–0.5 °C in the first 2 h, then 0.6–0.7 °C/h. `T_death` is a state input (hypothermia from blood loss, hyperthermia from struggle). Forensic readout error ± 2.8 h (wider at long intervals). Hands, feet and face feel cool within 1–2 h; the trunk stays warm for hours; armpits longest.
+
+### 6.6 Rigor mortis (optional feature)
+
+| Stage | Mean (range) |
+|---|---|
+| Onset | **3 h (0.5–7)** |
+| Fully developed | **8 h (2–20)** |
+| Re-establishes after being broken, if broken before | 8 h (2–8) |
+| Persists | 57 h (24–96) |
+| Resolved | 76 h (24–192) |
+
+- Order (Nysten): eyelids and jaw → face and neck → arms → trunk → legs (offsets 0, +0.5, +1, +1.5, +2 h); resolves in the same order. Faster with heat and with intense activity just before death (× 0.5), slower in cold (× 1.5–2).
+- Implementation: per joint group `s(t)` 0 → 1 between onset and full; map to angular damping and to joint limits clamped around the current pose; an external torque above `τ_break·s` sets that group's `s` to 0.2 (re-grows to 0.6 if t < 8 h). Breaking rigor gives way suddenly, with no bone sound, then stays loose.
+- Cadaveric spasm (instant grip freeze): ≤ 1 % of deaths with intense activity; hands only.
+
+### 6.7 Supravital reactions (forensic mode only, low confidence) [R04 §12.7]
+Striking the biceps produces a visible contraction/idiomuscular bulge for ~1.5–2.5 h (a local bulge up to ~4–5 h); electrical eyelid reactions for several hours (weak local twitches up to ~13–22 h); pupils respond to eye drops for hours.
+
+### 6.8 Master timeline (real time after arrest → game time)
+
+| t_real after arrest | What changes | At 120× | At 720× |
+|---|---|---|---|
+| 0–1 min | Spurting stops; last gasp/sigh; jaw drops; lids settle; pupils dilating | 1× (real) | 1× |
+| 1–5 min | Pupils wide and fixed; tear film broken; fine twitches; gravity drainage; dead flag at 5 min | 1× → 4× | 4× |
+| 5–30 min | Pallor mortis; eye gloss fading; blood pooling at dependent wounds; pools gel | 5–15 s | 1–3 s |
+| 30–60 min | First livor patches; hands/face cool; Ripault's sign | 15–30 s | 3–5 s |
+| 1–3 h | Livor confluent; rigor begins in jaw and lids; globe soft; corneal haze begins (open); yellow dried scleral bands | 0.5–1.5 min | 5–15 s |
+| 3–6 h | Tache noire darkens; rigor in neck and arms; livor still shifts if turned; rectal 36.3 → 34.4 °C | 1.5–3 min | 15–30 s |
+| 6–12 h | Rigor complete; livor maximal and fixing; corneas clearly cloudy (open eyes); 34–31 °C | 3–6 min | 30–60 s |
+| 12–24 h | Livor fixed; open corneas opaque by 24 h, closed ones begin to cloud; globes sunken; 31–25 °C | 6–12 min | 1–2 min |
+| 24–48 h | Rigor persists then begins resolving; near ambient temperature; first decomposition (greenish right lower abdomen from ~24–36 h, out of scope) | 12–24 min | 2–4 min |
+
+### Simulation parameters (post-mortem)
+
+| Parameter | Value / range | Unit | Notes | Source |
+|---|---|---|---|---|
+| `pm_clock_start` | circulatory arrest | — | | [R04 §12.9] C |
+| `pm_scale / ff_scale` | 120 / 720 | × | | G |
+| `pm_drainage` | 50–500, τ 20–40 min, dependent wounds only | mL | 0.78 mmHg/cm | [R04 §12.2] E/G |
+| `pallor_mortis` | 15–30 min, −20–40 % saturation/lightness | — | | [R04 §12.3] C/G |
+| `livor_onset / confluent / max` | 0.75 (0.25–3) / 2.5 (1–4) / 9.5 (3–16) | h | | [R04 §12.4] C |
+| `livor_blanch_complete / incomplete` | 5.5 (1–20) / 17 (10–30) | h | Thumb-press interaction | [R04 §12.4] C |
+| `livor_shift_complete / partial` | 3.75 (2–6) / 11 (4–24) | h | Turning the body | [R04 §12.4] C |
+| `livor_opacity_exsanguinated` | × (1 − 1.5·loss), min 0.1 | — | | [R04 §12.4] G |
+| `algor` | Henssge; c 1.0 naked, 1.1–1.4 clothed | — | ± 2.8 h readout | [R04 §12.5] C/V |
+| `rigor_onset / full / persist / resolved` | 3 (0.5–7) / 8 (2–20) / 57 (24–96) / 76 (24–192) | h | × 0.5 hot/active, × 1.5–2 cold | [R04 §12.6] C |
+| `rigor_order_offsets` | jaw/lids 0, neck 0.5, arms 1, trunk 1.5, legs 2 | h | | [R04 §12.6] C/G |
+| `rigor_reestablish_window` | 8 | h | | [R04 §12.6] C |
+| `urine_release_p` | 0.2–0.3 (50–200 mL) | p | | [R04 §12.1] G |
+| `pm_groan_on_press_p` | 0.3 per heavy press, first 12 h | p | Audio | [R04 §12.9] G |
+
+### Visual/behavioural checklist (post-mortem)
+- At the instant of death the jet stops mid-rhythm, the body goes completely slack, the jaw sags open and the lids settle half-open.
+- Within half an hour the face drains to a waxy pallor and the eye shine dulls.
+- Within the hour faint pink-purple blotches appear on the down-side of the body, except where it presses on the floor; hands feel cool.
+- Over hours the blotches merge into a deep purple band; jaw and neck stiffen, then arms, then legs; a forced joint gives way suddenly and stays loose.
+- A bled-out body has barely any livor and looks white overall.
+- Moving the body squeezes out a groan and blood/froth from the mouth and dependent wounds.
+
+---
+
+## 7. Body anatomy summary (body frame, metres, Z up, face −Y, left +X, origin on the floor between the feet)
+
+Reference body: male, 1.78 m, 75 kg, ~15 % fat, A-pose (§1.2). Accuracy: ±5–10 mm surface landmarks, ±10–20 mm deep structures, ±2–5 mm dimensions [R05 §0.1]. All heights scale with k = H/1.78 (§7.8). Head-internal positions use the contract head placed at `p_body = p_head + (0, 0.020, 1.647)`.
+
+### 7.1 Landmarks (code-ready CSV; corrected values from the R05 fact-check, head rows already lowered 8 mm) [R05 §13.1]
+
+```csv
+# name,x,y,z,kind   (kind: skin | bone | joint); left side, mirror x for right
+# head rows: the existing contract head overrides these inside the head (vertex 1.772, ear canal x 0.072, chin (0,-0.060,1.544)); see §1.2
+vertex,0.000,0.020,1.780,skin
+head_origin_mid_ear_canals,0.000,0.020,1.647,joint
+ear_canal_L,0.068,0.020,1.647,skin
+mastoid_tip_L,0.055,0.030,1.612,bone
+inion,0.000,0.112,1.654,skin
+basion,0.000,0.018,1.626,bone
+atlanto_occipital_pivot,0.000,0.015,1.622,joint
+menton,0.000,-0.068,1.550,skin
+gonion_L,0.052,-0.005,1.577,skin
+hyoid_body,0.000,-0.030,1.556,bone
+laryngeal_prominence,0.000,-0.062,1.537,skin
+cricoid,0.000,-0.055,1.515,skin
+c7_spinous_cervicale,0.000,0.075,1.532,skin
+jugular_notch,0.000,-0.048,1.455,skin
+sc_joint_L,0.025,-0.040,1.450,joint
+ac_joint_L,0.165,0.010,1.462,joint
+acromion_L,0.200,0.015,1.458,bone
+gh_joint_L,0.180,0.020,1.415,joint
+sternal_angle,0.000,-0.075,1.405,skin
+nipple_L,0.100,-0.112,1.300,skin
+xiphisternal_joint,0.000,-0.110,1.305,skin
+xiphoid_tip,0.000,-0.094,1.273,bone
+scapula_inferior_angle_L,0.085,0.105,1.325,bone
+costal_margin_lowest_L,0.112,-0.050,1.125,bone
+navel,0.000,-0.108,1.075,skin
+iliac_crest_top_L,0.140,0.025,1.070,bone
+asis_L,0.122,-0.062,0.992,bone
+psis_L,0.045,0.090,1.010,bone
+pubic_symphysis_top,0.000,-0.068,0.911,bone
+mid_inguinal_point_L,0.065,-0.068,0.940,skin
+hip_joint_centre_L,0.087,-0.015,0.918,joint
+greater_trochanter_L,0.158,0.000,0.913,bone
+ischial_tuberosity_L,0.055,0.020,0.841,bone
+crotch,0.000,0.005,0.860,skin
+elbow_centre_L_apose,0.325,0.020,1.164,joint
+wrist_centre_L_apose,0.460,0.020,0.930,joint
+mcp3_L_apose,0.508,0.020,0.848,joint
+fingertip3_L_apose,0.553,0.020,0.770,skin
+knee_centre_L,0.092,0.020,0.492,joint
+patella_centre_L,0.090,-0.035,0.497,bone
+tibial_tuberosity_L,0.090,-0.025,0.434,bone
+fibular_head_L,0.130,0.035,0.452,bone
+ankle_centre_L,0.095,0.050,0.075,joint
+lateral_malleolus_L,0.132,0.060,0.055,bone
+medial_malleolus_L,0.065,0.045,0.068,bone
+heel_L,0.095,0.115,0.030,skin
+toe2_tip_L,0.128,-0.151,0.010,skin
+```
+ANSUR II checks (14 men 1.77–1.79 m / 71–79 kg; V): cervicale 1.532, suprasternale 1.454, acromion 1.449, nipple 1.305, omphalion 1.072, iliocristale 1.071, trochanterion 0.920, crotch 0.860, lateral femoral epicondyle 0.490, tibiale 0.480, stylion 0.848, lateral malleolus 0.073. Girths (cm): head 57.5, neck 38, chest 100 (breadth 28.7 × depth 23), waist at navel 84, hips 97, upper thigh 58, calf 37.5; biacromial 42, bideltoid 49 [R05 §2.1]. Model torso rings as superellipses (n ≈ 3.5 chest, 2.8 waist, 2.5 limbs) with section centres offset in y (buttocks +0.028, calf 7 cm behind the shin) [R05 §2.1].
+
+### 7.2 Rig, segment masses, joint pivots [R05 §2.2–2.3, V (Dempster/Winter table)]
+
+| Bone | Parent | Head (x, y, z) | Tail (x, y, z) | Length | Mass (kg, 75 kg body) | COM from head |
+|---|---|---|---|---|---|---|
+| `hips` | root | (0, −0.005, 0.965) | (0, 0.006, 1.027) | 0.063 | pelvis 10.65 | — |
+| `spine` (lumbar) | hips | (0, 0.006, 1.027) | (0, 0.002, 1.212) | 0.185 | abdomen 10.4 | 0.44 |
+| `chest` | spine | (0, 0.002, 1.212) | (0, 0.049, 1.353) | 0.149 | thorax 16.2 (chest + upper_chest) | 0.82 |
+| `upper_chest` | chest | (0, 0.049, 1.353) | (0, 0.015, 1.490) | 0.141 | | |
+| `neck` | upper_chest | (0, 0.015, 1.490) | (0, 0.015, 1.622) | 0.132 | head + neck 6.08 (split ~5.0 + 1.1; neck ≥ 1–1.5 kg) | COM ≈ ear canal |
+| `head` | neck | (0, 0.015, 1.622) | (0, 0.020, 1.780) | 0.158 | | Existing head origin at (0, 0.020, 1.647) |
+| `clavicle.L` | upper_chest | (0.025, −0.040, 1.450) | (0.165, 0.010, 1.462) | 0.149 | — | |
+| `upper_arm.L` | clavicle.L | (0.180, 0.020, 1.415) | (0.325, 0.020, 1.164) | 0.290 | 2.10 | 0.436 |
+| `forearm.L` | upper_arm.L | (0.325, 0.020, 1.164) | (0.460, 0.020, 0.930) | 0.270 | 1.20 | 0.430 |
+| `hand.L` | forearm.L | (0.460, 0.020, 0.930) | (0.508, 0.020, 0.848) | 0.095 | 0.45 | 0.506 |
+| `thigh.L` | hips | (0.087, −0.015, 0.918) | (0.092, 0.020, 0.492) | 0.428 | 7.50 (de Leva 10.6 alternative) | 0.433 |
+| `shin.L` | thigh.L | (0.092, 0.020, 0.492) | (0.095, 0.050, 0.075) | 0.418 | 3.49 | 0.433 |
+| `foot.L` | shin.L | (0.095, 0.050, 0.075) | (0.119, −0.079, 0.025) | 0.140 | 1.09 | 0.50 |
+| `toes.L` | foot.L | (0.119, −0.079, 0.025) | (0.128, −0.151, 0.010) | 0.074 | — | |
+
+Head pivots: nodding at the atlanto-occipital joint (0, 0.015, 1.622); ~50 % of neck rotation at C1–C2 about a vertical axis through (0, 0.008, 1.60). Whole-body standing COM ≈ 0.96 m [R2-03 §11]. **Resolved (segment table):** keep Winter/Dempster (verified) as default; switch to de Leva (thigh ~10.6 kg, lower and heavier-legged falls) if falls look top-heavy [R06 §10.1, R2-03].
+
+### 7.3 Skeleton
+
+**Vertebrae** (x = 0; body centres; cord centre y; L2–S1 have no cord, only cauda equina) [R05 §13.4]:
+```csv
+# level,y,z,body_h_mm,body_w_mm,body_d_mm,disc_below_mm,canal_ap_mm,canal_w_mm,spinous_dy_mm,cord_y,cord_w_mm,cord_ap_mm
+C1,0.020,1.610,10,78,45,0,30,28,30,0.024,11.5,8.5
+C2,0.012,1.590,23,17,15.5,5,16,24,43,0.027,11.9,7.9
+C3,0.007,1.570,14,16.5,15.5,5,14.5,23,40,0.023,12.5,8.0
+C4,0.004,1.553,14,17.5,15.5,5,14,24,40,0.020,13.0,7.8
+C5,0.003,1.536,13.5,18.5,16,5,14,24,42,0.019,13.5,7.7
+C6,0.004,1.518,13.5,20,16.5,5,14,24,45,0.020,13.0,7.5
+C7,0.010,1.500,15,22,16.5,5,14,23,57,0.026,12.0,7.5
+T1,0.019,1.481,16,26,16.5,4.5,14,19,60,0.035,10.5,7.0
+T2,0.028,1.461,17,27,17.5,4.5,14,17,60,0.044,9.0,6.5
+T3,0.036,1.441,17.5,27,18.5,4.5,14,16,61,0.053,8.8,6.5
+T4,0.042,1.420,18,27.5,20,5,13.5,15.5,62,0.060,8.5,6.5
+T5,0.046,1.398,18.5,28.5,22,5,13.5,15.5,63,0.065,8.5,6.4
+T6,0.049,1.376,19,30,24,5,13.5,15.5,64,0.069,8.3,6.4
+T7,0.049,1.353,19.5,31,26,5,13.5,15.5,64,0.069,8.0,6.3
+T8,0.046,1.329,20,32.5,27.5,5.5,14,16,63,0.067,8.0,6.3
+T9,0.040,1.305,21,34,28.5,6,14,16,62,0.061,8.3,6.5
+T10,0.031,1.280,22,37,29.5,6.5,14.5,17,62,0.053,8.5,7.0
+T11,0.020,1.254,23,40,31,7,15,18,58,0.043,9.5,7.5
+T12,0.008,1.227,24,42,32,8,16,21,58,0.031,10.0,8.0
+L1,-0.004,1.197,25.5,43,33,10,17,22,68,0.021,8.0,7.0
+L2,-0.013,1.161,26.5,45,34,11,17,23,70,0.013,0,0
+L3,-0.018,1.124,27,48,35,12,16,23,70,0.008,0,0
+L4,-0.016,1.087,27,50,35,12,16,24,70,0.011,0,0
+L5,-0.005,1.050,26.5,52,35,11,17,26,65,0.022,0,0
+S1,0.014,1.012,30,50,30,0,15,30,0,0.035,0,0
+```
+Known fit conflict: the ANSUR II cervicale skin bump (1.532) sits ~3 cm above the C7 body centre (1.500); expect ±2–3 cm in C4–T3 until a refit [R05 §4.6]. Surface levels: jugular notch T2/T3, sternal angle T4/T5, xiphisternum T9, subcostal plane L3, iliac crests L4/L5 (V), navel L3/4–L4. Thoracic spinous tips lie one level below their body (T5–T8). Curvatures: cervical lordosis ~30°, thoracic kyphosis ~36°, lumbar lordosis ~60°, pelvic incidence 53° [R05 §4.2, V ranges].
+
+**Ribs** (left; head at the spine, CCJ = costochondral junction, cartilage end at the sternum or the cartilage above) [R05 §5.2, E]:
+
+| Rib | Head | Lateral (≈ MAL) | CCJ | Cartilage end | Arc / cartilage (mm) |
+|---|---|---|---|---|---|
+| 1 | (0.018, 0.030, 1.481) | (0.055, −0.005, 1.462) | (0.035, −0.030, 1.440) | manubrium (0.020, −0.042, 1.440) | 80 / 25 |
+| 2 | (0.020, 0.038, 1.469) | (0.085, 0.015, 1.440) | (0.045, −0.052, 1.405) | sternal angle (0.016, −0.062, 1.405) | 150 / 30 |
+| 3 | (0.020, 0.046, 1.449) | (0.105, 0.022, 1.414) | (0.058, −0.066, 1.372) | (0.015, −0.071, 1.380) | 195 / 35 |
+| 4 | (0.020, 0.052, 1.428) | (0.118, 0.025, 1.388) | (0.070, −0.075, 1.340) | (0.016, −0.079, 1.355) | 225 / 45 |
+| 5 | (0.021, 0.056, 1.406) | (0.127, 0.025, 1.362) | (0.082, −0.080, 1.308) | (0.017, −0.086, 1.332) | 245 / 55 |
+| 6 | (0.021, 0.059, 1.384) | (0.133, 0.022, 1.336) | (0.092, −0.080, 1.275) | (0.015, −0.094, 1.312) | 260 / 75 |
+| 7 | (0.022, 0.059, 1.361) | (0.137, 0.018, 1.308) | (0.100, −0.075, 1.240) | xiphisternal (0.010, −0.098, 1.302) | 270 / 110 |
+| 8 | (0.022, 0.056, 1.337) | (0.139, 0.015, 1.280) | (0.110, −0.062, 1.205) | → 7th cartilage (0.060, −0.090, 1.245) | 270 / 90 |
+| 9 | (0.023, 0.050, 1.313) | (0.139, 0.015, 1.250) | (0.118, −0.048, 1.175) | → 8th (0.085, −0.078, 1.200) | 260 / 70 |
+| 10 | (0.024, 0.041, 1.280) | (0.136, 0.018, 1.212) | (0.125, −0.030, 1.150) | → 9th (0.100, −0.065, 1.150) | 240 / 55 |
+| 11 | (0.025, 0.030, 1.254) | (0.130, 0.030, 1.185) | free tip (0.125, 0.010, 1.160) | cap | 190 / 10 |
+| 12 | (0.025, 0.018, 1.227) | — | free tip (0.085, 0.060, 1.180) | cap | 120 / 5 |
+
+Sweep a rounded section 12–15 × 5–7 mm (rib 1: 25–30 × 5) through head → posterior angle → lateral → CCJ; costal groove on the lower inner edge (intercostal vein, artery, nerve). Rib cortex ~1 mm; intercostal spaces 15–25 mm front, 8–12 mm back. Sternum inclined 20° (lower end forward): manubrium 50 mm, body 105 mm, xiphoid 35 mm; soft tissue in front only 5–12 mm; the RV lies 25–35 mm behind the lower sternal skin [R05 §5].
+
+**Bones: dimensions, cortex, marrow** [R05 §6–8, C; cortex values M/L]:
+
+| Bone | Length (cm) | Mid-shaft Ø (mm) | Cortex (mm) | Interior / cut colour |
+|---|---|---|---|---|
+| Femur | 47 (47–48.5) | 28 (29 × 27) | 7 (6–8) | Yellow marrow shaft `#E4C36A`; red in neck/head |
+| Tibia | 41 | 32 × 23 triangular | 6 (5–7) | Anteromedial face subcutaneous (3–6 mm) |
+| Fibula | 39.5 | 14–16 | 2.5–3.5 | |
+| Humerus | 33.5–34.5 | 21 (22 × 20) | 5 (4–6) | Radial nerve in the spiral groove (wrist drop with shaft fractures) |
+| Radius / ulna | 26.0 / 27.5 | 13–14 | 2.5–3.5 | Ulna border subcutaneous |
+| Clavicle | 14.8 | 12 | 2–3 | Subclavian vessels and plexus under its middle third |
+| Scapula blade | 15.5 × 10.5 | — | 1–3 total (fossae translucent) | Clean bullet hole + cracks |
+| Ribs | §7.3 | 13 × 6 | ~1 | Red marrow `#B5524A`, oozes |
+| Vertebral body | CSV | — | shell 0.3–0.6 | Red marrow; crushes with a muffled crunch |
+| Iliac wing | — | 2–4 thin centre, 10–15 crest | 1–2 | Bullets perforate it cleanly |
+| Skull vault | frontal 7 (5.8–8), parietal 6 (5.4–7), temporal squama 2–5, occipital 8–8.6, orbital roof/floor 0.25–1 | — | tables 1.5–2 each | Diploë `#A4574A` bleeds |
+
+Materials: cortical bone 1.9 g/cm³, E 17–20 GPa, ultimate tension/compression/shear ~130/190/70 MPa; trabecular (vertebral) 1–7 MPa; three-point bending failure femur 3–5 kN, tibia 2.5–4, humerus 1.5–2.5, radius/ulna 1–1.5 each [R05 §8.2, R2-05 §8.1, C/L]. Colours: cortical cut `#E9DFCC`, periosteum `#E6CFC4`, articular cartilage `#DDE3E6`, costal cartilage `#CBD5D8`, disc annulus/nucleus `#E3E0D6`/`#D8DDD2`, dura `#D9D6CE`.
+
+### 7.4 Spinal cord and brainstem [R05 §9, C; C2/C5/T8 sizes V]
+
+- Cord 45 cm (foramen magnum → conus); conus tip L1/L2 (0, 0.017, 1.180); thecal sac ends at S2 (0, 0.035, 0.995); cauda equina chain L1/L2 → S2, radius 7 mm.
+- Cord centreline = CSV `cord_y` at each body-centre z; ellipse radii = half the width/AP (C2 5.95 × 3.95 mm; C5 6.75 × 3.85; T7 4.0 × 3.15). Add a canal chain (radius = canal AP/2) for near-miss concussion. Depth from back skin: C5 ~45 mm, T7 ~53 mm, conus ~60 mm.
+- Cord colour: white `#EEE5D6` with a grey butterfly `#B9A89E`, silvery dural tube, clear CSF (leaks watery, blood-tinged from canal wounds).
+
+**Brainstem nodes** (relative to the head origin — use with the contract head; body = rel + (0, 0.020, 1.647)) [R05 §9.4]:
+
+| Structure | Centre rel. head origin (m) | Size (length × width × AP, mm) | Notes |
+|---|---|---|---|
+| Midbrain | (0, −0.010, +0.035) | 15–20 × 30 × 25 | Tentorial notch; CN III |
+| Pons | (0, −0.006, +0.012) | 25–27 × 35–38 × 25 | Basis front at y_rel ≈ −0.019 on the clivus |
+| **Pontomedullary junction** | **(0, 0.000, 0.000)** | — | At the head origin (CN VII/VIII exit) |
+| Medulla | (0, +0.005, −0.014) | 30 × 20 → 12 × 12–13 | Respiratory/vasomotor centres |
+| Cervicomedullary junction | (0, +0.010, −0.028) | 11 × 9 | At the foramen magnum |
+| Cerebellum | (0, +0.045, −0.005), hemispheres x ±0.045 | 100 × 50 × 55 | 140–150 g |
+| Capsule chain `brainstem` (body) | (0,0.030,1.619) → (0,0.025,1.633) → (0,0.020,1.647) → (0,0.014,1.659) → (0,0.010,1.682), r 11 mm | | Long axis tilted 15–25° top-forward |
+
+Label hit volumes `midbrain`, `pons_tegmentum`, `pons_basis`, `medulla`, `cord_C1_C2` separately and give each a concussive radius (18 mm handgun) [R04 §2.1]. From the front the brainstem column lies behind the brow-line/nose "T"; from behind, just below the external occipital protuberance; from the side, on the ear-canal line and 0–2 cm in front of it.
+
+### 7.5 Organs and hit volumes [R05 §13.2–13.3, §10–11]
+
+```csv
+# name,shape,cx,cy,cz,size_u,size_v,size_w,ux,uy,uz,vx,vy,vz,mass_g   (full lengths; aabb: u=+X, v=+Y)
+heart,obb,0.035,-0.036,1.325,0.125,0.090,0.065,0.632,-0.498,-0.593,0.466,-0.367,0.805,320
+heart_RA,ellipsoid,-0.030,-0.018,1.335,0.045,0.050,0.045,1,0,0,0,1,0,0
+heart_RV,ellipsoid,0.012,-0.060,1.312,0.070,0.030,0.060,1,0,0,0,1,0,0
+heart_LA,ellipsoid,0.008,-0.008,1.365,0.050,0.038,0.040,1,0,0,0,1,0,0
+heart_LV,ellipsoid,0.045,-0.035,1.305,0.090,0.055,0.055,0.632,-0.498,-0.593,0.466,-0.367,0.805,0
+lung_R,aabb,-0.075,0.006,1.383,0.130,0.168,0.225,1,0,0,0,1,0,550
+lung_L,aabb,0.075,0.008,1.380,0.130,0.165,0.230,1,0,0,0,1,0,480
+liver,aabb,-0.033,-0.008,1.235,0.225,0.155,0.160,1,0,0,0,1,0,1550
+liver_right_lobe,ellipsoid,-0.075,0.000,1.235,0.140,0.150,0.160,1,0,0,0,1,0,0
+liver_left_lobe,ellipsoid,0.035,-0.045,1.270,0.090,0.070,0.060,1,0,0,0,1,0,0
+liver_caudate,ellipsoid,-0.010,0.030,1.255,0.030,0.030,0.060,1,0,0,0,1,0,0
+gallbladder,capsule,-0.060,-0.043,1.208,0.080,0.035,0.035,0.466,0.699,0.543,0.832,-0.555,0,40
+spleen,obb,0.105,0.040,1.228,0.120,0.070,0.030,0.390,-0.547,-0.742,0.445,-0.594,0.672,150
+kidney_L,obb,0.070,0.024,1.180,0.115,0.060,0.040,0.258,-0.198,-0.946,-0.804,-0.586,-0.097,150
+adrenal_L,ellipsoid,0.042,0.025,1.230,0.030,0.010,0.050,1,0,0,0,1,0,5
+stomach,aabb,0.038,-0.025,1.200,0.145,0.120,0.210,1,0,0,0,1,0,150
+bladder_empty,sphere,0.000,-0.030,0.898,0.050,0.050,0.050,1,0,0,0,1,0,50
+bladder_full,sphere,0.000,-0.035,0.943,0.100,0.100,0.100,1,0,0,0,1,0,50
+thyroid_lobe_L,ellipsoid,0.022,-0.028,1.505,0.020,0.018,0.050,1,0,0,0,1,0,9
+thyroid_isthmus,ellipsoid,0.000,-0.042,1.492,0.020,0.005,0.020,1,0,0,0,1,0,2
+bowel_filler,aabb,0.000,-0.040,1.040,0.240,0.120,0.280,1,0,0,0,1,0,2200
+# right side: kidney_R (-0.070,0.024,1.160) u(-0.258,-0.198,-0.946) v(0.804,-0.586,-0.097); adrenal_R (-0.040,0.030,1.235)
+# bowel_filler has the lowest hit priority (intestines are not modelled; mass/volume filler only)
+```
+```csv
+# tube structures: name,radius,x1,y1,z1,x2,y2,z2,...
+trachea,0.010,0.000,-0.030,1.508,0.000,-0.018,1.455,-0.003,0.008,1.402
+bronchus_R,0.0075,-0.003,0.008,1.402,-0.028,0.012,1.380
+bronchus_L,0.006,-0.003,0.008,1.402,0.042,0.020,1.380
+oesophagus,0.009,0.000,-0.012,1.508,0.004,0.012,1.450,0.000,0.022,1.415,0.002,0.024,1.355,0.012,0.012,1.310,0.022,-0.008,1.280,0.030,-0.018,1.255
+pancreas,0.012,-0.035,-0.035,1.160,-0.005,-0.050,1.180,0.025,-0.045,1.195,0.090,0.015,1.215
+brainstem,0.011,0.000,0.030,1.619,0.000,0.025,1.633,0.000,0.020,1.647,0.000,0.014,1.659,0.000,0.010,1.682
+cauda_equina,0.007,0.000,0.017,1.180,0.000,0.013,1.161,0.000,0.008,1.124,0.000,0.011,1.087,0.000,0.022,1.050,0.000,0.035,0.995
+# great vessels: see §3.3 waypoints
+```
+
+Key organ facts [R05 §10–11, V/C]:
+- **Heart** 320 g (250–380), 12.5 × 9 × 6.5 cm, axis base (0, −0.005, 1.360) → apex (0.082, −0.068, 1.285) (left, forward, down); apex beat 5th left ICS, MCL (~9 cm from midline). Walls: LV 9 mm (echo 6–10; cut post-mortem 12–14), RV 3–5, atria 2–3. Valves: pulmonary (0.022, −0.058, 1.378), aortic (0.008, −0.038, 1.360), mitral (0.030, −0.030, 1.340), tricuspid (−0.008, −0.048, 1.325). Myocardium `#7B2626`, epicardial fat `#E6C45A`.
+- **Lungs**: apex 2.5–3 cm above the medial clavicle (z 1.495); lower lung border 6th rib MCL / 8th MAL / 10th back (z ≈ 1.27–1.28); pleura 8th / 10th / 12th (z ≈ 1.21–1.23 — a stab there crosses pleura and diaphragm into liver or spleen). TLC 7.1 L, FRC 3.35, tidal 0.5 (V). Pink `#E0A0A0` with anthracotic speckles `#3A3A3A`; dependent post-mortem `#A04A55`.
+- **Diaphragm** domes R z 1.320, L 1.300, central tendon 1.310 (standing, end-expiration); excursion 1.5–2 cm quiet, 6–10 cm deep; openings IVC T8, oesophagus T10, aorta T12 (V).
+- **Liver** 1,550 g (970–1,860 V); lower edge along the right costal margin, crosses the midline ~halfway xiphoid–navel; red-brown `#7A2E23`. **Spleen** 150 g, 12 × 7 × 3 cm under left ribs 9–11 (V), purple `#5E2433`. **Kidneys** 150 g each, T12–L3, right ~2 cm lower (V), 5–7 cm from the back skin, in yellow perirenal fat. Pancreas crushed against L1 by upper-abdominal blows. Bladder behind the symphysis unless full (ruptures under a kick when full).
+- Posture: supine organs sit 2–4 cm higher than standing (cosmetic, post-mortem pose only) [R05 §14.1].
+
+### 7.6 Tissue layers and depth to structures [R05 §12.2, C/M]
+
+| Region (point) | Skin / fat / muscle (mm) | Depth to key structure |
+|---|---|---|
+| Scalp | 3.5–5.5 skin, 5–8 total to bone | Outer table at ~6 mm |
+| Neck, anterior midline (cricoid) | 1.5 / 2–5 / 3–4 | Trachea 8–12 mm; thyroid isthmus ~10 mm |
+| Neck, over the carotid (C4–C6) | 1.5 / 3–6 / platysma 1–2 + SCM 8–12 | **CCA/IJV 20–30 mm** |
+| Neck, posterior midline C4 | 3 / 3–8 / 25–35 | Lamina ~35 mm; **cord 45–55 mm** |
+| Over the sternum | 1.5–2 / 3–8 / — | Bone 5–12 mm; **RV 25–35 mm** |
+| Anterior chest 2nd ICS MCL | 2 / 5–10 / 15–35 | **Pleura ~42 mm** (20–80) |
+| Lateral chest 5th ICS MAL | 2 / 5–15 / 10–22 | **Pleura ~32–34 mm** |
+| Upper back T4–T7, 4–5 cm lateral | 3–4 / 5–10 / 30–50 | Rib 40–60 mm; over spinous tips 8–12 mm |
+| Abdomen paramedian at the navel | 2 / 12–20 / rectus 10–12 | Peritoneum 25–40 mm; aorta ~75 mm |
+| Flank MAL L2 | 2 / 10–25 / 15–20 | Peritoneum 30–45; kidney edge 60–80 |
+| Lower back L3, 4–5 cm lateral | 3–4 / 8–20 / 40–55 | **Kidney 50–70 mm**; canal ~70 mm midline |
+| Groin | 1.5 / 8–15 / — | **Femoral artery 15–30 mm** |
+| Upper arm anterior | 1.5 / 4–7 / 30–40 | Humerus 40–45; brachial artery medially 10–20 |
+| Wrist volar | 1.0 / 2–3 / tendons | **Radial artery 2–5 mm**, ulnar 4–7 |
+| Thigh anterior mid | 1.5–2 / 6–12 / 45–55 | Femur 55–70 mm |
+| Shin anteromedial | 1.5–2 / 1–3 / — | **Tibia 3–6 mm** |
+| Knee / malleoli / heel | — | Patella 4–8; malleoli 2–4; calcaneus 18–24 |
+
+Skin thickness: eyelid 0.5–0.7, face 1.5–2.0, trunk front 1.5–2.5, **back 2.5–4.0**, limbs 1.0–2.0, palm/sole 1.5–4. Subcutaneous fat map (mm, × body fat % / 15): chest 6, abdomen 15, flank 15, back 8, buttock 20, thigh 9, arm 6, forearm 4, calf 6, shin 2, hands/feet 2. Cut-surface colours: dermis `#EAD2C8`, fat `#F2D16B`, fascia `#E8E6DF`, muscle `#9B2F2B` → `#6E2020` deoxygenated.
+
+### 7.7 Vessels
+Waypoints, diameters and flows: §3.3. Cap cross-sections at dismemberment zones must place the lumens where §3.3 says, so jets start from the right place [R06 §9.2].
+
+### 7.8 Scaling to other generated bodies [R05 §14.3, E]
+Heights, bone lengths and all coordinates × k = H/1.78; girths/breadths/depths × √(W/75)/√k, distributed mostly into subcutaneous fat (waist ×2 of the average change; hands, feet, head ×0.3); organ masses scale with BSA (W^0.425·H^0.725); vessel Ø × √k (× 0.9 female). Female bodies are a separate parameter set (pelvis, shoulders, heart ~250 g), not a scale factor.
+
+### Simulation parameters (anatomy)
+
+| Parameter | Value / range | Unit | Notes | Source |
+|---|---|---|---|---|
+| `stature / mass / bsa` | 1.78 / 75 / 1.93 | m / kg / m² | DuBois BSA | [R05 §0.3] V calc |
+| `landmarks_csv` | §7.1 | m | Left side | [R05 §13.1] |
+| `rig_joints` | §7.2 | m | | [R05 §2.3] |
+| `segment_mass_fractions` | head+neck .081, thorax .216, abdomen .139, pelvis .142, upper arm .028, forearm .016, hand .006, thigh .100, shank .0465, foot .0145 | — | Sum 1.000 | [R05 §2.2] V |
+| `vertebrae_csv` | §7.3 | m, mm | | [R05 §13.4] |
+| `cord_segment_offset` | cervical +1, upper thoracic +2, lower thoracic +3; T12 → L3–S1; L1 → S2–S5 | levels | ±1 segment between sources at T10–T12 | [R05 §9.3] C |
+| `brainstem_nodes_rel_head` | §7.4 | m | | [R05 §9.4] C |
+| `organ_csv / tubes_csv` | §7.5 | m | Hit primitives in bone-local space | [R05 §13.2–13.3] |
+| `organ_parent_bones` | heart, lungs, trachea, oesophagus → chest/upper_chest; liver, spleen, stomach, kidneys, pancreas → spine; bladder → hips | — | Organs are not rigid bodies | [R05 §15] G |
+| `tissue_maps` | §7.6 | mm | Painted texture channels | [R05 §12] C |
+| `scale_k` | H/1.78 | — | | [R05 §14.3] E |
+
+### Visual/behavioural checklist (anatomy)
+- In profile the ear canal, shoulder joint, greater trochanter and a point just in front of the ankle line up vertically.
+- Nipples sit ~15.5 cm below the jugular notch and 20 cm apart; the navel ~20 cm below the xiphoid tip; A-pose fingertips reach mid-thigh (z ≈ 0.77).
+- The spine lies in the back third of the trunk: a front-to-back torso wound meets heart, liver or aorta long before bone; in the lumbar region the aorta and IVC lie directly on the vertebral bodies.
+- Lean areas (shin, sternum, back of hand, ulna border, spinous processes) show bone right under the dermis; abdomen and buttocks show 1.5–3 cm of yellow fat first.
+- Chest wounds reach the pleura within 2.5–4.5 cm almost everywhere.
+
+---
+
+## 8. Technical architecture for Godot 4.5 (60 fps at 1080p with heavy gore)
+
+### 8.1 Decisions [R06 §0.4, §14]
+
+| Decision | Chosen | Rejected | Why |
+|---|---|---|---|
+| Wound space | **Rest space**; rest position baked into `CUSTOM0` (32-bit float) at import | World-space decals | Skinning is a compute pre-pass, so shaders see only posed vertices; decals slide on deforming skin and project through limbs (V: 4.5-stable source) |
+| Surface damage | **Compute-painted UV atlases** (`Texture2DRD` on the global RenderingDevice, dispatched in `RenderingServer.call_on_render_thread()`), 3D brushes evaluated from a position map (seam-free) | `Decal` nodes on characters; SubViewport painting (prototype only) | Persistent, float data, unlimited count |
+| Holes | **SDF wounds in the skin shader**: analytic cavity shading for holes ≤ 12 mm; `discard` + interior meshes for larger holes; back-face "flesh" fallback `#3A0A0C` | CSG, runtime remeshing | Left 4 Dead 2 pattern; cheap; correct shadows |
+| Discard cost | **Two skin-shader variants** (with/without `discard`); switch a body surface to the discard variant only when it gets its first open wound | Branching around `discard` | The mere presence of `discard` disables the depth-prepass benefit for that shader (V: 4.5 manual) |
+| Interior | Muscle shell, skeleton/skull (pre-fractured variants, 8–20 fragments), brain, cord, heart, lungs, liver, spleen, kidneys, great vessels — hidden until an open wound is within 5–10 cm | Volumetric flesh | Authored layers are the AAA norm (Dead Island 2 FLESH, Dead Space, RE2) |
+| Dismemberment | Pre-split zones + authored caps (Fallout partition pattern), 12–16 zones (fingers, hand/wrist, forearm, elbow, arm, shoulder, foot, shank, knee, thigh, jaw, face, vault, neck); **realism gate: severing is rare with these weapons** | Runtime slicing everywhere | Predictable, cheap |
+| Knife incisions | C++ GDExtension slicer on a worker (1–4 ms, one job in flight) only for cuts deeper than fat and longer than 8–10 cm; shallow cuts are SDF slabs | GDScript slicing (50–300 ms) | Close inspection needs real walls |
+| Bleeding VFX | **Vessel graph → flow regime** (ooze / drip / stream / jet / froth), jets pressure-gated (§3.5) | Particle-only blood | Physiologically correct and budgetable |
+| Stains | GPU stain particles (freeze on collision) for mist/fine spatter; **CPU "hero drops"** (≤ 200 in flight, Jolt raycasts) for stains that matter; floor stains into a **splat map** with cellular spread | GPU collision → Decal (impossible: no GPU→CPU event path) | |
+| Ragdoll | `PhysicalBoneSimulator3D` + 17–19 `PhysicalBone3D` on Jolt; physiology-driven PD tone in `_integrate_forces` with torque caps | Canned death animations; Jolt native Ragdoll (not exposed) | Physical, never the same twice |
+| X-ray cam (optional) | Stencil (new in 4.5): skin writes in the opaque pass; inner anatomy **reads only in the transparent pass** (`read`, `compare_equal`) | Second viewport | Built-in; one character |
+| Languages | GDScript glue; **C++ GDExtension** for hit pipeline, anatomy march, vessel solve, rivulet agents, slicer | All GDScript | Hot loops are 1–2 orders faster in C++ |
+| Physics engine | **Select Jolt explicitly** (Project Settings > Physics > 3D > Physics Engine); Godot Physics is still the 4.5 default | — | V: 4.5 manual |
+
+### 8.2 Godot 4.5 constraints to respect [R06 §2, V unless noted]
+- Skinning compute shader, up to 8 weights/vertex; `VERTEX` in `vertex()` is post-skin model space; no bone matrices in spatial shaders.
+- Uniform buffers ≤ 65,536 B (desktop); **≤ 16 instance uniforms per shader, scalars/vectors only** (use a data texture indexed by one instance ID for more).
+- Forward+ clustered elements: **512 per view** shared by omni/spot lights, decals and reflection probes (no area lights in 4.5). Cap visible decals at ~200. Remove the victim's visual layer from every world decal's `cull_mask`.
+- GPU particles: collision only with `GPUParticlesCollision3D` (box, sphere, heightfield, SDF); **SDF baked in the editor only**; heightfield updates at runtime (`UPDATE_MODE_ALWAYS` if it must see the moving body); ≤ 32 colliders and ≤ 32 attractors per system; changing `amount` restarts a system — vary `amount_ratio`; no GPU→CPU event channel.
+- SSS only in Forward+ (screen-space separable, 11/17/25 taps); **project default is Low (11)** — set explicitly.
+- `PhysicalBone3D` joint motors are not reachable from script before 4.8 (`get_joint_rid()` merged for 4.8); 6DOF springs map to uncapped Jolt position motors in 4.5 → use script PD with caps.
+- Jolt defaults: 10 velocity / 2 position steps (raise to 12–16 / 3–4 only if joints stretch), sleep 0.03 m/s for 0.5 s; contact impulses are **estimates** (drive fracture thresholds from relative velocity × mass as well); enable "Enable Ray Cast Face Index" (+~25 % memory on concave shapes).
+- `Engine.time_scale` does not change `physics_ticks_per_second` (slow motion stays smooth) nor audio speed (set `AudioServer.playback_speed_scale`).
+- Pipeline hitches: 4.4+ compiles ubershaders at load and specialises in the background; 4.5 adds the shader baker. Still instance every gore material, particle system and inner mesh once off-screen at load; `RENDERING_INFO_PIPELINE_COMPILATIONS_DRAW` must stay 0 during a scripted gore test.
+- Keep the code free of 4.6+ APIs (TwoBoneIK3D, new SSR); write a small two-bone IK SkeletonModifier3D for wound clutching.
+
+### 8.3 Data flow and rates
+
+```
+Weapon event (ray / 9 pellet rays / blade sweep 3–5 rays per frame / hammer & fist overlap / torch cone)
+  └► HIT PIPELINE (C++, main thread, ≤ 0.5 ms per shot)
+       1 Jolt ray vs PhysicalBone3D shapes → bone b      2 ray → rest space via Rest(b)·Pose(b)⁻¹
+       3 exact hit vs rest-pose trimesh (private physics space, face index on) → point, normal, UV
+       4 march 1–2 mm through tissue maps, bone capsules, organ SDFs, vessel capsules, cord → events
+  ├► WOUND STORE (≤ 64 SDF wounds, 3×vec4 each; 3D lookup grid 2.5 cm cells, 4 indices/cell, A-pose 60×16×80)
+  ├► PHYSIOLOGY (worker, 20 Hz alive / 2–5 Hz dead; §3–§4)
+  ├► DAMAGE PAINTER (render thread, ≤ 8 dispatches/frame, 64²–256² texel rects)
+  └► VFX DIRECTOR (60 Hz, interpolates physiology) → jets, drips, rivulet agents (30 Hz, ≤ 32), hero drops, splat map
+       MOTOR CONTROLLER (60 Hz PD) · EYE/SKIN UNIFORMS (eyes per frame, skin masks ≤ 1 Hz)
+```
+
+Atlases per hero character [R06 §6.1, V arithmetic]: body 2,048² (~0.8 mm texels) and head 2,048² (~0.24 mm texels — enough for stippling and 1–2 mm collars): `blood_state` RGBA16F (film thickness mm, deposit time min, dilution/serum, crust) + `tissue_state` RGBA8 (bruise, burn degree, soot/stipple, abrasion) + position/normal maps; **~126 MB per hero** (fits 6 GB). Store timestamps (sim minutes), never ages: drying needs no per-frame writes.
+
+### 8.4 Frame budget (1080p, "heavy gore" reference scene) [R06 §13, E — profile on hardware]
+
+Target hardware: **mid-range = RTX 3060 12 GB + 6-core CPU (Ryzen 5 3600 / i5-10400 class)**; minimum = GTX 1660 6 GB (RTX 3060 ≈ 1.57× a GTX 1660 in raster games, V). 60 fps = 16.67 ms; targets GPU ≤ 13.5 ms (1660) / ≤ 8 ms (3060), main-thread CPU ≤ 12 ms, ~3 ms headroom for gore spikes.
+
+**Heavy gore reference scene**: one room (150–300k visible triangles, 1 directional light with 2 cascades at 2,048, 2–4 shadowed spot/omni at 1,024); hero victim 100–150k triangles with **40 wounds (8 open holes)**, muscle shell, skull, brain and 2 organs visible, **2 jets, 10 drips/streams, 24 rivulet agents**; 15k live GPU particles; 200 visible decals; a 1.5 L floor pool; 40 active debris bodies + 800 frozen MultiMesh fragments; one powered ragdoll + one sleeping ragdoll.
+
+| GPU pass | GTX 1660 (ms) | RTX 3060 (ms) | How it stays inside |
+|---|---|---|---|
+| Skinning compute (≤ 300k skinned verts incl. visible inner meshes) | 0.1–0.2 | 0.05–0.1 | Inner meshes hidden until needed; hand-authored body LODs |
+| Particle simulation (≤ 20k, collision) | 0.1–0.3 | 0.05–0.15 | ≤ 32 colliders; bone spheres on 4–8 bones; `amount_ratio` scaling |
+| Paint + floor flow compute | 0.05–0.2 | 0.03–0.1 | ≤ 8 dispatches/frame; dirty-rect only; 256² active floor window |
+| Shadow maps | 1.5–2.5 | 0.8–1.3 | Inner meshes cast no shadows |
+| Depth prepass (incl. discard variant) | 0.6–1.0 | 0.3–0.5 | Discard variant only on surfaces with open wounds |
+| SSAO | 0.5–0.8 | 0.3–0.5 | Half-res on 1660 |
+| Opaque (clustered lights, ≤ 200 decals, skin + wound shader) | 3.0–4.5 | 1.5–2.5 | ≤ 4 SDF evals per fragment via the grid (~0.1–0.2 ms at 40 % screen); decals cost by coverage; floor stains in the splat map |
+| SSS | 0.3–0.6 | 0.2–0.4 | 17 taps (1660) / 25 (3060) |
+| Sky, fog | 0.1–0.3 | 0.05–0.15 | Volumetric fog off/low |
+| Transparent (mist, jet ribbons, optional X-ray) | 0.5–1.5 | 0.3–0.8 | **Main risk**: mist overdraw — unshaded mist, ≤ 15–20 % of the screen, ≤ 4 layers; droplets opaque alpha-scissor |
+| Post (tonemap, glow, SMAA/TAA) | 0.6–1.0 | 0.3–0.6 | SMAA (4.5); check TAA ghosting on spatter |
+| UI | ~0.1 | ~0.05 | |
+| **Total** | **7.5–13.0** | **4.7–8.3** (1660 × 1/1.57) | Profile first; SSR/SSIL may not fit the 3060 worst case |
+
+| CPU work (main thread unless noted) | ms | How it stays inside |
+|---|---|---|
+| Jolt (2 ragdolls, 48 debris, arena), 60 Hz | 0.3–1.0 | Remove finger bodies; debris sleeps → MultiMesh (2 m chunks); optional physics thread (experimental) |
+| Physiology + vessel graph, 20 Hz (worker) | < 0.1 per tick | ~150 unknowns, closed-form shunt solve |
+| Hit pipeline | 0.1–0.5 per shot (C++) | Shotgun: 9 pellet rays, merged spatter emitters; co-located pellet tracks at ≤ 1 m merged into one wound |
+| Rivulet agents (worker, 30 Hz) | 0.05–0.2 | ≤ 32 per character |
+| Hero drops | 0.1–0.3 | ≤ 200 in flight; 30–60 per spatter event |
+| Animation + skeleton modifiers | 0.2–0.6 | |
+| Game logic (GDScript) | 1–3 | No per-tick allocation |
+| Render CPU (culling, 1,000–2,000 draws) | 2–4 | Modular body surfaces only where needed |
+| **Total** | **~4–10** | Target ≤ 12 |
+
+**Caps** [R06 §8.5, §0.4]: ≤ 20k live GPU particles (1660; 40k on 3060) — spatter pool 8 × 1,024 via `amount_ratio`, mist sprites ≤ 64, stain particles ≤ 8,000, jet breakup 6 × 256, debris chips ≤ 1,000; **≤ 6 jets, ≤ 20 drips/streams**, ≤ 32 rivulet agents per character, ≤ 200 visible decals (pool 128–256, preloaded 32–64 textures), ≤ 48 active debris bodies, ≤ 2,000 frozen instances, ≤ 64 SDF wounds per character (oldest closed wounds retire into the paint atlas). **The physiology always accounts for every wound's volume, even when its VFX is culled.**
+
+**Scalability governor** (GPU time > 14 ms over 0.5 s → degrade in order; restore when < 11 ms for 3 s) [R06 §13.7, G]: 1 mist count/size → 2 spatter `amount_ratio` down to 50 % → 3 stain-particle lifetime (bake old stains into the splat map) → 4 decal fade distance 25 → 12 m → 5 SSS taps 25 → 17 → 11 → 6 SSAO half-res → 7 FSR 2.2 at 0.77. **Never degrade wounds, physiology, or stains on the victim.**
+
+**Pass criterion**: scripted 60 s heavy-scene run with shots — **1 % low ≥ 55 fps on the GTX 1660; average ≥ 60 fps and 1 % low ≥ 58 fps on the RTX 3060** [R06 §13.6, G]; zero draw-time pipeline compilations.
+
+### 8.5 Phased plan [R06 §14.1]
+1. **Head** (current): rest-space pipeline, head atlas, skull/brain inner meshes with pre-fractured skull, fixes from §2.7, range-of-fire looks, spatter, rivulets, floor pool.
+2. **Full body**: body atlas and muscle shell, vessel graph + VFX regimes, heart/lung meshes, physiology state machine (§3–4), eyes (§5), ragdoll tone map, wound clutching.
+3. **Post-mortem and dismemberment**: §6 clocks, hand/finger/jaw/face zones, debris freezing, knife slicer.
+4. **Performance**: governor, 1660 pass, optional move to 4.6+ (IK nodes, SSR).
+
+### Simulation parameters (tech)
+
+| Parameter | Value / range | Unit | Notes | Source |
+|---|---|---|---|---|
+| `godot_version / physics` | 4.5.x (4.5.2) / Jolt selected explicitly | — | | [R06 §2.1] V |
+| `gpu_budget_1660 / 3060` | ≤ 13.5 / ≤ 8 | ms | 1080p | [R06 §13] G |
+| `cpu_main_budget` | ≤ 12 | ms | | [R06 §13] G |
+| `hit_pipeline_budget` | ≤ 0.5 | ms/shot | C++ | [R06 §3] E |
+| `sdf_wounds_max / wound_grid` | 64 / 60×16×80 cells at 2.5 cm (A-pose bind) | — | ~0.3 MB | [R06 §4.4] V calc |
+| `atlas_body / head` | 2,048² (4,096² ≥ 8 GB VRAM) / 2,048² | texels | 0.81 / 0.24 mm | [R06 §4.1] V calc |
+| `cavity_max_radius` | 6 (holes ≤ 12 mm) | mm | Above: discard + interior | [R06 §5] G |
+| `layer_reveal_radius` | 5–10 | cm | Show inner meshes | [R06 §5.3] G |
+| `live_particles_max` | 20k (1660) / 40k (3060) | — | | [R06 §8.5] E |
+| `jets_max / drips_max / agents_max` | 6 / 20 / 32 | — | | [R03 §12], [R06] G |
+| `decals_visible_max` | 200 (cluster limit 512) | — | | [R06 §2.5] V/G |
+| `debris_active_max / frozen_max` | 48 / 2,000 | — | | [R06 §9.5] G |
+| `mist_screen_coverage_max` | 15–20 %, ≤ 4 layers, unshaded | — | | [R06 §13.3] E |
+| `sss_taps` | 17 (1660) / 25 (3060) | — | Default is 11: set it | [R06 §2.8] V |
+| `governor_high / low` | 14 / 11 | ms | Hysteresis | [R06 §13.7] G |
+| `pass_criterion` | 1 % low ≥ 55 fps (1660) | — | Heavy scene | [R06 §13.6] G |
+
+### Visual/behavioural checklist (tech)
+- Wounds stay exactly where they were made in any pose; nothing slides when an elbow or knee flexes through its full range; nothing projects through a limb.
+- The first blood, first open hole and first inner mesh of a session cause no hitch.
+- A point-blank shotgun volley keeps frame pacing smooth; when the governor acts only mist density and distant stains change — the victim looks identical.
+- Large holes show real depth (muscle, then bone) and cast correct shadows; a hole never shows an empty body shell.
+
+---
+
+## 9. Realism checklist (acceptance tests)
+
+Each statement is testable in-game (debug overlay showing wound sizes, physiology values and sim time). "sim" = simulated time. Tolerances are the stated ranges; over ≥ 20 repetitions the distribution must fall inside them.
+
+| # | Statement | Test | Source |
+|---|---|---|---|
+| 1 | A 9 mm FMJ distant entrance in trunk skin is a round hole **3.3–5.6 mm** (mean ~4.5) with a **1.6–2.4 mm** red-brown abrasion collar; never ≥ 10 mm | Shoot the chest at 3 m, measure | [R01 §2] C |
+| 2 | A 9 mm entrance in the scalp is **6.3–9.0 mm** with a concentric collar at 90° incidence | Head shot at 3 m, perpendicular | [R01 §2] C |
+| 3 | At 45° incidence the entrance is an ellipse (major/minor ≈ 1.4) and the collar is widest on the side facing the shooter | Angled shot | [R01 §2.2] C/E |
+| 4 | Exits never show soot, stippling, searing or an abrasion collar (except a shored exit against a surface) | Inspect 20 exits | [R01 §4] C |
+| 5 | At 5–10 cm muzzle distance a dense black soot zone (~2.3–3.5 cm Ø) surrounds the entrance and wipes off; red-brown stippling (0.2–1.5 mm dots) does not wipe off | Shoot at 5/10 cm, apply wipe | [R01 §3] C |
+| 6 | Stippling appears up to 60 cm (flake) / 90 cm (ball powder) and is absent at 150 cm; at 30 cm its pattern is 5.7–17.7 cm across | Shoot at 30/60/90/150 cm | [R01 §3] C |
+| 7 | A contact 9 mm shot to the scalp over bone gives a stellate tear (3–6 rays, 5–20 mm) with a blackened seared rim, soot in the wound and a muzzle imprint; the entrance may exceed the exit | Contact head shot | [R01 §3.5] C |
+| 8 | 9 mm FMJ head exits are 10–30 mm with everted edges; over ≥ 100 exits ~25 % circular, ~33 % stellate, ~30 % irregular, ~9 % slit, ~3 % crescent | Batch test | [R01 §4] C |
+| 9 | The skull entrance has a 9.0–10.8 mm outer-table hole and a 1.3–2.0× larger inner cone; the exit is bevelled outward; a handgun never bursts the vault | Peel scalp in debug view | [R01 §5], [R2-05 §2] C/E |
+| 10 | A handgun head wound shows 0–4 radial fractures ≤ 80 mm; later fractures stop at earlier ones in ≥ 90 % of cases | Two shots, inspect skull | [R01 §5.4] C |
+| 11 | Back-spatter from a head shot is 30–320 visible drops, mostly within 0.5 m on the shooter side (max ~1.2 m); forward spatter is 2–5× denser in a ~27° cone | Scripted shot at a wall-backed head | [R01 §7] C |
+| 12 | No shot moves the body backward by more than 0.2 m/s (9 mm ≤ 0.04 m/s; buckshot ≤ 0.17 m/s) | Measure pelvis velocity | [R01 §1] V |
+| 13 | 12 ga: a single hole ~2–2.5 cm at ≤ 0.3 m, 3–4 cm at 1 m, scalloped at 1–2 m, central hole + satellites at 2–4 m, separate pellet holes beyond 4–5 m; the wad is in the wound at ≤ 1.5 m | Range series on the torso | [R01 §9] C |
+| 14 | A contact shotgun shot to the head bursts the vault (far-side crater, radial scalp flaps, brain partly ejected down-range) and the heart keeps pumping blood from the defect for 1–10 min | Contact shot | [R2-05 §2] C/E |
+| 15 | A 40 mm knife cut across the skin tension lines gapes 6–10 mm within 1 s; the same cut along them gapes 1–2 mm; edges are straight, unabraded, without tissue bridges, and the stroke end tapers into a 5–30 mm tail | Two cuts on the forehead | [R02 §2] C/E |
+| 16 | A single-edged stab is a slit with one sharp and one square/fish-tailed end, length = blade width − 0–2 mm; the knife never cuts through the skull or a long bone | Stab tests | [R02 §2.5] C |
+| 17 | A hammer blow lacerates only over bone, with ragged, abraded, bruised margins and tissue bridges; a committed blow (≥ 23 J frontal, ≥ 15 J temporal on average) leaves a depressed defect matching the 25–32 mm face, wider and irregular on the inner table | Blows at increasing energy | [R02 §3.4, §5] C/E |
+| 18 | A bruise never shows yellow before 18 h (sim); a fist bruise becomes visible within 15–60 min; a deep bruise may surface only after 12–48 h and lower than the impact | Time-lapse | [R02 §3.2] V/C |
+| 19 | A bare punch can break the nose (≥ 111–334 N) but never fractures the frontal bone; ~66 % of knockouts show a fencing posture lasting 2–10 s | Punch batch | [R02 §4.1], [R04 §3.6] C |
+| 20 | Torch at close range: grey-white epidermis within ~0.3–0.8 s, leathery tan at 1.5–4 s, char at 3–8 s; blisters appear 30 s–5 min later only on partial-thickness areas; burned tissue does not bleed and full-thickness areas cause no pain reaction | Torch dwell series | [R02 §6] E/V |
+| 21 | An exposed, transected carotid spurts bright red in time with the heartbeat (pulses lag the heart sound by ~0.1 s), initial jet 0.55–1.0 m high at 120/80 supine; LOC at 20–90 s; arrest at 2–5 min untreated | Neck cut, overlay | [R03 §5, §6] C/E |
+| 22 | As shock deepens the jet pulses get faster and weaker; below MAP ~25–30 mmHg there is no jet, only welling; it stops within 1–2 beats of cardiac arrest | Observe a femoral bleed-out | [R03 §6.2] C |
+| 23 | Venous bleeding is dark maroon and non-pulsatile, surges when the victim screams, and nearly stops when the limb is raised above the heart | Cut a forearm vein, raise the arm | [R03 §6] C |
+| 24 | A single clean radial-artery cut bleeds 100–300 mL/min at first, falls to 20–60 mL/min after spasm and stops within 5–20 min after 200–500 mL; the victim survives | Scenario A | [R03 §5.1] E |
+| 25 | A common femoral transection in a standing victim causes collapse at ~2 min and arrest at 4–8 min; a 1 L floor pool is ~70 cm across and ~2.5 mm thick and stops spreading after 5–15 min | Scenario C | [R03 §5.1, §10.3] V/E |
+| 26 | A 5–10 cm scalp laceration keeps bleeding (5–30 mL/min, more with a cut STA) long after small cuts elsewhere have clotted, soaking and dripping from the hair | Hammer/knife to the scalp | [R02 §2.6], [R03 §7.3] C |
+| 27 | A small trunk bullet wound drips little externally while the victim becomes pale, tachypnoeic and confused from internal bleeding | Liver/spleen shot | [R03 §4.5] C |
+| 28 | Shock signs follow blood loss: HR < 100 below 15 % loss, 100–120 at 15–30 %, systolic BP falls only after ~30 %, yet ≈ 40 % of hypotensive victims keep HR < 100 (relative bradycardia); supine LOC at ~45 %; arrest at 45–55 % | Overlay during a slow bleed | [R03 §3] V/C |
+| 29 | An exsanguinated victim is waxy white-grey with grey-lilac lips, never blue, and shows faint or no livor after death | Bleed-out to death | [R04 §7.7, §12.4] C |
+| 30 | A heart stab with an intact pericardium produces few mL of external blood, distended neck veins, a dusky face and falling BP over 5–30 min, then PEA | Stab the RV | [R03 §8.2] V/C |
+| 31 | A lung hit produces bright frothy pink-red blood at the mouth within 5–60 s; a chest-wall hole > 10–13 mm sucks on inspiration and bubbles froth on expiration | Chest shots | [R04 §9] C |
+| 32 | A medulla/pons hit collapses the body in 0.6–1.2 s with no protective arm reaction; after a medullary hit there is no breathing movement and no gasping; the heart continues ~100 bpm and arrests at 4–10 min | Brainstem shot | [R04 §2] C |
+| 33 | After destruction of the heart the character can act for 10–15 s, loses consciousness at 8–15 s with eyes open and briefly rolled up 10–30° and (p ~0.9) irregular jerks | Heart destroyed | [R04 §8] C |
+| 34 | A low-energy unilateral frontal track leaves the character conscious 10 s later in 10–30 % of trials | Batch | [R04 §3] G |
+| 35 | A motor-strip/internal-capsule track gives contralateral flaccid hemiplegia with eyes and head deviated 15–40° toward the wounded side; the character falls toward the paralysed side | Targeted shot | [R04 §3.3] C |
+| 36 | A complete C1–C3 lesion gives instant flaccid quadriplegia and apnoea with the character awake (eyes darting, mouth moving silently) until LOC at 90–180 s; arrest at 4–10 min | Neck shot through the canal | [R04 §6] C |
+| 37 | A complete T8 lesion: legs fold, arms break the fall, the character drags itself; cutting or burning the legs produces no flinch at all | Back shot | [R04 §6.6] C |
+| 38 | A knife hemisection (Brown-Séquard) paralyses the leg on the stabbed side while the other leg moves but ignores the torch | Stab beside the spine | [R04 §6.3] C |
+| 39 | A temporal hammer blow can produce a lucid interval (20–50 %), then a unilateral pupil 6–9 mm, contralateral weakness, Cushing's triad (SBP 160–220, HR 40–60) and apnoea; death 1–6 h real (8–12 min of play) | EDH scenario | [R04 §5.4] C/G |
+| 40 | Agonal gasps occur in 30–50 % of arrests with an intact medulla: 2–10/min, with neck extension and jaw opening, stopping within 1–5 min; no death rattle in any death faster than hours | Observe 20 deaths | [R04 §10], [R2-04 §14] C |
+| 41 | A living alert character blinks 12–20 times/min (250–400 ms each), makes saccades of duration ≈ 21 + 2.2 ms/°, and pupils (3–4 mm) constrict within 0.2–0.25 s of a light | Eye debug | [R04 §11], [R2-06] C |
+| 42 | Eyes stay open or half-open after death (sudden death: open ~55 %, half-open ~35 %, closed ~10 %); the lids drop 2–4 mm over 1–3 s and never blink shut; gaze settles 3–10° outward with no further movement | Observe 20 sudden deaths | [R04 §11.3] G |
+| 43 | Dead pupils are 6–8 mm and fixed by 2 min after arrest, relax to 4–6 mm (anisocoria ≤ 1 mm) over 2–6 h, and are never pinpoint unless the pons was destroyed | Pupil overlay | [R04 §11.5] C |
+| 44 | Turning a dead head moves the eyes rigidly with it; turning an unconscious living head (brainstem intact) makes the eyes counter-rotate | Head-turn test | [R04 §11.4] C |
+| 45 | Open dead eyes lose their gloss within ~1 h, haze from 1–2 h (obvious at 3–6 h), show brown-black tache noire at 3–6 h; closed eyes cloud only from ~12 h | Forensic fast-forward | [R04 §11.6] C |
+| 46 | The jaw drops 10–30 mm within 30 s of death in a supine body; the face relaxes (no frozen expression); the body is flaccid until rigor | Death observation | [R04 §12.1] C |
+| 47 | Livor: first patches at ~0.75 h (0.25–3), confluent ~2.5 h, maximal ~9.5 h; blanches fully under pressure until ~5.5 h; shifts completely if the body is turned before ~3.75 h; pressure points stay pale | Fast-forward + turning | [R04 §12.4] C |
+| 48 | Rigor starts in the jaw/eyelids at ~3 h, is complete at ~8 h, in the order jaw → neck → arms → trunk → legs; a forced joint gives way and stays loose | Fast-forward | [R04 §12.6] C |
+| 49 | Rectal temperature of the reference body (75 kg, naked, 20 °C) reads ~34.4 °C at 6 h and ~25.4 °C at 24 h after arrest | Forensic readout | [R04 §12.5] V |
+| 50 | The heavy-gore reference scene holds 1 % low ≥ 55 fps on a GTX 1660 and ≥ 60 fps average on an RTX 3060 at 1080p, with zero draw-time pipeline compilations | Automated perf run | [R06 §13] G |
+
+---
+
+## 10. Open issues, verification queue, suspicious content, sources
+
+### 10.1 QA re-check list (open the primary source before exposing as a measured value)
+1. Entrance hole sizes and collar ratios (Geisenberger 2022 [PMID 36006518](https://pubmed.ncbi.nlm.nih.gov/36006518/); contusion-ring study [PMID 1811497](https://pubmed.ncbi.nlm.nih.gov/1811497/)).
+2. Stippling ranges and pattern sizes (DiMaio 1976; Dana & DiMaio 2003; ETSU thesis) and ball-powder 90 vs 120 cm.
+3. Brain destruction zone "3.6 cm" diameter vs radius (Oehmichen 2000/2004, [PMID 15542271](https://pubmed.ncbi.nlm.nih.gov/15542271/)); this bible uses radius 18 mm.
+4. Back/forward spatter (Karger [PMID 8912050](https://pubmed.ncbi.nlm.nih.gov/8912050/); Comiskey/Attinger — foam targets, not heads).
+5. Per-vessel bleed-out times (§3.3) — tuning targets; no per-vessel human series exists in the reviewed sources.
+6. LOC/PEA loss thresholds (ATLS > 50 % vs Guyton 40–45 %) and Rossen 1943 (LOC 5–10 s).
+7. Lid position at death — no prevalence study exists; distribution is a game choice.
+8. Mallach livor/rigor tables (Henssge & Madea 2004) and Henssge 1988 constants (recall-consistent only).
+9. Fist/hammer force and skull fracture energies (temporal 5–15 J source; 2025 blow-energy study).
+10. Heat-flux/porcine burn depth values (Stoll curve verified; porcine 600 °C depths unverified).
+11. Skull/bone cortex thicknesses and vertebral positions in C4–T3 (cervicale conflict).
+12. Every timing in the drying/colour ramps (chemistry verified; times estimated).
+
+### 10.2 Conflicts resolved in this bible
+| Topic | Documents | Resolution |
+|---|---|---|
+| BV0 | R03 5.0 L, R04 5.25 L | Nadler per body (5.09 L reference); thresholds as fractions |
+| Bradycardia in haemorrhage | R03 0.35–0.45 (corrected, trauma series), R04 0.10–0.30 | Split into `relative_brady_p` 0.40 (trait) and `sudden_faint_p` 0.20 (event) |
+| Transcapillary refill | R03 250–500 mL first hour (Marino, V), R04 50–150 mL/h | R03 value |
+| Scalp laceration rate | R02 20–100, R03 5–30 (50–100 with a named artery) | 5–30 base + 20–60 per named artery |
+| Lung parenchyma rate | R03 5–50, R04 20–100 | Peripheral 5–50; handgun through-track 20–100 |
+| Buckshot pellet holes | R01 4–7 mm, R2-05 6–9 mm | Region factor × 8.4 mm (trunk 3.4–5.2, scalp 5.9–8.4) |
+| Temporal fracture energy | R02 5–15 J (clamped ≥ 10), R2-05 50 % at 10 J | 50 % at 15 J (range 10–15) |
+| Ragdoll gains | R06 f 4–6 Hz, R2-03 ω 10–12 rad/s with ω·Δt ≤ 0.5 | R2-03 values (stability-checked) |
+| Segment masses | Dempster/Winter vs de Leva | Dempster default (verified), de Leva optional |
+| Head origin height | R05 1.655 → corrected 1.647; contract head vertex 0.125 m | Origin at 1.647; do not rescale the head |
+| Arterial jet gate | R06 flow > 300 mL/min | Pressure gate (P_local ≥ 25–30 mmHg), flow sets thickness only |
+
+### 10.3 Suspicious content
+- **None encountered in this synthesis pass.** The only material read was the project's own research documents (`docs/research/`, `docs/research2/`), `blender/gore_head/CONTRACT.md`, `gore.py`, `build.py`, `materials.py` and the head renders; all were treated as data, and none contained instructions directed at the reader.
+- One WebSearch was refused (session budget 200/200 exhausted) and one WebFetch to pubmed.ncbi.nlm.nih.gov returned `EGRESS_BLOCKED`; no external content was received. No shell commands were run, nothing was downloaded, installed or executed, and no code was copied from the web.
+- The research documents' own suspicious-content sections report no prompt-injection attempts in any search result or fetched page (R01 §14, R02 §10, R03 §14, R04 §17, R05 §17, R06 §17, R2-02 §16, R2-05 §19).
+
+### 10.4 Sources
+- Project research: [R01](research/01_gunshot_wounds.md) · [R02](research/02_sharp_blunt_burn.md) · [R03](research/03_bleeding_vessels.md) · [R04](research/04_neuro_death_eyes.md) · [R05](research/05_body_anatomy_reference.md) · [R06](research/06_game_gore_tech.md) · [R2-01](research2/01_brain_injury_deficits.md) · [R2-02](research2/02_reactions_to_being_shot_and_hit.md) · [R2-03](research2/03_falling_ragdoll_biomechanics.md) · [R2-04](research2/04_agonal_involuntary_movement.md) · [R2-05](research2/05_severe_trauma_morphology.md) · [R2-06](research2/06_sounds_voice_face.md). Each contains its full reference list with URLs and verification status.
+- Current head: [`blender/gore_head/CONTRACT.md`](../../blender/gore_head/CONTRACT.md), [`gore.py`](../../blender/gore_head/gore.py), renders in `blender/gore_head/renders/`.
+- Key primary sources cited through the research docs (not re-opened in this pass): ATLS 9th/10th ed. (shock classes); Marino, *The ICU Book* (blood volume, refill, air embolism — read via text copy in R03); Nadler 1962 (blood volume); HuBMAP HRA-VCCF vessel table (diameters, read in R03); Prahl 1999 haemoglobin extinction (read in R03); ANSUR II raw data (read in R05); Dempster/Winter segment table (read in R05/R06); Godot 4.5-stable engine source and manual (read in R06); Plum & Posner (coma, eyes); Henssge & Madea 2004 (livor, rigor); Henssge 1988 (cooling); Lempert 1994 (syncope); Rossen 1943 (cerebral arrest); Wijdicks 2010 / Greer 2023 (brain death); DiMaio *Gunshot Wounds*; Saukko & Knight *Knight's Forensic Pathology*; Karger (incapacitation, spatter); Oehmichen (brain cavitation); Stoll & Chianta (burn criterion); Moritz & Henriques (scald times).
+

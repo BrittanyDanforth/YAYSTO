@@ -71,7 +71,7 @@ evaluated verts; others as needed).
 | `GH_Tongue` | tongue in mouth cavity |
 | `GH_MouthCavity` | inner mouth lining (may be part of `GH_Skin` instead, then omit) |
 | `GH_Controls` | empty with global gore sliders (created by `gh_common.ensure_controls()`) |
-| `GH_Hair` | eyebrows and eyelashes (hair curves, material `GH_Hair`), grown by `build.py`; a small GN modifier (`GH_HairOnSkin`) keeps them on the wounded skin and removes strands whose root is burned or torn open |
+| `GH_Eyebrows`, `GH_Eyelashes` | hair curves (materials `GH_Hair`, `GH_Hair_Lash`) grown by `build.py`; a small GN modifier (`GH_HairOnSkin`) keeps them on the wounded skin and removes strands whose root is burned or torn open |
 
 `build_anatomy()` returns a dict keyed by the object names above.
 

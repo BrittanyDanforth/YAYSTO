@@ -48,6 +48,7 @@ Audience: audio, facial-animation, shader and physiology engineers. Clinical, fa
   - `[E]` values are engineering estimates for the game, with the reasoning shown.
 - **Calibrated recordings of real injuries barely exist.** Nobody measures the sound pressure of a stabbing. The impact levels in §2–§4 are therefore `[E]` (L): derived from contact physics and forensic or clinical descriptions. **Before hard-coding any dB value, measure the game's own foley references** (meat, bone, gelatin, body-weight drops on the target floors) with a calibrated sound level meter at 1 m. The QA list is §18.
 - Where sources or memory disagree, the range is given with a **game default** and the reason for choosing it.
+- **An independent fact-check pass has been applied (§21).** Its markers in the text: "✓ verified" (with the basis: arithmetic, [K], or consistent with recall), "⚠" (plausible, not verifiable here) and "Corrected: was X". The checker also had no web access.
 
 ### 0.2 Tags
 
@@ -878,18 +879,18 @@ AU intensities as FACS letters (A trace … E maximum; weights in §0.3). Lid ap
 | **Fear** | 1C, 2C, 4B, **5D**, 7B, **20C**, 26B, 38B | **Wide 11–12 mm; white above the iris** | Lips stretched horizontally; jaw slightly dropped | Pulled back, chin down | 200–500 ms / sustained while the threat lasts | [K; M11] (H) ✓ verified [K] (H): the FACS Investigator's Guide prototype is 1+2+4+5+7+20+26 (variants 1+2+4+5+20+25/26/27 and 1+2+4+5+25/26/27); AU38 is an addition |
 | **Terror scream** | 1D, 2D, 4C, **5E**, 20D, 27D, 21D, 38C | **Wide open**, fixed on the threat | Wide, stretched | Back | With each scream | [K; M11] [E] |
 | Startle (first 0.3 s) | 45 (blink at ~30 ms), 4B, 7C, 20C, 21C | Blink then wide | Stretched | Head down, shoulders up | 30–300 ms | `[R2-02 §1]` [K] |
-| Surprise (unhurt, e.g. a miss) | 1C, 2C, 5B, 26B | Wide | Dropped jaw | Back slightly | < 1 s | [K; M11] (H) |
+| Surprise (unhurt, e.g. a miss) | 1C, 2C, 5B, 26B | Wide | Dropped jaw | Back slightly | < 1 s | [K; M11] (H) ✓ verified [K] (H): prototype 1+2+5B+26 |
 | **Circulatory shock** (class III) | All expression AUs ≤ A; **41–42**; **25, 26B** (open-mouth breathing); 38B with air hunger | **5–8 mm, heavy; eyes look sunken**; slow blinks (300–500 ms) | Open, dry, pale lips | Lolling, poor head control | Sustained; pain grimace when moved at ×0.3–0.6 | `[R2-04 §7.1]` [K] (M) |
 | **Dazed / concussed** | Near-neutral; 26A; occasionally 1B + 4A when addressed | "**Blank or vacant look**"; slow, few saccades | Slightly open | Slow, unsteady | Seconds to minutes | [S6] [K] (M) |
 | **Confused** (hypoxia, delirium, head injury) | 1B + 4B (puzzled), 7A, 24A | Wandering gaze, 1–3 saccades/s | Slightly parted | Tilted 5–15° | Waxes and wanes | [K] (M), [E] |
-| Anger, defiance | 4D, 5C, 7C, 23C or 24C | Glaring | Lips pressed or thinned | Forward | — | [K; M11] (H) |
+| Anger, defiance | 4D, 5C, 7C, 23C or 24C | Glaring | Lips pressed or thinned | Forward | — | [K; M11] (H) ✓ verified [K] (H): prototype 4+5+7+23 (variants with 17, 24, or 10+22+25/26) |
 | **Roar** (fighting back) | 4D, 5C, 7C, 9B, 10C, 25, 27C | Glaring, open | Wide, upper teeth bared | Forward | With the roar | [K] (M) |
-| **Crying, despair** | 1C, 4C, 6C, 7B, 15C, 17C (+ 9B, 10B, 20B, 25/26 during sobs) | Squeezed, wet, reddening | Corners down, chin wrinkled | Down | Minutes | [K; M11] (H), [E] |
+| **Crying, despair** | 1C, 4C, 6C, 7B, 15C, 17C (+ 9B, 10B, 20B, 25/26 during sobs) | Squeezed, wet, reddening | Corners down, chin wrinkled | Down | Minutes | [K; M11] (H), [E]. ✓ sadness core 1+4+15 verified [K] (H); the crying additions are `[E]` |
 | Pleading | 1D + 4C (oblique brows), 15B, 20B, 25 | Wide-ish, fixed on the attacker | Parted | Tilted, forward | — | [E] |
 | **Effort, straining** (pushing up, crawling, pressing a wound) | 4C, 6C, 7C, 9B, 10B, **24D or 31**, 21C | Squeezed | Lips pressed or teeth clenched | — | 0.5–3 s | [K] (M) |
 | **Air hunger, choking** | 1C, 2C, **5C**, 25, **27C** (gaping), **38D**, **21D** | Wide, frightened | Gaping; nostrils flared; neck cords | **Extended**; hands to throat `[R2-04 §7.5]` | With each breath | [K] (H) |
 | Nausea | 9B, 10B, 15B, 17B, 25A; swallowing every 10–30 s; yawns | Glazed | Lip-licking, swallowing | Still, head down | 10–120 s before vomiting `[R2-04 §2.7]` | [K] (M) |
-| Disgust at the wound | 9C, 10C, 15B, 16B, 25 | Narrowed | Upper lip up, lower lip down | Back 5–10° | 0.5–2 s | [K; M11] (H) |
+| Disgust at the wound | 9C, 10C, 15B, 16B, 25 | Narrowed | Upper lip up, lower lip down | Back 5–10° | 0.5–2 s | [K; M11] (H) ✓ verified [K] (H): prototypes 9+15+16 and 10+15+16 |
 | Exhaustion, resignation (class III–IV, conscious) | 1A, 4A, 15A, 41C | Heavy lids, slow blinks | Slack | Drops | Sustained | [E] |
 
 ### 8.3 Pain face: extra detail
@@ -899,7 +900,7 @@ AU intensities as FACS letters (A trace … E maximum; weights in §0.3). Lid ap
 - **People have different pain faces.** A cluster analysis found a small number of recurring individual patterns, e.g. narrowed eyes with furrowed brows and wrinkled nose, or an opened mouth with narrowed eyes `[K; M10] (M–L)`. **Roll one pain-face type per character** (weights on the AU groups ±30 %) so that crowds do not grimace identically `[E]`.
 - **Expressivity varies**: many people show little facial expression at moderate pain `[K; M10] (L–M)`. Game: `pain_face_gain` 0.3–1.3 per character, default distribution median 1.
 - **Dynamics** `[E]`: onset 150–400 ms `[R2-02 §9.1]`; apex 0.5–1.5 s; in sustained pain, bursts of 1–3 s every 3–15 s with relaxation to 30–50 % between bursts; new pain spikes restart the burst.
-- **Pain scream vs fear scream**: in pain the eyes are **squeezed shut** (AU6/7/43); in terror they are **wide open** (AU5). This single cue tells the player which one they are looking at `[K] (M)`.
+- **Pain scream vs fear scream**: in pain the eyes are **squeezed shut** (AU6/7/43); in terror they are **wide open** (AU5). This single cue tells the player which one they are looking at `[K] (M)`. ✓ consistent with the AU sets `[K]` (M). Caveat: a person in pain who is also looking at the attacker or the wound opens the eyes between squeezes; use eyes-shut for the apex of each pain burst, not for the whole episode.
 
 ### 8.4 Blending and living-face rules `[E]`
 
@@ -950,10 +951,10 @@ AU intensities as FACS letters (A trace … E maximum; weights in §0.3). Lid ap
 | Feature | **Central** (upper motor neuron): face area of the motor cortex (lower precentral gyrus), corona radiata, internal-capsule genu | **Peripheral** (lower motor neuron): facial nucleus in the pons, the nerve in the temporal bone, its branches in the parotid and cheek | Tag |
 |---|---|---|---|
 | Side | **Opposite** to the lesion | **Same** side as the lesion | [K] (H) |
-| Forehead (AU1, AU2) | **Largely spared** (upper face has input from both hemispheres); mild upper-face weakness is common in severe acute strokes | **Paralysed**: no wrinkling, brow lower | [S4] [K] (H) |
-| Eye closure, blink (AU43, AU45) | Preserved or mildly weak | **Incomplete closure** (lagophthalmos); **Bell's phenomenon**: the eye rolls up and out on attempted closure, showing white | [S4] [S5] [K] (H) |
+| Forehead (AU1, AU2) | **Largely spared** (upper face has input from both hemispheres); mild upper-face weakness is common in severe acute strokes | **Paralysed**: no wrinkling, brow lower | [S4] [K] (H) ✓ verified [K] (H) |
+| Eye closure, blink (AU43, AU45) | Preserved or mildly weak | **Incomplete closure** (lagophthalmos); **Bell's phenomenon**: the eye rolls up and out on attempted closure, showing white | [S4] [S5] [K] (H) ✓ verified [K] (H). Bell's phenomenon is a normal reflex (present in most people); it is only **visible** when the lid fails to cover the eye |
 | Lower face (AU10, 12, 15, 20, 24) | Weak | Weak | [K] (H) |
-| Emotional vs voluntary movement | **Emotional smiling may still move the weak side** (volitional–emotional dissociation) | Both lost | [S4] |
+| Emotional vs voluntary movement | **Emotional smiling may still move the weak side** (volitional–emotional dissociation) | Both lost | [S4] ✓ verified [K] (M–H) for cortical and internal-capsule lesions. Gap added: the **reverse** pattern ("emotional facial paresis": normal voluntary movement, weak spontaneous smiling and grimacing) occurs with thalamic, striatocapsular, insular and medial frontal lesions `[K]` (M). For pain grimaces in the game, a cortical/capsular lesion may therefore still grimace on both sides, a thalamic one may grimace on one side only |
 | Resting face | Mild: flat nasolabial fold, corner 1–3 mm lower | Marked (§9.3) | [K] (M), [E] |
 | Associated signs | Opposite arm and hand weak; aphasia if dominant `[R2-01 §2, §5]` | Pons: crossed signs `[R2-01 §13]`. Temporal bone: hearing loss, blood or CSF from the ear, later Battle's sign `[R1-01 §5]` | [K] (H) |
 | Onset in trauma | Immediate with the lesion | Immediate (nerve cut) or delayed by days (swelling in the canal) | [K] (H) |
@@ -984,7 +985,8 @@ AU intensities as FACS letters (A trace … E maximum; weights in §0.3). Lid ap
 | Fluids | Drool and blood leak from the paralysed corner; **tears spill** over the lower lid (it no longer pumps tears) |
 | Over hours | The exposed eye reddens and dries (a dry band like `[R1-04 §11]` but in a living eye) |
 
-- **Bell's phenomenon** (upward roll of the eye with lid closure) is present in most people `[S5] (M)`.
+- **Bell's phenomenon** (upward roll of the eye with lid closure) is present in most people `[S5] (M)`. ✓ consistent [K] (M): commonly quoted as ~75–90 % with a normal up-and-out roll; the remainder roll poorly, horizontally or not at all.
+- ⚠ Myth guard (fact-check addition): Bell's phenomenon is an active reflex during attempted closure in a **living** person. It is **not** why eyes "roll back" at a knockout or faint (that is a transient upward deviation at loss of consciousness, 2–10 s `[R2-02 §5.6]`), and it has nothing to do with the eyes of the dead, which rest near straight ahead or slightly divergent `[R1-04 §11]`.
 - **Cheek puffing on expiration on the paralysed side** is a classic sign of hemiplegia in a comatose patient, and it also occurs in central palsy because the lower face is weak `[K] (H)`.
 
 ### 9.4 Grading (House–Brackmann) → AU gain
@@ -1018,8 +1020,8 @@ AU intensities as FACS letters (A trace … E maximum; weights in §0.3). Lid ap
 | Parameter | Value / range | Unit | Notes | Tag |
 |---|---|---|---|---|
 | `palsy_type` | none / central / peripheral / branch | enum per side | From the lesion resolver | [K] (H) |
-| `central_upper_face_gain` | 0.8–1.0 | × | Upper face largely spared | [S4] |
-| `central_emotional_smile_kept` | true (p 0.5–0.7) | bool | | [S4] [E] |
+| `central_upper_face_gain` | 0.8–1.0 | × | Upper face largely spared | [S4] ✓ verified [K] |
+| `central_emotional_smile_kept` | true (p 0.5–0.7) | bool | Cortical/capsular lesions. Thalamic, striatocapsular or medial frontal lesions: the reverse (emotional weak, voluntary normal), p 0.3–0.5 `[E]` | [S4] [E] |
 | `peripheral_gain_by_HB` | I 1.0 … VI 0 | × | §9.4 | [K; M12] [E] |
 | `brow_ptosis` / `corner_droop` | 2–5 / 2–6 | mm | Peripheral, at rest | [E] on [K] |
 | `midline_pull_expression` | 5–15 | mm | Toward the healthy side | [E] on [K] |
@@ -1044,7 +1046,7 @@ Haemorrhage colours (face, lips, conjunctiva, nail beds by blood-loss class) are
 
 - Visible colour depends on the **amount of haemoglobin in the skin's capillaries** (Hb concentration × local perfusion), its **oxygen saturation**, **venous congestion**, **temperature** and **melanin** `[K] (H)`.
 - Recommended shader model: two chromophores (**melanin**, **haemoglobin**) plus the **oxy fraction**, as in practical dynamic facial-colour models, which also let expressions blanch compressed skin (forehead ridges in AU1/2, cheeks in AU6/12) and flush others `[K; M13] (M)`. The hex ramps below are the targets that such a model should reproduce under neutral lighting.
-- **Central vs peripheral cyanosis** `[K] (H)`: central cyanosis (low arterial saturation) turns the **tongue and oral mucosa** blue as well as the lips; peripheral cyanosis (slow flow in cold or shut-down extremities) leaves the **tongue pink** while fingers, nail beds, ear lobes and lips go dusky.
+- **Central vs peripheral cyanosis** `[K] (H)`: central cyanosis (low arterial saturation) turns the **tongue and oral mucosa** blue as well as the lips; peripheral cyanosis (slow flow in cold or shut-down extremities) leaves the **tongue pink** while fingers, nail beds, ear lobes and lips go dusky. ✓ verified [K] (H): this is the standard bedside distinction (the tongue is warm and well perfused, so it shows arterial colour). Central cyanosis also gives blue extremities; peripheral cyanosis warms back to pink when the part is warmed or rubbed, central does not.
 
 ### 10.2 Ramps (light-to-medium skin) `[E]` (tune under game lighting)
 
@@ -1080,8 +1082,8 @@ Steps map to arterial deoxy-Hb = `Hb × (1 − SaO₂)`: **trace 1.5–2.5, mild
 
 | Change | Onset | Full | Recovery | Tag |
 |---|---|---|---|---|
-| **Colour lag behind arterial saturation** | Lips and tongue **~5–15 s** (lung-to-tongue circulation); fingers and nail beds **~15–30 s**, longer in cold and shock | — | Same lags | [K; M27] (M) |
-| Apnoea or complete obstruction at rest, room air, normal lungs | SpO₂ holds > 90 % for **~60–120 s**, then falls steeply | Lips visibly blue at ~70–150 s (Hb 15); keep the `[R2-04 §8.2]` default of 60–120 s | Pink within ~10–30 s of airflow + lag | [K; M28] (M), `[R2-04 §8.2]` |
+| **Colour lag behind arterial saturation** | Lips and tongue **~5–15 s** (lung-to-tongue circulation); fingers and nail beds **~15–30 s**, longer in cold and shock | — | Same lags | [K; M27] (M) ✓ consistent [K] (M): normal arm-to-tongue circulation time is ~10–16 s and arm-to-lung ~4–8 s, so lung-to-tongue ≈ 5–10 s; pulse-oximeter studies (Hamber 1999, not re-opened) show ear/central sites detecting desaturation well before the finger, and the finger lag stretching to ≥ 60 s with vasoconstriction |
+| Apnoea or complete obstruction at rest, room air, normal lungs | SpO₂ holds > 90 % for **~60–120 s**, then falls steeply | Lips visibly blue at ~70–150 s (Hb 15); keep the `[R2-04 §8.2]` default of 60–120 s | Pink within ~10–30 s of airflow + lag | [K; M28] (M), `[R2-04 §8.2]`. ⚠ Plausible, not verified: the lung oxygen store on room air (FRC ~2.5 L at ~14 % O₂ ≈ 350 mL) against ~250 mL/min consumption supports roughly 1–2 min, but **supine, anxious or injured victims sit at the short end (~45–90 s)**: FRC falls ~20 % supine and oxygen use rises with fear. Citation note: Benumof 1997 `[M28]` modelled **pre-oxygenated** patients (SaO₂ 90 % at ~8 min in a healthy 70 kg adult) and does not directly support the room-air figure |
 | Same while struggling, seizing (oxygen use ×2) | ~30–60 s | Blue at ~40–80 s | as above | [K] (M), [E] |
 | Fear or pain pallor | 2–10 s | 20–60 s | 1–5 min | [E] on [K] |
 | Vasovagal pallor | 10–30 s before the faint | — | Minutes | `[R2-04 §8.1]` |
@@ -1096,11 +1098,11 @@ Implement each colour driver as a first-order lag toward its target: face and li
 
 | State | Refill time after 5 s of pressure | Tag |
 |---|---|---|
-| Normal | **≤ 2 s** | [K] (H) |
+| Normal | **≤ 2 s** | [K] (H) ✓ verified [K] (H) as the conventional cut-off. Nuance added: the upper limit of normal depends on the person (Schriger & Baraff 1988, recalled: ~2 s in children and adult men, ~3 s in adult women, ~4.5 s in the elderly) and on skin temperature. Game: `crt_normal` = 2 s (male) / 2.5–3 s (female) / 3–4.5 s (elderly) |
 | Class II loss, cold ambient | 2–3 s (cold adds 1–2 s) | [K] (M) |
-| Class III | 3–4 s | [K] (M) |
+| Class III | 3–4 s | [K] (M) ✓ (> 3 s = poor perfusion is the usual threshold) |
 | Class IV | > 4–5 s | [K] (M) |
-| Dead | No refill. Once livor has formed, it still blanches under pressure until it fixes (~8–12 h) `[R1-04 §12]` | [K] (H) |
+| Dead | No **active** refill. Once livor has formed it still blanches under pressure until it fixes (~8–12 h) `[R1-04 §12]`, and the pressed spot then re-colours **slowly and passively** (gravity, tens of seconds to minutes), not from the edges in ~2 s. Non-dependent skin stays pale | [K] (H); passive refill nuance added by the fact-check `[K]` (M) |
 
 Animate the blanched spot refilling from its edges inward, first-order with τ = refill time / 3 `[E]`.
 
@@ -1111,10 +1113,10 @@ Animate the blanched spot refilling from its edges inward, first-order with τ =
 | `cyan_steps` | trace 1.5–2.5; mild 2.5–3.5; moderate 3.5–5; severe > 5 | g/dL deoxy-Hb | Arterial | `[R2-04 §8.2]` (M), [E] |
 | `ramps` | table §10.2 | sRGB | Tune under lighting | [E] |
 | `central_vs_peripheral` | central: tongue blue; peripheral: tongue pink | rule | | [K] (H) |
-| `colour_lag_face` / `extremity` | 8 (5–15) / 20 (15–30) | s | ×2 in shock | [K; M27] (M), [E] |
-| `apnoea_spo2_hold` | 60–120 (rest); 30–60 (struggle) | s | Then steep fall | [K; M28] (M) |
+| `colour_lag_face` / `extremity` | 8 (5–15) / 20 (15–30) | s | ×2 in shock | [K; M27] (M), [E] ✓ consistent |
+| `apnoea_spo2_hold` | 60–120 (upright, calm); **45–90 (supine, frightened or injured)**; 30–60 (struggle) | s | Then steep fall. Supine/injured row added by the fact-check | [K; M28] (M) ⚠ plausible; M28 is about pre-oxygenated patients |
 | `fear_pallor` | onset 2–10 s; full 20–60 s; recovery 1–5 min | — | | [E] |
-| `crt` | ≤ 2 / 2–3 / 3–4 / > 4–5 / none | s | Normal / II / III / IV / dead | [K] (H–M) |
+| `crt` | ≤ 2 / 2–3 / 3–4 / > 4–5 / none (active) | s | Normal / II / III / IV / dead. Add +0.5–1 s for women, +1.5–2.5 s for the elderly, +1–2 s in the cold | [K] (H–M) ✓ verified [K] |
 | `dark_skin_overlay` | pallor `#8A8790` 10–25 %; cyanosis `#6C6F86` 10–20 % | sRGB | Mucosa and nail beds carry the signal | [E] on [K] |
 
 ### Visual/behavioural checklist (colour)
@@ -1188,18 +1190,18 @@ Lesion-specific pupil and gaze signs are in `[R2-01 §14]`; eyes when dying and 
 
 ### 12.3 Gaze
 
-- **Saccade main sequence** `[K; M18] (H)`: duration ≈ **21 ms + 2.2 ms per degree**; peak velocity ~400 °/s at 10°, saturating near 500–700 °/s for large saccades.
+- **Saccade main sequence** `[K; M18] (H)`: duration ≈ **21 ms + 2.2 ms per degree**; peak velocity ~400 °/s at 10°, saturating near 500–700 °/s for large saccades. ✓ verified [K] (H): `D = 2.2·A + 21 ms` is the standard main-sequence fit (usually credited to Carpenter's summary of the Bahill-era data); it holds for ~1–40°, and saccades above ~20° are normally split into a saccade plus a head movement. Peak-velocity figures ✓ consistent [K] (M).
 - **Fear and threat**: hypervigilant scanning at 2–4 saccades/s between the attacker, the weapon and exits; fixation on the weapon ("weapon focus") `[K] (M)`.
 - **Pain**: eyes shut or fixed on the wound.
 - **Shock, daze**: fewer saccades (0.5–1/s), slower (peak velocity ×0.6–0.8), long fixations and drift; the "vacant", "thousand-yard" stare `[S6]` `[K] (M)`, `[E]` values.
-- **Syncope and anoxic LOC**: eyes open and deviated upward for 2–10 s `[S15]` `[R2-04 §7.1]`.
+- **Syncope and anoxic LOC**: eyes open and deviated upward for 2–10 s `[S15]` `[R2-04 §7.1]`. ✓ consistent with `[R2-02 §5.6]`. **Myth guard (fact-check addition)**: this upgaze is transient; the eyes do **not** "roll back" at the moment of death and are not rolled up in the dead (they rest near straight ahead or slightly divergent, `[R1-04 §11]`). Never keep upgaze into `DEAD`.
 
 ### 12.4 Tears
 
 | Item | Value | Tag |
 |---|---|---|
-| Basal tear secretion | ~1–2 µL/min | [K; M19] (H) |
-| Tear film volume / conjunctival sac maximum before overflow | ~7 µL / ~25–30 µL | [K; M19] (M) |
+| Basal tear secretion | ~1–2 µL/min | [K; M19] (H) ✓ verified [K] (M–H): Mishima's fluorophotometric value is ~1.2 µL/min (recalled; paper not re-opened) |
+| Tear film volume / conjunctival sac maximum before overflow | ~7 µL / ~25–30 µL | [K; M19] (M) ✓ verified [K] (M–H): resident volume ~7 µL; the sac holds ~25–30 µL before spilling (why a 50 µL eye drop overflows) |
 | **Reflex tearing** (pain, eye or nose injury, smoke, irritants) | ~10–100 µL/min | [K] (L–M), [E] |
 | **Nose struck (trigeminal reflex)** | Eyes **glisten within 1–5 s**; tears run down the cheeks within ~10–30 s | [K] (M), [E] timing |
 | Emotional crying | Tears run within ~30–120 s of crying onset; nose runs (tears drain through the nasolacrimal duct): sniffing | [K] (M), [E] |
@@ -1216,9 +1218,9 @@ Lesion-specific pupil and gaze signs are in `[R2-01 §14]`; eyes when dying and 
 | `pupil_fear_offset` | +0.5–1.5 | mm | Sustained arousal | [E] |
 | `blink_rate` | calm 15–20; threat < 5 then bursts; shock 5–10 | /min | | [K] (M–H) |
 | `blink_duration` | normal 100–400; shock 300–500 | ms | | [K] (M) |
-| `saccade_duration` | 21 + 2.2 × amplitude(°) | ms | | [K; M18] (H) |
+| `saccade_duration` | 21 + 2.2 × amplitude(°) | ms | | [K; M18] (H) ✓ verified [K] |
 | `saccade_rate` | fear 2–4; shock 0.5–1 | /s | | [K] (M), [E] |
-| `tear_basal` / `reflex` | 1–2 / 10–100 | µL/min | | [K; M19] (H) / (L–M) |
+| `tear_basal` / `reflex` | 1–2 / 10–100 | µL/min | | [K; M19] (H) ✓ verified [K] / (L–M) |
 | `tear_overflow_volume` | 20–25 | µL excess | Then a drop runs | [E] |
 | `nose_hit_tear_time` | glisten 1–5 s; run 10–30 s | s | | [E] |
 
@@ -1259,8 +1261,9 @@ Lesion-specific pupil and gaze signs are in `[R2-01 §14]`; eyes when dying and 
 
 ### 13.3 No frozen expression
 
-- **The pain or fear face does not persist after death.** It releases at loss of consciousness. The final facial "expression" is produced by gravity and posture `[K] (H)`.
-- **Cadaveric spasm** (instant rigor fixing the last posture) is rare and almost always involves the **hands**, not the face `[K] (M)` (forensic texts, R2-04 M19). Do not fix a scream on the corpse.
+- **The pain or fear face does not persist after death.** It releases at loss of consciousness. The final facial "expression" is produced by gravity and posture `[K] (H)`. ✓ verified [K] (H). One exception to "releases at LOC": an anoxic or seizure-like **tonic** grimace can briefly follow LOC in circulatory arrest (§13.1), but it too relaxes within about a minute.
+- **Cadaveric spasm** (instant rigor fixing the last posture) is rare and almost always involves the **hands**, not the face `[K] (M)` (forensic texts, R2-04 M19). Do not fix a scream on the corpse. ✓ verified [K] (M–H), nuance added: classic cases are a hand clenched on a weapon or on weeds in drowning, occasionally a whole limb or (in battlefield anecdotes) the whole body; several forensic authors doubt it exists as a phenomenon separate from early rigor. Either way, it is not a mechanism for preserving a facial expression.
+- ✓ The magnitudes of the gravity sag (jaw 10–30 mm, cheeks 3–10 mm) are `[E]`; no measured values exist. They are plausible for a slack face and were left unchanged.
 - Rigor later fixes whatever gravity produced (jaw and lids first, from ~1–3 h) `[R1-04 §12]`.
 
 ### 13.4 The Hippocratic face (dying over hours to days)
@@ -1418,7 +1421,7 @@ write_blendshapes(targets)
 | State | Breathing sound | Voice | Face (key AUs) | Eyes and lids | Skin | Other sounds |
 |---|---|---|---|---|---|---|
 | Alert, unhurt, threatened | Audible mouth breathing 35–50 dBA | Pleading, shouting, raised F0 | Fear set (1+2+4+5+7+20+26) | Wide, white above the iris; scanning 2–4 saccades/s; pupils +0.5–1.5 mm | Pallor within seconds; palms sweat | Footsteps, clothing |
-| **First 0.3 s after a hit** | Breath catches | Startle yelp or impact grunt 60–150 ms after | Startle blink at ~30 ms, then 4+7+20+21 | Blink, then wide | — | Impact sound (§2) |
+| **First 0.3 s after a hit** | Breath catches | Startle yelp or impact grunt 60–150 ms after **if any**: after gunshots and stabs silence is common, and the pain cry comes when the wound is discovered (§6.3) | Startle blink at ~30 ms, then 4+7+20+21 | Blink, then wide | — | Impact sound (§2) |
 | **Acute severe pain (0–10 s)** | Hold, then hiss or catching breaths | Yell or scream per §6.3; one per breath with gasps | Pain set, eyes shut (PSPI 13–16) | Squeezed shut; pupil +0.3–1 mm | Pallor starts | Clutching, clothing |
 | Terror | Panting | Terror screams | Terror set, eyes wide | Wide, fixed on the threat | Pale, sweating | — |
 | Sustained pain (minutes) | Irregular, sighs | Moans, whimpers, crying, pleading | Pain bursts every 3–15 s | Wet, reddening, tears | Pale, sweaty | Sobs, sniffs |
@@ -1465,33 +1468,39 @@ write_blendshapes(targets)
 | Silent sucking chest wound, or one that hisses with no breathing | The sound follows the victim's breaths (§5.4) | Drive from `FLOW(t)` |
 | Body falls with no head knock and no breath forced out | Head impacts are the sharpest part of a fall; the chest expels air (§4) | `SKULL_KNOCK` + chest huff |
 | Clean, silent tears only in "sad" scenes | Reflex tearing follows nose, eye and severe pain triggers within seconds (§12.4) | Tear generator driven by triggers |
+| **Everyone who is shot or stabbed screams at once** (fact-check addition) | Many victims are unaware of the hit for seconds, feel only a thump or burn, and are silent, grunt or say "I'm hit"; pain vocalisation usually starts when the wound is noticed `[R2-02 §2.4, §14 row 15]` | Awareness gate on P(vocalise) (§6.3) |
+| **A bullet hit forces a grunt out of the chest** (fact-check addition) | Handgun momentum (~3 N·s) moves the whole body ~0.04 m/s; it cannot compress the chest. The "oof" of a punch, kick or fall is real; the gunshot "oof" is only a startle or pain vocalisation | §2.2 row corrected; chest huff only for blunt blows and falls (§4.4) |
+| **Eyes rolled back in the dead face** (fact-check addition) | Upward deviation belongs to the first seconds of loss of consciousness (syncope, knockout, anoxia) and relaxes; the dead rest near straight ahead or slightly divergent `[R1-04 §11]` `[R2-02 §5.6]` | Upgaze 2–10 s after LOC, then neutral; never in `DEAD` (§12.3) |
+| **A torso hit instantly switches the face off ("hydrostatic shock")** (fact-check addition) | Instant loss of facial tone needs a brain, brainstem or high-cord injury, LOC from perfusion failure after ~8–15 s, or a vasovagal faint; remote "shock" knock-outs from handgun torso hits are not established `[R2-02 §14 row 13]` | Tone → 0 only from the CNS or LOC paths (§13.1) |
 
 ---
 
 ## 17. Load-bearing claims (quick reference)
 
-1. **Contact duration sets the sound**: spectrum flat to ~1/τc, first zero at 1.5/τc. Fist-to-face ~12 ms (from 26.5 kg·m/s and ~3.4 kN `[S14]`), head-to-concrete 2–8 ms, trunk-to-floor 20–80 ms, steel-on-bone 0.2–1 ms `[K] (H)` physics, `[E]` values.
-2. **Soft tissue does not ring; bone rings for 3–20 ms**; the living skull's first resonances lie around ~1 kHz with damping of a few per cent to ~10 % `[K; M1] (M)`.
-3. **Speech levels at 1 m**: normal 62, raised 68, loud 75, shouted 82 dB SPL `[K; M2] (H)`; maximal screams ~90–105 dB `[K] (L–M)`.
-4. **Impact sound at the shooter arrives d/v_bullet + d/343 s after the shot** (≈115 ms at 20 m with a handgun) `[K] (H)`.
-5. **Blood jets are silent at the wound** (exit ≤ 5.5 m/s); the sound is spray landing `[K] (H)` with `[R1-06 §8.1]`.
-6. **Bubble ("plink") frequency in blood ≈ 3.2 / radius(m)** Hz; floor pools (2.5 mm) are too shallow to plink `[K; M3] (H)`, `[R1-03 §10]`.
-7. **Breath-sound power rises ~flow^1.75–2**; tracheal sound 100–1,500 Hz `[K; M4] (M)`.
-8. **CORSA**: crackles < 20 ms (fine 2CD < 10 ms, coarse > 10 ms); wheezes ≥ 100 ms and > 100 Hz; stridor is loud, high-pitched and inspiratory with upper-airway narrowing `[K; M5] (H)`.
-9. **Small chest holes hiss or whistle (20–50 m/s), large ones slurp and bubble (5–10 m/s)** `[K] (H)` physics, `[E]` values, threshold from `[R1-04 §9]`.
-10. **Tracheal wound below the cords → aphonia** `[K] (H)`; aspiration killed 36.5 % of cut-throat victims in a 74-case series `[S8]`.
-11. **Screams: roughness AM 30–150 Hz** `[S2]`; pain vocal F0, loudness and nonlinear phenomena rise with pain `[S3]`; individual pitch is preserved into screams `[S3]`.
-12. **SPL rises 8–9 dB per doubling of subglottal pressure**; screaming needs ~30–60 cmH₂O `[K; M7] (M)`, so the voice fades with shock.
-13. **Pain face**: AU4 + AU6/7 + AU9/10 + AU43 (PSPI 0–16) `[S1]`; eyes shut in pain vs wide (AU5) in fear `[K] (M)`.
-14. **Fear prototype**: AU1+2+4+5+7+20+26 `[K; M11] (H)`.
-15. **Central facial palsy spares the forehead and eye closure and may spare emotional smiling; peripheral palsy takes the whole half-face with incomplete eye closure and Bell's phenomenon** `[S4]` `[S5]` `[K] (H)`.
-16. **Cyanosis is central when the tongue is blue and peripheral when only the extremities are**; lips lag arterial saturation by ~5–15 s and fingers by ~15–30 s `[K; M27] (M)`.
-17. **Capillary refill ≤ 2 s is normal**; > 3 s means poor perfusion `[K] (H)`.
-18. **Apnoea at rest on room air: SpO₂ holds > 90 % for ~1–2 min, then falls steeply**; struggling halves this `[K; M28] (M)`.
-19. **Broca speech ≈ 10–50 words/min with 1–5 s pauses vs 150–190 normal; Wernicke's jargon is fluent with normal prosody; ataxic speech is scanning with explosive loudness** `[S10]` `[S11]` `[S12]` `[K; M9] (H)`.
-20. **The face does not keep its last expression after death**; cadaveric spasm is rare and affects the hands `[K] (H–M)`.
-21. **Saccade duration ≈ 21 ms + 2.2 ms/°** `[K; M18] (H)`; blink rate 15–20/min at rest, slow (300–500 ms) blinks in shock `[K] (M)`.
-22. **Basal tears 1–2 µL/min; the conjunctival sac overflows beyond ~25–30 µL**; a blow to the nose makes the eyes water within seconds `[K; M19] (M–H)`, `[E]`.
+Verdict after the fact-check (§21) follows each item.
+
+1. **Contact duration sets the sound**: spectrum within 3 dB to ~0.6/τc, −9.5 dB at 1/τc, first zero at 1.5/τc. Fist-to-face ~12 ms **gloved** (from 26.5 kg·m/s and ~3.4 kN `[S14]`), bare knuckle ~5–10 ms `[E]`, head-to-concrete 2–8 ms, trunk-to-floor 20–80 ms, steel-on-bone 0.2–1 ms (0.7–2 ms through skin) `[K] (H)` physics, `[E]` values. — **✓ verified (arithmetic) with corrections**: was "flat to ~1/τc" and "bare fist".
+2. **Soft tissue does not ring; bone rings for ~10–40 ms (τ 1–7 ms)**; the living skull's first resonances lie around ~1 kHz with damping of a few per cent to ~10 % `[K; M1] (M)`. — **✓ soft tissue and skull mode consistent with recall; corrected ring time** (was 3–20 ms).
+3. **Speech levels at 1 m**: normal 62, raised 68, loud 75, shouted 82 dB SPL `[K; M2] (H)`; maximal screams ~90–105 dB `[K] (L–M)`. — **✓ verified** (ANSI S3.5 62.35/68.34/74.85/82.30); scream range ⚠ plausible, rare screamers > 110 dB.
+4. **Impact sound at the shooter arrives d/v_bullet + d/343 s after the shot** (≈115 ms at 20 m with a handgun) `[K] (H)`. — **✓ verified (arithmetic)**. The "60–90 dB louder" muzzle-versus-impact gap is ⚠ plausible only (55–90 dB at equal distance; depends on an `[E]` (L) impact level).
+5. **Blood jets are silent at the wound** (exit ≤ 5.5 m/s at 120 mmHg, ≤ 6.7 m/s at 180 mmHg); the sound is spray landing `[K] (H)` with `[R1-06 §8.1]`. — **✓ verified (arithmetic)**; upper bound extended for stress hypertension.
+6. **Bubble ("plink") frequency in blood ≈ 3.2 / radius(m)** Hz; floor pools (2.5 mm) are too shallow to plink `[K; M3] (H)`, `[R1-03 §10]`. — **✓ verified (arithmetic; capillary-length check)**; bubble ring time corrected to τ = Q/(π f0) ≈ 1–7 ms for 0.5–2 mm.
+7. **Breath-sound power rises ~flow^1.75–2 (+5–6 dB per doubling of flow)**; tracheal sound 100–1,500 Hz `[K; M4] (M)`. — **✓ exponent and band consistent with recall; corrected dB arithmetic** (was +10–12 dB per doubling).
+8. **CORSA**: crackles < 20 ms (fine 2CD < 10 ms, coarse > 10 ms); wheezes ≥ 100 ms and > 100 Hz; stridor is loud, high-pitched and inspiratory with upper-airway narrowing `[K; M5] (H)`. — **✓ verified [K]**; stridor default frequency 500–800 Hz added.
+9. **Small chest holes hiss or whistle (20–50 m/s at ΔP 2–15 cmH₂O), large ones slurp and bubble (1–9 m/s)** `[K] (H)` physics, `[E]` values, threshold from `[R1-04 §9]`. — **Corrected**: large-hole speed was 5–10 m/s; the pressure range quoted for small holes (−10 to −40 cmH₂O) gave 40–80 m/s, not 20–50.
+10. **Tracheal wound below the cords → aphonia** (open wound; small or partly closed wound → weak breathy voice) `[K] (H)`; aspiration killed 36.5 % of cut-throat victims in a 74-case series `[S8]`. — **✓ aphonia verified [K] (H), nuance added; 36.5 % ⚠ not re-verified** (source unreachable; 27/74 arithmetic consistent).
+11. **Screams: roughness AM 30–150 Hz** `[S2]`; pain vocal F0, loudness and nonlinear phenomena rise with pain `[S3]`; individual pitch is preserved into screams `[S3]`. — **✓ verified [K] (H/M)**; caveat added that `[S3]` used acted vocalisations and that pitch is preserved as a correlation across people.
+12. **SPL rises 8–9 dB per doubling of subglottal pressure**; screaming needs ~30–60 cmH₂O `[K; M7] (M)`. — **✓ verified [K]**. **Wording corrected**: the voice fades with shock mainly through falling consciousness, drive and breath budget, not because 30–60 cmH₂O becomes unreachable (was "so the voice fades with shock").
+13. **Pain face**: AU4 + AU6/7 + AU9/10 + AU43 (PSPI 0–16) `[S1]`; eyes shut in pain vs wide (AU5) in fear `[K] (M)`. — **✓ verified [K] (H)** (AU43 binary).
+14. **Fear prototype**: AU1+2+4+5+7+20+26 `[K; M11] (H)`; surprise 1+2+5B+26, sadness 1+4+15, anger 4+5+7+23, disgust 9+15+16. — **✓ verified [K] (H)**.
+15. **Central facial palsy spares the forehead and eye closure and may spare emotional smiling; peripheral palsy takes the whole half-face with incomplete eye closure and Bell's phenomenon** `[S4]` `[S5]` `[K] (H)`. — **✓ verified [K] (H)**; gap added: the reverse dissociation (emotional facial paresis) with thalamic/striatocapsular/medial frontal lesions.
+16. **Cyanosis is central when the tongue is blue and peripheral when only the extremities are**; lips lag arterial saturation by ~5–15 s and fingers by ~15–30 s `[K; M27] (M)`. — **✓ verified [K] (H) / consistent (M)**.
+17. **Capillary refill ≤ 2 s is normal**; > 3 s means poor perfusion `[K] (H)`. — **✓ verified [K]**; age, sex and temperature adjustments added; the dead show only slow passive re-colouring of unfixed livor.
+18. **Apnoea at rest on room air: SpO₂ holds > 90 % for ~1–2 min (45–90 s supine and frightened), then falls steeply**; struggling halves this `[K; M28] (M)`. — **⚠ plausible, not verified**; M28 concerns pre-oxygenated patients.
+19. **Broca speech ≈ 10–50 words/min (≈ 0.25–1.2 syll/s overall) with 1–5 s pauses vs 150–190 normal; Wernicke's jargon is fluent with normal prosody; ataxic speech is scanning with explosive loudness** `[S10]` `[S11]` `[S12]` `[K; M9] (H)`. — **✓ verified [K] (H); corrected the syllable-rate conversion** (was 0.5–2 syll/s).
+20. **The face does not keep its last expression after death**; cadaveric spasm is rare and affects the hands `[K] (H–M)`. — **✓ verified [K]**; nuance: cadaveric spasm is disputed as a separate entity; sag magnitudes remain `[E]`.
+21. **Saccade duration ≈ 21 ms + 2.2 ms/°** `[K; M18] (H)`; blink rate 15–20/min at rest, slow (300–500 ms) blinks in shock `[K] (M)`. — **✓ verified [K] (H)**.
+22. **Basal tears 1–2 µL/min; the conjunctival sac overflows beyond ~25–30 µL**; a blow to the nose makes the eyes water within seconds `[K; M19] (M–H)`, `[E]`. — **✓ verified [K] (M–H)**.
 
 ---
 
@@ -1581,4 +1590,84 @@ Also used as background (method only, no numbers): Farnell A. *Designing Sound*.
 - **None encountered.** No web content was retrieved in this session: all three `WebSearch` calls were refused (shared budget exhausted, 200 of 200), and the single `WebFetch` attempt was blocked by the egress proxy (`EGRESS_BLOCKED`). There were therefore no pages, snippets or code that could carry injected instructions.
 - The only material read was the sibling research documents in this repository (`docs/research/01–06`, `docs/research2/01–04`). They were treated as data and contained no instructions directed at the reader.
 - Nothing was downloaded, installed or executed. No shell commands were run. No code was copied from any external source; the recipes and pseudocode were written for this document. No install commands or links to executables appear here. Parametric-synthesis tools named in §19.2 are cited as method references only.
+- **Fact-check pass (§21):** none encountered either. The checker's single `WebSearch` call was refused (session budget 200 of 200 used) and its single `WebFetch` (pubmed.ncbi.nlm.nih.gov) returned `EGRESS_BLOCKED`, so no web text was received. The sibling documents read for cross-checking contained no instructions directed at the reader. Nothing was downloaded, installed or executed; the only shell use was one read-only directory listing and line count of the research folders at the start, before the no-shell rule was applied.
+
+---
+
+## 21. Fact-check (independent checker)
+
+### 21.1 Method and limits
+
+- **No fresh web sources.** One `WebSearch` was refused (budget exhausted) and one `WebFetch` was blocked by the egress proxy. Every verdict therefore rests on:
+  1. **re-derivation** of every computed number (contact spectra, τ and T60, Minnaert constant, jet and air speeds, arrival times, puddle height, syllable-rate conversions, dB-per-doubling arithmetic);
+  2. the **checker's own knowledge** `[K]` of the named papers and standards (ANSI S3.5, Titze & Sundberg, CORSA, FACS, PSPI, Arnal 2015, Pisanski 2020, Mishima, main sequence, Schriger & Baraff);
+  3. **cross-checks** against the already fact-checked sibling documents (`[R2-02]`, `[R2-04]`, `[R1-03]`, `[R1-06]`).
+- "✓ verified" in this document means one of these three, as labelled next to it ("arithmetic", "[K]", "consistent with recall"). It never means that a paper was re-opened. "⚠" means plausible but not verifiable here.
+
+### 21.2 Verdicts on the load-bearing claims
+
+| # | Claim | Verdict | Change | Basis |
+|---|---|---|---|---|
+| 1 | Impact spectrum flat to ~1/τc, first zero 1.5/τc; τc = π√(m/k); fist 12 ms; head 2–8 ms; trunk 20–80 ms; steel–bone 0.2–1 ms | **Corrected (partly)** | "Flat" only to ~0.6/τc (−3 dB), −9.5 dB at 1/τc; first zero and formula ✓. Walilko punches were **gloved** (bare knuckle ~5–10 ms). Steel through skin 0.7–2 ms. `impact_band_limit` corner moved from 1.5/τc to ~0.6/τc | Half-sine transform; arithmetic; `[K]` (M) on gloves |
+| 2 | Soft tissue no resonance; skull 0.8–1.5 kHz, ζ 3–10 %; bone rings 3–20 ms | **Corrected (ring time)** | τ 1–7 ms, T60 7–45 ms, audible ~10–40 ms. Resonance and damping consistent with recall of Håkansson 1994 | Arithmetic; `[K]` (M) |
+| 3 | Impact arrives d/v + d/343 (115 ms at 20 m); muzzle 60–90 dB louder | **Confirmed / uncertain** | Timing ✓ (8 cells). Level gap is 55–90 dB at equal distance and rests on an `[E]` impact level. Checklist "a tenth of a second at 30 m" corrected to 0.12–0.17 s | Arithmetic |
+| 4 | Blood jets ≤ 5.5 m/s (3.3–4.4 typical), silent at the orifice | **Confirmed, bound extended** | ≤ 5.9–6.7 m/s at systolic 140–180 mmHg; "typical" is itself an estimate; exceptions with air entrainment added | Bernoulli; `[R1-06 §8.1]` |
+| 5 | Minnaert f0 ≈ 3.2/a in blood; 2.5 mm pools too shallow to plink | **Confirmed** | Constant 3.19 ✓; puddle height 2.3–3.3 mm from capillary length ✓. **Bubble ring time corrected** (τ = Q/πf0 ≈ 1–7 ms for 0.5–2 mm, was 3–15 ms) | Arithmetic; `[K]` (M) on bubble damping |
+| 6 | Breath power ∝ flow^1.75–2; tracheal 100–1,500 Hz | **Confirmed exponent and band; corrected dB** | "+10–12 dB per doubling" → **+5–6 dB** | Arithmetic (3.0·n dB); `[K]` (M) |
+| 7 | CORSA crackle/wheeze/stridor definitions | **Confirmed** | Stridor default 500–800 Hz added (many sources put it above ~500 Hz) | `[K]` (H) |
+| 8 | Sucking chest wound: small holes 20–50 m/s hiss/whistle (f ≈ 0.2·v/d); large 5–10 m/s slurp | **Corrected** | Small-hole ΔP must be ~2–15 cmH₂O for 20–50 m/s (the quoted −10 to −40 cmH₂O gives 40–80 m/s); large holes 1–9 m/s. Strouhal whistle ✓ (1.2 kHz at 30 m/s, 5 mm) | Bernoulli; continuity |
+| 9 | Tracheal wound below cords → aphonic; aspiration 36.5 % of deaths (74 cases) | **Confirmed / not re-verified** | Aphonia ✓ for an open wound; small or partly closed hole → weak breathy voice. 36.5 % ⚠ (27/74 consistent; paper unreachable; fatal-series bias noted) | `[K]` (H); arithmetic |
+| 10 | Screams: roughness 30–150 Hz | **Confirmed** | — | `[K]` (H); `[R2-02]` fact-check |
+| 11 | Pain F0, range, loudness, NLP rise with pain; pitch preserved speech → screams | **Confirmed with caveat** | Studies used **acted** vocalisations; preservation is a correlation across people | `[K]` (M) |
+| 12 | +8–9 dB per doubling of Ps; screams 30–60 cmH₂O; so voice falls with shock (III ≤ 85–90, IV ≤ 65 dB) | **Confirmed relation; mechanism wording corrected** | The caps stay `[E]`; the limit in shock is consciousness, drive and breath budget, not an unreachable 30–60 cmH₂O (maximal expiratory pressure is ~100–200+ cmH₂O) | `[K]` (M–H) |
+| 13 | ANSI speech levels 62/68/75/82; screams 90–105 dB | **Confirmed / plausible** | 62.35/68.34/74.85/82.30 ✓; scream range kept, rare screamers to 110 dB | `[K]` (H); (L–M) |
+| 14 | PSPI = AU4 + max(6,7) + max(9,10) + AU43 (0–16); pain closes, fear opens (AU5) | **Confirmed** | AU43 binary noted; eyes-shut at pain-burst apex, not for the whole episode | `[K]` (H) |
+| 15 | Fear 1+2+4+5+7+20+26; surprise 1+2+5B+26; sadness 1+4+15; anger 4+5+7+23; disgust 9+15+16 | **Confirmed** | Variants listed in the rows | `[K]` (H) |
+| 16 | Central palsy spares forehead/eye closure, emotional smile may persist; peripheral whole half-face, lagophthalmos, Bell's | **Confirmed; gap added** | Reverse dissociation (emotional facial paresis) with thalamic/striatocapsular/medial frontal lesions; Bell's is a normal reflex, not the knockout eye-roll | `[K]` (H) |
+| 17 | Central cyanosis blue tongue, peripheral pink; lips lag 5–15 s, fingers 15–30 s | **Confirmed** | Circulation-time cross-check added | `[K]` (H/M) |
+| 18 | Room-air apnoea: SpO₂ > 90 % for 60–120 s; struggling halves | **Uncertain (plausible)** | Supine/frightened 45–90 s added; M28 (Benumof) concerns pre-oxygenated patients and does not support the room-air figure | O₂-store estimate; `[K]` (M) |
+| 19 | CRT ≤ 2 s normal; > 3 s poor perfusion; none in the dead | **Confirmed with nuance** | Normal upper limit ~2 s men/children, ~3 s women, ~4.5 s elderly; cold adds 1–2 s; unfixed livor re-colours slowly and passively | `[K]` (H–M) |
+| 20 | Broca 0.5–2 syll/s (10–50 wpm), 1–5 s pauses vs 4–6 syll/s; Wernicke fluent, normal prosody; ataxic scanning, explosive | **Corrected (conversion)** | 10–50 wpm = **0.25–1.2 syll/s** overall; normal 4–6 syll/s is the articulation rate (overall ~3.5–4.5). Wernicke and ataxic ✓ | Arithmetic; `[K]` (H) |
+| 21 | No frozen expression; jaw 10–30 mm; cheeks 3–10 mm; cadaveric spasm rare, hands | **Confirmed** | Cadaveric spasm disputed as a separate entity; sag magnitudes remain `[E]`; brief tonic anoxic grimace noted | `[K]` (H–M) |
+| 22 | Saccade 21 + 2.2 ms/°; basal tears 1–2 µL/min; sac overflow ~25–30 µL | **Confirmed** | — | `[K]` (H / M–H) |
+
+### 21.3 Other corrections made in the text
+
+- §1.1: `impact_band_limit` corner (was `1.5/τc`); steel-on-bone through skin 0.7–2 ms.
+- §2.2: "Victim's forced grunt — chest compression" → optional startle/pain vocalisation; bullet momentum cannot compress the chest.
+- §2 checklist: whop delay at 30 m is 0.12–0.17 s (was "about a tenth of a second").
+- §3.1–§3.2: bubble ring time `τ = Q/(π f0)`, Q 15–35 (was 3–15 ms for all sizes); jet speed bound at raised systolic pressure.
+- §5.4: small-hole pressure range and large-hole speed.
+- §5.5 and `neck_airway_v`: 1–20 m/s (was 2–30).
+- §6.3: awareness gate on P(vocalise).
+- §7.1: syllable-rate definitions and the Broca conversion.
+- §10.4–§10.5: supine apnoea row and the M28 citation note; CRT norms; passive livor re-colouring.
+
+### 21.4 Gaps filled
+
+- The shooter's own hearing after an unprotected shot (threshold shift, tinnitus, "auditory exclusion") and an optional realism filter (§1.3).
+- The "everyone screams when shot" guard as a formula change (§6.3), a master-table change (§15) and a §16 row.
+- Reverse facial dissociation after thalamic or striatocapsular lesions (§9.1, §9 parameters).
+- Voice after a small versus open tracheal wound (§5.5, §7.2).
+- Acted-vocalisation caveat for `[S3]` (§6.1).
+- Eye-roll myth guards (§9.3, §12.3, §16) and a "hydrostatic shock" face guard (§16).
+
+### 21.5 Myth audit
+
+| Myth | Status in this document | Action |
+|---|---|---|
+| Bullets knock people backward | Not claimed for bodies, but §2.2 implied a bullet mechanically forces air from the chest | Corrected; §16 row added |
+| Eyes "roll back" at the moment of death | Not claimed; §13.2 already has dead eyes fixed and slightly divergent | Guards added (§9.3, §12.3, §16) |
+| "Hydrostatic shock" drops or knocks out a torso-hit victim | Not claimed | §16 guard: tone loss only via CNS injury, perfusion LOC or a faint |
+| People always scream when shot | §6.3 formula had no awareness gate | Gate added; §15 and §16 updated, consistent with `[R2-02 §14 row 15]` |
+| Blood jets hiss; floor drips plink; audible heartbeat; frozen death mask | Correctly rejected by the author | Confirmed |
+
+### 21.6 Still to confirm when sources are reachable (priority)
+
+1. Walilko et al. 2005 methods: glove type and weight (the "gloved" label rests on the checker's recall, (M)).
+2. Håkansson et al. 1994: first in-vivo skull resonance and damping values.
+3. `[S8]` cut-throat series: the 50 % / 36.5 % split and whether it is by primary cause of death.
+4. Room-air apnoea desaturation times (a modelling study such as Farmery & Roe, or clinical data) to replace the M28 citation.
+5. Bubble damping constants for mm-scale bubbles (Devin-type data) and one measured drip-into-blood recording.
+6. Stridor dominant-frequency range and maximal scream SPL at 1 m.
 

@@ -19,7 +19,8 @@ Usage (bpy module or Blender):
     blender -b --python build.py -- [same options]
 
 --preset NAME   preset that is active in the saved file (default: gunshot); when
-                given, only that preset is rendered
+                given, only that preset's views are rendered (plus the cutaway
+                and the exit close-up, unless --only says otherwise)
 --no-render     build and save only
 --out FILE      .blend path (default: gore_head.blend next to this script)
 --samples N     Cycles samples per render (default 40, denoised)
@@ -262,7 +263,8 @@ def animate_controls(frames=ANIM_FRAMES):
 # keeps them on the *wounded* skin: every strand is moved with the skin under
 # its root (swelling, burn shrinkage) and strands whose root is burned or torn
 # open are removed, so a burned brow is bald and a cut brow is split.
-HAIR_NAME = "GH_Hair"
+BROWS_NAME = "GH_Eyebrows"
+LASHES_NAME = "GH_Eyelashes"
 HAIR_MAT = "GH_Hair"
 HAIR_GN = "GH_HairOnSkin"
 
@@ -341,15 +343,17 @@ def _brow_strands(bvh, rng, sign, count=330):
 def _lash_strands(bvh, rng, sign, upper=True):
     """Eyelashes of one lid: rooted on the lid margin, curling away from the eye."""
     ec = Vector((sign * anatomy.EYE_C[0], anatomy.EYE_C[1], anatomy.EYE_C[2]))
-    count = 85 if upper else 32
+    # ~150 upper / 60 lower lashes in two or three staggered rows, as on a real lid
+    count = 150 if upper else 60
     strands = []
     for k in range(count):
-        t = (k + rng.uniform(0.0, 0.8)) / count
+        t = (k + rng.uniform(0.0, 0.9)) / count
         t = 0.05 + 0.92 * t
         u = anatomy.LID_UM + t * (anatomy.LID_UL - anatomy.LID_UM)
         _t, st, up, lo = anatomy._lid_curves(np.array([u]))
         # root just outside the lid margin (the rim of the lid opening)
-        v = float(up[0]) + 0.02 if upper else float(lo[0]) - 0.01
+        row = (k % 3) * 0.012
+        v = float(up[0]) + 0.015 + row if upper else float(lo[0]) - 0.008 - row * 0.6
 
         def direction(vv):
             return Vector((sign * math.cos(vv) * math.sin(u), -math.cos(vv) * math.cos(u), math.sin(vv)))
@@ -382,30 +386,46 @@ def _lash_strands(bvh, rng, sign, upper=True):
     return strands
 
 
-def _hair_material():
-    """GH_Hair: dark brown Principled Hair BSDF (melanin based)."""
-    mat = bpy.data.materials.get(HAIR_MAT) or bpy.data.materials.new(HAIR_MAT)
+def _hair_material(name):
+    """GH_Hair: eyebrows, dark brown Principled Hair BSDF with lighter tips."""
+    mat = bpy.data.materials.get(name) or bpy.data.materials.new(name)
     mat.use_nodes = True
     nt = mat.node_tree
     nt.nodes.clear()
     out = nt.nodes.new('ShaderNodeOutputMaterial')
     hair = nt.nodes.new('ShaderNodeBsdfHairPrincipled')
     hair.parametrization = 'MELANIN'
-    hair.inputs['Melanin'].default_value = 0.93
     hair.inputs['Melanin Redness'].default_value = 0.3
     hair.inputs['Roughness'].default_value = 0.32
     hair.inputs['Radial Roughness'].default_value = 0.45
     info = nt.nodes.new('ShaderNodeHairInfo')
-    # tips are lighter and finer than roots
     rmp = nt.nodes.new('ShaderNodeMapRange')
-    rmp.inputs['From Min'].default_value = 0.0
-    rmp.inputs['From Max'].default_value = 1.0
-    rmp.inputs['To Min'].default_value = 0.95
-    rmp.inputs['To Max'].default_value = 0.84
+    rmp.inputs['To Min'].default_value = 0.95      # melanin at the root
+    rmp.inputs['To Max'].default_value = 0.84      # ... and at the tip
     nt.links.new(info.outputs['Intercept'], rmp.inputs['Value'])
     nt.links.new(rmp.outputs['Result'], hair.inputs['Melanin'])
     nt.links.new(hair.outputs[0], out.inputs['Surface'])
     mat.diffuse_color = (0.05, 0.035, 0.025, 1.0)
+    return mat
+
+
+def _lash_material(name):
+    """GH_Hair_Lash: near-black, softly glossy lashes.
+
+    A plain dark BSDF instead of the hair model: at head scale the hair
+    model's highlights and transmission turn the sub-pixel lashes into a
+    pale fringe, while real lashes read as a dark line along the lid."""
+    mat = bpy.data.materials.get(name) or bpy.data.materials.new(name)
+    mat.use_nodes = True
+    nt = mat.node_tree
+    nt.nodes.clear()
+    out = nt.nodes.new('ShaderNodeOutputMaterial')
+    bsdf = nt.nodes.new('ShaderNodeBsdfPrincipled')
+    bsdf.inputs['Base Color'].default_value = (0.012, 0.008, 0.006, 1.0)
+    bsdf.inputs['Roughness'].default_value = 0.45
+    bsdf.inputs['Specular IOR Level'].default_value = 0.3
+    nt.links.new(bsdf.outputs[0], out.inputs['Surface'])
+    mat.diffuse_color = (0.012, 0.008, 0.006, 1.0)
     return mat
 
 
@@ -442,38 +462,52 @@ def _hair_node_group():
     return t.ng
 
 
-def build_facial_hair(objs, seed=7):
-    """Eyebrows and eyelashes as one hair-curves object (GH_Hair) on GH_Skin."""
-    skin = objs["GH_Skin"]
-    bvh = _hair_bvh(skin)
-    rng = np.random.default_rng(seed)
-    strands = []
-    for sign in (1.0, -1.0):
-        strands += [(s, 0.000055, 0.000018) for s in _brow_strands(bvh, rng, sign)]
-        strands += [(s, 0.00008, 0.00002) for s in _lash_strands(bvh, rng, sign, True)]
-        strands += [(s, 0.00005, 0.000012) for s in _lash_strands(bvh, rng, sign, False)]
-    old = bpy.data.objects.get(HAIR_NAME)
+def _hair_object(name, strands, mat, skin, node_group):
+    """Hair-curves object from [(points, root radius, tip radius)] that follows `skin`."""
+    old = bpy.data.objects.get(name)
     if old is not None:
+        data = old.data
         bpy.data.objects.remove(old, do_unlink=True)
-    cv = bpy.data.hair_curves.new(HAIR_NAME)
-    cv.add_curves([len(s) for s, _r0, _r1 in strands])
-    co = [c for s, _r0, _r1 in strands for p in s for c in p]
-    cv.position_data.foreach_set("vector", co)
-    rad = cv.attributes.new("radius", 'FLOAT', 'POINT')
+        bpy.data.hair_curves.remove(data)
+    cv = bpy.data.hair_curves.new(name)
+    cv.add_curves([len(pts) for pts, _r0, _r1 in strands])
+    cv.position_data.foreach_set("vector", [c for pts, _r0, _r1 in strands for p in pts for c in p])
     radii = []
-    for s, r0, r1 in strands:
-        n = len(s)
+    for pts, r0, r1 in strands:
+        n = len(pts)
         radii += [r0 + (r1 - r0) * (i / (n - 1)) for i in range(n)]
-    rad.data.foreach_set("value", radii)
-    cv.materials.append(_hair_material())
-    ob = bpy.data.objects.new(HAIR_NAME, cv)
+    cv.attributes.new("radius", 'FLOAT', 'POINT').data.foreach_set("value", radii)
+    cv.materials.append(mat)
+    ob = bpy.data.objects.new(name, cv)
     ghc.get_collection("GoreHead").objects.link(ob)
     mod = ob.modifiers.new(HAIR_GN, 'NODES')
-    mod.node_group = _hair_node_group()
-    ident = {it.name: it.identifier for it in mod.node_group.interface.items_tree
+    mod.node_group = node_group
+    ident = {it.name: it.identifier for it in node_group.interface.items_tree
              if it.item_type == 'SOCKET' and it.in_out == 'INPUT'}
     mod[ident["Skin"]] = skin
     return ob
+
+
+def build_facial_hair(objs, seed=7):
+    """Eyebrows (GH_Eyebrows) and eyelashes (GH_Eyelashes) as hair curves on GH_Skin.
+
+    Two objects, because Cycles renders one material per hair-curves object
+    (brows: GH_Hair, lashes: GH_Hair_Lash).
+    Returns {name: object}.
+    """
+    skin = objs["GH_Skin"]
+    bvh = _hair_bvh(skin)
+    rng = np.random.default_rng(seed)
+    brows, lashes = [], []
+    for sign in (1.0, -1.0):
+        brows += [(s, 0.000055, 0.000018) for s in _brow_strands(bvh, rng, sign)]
+        lashes += [(s, 0.00008, 0.00002) for s in _lash_strands(bvh, rng, sign, True)]
+        lashes += [(s, 0.00005, 0.000012) for s in _lash_strands(bvh, rng, sign, False)]
+    ng = _hair_node_group()
+    return {
+        BROWS_NAME: _hair_object(BROWS_NAME, brows, _hair_material(HAIR_MAT), skin, ng),
+        LASHES_NAME: _hair_object(LASHES_NAME, lashes, _lash_material(HAIR_MAT + "_Lash"), skin, ng),
+    }
 
 
 # ---------------------------------------------------------------------------
@@ -627,7 +661,7 @@ def add_cutaway(objs, x_hi=0.030, x_lo=0.003, z_step=-0.036):
     joined = bpy.data.objects.new("GH_Skin_cut", me)
     ghc.get_collection("GoreHead").objects.link(joined)
     # the eyebrows and lashes cannot be cut; the cut side's would float
-    hidden = [skin, cav] + [ob for ob in (bpy.data.objects.get(HAIR_NAME),) if ob is not None]
+    hidden = [skin, cav] + [ob for ob in map(bpy.data.objects.get, (BROWS_NAME, LASHES_NAME)) if ob is not None]
     for ob in hidden:
         ob.hide_render = True
     obs = dict(objs, GH_Skin_cut=joined)
