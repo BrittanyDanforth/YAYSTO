@@ -1,0 +1,338 @@
+{
+ "data": {
+  "blend_shape_meshes": [
+   "GB_Head",
+   "GB_EyeFX_L",
+   "GB_EyeFX_R",
+   "GB_BrowLash",
+   "GB_Head_LOD1"
+  ],
+  "blend_shapes": [
+   "AU01_L",
+   "AU01_R",
+   "AU02_L",
+   "AU02_R",
+   "AU04_L",
+   "AU04_R",
+   "AU06_L",
+   "AU06_R",
+   "AU07_L",
+   "AU07_R",
+   "AU09_L",
+   "AU09_R",
+   "AU10_L",
+   "AU10_R",
+   "AU12_L",
+   "AU12_R",
+   "AU15_L",
+   "AU15_R",
+   "AU20_L",
+   "AU20_R",
+   "mouth_slack_L",
+   "mouth_slack_R",
+   "swell_periorbital_L",
+   "swell_periorbital_R"
+  ],
+  "bone_driven": {
+   "AU05": "lid_upper_*",
+   "AU26": "jaw",
+   "AU43": "lid_upper_* + lid_lower_*"
+  },
+  "cornea": {
+   "centre_offset": 0.00582,
+   "iris_plane_local_y": -0.0101,
+   "limbus_radius": 0.0059,
+   "radius": 0.0075
+  },
+  "eye_centres": {
+   "L": [
+    0.032,
+    -0.05,
+    1.669
+   ],
+   "R": [
+    -0.032,
+    -0.05,
+    1.669
+   ]
+  },
+  "eye_radius": 0.012,
+  "jaw_axis_world": [
+   1.0,
+   0.0,
+   0.0
+  ],
+  "jaw_incisor_mm_per_deg": 1.58,
+  "jaw_note": "opening = +rotation about +X through jaw_pivot (TMJ hinge, condyle centres); death jaw drop 10-30 mm = 6-19 deg [RB \u00a75.6]",
+  "jaw_pivot": [
+   0.0,
+   0.0085,
+   1.645
+  ],
+  "lid_aperture_mm_to_deg": [
+   [
+    0.0,
+    -33.261
+   ],
+   [
+    1.0,
+    -30.235
+   ],
+   [
+    2.0,
+    -27.184
+   ],
+   [
+    3.0,
+    -24.337
+   ],
+   [
+    4.0,
+    -21.307
+   ],
+   [
+    5.0,
+    -18.275
+   ],
+   [
+    6.0,
+    -15.194
+   ],
+   [
+    7.0,
+    -11.932
+   ],
+   [
+    8.0,
+    -8.629
+   ],
+   [
+    9.0,
+    -5.226
+   ],
+   [
+    10.0,
+    -1.496
+   ],
+   [
+    10.45,
+    0.0
+   ],
+   [
+    11.0,
+    2.468
+   ],
+   [
+    12.0,
+    7.474
+   ]
+  ],
+  "lid_lower_deg": [
+   [
+    0.0,
+    -11.641
+   ],
+   [
+    1.0,
+    -10.582
+   ],
+   [
+    2.0,
+    -9.514
+   ],
+   [
+    3.0,
+    -8.518
+   ],
+   [
+    4.0,
+    -7.457
+   ],
+   [
+    5.0,
+    -6.396
+   ],
+   [
+    6.0,
+    -5.318
+   ],
+   [
+    7.0,
+    -4.176
+   ],
+   [
+    8.0,
+    -3.02
+   ],
+   [
+    9.0,
+    -1.829
+   ],
+   [
+    10.0,
+    -0.524
+   ],
+   [
+    10.45,
+    0.0
+   ],
+   [
+    11.0,
+    0.0
+   ],
+   [
+    12.0,
+    0.0
+   ]
+  ],
+  "lid_scale_rule": {
+   "close_scale": 0.1,
+   "full_at_deg": 18.0,
+   "note": "closing lid bones scale up so the lid rides over the cornea (apex 13.3 mm)"
+  },
+  "lid_table": {
+   "closing_path_min_gap_mm": 0.35,
+   "columns": [
+    "aperture_mm",
+    "upper_deg",
+    "lower_deg",
+    "min_globe_gap_mm",
+    "upper_scale",
+    "lower_scale"
+   ],
+   "lower_share_when_closing": 0.35,
+   "rest_aperture_mm": 10.45,
+   "rows": [
+    [
+     0.0,
+     -33.261,
+     -11.641,
+     0.427,
+     1.1,
+     1.07138
+    ],
+    [
+     1.0,
+     -30.235,
+     -10.582,
+     0.429,
+     1.1,
+     1.06305
+    ],
+    [
+     2.0,
+     -27.184,
+     -9.514,
+     0.443,
+     1.1,
+     1.05428
+    ],
+    [
+     3.0,
+     -24.337,
+     -8.518,
+     0.451,
+     1.1,
+     1.04599
+    ],
+    [
+     4.0,
+     -21.307,
+     -7.457,
+     0.412,
+     1.1,
+     1.03727
+    ],
+    [
+     5.0,
+     -18.275,
+     -6.396,
+     0.38,
+     1.1,
+     1.02891
+    ],
+    [
+     6.0,
+     -15.194,
+     -5.318,
+     0.358,
+     1.09347,
+     1.02103
+    ],
+    [
+     7.0,
+     -11.932,
+     -4.176,
+     0.35,
+     1.07357,
+     1.01365
+    ],
+    [
+     8.0,
+     -8.629,
+     -3.02,
+     0.36,
+     1.04691,
+     1.0075
+    ],
+    [
+     9.0,
+     -5.226,
+     -1.829,
+     0.371,
+     1.02039,
+     1.00289
+    ],
+    [
+     10.0,
+     -1.496,
+     -0.524,
+     0.424,
+     1.00196,
+     1.00025
+    ],
+    [
+     10.45,
+     0.0,
+     0.0,
+     0.5,
+     1.0,
+     1.0
+    ],
+    [
+     11.0,
+     2.468,
+     0.0,
+     0.497,
+     1.0,
+     1.0
+    ],
+    [
+     12.0,
+     7.474,
+     0.0,
+     0.475,
+     1.0,
+     1.0
+    ]
+   ],
+   "self_intersection_free_above_mm": 0.0,
+   "sign": "upper_deg > 0 lifts the upper margin (opens); lower_deg > 0 lowers the lower margin (opens); rotation axis = body +X (Godot +X) through the eyeball centre (bone head); upper lid world rotation = -upper_deg about +X, lower lid = +lower_deg about +X; the scale columns are uniform bone scales about the eyeball centre"
+  },
+  "rigid_parts": {
+   "GB_BrowLash brows": "head",
+   "GB_BrowLash lashes": "lid_*",
+   "GB_EyeFX occlusion": "lid_upper_*/lid_lower_*",
+   "GB_EyeFX tearline": "lid_lower_*",
+   "GB_Eye_*": "eye_*",
+   "GB_Mouth lower teeth/gum": "jaw",
+   "GB_Mouth tongue": "tongue",
+   "GB_Mouth upper teeth/gum": "head"
+  },
+  "status": "measured on GB_Head (B2)"
+ },
+ "frame": "body_zup_m",
+ "generator": "blender/gore_body/head_integration.py",
+ "godot_mapping": "(x, z, -y)",
+ "schema": "gb.face_rig/1"
+}

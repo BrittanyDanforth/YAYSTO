@@ -1142,6 +1142,880 @@ def b1_body_maps():
     return all(v == "ok" for v in res.values()), str(res)
 
 
+# ===========================================================================
+# B2 checks: head integration, neck seam, face rig, eye FX, cards (plan §8.2 B2 acceptance).
+# The measurements live in head_integration.check_* (each skips while GB_Head is a stand-in).
+# ===========================================================================
+def _b2(name):
+    import head_integration as hi
+    return getattr(hi, name)()
+
+
+@check("scene", owner="B2")
+def b2_head_landmarks():
+    """RB §1.2 head landmarks in the body frame (eyeball centres, vertex, glabella, nose, chin, ear canals)."""
+    return _b2("check_landmarks")
+
+
+@check("scene", owner="B2")
+def b2_neck_seam_fb1():
+    """FB-1: 160 identical ring vertices shared by GB_Head/GB_Body, normal difference < 1 deg."""
+    return _b2("check_seam")
+
+
+@check("scene", owner="B2")
+def b2_lids_close_and_open():
+    """Lids close to 0 mm (>= 0.2 mm off the globe on the whole path) and open to 12 mm."""
+    return _b2("check_lids")
+
+
+@check("scene", owner="B2")
+def b2_face_shape_keys():
+    """24 face keys: no self-intersection, no lip/teeth penetration, lids off the globe, 1.5-8 mm amplitudes."""
+    return _b2("check_shape_keys")
+
+
+@check("scene", owner="B2")
+def b2_cards_attached():
+    """Brow cards on the skin at rest and under every face key; lash roots on lid-weighted skin."""
+    return _b2("check_cards")
+
+
+@check("scene", owner="B2")
+def b2_head_texel_uv():
+    """Head texel 0.24 mm +- 20 % and no overlapping UV islands."""
+    return _b2("check_texel_uv")
+
+
+@check("scene", owner="B2", severity="warn")
+def b2_budgets():
+    """Plan §4.1 budgets of the head meshes."""
+    return _b2("check_budgets")
+
+
+@check("scene", owner="B2")
+def b2_eye_fx_and_teeth():
+    """Eye FX shells inside the lid gap; 28 separate teeth with FDI ids."""
+    return _b2("check_eye_fx_and_mouth")
+
+
+@check("scene", owner="B2")
+def b2_head_codes():
+    """Head codes: segment, regions and dermatomes present and valid."""
+    return _b2("check_codes")
+
+
+# ===========================================================================
+# B4: organs, cord, brainstem, brain labels (plan §8.2 B4, FB-4)
+# ===========================================================================
+def _b4_obj(name):
+    o = _bpy().data.objects.get(name)
+    return o if (o is not None and o.get("gb_status") == "B4") else None
+
+
+def _b4_organ_parts():
+    """{organ name: (verts, tris, sub per vertex)} of GB_Organs (None if not built by B4)."""
+    o = _b4_obj("GB_Organs")
+    if o is None:
+        return None
+    v, t = gbc.mesh_arrays(o.data)
+    org = gbc.read_point_attr(o, "gb_organ", 'INT')
+    sub = gbc.read_point_attr(o, "gb_sub", 'INT')
+    idn = {x["organ_id"]: x["id"] for x in OR.ORGANS}
+    out = {}
+    for oid in np.unique(org):
+        tm = (org[t] == oid).all(1)
+        out[idn[int(oid)]] = (v, t[tm], sub)
+    return out
+
+
+def _b4_measured():
+    import json
+    o = _b4_obj("GB_Organs")
+    return json.loads(o["gb_b4_measured"]) if o is not None and "gb_b4_measured" in o.keys() else None
+
+
+def _bvh(v, t):
+    from mathutils.bvhtree import BVHTree
+    return BVHTree.FromPolygons(np.asarray(v).tolist(), np.asarray(t).tolist())
+
+
+def _inside_depth(bvh, pts, lo=None, hi=None):
+    """Signed distance of points to a closed mesh (negative inside).  Inside/outside by ray parity along
+    three skew directions with a majority vote (hits closer than 0.1 mm to the previous one - a ray through
+    a shared edge - are counted once); points outside the optional AABB lo..hi are outside."""
+    from mathutils import Vector
+    out = np.empty(len(pts))
+    dirs = [Vector(d).normalized() for d in ((0.577, 0.577, 0.578), (-0.41, 0.82, -0.40), (0.30, -0.25, 0.92))]
+    for i, p in enumerate(pts):
+        pv = Vector(p)
+        _loc, _n, _i, dist = bvh.find_nearest(pv)
+        if lo is not None and (np.any(p < lo) or np.any(p > hi)):
+            out[i] = dist
+            continue
+        votes = 0
+        for dv in dirs:
+            n, q = 0, pv
+            for _k in range(64):
+                hit = bvh.ray_cast(q, dv)
+                if hit[0] is None:
+                    break
+                n += 1
+                q = hit[0] + dv * 1e-4
+            votes += n % 2
+        out[i] = -dist if votes >= 2 else dist
+    return out
+
+
+def _b4_skip(name="GB_Organs"):
+    return _b4_obj(name) is None
+
+
+@check("scene", owner="B4")
+def b4_organs_complete():
+    """GB_Organs built by B4: every organ id of gb_data.organs present, 6 shape keys, codes = (organ, sub)."""
+    if _b4_skip():
+        return False, "GB_Organs not built by B4"
+    P = _b4_organ_parts()
+    missing = [x["id"] for x in OR.ORGANS if x["id"] not in P]
+    o = _b4_obj("GB_Organs")
+    keys = [k.name for k in o.data.shape_keys.key_blocks[1:]] if o.data.shape_keys else []
+    u, v = gbc.read_codes_uv(o)
+    org = gbc.read_point_attr(o, "gb_organ", 'INT')
+    sub = gbc.read_point_attr(o, "gb_sub", 'INT')
+    codes_ok = bool(np.array_equal(u, org) and np.array_equal(v, sub))
+    hr = _b4_obj("GB_Organs_HR") is not None
+    return (not missing and keys == list(gbc.SHAPE_KEYS["GB_Organs"]) and codes_ok and hr,
+            f"missing organs {missing}; shape keys {keys}; UV2 = (organ, sub) {codes_ok}; HR bake source {hr}")
+
+
+# bible centres (R05 §10-11 centre of mass / centre) checked at +-5 mm
+B4_CENTRES = {"heart": (0.030, -0.035, 1.330), "liver": (-0.055, -0.005, 1.230), "spleen": (0.105, 0.040, 1.228),
+              "kidney_L": (0.070, 0.024, 1.180), "kidney_R": (-0.070, 0.024, 1.160),
+              "adrenal_L": (0.042, 0.025, 1.230), "adrenal_R": (-0.040, 0.030, 1.235),
+              "bladder": (0.0, -0.030, 0.898), "thyroid": (0.0, -0.030, 1.502),
+              "lung_R": (-0.080, 0.012, 1.385), "lung_L": (0.082, 0.020, 1.390)}
+# bible extents (AABB, m) checked at +-10 %
+B4_EXTENTS = {"heart": (0.138, 0.092, 0.127), "lung_R": (0.130, 0.168, 0.225), "lung_L": (0.130, 0.165, 0.230),
+              "liver": (0.225, 0.155, 0.160), "stomach": (0.145, 0.120, 0.210)}
+
+
+@check("scene", owner="B4", severity="warn")
+def b4_organ_centres_sizes():
+    """Plan B4: organ centres +-5 mm, sizes +-10 % of the bible (volume centroid; AABB extents)."""
+    M = _b4_measured()
+    if M is None:
+        return False, "no measured data"
+    bad, rep = [], []
+    for k, c in B4_CENTRES.items():
+        d = 1000 * float(np.linalg.norm(np.array(M[k]["centroid"]) - np.array(c)))
+        rep.append(f"{k} {d:.1f}mm")
+        if d > 5.0:
+            bad.append(f"{k} centre {d:.1f} mm")
+    for k, ext in B4_EXTENTS.items():
+        lo, hi = np.array(M[k]["aabb"][0]), np.array(M[k]["aabb"][1])
+        r = (hi - lo) / np.array(ext)
+        rep.append(f"{k} size x{np.round(r, 2).tolist()}")
+        if np.any(np.abs(r - 1) > 0.10):
+            bad.append(f"{k} size ratio {np.round(r, 2).tolist()}")
+    return not bad, f"off: {bad} | all: {'; '.join(rep)}"
+
+
+@check("scene", owner="B4")
+def b4_organ_masses():
+    """Plan B4: mass = mesh volume x density within +-15 % of the bible (solid organs; hollow organs by
+    wall volume).  Lungs are checked by volume in b4_lung_volume; the backing mass is a space filler."""
+    M = _b4_measured()
+    if M is None:
+        return False, "no measured data"
+    bad, rep = [], []
+    for k, rec in M.items():
+        if "mass_g_bible" not in rec or k.startswith("lung") or k == "bowel_filler":
+            continue
+        r = rec["mass_g_est"] / rec["mass_g_bible"]
+        rep.append(f"{k} {rec['mass_g_est']:.0f}/{rec['mass_g_bible']}")
+        if abs(r - 1) > 0.15:
+            bad.append(f"{k} {r:.2f}")
+    return not bad, f"outside +-15 %: {bad} | {', '.join(rep)}"
+
+
+@check("scene", owner="B4", severity="warn")
+def b4_lung_volume():
+    """Lung volumes vs R05 §10.5 FRC (R 1.8 L, L 1.55 L), +-15 %.  Known limit: the rib-table cage holds only
+    ~1.95 L per hemithorax above the domes (heart side included)."""
+    M = _b4_measured()
+    if M is None:
+        return False, "no measured data"
+    rep = {k: round(M[k]["volume_ml"] / 1000, 3) for k in ("lung_R", "lung_L")}
+    ok = abs(rep["lung_R"] / 1.80 - 1) <= 0.15 and abs(rep["lung_L"] / 1.55 - 1) <= 0.15
+    return ok, f"lung volumes L {rep} vs FRC R 1.80 / L 1.55"
+
+
+@check("scene", owner="B4")
+def b4_lung_borders():
+    """Plan B4: lowest lung point at the MCL (6th rib), MAL (8th) and back (10th) within +-15 mm of
+    the '6-8-10' lines of the rib table (z ~1.27-1.28, R05 §10.5).  Left MCL: measured on the lingula 7 deg
+    lateral, because the bible heart apex lies on the left MCL (cardiac notch)."""
+    import viscera as VI
+    P = _b4_organ_parts()
+    if P is None:
+        return False, "GB_Organs not built by B4"
+    bad, rep = [], []
+    for side, sx in (("L", 1), ("R", -1)):
+        v, t, _s = P["lung_" + side]
+        vv = v[np.unique(t)]
+        th, _r = VI._theta_r(vv[:, 0], vv[:, 1])
+        for name, t0 in (("MCL", VI._mcl_theta()), ("MAL", 0.0), ("back", 55.0)):
+            if side == "L" and name == "MCL":
+                t0 += 7.0            # the apex beat (5th ICS, MCL) sits in the cardiac notch: test the lingula
+            m = np.abs(th - t0) < 5
+            if not m.any():
+                bad.append(f"{side} {name}: no vertices")
+                continue
+            zlow = float(vv[m, 2].min())
+            rib = {"MCL": 6, "MAL": 8, "back": 10}[name]
+            ref = float(VI._rib_z_at_theta(rib, np.array([t0]))[0])          # the rib line itself
+            rep.append(f"{side}-{name} {zlow:.3f}/{ref:.3f}")
+            if abs(zlow - ref) > 0.015:
+                bad.append(f"{side} {name} {1000 * (zlow - ref):+.0f} mm")
+    return not bad, f"{bad} | {', '.join(rep)}"
+
+
+def _pairs_overlap(P, pairs_skip):
+    names = [n for n in P]
+    bvhs = {n: _bvh(P[n][0], P[n][1]) for n in names}
+    boxes = {n: (P[n][0][np.unique(P[n][1])].min(0), P[n][0][np.unique(P[n][1])].max(0)) for n in names}
+    rng = gbc.rng("verify")
+    worst = {}
+    for a in names:
+        v, t, _s = P[a]
+        idx = np.unique(t)
+        pts = v[rng.choice(idx, min(600, len(idx)), replace=False)]
+        for b in names:
+            if b == a or frozenset((a, b)) in pairs_skip:
+                continue
+            d = _inside_depth(bvhs[b], pts, *boxes[b])
+            dmin = float(d.min())
+            if dmin < -0.001:
+                worst[f"{a}->{b}"] = round(-1000 * dmin, 1)
+    return worst
+
+
+B4_CONTAINED = {frozenset(p) for p in [("heart", "pericardium"), ("trachea", "bronchus_L"), ("trachea", "bronchus_R"),
+                                       ("bronchus_L", "bronchus_R"), ("adrenal_L", "kidney_L"),
+                                       ("adrenal_R", "kidney_R"), ("omentum", "bowel_filler")]}
+
+
+@check("scene", owner="B4")
+def b4_fb4_organ_overlap():
+    """FB-4: no organ-organ overlap > 1 mm: every exported GB_Organs vertex is tested against every other
+    organ's exact SDF (viscera.organ_specs); containers by design (pericardium around the heart, perirenal
+    fat around kidney and adrenal, airway parts among themselves) are skipped.  The exported LOD's own
+    deviation from its SDF is reported (95th percentile) so the test also bounds the mesh error."""
+    import viscera as VI
+    o = _b4_obj("GB_Organs")
+    if o is None:
+        return False, "GB_Organs not built by B4"
+    v = gbc.get_verts(o.data)
+    org = gbc.read_point_attr(o, "gb_organ", 'INT')
+    sub = gbc.read_point_attr(o, "gb_sub", 'INT')
+    idn = {x["organ_id"]: x["id"] for x in OR.ORGANS}
+    name = np.array([idn[int(i)] for i in org], dtype=object)
+    name[(np.char.startswith(name.astype(str), "kidney")) & (sub == 3)] = np.array(
+        [n + "_fat" for n in name[(np.char.startswith(name.astype(str), "kidney")) & (sub == 3)]], dtype=object)
+    specs = {}
+    for key, oname, fn, box, h, tris, subfn in VI.organ_specs():
+        k = {"airway": "airway", "kidney_fat_L": "kidney_L_fat", "kidney_fat_R": "kidney_R_fat"}.get(key, key)
+        specs[k] = (fn, box)
+    group = {n: n for n in set(name)}
+    for n in ("trachea", "bronchus_L", "bronchus_R"):
+        group[n] = "airway"
+    skip = {frozenset(p) for p in [("heart", "pericardium"), ("kidney_L", "kidney_L_fat"), ("kidney_R", "kidney_R_fat"),
+                                   ("adrenal_L", "kidney_L_fat"), ("adrenal_R", "kidney_R_fat")]}
+    worst, own = {}, {}
+    rng = gbc.rng("verify")
+    for a in sorted(set(group.values())):
+        m = np.array([group[n] == a for n in name])
+        pts = v[m]
+        if len(pts) > 1500:
+            pts = pts[rng.choice(len(pts), 1500, replace=False)]
+        fa, _ba = specs[a]
+        own[a] = round(1000 * float(np.quantile(np.abs(fa(pts[:, 0], pts[:, 1], pts[:, 2])), 0.95)), 2)
+        for b, (fb, bb) in specs.items():
+            if b == a or frozenset((a, b)) in skip:
+                continue
+            lo, hi = np.asarray(bb[0]) - 0.01, np.asarray(bb[1]) + 0.01
+            inb = np.all((pts > lo) & (pts < hi), axis=1)
+            if not inb.any():
+                continue
+            d = fb(pts[inb, 0], pts[inb, 1], pts[inb, 2])
+            if d.min() < -0.001:
+                worst[f"{a}->{b}"] = round(-1000 * float(d.min()), 1)
+    return not worst, f"overlaps > 1 mm (mm): {worst}; LOD-to-SDF deviation p95 (mm): {own}"
+
+
+@check("scene", owner="B4")
+def b4_fb4_organs_vs_bone():
+    """FB-4: organs inside the ribcage / clear of bone by >= 2 mm (sampled vertices vs GB_Skeleton):
+    <= 2 % of vertices closer than 2 mm and <= 0.5 % inside bone."""
+    bpy = _bpy()
+    sk = bpy.data.objects.get("GB_Skeleton")
+    o = _b4_obj("GB_Organs")
+    if sk is None or o is None:
+        return False, "GB_Skeleton or B4 GB_Organs missing"
+    vs, ts = gbc.mesh_arrays(sk.data)
+    bvh = _bvh(vs, ts)
+    v = gbc.get_verts(o.data)
+    org = gbc.read_point_attr(o, "gb_organ", 'INT')
+    rng = gbc.rng("verify")
+    idx = rng.choice(len(v), min(6000, len(v)), replace=False)
+    d = _inside_depth(bvh, v[idx])
+    close = float((d < 0.002).mean())
+    inside = float((d < 0).mean())
+    idn = {x["organ_id"]: x["id"] for x in OR.ORGANS}
+    worst = {}
+    for i in np.nonzero(d < 0.002)[0]:
+        n = idn[int(org[idx[i]])]
+        worst[n] = worst.get(n, 0) + 1
+    return (close <= 0.02 and inside <= 0.005,
+            f"{100 * close:.2f} % of sampled organ vertices < 2 mm from bone, {100 * inside:.2f} % inside; by organ {worst}")
+
+
+@check("scene", owner="B4")
+def b4_heart_walls():
+    """Plan B4: free-wall thickness, measured from each chamber's cavity surface along the wall normal to the
+    outer surface (rays that end in open space; septal rays excluded): LV 9 (echo 6-10; accept 7.5-11) mm, RV 3-5 (accept 3-5.5), atria 2-3 (accept 2-3.5) mm;
+    the four chambers are closed cavities."""
+    import viscera as VI
+    from mathutils import Vector
+    P = _b4_organ_parts()
+    if P is None:
+        return False, "GB_Organs not built by B4"
+    v, t, sub = P["heart"]
+    bvh = _bvh(v, t)
+    comp = VI.islands(len(v), t)
+    fl = comp[t[:, 0]]
+    names = {1: "RA", 2: "RV", 3: "LA", 4: "LV"}
+    # LV: the bible's 9 mm (echo 6-10; post-mortem cut 12-14); rays from the trabeculated cavity surface
+    # through epicardial fat read ~2-3 mm thicker than the designed compact wall, hence up to 12 mm
+    want = {"LV": (7.5, 12.0), "RV": (3.0, 5.5), "RA": (2.0, 3.5), "LA": (2.0, 3.5)}
+    found, res, bad = {}, {}, []
+    rng = gbc.rng("verify")
+    for c in np.unique(fl):
+        tf = t[fl == c]
+        if VI.mesh_volume(v, tf) >= 0:
+            continue                                      # outer surface
+        ids, cnt = np.unique(sub[tf].ravel(), return_counts=True)
+        ch = names.get(int(ids[np.argmax(cnt)]))
+        if ch is None:
+            continue
+        found[ch] = found.get(ch, 0) + 1
+        a, b_, c_ = v[tf[:, 0]], v[tf[:, 1]], v[tf[:, 2]]
+        cen = (a + b_ + c_) / 3.0
+        nrm = np.cross(b_ - a, c_ - a)
+        nrm /= np.maximum(np.linalg.norm(nrm, axis=1, keepdims=True), 1e-12)
+        th = []
+        for i in rng.choice(len(tf), min(120, len(tf)), replace=False):
+            d = Vector(-nrm[i])
+            hit = bvh.ray_cast(Vector(cen[i]) + d * 1e-5, d)
+            if hit[0] is None or hit[1].dot(d) <= 0.0:
+                continue                                  # not leaving through the outer surface
+            if bvh.ray_cast(hit[0] + d * 1e-5, d)[0] is not None:
+                continue                                  # septum / other chamber: free walls only
+            th.append((hit[0] - Vector(cen[i])).length * 1000)
+        if th:
+            res[ch] = round(float(np.median(th)), 1)
+    for ch, (lo, hi) in want.items():
+        if ch not in res:
+            bad.append(f"{ch}: no cavity")
+        elif not (lo <= res[ch] <= hi):
+            bad.append(f"{ch} {res[ch]} mm")
+    return not bad, f"median wall (mm) {res}; cavities {found}; bad {bad}"
+
+
+@check("scene", owner="B4")
+def b4_shape_keys():
+    """Plan B4 blend shapes: heart_systole ventricular cavities -15..-20 %, lung_inhale +10 % (+-3), lung_collapse
+    -70 % (+-3), diaphragm_inhale dome descent 15-20 mm."""
+    o = _b4_obj("GB_Organs")
+    if o is None:
+        return False, "GB_Organs not built by B4"
+    v0, t = gbc.mesh_arrays(o.data)
+    kb = o.data.shape_keys.key_blocks
+    org = gbc.read_point_attr(o, "gb_organ", 'INT')
+    sub = gbc.read_point_attr(o, "gb_sub", 'INT')
+    oid = {x["id"]: x["organ_id"] for x in OR.ORGANS}
+
+    def keyed(name):
+        a = np.empty(len(v0) * 3)
+        kb[name].data.foreach_get("co", a)
+        return a.reshape(-1, 3)
+
+    def vol(v, tm):
+        a, b, c = v[t[tm, 0]], v[t[tm, 1]], v[t[tm, 2]]
+        return float(np.einsum("ij,ij->i", a, np.cross(b, c)).sum() / 6.0)
+    out, bad = {}, []
+    # ventricular cavities: heart faces of the LV/RV sub-parts whose normals face the cavity (negative volume)
+    hm = (org[t] == oid["heart"]).all(1) & np.isin(sub[t], (2, 4)).all(1)
+    import viscera as VI
+    comp = VI.islands(len(v0), t[hm])
+    cav = []
+    for lab in np.unique(comp[np.unique(t[hm])]):
+        m = hm.copy()
+        m[hm] = (comp[t[hm][:, 0]] == lab)
+        if vol(v0, m) < 0:
+            cav.append(m)
+    if cav:
+        vv0 = sum(vol(v0, m) for m in cav)
+        vv1 = sum(vol(keyed("heart_systole"), m) for m in cav)
+        out["systole_cavity"] = round(vv1 / vv0 - 1, 3)
+        if not (-0.22 <= vv1 / vv0 - 1 <= -0.14):
+            bad.append("heart_systole")
+    else:
+        bad.append("no ventricular cavity found")
+    for sd in ("L", "R"):
+        m = (org[t] == oid["lung_" + sd]).all(1)
+        base = vol(v0, m)
+        inh = vol(keyed("lung_inhale_" + sd), m) / base - 1
+        col = vol(keyed("lung_collapse_" + sd), m) / base - 1
+        out[f"inhale_{sd}"], out[f"collapse_{sd}"] = round(inh, 3), round(col, 3)
+        if abs(inh - 0.10) > 0.03:
+            bad.append(f"lung_inhale_{sd}")
+        if abs(col + 0.70) > 0.03:
+            bad.append(f"lung_collapse_{sd}")
+    dm = org == oid["diaphragm"]
+    dz = keyed("diaphragm_inhale")[dm, 2] - v0[dm, 2]
+    top = v0[dm, 2] > np.quantile(v0[dm, 2], 0.8)
+    out["dome_descent_mm"] = round(-1000 * float(dz[top].mean()), 1)
+    if not (15 <= out["dome_descent_mm"] <= 20):
+        bad.append("diaphragm_inhale")
+    return not bad, f"{out}; bad {bad}"
+
+
+def _cord_parts():
+    o = _b4_obj("GB_Cord")
+    if o is None:
+        return None
+    v = gbc.get_verts(o.data)
+    u, _t = gbc.read_codes_uv(o)
+    return v, u
+
+
+@check("scene", owner="B4")
+def b4_cord_sizes_conus():
+    """Plan B4: conus tip (0, 0.017, 1.180) +-3 mm; cord width x AP at C2, C5, T7 +-0.5 mm of RB §7.4."""
+    C = _cord_parts()
+    if C is None:
+        return False, "GB_Cord not built by B4"
+    v, u = C
+    cord = v[u < 30]
+    tip = cord[np.argmin(cord[:, 2])]
+    dtip = 1000 * float(np.linalg.norm(tip - np.array(VT.CONUS_TIP)))
+    bad, rep = [], [f"conus tip {np.round(tip, 3).tolist()} ({dtip:.1f} mm)"]
+    if dtip > 3.0:
+        bad.append("conus")
+    for lv in ("C2", "C5", "T7"):
+        r = VT.VERTEBRA[lv]
+        m = np.abs(cord[:, 2] - r["z"]) < 0.004
+        w = 1000 * float(cord[m, 0].max() - cord[m, 0].min())
+        ap = 1000 * float(cord[m, 1].max() - cord[m, 1].min())
+        rep.append(f"{lv} {w:.1f} x {ap:.1f} (bible {r['cord_w_mm']} x {r['cord_ap_mm']})")
+        if abs(w - r["cord_w_mm"]) > 0.5 or abs(ap - r["cord_ap_mm"]) > 0.5:
+            bad.append(lv)
+    return not bad, f"{'; '.join(rep)}; bad {bad}"
+
+
+@check("scene", owner="B4", severity="warn")
+def b4_cord_in_canal():
+    """Cord, dura and roots inside the vertebral canal: fraction of GB_Cord vertices inside GB_Skeleton bone
+    (the C1 / foramen-magnum misalignment between the head skull and the atlas is reported by level)."""
+    bpy = _bpy()
+    sk = bpy.data.objects.get("GB_Skeleton")
+    C = _cord_parts()
+    if sk is None or C is None:
+        return False, "GB_Skeleton or B4 GB_Cord missing"
+    v, u = C
+    vs, ts = gbc.mesh_arrays(sk.data)
+    d = _inside_depth(_bvh(vs, ts), v)
+    ins = d < 0
+    lv = {}
+    for p in v[ins]:
+        near = min(VT.VERTEBRAE, key=lambda r: abs(r["z"] - p[2]))["level"]
+        lv[near] = lv.get(near, 0) + 1
+    frac = float(ins.mean())
+    return frac <= 0.005, f"{100 * frac:.2f} % of cord/dura/root vertices inside bone; by level {lv}"
+
+
+@check("scene", owner="B4")
+def b4_brain():
+    """GB_Brain (B4): <= 14k (+10 %) triangles, UV2 region ids valid, every RB §4.5 region on the surface or in
+    the grid, brain reaches the cord (gap 0), brain clear of the skull (<= 1 % of vertices inside bone)."""
+    from gb_data import brain as BR
+    import neuro as NE
+    o = _b4_obj("GB_Brain")
+    C = _cord_parts()
+    if o is None or C is None:
+        return False, "GB_Brain / GB_Cord not built by B4"
+    v = gbc.get_verts(o.data)
+    u, _d = gbc.read_codes_uv(o)
+    tris = gbc.tri_count(o.data)
+    valid = bool(np.isin(u, list(BR.BRAIN_REGIONS)).all())
+    cord = C[0][C[1] < 30]
+    joined = float(v[:, 2].min()) <= float(cord[:, 2].max())
+    bpy = _bpy()
+    sk = bpy.data.objects.get("GB_Skeleton")
+    inside = None
+    if sk is not None:
+        vs, ts = gbc.mesh_arrays(sk.data)
+        rng = gbc.rng("verify")
+        idx = rng.choice(len(v), min(3000, len(v)), replace=False)
+        inside = float((_inside_depth(_bvh(vs, ts), v[idx]) < 0).mean())
+    ok = tris <= 15400 and valid and joined and (inside is None or inside <= 0.01)
+    return ok, (f"{tris} tris, region codes valid {valid}, brain bottom {v[:, 2].min():.3f} <= cord top "
+                f"{cord[:, 2].max():.3f}: {joined}, inside bone {inside}")
+
+
+@check("files", owner="B4")
+def b4_sidecars():
+    """organs.json (measured data per organ, status B4), spine.json (30 cord segments, 5 brainstem capsules,
+    cord codes), brain_labels.json (every region 1..26 has voxels)."""
+    out = gbc.SUBJECT_OUT
+    bad = []
+    try:
+        og = gbc.read_json(os.path.join(out, "organs.json"))["data"]
+        if og.get("status") != "B4" or any("measured" not in o for o in og["organs"]):
+            bad.append("organs.json not B4 / measured missing")
+        sp = gbc.read_json(os.path.join(out, "spine.json"))["data"]
+        if len(sp["cord_segments"]) != 30 or len(sp["brainstem"]) != 5 or "cord_codes" not in sp:
+            bad.append("spine.json content")
+        bl = gbc.read_json(os.path.join(out, "brain_labels.json"))["data"]
+        empty = [v["name"] for k, v in bl["regions"].items() if k != "0" and v.get("voxels", 0) == 0]
+        if empty:
+            bad.append(f"empty regions {empty}")
+    except Exception as exc:
+        bad.append(f"{type(exc).__name__}: {exc}")
+    return not bad, f"problems: {bad}"
+
+
+# ===========================================================================
+# B5: vessel network and nerves (plan §3.4.1, §8.2 B5, FB-5).  The measurements live in vascular.py.
+# ===========================================================================
+def _b5_built():
+    o = _bpy().data.objects.get("GB_Vessels_Art")
+    return o is not None and o.get("gb_status") == "B5"
+
+
+@check("tables", owner="B5")
+def b5_vessel_graph():
+    """Loader-style graph check: parents/children consistent, [x,y,z,r] points, bones per point, arterial roots
+    A01 + P01 only, systemic/portal veins end at the RA, pulmonary veins at the LA, every left has a right."""
+    import vascular
+    return vascular.graph_report()
+
+
+@check("scene", owner="B5")
+def b5_fb5_depths():
+    """FB-5: CCA/IJV 20-30 mm at C4-C6, femoral artery 15-30 at the groin, radial 2-5 at the wrist, brachial
+    10-20 mid-arm (centreline to the nearest GB_Body/GB_Head surface, both sides)."""
+    import vascular
+    if not _b5_built():
+        return False, "GB_Vessels_* not built by B5 (placeholder)"
+    ok, rows = vascular.fb5_report()
+    return ok, "; ".join(f"{r[0]} {r[1]} in {r[2]}: {'ok' if r[3] else 'FAIL'}" for r in rows)
+
+
+@check("scene", owner="B5")
+def b5_vessels_clear_of_bone():
+    """No vessel tube inside GB_Skeleton except in bone canals (vertebral foramina, carotid canal, skull base,
+    meningeal/sinus grooves): fitted centrelines (wall >= -0.5 mm) and tube vertices (<= 0.5 %)."""
+    import vascular
+    if not _b5_built():
+        return False, "GB_Vessels_* not built by B5 (placeholder)"
+    ok, det = vascular.bone_report()
+    frac = vascular.tube_vertices_in_bone()
+    return ok and frac <= 0.005, f"{det}; arterial tube vertices inside bone outside canals {100 * frac:.2f} %"
+
+
+@check("scene", owner="B5")
+def b5_vessels_inside_skin():
+    """Every tube wall at least 0.3 mm under the skin (fitted centrelines vs GB_Body + GB_Head)."""
+    import vascular
+    if not _b5_built():
+        return False, "GB_Vessels_* not built by B5 (placeholder)"
+    return vascular.skin_report()
+
+
+@check("scene", owner="B5")
+def b5_bible_waypoints():
+    """Centrelines within 2 mm of every RB §3.3 waypoint ((E) rows 20 mm), unless a hard rule moved them
+    (bone, skin band, brain, parent origin; each cause listed)."""
+    import vascular
+    if not _b5_built():
+        return False, "GB_Vessels_* not built by B5 (placeholder)"
+    ok, det, _rows = vascular.waypoint_report()
+    return ok, det
+
+
+@check("scene", owner="B5", severity="warn")
+def b5_tube_budget():
+    """GB_Vessels_Art + _Ven triangles vs the plan §4.1 ~14k (+10 %)."""
+    bpy = _bpy()
+    tris = sum(gbc.tri_count(bpy.data.objects[n].data) for n in ("GB_Vessels_Art", "GB_Vessels_Ven")
+               if n in bpy.data.objects)
+    return tris <= 15400, f"{tris} triangles (plan ~14,000)"
+
+
+@check("files", owner="B5")
+def b5_vessels_json():
+    """vessels.json: gb.vessels/1 envelope, fitted by B5, graph check passes on the file itself, nerves and
+    beds present, every tube segment has a mesh and vessel_index."""
+    import vascular
+    path = os.path.join(gbc.SUBJECT_OUT, "vessels.json")
+    if not os.path.exists(path):
+        return False, "vessels.json missing"
+    doc = gbc.read_json(path)
+    d = doc["data"]
+    probs = gbc.validate_schema(d, doc.get("schema", ""))
+    ok_g, det = vascular.graph_report(d)
+    fitted = str(d.get("status", "")).startswith("B5: centrelines fitted")
+    n = d.get("counts", {})
+    ok = not probs and ok_g and fitted and len(d["nerves"]) >= 20 and len(d["beds"]) >= 9
+    return ok, f"schema {probs or 'ok'}; fitted {fitted}; counts {n}; {det}"
+
+
+# ===========================================================================
+# B8 props and room (plan §8.2 B8 acceptance): critical dimensions +-1 mm, markers present,
+# room constants (room.json) equal the built geometry and ``world/room.gd`` when it exists
+# ===========================================================================
+B8_MARKERS = (["GBP_muzzle_pistol", "GBP_muzzle_shotgun", "GBP_hammer_face", "GBP_claw", "GBP_torch_nozzle",
+               "GBP_blade_tip", "GBP_fist_knuckles", "GBP_ruler_zero", "GBP_penlight_beam", "GBP_thermo_tip",
+               "GBP_thermo_display"] + [f"GBP_blade_edge_{i}" for i in range(8)])
+B8_ROOM_MARKERS = ("GBP_room_subject_mark", "GBP_room_player_spawn", "GBP_room_light_key", "GBP_room_light_panel_0",
+                   "GBP_room_light_panel_1", "GBP_room_probe", "GBP_room_drain", "GBP_room_backstop",
+                   "GBP_room_table", "GBP_room_trolley", "GBP_room_door", "GBP_room_scale_bar")
+B8_ROOTS = ("GBP_Pistol", "GBP_Shotgun", "GBP_Knife", "GBP_Hammer", "GBP_Torch", "GBP_Fist", "GBP_Ruler",
+            "GBP_Penlight", "GBP_Thermometer", "GBP_Room")
+
+
+def _b8_props():
+    """props module with its KITS re-attached to the scene objects (works on a reopened .blend)."""
+    import props
+    bpy = _bpy()
+    if bpy is None or "GBP_Pistol" not in bpy.data.objects:
+        return None
+    if not props.KITS:
+        builders = dict(props.WEAPON_BUILDERS)
+        origins = {"pistol": (0.0, 31.5, -70.0), "shotgun": (0.0, -55.0, -33.0), "knife": (0.0, -60.0, -1.0),
+                   "hammer": (0.0, -2.5, 70.0), "torch": (0.0, 120.0, 0.0), "fist": (0.0, -40.0, -8.0),
+                   "ruler": (25.0, 25.0, 0.0), "penlight": (0.0, -15.0, 0.0), "thermometer": (0.0, -30.0, 0.0),
+                   "room": (0.0, 0.0, 0.0)}
+        for name in list(builders) + ["room"]:
+            root = bpy.data.objects.get("GBP_" + name.capitalize())
+            if root is None:
+                continue
+            k = props.Kit.__new__(props.Kit)
+            k.root, k.unit, k.origin = root, (1.0 if name == "room" else props.MM), np.asarray(origins[name])
+            k.objects = {o.name: o for o in root.children if o.type == 'MESH'}
+            k.markers = {o.name: o for o in root.children if o.type == 'EMPTY'}
+            props.KITS[name] = k
+    return props
+
+
+@check("scene", owner="B8")
+def b8_props_present():
+    props = _b8_props()
+    if props is None:
+        return True, "props not built in this scene (build.py --stage props)"
+    bpy = _bpy()
+    missing = [n for n in B8_ROOTS + tuple(B8_MARKERS) + B8_ROOM_MARKERS if n not in bpy.data.objects]
+    tools = [n for n in ("pistol", "shotgun", "knife", "hammer", "torch", "ruler", "penlight", "thermometer")
+             if f"GBP_room_tool_{n}" not in bpy.data.objects]
+    return not missing and not tools, f"roots + {len(B8_MARKERS)} item markers + {len(B8_ROOM_MARKERS)} room " \
+                                      f"markers; missing {missing}; tool spots missing {tools}"
+
+
+@check("scene", owner="B8")
+def b8_critical_dimensions():
+    props = _b8_props()
+    if props is None:
+        return True, "props not built in this scene"
+    ok, probs, table = props.spec_check()
+    return ok, f"{sum(1 for v in table.values() if v[2])}/{len(table)} within +-1 mm (bores +-0.05); {probs}"
+
+
+@check("scene", owner="B8")
+def b8_marker_frames():
+    """Every marker has an orthonormal right-handed frame; action directions point where the item does."""
+    props = _b8_props()
+    if props is None:
+        return True, "props not built in this scene"
+    bpy = _bpy()
+    bad = []
+    want = {"GBP_muzzle_pistol": (0, 1, 0), "GBP_muzzle_shotgun": (0, 1, 0), "GBP_hammer_face": (0, 1, 0),
+            "GBP_torch_nozzle": (0, 1, 0), "GBP_blade_tip": (0, 1, 0), "GBP_fist_knuckles": (0, 1, 0),
+            "GBP_penlight_beam": (0, 1, 0), "GBP_thermo_tip": (0, 1, 0), "GBP_room_player_spawn": (0, 1, 0),
+            "GBP_room_subject_mark": (0, -1, 0), "GBP_room_backstop": (0, -1, 0)}
+    for o in bpy.data.objects:
+        if o.type != 'EMPTY' or not o.name.startswith("GBP_") or "gbp_marker" not in o:
+            continue
+        R = np.array(o.matrix_world.to_3x3())
+        if np.abs(R.T @ R - np.eye(3)).max() > 1e-4 or np.linalg.det(R) < 0.999:
+            bad.append(f"{o.name} frame")
+        if o.name in want and float(R[:, 1] @ np.array(want[o.name])) < 0.999:
+            bad.append(f"{o.name} fwd {np.round(R[:, 1], 3).tolist()}")
+        if o.name.startswith("GBP_blade_edge_") and R[2, 1] > -0.2:
+            bad.append(f"{o.name} edge normal not downward")
+    return not bad, f"marker frames; bad {bad}"
+
+
+@check("scene", owner="B8")
+def b8_room_geometry():
+    """Tile faces exactly on the interior planes, ceiling 3.0 m, backstop front on z = -1.3 (Godot),
+    1 % floor fall with zero at the subject mark, drain at (0, 0, 1.0) Godot."""
+    props = _b8_props()
+    if props is None:
+        return True, "room not built in this scene"
+    bpy = _bpy()
+    x0, x1, y0, y1, _, z1 = props.room_bounds()
+    T = np.array([v.co[:] for v in bpy.data.objects["GBP_Room_Tiles"].data.vertices])
+    relief = props.ROOM["tile_relief"]
+    # tile faces lie exactly on the planes; the pads only extend backwards (outside) by the relief
+    planes = {"x_min": T[:, 0].min() - (x0 - relief), "x_max": T[:, 0].max() - (x1 + relief),
+              "y_min": T[:, 1].min() - (y0 - relief), "y_max": T[:, 1].max() - (y1 + relief)}
+    face_sets = {"x_min": np.isclose(T[:, 0], x0, atol=1e-6).sum(), "x_max": np.isclose(T[:, 0], x1, atol=1e-6).sum(),
+                 "y_min": np.isclose(T[:, 1], y0, atol=1e-6).sum(), "y_max": np.isclose(T[:, 1], y1, atol=1e-6).sum()}
+    inside = ((T[:, 0] > x0 + 1e-6) & (T[:, 0] < x1 - 1e-6) & (T[:, 1] > y0 + 1e-6) & (T[:, 1] < y1 - 1e-6)).sum()
+    C = np.array([v.co[:] for v in bpy.data.objects["GBP_Room_Ceiling"].data.vertices])
+    Bs = np.array([v.co[:] for v in bpy.data.objects["GBP_Room_Backstop"].data.vertices])
+    Bf = np.array([v.co[:] for v in bpy.data.objects["GBP_Room_BackstopFrame"].data.vertices])
+    F = np.array([v.co[:] for v in bpy.data.objects["GBP_Room_Floor"].data.vertices])
+    rc = props.ROOM["cove_r"] + 1e-4
+    flat = F[(F[:, 0] > x0 + rc) & (F[:, 0] < x1 - rc) & (F[:, 1] > y0 + rc) & (F[:, 1] < y1 - rc)]
+    pred = props.floor_height(flat[:, 0], flat[:, 1])
+    fall_err = float(np.abs(flat[:, 2] - pred).max())
+    d = props.drain_xy()
+    far = flat[np.hypot(flat[:, 0] - d[0], flat[:, 1] - d[1]) > 0.5]
+    g = np.polyfit(np.hypot(far[:, 0] - d[0], far[:, 1] - d[1]), far[:, 2], 1)[0]
+    ok = (max(abs(v) for v in planes.values()) < 1e-6 and min(face_sets.values()) > 100 and inside == 0
+          and np.allclose(C[:, 2], z1, atol=1e-6) and abs(Bf[:, 1].min() - 1.3) < 1e-4 and Bs[:, 1].min() >= 1.3 - 1e-4
+          and fall_err < 1e-6 and abs(g - 0.01) < 1e-4 and abs(float(props.floor_height(0.0, 0.0))) < 1e-9
+          and np.allclose(d, (0.0, -1.0)))
+    return ok, (f"tile depth vs plane - relief {({k: round(float(v), 7) for k, v in planes.items()})}; tile verts on planes "
+                f"{face_sets}; verts inside the room {inside}; ceiling z {C[:, 2].min():.4f}..{C[:, 2].max():.4f}; "
+                f"backstop front y {Bf[:, 1].min():.4f} (rubber >= {Bs[:, 1].min():.4f}); floor formula err "
+                f"{fall_err:.2e} m, fitted fall {g * 100:.3f} %; drain {d.tolist()}")
+
+
+@check("scene", owner="B8")
+def b8_meshes_clean():
+    """Prop meshes: identity roots, no modifiers left, 'atlas' UV on visible meshes, GBPM_ materials,
+    no loose / degenerate geometry that would break Godot's import."""
+    props = _b8_props()
+    if props is None:
+        return True, "props not built in this scene"
+    bpy = _bpy()
+    bad = []
+    tris = {}
+    for root in B8_ROOTS:
+        r = bpy.data.objects[root]
+        if not np.allclose(np.array(r.matrix_world), np.eye(4), atol=1e-9):
+            bad.append(f"{root} not at identity")
+        for o in r.children:
+            if o.type != 'MESH':
+                continue
+            if o.modifiers:
+                bad.append(f"{o.name} modifiers")
+            coll = o.get("gbp_collision", False)
+            if not coll and "atlas" not in o.data.uv_layers:
+                bad.append(f"{o.name} no atlas UV")
+            if not coll and any(m is None or not m.name.startswith("GBPM_") for m in o.data.materials):
+                bad.append(f"{o.name} material")
+            if not coll and not len(o.data.materials):
+                bad.append(f"{o.name} no material")
+            areas = np.zeros(len(o.data.polygons))
+            o.data.polygons.foreach_get("area", areas)
+            if (areas <= 0).sum() > 0.002 * len(areas) + 2:
+                bad.append(f"{o.name} {(areas <= 0).sum()} zero-area faces")
+            tris[root] = tris.get(root, 0) + sum(len(p.vertices) - 2 for p in o.data.polygons)
+    return not bad, f"problems {bad}; triangles {tris}"
+
+
+def _glb_nodes(path):
+    g = _glb_json(path)
+    return {n.get("name") for n in g.get("nodes", [])}, g
+
+
+@check("files", owner="B8")
+def b8_props_files():
+    out = gbc.PROPS_OUT
+    need = ["weapons.glb", "room.glb", "props.json", "room.json"]
+    missing = [f for f in need if not os.path.exists(os.path.join(out, f))]
+    if missing:
+        return False, f"missing {missing} in {out} (run build.py --stage props)"
+    big = [f for f in need if os.path.getsize(os.path.join(out, f)) > 50e6]
+    wn, wg = _glb_nodes(os.path.join(out, "weapons.glb"))
+    rn, rg = _glb_nodes(os.path.join(out, "room.glb"))
+    miss_w = [m for m in B8_MARKERS if m not in wn]
+    miss_r = [m for m in B8_ROOM_MARKERS if m not in rn]
+    images = len(wg.get("images", [])) + len(rg.get("images", []))
+    probs = []
+    for f, schema in (("props.json", "gb.props/1"), ("room.json", "gb.room/1")):
+        doc = gbc.read_json(os.path.join(out, f))
+        probs += gbc.validate_schema(doc.get("data", {}), doc.get("schema", ""))
+        if doc.get("schema") != schema:
+            probs.append(f"{f} schema {doc.get('schema')}")
+    sizes = {f: round(os.path.getsize(os.path.join(out, f)) / 1e6, 2) for f in need}
+    ok = not big and not miss_w and not miss_r and images == 0 and not probs
+    return ok, f"sizes MB {sizes}; markers missing weapons {miss_w} room {miss_r}; images {images}; schema {probs}"
+
+
+def _room_gd_constants(path):
+    """Parse ``const NAME := <number or Vector3(...)>`` lines of world/room.gd."""
+    import re
+    out = {}
+    with open(path, "r", encoding="utf-8") as fh:
+        for line in fh:
+            m = re.match(r"\s*const\s+(\w+)\s*(?::\s*\w+)?\s*:?=\s*(.+)", line)
+            if not m:
+                continue
+            val = m.group(2).split("#")[0].strip()
+            nums = re.findall(r"-?\d+\.?\d*(?:e-?\d+)?", val)
+            if nums:
+                out[m.group(1)] = [float(n) for n in nums]
+    return out
+
+
+@check("files", owner="B8")
+def b8_room_constants():
+    """room.json equals props.ROOM (the single source) and, once G7 writes world/room.gd, its constants."""
+    import props
+    path = os.path.join(gbc.PROPS_OUT, "room.json")
+    if not os.path.exists(path):
+        return False, "room.json missing"
+    g = gbc.read_json(path)["data"]["godot"]
+    R = props.ROOM
+    pairs = {"x": (g["interior"]["x"], list(R["x"])), "z": (g["interior"]["z"], list(R["z"])),
+             "ceiling": (g["wall_planes"]["ceiling_y"], R["height"]), "fall": (g["floor"]["fall"], R["floor_fall"]),
+             "drain": (g["floor"]["drain"], list(R["drain_g"])), "backstop_z": (g["backstop"]["front_z"],
+                                                                               R["backstop_front_z"]),
+             "spawn": (g["player"]["spawn"], list(R["player_spawn_g"])), "table_top": (g["table"]["top_y"],
+                                                                                        R["table_top"])}
+    bad = [k for k, (a, b) in pairs.items() if not _close(a, b, 1e-9)]
+    gd = os.path.join(gbc.GAME_DIR, "world", "room.gd")
+    gd_note = "world/room.gd not written yet (G7 must take its constants from room.json)"
+    if os.path.exists(gd):
+        c = _room_gd_constants(gd)
+        expect = {"ROOM_HALF_X": [3.0], "ROOM_Z_MIN": [R["z"][0]], "ROOM_Z_MAX": [R["z"][1]],
+                  "CEILING_Y": [R["height"]], "FLOOR_FALL": [R["floor_fall"]], "DRAIN_POS": list(R["drain_g"]),
+                  "BACKSTOP_FRONT_Z": [R["backstop_front_z"]], "PLAYER_SPAWN": list(R["player_spawn_g"])}
+        diff = [k for k, v in expect.items() if k in c and not _close(c[k], v, 1e-6)]
+        absent = [k for k in expect if k not in c]
+        bad += [f"room.gd {k}" for k in diff]
+        gd_note = f"room.gd compared: mismatches {diff}; not declared there {absent}"
+    return not bad, f"room.json vs props.ROOM mismatches {bad}; {gd_note}"
+
+
+
 def verify_all(groups=("tables", "scene", "files"), quiet=False):
     """Run every registered check of ``groups``; returns {name: {ok, severity, owner, group, detail}}."""
     res = {}

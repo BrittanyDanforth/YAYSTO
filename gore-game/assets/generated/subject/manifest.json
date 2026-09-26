@@ -3,50 +3,45 @@
  "frame": "body_zup_m",
  "godot_mapping": "(x, z, -y)",
  "generator": "blender/gore_body/build.py",
- "build_id": "gb-6e0d788cb2c3",
+ "build_id": "gb-7f773750956e",
  "data": {
   "build": {
-   "build_id": "gb-6e0d788cb2c3",
+   "build_id": "gb-7f773750956e",
    "blender": "5.0.1",
    "gltf_exporter": "5.0.21",
    "quick": false,
    "timings_s": {
     "placeholder: armature + poses": 0.01,
-    "placeholder: head + body skin (seam ring)": 19.13,
-    "placeholder: shorts + muscle shell": 6.51,
-    "placeholder: eyes, eye FX, mouth, brow/lash": 1.59,
-    "placeholder: skeleton + fracture variants": 23.96,
-    "placeholder: brain, organs, cord, vessels": 5.56,
-    "placeholder: atlas UVs": 1.66,
-    "placeholder: LOD1 + shape keys": 0.65,
-    "placeholder: GB_Data objects": 0.1,
-    "placeholder: skin weights": 0.92,
-    "stage placeholder": 60.23,
-    "B1: master skin SDF mesh": 21.14,
-    "B1: LOD0 decimate + seam zip": 10.23,
-    "B1: UV islands, seams, unwrap, pack": 26.01,
-    "B1: codes, tissue + tension attributes, surfaces": 2.4,
-    "B1: shape keys + LOD1": 0.44,
-    "B1: tissue-depth + tension maps (512^2)": 7.37,
-    "B1: fit a placeholder head to the canonical ring": 4.7,
-    "B1: shorts SDF mesh": 2.88,
-    "B1: shorts solidify + UV": 7.93,
-    "B1: shorts codes": 0.01,
-    "B1: muscle shell SDF mesh": 8.56,
-    "B1: muscle shell codes + surfaces + UV": 0.25,
-    "stage skin": 92.47,
-    "stage skeleton (cache)": 0.19,
-    "stage rig (skin weights)": 1.05,
-    "stage export": 6.72,
-    "save .blend": 0.85,
-    "verify": 11.55,
-    "total": 173.39
+    "placeholder: head + body skin (seam ring)": 17.01,
+    "placeholder: shorts + muscle shell": 5.43,
+    "placeholder: eyes, eye FX, mouth, brow/lash": 1.3,
+    "placeholder: skeleton + fracture variants": 21.46,
+    "placeholder: brain, organs, cord, vessels": 5.3,
+    "placeholder: atlas UVs": 1.68,
+    "placeholder: LOD1 + shape keys": 0.76,
+    "placeholder: GB_Data objects": 0.27,
+    "placeholder: skin weights": 1.01,
+    "stage placeholder": 54.39,
+    "stage skin (cache)": 0.15,
+    "stage head (cache)": 0.1,
+    "stage skeleton (cache)": 0.14,
+    "stage viscera (cache)": 0.05,
+    "stage neuro (cache)": 0.08,
+    "stage vascular (cache)": 0.22,
+    "stage rig (skin weights)": 0.92,
+    "props: export weapons.glb": 0.48,
+    "props: export room.glb": 0.32,
+    "stage props": 9.46,
+    "stage export": 6.61,
+    "save .blend": 0.94,
+    "verify": 24.16,
+    "total": 97.3
    },
    "input_hashes": {
     "bake.py": "52fd332f910a7e5f",
     "body_skin.py": "6b355a74433386cf",
     "build.py": "63254531ee30f538",
-    "export.py": "dd37087956b2c5b3",
+    "export.py": "42fd6ab72872f6aa",
     "gb_common.py": "dee38f916f03aacc",
     "gb_data/__init__.py": "64e1e9bd93e8cf9a",
     "gb_data/bones.py": "4f7886de5d7ad7e1",
@@ -61,22 +56,23 @@
     "gb_data/segments.py": "61456d9ea6620d80",
     "gb_data/tissue.py": "d29b19f6b8ae2fd1",
     "gb_data/vertebrae.py": "a1a1ff223c3527c2",
-    "gb_data/vessels.py": "4cdf32c8a392a175",
+    "gb_data/vessels.py": "438919d796e4e3d0",
     "gb_geom.py": "0b504fbc8e348351",
-    "head_integration.py": "affd67bca5dc2783",
+    "head_integration.py": "51cd2c1c14e571ad",
     "lookdev.py": "ced4a22821e9168d",
-    "neuro.py": "2516bf2beaf931b6",
+    "neuro.py": "fd2b44305ad516ba",
     "placeholder.py": "03588e988564e144",
-    "props.py": "fc444b3143605ac8",
+    "props.py": "5fd1303bb0d29edc",
     "rig.py": "31e7f70ec9048975",
-    "skeleton.py": "9e43532f2710a76c",
+    "skeleton.py": "e574731ff9842e75",
+    "t_neuro.py": "6fb698bfc21bb8b0",
     "uv.py": "45f19ad36ae9dd66",
-    "vascular.py": "04d3395592677b65",
-    "verify.py": "87bd292380178d5d",
-    "viscera.py": "9b1322743e7a0796",
+    "vascular.py": "df05d83b197585ca",
+    "verify.py": "a90e3eaf729b1a88",
+    "viscera.py": "6c21ecc7ddd72484",
     "../gore_head/anatomy.py": "84302d7fe42e6c31",
-    "../gore_head/materials.py": "cd72b9979140403f",
-    "../gore_head/gh_common.py": "162ff1575e0caacf"
+    "../gore_head/materials.py": "c558ba3061993779",
+    "../gore_head/gh_common.py": "95bb3bc4d76e99e3"
    },
    "schemas": {
     "gb.manifest/1": "gb.manifest/1",
@@ -87,68 +83,70 @@
     "gb.spine/1": "gb.spine/1",
     "gb.codes/1": "gb.codes/1",
     "gb.brain_labels/1": "gb.brain_labels/1",
+    "gb.props/1": "gb.props/1",
+    "gb.room/1": "gb.room/1",
     "gb.bones/1": "gb.bones/1"
    }
   },
   "files": {
    "GB_Subject.glb": {
-    "bytes": 24933200,
-    "sha256": "2d5fbdeef5acb32c6804a497360fbbd8fab250cb8de60b4a2e14baa147833ff1",
-    "mb": 24.933
+    "bytes": 23082560,
+    "sha256": "bb727898aa6e3bb5b623101694453d3f1b027030237e2b4a694f575a8ba59539",
+    "mb": 23.083
    },
    "GB_Subject_LOD1.glb": {
-    "bytes": 2028380,
-    "sha256": "a37ceca7c7ecd7f7525d8c497b66399d5b2f59be8a7d5a21394b1815b5161266",
-    "mb": 2.028
+    "bytes": 2717256,
+    "sha256": "79d648a45524ed67a65f33651f65f52f0b6b858cee09210c588d8bf5f3efe3a7",
+    "mb": 2.717
    },
    "rig.json": {
     "bytes": 62143,
-    "sha256": "a6c6450e57953838f4cd3c16bc06ac6f22873bf42899d31b5d3d7637cc2c5d69",
+    "sha256": "58d364a102c11f50cc40cf3d28f000876cd9120792ff1dfd2fad20820ae4c978",
     "mb": 0.062
    },
    "landmarks.json": {
     "bytes": 16149,
-    "sha256": "a1f7440ce656b6276334d4abdf9700bfb5273b35500d810585d571e1106d2530",
+    "sha256": "36b240050f24c8131db25bad08380ce7b040f5dcf73d0248ebff3599d2720218",
     "mb": 0.016
    },
    "organs.json": {
-    "bytes": 22479,
-    "sha256": "8a389371af34233026f99427b82dcc4b6b3c942d7a6bbe134ec0caf117381d59",
-    "mb": 0.022
+    "bytes": 33652,
+    "sha256": "193b062e0eb8d260af962f53b95c5f5a82511dc870170a8e107f3caa8fc5055e",
+    "mb": 0.034
    },
    "vessels.json": {
-    "bytes": 535879,
-    "sha256": "afc1bcc9b03ab23d86ff6ef6968d8d7237f40fc9d418639966d5dc575f8be013",
-    "mb": 0.536
+    "bytes": 997511,
+    "sha256": "48c663aa1bafc3d98d51ebca86ac9755080355cd2639a9b7c0cde30ba6d264dc",
+    "mb": 0.998
    },
    "spine.json": {
-    "bytes": 19372,
-    "sha256": "0cc3e36f2e1794969cc1a217edeebd40185f272329c10a7c7b54fa818b26223d",
-    "mb": 0.019
+    "bytes": 28963,
+    "sha256": "b7336908733b7ff908fda8773dac352317819a84cff4376f782d60396b3d43a3",
+    "mb": 0.029
    },
    "codes.json": {
     "bytes": 6375,
-    "sha256": "6a2a6f52b85698dc912f135b4950974fe4cf9500a7397d3d7bb4b40372ab75e5",
+    "sha256": "c313d793d36f52363e3b17582b30f4cd8d12c504be29ab0d1a24f9029d8aee6d",
     "mb": 0.006
    },
    "brain_labels.png": {
-    "bytes": 7055,
-    "sha256": "fd3a9e45588af413228d9eb5069572b9406391a6f15d2ff57d18a36d818d069e",
-    "mb": 0.007
+    "bytes": 8366,
+    "sha256": "34e5bf72de7c7f5b727608694efd425506ac2de56c74b9423d85e4cd9e075337",
+    "mb": 0.008
    },
    "brain_labels.json": {
-    "bytes": 3748,
-    "sha256": "5f9e14f6479fe8411ec1dd8fbaa7bc6422cab3c0c49b6182e96b3e0b46a5c690",
-    "mb": 0.004
+    "bytes": 5176,
+    "sha256": "c8bccd0836c0b898cdcfe15f019862a1d6fbb412f38a5f1999da74ffa1981494",
+    "mb": 0.005
    }
   },
   "meshes": {
    "GB_Head": {
-    "vertices": 13404,
-    "triangles": 26646,
+    "vertices": 15026,
+    "triangles": 29890,
     "surfaces": {
-     "GBM_skin_head": 24789,
-     "GBM_mouth_lining": 1857
+     "GBM_skin_head": 27551,
+     "GBM_mouth_lining": 2339
     },
     "shape_keys": [
      "AU01_L",
@@ -177,7 +175,7 @@
      "swell_periorbital_R"
     ],
     "layer": "skin",
-    "status": "placeholder (B0 method on the B1 skin_sdf)",
+    "status": "built (B2)",
     "uv_maps": [
      "atlas",
      "gb_codes"
@@ -221,88 +219,163 @@
     ]
    },
    "GB_Eye_L": {
-    "vertices": 952,
-    "triangles": 1900,
+    "vertices": 922,
+    "triangles": 1840,
     "surfaces": {
-     "GBM_eye": 1900
+     "GBM_eye": 1840
     },
     "shape_keys": [],
     "layer": "eye",
-    "status": "placeholder",
+    "status": "built (B2)",
     "uv_maps": [
      "atlas",
      "gb_codes"
     ]
    },
    "GB_Eye_R": {
-    "vertices": 952,
-    "triangles": 1900,
+    "vertices": 922,
+    "triangles": 1840,
     "surfaces": {
-     "GBM_eye": 1900
+     "GBM_eye": 1840
     },
     "shape_keys": [],
     "layer": "eye",
-    "status": "placeholder",
+    "status": "built (B2)",
     "uv_maps": [
      "atlas",
      "gb_codes"
     ]
    },
    "GB_EyeFX_L": {
-    "vertices": 313,
-    "triangles": 550,
+    "vertices": 352,
+    "triangles": 496,
     "surfaces": {
-     "GBM_tearline": 46,
-     "GBM_eye_occlusion": 504
+     "GBM_tearline": 124,
+     "GBM_eye_occlusion": 372
     },
-    "shape_keys": [],
+    "shape_keys": [
+     "AU01_L",
+     "AU01_R",
+     "AU02_L",
+     "AU02_R",
+     "AU04_L",
+     "AU04_R",
+     "AU06_L",
+     "AU06_R",
+     "AU07_L",
+     "AU07_R",
+     "AU09_L",
+     "AU09_R",
+     "AU10_L",
+     "AU10_R",
+     "AU12_L",
+     "AU12_R",
+     "AU15_L",
+     "AU15_R",
+     "AU20_L",
+     "AU20_R",
+     "mouth_slack_L",
+     "mouth_slack_R",
+     "swell_periorbital_L",
+     "swell_periorbital_R"
+    ],
     "layer": "eye_fx",
-    "status": "placeholder",
+    "status": "built (B2)",
     "uv_maps": [
      "atlas",
      "gb_codes"
     ]
    },
    "GB_EyeFX_R": {
-    "vertices": 313,
-    "triangles": 550,
+    "vertices": 352,
+    "triangles": 496,
     "surfaces": {
-     "GBM_tearline": 46,
-     "GBM_eye_occlusion": 504
+     "GBM_tearline": 124,
+     "GBM_eye_occlusion": 372
     },
-    "shape_keys": [],
+    "shape_keys": [
+     "AU01_L",
+     "AU01_R",
+     "AU02_L",
+     "AU02_R",
+     "AU04_L",
+     "AU04_R",
+     "AU06_L",
+     "AU06_R",
+     "AU07_L",
+     "AU07_R",
+     "AU09_L",
+     "AU09_R",
+     "AU10_L",
+     "AU10_R",
+     "AU12_L",
+     "AU12_R",
+     "AU15_L",
+     "AU15_R",
+     "AU20_L",
+     "AU20_R",
+     "mouth_slack_L",
+     "mouth_slack_R",
+     "swell_periorbital_L",
+     "swell_periorbital_R"
+    ],
     "layer": "eye_fx",
-    "status": "placeholder",
+    "status": "built (B2)",
     "uv_maps": [
      "atlas",
      "gb_codes"
     ]
    },
    "GB_Mouth": {
-    "vertices": 4163,
-    "triangles": 8400,
+    "vertices": 4076,
+    "triangles": 8292,
     "surfaces": {
-     "GBM_teeth": 3550,
-     "GBM_gums": 4404,
-     "GBM_tongue": 446
+     "GBM_teeth": 4592,
+     "GBM_gums": 2200,
+     "GBM_tongue": 1500
     },
     "shape_keys": [],
     "layer": "mouth",
-    "status": "placeholder",
+    "status": "built (B2)",
     "uv_maps": [
      "atlas",
      "gb_codes"
     ]
    },
    "GB_BrowLash": {
-    "vertices": 184,
-    "triangles": 172,
+    "vertices": 1160,
+    "triangles": 1344,
     "surfaces": {
-     "GBM_hair_card": 172
+     "GBM_hair_card": 1344
     },
-    "shape_keys": [],
+    "shape_keys": [
+     "AU01_L",
+     "AU01_R",
+     "AU02_L",
+     "AU02_R",
+     "AU04_L",
+     "AU04_R",
+     "AU06_L",
+     "AU06_R",
+     "AU07_L",
+     "AU07_R",
+     "AU09_L",
+     "AU09_R",
+     "AU10_L",
+     "AU10_R",
+     "AU12_L",
+     "AU12_R",
+     "AU15_L",
+     "AU15_R",
+     "AU20_L",
+     "AU20_R",
+     "mouth_slack_L",
+     "mouth_slack_R",
+     "swell_periorbital_L",
+     "swell_periorbital_R"
+    ],
     "layer": "hair",
-    "status": "placeholder",
+    "status": "built (B2)",
     "uv_maps": [
      "atlas",
      "gb_codes"
@@ -328,10 +401,10 @@
     ]
    },
    "GB_Skeleton": {
-    "vertices": 18934,
-    "triangles": 36824,
+    "vertices": 18938,
+    "triangles": 36832,
     "surfaces": {
-     "GBM_bone": 35252,
+     "GBM_bone": 35260,
      "GBM_cartilage": 1572
     },
     "shape_keys": [],
@@ -343,24 +416,24 @@
     ]
    },
    "GB_Brain": {
-    "vertices": 5332,
-    "triangles": 13872,
+    "vertices": 5576,
+    "triangles": 13799,
     "surfaces": {
-     "GBM_brain": 13872
+     "GBM_brain": 13799
     },
     "shape_keys": [],
     "layer": "brain",
-    "status": "placeholder",
+    "status": "B4",
     "uv_maps": [
      "atlas",
      "gb_codes"
     ]
    },
    "GB_Organs": {
-    "vertices": 10880,
-    "triangles": 21800,
+    "vertices": 10912,
+    "triangles": 22048,
     "surfaces": {
-     "GBM_organ": 21800
+     "GBM_organ": 22048
     },
     "shape_keys": [
      "heart_systole",
@@ -371,59 +444,59 @@
      "diaphragm_inhale"
     ],
     "layer": "organ",
-    "status": "placeholder",
+    "status": "B4",
     "uv_maps": [
      "atlas",
      "gb_codes"
     ]
    },
    "GB_Cord": {
-    "vertices": 1190,
-    "triangles": 2372,
+    "vertices": 1704,
+    "triangles": 3168,
     "surfaces": {
-     "GBM_cord": 2372
+     "GBM_cord": 3168
     },
     "shape_keys": [],
     "layer": "cord",
-    "status": "placeholder",
+    "status": "B4",
     "uv_maps": [
      "atlas",
      "gb_codes"
     ]
    },
    "GB_Vessels_Art": {
-    "vertices": 5020,
-    "triangles": 9660,
+    "vertices": 4494,
+    "triangles": 8460,
     "surfaces": {
-     "GBM_vessel_art": 9660
+     "GBM_vessel_art": 8460
     },
     "shape_keys": [],
     "layer": "vessel_art",
-    "status": "placeholder",
+    "status": "B5",
     "uv_maps": [
      "atlas",
      "gb_codes"
     ]
    },
    "GB_Vessels_Ven": {
-    "vertices": 2536,
-    "triangles": 4928,
+    "vertices": 3372,
+    "triangles": 6468,
     "surfaces": {
-     "GBM_vessel_ven": 4928
+     "GBM_vessel_ven": 6468
     },
     "shape_keys": [],
     "layer": "vessel_ven",
-    "status": "placeholder",
+    "status": "B5",
     "uv_maps": [
      "atlas",
      "gb_codes"
     ]
    },
    "GB_Frac_Skull_L": {
-    "vertices": 36493,
-    "triangles": 72693,
+    "vertices": 3904,
+    "triangles": 7520,
     "surfaces": {
-     "GBM_bone": 72693
+     "GBM_bone": 7520
     },
     "shape_keys": [],
     "layer": "bone_variant",
@@ -448,10 +521,10 @@
     ]
    },
    "GB_Frac_Skull_T": {
-    "vertices": 3875,
-    "triangles": 7458,
+    "vertices": 3871,
+    "triangles": 7454,
     "surfaces": {
-     "GBM_bone": 7458
+     "GBM_bone": 7454
     },
     "shape_keys": [],
     "layer": "bone_variant",
@@ -532,10 +605,10 @@
     ]
    },
    "GB_Frac_RadUlna_L_comminuted": {
-    "vertices": 1259,
-    "triangles": 2358,
+    "vertices": 1263,
+    "triangles": 2366,
     "surfaces": {
-     "GBM_bone": 2358
+     "GBM_bone": 2366
     },
     "shape_keys": [],
     "layer": "bone_variant",
@@ -560,10 +633,10 @@
     ]
    },
    "GB_Frac_RadUlna_R_comminuted": {
-    "vertices": 1259,
-    "triangles": 2358,
+    "vertices": 1263,
+    "triangles": 2366,
     "surfaces": {
-     "GBM_bone": 2358
+     "GBM_bone": 2366
     },
     "shape_keys": [],
     "layer": "bone_variant",
@@ -644,10 +717,10 @@
     ]
    },
    "GB_Frac_Tibia_L_comminuted": {
-    "vertices": 1145,
-    "triangles": 2230,
+    "vertices": 1143,
+    "triangles": 2226,
     "surfaces": {
-     "GBM_bone": 2230
+     "GBM_bone": 2226
     },
     "shape_keys": [],
     "layer": "bone_variant",
@@ -672,10 +745,10 @@
     ]
    },
    "GB_Frac_Tibia_R_comminuted": {
-    "vertices": 1145,
-    "triangles": 2230,
+    "vertices": 1143,
+    "triangles": 2226,
     "surfaces": {
-     "GBM_bone": 2230
+     "GBM_bone": 2226
     },
     "shape_keys": [],
     "layer": "bone_variant",
@@ -686,14 +759,40 @@
     ]
    },
    "GB_Head_LOD1": {
-    "vertices": 6742,
-    "triangles": 13322,
+    "vertices": 7580,
+    "triangles": 14998,
     "surfaces": {
-     "GBM_skin_head": 13322
+     "GBM_skin_head": 13565,
+     "GBM_mouth_lining": 1433
     },
-    "shape_keys": [],
+    "shape_keys": [
+     "AU01_L",
+     "AU01_R",
+     "AU02_L",
+     "AU02_R",
+     "AU04_L",
+     "AU04_R",
+     "AU06_L",
+     "AU06_R",
+     "AU07_L",
+     "AU07_R",
+     "AU09_L",
+     "AU09_R",
+     "AU10_L",
+     "AU10_R",
+     "AU12_L",
+     "AU12_R",
+     "AU15_L",
+     "AU15_R",
+     "AU20_L",
+     "AU20_R",
+     "mouth_slack_L",
+     "mouth_slack_R",
+     "swell_periorbital_L",
+     "swell_periorbital_R"
+    ],
     "layer": "skin",
-    "status": "placeholder (B0 method on the B1 skin_sdf)",
+    "status": "built (B2)",
     "uv_maps": [
      "atlas",
      "gb_codes"
@@ -777,7 +876,7 @@
     "max": [
      0.52697,
      0.15277,
-     1.77218
+     1.7721
     ]
    },
    "godot_rest": {
@@ -788,7 +887,7 @@
     ],
     "max": [
      0.52697,
-     1.77218,
+     1.7721,
      0.15197
     ]
    }
@@ -813,14 +912,14 @@
    "head_neck": {
     "code": 0,
     "origin": [
-     -0.08813,
-     -0.09124,
+     -0.08818,
+     -0.09126,
      1.485
     ],
     "extent": [
-     0.17626,
-     0.21125,
-     0.28718
+     0.17635,
+     0.21124,
+     0.2871
     ]
    },
    "torso": {
@@ -958,7 +1057,7 @@
   "texture_note": "no baked textures yet (B7); materials are named placeholders swapped in Godot",
   "budgets": {
    "GB_Head": {
-    "triangles": 26646,
+    "triangles": 29890,
     "budget": 30000,
     "ok": true
    },
@@ -973,17 +1072,17 @@
     "ok": true
    },
    "GB_Eye+EyeFX": {
-    "triangles": 4900,
+    "triangles": 4672,
     "budget": 5000,
     "ok": true
    },
    "GB_Mouth": {
-    "triangles": 8400,
+    "triangles": 8292,
     "budget": 8500,
     "ok": true
    },
    "GB_BrowLash": {
-    "triangles": 172,
+    "triangles": 1344,
     "budget": 2000,
     "ok": true
    },
@@ -993,41 +1092,37 @@
     "ok": true
    },
    "GB_Skeleton": {
-    "triangles": 36824,
+    "triangles": 36832,
     "budget": 36000,
     "ok": true
    },
    "GB_Brain": {
-    "triangles": 13872,
+    "triangles": 13799,
     "budget": 14000,
     "ok": true
    },
    "GB_Organs": {
-    "triangles": 21800,
+    "triangles": 22048,
     "budget": 22000,
     "ok": true
    },
    "GB_Cord": {
-    "triangles": 2372,
+    "triangles": 3168,
     "budget": 3000,
     "ok": true
    },
    "GB_Vessels": {
-    "triangles": 14588,
+    "triangles": 14928,
     "budget": 14000,
     "ok": true
    },
    "GB_Variants": {
-    "triangles": 123233,
+    "triangles": 58064,
     "budget": 60000,
-    "ok": false
+    "ok": true
    }
   },
   "pending": {
-   "head": "placeholder",
-   "viscera": "placeholder",
-   "neuro": "placeholder",
-   "vascular": "placeholder",
    "bake": "skipped"
   },
   "import_hints": {

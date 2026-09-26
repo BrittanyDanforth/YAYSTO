@@ -3,7 +3,7 @@
  "frame": "body_zup_m",
  "godot_mapping": "(x, z, -y)",
  "generator": "blender/gore_body/build.py",
- "build_id": "gb-6e0d788cb2c3",
+ "build_id": "gb-7f773750956e",
  "data": {
   "organs": [
    {
@@ -146,9 +146,43 @@
       "sub_id": 4
      }
     ],
+    "sub_parts": {
+     "RA": 1,
+     "RV": 2,
+     "LA": 3,
+     "LV": 4,
+     "epicardial_fat": 5
+    },
     "blend_shapes": [
      "heart_systole"
-    ]
+    ],
+    "measured": {
+     "aabb": [
+      [
+       -0.05041,
+       -0.07907,
+       1.26914
+      ],
+      [
+       0.08782,
+       0.01679,
+       1.39239
+      ]
+     ],
+     "centroid": [
+      0.0273,
+      -0.03312,
+      1.33146
+     ],
+     "density_g_ml": 1.05,
+     "mass_g_bible": 320,
+     "mass_g_est": 333.0,
+     "mesh_parts": [
+      "heart"
+     ],
+     "tris": 3294,
+     "volume_ml": 317.12
+    }
    },
    {
     "id": "lung_L",
@@ -158,7 +192,7 @@
      "chest": 0.5,
      "upper_chest": 0.5
     },
-    "mass_g": 480.0,
+    "mass_g": 480,
     "compartment": "pleura_L",
     "hit_priority": 6,
     "surface_colour": "#E0A0A0",
@@ -190,10 +224,41 @@
      }
     ],
     "sub": [],
+    "sub_parts": {
+     "upper": 1,
+     "lower": 2
+    },
     "blend_shapes": [
      "lung_inhale_L",
      "lung_collapse_L"
-    ]
+    ],
+    "measured": {
+     "aabb": [
+      [
+       0.00899,
+       -0.08586,
+       1.27077
+      ],
+      [
+       0.13277,
+       0.08664,
+       1.49452
+      ]
+     ],
+     "centroid": [
+      0.06762,
+      0.01946,
+      1.36715
+     ],
+     "density_g_ml": 0.3,
+     "mass_g_bible": 480,
+     "mass_g_est": 315.2,
+     "mesh_parts": [
+      "lung_L"
+     ],
+     "tris": 1708,
+     "volume_ml": 1050.52
+    }
    },
    {
     "id": "lung_R",
@@ -203,7 +268,7 @@
      "chest": 0.5,
      "upper_chest": 0.5
     },
-    "mass_g": 550.0,
+    "mass_g": 550,
     "compartment": "pleura_R",
     "hit_priority": 6,
     "surface_colour": "#E0A0A0",
@@ -235,10 +300,42 @@
      }
     ],
     "sub": [],
+    "sub_parts": {
+     "upper": 1,
+     "middle": 2,
+     "lower": 3
+    },
     "blend_shapes": [
      "lung_inhale_R",
      "lung_collapse_R"
-    ]
+    ],
+    "measured": {
+     "aabb": [
+      [
+       -0.1327,
+       -0.08593,
+       1.27104
+      ],
+      [
+       -0.00898,
+       0.08665,
+       1.49416
+      ]
+     ],
+     "centroid": [
+      -0.0608,
+      0.01238,
+      1.37055
+     ],
+     "density_g_ml": 0.3,
+     "mass_g_bible": 550,
+     "mass_g_est": 345.6,
+     "mesh_parts": [
+      "lung_R"
+     ],
+     "tris": 1898,
+     "volume_ml": 1151.92
+    }
    },
    {
     "id": "liver",
@@ -247,7 +344,7 @@
     "parent_bones": {
      "spine": 1.0
     },
-    "mass_g": 1550.0,
+    "mass_g": 1550,
     "compartment": "peritoneum",
     "hit_priority": 7,
     "surface_colour": "#7A2E23",
@@ -355,7 +452,39 @@
       "sub_id": 3
      }
     ],
-    "blend_shapes": []
+    "sub_parts": {
+     "right_lobe": 1,
+     "left_lobe": 2,
+     "caudate": 3
+    },
+    "blend_shapes": [],
+    "measured": {
+     "aabb": [
+      [
+       -0.12284,
+       -0.07727,
+       1.16617
+      ],
+      [
+       0.08472,
+       0.05765,
+       1.31572
+      ]
+     ],
+     "centroid": [
+      -0.05056,
+      -0.02213,
+      1.25102
+     ],
+     "density_g_ml": 1.05,
+     "mass_g_bible": 1550,
+     "mass_g_est": 1354.7,
+     "mesh_parts": [
+      "liver"
+     ],
+     "tris": 2000,
+     "volume_ml": 1290.22
+    }
    },
    {
     "id": "gallbladder",
@@ -364,7 +493,7 @@
     "parent_bones": {
      "spine": 1.0
     },
-    "mass_g": 40.0,
+    "mass_g": 40,
     "compartment": "peritoneum",
     "hit_priority": 8,
     "surface_colour": "#5E7A3A",
@@ -396,7 +525,35 @@
      }
     ],
     "sub": [],
-    "blend_shapes": []
+    "sub_parts": {},
+    "blend_shapes": [],
+    "measured": {
+     "aabb": [
+      [
+       -0.08847,
+       -0.06999,
+       1.1602
+      ],
+      [
+       -0.03147,
+       -0.00448,
+       1.21383
+      ]
+     ],
+     "centroid": [
+      -0.06406,
+      -0.04221,
+      1.18413
+     ],
+     "density_g_ml": 1.02,
+     "mass_g_bible": 40,
+     "mass_g_est": 39.6,
+     "mesh_parts": [
+      "gallbladder"
+     ],
+     "tris": 250,
+     "volume_ml": 38.84
+    }
    },
    {
     "id": "spleen",
@@ -405,7 +562,7 @@
     "parent_bones": {
      "spine": 1.0
     },
-    "mass_g": 150.0,
+    "mass_g": 150,
     "compartment": "peritoneum",
     "hit_priority": 8,
     "surface_colour": "#5E2433",
@@ -437,7 +594,35 @@
      }
     ],
     "sub": [],
-    "blend_shapes": []
+    "sub_parts": {},
+    "blend_shapes": [],
+    "measured": {
+     "aabb": [
+      [
+       0.05769,
+       -0.01687,
+       1.17447
+      ],
+      [
+       0.12576,
+       0.06513,
+       1.28468
+      ]
+     ],
+     "centroid": [
+      0.10075,
+      0.02379,
+      1.22908
+     ],
+     "density_g_ml": 1.05,
+     "mass_g_bible": 150,
+     "mass_g_est": 127.9,
+     "mesh_parts": [
+      "spleen"
+     ],
+     "tris": 500,
+     "volume_ml": 121.83
+    }
    },
    {
     "id": "kidney_L",
@@ -446,7 +631,7 @@
     "parent_bones": {
      "spine": 1.0
     },
-    "mass_g": 150.0,
+    "mass_g": 150,
     "compartment": "retroperitoneum",
     "hit_priority": 8,
     "surface_colour": "#6E2A26",
@@ -478,7 +663,43 @@
      }
     ],
     "sub": [],
-    "blend_shapes": []
+    "sub_parts": {
+     "kidney": 1,
+     "hilum_sinus": 2,
+     "perirenal_fat": 3
+    },
+    "blend_shapes": [],
+    "encloses": [
+     "kidney_L (perirenal fat sub 3 encloses sub 1-2)"
+    ],
+    "measured": {
+     "aabb": [
+      [
+       0.0387,
+       -0.00253,
+       1.1252
+      ],
+      [
+       0.10064,
+       0.05162,
+       1.23402
+      ]
+     ],
+     "centroid": [
+      0.07097,
+      0.0247,
+      1.18002
+     ],
+     "density_g_ml": 1.05,
+     "mass_g_bible": 150,
+     "mass_g_est": 149.3,
+     "mesh_parts": [
+      "kidney_L",
+      "kidney_fat_L"
+     ],
+     "tris": 850,
+     "volume_ml": 142.22
+    }
    },
    {
     "id": "kidney_R",
@@ -487,7 +708,7 @@
     "parent_bones": {
      "spine": 1.0
     },
-    "mass_g": 150.0,
+    "mass_g": 150,
     "compartment": "retroperitoneum",
     "hit_priority": 8,
     "surface_colour": "#6E2A26",
@@ -519,7 +740,43 @@
      }
     ],
     "sub": [],
-    "blend_shapes": []
+    "sub_parts": {
+     "kidney": 1,
+     "hilum_sinus": 2,
+     "perirenal_fat": 3
+    },
+    "blend_shapes": [],
+    "encloses": [
+     "kidney_R (perirenal fat sub 3 encloses sub 1-2)"
+    ],
+    "measured": {
+     "aabb": [
+      [
+       -0.10077,
+       -0.0033,
+       1.10554
+      ],
+      [
+       -0.03946,
+       0.05097,
+       1.21388
+      ]
+     ],
+     "centroid": [
+      -0.07095,
+      0.0247,
+      1.16009
+     ],
+     "density_g_ml": 1.05,
+     "mass_g_bible": 150,
+     "mass_g_est": 149.1,
+     "mesh_parts": [
+      "kidney_R",
+      "kidney_fat_R"
+     ],
+     "tris": 850,
+     "volume_ml": 141.97
+    }
    },
    {
     "id": "adrenal_L",
@@ -528,7 +785,7 @@
     "parent_bones": {
      "spine": 1.0
     },
-    "mass_g": 5.0,
+    "mass_g": 5,
     "compartment": "retroperitoneum",
     "hit_priority": 9,
     "surface_colour": "#C9A04A",
@@ -560,7 +817,35 @@
      }
     ],
     "sub": [],
-    "blend_shapes": []
+    "sub_parts": {},
+    "blend_shapes": [],
+    "measured": {
+     "aabb": [
+      [
+       0.02803,
+       0.01978,
+       1.20894
+      ],
+      [
+       0.0567,
+       0.02994,
+       1.25554
+      ]
+     ],
+     "centroid": [
+      0.04027,
+      0.02487,
+      1.23593
+     ],
+     "density_g_ml": 1.05,
+     "mass_g_bible": 5,
+     "mass_g_est": 5.1,
+     "mesh_parts": [
+      "adrenal_L"
+     ],
+     "tris": 120,
+     "volume_ml": 4.84
+    }
    },
    {
     "id": "adrenal_R",
@@ -569,7 +854,7 @@
     "parent_bones": {
      "spine": 1.0
     },
-    "mass_g": 5.0,
+    "mass_g": 5,
     "compartment": "retroperitoneum",
     "hit_priority": 9,
     "surface_colour": "#C9A04A",
@@ -601,7 +886,35 @@
      }
     ],
     "sub": [],
-    "blend_shapes": []
+    "sub_parts": {},
+    "blend_shapes": [],
+    "measured": {
+     "aabb": [
+      [
+       -0.05243,
+       0.02557,
+       1.21344
+      ],
+      [
+       -0.02752,
+       0.03457,
+       1.25664
+      ]
+     ],
+     "centroid": [
+      -0.03999,
+      0.03001,
+      1.23499
+     ],
+     "density_g_ml": 1.05,
+     "mass_g_bible": 5,
+     "mass_g_est": 5.1,
+     "mesh_parts": [
+      "adrenal_R"
+     ],
+     "tris": 120,
+     "volume_ml": 4.83
+    }
    },
    {
     "id": "stomach",
@@ -610,7 +923,7 @@
     "parent_bones": {
      "spine": 1.0
     },
-    "mass_g": 150.0,
+    "mass_g": 150,
     "compartment": "peritoneum",
     "hit_priority": 5,
     "surface_colour": "#C98A7E",
@@ -642,7 +955,38 @@
      }
     ],
     "sub": [],
-    "blend_shapes": []
+    "sub_parts": {
+     "serosa": 1,
+     "mucosa_lumen": 2
+    },
+    "blend_shapes": [],
+    "measured": {
+     "aabb": [
+      [
+       -0.04226,
+       -0.08218,
+       1.094
+      ],
+      [
+       0.11207,
+       0.03765,
+       1.29234
+      ]
+     ],
+     "centroid": [
+      0.05087,
+      -0.03264,
+      1.19619
+     ],
+     "density_g_ml": 1.05,
+     "mass_g_bible": 150,
+     "mass_g_est": 144.5,
+     "mesh_parts": [
+      "stomach"
+     ],
+     "tris": 2400,
+     "volume_ml": 137.62
+    }
    },
    {
     "id": "pancreas",
@@ -651,13 +995,14 @@
     "parent_bones": {
      "spine": 1.0
     },
-    "mass_g": null,
+    "mass_g": 115,
     "compartment": "retroperitoneum",
     "hit_priority": 7,
     "surface_colour": "#D9B28A",
     "interior_colour": "#C89A74",
     "hit": [],
     "sub": [],
+    "sub_parts": {},
     "blend_shapes": [],
     "tube": {
      "id": "pancreas",
@@ -684,6 +1029,33 @@
        1.215
       ]
      ]
+    },
+    "measured": {
+     "aabb": [
+      [
+       -0.05756,
+       -0.06289,
+       1.12214
+      ],
+      [
+       0.09423,
+       0.01553,
+       1.22595
+      ]
+     ],
+     "centroid": [
+      -0.01416,
+      -0.03863,
+      1.1697
+     ],
+     "density_g_ml": 1.05,
+     "mass_g_bible": 115,
+     "mass_g_est": 104.8,
+     "mesh_parts": [
+      "pancreas"
+     ],
+     "tris": 454,
+     "volume_ml": 99.82
     }
    },
    {
@@ -693,7 +1065,7 @@
     "parent_bones": {
      "hips": 1.0
     },
-    "mass_g": 50.0,
+    "mass_g": 50,
     "compartment": "pelvis_extraperitoneal",
     "hit_priority": 6,
     "surface_colour": "#D8B0A0",
@@ -751,7 +1123,38 @@
       "sub_id": 1
      }
     ],
-    "blend_shapes": []
+    "sub_parts": {
+     "serosa": 1,
+     "mucosa_lumen": 2
+    },
+    "blend_shapes": [],
+    "measured": {
+     "aabb": [
+      [
+       -0.03008,
+       -0.0559,
+       0.87905
+      ],
+      [
+       0.0301,
+       -0.00407,
+       0.91877
+      ]
+     ],
+     "centroid": [
+      1e-05,
+      -0.0299,
+      0.90036
+     ],
+     "density_g_ml": 1.05,
+     "mass_g_bible": 50,
+     "mass_g_est": 50.6,
+     "mesh_parts": [
+      "bladder"
+     ],
+     "tris": 478,
+     "volume_ml": 48.18
+    }
    },
    {
     "id": "thyroid",
@@ -760,7 +1163,7 @@
     "parent_bones": {
      "neck": 1.0
     },
-    "mass_g": 20.0,
+    "mass_g": 20,
     "compartment": "neck",
     "hit_priority": 6,
     "surface_colour": "#9A3A3A",
@@ -840,7 +1243,35 @@
      }
     ],
     "sub": [],
-    "blend_shapes": []
+    "sub_parts": {},
+    "blend_shapes": [],
+    "measured": {
+     "aabb": [
+      [
+       -0.031,
+       -0.04493,
+       1.47996
+      ],
+      [
+       0.03123,
+       -0.01759,
+       1.53166
+      ]
+     ],
+     "centroid": [
+      0.00014,
+      -0.02775,
+      1.50634
+     ],
+     "density_g_ml": 1.05,
+     "mass_g_bible": 20,
+     "mass_g_est": 18.5,
+     "mesh_parts": [
+      "thyroid"
+     ],
+     "tris": 480,
+     "volume_ml": 17.62
+    }
    },
    {
     "id": "trachea",
@@ -857,6 +1288,12 @@
     "interior_colour": "#C08880",
     "hit": [],
     "sub": [],
+    "sub_parts": {
+     "cartilage_ring": 1,
+     "annular_ligament": 2,
+     "membranous_wall": 3,
+     "mucosa_lumen": 4
+    },
     "blend_shapes": [],
     "tube": {
      "id": "trachea",
@@ -878,6 +1315,30 @@
        1.402
       ]
      ]
+    },
+    "measured": {
+     "aabb": [
+      [
+       -0.01437,
+       -0.03857,
+       1.40092
+      ],
+      [
+       0.01112,
+       0.01557,
+       1.5054
+      ]
+     ],
+     "centroid": [
+      -0.00162,
+      0.00084,
+      1.12822
+     ],
+     "mesh_parts": [
+      "airway"
+     ],
+     "tris": 657,
+     "volume_ml": 87.16
     }
    },
    {
@@ -894,6 +1355,12 @@
     "interior_colour": "#C08880",
     "hit": [],
     "sub": [],
+    "sub_parts": {
+     "cartilage_ring": 1,
+     "annular_ligament": 2,
+     "membranous_wall": 3,
+     "mucosa_lumen": 4
+    },
     "blend_shapes": [],
     "tube": {
      "id": "bronchus_L",
@@ -910,6 +1377,26 @@
        1.38
       ]
      ]
+    },
+    "measured": {
+     "aabb": [
+      [
+       -0.00151,
+       0.0035,
+       1.37078
+      ],
+      [
+       0.05323,
+       0.02872,
+       1.40246
+      ]
+     ],
+     "centroid": null,
+     "mesh_parts": [
+      "airway"
+     ],
+     "tris": 349,
+     "volume_ml": -25.09
     }
    },
    {
@@ -926,6 +1413,12 @@
     "interior_colour": "#C08880",
     "hit": [],
     "sub": [],
+    "sub_parts": {
+     "cartilage_ring": 1,
+     "annular_ligament": 2,
+     "membranous_wall": 3,
+     "mucosa_lumen": 4
+    },
     "blend_shapes": [],
     "tube": {
      "id": "bronchus_R",
@@ -942,6 +1435,26 @@
        1.38
       ]
      ]
+    },
+    "measured": {
+     "aabb": [
+      [
+       -0.04679,
+       0.00066,
+       1.36432
+      ],
+      [
+       -0.00265,
+       0.02165,
+       1.40408
+      ]
+     ],
+     "centroid": null,
+     "mesh_parts": [
+      "airway"
+     ],
+     "tris": 312,
+     "volume_ml": -25.99
     }
    },
    {
@@ -959,6 +1472,10 @@
     "interior_colour": "#B06060",
     "hit": [],
     "sub": [],
+    "sub_parts": {
+     "wall": 1,
+     "lumen": 2
+    },
     "blend_shapes": [],
     "tube": {
      "id": "oesophagus",
@@ -1000,6 +1517,30 @@
        1.255
       ]
      ]
+    },
+    "measured": {
+     "aabb": [
+      [
+       -0.01078,
+       -0.02131,
+       1.26075
+      ],
+      [
+       0.0373,
+       0.0326,
+       1.50836
+      ]
+     ],
+     "centroid": [
+      0.00507,
+      0.00993,
+      1.39129
+     ],
+     "mesh_parts": [
+      "oesophagus"
+     ],
+     "tris": 800,
+     "volume_ml": 43.98
     }
    },
    {
@@ -1009,7 +1550,7 @@
     "parent_bones": {
      "neck": 1.0
     },
-    "mass_g": 30.0,
+    "mass_g": 30,
     "compartment": "airway",
     "hit_priority": 7,
     "surface_colour": "#D8CFC6",
@@ -1041,7 +1582,40 @@
      }
     ],
     "sub": [],
-    "blend_shapes": []
+    "sub_parts": {
+     "thyroid_cartilage": 1,
+     "cricoid": 2,
+     "soft_tissue": 3,
+     "lumen": 4
+    },
+    "blend_shapes": [],
+    "measured": {
+     "aabb": [
+      [
+       -0.02225,
+       -0.05796,
+       1.50603
+      ],
+      [
+       0.02213,
+       -0.01981,
+       1.55902
+      ]
+     ],
+     "centroid": [
+      1e-05,
+      -0.03737,
+      1.53126
+     ],
+     "density_g_ml": 1.1,
+     "mass_g_bible": 30,
+     "mass_g_est": 27.9,
+     "mesh_parts": [
+      "larynx"
+     ],
+     "tris": 910,
+     "volume_ml": 25.35
+    }
    },
    {
     "id": "diaphragm",
@@ -1058,9 +1632,37 @@
     "interior_colour": "#7A2424",
     "hit": [],
     "sub": [],
+    "sub_parts": {
+     "muscle": 1,
+     "central_tendon": 2
+    },
     "blend_shapes": [
      "diaphragm_inhale"
-    ]
+    ],
+    "measured": {
+     "aabb": [
+      [
+       -0.13372,
+       -0.09008,
+       1.11871
+      ],
+      [
+       0.13394,
+       0.07812,
+       1.32084
+      ]
+     ],
+     "centroid": [
+      -0.00725,
+      -0.01274,
+      1.23782
+     ],
+     "mesh_parts": [
+      "diaphragm"
+     ],
+     "tris": 1838,
+     "volume_ml": 280.87
+    }
    },
    {
     "id": "omentum",
@@ -1069,7 +1671,7 @@
     "parent_bones": {
      "spine": 1.0
     },
-    "mass_g": 300.0,
+    "mass_g": 300,
     "compartment": "peritoneum",
     "hit_priority": 2,
     "surface_colour": "#E8C766",
@@ -1101,7 +1703,35 @@
      }
     ],
     "sub": [],
-    "blend_shapes": []
+    "sub_parts": {},
+    "blend_shapes": [],
+    "measured": {
+     "aabb": [
+      [
+       -0.10944,
+       -0.08852,
+       0.94209
+      ],
+      [
+       0.11028,
+       -0.03168,
+       1.12898
+      ]
+     ],
+     "centroid": [
+      0.00468,
+      -0.06499,
+      1.03491
+     ],
+     "density_g_ml": 0.93,
+     "mass_g_bible": 300,
+     "mass_g_est": 341.5,
+     "mesh_parts": [
+      "omentum"
+     ],
+     "tris": 750,
+     "volume_ml": 367.18
+    }
    },
    {
     "id": "pericardium",
@@ -1117,7 +1747,35 @@
     "interior_colour": "#7B2626",
     "hit": [],
     "sub": [],
-    "blend_shapes": []
+    "sub_parts": {},
+    "blend_shapes": [],
+    "encloses": [
+     "heart"
+    ],
+    "measured": {
+     "aabb": [
+      [
+       -0.05421,
+       -0.08254,
+       1.26574
+      ],
+      [
+       0.09268,
+       0.02002,
+       1.40984
+      ]
+     ],
+     "centroid": [
+      0.01952,
+      -0.03296,
+      1.33845
+     ],
+     "mesh_parts": [
+      "pericardium"
+     ],
+     "tris": 550,
+     "volume_ml": 742.66
+    }
    },
    {
     "id": "bowel_filler",
@@ -1127,7 +1785,7 @@
      "spine": 0.5,
      "hips": 0.5
     },
-    "mass_g": 2200.0,
+    "mass_g": 2200,
     "compartment": "peritoneum",
     "hit_priority": 0,
     "surface_colour": "#3A1414",
@@ -1159,7 +1817,35 @@
      }
     ],
     "sub": [],
+    "sub_parts": {},
     "blend_shapes": [],
+    "measured": {
+     "aabb": [
+      [
+       -0.11246,
+       -0.08119,
+       0.92518
+      ],
+      [
+       0.11795,
+       0.04568,
+       1.20411
+      ]
+     ],
+     "centroid": [
+      -0.00256,
+      -0.01633,
+      1.04794
+     ],
+     "density_g_ml": 1.05,
+     "mass_g_bible": 2200,
+     "mass_g_est": 2967.1,
+     "mesh_parts": [
+      "bowel_filler"
+     ],
+     "tris": 400,
+     "volume_ml": 2825.78
+    },
     "note": "lowest priority; intestines are not modelled (mass/volume filler only)"
    }
   ],
@@ -1510,15 +2196,25 @@
     "z_top": 1.12,
     "z_bottom": 0.95,
     "backing": "dark peritoneal backing shell"
+   },
+   "lung_frc_l": {
+    "lung_R": 1.8,
+    "lung_L": 1.55
    }
   },
   "density_g_cm3": 1.05,
+  "blend_shape_notes": {
+   "heart_systole": "ventricles -18 % volume (radial x0.925, axial x0.96); atria fixed",
+   "lung_inhale_L/R": "base -1.7 cm with the diaphragm + 1.2 % outward; use with diaphragm_inhale",
+   "lung_collapse_L/R": "x0.67 toward the hilum = -70 % volume (pneumothorax)",
+   "diaphragm_inhale": "domes -1.7 cm (fixed at the costal attachment); liver, spleen, stomach, kidneys, adrenals, pancreas ride down 0.6-1.0 x; backing mass and omentum pushed down and forward"
+  },
   "shapes": {
    "obb": "c = centre, size = full lengths along u, v, w = u x v",
    "ellipsoid": "size = full diameters along u, v, w",
    "sphere": "size[0] = diameter",
    "capsule": "size[0] = total length along u, size[1] = diameter"
   },
-  "status": "v0 (B0 from gb_data; B4 refines)"
+  "status": "B4"
  }
 }

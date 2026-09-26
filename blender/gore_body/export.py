@@ -6,7 +6,7 @@ Final entry points
 ------------------
 ``export_subject(objs, out)``  -> writes GB_Subject.glb, GB_Subject_LOD1.glb and every JSON sidecar
                                   (rig, landmarks, organs, vessels, spine, codes, brain_labels) to ``out``
-``export_props(out)``          -> weapons.glb, room.glb (B8 props; pending until B8 builds them)
+``export_props(out)``          -> weapons.glb, room.glb, props.json, room.json (delegates to props.py, B8)
 ``write_manifest(out, ...)``   -> manifest.json (schema/generator versions, build id, input hashes,
                                   per-mesh counts, surfaces, bounds, wound grid, segment origins,
                                   textures, budget checks, pending stages)
@@ -290,8 +290,6 @@ def export_subject(objs=None, out=gbc.SUBJECT_OUT, pending=None, timings=None, q
 
 
 def export_props(out=gbc.PROPS_OUT):
-    """weapons.glb and room.glb from props.py (B8)."""
+    """weapons.glb, room.glb, props.json and room.json from props.py (B8 builds and exports them)."""
     import props
-    props.build_weapons()           # raises NotBuiltYet until B8 builds the props
-    props.build_room()
-    gbc.not_built("B8", "export.export_props (props export)")
+    return props.export_props(out)

@@ -111,16 +111,22 @@ _row("A09", "occipital", "M", 2.0, (2.0, 2.0), (10, 20), "A06", "LR",
 _row("A10", "vertebral", "M", 3.5, (3.0, 4.0), (70, 120), "A14", "LR",
      [(0.030, -0.008, 1.440), (0.015, 0.004, 1.518), (0.015, 0.007, 1.536), (0.015, 0.008, 1.553),
       (0.015, 0.011, 1.570), (0.018, 0.016, 1.590), (0.030, 0.022, 1.610), (0.028, 0.035, 1.622),
-      (0.008, 0.030, 1.630)],
-     fit_points=[2, 3, 4, 5, 6],
+      (0.016, 0.037, 1.617), (0.010, 0.022, 1.619), (0.0, 0.014, 1.624)],
+     fit_points=[2, 3, 4, 5, 6, 8, 9, 10],
      landmarks="In bone canal (C6 -> C1 transverse foramina, x +-0.015); loop behind the C1 lateral masses; "
                "4-7 cm deep", depth_mm=(40, 70),
      bleed=_b((100, 400), None, (5, 20), "often contained"), self_stop="often contained", compressible="no",
-     in_bone_canal=True, outlet_default="neck_deep", tag="C5-C1 foramen points (E, fit B0)")
+     in_bone_canal=True, outlet_default="neck_deep", tag="C5-C1 foramen points (E, fit B0); end (B5)",
+     note="B5: the bible end point (0.008, 0.030, 1.630) lies inside the modelled medulla (gore_head brainstem); "
+          "the artery now enters the foramen magnum lateral to the medulla and curves in front of it to "
+          "the basilar origin at the pontomedullary junction")
 _row("A11", "basilar", "M", 3.5, (3.0, 4.0), (150, 200), "A10_L", "mid",
-     [(0.0, -0.004, 1.645), (0.0, -0.004, 1.690)], extra_parents=["A10_R"],
+     [(0.0, 0.014, 1.624), (0.0, 0.013, 1.653)], extra_parents=["A10_R"],
      landmarks="Front of the pons on the clivus", bleed=_b(None, None, None, "intracranial (RB §3.9)"),
-     outlet_default="cranium")
+     outlet_default="cranium", tag="B5 fit to the modelled pons",
+     note="B5: bible (0,-0.004,1.645)->(0,-0.004,1.690) lies 20 mm in front of the gore_head pons (front at "
+          "y 0.016-0.019 for z 1.632-1.648), i.e. in the clivus; moved onto the pons, top at the interpeduncular "
+          "fossa where the posterior cerebral arteries arise")
 _row("A12", "middle meningeal", "M", 1.75, (1.5, 2.0), (5, 15), "A06", "LR",
      [(0.022, -0.002, 1.640), (0.050, -0.004, 1.660), (0.058, -0.008, 1.682)], fit_points=[0, 1],
      landmarks="Pterion ~3.5 cm above the midpoint of the zygomatic arch; inside the skull",
@@ -274,12 +280,14 @@ _row("A31", "popliteal", "M", 5.5, (5, 7), (80, 150), "A30", "LR",
      bleed=_b((300, 800), (300, 720), (10, 30)), self_stop="rarely", compressible="yes", stump_frac=0.5,
      collaterals=["geniculate network", "A29"])
 _row("A32", "anterior tibial -> dorsalis pedis", "M", 3.0, (2.5, 3.5), (30, 50), "A31", "LR",
-     [(0.092, 0.055, 0.440), (0.105, 0.020, 0.420), (0.100, -0.005, 0.250), (0.097, 0.012, 0.080),
-      (0.105, -0.030, 0.050)], d_end_mm=2.5,
+     [(0.092, 0.055, 0.440), (0.108, 0.038, 0.420), (0.112, 0.034, 0.250), (0.104, 0.030, 0.140),
+      (0.097, 0.025, 0.085), (0.105, -0.030, 0.050)], d_end_mm=2.5,
      landmarks="DP pulse lateral to the EHL tendon; ankle ~5 mm deep", depth_mm=(5, 20),
      bleed=_b((50, 200), (1200, 3600), (60, 180), "LOC 20-60+ min, death 1-3 h"), self_stop="often",
      compressible="yes", pulse_delay_ms=(220, 300), tag="E waypoints",
-     note="waypoint (0.100,-0.005,0.250) lies at/over the shin skin line: B5 must deepen it (FB-5)")
+     note="B5: bible E waypoints (0.105,0.020,0.420), (0.100,-0.005,0.250), (0.097,0.012,0.080) lay in the tibia or "
+          "25 mm in front of the built shin; moved onto the interosseous membrane between the built tibia and "
+          "fibula and under the front of the ankle")
 _row("A33", "posterior tibial", "M", 3.0, (2.5, 3.5), (30, 50), "A31", "LR",
      [(0.092, 0.055, 0.440), (0.088, 0.060, 0.250), (0.075, 0.075, 0.080)],
      landmarks="Between medial malleolus and Achilles; ~1 cm deep at the ankle", depth_mm=(8, 12),
@@ -326,13 +334,14 @@ _row("V16", "femoral / popliteal veins", "V", 10.0, (8, 12), None, "V15", "LR",
      branch_d_mm={"popliteal": 8.0}, circuit=VEN, landmarks="Deep veins alongside A30 / A31",
      bleed=_b((100, 400), None, None), self_stop="sometimes", compressible="yes",
      tag="E fit B0: A30/A31 offset medial/posterior")
-_row("V17", "great saphenous", "V", 4.0, (3, 5), None, "V15", "LR",
+_row("V17", "great saphenous", "V", 6.5, (3, 8), None, "V15", "LR",
      [(0.060, 0.030, 0.085), (0.060, 0.050, 0.500), (0.038, -0.038, 0.700), (0.050, -0.065, 0.885)],
-     circuit=VEN, listed="distal_first", fit_points=[2], d_end_mm=7.0,
+     circuit=VEN, listed="distal_first", fit_points=[2], d_end_mm=3.5,
      landmarks="Just under the skin: in front of medial malleolus -> behind medial femoral condyle -> "
                "anteromedial thigh -> SFJ 3-4 cm below-lateral pubic tubercle", depth_mm=(2, 6),
      bleed=_b((20, 100), None, None), self_stop="yes", compressible="yes", tag="E waypoints",
-     note="6-8 mm at the junction")
+     note="4 mm (3-5) along the leg, 6-8 mm at the junction: d_mm is the proximal (junction) end, d_end the "
+          "ankle (B5 fix: segments run proximal first)")
 
 # ===========================================================================
 # Upper limb (A-pose; d = (0.5, 0, -0.866); n_m = (-0.866, 0, -0.5); radial side = -Y) (E)
@@ -364,9 +373,10 @@ _row("A44", "palmar arches", "M", 1.75, (1.5, 2.0), (1, 5), "A43", "LR",
      extra_parents=["A42"], landmarks="Superficial arch at the distal border of the extended thumb",
      bleed=_b((5, 30), None, None), self_stop="yes", compressible="yes", tag="E fit B0 around the bible point",
      note="digital arteries 0.8-1.6 mm, 1-5 mL/min per digit")
-_row("V20", "superficial arm veins", "V", 3.5, (2, 6), None, "V04", "LR",
+_row("V20", "superficial arm veins", "V", 3.5, (2, 6), None, "V21", "LR",
      [("cephalic", [(0.452, -0.008, 0.935), (0.390, -0.015, 1.050), (0.342, -0.015, 1.174),
-                    (0.270, -0.025, 1.300), (0.150, -0.070, 1.400), (0.110, -0.045, 1.440)]),
+                    (0.270, -0.025, 1.300), (0.150, -0.070, 1.400), (0.125, -0.058, 1.425),
+                    (0.105, -0.021, 1.439)]),
       ("basilic", [(0.452, 0.045, 0.930), (0.385, 0.045, 1.045), (0.299, 0.035, 1.149), (0.240, 0.030, 1.280)]),
       ("median_cubital", [(0.345, -0.020, 1.140), (0.310, -0.010, 1.165)])],
      branch_d_mm={"cephalic": 3.5, "basilic": 4.5, "median_cubital": 3.5}, branch_parent={"basilic": "row"},
@@ -374,7 +384,225 @@ _row("V20", "superficial arm veins", "V", 3.5, (2, 6), None, "V04", "LR",
      landmarks="Cephalic: lateral arm (deltopectoral groove) / basilic: medial arm / median cubital: cubital fossa. "
                "Visible; flatten and vanish in shock", depth_mm=(1, 4), bleed=_b((5, 30), None, None),
      self_stop="yes", compressible="yes", tag="E fit B0 (all waypoints)",
-     note="cephalic 2-5, basilic 3-6, median cubital 2-5 mm; drain via the axillary vein (B5 addition) -> V04")
+     note="cephalic 2-5, basilic 3-6, median cubital 2-5 mm; drain via the axillary vein (V21, B5) -> V04")
+
+# ===========================================================================
+# B5 additions (plan §3.4.1 list; K = standard anatomy, QA re-check; waypoints E fits by B5 to the
+# gb_data landmark/vertebra/rib/organ tables and to the head project's brain and skull)
+# ===========================================================================
+K5 = "K (B5 addition, QA re-check); waypoints E fit B5"
+CRAN = "cranium"
+
+# --- intracranial arteries (circle of Willis) -----------------------------------------------------
+# The head project's brainstem lies ~20 mm behind the RB §3.3 basilar line (pons front at y ~ 0.016 for
+# z 1.632-1.648 in GB_Brain; basion (0, 0.018, 1.626)).  The bible basilar/vertebral end points would sit
+# in the clivus / medulla, so B5 follows the modelled brain (vascular.FIT 'cranial' keeps every
+# intracranial vessel outside GB_Brain and inside the skull).  Bible points kept in ``bible_points``.
+_row("A50", "internal carotid (petrous, cavernous, supraclinoid)", "M", 4.0, (3.5, 5.0), (220, 300), "A05", "LR",
+     [(0.024, 0.012, 1.625), (0.021, 0.004, 1.631), (0.018, -0.004, 1.638), (0.017, -0.013, 1.646),
+      (0.015, -0.011, 1.655), (0.016, -0.004, 1.659)],
+     landmarks="Carotid canal in the petrous bone -> cavernous sinus beside the sella -> siphon -> terminal "
+               "bifurcation under the anterior perforated substance", in_bone_canal=True, outlet_default=CRAN,
+     bleed=_b((300, 800), (10, 60), (2, 10), "intracranial: subarachnoid/carotid-cavernous; external only "
+                                           "through an open skull base"), stump_frac=0.5,
+     collaterals=["circle of Willis"], tag=K5, note="4 mm (plan §3.4.1)")
+_row("A51", "middle cerebral", "M", 3.0, (2.5, 3.5), (120, 160), "A50", "LR",
+     [("", [(0.016, -0.004, 1.659), (0.028, -0.008, 1.660), (0.040, -0.010, 1.662)]),
+      ("M2", [(0.040, -0.010, 1.662), (0.046, 0.000, 1.671), (0.048, 0.020, 1.684), (0.046, 0.040, 1.697)])],
+     branch_d_mm={"M2": 2.2}, landmarks="M1 laterally in the stem of the lateral fissure; M2 over the insula",
+     outlet_default=CRAN, bleed=_b((50, 150), (30, 300), None, "subarachnoid / intracerebral (RB §3.9)"),
+     stump_frac=0.2, tag=K5, note="M1 3 mm (plan §3.4.1); end artery -> distal territory ischaemic")
+_row("A52", "anterior cerebral", "M", 2.0, (1.5, 2.5), (60, 90), "A50", "LR",
+     [("", [(0.016, -0.004, 1.659), (0.009, -0.015, 1.663), (0.003, -0.020, 1.665)]),
+      ("A2", [(0.003, -0.020, 1.665), (0.003, -0.037, 1.680), (0.003, -0.046, 1.704), (0.003, -0.036, 1.728),
+              (0.003, -0.008, 1.740), (0.003, 0.030, 1.735)])],
+     branch_d_mm={"A2": 1.8}, landmarks="A1 over the optic chiasm; A2 / pericallosal in the interhemispheric "
+                                        "fissure around the corpus callosum", outlet_default=CRAN,
+     bleed=_b((20, 80), (60, 600), None, "subarachnoid"), stump_frac=0.3, tag=K5, note="A1 2 mm (plan §3.4.1)")
+_row("A53", "posterior cerebral", "M", 2.0, (1.8, 2.5), (50, 70), "A11", "LR",
+     [(0.000, 0.014, 1.654), (0.010, 0.012, 1.657), (0.020, 0.018, 1.658), (0.028, 0.032, 1.656),
+      (0.030, 0.055, 1.650), (0.026, 0.080, 1.645)],
+     landmarks="From the basilar tip around the midbrain (ambient cistern) to the medial occipital lobe",
+     outlet_default=CRAN, bleed=_b((20, 80), (60, 600), None, "subarachnoid"), stump_frac=0.3, tag=K5)
+_row("A54", "posterior communicating", "M", 1.5, (1.0, 2.0), (0, 10), "A50", "LR",
+     [(0.016, -0.006, 1.657), (0.013, 0.003, 1.657), (0.010, 0.012, 1.657)], extra_parents=["A53"],
+     landmarks="Circle of Willis ICA <-> PCA (complete in 20-50 %)", outlet_default=CRAN,
+     bleed=_b((5, 30), None, None, "subarachnoid"), tag=K5)
+
+# --- dural venous sinuses (drain the brain to the internal jugular veins) -------------------------
+_row("V30", "superior sagittal sinus", "V", 9.0, (8, 10), (300, 450), "V31_R", "mid",
+     [(0.0, -0.052, 1.712), (0.0, -0.040, 1.742), (0.0, -0.012, 1.762), (0.0, 0.030, 1.765),
+      (0.0, 0.068, 1.743), (0.0, 0.094, 1.705), (0.0, 0.100, 1.665)],
+     circuit=VEN, listed="distal_first", d_end_mm=3.0,
+     landmarks="Midline under the inner table of the vault, from the foramen caecum to the confluence at the "
+               "internal occipital protuberance; triangular section, rigid walls (does not collapse)",
+     outlet_default=CRAN, air_entry=True, depth_mm=(10, 20),
+     bleed=_b((100, 500), (60, 600), None, "open skull: heavy dark venous welling, air entry when upright"),
+     compressible="no", tag=K5, note="8-10 mm, triangular (plan §3.4.1); section 'tri' in vascular.py")
+_row("V31", "transverse sinus", "V", 8.0, (7, 9), (250, 350), "V32", "LR",
+     [(0.0, 0.100, 1.665), (0.028, 0.094, 1.658), (0.048, 0.076, 1.650), (0.055, 0.056, 1.644)],
+     circuit=VEN, listed="distal_first", outlet_default=CRAN, air_entry=True, depth_mm=(12, 25),
+     landmarks="Along the attached margin of the tentorium on the occipital bone", compressible="no",
+     bleed=_b((100, 400), (60, 600), None, "open skull"), tag=K5, note="right usually dominant (takes the SSS)")
+_row("V32", "sigmoid sinus", "V", 7.0, (6, 8), (250, 350), "V01", "LR",
+     [(0.055, 0.056, 1.644), (0.053, 0.044, 1.633), (0.045, 0.036, 1.625), (0.034, 0.031, 1.625),
+      (0.030, 0.030, 1.625)],
+     circuit=VEN, listed="distal_first", outlet_default=CRAN, air_entry=True, depth_mm=(12, 25),
+     landmarks="S-curve in a groove on the mastoid part of the temporal bone, behind the ear, to the jugular "
+               "foramen", compressible="no", bleed=_b((100, 400), (60, 600), None, "open skull / mastoid"),
+     tag=K5)
+
+# --- face and scalp veins --------------------------------------------------------------------------
+_row("V33", "facial vein", "V", 3.0, (2.5, 4.0), (20, 40), "V01", "LR",
+     [(0.017, -0.075, 1.664), (0.030, -0.073, 1.622), (0.038, -0.060, 1.590), (0.046, -0.036, 1.566),
+      (0.040, -0.008, 1.558)],
+     circuit=VEN, listed="distal_first", landmarks="Angular vein at the medial canthus -> behind the facial "
+                                                   "artery across the cheek -> jaw at the masseter -> IJV",
+     depth_mm=(5, 12), bleed=_b((10, 40), None, None, "dark welling (valveless, drains the face)"),
+     self_stop="partially", compressible="yes", tag=K5)
+_row("V34", "retromandibular vein", "V", 4.0, (3, 5), (20, 50), "V02", "LR",
+     [(0.061, 0.006, 1.648), (0.058, 0.004, 1.625), (0.054, 0.002, 1.598), (0.050, 0.000, 1.572)],
+     circuit=VEN, listed="distal_first", landmarks="In the parotid behind the mandibular ramus; its posterior "
+                                                   "division forms the external jugular vein",
+     depth_mm=(10, 25), bleed=_b((20, 80), None, None), self_stop="sometimes", compressible="yes", tag=K5)
+_row("V35", "superficial temporal vein", "V", 2.0, (1.5, 2.5), (10, 20), "V34", "LR",
+     [(0.063, 0.032, 1.738), (0.070, 0.006, 1.690), (0.068, 0.006, 1.660), (0.061, 0.006, 1.648)],
+     circuit=VEN, listed="distal_first", landmarks="With the superficial temporal artery in front of the ear",
+     depth_mm=(3, 6), bleed=_b((10, 30), None, None, "scalp: both ends bleed"), self_stop="poorly",
+     compressible="yes", tag=K5)
+
+# --- upper limb and axilla ------------------------------------------------------------------------
+_row("A45", "profunda brachii", "M", 2.5, (2.0, 3.0), (10, 30), "A41", "LR",
+     [(0.198, 0.017, 1.334), (0.222, 0.040, 1.302), (0.258, 0.042, 1.252), (0.296, 0.012, 1.206),
+      (0.318, 0.000, 1.182)],
+     landmarks="With the radial nerve in the spiral groove behind the humerus", depth_mm=(25, 45),
+     bleed=_b((30, 100), None, None), self_stop="often", compressible="partial", tag=K5)
+_row("A46", "subscapular", "M", 4.0, (3, 5), (30, 60), "A40", "LR",
+     [(0.172, 0.012, 1.372), (0.155, 0.040, 1.345), (0.135, 0.062, 1.310), (0.115, 0.080, 1.275)],
+     landmarks="Along the lateral border of the scapula (thoracodorsal continuation)", depth_mm=(30, 60),
+     bleed=_b((100, 300), None, None), compressible="no", tag=K5)
+_row("A47", "lateral thoracic", "M", 2.0, (1.5, 2.5), (10, 20), "A40", "LR",
+     [(0.140, 0.000, 1.410), (0.146, -0.015, 1.370), (0.152, -0.022, 1.310), (0.152, -0.020, 1.240)],
+     landmarks="On serratus anterior along the lateral chest wall", depth_mm=(12, 30),
+     bleed=_b((20, 60), None, None), self_stop="often", compressible="yes", tag=K5)
+_row("V21", "axillary vein", "V", 11.0, (10, 12), (100, 200), "V04", "LR",
+     [(0.232, 0.030, 1.285), (0.212, 0.022, 1.312), (0.186, 0.008, 1.352), (0.140, -0.010, 1.412),
+      (0.090, -0.025, 1.450)],
+     circuit=VEN, listed="distal_first", landmarks="Medial (in front of and below) the axillary artery; from "
+                                                   "the lower border of teres major to the first rib",
+     depth_mm=(25, 50), bleed=_b((100, 400), (600, 1800), None, "dark, air entry near the clavicle"),
+     compressible="poor (junctional)", air_entry=True, tag=K5, note="10-12 mm (plan §3.4.1)")
+_row("V22", "brachial veins", "V", 3.5, (3, 5), (50, 120), "V21", "LR",
+     [("a", [(0.331, 0.012, 1.150), (0.272, 0.024, 1.232), (0.228, 0.026, 1.290)]),
+      ("b", [(0.325, -0.002, 1.146), (0.266, 0.006, 1.228), (0.224, 0.012, 1.290)])],
+     branch_parent={"*": "row"}, circuit=VEN, listed="distal_first",
+     landmarks="Paired venae comitantes either side of the brachial artery", depth_mm=(10, 20),
+     bleed=_b((30, 100), None, None), self_stop="sometimes", compressible="yes", tag=K5,
+     note="paired 3-5 mm (plan §3.4.1)")
+_row("V23", "radial veins", "V", 2.0, (1.5, 2.5), (10, 30), {"L": "V22_a_L", "R": "V22_a_R"}, "LR",
+     [(0.449, 0.001, 0.926), (0.387, 0.001, 1.046), (0.331, 0.010, 1.150)], circuit=VEN, listed="distal_first",
+     landmarks="Venae comitantes of the radial artery", depth_mm=(3, 8), bleed=_b((10, 30), None, None),
+     self_stop="yes", compressible="yes", tag=K5)
+_row("V24", "ulnar veins", "V", 2.0, (1.5, 2.5), (10, 30), {"L": "V22_b_L", "R": "V22_b_R"}, "LR",
+     [(0.452, 0.039, 0.927), (0.382, 0.034, 1.052), (0.325, -0.002, 1.146)], circuit=VEN, listed="distal_first",
+     landmarks="Venae comitantes of the ulnar artery", depth_mm=(5, 10), bleed=_b((10, 30), None, None),
+     self_stop="yes", compressible="yes", tag=K5)
+
+# --- trunk wall, pelvis, gluteal ------------------------------------------------------------------
+_row("A60", "superior epigastric", "M", 2.5, (2.0, 3.0), (10, 20), "A15", "LR",
+     [(0.030, -0.060, 1.290), (0.042, -0.082, 1.255), (0.050, -0.090, 1.180), (0.052, -0.092, 1.112)],
+     landmarks="Continuation of the internal thoracic behind the rectus abdominis", depth_mm=(18, 32),
+     bleed=_b((20, 80), None, None, "rectus sheath haematoma"), self_stop="often", outlet_default="abdominal_wall",
+     tag=K5)
+_row("A61", "inferior epigastric", "M", 2.5, (2.0, 3.0), (10, 25), "A27", "LR",
+     [(0.062, -0.066, 0.950), (0.055, -0.080, 0.990), (0.052, -0.090, 1.050), (0.052, -0.092, 1.112)],
+     landmarks="From the external iliac just above the inguinal ligament, up behind the rectus",
+     depth_mm=(18, 32), bleed=_b((30, 100), None, None, "rectus sheath / preperitoneal haematoma"),
+     self_stop="often", outlet_default="abdominal_wall", tag=K5)
+_row("A62", "superior gluteal", "M", 5.0, (4, 6), (40, 80), "A26", "LR",
+     [(0.050, 0.020, 0.980), (0.070, 0.050, 0.990), (0.095, 0.078, 0.995), (0.118, 0.095, 0.985)],
+     landmarks="Through the greater sciatic foramen above piriformis, under gluteus maximus/medius",
+     depth_mm=(40, 80), bleed=_b((200, 600), None, None, "deep gluteal / pelvic"), compressible="no", tag=K5)
+_row("A63", "inferior gluteal", "M", 4.0, (3, 5), (30, 60), "A26", "LR",
+     [(0.049, 0.012, 0.985), (0.060, 0.045, 0.945), (0.072, 0.078, 0.912), (0.085, 0.100, 0.880)],
+     landmarks="Below piriformis with the sciatic nerve, under gluteus maximus", depth_mm=(40, 80),
+     bleed=_b((100, 400), None, None), compressible="no", tag=K5)
+
+
+def _lumbar_points(level):
+    """Lumbar artery path around the vertebral body of ``level`` (E fit B5 from the vertebra table)."""
+    from .vertebrae import VERTEBRA
+    v = VERTEBRA[level]
+    c = np.array((0.0, v["y"], v["z"]), float)
+    half_d = 0.5e-3 * v["body_d_mm"]
+    half_w = 0.5e-3 * v["body_w_mm"]
+    front = c[1] - half_d
+    pts = [(0.006, front - 0.004, c[2] + 0.004), (0.60 * half_w + 0.004, front + 0.002, c[2]),
+           (half_w + 0.004, c[1] + 0.004, c[2] - 0.002), (half_w + 0.010, c[1] + 0.030, c[2] - 0.004),
+           (half_w + 0.018, c[1] + 0.055, c[2] - 0.004)]
+    return [tuple(float(round(q, 4)) for q in p) for p in pts]
+
+
+for _lv in ("L1", "L2", "L3", "L4"):
+    _row("A64", "lumbar artery", "M", 2.5, (2.0, 3.0), (10, 25), "A21", "LR", [(_lv.lower(), _lumbar_points(_lv))],
+         landmarks="Around the waist of the vertebral body under psoas to the back muscles",
+         depth_mm=(60, 120), bleed=_b((30, 100), None, None, "retroperitoneal"), outlet_default="retroperitoneum",
+         tag=K5)
+
+# --- azygos system, portal tributaries, coronary sinus --------------------------------------------
+_row("V36", "azygos vein", "V", 9.0, (8, 10), (150, 300), "V05", "R",
+     [(-0.015, -0.017, 1.198), (-0.014, 0.008, 1.254), (-0.013, 0.028, 1.305), (-0.013, 0.037, 1.353),
+      (-0.014, 0.035, 1.398), (-0.018, 0.030, 1.422), (-0.026, 0.012, 1.430), (-0.029, -0.008, 1.425),
+      (-0.028, -0.024, 1.412)],
+     circuit=VEN, listed="distal_first", landmarks="Right front of the thoracic vertebral bodies; arches over "
+                                                   "the right main bronchus at T4 into the back of the SVC",
+     bleed=_b((100, 400), None, None, "into the right pleura / mediastinum"), outlet_default="pleura_R",
+     d_end_mm=6.0, tag=K5, note="8-10 mm (plan §3.4.1)")
+_row("V37", "hemiazygos vein", "V", 5.0, (4, 6), (50, 100), "V36", "L",
+     [(0.015, -0.016, 1.200), (0.015, 0.010, 1.254), (0.014, 0.028, 1.300), (0.004, 0.036, 1.322),
+      (-0.012, 0.037, 1.330)],
+     circuit=VEN, listed="distal_first", landmarks="Left of the lower thoracic bodies; crosses behind the aorta "
+                                                   "at T8-T9 into the azygos",
+     bleed=_b((30, 100), None, None, "left pleura"), outlet_default="pleura_L", tag=K5)
+_row("V38", "splenic vein", "V", 8.0, (7, 9), (200, 300), "V13", "mid",
+     [(0.090, 0.032, 1.222), (0.060, 0.018, 1.204), (0.028, 0.004, 1.190), (0.008, -0.020, 1.180),
+      (-0.005, -0.045, 1.175)],
+     circuit="portal", listed="distal_first", landmarks="Behind the pancreas from the splenic hilum to the "
+                                                        "portal confluence behind the pancreatic neck",
+     bleed=_b((200, 600), (300, 1200), None, "intraperitoneal"), outlet_default="peritoneum", tag=K5)
+_row("V39", "superior mesenteric vein", "V", 10.0, (9, 11), (500, 700), "V13", "mid",
+     [(-0.004, -0.075, 1.100), (-0.007, -0.060, 1.140), (-0.006, -0.050, 1.165), (-0.005, -0.045, 1.175)],
+     circuit="portal", listed="distal_first", landmarks="In the mesentery right of the SMA",
+     bleed=_b((300, 900), (300, 1200), None, "intraperitoneal"), outlet_default="peritoneum", tag=K5)
+_row("V45", "coronary sinus", "V", 9.0, (7, 11), (200, 250), "RA", "mid",
+     [(0.066, -0.012, 1.298), (0.048, 0.002, 1.310), (0.022, 0.006, 1.318), (0.000, 0.000, 1.322),
+      (-0.016, -0.010, 1.324)],
+     circuit=VEN, listed="distal_first", landmarks="Posterior atrioventricular groove into the right atrium",
+     bleed=_b((100, 300), None, None, "pericardium -> tamponade"), outlet_default="pericardium", tag=K5)
+
+# --- lower limb veins -----------------------------------------------------------------------------
+_row("V40", "small saphenous vein", "V", 3.0, (2.5, 4.0), (10, 40), {"L": "V16_popliteal_L",
+                                                                   "R": "V16_popliteal_R"}, "LR",
+     [(0.128, 0.080, 0.065), (0.118, 0.098, 0.140), (0.103, 0.108, 0.260), (0.096, 0.098, 0.380),
+      (0.093, 0.080, 0.465), (0.092, 0.064, 0.497)],
+     circuit=VEN, listed="distal_first", landmarks="Behind the lateral malleolus, up the middle of the calf "
+                                                   "just under the skin, through the popliteal fascia",
+     depth_mm=(2, 6), bleed=_b((10, 50), None, None), self_stop="yes", compressible="yes", tag=K5)
+_row("V41", "anterior tibial veins", "V", 4.0, (3, 5), (20, 40), {"L": "V16_popliteal_L",
+                                                                "R": "V16_popliteal_R"}, "LR",
+     [(0.101, 0.027, 0.087), (0.115, 0.037, 0.250), (0.111, 0.041, 0.420), (0.094, 0.060, 0.442)],
+     circuit=VEN, listed="distal_first", landmarks="Venae comitantes of the anterior tibial artery on the "
+                                                   "interosseous membrane", depth_mm=(10, 30),
+     bleed=_b((20, 80), None, None), self_stop="often", compressible="yes", tag=K5)
+_row("V42", "posterior tibial veins", "V", 5.0, (4, 6), (30, 50), {"L": "V16_popliteal_L",
+                                                                 "R": "V16_popliteal_R"}, "LR",
+     [(0.071, 0.078, 0.082), (0.084, 0.064, 0.250), (0.089, 0.059, 0.420), (0.092, 0.062, 0.442)],
+     circuit=VEN, listed="distal_first", landmarks="Venae comitantes of the posterior tibial artery",
+     depth_mm=(8, 40), bleed=_b((30, 100), None, None), self_stop="often", compressible="yes", tag=K5)
+_row("V43", "peroneal veins", "V", 4.0, (3, 5), (20, 40), "V42", "LR",
+     [(0.123, 0.059, 0.200), (0.098, 0.064, 0.420), (0.092, 0.062, 0.438)],
+     circuit=VEN, listed="distal_first", landmarks="Venae comitantes of the peroneal artery along the fibula",
+     bleed=_b((20, 80), None, None), self_stop="often", tag=K5)
 
 # ---------------------------------------------------------------------------
 # Capillary beds [RB §3.3] (Tier 2 R_bed = (P_art - P_ven) / Q_rest)

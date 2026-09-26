@@ -140,7 +140,8 @@ def setup_stage():
     _area_light("GH_Rim", (0.3, 0.7, 0.45), (0, 0, 0.05), 45.0, 0.4, (1.0, 0.95, 0.95))
     world = bpy.data.worlds.get("GH_World") or bpy.data.worlds.new("GH_World")
     scene.world = world
-    world.use_nodes = True
+    if world.node_tree is None:
+        world.use_nodes = True
     bg = world.node_tree.nodes.get("Background")
     bg.inputs[0].default_value = (0.02, 0.022, 0.026, 1.0)
     bg.inputs[1].default_value = 1.0

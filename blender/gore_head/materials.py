@@ -107,6 +107,10 @@ OCCLUSAL_Y = -0.087
 OCCLUSAL_SLOPE = 0.035    # dz / dy toward the back of the mouth
 
 # Face landmarks (mirrored |x|) for regional skin colour, from CONTRACT.md.
+# cut dermis: dense pinkish tissue, tinged by the blood in it (a white band at
+# the wound margin reads as paper)
+DERMIS_LO, DERMIS_HI = (0.40, 0.13, 0.11), (0.50, 0.21, 0.17)
+
 FACE_REGIONS = {
     #             centre                     radius  (red, dark)
     "nose":      ((0.0, -0.104, -0.008),     0.016, (0.45, 0.0)),
@@ -541,9 +545,11 @@ def _group_blood_film():
     n_mid = t.noise(p, 330.0, 2.0, 0.55)
     # coverage: blotchy fringes where there is a little blood; the body of a
     # run or pool (blood near 1) stays even
+    # (low-frequency, soft edges: a high-frequency threshold reads as a
+    # watercolour decal)
     fringe = blood.smooth(0.0, 0.3) * (1.0 - blood.smooth(0.5, 0.85))
-    cov = blood * (0.6 + 0.8 * n_big) + (n_mid - 0.5) * 0.4 * fringe
-    film = cov.smooth(0.10, 0.19)
+    cov = blood * (0.8 + 0.4 * n_big) + (n_mid - 0.5) * 0.22 * fringe
+    film = cov.smooth(0.1, 0.19)
     thick = cov.smooth(0.45, 1.0)
     # fine spatter droplets on the fringe of a bloody area
     sd, scol, _ = t.voronoi(t.warp(p, 900.0, 0.0004), 520.0)
@@ -555,11 +561,11 @@ def _group_blood_film():
     a = (age + (1.0 - thick) * 0.35 * age + (n_mid - 0.5) * 0.5 * age * (1.0 - age)).clamp()
 
     # thin films are semi-transparent stains; opacity grows with the amount
-    op = 0.6 + 0.4 * cov.smooth(0.15, 0.5)
+    op = 0.9 + 0.1 * cov.smooth(0.15, 0.5)
     thin = t.mix(op, base, t.mix(n_mid, base * (0.45, 0.05, 0.056), base * (0.30, 0.022, 0.03)))
     fresh = t.mix(thick, thin, t.mix(n_big, (0.04, 0.0042, 0.005), (0.065, 0.006, 0.007)))
     # clots in broad pools only (not along thin runs), and the darker rim where a film thins out
-    clot = t.noise(p, 220.0, 3.0).smooth(0.62, 0.76) * thick.smooth(0.85, 1.0) * n_big.smooth(0.55, 0.7)
+    clot = t.noise(p, 220.0, 3.0).smooth(0.55, 0.72) * thick.smooth(0.75, 1.0) * n_big.smooth(0.45, 0.65)
     fresh = t.mix(clot * 0.8, fresh, (0.022, 0.0025, 0.003))
     rim = film * (1.0 - cov.smooth(0.2, 0.34))
     fresh = t.mix(rim * 0.5, fresh, fresh * 0.55)
@@ -572,9 +578,10 @@ def _group_blood_film():
     col = t.mix(crack * 0.75, col, base * 0.3)
 
     t.result("Color", t.mix(mask, base, col))
-    r_blood = t.mix(a, t.mix(wet, 0.34, 0.05) + clot * 0.2, t.mix(thick, 0.64, 0.42))
+    # fresh thin film glossy (0.05-0.15), clots matte (0.4-0.6)
+    r_blood = t.mix(a, t.mix(wet, 0.34, 0.07) + clot * 0.42, t.mix(thick, 0.64, 0.42))
     t.result("Roughness", t.mix(mask, rough, r_blood))
-    t.result("Coat", mask * (0.35 + 0.65 * thick) * (1.0 - a * 0.9) * (0.25 + 0.75 * wet))
+    t.result("Coat", mask * (0.35 + 0.65 * thick) * (1.0 - a * 0.9) * (0.25 + 0.75 * wet) * (1.0 - clot * 0.8))
     t.result("Coat Roughness", 0.02 + (1.0 - wet) * 0.25 + a * 0.3)
     t.result("Coat Tint", t.mix(thick * (1.0 - a), (1.0, 1.0, 1.0), (0.92, 0.32, 0.27)))
     t.result("Mask", mask)
@@ -650,12 +657,13 @@ def _group_fat():
     tone = t.sep(c1)[0] * 0.6 + t.sep(c2)[1] * 0.4
     n = t.noise(p, 1400.0, 2.0)
     # pale cream-yellow lobules (fresh subcutaneous fat is not orange)
-    col = (lob * 0.45 + tone * 0.4 + n * 0.15).ramp([(0.15, (0.40, 0.25, 0.085)), (0.5, (0.56, 0.41, 0.17)),
-                                                     (0.85, (0.66, 0.55, 0.30))])
+    # (saturated but not bright: a lit wound wall must not blow out to white)
+    col = (lob * 0.45 + tone * 0.4 + n * 0.15).ramp([(0.15, (0.34, 0.19, 0.035)), (0.5, (0.48, 0.31, 0.07)),
+                                                     (0.85, (0.56, 0.42, 0.14))])
     cap = t.ridge(t.noise(t.warp(p, 120.0, 0.002), 160.0, 3.0), 0.012) * t.noise(p, 45.0).smooth(0.4, 0.6)
     col = t.mix(sept * 0.6, col, (0.48, 0.17, 0.08))
     col = t.mix(cap * 0.75, col, (0.30, 0.025, 0.018))
-    blush = t.noise(p, 60.0, 3.0).smooth(0.55, 0.75) * 0.35    # blood-tinged patches
+    blush = t.noise(p, 60.0, 3.0).smooth(0.6, 0.8) * 0.25     # blood-tinged patches
     col = t.mix(blush, col, col * (0.9, 0.45, 0.35))
     t.result("Color", col)
     t.result("Roughness", t.mix(wet, 0.45, 0.2) + sept * 0.1)
@@ -851,8 +859,10 @@ def _skin_material(g, name="GH_Skin"):
     mus = t.group(g["muscle"], {"Vector": p, "Wetness": wet})
     bone = t.group(g["bone"], {"Vector": p, "Wetness": wet})
     dn = depth + (t.noise(p, 380.0, 3.0, 0.6) - 0.5) * 0.4
-    f_fat, f_mus, f_bone = dn.smooth(0.10, 0.16), dn.smooth(0.50, 0.57), dn.smooth(0.92, 0.98)
-    dermis = t.mix(t.noise(p, 900.0, 2.0), (0.52, 0.30, 0.25), (0.64, 0.43, 0.37))
+    # (only a thin 0.5-1 mm dermis line at the top of a wall, pink-red and
+    # blood-tinged: a wide pale band reads as a white paper edge)
+    f_fat, f_mus, f_bone = dn.smooth(0.05, 0.09), dn.smooth(0.50, 0.57), dn.smooth(0.92, 0.98)
+    dermis = t.mix(t.noise(p, 900.0, 2.0), DERMIS_LO, DERMIS_HI)
     tis = t.mix(f_fat, dermis, fat["Color"])
     tis = t.mix(f_mus, tis, mus["Color"])
     fresh_bone = t.mix(t.noise(p, 250.0).smooth(0.35, 0.55), bone["Color"] * (0.85, 0.68, 0.62),
@@ -861,6 +871,8 @@ def _skin_material(g, name="GH_Skin"):
     # exposed tissue is always blood-soaked, more so deeper down
     soak = t.noise(p, 140.0, 3.0).smooth(0.4, 0.75) * 0.35 + dn.smooth(0.55, 1.0) * 0.3
     tis = t.mix(soak * (1.0 - f_bone * 0.5), tis, tis * (0.62, 0.20, 0.17))
+    # cavity: the bed of a wound lies in its own shadow, darkening 40-60 %
+    tis = tis * (1.0 - 0.55 * depth.smooth(0.12, 0.7))
     h_tis = t.mix(f_fat, t.noise(p, 900.0) * 0.6, fat["Height"])
     h_tis = t.mix(f_mus, h_tis, mus["Height"])
     h_tis = t.mix(f_bone, h_tis, bone["Height"])
@@ -870,18 +882,18 @@ def _skin_material(g, name="GH_Skin"):
     tis = t.mix(burn.smooth(0.08, 0.18) * (1.0 - dn.smooth(0.3, 0.5)), tis, raw_col)
     wm = (wound + (t.noise(p, 400.0) - 0.5) * 0.3).smooth(0.35, 0.65)
     col = t.mix(wm, skin_col, tis)
-    rgh = t.mix(wm, rough, t.mix(wet, 0.45, 0.14))
+    rgh = t.mix(wm, rough, t.mix(wet, 0.5, 0.3) + (t.noise(p, 250.0) - 0.5) * 0.2)
     height = t.mix(wm, h_lite, h_tis * 1.5)
 
     # ---- abraded / torn rim ----------------------------------------------
     en = t.noise(p, 220.0, 2.0)
-    em = (edge * (0.55 + 0.9 * en)).clamp().smooth(0.15, 0.6) * (1.0 - wm) * (1.0 - burn.smooth(0.08, 0.18))
+    em = (edge * (0.6 + 0.8 * en)).clamp().smooth(0.05, 0.6) * (1.0 - wm) * (1.0 - burn.smooth(0.08, 0.18))
     scr = t.noise(p * (1.0, 1.0, 0.18), 1400.0, 3.0)         # drag scratches
     ab = (t.noise(p, 900.0, 4.0) * 0.7 + scr * 0.3).ramp(
         [(0.25, (0.36, 0.07, 0.05)), (0.5, (0.19, 0.035, 0.025)), (0.75, (0.08, 0.02, 0.014))])
     ab = t.mix(edge.smooth(0.2, 0.9) * 0.5, ab, (0.09, 0.02, 0.015))
     col = t.mix(em, col, ab)
-    rgh = t.mix(em, rgh, t.mix(wet, 0.62, 0.3))
+    rgh = t.mix(em, rgh, 0.62)                  # abraded skin is dry and matte
     height = t.mix(em, height, en * 1.2 - 0.6)
 
     # ---- bruise (under the skin: multiplies the colour) ---------------------
@@ -972,8 +984,8 @@ def _skin_material(g, name="GH_Skin"):
     n_fine = t.bump(height, 0.0001)
     damaged = t.principled(dict(skin_sss, **{
         'Base Color': bl["Color"], 'Roughness': bl["Roughness"], 'Subsurface Weight': sss.clamp(),
-        'Coat Weight': (bl["Coat"] + (0.12 + oily * 0.1 + lip * 0.15) * (1.0 - bl["Mask"])
-                        + (wm + raw + bm) * wet * 0.5).clamp(),
+        'Coat Weight': (bl["Coat"] + (0.12 + oily * 0.1 + lip * 0.15) * (1.0 - bl["Mask"]) * (1.0 - em * 0.9)
+                        + (wm * 0.35 + raw + bm) * wet * 0.5).clamp(),
         'Coat Roughness': t.mix(bl["Mask"], 0.3 - lip * 0.1, bl["Coat Roughness"]),
         'Coat IOR': 1.45, 'Coat Tint': bl["Coat Tint"], 'Coat Normal': n_fine,
         'Sheen Weight': 0.06 * (1.0 - bl["Mask"]), 'Normal': n_fine}), sss_method='RANDOM_WALK_SKIN')
@@ -1040,8 +1052,8 @@ def _fat_material(g):
     d = t.attr("gore_depth")
     dj = d + (t.noise(p, 500.0) - 0.5) * 0.06
     # the top of the wall is the dermis: dense, pale pink-white
-    dm = (1.0 - dj.smooth(0.10, 0.16)) * d.smooth(0.0, 0.02)
-    dermis = t.mix(t.noise(p, 900.0), (0.52, 0.30, 0.25), (0.64, 0.43, 0.37))
+    dm = (1.0 - dj.smooth(0.05, 0.09)) * d.smooth(0.0, 0.02)
+    dermis = t.mix(t.noise(p, 900.0), DERMIS_LO, DERMIS_HI)
     col = t.mix(dm, f["Color"], dermis)
     # deep in a cut: muscle (dark red, blood-soaked)
     fm = dj.smooth(0.58, 0.68)
@@ -1052,15 +1064,24 @@ def _fat_material(g):
     sept = 1.0 - f["Height"].smooth(0.1, 0.5)
     col = t.mix(sept * 0.55 * (1.0 - dm), col, (0.10, 0.012, 0.012))
     # the deeper, the darker (self-shadowed, blood-filled bed)
-    col = col * (1.0 - 0.55 * dj.smooth(0.2, 0.75))
-    rough = t.mix(fm, f["Roughness"], mus["Roughness"])
+    # (the whole wall sits in the wound's shade: a wall facing the key light
+    # must not come out brighter than the skin around it)
+    col = col * (0.62 - 0.42 * dj.smooth(0.12, 0.7))
+    # (moist, but a satin sheen: a mirror-like wall reflects the key light as
+    # a white sheet that reads as a row of teeth)
+    rough = t.mix(fm, f["Roughness"], mus["Roughness"]) + 0.16
     bl = _blood_layer(t, g, col, rough, (t.attr("gore_blood") * 0.75).max(0.1), p)
     h = t.mix(bl["Height Mask"], t.mix(fm, f["Height"], mus["Height"]), bl["Height"] * 2.0)
     bsdf = t.principled({
-        'Base Color': bl["Color"], 'Roughness': bl["Roughness"], 'IOR': 1.45,
-        'Subsurface Weight': 0.6 * bl["SSS"], 'Subsurface Radius': (1.0, 0.6, 0.3),
-        'Subsurface Scale': 0.0015, 'Coat Weight': ((f["Coat"] + bl["Coat"]) * 0.6).clamp(),
-        'Coat Roughness': t.mix(bl["Mask"], 0.1, bl["Coat Roughness"]), 'Coat Tint': bl["Coat Tint"],
+        # (walls are seen at grazing angles, where Fresnel turns a wet surface
+        # into a mirror of the key light: a white sheet with red seams reads
+        # as a row of teeth. A low specular level and a satin roughness keep
+        # the tissue colour; the blood film's own gloss still shows)
+        'Base Color': bl["Color"], 'Roughness': bl["Roughness"].max(0.35), 'IOR': 1.45,
+        'Subsurface Weight': 0.15 * bl["SSS"], 'Subsurface Radius': (1.0, 0.6, 0.3),
+        'Subsurface Scale': 0.0008, 'Coat Weight': bl["Coat"] * bl["Thickness"] * 0.3,
+        'Specular IOR Level': 0.12,
+        'Coat Roughness': bl["Coat Roughness"] + 0.1, 'Coat Tint': bl["Coat Tint"],
         'Normal': t.bump(h, 0.00025)})
     t.output(bsdf)
     return _finish(mat, t, (0.70, 0.55, 0.30), 0.25)
@@ -1167,14 +1188,19 @@ def _blood_material(g):
     old = t.mix(n, (0.022, 0.008, 0.006), (0.045, 0.014, 0.009))
     col = t.mix(a, fresh, old)
     col = t.mix(clot * 0.7, col, (0.07, 0.008, 0.006))
-    rough = t.mix(a, t.mix(wet, 0.3, 0.04), 0.32 + n * 0.2) + clot * 0.1
-    h = clot * 0.3 * (1.0 - a) + t.noise(p, 4000.0) * a * 0.3
+    # fresh clot already forms in pooled blood: near-black red, matte lumps
+    fclot = t.noise(p, 160.0, 3.0).smooth(0.56, 0.7) * (1.0 - a)
+    col = t.mix(fclot * 0.85, col, (0.045, 0.003, 0.004))
+    # (never a perfect mirror: pooled blood seen at a grazing angle would
+    # reflect the key light as a chrome bar)
+    rough = t.mix(a, t.mix(wet, 0.3, 0.1), 0.32 + n * 0.2) + clot * 0.1 + fclot * 0.4
+    h = clot * 0.3 * (1.0 - a) + t.noise(p, 4000.0) * a * 0.3 + fclot * t.noise(p, 700.0, 2.0) * 0.6
     bsdf = t.principled({
         'Base Color': col, 'Roughness': rough, 'IOR': 1.36, 'Specular IOR Level': 0.5,
         'Subsurface Weight': (1.0 - a) * 0.45, 'Subsurface Radius': (1.0, 0.02, 0.02),
         'Subsurface Scale': 0.001, 'Subsurface IOR': 1.36,
-        'Coat Weight': (1.0 - a * 0.85) * (0.3 + 0.7 * wet), 'Coat IOR': 1.36,
-        'Coat Roughness': 0.015 + (1.0 - wet) * 0.2 + a * 0.3, 'Coat Tint': t.mix(a, (0.9, 0.4, 0.4), (1, 1, 1)),
+        'Coat Weight': (1.0 - a * 0.85) * (0.3 + 0.7 * wet) * (1.0 - fclot * 0.75), 'Coat IOR': 1.36,
+        'Coat Roughness': 0.06 + (1.0 - wet) * 0.2 + a * 0.3, 'Coat Tint': t.mix(a, (0.9, 0.4, 0.4), (1, 1, 1)),
         'Normal': t.bump(h, 0.0001)})
     t.output(bsdf)
     return _finish(mat, t, (0.25, 0.01, 0.01), 0.1)

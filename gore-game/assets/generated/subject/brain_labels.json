@@ -3,17 +3,17 @@
  "frame": "body_zup_m",
  "godot_mapping": "(x, z, -y)",
  "generator": "blender/gore_body/build.py",
- "build_id": "gb-6e0d788cb2c3",
+ "build_id": "gb-7f773750956e",
  "data": {
   "origin": [
    -0.07,
    -0.07,
-   1.582
+   1.6
   ],
   "voxel_size": [
    0.00219,
    0.00297,
-   0.00281
+   0.00253
   ],
   "dims": [
    64,
@@ -37,168 +37,223 @@
    "0": {
     "name": "none",
     "side": "-",
-    "rb_row": ""
+    "rb_row": "",
+    "voxels": 195194,
+    "volume_ml": 3208.66
    },
    "1": {
     "name": "prefrontal_L",
     "side": "L",
-    "rb_row": "Prefrontal"
+    "rb_row": "Prefrontal",
+    "voxels": 5032,
+    "volume_ml": 82.72
    },
    "2": {
     "name": "prefrontal_R",
     "side": "R",
-    "rb_row": "Prefrontal"
+    "rb_row": "Prefrontal",
+    "voxels": 5319,
+    "volume_ml": 87.44
    },
    "3": {
     "name": "motor_strip_L",
     "side": "L",
-    "rb_row": "Motor strip / internal capsule"
+    "rb_row": "Motor strip / internal capsule",
+    "voxels": 2287,
+    "volume_ml": 37.59
    },
    "4": {
     "name": "motor_strip_R",
     "side": "R",
-    "rb_row": "Motor strip / internal capsule"
+    "rb_row": "Motor strip / internal capsule",
+    "voxels": 2287,
+    "volume_ml": 37.59
    },
    "5": {
     "name": "frontal_eye_field_L",
     "side": "L",
-    "rb_row": "Frontal eye field"
+    "rb_row": "Frontal eye field",
+    "voxels": 673,
+    "volume_ml": 11.06
    },
    "6": {
     "name": "frontal_eye_field_R",
     "side": "R",
-    "rb_row": "Frontal eye field"
+    "rb_row": "Frontal eye field",
+    "voxels": 673,
+    "volume_ml": 11.06
    },
    "7": {
     "name": "broca_L",
     "side": "L",
-    "rb_row": "Left (dominant) language areas"
+    "rb_row": "Left (dominant) language areas",
+    "voxels": 287,
+    "volume_ml": 4.72
    },
    "8": {
     "name": "wernicke_L",
     "side": "L",
-    "rb_row": "Left (dominant) language areas"
+    "rb_row": "Left (dominant) language areas",
+    "voxels": 833,
+    "volume_ml": 13.69
    },
    "9": {
     "name": "parietal_L",
     "side": "L",
-    "rb_row": "(parietal, sensory; left: language support)"
+    "rb_row": "(parietal, sensory; left: language support)",
+    "voxels": 9606,
+    "volume_ml": 157.91
    },
    "10": {
     "name": "parietal_R",
     "side": "R",
-    "rb_row": "Right parietal (left neglect)"
+    "rb_row": "Right parietal (left neglect)",
+    "voxels": 9807,
+    "volume_ml": 161.21
    },
    "11": {
     "name": "occipital_L",
     "side": "L",
-    "rb_row": "Occipital"
+    "rb_row": "Occipital",
+    "voxels": 3682,
+    "volume_ml": 60.53
    },
    "12": {
     "name": "occipital_R",
     "side": "R",
-    "rb_row": "Occipital"
+    "rb_row": "Occipital",
+    "voxels": 3682,
+    "volume_ml": 60.53
    },
    "13": {
     "name": "temporal_L",
     "side": "L",
-    "rb_row": "Temporal"
+    "rb_row": "Temporal",
+    "voxels": 5078,
+    "volume_ml": 83.47
    },
    "14": {
     "name": "temporal_R",
     "side": "R",
-    "rb_row": "Temporal"
+    "rb_row": "Temporal",
+    "voxels": 5710,
+    "volume_ml": 93.86
    },
    "15": {
     "name": "thalamus_L",
     "side": "L",
-    "rb_row": "Thalamus / diencephalon"
+    "rb_row": "Thalamus / diencephalon",
+    "voxels": 283,
+    "volume_ml": 4.65
    },
    "16": {
     "name": "thalamus_R",
     "side": "R",
-    "rb_row": "Thalamus / diencephalon"
+    "rb_row": "Thalamus / diencephalon",
+    "voxels": 283,
+    "volume_ml": 4.65
    },
    "17": {
     "name": "internal_capsule_L",
     "side": "L",
-    "rb_row": "Motor strip / internal capsule"
+    "rb_row": "Motor strip / internal capsule",
+    "voxels": 337,
+    "volume_ml": 5.54
    },
    "18": {
     "name": "internal_capsule_R",
     "side": "R",
-    "rb_row": "Motor strip / internal capsule"
+    "rb_row": "Motor strip / internal capsule",
+    "voxels": 337,
+    "volume_ml": 5.54
    },
    "19": {
     "name": "cerebellum_L",
     "side": "L",
-    "rb_row": "Cerebellar hemisphere"
+    "rb_row": "Cerebellar hemisphere",
+    "voxels": 3429,
+    "volume_ml": 56.37
    },
    "20": {
     "name": "cerebellum_R",
     "side": "R",
-    "rb_row": "Cerebellar hemisphere"
+    "rb_row": "Cerebellar hemisphere",
+    "voxels": 3429,
+    "volume_ml": 56.37
    },
    "21": {
     "name": "vermis",
     "side": "mid",
-    "rb_row": "Vermis"
+    "rb_row": "Vermis",
+    "voxels": 1352,
+    "volume_ml": 22.22
    },
    "22": {
     "name": "midbrain",
     "side": "mid",
-    "rb_row": "Midbrain"
+    "rb_row": "Midbrain",
+    "voxels": 614,
+    "volume_ml": 10.09
    },
    "23": {
     "name": "pons_tegmentum",
     "side": "mid",
-    "rb_row": "Pons, tegmentum"
+    "rb_row": "Pons, tegmentum",
+    "voxels": 276,
+    "volume_ml": 4.54
    },
    "24": {
     "name": "pons_basis",
     "side": "mid",
-    "rb_row": "Pons, ventral basis only"
+    "rb_row": "Pons, ventral basis only",
+    "voxels": 204,
+    "volume_ml": 3.35
    },
    "25": {
     "name": "medulla",
     "side": "mid",
-    "rb_row": "Medulla"
+    "rb_row": "Medulla",
+    "voxels": 214,
+    "volume_ml": 3.52
    },
    "26": {
     "name": "corpus_callosum",
     "side": "mid",
-    "rb_row": "(midline white matter; part of bilateral hemisphere damage)"
+    "rb_row": "(midline white matter; part of bilateral hemisphere damage)",
+    "voxels": 1236,
+    "volume_ml": 20.32
    }
   },
   "counts": {
-   "0": 200660,
-   "1": 2388,
-   "2": 2493,
-   "3": 2272,
-   "4": 2272,
-   "5": 1596,
-   "6": 1596,
-   "7": 105,
-   "8": 517,
-   "9": 9836,
-   "10": 9956,
-   "11": 4420,
-   "12": 4420,
-   "13": 4346,
-   "14": 4743,
-   "15": 250,
-   "16": 250,
-   "17": 363,
-   "18": 363,
-   "19": 2215,
-   "20": 2215,
-   "21": 1960,
-   "22": 1156,
-   "23": 230,
-   "24": 278,
-   "25": 462,
-   "26": 782
+   "0": 195194,
+   "1": 5032,
+   "2": 5319,
+   "3": 2287,
+   "4": 2287,
+   "5": 673,
+   "6": 673,
+   "7": 287,
+   "8": 833,
+   "9": 9606,
+   "10": 9807,
+   "11": 3682,
+   "12": 3682,
+   "13": 5078,
+   "14": 5710,
+   "15": 283,
+   "16": 283,
+   "17": 337,
+   "18": 337,
+   "19": 3429,
+   "20": 3429,
+   "21": 1352,
+   "22": 614,
+   "23": 276,
+   "24": 204,
+   "25": 214,
+   "26": 1236
   },
-  "status": "v0 (B0 geometric rules; B4 refines)"
+  "method": "inside = GB_Brain SDF; lobes cut by the head's CENTRAL_SULCUS / LATERAL_FISSURE curves + parieto-occipital plane; thalamus, internal capsule, corpus callosum ellipsoids; cerebellum under the tentorium, vermis |x| < 11 mm; brainstem by the mesh capsules (spine.json brainstem)",
+  "status": "B4"
  }
 }

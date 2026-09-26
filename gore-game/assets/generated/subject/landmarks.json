@@ -3,7 +3,7 @@
  "frame": "body_zup_m",
  "godot_mapping": "(x, z, -y)",
  "generator": "blender/gore_body/build.py",
- "build_id": "gb-6e0d788cb2c3",
+ "build_id": "gb-7f773750956e",
  "data": {
   "landmarks": {
    "vertex": [

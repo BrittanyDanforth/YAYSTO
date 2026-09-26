@@ -1063,8 +1063,8 @@ def clavicle_sdf():
     wp = np.array(BN.CLAVICLE_WAYPOINTS, float)
     sc, ac = wp[0], wp[-1]
     kn = [0.0, 0.12, 0.35, 0.55, 0.78, 1.0]
-    rn = [0.0100, 0.0072, 0.0058, 0.0052, 0.0048, 0.0050]      # vertical half
-    rb = [0.0122, 0.0080, 0.0068, 0.0066, 0.0090, 0.0115]      # horizontal half
+    rn = [0.0100, 0.0072, 0.0058, 0.0052, 0.0046, 0.0045]      # vertical half
+    rb = [0.0122, 0.0080, 0.0068, 0.0066, 0.0085, 0.0100]      # horizontal half
 
     def sec(n, b, t):
         return gg_superellipse(n, b, interp(t, kn, rn), interp(t, kn, rb), 2.3)
@@ -1106,9 +1106,9 @@ def scapula_sdf():
                   thick=lambda u, v, e: 0.0024 + 0.0020 * np.exp(-(e / 0.004) ** 2))
     lat = [Ia, (0.100, 0.093, 1.340), (0.118, 0.073, 1.362), (0.137, 0.046, 1.392)]
     med = [Sa, root, (0.079, 0.103, 1.390), Ia]
-    crest = [(0.077, 0.100, 1.438), (0.105, 0.096, 1.447), (0.138, 0.080, 1.452), (0.166, 0.062, 1.456),
+    crest = [(0.077, 0.099, 1.438), (0.105, 0.088, 1.446), (0.138, 0.068, 1.452), (0.166, 0.056, 1.456),
              tuple(S["acromion_posterior_angle"])]
-    base = [(0.076, 0.094, 1.440), (0.105, 0.082, 1.446), (0.132, 0.062, 1.442), (0.140, 0.043, 1.432)]
+    base = [(0.076, 0.093, 1.440), (0.105, 0.078, 1.445), (0.132, 0.056, 1.442), (0.140, 0.043, 1.432)]
     spine_outline = base + [crest[3], crest[2], crest[1], crest[0]]
     spine = Sheet(_pca_frame(spine_outline), spine_outline, (), thick=lambda u, v, e: 0.0040)
     acro_outline = [tuple(S["acromion_posterior_angle"]), (0.203, 0.040, 1.457), (0.204, 0.022, 1.458),
@@ -1173,7 +1173,7 @@ def hip_bone_sdf():
     piis = np.array((0.052, 0.086, 0.986))
     notch = np.array((0.068, 0.056, 0.950))
     acet_top = ACET_C + np.array((0.002, 0.006, 0.036))
-    ctrl = [asis, tub, top, (0.121, 0.052, 1.064), crest_back, (0.064, 0.086, 1.042), psis, piis,
+    ctrl = [asis, tub, top, (0.121, 0.052, 1.064), crest_back, (0.064, 0.082, 1.040), psis, piis,
             (0.062, 0.070, 0.966), notch, (0.078, 0.030, 0.950), acet_top, (0.100, -0.038, 0.952), aiis,
             (0.114, -0.060, 0.974)]
     outline = _smooth_loop(ctrl, 5)
@@ -1183,7 +1183,7 @@ def hip_bone_sdf():
                                                     ((0.118, -0.028, 1.012), 0.0070), ((0.100, 0.020, 0.985), 0.0055),
                                                     ((0.120, 0.012, 1.045), 0.0060))]
     wing = Sheet(fr, outline, fossa, thick=lambda u, v, e: 0.0028 + 0.0045 * np.exp(-(e / 0.007) ** 2))
-    crest = [asis, tub, top, (0.121, 0.052, 1.064), crest_back, (0.064, 0.086, 1.042), psis]
+    crest = [asis, tub, top, (0.121, 0.052, 1.064), crest_back, (0.064, 0.082, 1.040), psis]
     crest_r = [0.0055, 0.0072, 0.0062, 0.0058, 0.0058, 0.0060, 0.0068]
     post_border = [psis, piis, (0.060, 0.072, 0.968), notch, (0.058, 0.043, 0.925),
                    np.array(P["ischial_spine"])]
@@ -1540,7 +1540,7 @@ def tibia_sdf():
         d = smin(d, A.sd_ellipsoid(x, y, z, np.array(K["tibial_tuberosity"]) + np.array((0.0, 0.0180, 0.002)),
                                    (0.0110, 0.0090, 0.0180)), 0.009)
         d = smin(d, A.sd_ellipsoid(x, y, z, (0.121, 0.036, 0.456), (0.0080, 0.0080, 0.0070)), 0.006)  # fibular facet
-        mm = A.sd_capsule(x, y, z, (0.073, 0.046, 0.102), mm_tip + np.array((0.0, 0.0, 0.0055)), 0.0085, 0.0055)
+        mm = A.sd_capsule(x, y, z, (0.075, 0.046, 0.102), mm_tip + np.array((0.0035, 0.0, 0.0065)), 0.0080, 0.0052)
         d = smax(d, plaf - z, 0.003)                                          # flat plafond
         d = smin(d, mm, 0.006)
         d = smax(d, -A.sd_ellipsoid(x, y, z, (0.124, 0.052, 0.100), (0.0055, 0.010, 0.020)), 0.002)  # fibular notch
@@ -1555,10 +1555,10 @@ def fibula_sdf():
     K = BN.KNEE_LEG
     hc = np.array(K["fibular_head"]) + np.array((0.0, 0.0, -0.004))
     lm = np.array(K["lateral_malleolus_tip"])
-    p = [hc + np.array((0.0, 0.002, -0.012)), (0.128, 0.045, 0.330), (0.127, 0.054, 0.200), (0.126, 0.058, 0.090)]
+    p = [hc + np.array((0.0, 0.002, -0.012)), (0.127, 0.045, 0.330), (0.125, 0.053, 0.200), (0.124, 0.057, 0.090)]
 
     def sec(n, b, t):
-        r = interp(t, [0.0, 0.2, 0.8, 1.0], [0.0068, 0.0072, 0.0068, 0.0085])
+        r = interp(t, [0.0, 0.2, 0.8, 1.0], [0.0068, 0.0072, 0.0066, 0.0074])
         return gg_superellipse(n, b, r * 0.95, r, 2.0)
     shaft = Tube(p, sec, ref_fn=lambda P: np.tile(ANT, (len(P), 1)), step=0.003, round_ends=True)
 
@@ -1567,7 +1567,7 @@ def fibula_sdf():
         apex = A.sd_capsule(x, y, z, hc, hc + np.array((0.003, 0.005, 0.0075)), 0.0050, 0.0028)
         d = smin(head, apex, 0.003)
         d = smin(d, shaft(x, y, z), 0.008)
-        mal = A.sd_ellipsoid(x, y, z, lm + np.array((-0.0055, -0.002, 0.021)), (0.0085, 0.0115, 0.0210))
+        mal = A.sd_ellipsoid(x, y, z, lm + np.array((-0.0075, -0.002, 0.018)), (0.0080, 0.0110, 0.0190))
         d = smin(d, mal, 0.008)
         return d
     core = _core(fn, 0.0030, hc - np.array((0.0, 0.0, 0.045)), (0.131, 0.058, 0.130), k=0.006)
@@ -1587,6 +1587,30 @@ FINGER_LAYOUT = [(-0.001, 0.080, 0.0095, 0.0080, 0.002), (0.020, 0.090, 0.0098, 
                  (0.038, 0.084, 0.0092, 0.0078, 0.003), (0.054, 0.068, 0.0082, 0.0070, 0.010)]
 CURL_DEG = (8.0, 18.0, 28.0)
 HAND_AX = np.array([ARM_D, EY, ARM_NM])        # distal, ulnar (+Y; thumb is -Y), palmar
+
+
+def skin_layout():
+    """Finger, thumb and toe layout of the skin the bones must sit in: B1's ``body_skin`` when it
+    provides one (fingers index..little: polyline + tip radius; thumb CMC/MCP/IP/tip + tip radius;
+    toe tips + radius), else the placeholder hand/foot.  Keeps phalanges ~3-4 mm inside the skin."""
+    try:
+        import body_skin as BS
+        fingers = [(np.array(BS.finger_polyline(n)), BS.FINGERS[n][4]) for n in ("index", "middle", "ring", "little")]
+        th = [np.array(BS.hand_point(*p)) for p in BS.THUMB_PTS]
+        toes = []
+        for s0, w0, s1, w1, r0, r1, h1 in BS.TOES:
+            toes.append((np.array(BS.foot_point(s1 - r1, w1, h1)), r1,
+                         np.array(BS.foot_point(0.5 * (s0 + s1 - r1) + 0.004, 0.5 * (w0 + w1), h1 + 0.4 * r0))))
+        return {"fingers": fingers, "thumb": th, "thumb_tip_r": BS.THUMB_R[-1], "toes": toes, "src": "body_skin"}
+    except (ImportError, AttributeError):
+        fingers = [(finger_polyline(y0, L, sb), r1) for y0, L, _r0, r1, sb in FINGER_LAYOUT]
+        t0, t1, t2 = THUMB_PTS
+        th = [t0, t1, t1 + 0.66 * (t2 - t1), t2]
+        toes = []
+        for x in (0.086, 0.106, 0.122, 0.138, 0.153):
+            yf = -0.116 - 0.032 * math.sqrt(max(1.0 - ((x - 0.119) / 0.044) ** 2, 0.0)) + 0.009
+            toes.append((np.array((x, yf, 0.012)), 0.004, None))
+        return {"fingers": fingers, "thumb": th, "thumb_tip_r": 0.0092, "toes": toes, "src": "placeholder"}
 
 
 def finger_polyline(y0, length, setback):
@@ -1691,32 +1715,34 @@ def hand_parts():
             d = fn(x, y, z)
             return np.maximum(np.maximum(d, -(rad(x, y, z) - 0.0015)), -(uln(x, y, z) - 0.0015))
         out.append((name, g, box, "hand_L"))
+    lay = skin_layout()
     bases_y = (-0.010, 0.000, 0.009, 0.017)
-    for k, ((y0, L, r0, r1, sb), by) in enumerate(zip(FINGER_LAYOUT, bases_y)):
-        P = finger_polyline(y0, L, sb)
+    for k, ((P, r1), by) in enumerate(zip(lay["fingers"], bases_y)):
         u0 = _n(P[1] - P[0])
         base = _hl((0.0215, by, 0.0))
-        head = P[0] - 0.0040 * ARM_D
-        fn, box = _long_small(base, head, 0.0048, 0.0036, 0.0060)
+        head = P[0] - 0.0045 * u0
+        fn, box = _long_small(base, head, 0.0048, 0.0036, 0.0058)
         out.append((f"metacarpal{k + 2}", fn, box, "hand_L"))
-        # phalanges: proximal, middle, distal (distal tip 3 mm inside the skin)
+        # phalanges: proximal, middle, distal (distal tip ~3 mm inside the skin)
         u1, u2 = _n(P[2] - P[1]), _n(P[3] - P[2])
-        tip = P[3] + u2 * (0.75 * r1)
-        segs = [(P[0] + u0 * 0.0080, P[1] - u0 * 0.0022, 0.0050, 0.0034, 0.0040),
+        tip = P[3] + u2 * r1
+        segs = [(P[0] + u0 * 0.0075, P[1] - u0 * 0.0022, 0.0050, 0.0034, 0.0040),
                 (P[1] + u1 * 0.0032, P[2] - u1 * 0.0020, 0.0040, 0.0028, 0.0033),
-                (P[2] + u2 * 0.0028, tip - u2 * 0.0030, 0.0033, 0.0022, 0.0030)]
-        for j, (a, b, rb_, rs, rh) in enumerate(segs):
-            fn, box = _long_small(a, b, rb_, rs, rh)
+                (P[2] + u2 * 0.0028, tip - u2 * 0.0050, 0.0033, 0.0022, 0.0028)]
+        for j, (a_, b_, rb_, rs, rh) in enumerate(segs):
+            fn, box = _long_small(a_, b_, rb_, rs, rh)
             out.append((f"phalanx{k + 2}_{j + 1}", fn, box, "fingers_L"))
     # thumb: metacarpal from the trapezium (CMC) to the MCP, proximal + distal phalanx
-    t0, t1, t2 = THUMB_PTS
+    t0, t1, t2, t3 = lay["thumb"]
     u = _n(t1 - t0)
-    fn, box = _long_small(t0 + u * 0.0060, t1 - u * 0.0045, 0.0060, 0.0042, 0.0065)
+    fn, box = _long_small(t0 + u * 0.0060, t1 - u * 0.0045, 0.0060, 0.0042, 0.0062)
     out.append(("metacarpal1", fn, box, "thumb_L"))
     v = _n(t2 - t1)
-    fn, box = _long_small(t1 + v * 0.0075, t1 + v * 0.0310, 0.0055, 0.0038, 0.0045)
+    fn, box = _long_small(t1 + v * 0.0070, t2 - v * 0.0022, 0.0055, 0.0038, 0.0045)
     out.append(("phalanx1_1", fn, box, "thumb_L"))
-    fn, box = _long_small(t1 + v * 0.0345, t1 + v * 0.0485, 0.0045, 0.0030, 0.0036)
+    w = _n(t3 - t2)
+    tip = t3 + w * (lay["thumb_tip_r"] - 0.0050)
+    fn, box = _long_small(t2 + w * 0.0030, tip, 0.0045, 0.0030, 0.0032)
     out.append(("phalanx1_2", fn, box, "thumb_L"))
     return out
 
@@ -1770,7 +1796,7 @@ def foot_parts():
         return lambda x, y, z: A.extrude(gg_superellipse(x - c[0], y - c[1], r[0], r[1], n), z - c[2], r[2], rnd)
 
     def mt5_base(x, y, z):
-        return A.sd_sphere(x, y, z, (0.141, -0.004, 0.025), 0.0058)
+        return A.sd_sphere(x, y, z, (0.136, -0.004, 0.026), 0.0055)
     cuboid = block((0.121, 0.006, 0.032), (0.0105, 0.0125, 0.0105), 2.8)
     cun = block
     order = [("talus", talus, "foot_L"), ("calcaneus", calcaneus, "foot_L"), ("navicular", navicular, "foot_L"),
@@ -1795,7 +1821,7 @@ def foot_parts():
     heads = [mtp1, np.array((0.104, -0.084, 0.019)), np.array((0.122, -0.076, 0.018)),
              np.array((0.141, -0.064, 0.018)), mtp5]
     bases = [np.array((0.083, -0.031, 0.040)), np.array((0.096, -0.027, 0.044)), np.array((0.108, -0.024, 0.041)),
-             np.array((0.119, -0.010, 0.033)), np.array((0.132, -0.005, 0.029))]
+             np.array((0.118, -0.010, 0.033)), np.array((0.129, -0.005, 0.029))]
     rads = [(0.0080, 0.0058, 0.0090), (0.0060, 0.0040, 0.0062), (0.0058, 0.0040, 0.0060), (0.0058, 0.0040, 0.0058),
             (0.0065, 0.0042, 0.0058)]
     for k in range(5):
@@ -1806,25 +1832,28 @@ def foot_parts():
             fn = lambda x, y, z, fn0=fn0: smin(fn0(x, y, z), mt5_base(x, y, z), 0.003)
         fn = _clipped(fn, done, 0.0015)
         out.append((f"metatarsal{k + 1}", fn, (box[0] - 0.006, box[1] + 0.006), "foot_L"))
-    # toes: tips 5 mm inside the skin's toe block front edge
-    tipx = [0.086, 0.106, 0.122, 0.138, 0.153]
+    # toes: along the skin's toe tubes (MTP -> mid -> tip), distal tip ~3 mm inside the skin
+    lay = skin_layout()
     nseg = [2, 3, 3, 3, 3]
     for k in range(5):
-        yf = -0.116 - 0.032 * math.sqrt(max(1.0 - ((tipx[k] - 0.119) / 0.044) ** 2, 0.0)) + 0.006
-        tip = np.array((tipx[k], yf, 0.012))
+        tip_c, tip_r, mid_c = lay["toes"][k]
         mtp = heads[k]
-        u = _n(tip - mtp)
-        L = np.linalg.norm(tip - mtp)
+        u_end = _n(tip_c - (mid_c if mid_c is not None else mtp))
+        tip = tip_c + u_end * (tip_r - 0.0030)
+        path = [mtp] + ([mid_c] if mid_c is not None else []) + [tip]
+        P, _t = _A().catmull(np.array(path), n=12), None
+        seglen = np.linalg.norm(np.diff(P, axis=0), axis=1)
+        cum = np.concatenate([[0.0], np.cumsum(seglen)])
+        L = cum[-1]
+        at = lambda d_: np.array([np.interp(d_, cum, P[:, i]) for i in range(3)])
         r0 = 0.0060 if k == 0 else 0.0040
         fr = (0.62, 0.38) if nseg[k] == 2 else (0.52, 0.26, 0.22)
-        s0 = (rads[k][2] + 0.0015)
+        s0 = rads[k][2] + 0.0015
         pos = s0
         for j, f_ in enumerate(fr):
             seg_len = (L - s0) * f_
-            a = mtp + u * (pos + 0.0012)
-            b = mtp + u * (pos + seg_len - 0.0012)
             sc = 1.0 - 0.18 * j
-            fn, box = _long_small(a, b, r0 * sc, r0 * 0.65 * sc, r0 * 0.8 * sc)
+            fn, box = _long_small(at(pos + 0.0012), at(pos + seg_len - 0.0012), r0 * sc, r0 * 0.65 * sc, r0 * 0.8 * sc)
             out.append((f"toe{k + 1}_{j + 1}", fn, box, "toes_L"))
             pos += seg_len
     return out

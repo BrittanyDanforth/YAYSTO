@@ -619,6 +619,7 @@ def verify(objs):
     * damage = 0 (and frame 1 of the animation) is identical to the intact head
     """
     lines, ok = [], True
+    evals = {}
 
     def check(name, cond, info=""):
         nonlocal ok
@@ -632,7 +633,7 @@ def verify(objs):
     intact = {n: _signature(ob) for n, ob in layers.items()}
     for name in PRESET_NAMES[1:]:
         apply_preset(name)
-        secs = evaluate_all(objs)
+        secs = evals[name] = evaluate_all(objs)
         sigs = {n: _signature(ob) for n, ob in layers.items()}
         missing = [n for n, sg in sigs.items() if len(sg[3]) != len(gore.ATTRS)]
         skin = sigs["GH_Skin"][3]
@@ -677,6 +678,7 @@ def verify(objs):
     check("gore.verify_gore() self-test", gore_ok)
     lines.append("RESULT: " + ("all checks passed" if ok else "SOME CHECKS FAILED"))
     print("[build] verification\n" + "\n".join(lines))
+    verify.evals = evals
     return ok
 
 
@@ -885,12 +887,10 @@ def main():
     objs, mats, timings = build_scene()
     print("[build] anatomy %.1f s, materials %.1f s, gore %.1f s, hair %.1f s, total build %.1f s"
           % (timings["anatomy"], timings["materials"], timings["gore"], timings["hair"], timings["build"]))
-    evals = {}
-    for name in PRESET_NAMES:
-        apply_preset(name)
-        evals[name] = evaluate_all(objs)
-    print("[build] evaluation (all layers): " + ", ".join(f"{k} {v:.2f} s" for k, v in evals.items()))
+    # verify() applies and evaluates every preset once and records the timings
     ok = verify(objs)
+    evals = getattr(verify, "evals", {})
+    print("[build] evaluation (all layers): " + ", ".join(f"{k} {v:.2f} s" for k, v in evals.items()))
     if not ok and not args.force:
         print("[build] verification FAILED: not rendering or saving (use --force to save anyway)")
         sys.exit(1)
