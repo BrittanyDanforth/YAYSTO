@@ -13,7 +13,8 @@ Audience: simulation, animation/ragdoll, AI/behaviour, eye/face, shader/VFX and 
 - the look of severe trauma (§6);
 - sound (§7);
 - eight second-by-second scenario scripts (§8);
-- a reviewer test list (§9).
+- a reviewer test list (§9);
+- appendices: conflict register (A), key references (B), suspicious content (C).
 
 `docs/REALISM_BIBLE.md` (RB) remains the specification for wounds, blood and circulation, the physiology state machine, post-mortem changes and anatomy. This document **reads** the physiology state of RB §4 and turns it into motion, eyes, face and sound. Where the two documents give different values, Appendix A records the conflict and the value chosen.
 
@@ -2584,4 +2585,288 @@ Sources: `[K] (H) R2-06 §3.1, §16`.
 - Nothing is thrown by a bullet. Unconscious bodies never protect themselves. Heart-shot characters stay capable for several seconds.
 - The brainstem victim never breathes again; the heart-shot victim gasps; the carotid victim goes white; the temporal victim talks for half an hour before one pupil blows; the knocked-out man wakes up asking the same question; the hammer victim's paralysed hand starts jerking before the whole body convulses.
 
-<!-- CONTINUE: section 9 -->
+---
+
+## 9. Test checklist (reviewer acceptance tests)
+
+This list complements RB §9, which covers wounds, blood, circulation, eyes after death and post-mortem changes (RB rows 1–50). Where a statement here overlaps an RB row, the RB row number is given. Each statement is observable in the game or its debug overlay, and each has a pass criterion.
+
+### 9.1 How to run the tests
+
+- **Test body**: the reference body (§0.3; 75 kg, 1.75 m), hero settings (physics 120 Hz). Q53 also runs at 60 Hz.
+- **Debug overlay** (required fields):
+  - sim time and band;
+  - physiology (MAP, HR, SpO₂, brain O₂ reserve, ICP, blood-loss class, `t_LOC`, `t_arr`);
+  - per-region neuro severity and the resolved channels;
+  - tone and strength per joint group;
+  - eye yaw and pitch per eye, pupil diameter, lid aperture;
+  - active involuntary generators and their gate state (§5.1);
+  - the audio event log with timestamps and peak SPL;
+  - the RNG seed and every roll with its outcome.
+- **Seeds**: batch tests use seeds 1…n. Scenario tests use the seeds stored with each §8 scenario plus seeds 1–10.
+- **Pass rules**:
+  - **Probabilities** (n runs): pass if the observed fraction lies inside [p_lo − 2σ, p_hi + 2σ], with σ = √(p̄(1 − p̄)/n) and p̄ the midpoint of the stated range.
+  - **Timings and magnitudes**: at least 90 % of runs inside the stated range, and 100 % inside the range widened by 25 % of its width on each side.
+  - **Absolute statements** ("never", "always", "0 events"): zero failures in n runs.
+  - **Reflex latencies**: ±1 physics tick (8.3 ms at 120 Hz). **Audio timing**: ±5 ms. **Eye angles**: ±2°. **Pupils**: ±0.2 mm. **Joint limits**: ±3°.
+- A failed test produces the event log of the failing seed. The fix is made in the system named in the "Ref" column, not by special-casing the test.
+
+### 9.2 Global rules
+
+| # | Statement | Method (n) | Pass criterion | Ref |
+|---|---|---|---|---|
+| Q01 | The same seed replays identically; a different seed changes the rolls | Replay each §8 scenario twice with seed s and once with s + 1 | Logs for seed s identical (event type, tick, bone, value); at least one rolled event differs for s + 1 | §0.3 |
+| Q02 | On the impact frame, only the physical impulse and the wound are visible | 50 hits, frame capture at 120 Hz | 0 non-L0 bone rotations > 0.5° on the contact frame; every L1 event starts 2–15 frames later | §0.3, §3.1 |
+| Q03 | Cosmetic oscillators keep real-time speed under time compression | A breathing, shivering, gasping body run at 1×, 4× and 15× | Breath rate, blink rate, tremor and shiver frequency and gasp intervals, measured in real seconds, match across speeds within ±5 % | §0.3 |
+| Q04 | Every involuntary sign respects its tissue gate | 500 random injuries; every generator event logged with its gate | 0 events with a failed gate; the six §5.1 debug assertions never fire | §5.1 |
+
+### 9.3 Neuro model (§1)
+
+| # | Statement | Method (n) | Pass criterion | Ref |
+|---|---|---|---|---|
+| Q05 | Body hits never switch the brain off ("hydrostatic shock" guard) | 200 handgun and rifle hits to soft tissue of the chest, abdomen and thigh (§3.4 rows 15, 17, 18, 22), with the heart, great vessels, cord and bone spared | Brain `stun` = 0 in 200/200; tone < 0.5 within 1 s in 0/200 | §1.3, §3.9 #5 |
+| Q06 | A one-sided hemisphere wound weakens the opposite side and turns the eyes and head toward the wound | Track through the left FEF and left M1 (or internal capsule), severity ≥ 0.7, 20 seeds, standing | Right hand: drive scale ≤ 0.2 and torque cap ≤ 0.3 (§1.5), left side normal, in 20/20; eyes 15–40° and head 10–30° toward the left in ≥ 18/20; falls toward the right in ≥ 80 % of falls | §1.5, RB §9 #35 |
+| Q07 | A seizure from the same focus turns the eyes and head away from the wound | Force a versive seizure in the Q06 bodies | Version 30–45° toward the right (away from the lesion) in ≥ 90 %; the destructive bias toward the left returns after the seizure | §1.8, §2.4 |
+| Q08 | Brainstem lesions cross: face and eye on the wound side, arm and leg on the other | Right lateral pontine lesion, 20 seeds | 20/20: right peripheral facial palsy (brow 2–5 mm low, closure gap 2–10 mm), right eye turned in 6–22° (CN VI), left arm and leg weak | §1.2, §2.4, §2.6 |
+| Q09 | Central and peripheral facial palsy differ at the forehead | Left M1 face-area lesion vs left pontine lesion, 10 seeds each | Cortical: right lower face weak, forehead gain ≥ 0.8. Pontine: whole left face weak, forehead gain ≤ 0.2 | §2.6 |
+| Q10 | A cerebellar wound leaves the character strong but falling toward the wound and overshooting | Right cerebellar hemisphere, severity 0.7, 50 seeds, standing, then a reach task | Falls toward the right in 0.6–0.8 (±2σ); reach overshoot 3–10 cm with a 3–5 Hz tremor of 1–5 cm in the last 10–20 cm, right hand; strength ≥ 0.9 | §1.5, §5.5 |
+| Q11 | A weak arm drifts | Both arms raised to 90°; contralateral arm severity 0.4–0.8 vs 0–0.2 | The weak arm drifts down and pronates within 3–10 s; the normal arm holds ≥ 20 s | §1.5 |
+| Q12 | Aphasia follows language dominance | 100 characters with rolled dominance; left inferior frontal lesion, severity ≥ 0.6 | Non-fluent output only in left-dominant characters (0.90 of the batch, ±2σ); swearing intact; no aphasia in left-dominant characters after the mirror (right) lesion | §1.5, §0.3 |
+| Q13 | Neglect occurs at the right rates and hides one side | 100 right and 100 left parietal (PPC) lesions, severity > 0.3 | Neglect 0.43 (right) and 0.20 (left), ±2σ. On the neglected side: no glance, no hand to a wound, no shielding | §1.5, §3.5 |
+| Q14 | An expanding mass is silent while compensated, then declines in order | EDH at 1 mL/min from 15 mL, 20 seeds | No herniation sign while the volume is < 60 mL; midline shift 0.10 mm per mL ± 10 %; stages U1 → U2 → M → P → X in order in 20/20, never skipped or reversed | §1.7 |
+| Q15 | The first blown pupil is on the side of the mass and the weakness on the other side, with rare exceptions | 100 temporal masses | First pupil ipsilateral in 0.85–0.90 (false side 0.10–0.15); ipsilateral hemiparesis (Kernohan) in 0.1–0.2 | §1.7 |
+| Q16 | Posturing follows the herniation stage | Q14 runs | Decorticate → decerebrate → flaccid; no new posturing after medullary failure; posturing absent after stage X | §1.7, §5.7 |
+| Q17 | The Cushing response appears at U2–M | Q14 runs plus 30 more | SBP rises and HR falls in every run; the full triad (SBP 160–240, HR 40–60, irregular breathing) in about ⅓ (0.2–0.47 at n = 50) | §1.7 |
+| Q18 | Early seizures occur at first-hour rates | 1,000 penetrating hemisphere wounds, 1,000 blunt, 1,000 knockouts | 0.05–0.10 (× 1.5 with motor or temporal cortex), 0.02–0.04, and 0.014 (0.007–0.021) | §1.8, C-02 |
+
+### 9.4 Eyes and face (§2)
+
+| # | Statement | Method (n) | Pass criterion | Ref |
+|---|---|---|---|---|
+| Q19 | Saccades follow the main sequence | 200 saccades of 5–40° | Duration 21 + 2.2 × amplitude ms, ±10 %; peak velocity 400–700 °/s for amplitudes ≥ 10° | §2.2 |
+| Q20 | Blinks match the state | 5 min per state | Alert: mean 12–20 /min, no interval < 1 s, full blink 250–400 ms. Shock: 5–10 /min, 300–500 ms. Coma and dead: 0 | §2.3, C-15, RB §9 #41 |
+| Q21 | Pupils respond to light, pain and fear | Light test; pain spike; visible threat | Light: constriction starts 200–300 ms, consensual. Pain: +0.3–1.0 mm, onset 0.3–0.6 s, peak 1–2 s, back in 3–10 s. Fear: +0.5–1.5 mm while the threat lasts | §2.2, §2.3, C-03 |
+| Q22 | Pupil size follows the lesion and the circulation | Pontine, midbrain and uncal lesions; circulatory arrest | Pons 1–1.5 mm; midbrain 4–6 mm fixed; uncal side 6–9 mm fixed. After arrest: dilation starts at 30–45 s and reaches 6–8 mm fixed by 60–120 s. A dead pupil is never < 4 mm unless the pons was destroyed | §2.3, RB §9 #43 |
+| Q23 | Doll's eyes depend on the brainstem | Turn the head 30° in four states: alert, coma with an intact brainstem, brainstem failed, dead | Alert: the eyes stay on the target. Coma: counter-rotation gain 1.0 ± 0.1. Brainstem failed or dead: gain 0 ± 0.05 | §2.7, RB §9 #44 |
+| Q24 | A lifted lid closes only in the living | Lift one lid 5 mm on a living coma body and on a dead body, 20 each | Living: closes over 1–2 s. Dead: stays up in 20/20 | §2.7 |
+| Q25 | Upgaze belongs to the collapse, never to death | 50 circulatory LOCs (heart, syncope); 100 deaths of all causes | Upgaze 10–30° for 2–10 s in 0.6–0.9 (±2σ); neutral again within 10–60 s. In every `DEAD` state: pitch ≤ +5°, yaw 3–10° outward; `assert_no_upgaze_in_dead` never fires | §2.3, §3.9 #10, C-05 |
+| Q26 | CN III palsy looks down and out with a blown pupil | Uncal stage U2 or midbrain lesion, 20 seeds | On the lesion side: ptosis 100 %, eye out 22–33° and down 5–10°, pupil 6–9 mm fixed | §2.4 |
+| Q27 | Lids at death follow the distribution | 100 sudden and 100 slow deaths | Sudden: open 0.55 / half 0.35 / closed 0.10. Slow: 0.20 / 0.45 / 0.35 (±2σ). Lids drop 2–4 mm over 1–3 s; no blink after death | §2.3, RB §9 #42 |
+| Q28 | A knocked-out character's eyes are open and glassy | 50 knockouts | Open or half-open in 0.8 (±2σ; C-04); tonic upgaze in about half of the open eyes for 2–10 s; pupils equal and reactive; doll's eyes present | §2.3 |
+| Q29 | The pain face scales with pain | Pain swept 0–10 on 10 characters | PSPI ≈ 1.6 × pain ± 2; AU43 binary; eyes shut in pain screams, wide in terror screams | §2.3, §2.6 |
+| Q30 | An unconscious palsied face shows the palsy through tone | Palsied comatose body, supine, pain stimulus | Only the working side grimaces; the paralysed cheek puffs out 3–10 mm on each expiration | §2.6 |
+| Q31 | Colour follows the cause | A bleed-out death; apnoea with normal Hb | Exsanguinated: white-grey face, grey-lilac lips, never blue. Apnoea: lips and tongue blue within 60–120 s. Face colour lags physiology by 5–15 s (× 2 in shock) | §2.6, RB §9 #29 |
+
+### 9.5 Reaction system (§3)
+
+| # | Statement | Method (n) | Pass criterion | Ref |
+|---|---|---|---|---|
+| Q32 | Bullets never throw bodies | 500 projectile hits, all weapons, standing and supine | Pelvis Δv ≤ 0.2 m/s in 500/500 (9 mm ≤ 0.05; 00 buckshot ≤ 0.17); `assert_projectile_body_dv` never fires; fall direction not correlated with shot direction (abs(r) < 0.2) | §3.9 #1, T10, RB §9 #12 |
+| Q33 | The involuntary "shot" snap is a startle flexion, whatever the shot direction | 50 shots from the front, 50 from behind | A hunch (head down, shoulders up) in ≥ 95 % of both sets; frontal shots produce no backward trunk rotation > 2° beyond L0 in the first 200 ms | §3.9 #2 |
+| Q34 | Startle timing | 50 unexpected shots near a conscious character | Visible blink 40–60 ms, head 90–130, arms 120–160, legs 140–220 ms; no startle with a destroyed brainstem | §3.3 |
+| Q35 | The startle habituates but the blink persists | 5 shots within 10 s, 20 seeds | Amplitudes 1.0 / 0.6 / 0.45 / 0.35 / 0.25 (±0.05); blink amplitude never below 0.5 | §3.3 |
+| Q36 | Not everyone stops when shot | 200 committed attackers; first 9 mm hit to the torso, CNS, heart and bone spared | Stop within 3 s in 0.35–0.45; never stop in 0.13–0.17 (±2σ); over a multi-hit batch, mean hits to stop 1.4–2.5 | §3.6, §3.9 #3 |
+| Q37 | A destroyed heart leaves seconds of capability | 50 committed attackers | Purposeful action continues ≥ 5 s in 50/50; LOC at 8–15 s (× 0.85 upright); hypoperfusion sag (G); no LOC before 5 s | §3.8, §3.9 #4, RB §9 #33 |
+| Q38 | Pain vocalisation is gated; not everyone screams | 200 gunshot and stab pain spikes | Vocalisation rate = clamp(0.15 × (pain − 2), 0, 0.95) × expressivity, ±2σ; 0 while unaware, winded, apnoeic or unconscious; the first cry comes at discovery, not at impact | §3.6, §3.9 #6 |
+| Q39 | Many wounds are not noticed at once | 200 high-arousal torso hits, 100 back stabs, 100 bone hits | Unaware for > 3 s: 0.3–0.5 / 0.4–0.6 / ≤ 0.05. Discovery median ~5 s (back stab ~10 s); P90 ≤ 60 s | §3.6, §3.9 #14 |
+| Q40 | A broken femur folds before any emotion | 20 loaded femur hits | The thigh gives way at 0.1–0.3 s; falls toward the injured side in ≥ 17/20; hands first; foot turned out 45–90°; shortening 2–5 cm; wound check and pain face start only after the collapse has begun | §3.4 #21, T15 |
+| Q41 | Knockout probability follows the α model | 200 blows at each of α 3,500 / 6,000 / 9,300 rad/s², unbraced | P(LOC) 0.11 / 0.50 / 0.94 (±2σ); braced midpoint 7,500–8,000 | §3.7 |
+| Q42 | A knockout drops at once and never protects itself | 50 knockouts | Tone < 0.1 within 100 ms of contact, before the head returns from its peak excursion; no protective hand in 50/50; tonic arm (fencing crumple plus plank) in 0.66 ± 0.13; the raised arm stays 2–10 s (≤ 20), then falls over 0.5–1 s | §3.7, §3.9 #7, #9, RB §9 #19 |
+| Q43 | Hits on the unconscious produce only reflexes | 50 hits at each of GCS M5–M4, M3–M2 and M1 | Withdrawal of the struck limb in 0.2–0.5 at M ≥ 4; posturing burst in 0.5 at M2–M3 (latency 0.2–1 s); nothing at M1; never a guard, a flinch or a blink | §3.4 #37 |
+| Q44 | Hits on the dead produce only mechanics | 100 hits on bodies 0–2 h after arrest | Active torque 0 in 100/100; a local muscle bulge of 5–20 mm in 0.1–0.3 of direct muscle hits, with no joint motion > 5° from it | §3.4 #38, §3.9 #12 |
+| Q45 | A paralysed side cannot protect | A hemiplegic character pushed toward each side, 20 pushes per side | No protective arm and no hand-to-wound on the paralysed side; falls after pushes toward the paralysed side are about 3 times as frequent | §3.5 |
+| Q46 | A faint is short and recovers | 50 vasovagal faints | Graded tone loss over 0.5–2 s; 1–10 irregular jerks over 5–15 s; eyes open and up; LOC 12.1 ± 4.4 s; wakes once horizontal | §3.6, T16, §3.9 #13 |
+
+### 9.6 Falls and ragdoll (§4)
+
+| # | Statement | Method (n) | Pass criterion | Ref |
+|---|---|---|---|---|
+| Q47 | An off-switch collapse drops straight down, head last | T2, 20 runs | First contact 0.35–0.55 s; head last, at 0.7–1.2 s and 3–5 m/s; the arms float up and slap down 50–150 ms after the trunk; no hand reaches out | §4.5 A, T2, RB §9 #32 |
+| Q48 | A rigid knockout topples like a plank | T3, 20 runs | Ground at 1.2–1.3 s from 5° of lean; head 6–7 m/s; feet planted until ~50°, then slide or lift | §4.5 B, T3 |
+| Q49 | A conscious fall is caught by the hands | T14, 50 runs | Arm burst ~100 ms after balance loss, oriented < 200 ms; hands first in ≥ 0.74 (±2σ); elbows yield 20–60°; face turned away | §4.6, T14, §3.9 #8 |
+| Q50 | Bodies neither slide nor bounce | 100 standing collapses; T8 | Slide 0.03–0.4 m, never > 1 m; T8 slide 2.3–2.8 m; rebound ≤ 2 cm (trunk), ≤ 5 cm (head), ≤ 3 cm (limbs) | §4.6 |
+| Q51 | Bodies settle and stay still | 100 falls, some on a 3° slope | KE < 0.5 J by 2–5 s and asleep by 5 s; no rolling; no bone moving > 1 cm/s after sleep; damping not raised before KE < 2 J for 0.5 s | §4.7, T7 |
+| Q52 | Limp limbs are heavy, not floaty | T4, T5, T6, T12 | T4 passes the vertical at 0.36–0.40 s, 2–4 swings, still by 4 s; T5 period 1.0–1.3 s; T6 chin to chest in 0.3–0.6 s; T12 the hand hits the face | §4.9 |
+| Q53 | The ragdoll is stable and physically honest | 1,000 random falls at 60 Hz and at 120 Hz | 0 NaN; no bone > 20 m/s without an external impulse; joint limits held within ±3° (T13); in free flight with drives on, total angular momentum constant within 1 % over 2 s (reaction torque applied) | §4.3, §4.4, C-12 |
+| Q54 | Rigor holds, then breaks | T17 | No motion below 15–40 Nm; then the joint gives way and stays loose | §4.9 |
+
+### 9.7 Involuntary movement (§5)
+
+| # | Statement | Method (n) | Pass criterion | Ref |
+|---|---|---|---|---|
+| Q55 | A destroyed medulla means no breathing movement of any kind | 50 medullary hits | 0 breaths, gasps, coughs and hiccups; lips blue by 60–120 s; `assert_no_gasp_if_medulla_dead` never fires | §5.1, RB §9 #32 |
+| Q56 | Agonal gasps follow their schedule | 100 destroyed-heart deaths with an intact medulla | Gasps in 0.45 (±2σ); first at ~30 s; intervals 10 × 1.3ⁿ s; ≤ 8 gasps plus a false last breath (0.3); mean rate over the gasping period 2–10 /min; last gasp within 1–5 min; the eyes move with the head | §5.2, RB §9 #40 |
+| Q57 | A generalised seizure has the right phases | 50 GTC seizures | Total 30–120 s (mean 62 ± 10); tonic 10–20 s with apnoea; clonic 30–60 s, falling from 3–4 Hz to 0.5–1 Hz and stopping when the gap exceeds 2–3 s; eyes open ≥ 0.9; cry 0.3–0.5; lateral tongue bite 0.2–0.35 | §5.4 |
+| Q58 | A faint is distinguishable from a seizure | 50 syncopes vs 50 GTC seizures | Syncope: 1–10 irregular jerks within 15 s, pale face. GTC: rhythmic clonus that slows, cyanosis, stertorous breathing afterwards | §5.3, §5.4 |
+| Q59 | Post-mortem movement fades and stops | 100 bodies from `t_arr` to `t_arr` + 30 min | Twitches in 0.2–0.4 of bodies at 0.5–5 /min, decaying; 0 spontaneous movement after `t_arr` + 20 min | §5.5, C-06 |
+| Q60 | Spinal reflexes and the Lazarus sign occur only in their window | 100 brainstem deaths with a beating heart | Any spinal movement in 0.2–0.4 (C-09); Lazarus in 0.03–0.05, a 2–5 s rise, never an impulse; no spinal movement outside brainstem death → `t_arr` + 60–180 s | §5.5 |
+| Q61 | A dead body never shivers, trembles, breathes, postures, blinks, tracks or flinches | 100 bodies; sound, touch, light and a head turn applied to each | 0 events | §5.5 |
+| Q62 | Tremor and shivering belong to the conscious | A frightened survivor; a class II–III bleed | Fear tremor 8–12 Hz, 0.5–3 mm; shivering bursts 4–8 /min starting 10–40 min after the bleed and stopping at or before LOC | §5.6 |
+| Q63 | No death rattle in a fast death | 100 deaths within 30 min; 50 comas lasting > 60 min | Rattle 0/100 in the fast deaths (assertion); 0.3–0.5 in the long comas | §5.1, §5.9 |
+
+### 9.8 Severe trauma visuals (§6)
+
+| # | Statement | Method (n) | Pass criterion | Ref |
+|---|---|---|---|---|
+| Q64 | Handguns never burst heads; contact shotgun blasts split them | 100 handgun head shots; 20 contact 12-gauge head shots | Handgun: burst 0/100. Shotgun: far-side crater, radial scalp flaps and a sagging face in 20/20; with the heart intact, blood pumps from the defect for minutes | §6.2, RB §9 #9, #14 |
+| Q65 | Hammer blows escalate visibly | 6 blows of 60–70 J, 10 seeds | Blow 1: no spatter. Once blood is exposed: 20–300 impact stains of 0.5–4 mm per blow; depression +3–10 mm and +2–6 fragments per blow | §6.2 |
+| Q66 | Punches do not burst eyes | 100 fist blows to the orbit; 20 hammer-face and thumb impacts | Globe rupture 0/100 from fists; rupture only when the impactor fits inside the 35 × 40 mm rim and exceeds 24,000–35,000 J/m² | §6.2, §3.9 #15 |
+| Q67 | Chest and neck wounds breathe | Chest-wall defects of 5, 10 and 15 mm; a tracheal cut | Sucking only at ≥ 10–13 mm, with pink froth on expiration. Tracheal cut below the cords: aphonic in 100 %; the lips move; hissing and bubbling at the neck | §6.2, §3.9 #16 |
+
+### 9.9 Audio (§7)
+
+| # | Statement | Method (n) | Pass criterion | Ref |
+|---|---|---|---|---|
+| Q68 | The impact is heard after the shot | Shots at 10, 30 and 100 m, heard at the shooter | Delay = d/v + d/343 (±5 ms); at 30 m a separate "whop" 0.12 s (rifle) or 0.17 s (handgun) after the report | §7.2 |
+| Q69 | Blood sounds come from where the blood lands | An arterial jet; drips onto a bare floor, a pool and a container | The jet is silent at the wound; patter at the landing point in time with the pulse; drips into a pool "pat"; a plink only in liquid ≥ 10–20 mm deep | §7.7 |
+| Q70 | Loudness is capped by shock class | Maximal scream requested at each class | Peak SPL at 1 m ≤ 105 / 100 / 85–90 / 65 / 0 dB for classes I / II / III / IV / LOC | §7.4, C-10 |
+| Q71 | Screams are rough and match the speaking voice | Spectral analysis of 50 screams from 10 characters | Amplitude-modulation roughness at 30–150 Hz present; each character's scream, moan and speech F0 derive from the same trait baseline | §7.4 |
+| Q72 | The skull sounds change once it fractures | A hammer sequence | Before fracture: knock modes near 1.0 / 1.7 / 2.8 / 4.2 kHz. After: modes × 0.6–0.8 and damping × 2–3 (no ring) | §7.2 |
+| Q73 | The voice budget holds under load | Stress scene with 20 wounded characters | ≤ 2 real-time GDScript voices; every other voice uses baked variants (8–16 per recipe and state) | §7.2 |
+
+### 9.10 Scenarios (§8)
+
+| # | Statement | Method (n) | Pass criterion | Ref |
+|---|---|---|---|---|
+| Q74 | Events keep their causal order | All 8 scenarios, seeds 1–10 | No event precedes its predecessor in: impulse → blink and flinch → mechanical failure → protective limbs → hand to the wound → looking → emotional reaction → physiological collapse. Conditional steps may be absent | §8 |
+| Q75 | Brainstem shot (§8.1) | 10 seeds | No blink and no startle at any time; the head is the last contact at 0.8–1.0 s and 3–5 m/s; no breath, gasp or cough; lips blue by 60–120 s; `t_arr` 4–10 min | §8.1, §3.9 #11 |
+| Q76 | Temporal shot, talk and die (§8.3) | 10 seeds on the main line | Talks for ≥ 20 min; the right pupil changes before the left; U1 at ~35 min, apnoea at ~72 min, `t_arr` at ~78 min (±15 %) | §8.3, RB §9 #39 |
+| Q77 | Heart shot (§8.4) | 10 seeds | Advances for ≥ 5 s; LOC at 7–13 s; eyes up at LOC; no external arterial jet | §8.4 |
+| Q78 | Carotid cut (§8.5) | 10 seeds | Pulsing jet of 0.5–1.5 m, one burst per beat; lips grey-lilac, never blue; event order as §8.5; LOC and `t_arr` equal to the RB solver output for the scenario's compression (C-17) | §8.5 |
+| Q79 | Punches to knockout (§8.7) | 10 seeds | Blows after the knockout are purely passive; snoring when supine; on waking, the eyes open first; the same question is repeated every 30–120 s | §8.7 |
+| Q80 | Hammer with seizure (§8.8) | 10 seeds on the main line | Clonus starts in the paralysed right hand and marches at 5–30 s per segment; head and eyes turn right before generalisation; Todd's paresis lasts 11 s – 22 min | §8.8 |
+
+### 9.11 Myth coverage
+
+Every myth in §3.9 and §7.7 has at least one test.
+
+| Myth (§3.9 #) | Tests |
+|---|---|
+| 1 Knock-back | Q32 |
+| 2 Snap follows the bullet | Q33 |
+| 3 Everyone falls | Q36 |
+| 4 Heart shot = instant drop | Q37, Q77 |
+| 5 Hydrostatic shock | Q05 |
+| 6 Everyone screams | Q38, Q70 |
+| 7 Unconscious bodies brace | Q42, Q47 |
+| 8 Conscious falls look like ragdolls | Q49 |
+| 9 Knockouts drift down | Q42 |
+| 10 Eyes roll back at death | Q25 |
+| 11 Head-shot bodies run or thrash | Q47, Q75 |
+| 12 A dead body jerks when shot | Q44, Q61 |
+| 13 A faint looks like death | Q46, Q58 |
+| 14 Every stab is noticed | Q39 |
+| 15 Punches pop eyes out | Q66 |
+| 16 A cut windpipe lets the victim scream | Q67 |
+| 17 Brain-injured characters act normally | Q06–Q13 |
+| Audio myths (§7.7) | Q63, Q68–Q71 |
+
+### Simulation parameters (tests)
+
+| Parameter | Value / range | Unit | Notes | Tag |
+|---|---|---|---|---|
+| `test_body` | 75 / 1.75 | kg / m | Reference body; lengths scale by stature / 1.75 | `[K]` |
+| `test_physics_hz` | 120 (Q53 also at 60) | Hz | | `[E]` |
+| `prob_tolerance` | ±2σ, σ = √(p̄(1 − p̄)/n) | — | p̄ = midpoint of the stated range | `[G]` |
+| `timing_pass` | ≥ 90 % inside; 100 % inside the range widened by 25 % of its width | — | | `[G]` |
+| `latency_tolerance` | ±1 physics tick (8.3) | ms | Reflex events | `[E]` |
+| `audio_timing_tolerance` | ±5 | ms | | `[E]` |
+| `eye_angle_tolerance` / `pupil_tolerance` | ±2 / ±0.2 | ° / mm | | `[G]` |
+| `joint_limit_tolerance` | ±3 | ° | T13 | `[E]` |
+| `default_n` | 20 (timings); as stated (probabilities, ≥ 50) | runs | | `[G]` |
+| `absolute_failures_allowed` | 0 | — | "never" / "always" statements | `[G]` |
+
+### Visual/behavioural checklist (tests)
+- Every Q test names the section that owns the behaviour, so a failure is fixed at its source.
+- Batch tests run headless every night on fixed seeds; a failure attaches the event log of the failing seed.
+- Before each release, a reviewer watches all eight §8 scenarios at 1× with the overlay on and signs off the order and timing of events.
+- A test that depends on an open conflict (C-01, C-04, C-11, C-17) is re-baselined when that conflict is decided.
+
+---
+
+## Appendix A. Conflict register
+
+"Chosen" is the value this document uses. "Open" means that a lead has to decide; until then the chosen value applies.
+
+| ID | Topic | Source A | Source B | Chosen here | Status |
+|---|---|---|---|---|---|
+| C-01 | Segment masses | RB §7.2, §10.2: Dempster/Winter default (verified); de Leva optional "if falls look top-heavy" | R2-03 §1: de Leva 1996 (thigh 10.62 kg vs 7.5 kg Dempster) | de Leva for the ragdoll (§4.1); neck raised to 1.2 kg for the 10 : 1 mass-ratio rule | **Open** (ragdoll lead). T3–T6 and Q52 assume de Leva; if Dempster is kept, re-derive the pendulum targets. RB already allows de Leva as an option |
+| C-02 | Early post-traumatic seizure probability | RB §4.5: 0.2 penetrating, 0.10–0.15 severe blunt, impact seizure 0.02–0.05 | This document §1.8: 0.05–0.10 penetrating and 0.02–0.04 blunt in the first hour; knockout 0.014 | Both kept: RB's values cover the first week (time skips); this document's cover the first hour of play | Resolved (different windows) |
+| C-03 | Pupil dilation to pain | RB §5.2: pain or fear +1–2 mm within 0.5–2 s | R2-06 §12.1: pain +0.3–1.0 mm, onset 0.3–0.6 s, peak 1–2 s | Split: phasic pain spike +0.3–1.0 mm plus a tonic fear offset of +0.5–1.5 mm; together they reach RB's +1–2 mm | Resolved; R2-06 value `[K⚠]`, on the QA list |
+| C-04 | Lids after a knockout | RB §5.3: open or closed about 50/50 | R2-02 §6.3: "open, glassy", lids half-open; this document p 0.8 | 0.8 open or half-open `[E]` | **Open** (low evidence on both sides; tune on video review) |
+| C-05 | Syncope upgaze probability | RB §5 parameters: 0.6–0.8 | R2-02 S27 (Lempert 1996; 13 of 14 episodes): 0.6–0.9 | 0.6–0.9; RB's range lies inside it | Resolved |
+| C-06 | Last movement after ischaemia with a beating heart | R1-04 (hanging-type series): last movement "up to ~4–7 min" | R2-04 fact-check correction: last twitch 110–450 s (default 240) | R2-04 corrected value | Resolved |
+| C-07 | Damping during posturing | RB §4.10: ζ 0.9 | R2-03 §4.3: ζ 1.2–2.0 ("lead-pipe", slow) | R2-03 value | Resolved here; RB table to be aligned by its owner |
+| C-08 | Fencing and tonic gains | RB §4.10: fencing ω 8–12, ζ 0.9; tonic ζ 0.7 | R2-03 §4.3: tonic ω 12–16, ζ 1.0–1.5, onset 50–200 ms | R2-03 values; fencing is driven as a tonic state | Resolved |
+| C-09 | Spinal reflex probability after brainstem death | RB §4.8: p 0.1–0.2, 1–10 min | R2-04 §5.5 on S11: 0.2–0.4 (13–79 % across series; ~39 % in one series) | 0.2–0.4 when the heart keeps beating ≥ 60 s after brainstem death. RB's 0.1–0.2 fits as an unconditional per-death rate, since many brainstem deaths arrest early `[E]` | Resolved; QA check |
+| C-10 | Why the voice fades in shock | RB §4.9: shock lowers subglottal pressure (−8–9 dB per halving) | R2-06 §3, §16: subglottal pressure comes from the breathing muscles, not from arterial pressure; the voice fades through falling consciousness, drive and breath budget | Voice budget by class (§7.4). The −8–9 dB per halving of subglottal pressure stays as the acoustic law | Resolved |
+| C-11 | Myoclonus at LOC after a destroyed heart | RB §4.2, §4.9, RB §9 #33: p 0.9 | R2-04 §5.9: 0.8 (sudden onset), 0.5 (slow onset) | 0.8 default, tunable to 0.9; the RB #33 test tolerance must accept 0.8 | **Open** (minor) |
+| C-12 | How to drive the joints | R2-03 §8.5: script torques first; 6DOF springs or velocity motors as alternatives to verify | RB §4.10, §8.2 (checked against the 4.5-stable source): no script-reachable joint motors before 4.8; 6DOF springs map to uncapped Jolt motors | Script torques with explicit caps and reaction torque (§4.4) | Resolved; revisit on Godot ≥ 4.8 |
+| C-13 | Decerebrate hand orientation | R1-04 §4: arms "turned inward (backs of the hands facing each other or forward)", wrist flexion 60–80° | R2-01 §18.2: internal rotation 60–90°, full pronation 80–90°, wrist flexion 30–70° | Joint targets from R2-01 (§4.4). The R1-04 wording describes the same pose seen from the front; wrist 30–80° is acceptable | Resolved (wording) |
+| C-14 | Reference stature | RB anatomy: 1.78 m | Round two: 1.75 m | Behaviour values are for 1.75 m; lengths scale by stature / 1.75 | Resolved |
+| C-15 | Blink duration and rate | RB §5.2, RB §9 #41: full blink 250–400 ms; 12–20 /min | R2-06 §12.2: 100–400 ms; 15–20 /min | Spontaneous blink 250–400 ms; reflex or incomplete blinks 100–250 ms; default rate 15–20 /min, inside RB's 12–20 test band. §2.2, §2.3 and the §2 parameters were updated | Resolved |
+| C-16 | Body friction | RB §4.10: skin or cloth on a floor 0.6–0.9; wet blood 0.1–0.25 | R2-03 §6.4: clothing on concrete 0.55; body bones 0.55–0.6 | Per-pair table (§4.6): bones 0.55–0.6, floors govern; RB's 0.6–0.9 applies to bare skin and rough floors | Resolved; verify the Jolt friction-combine rule |
+| C-17 | Carotid bleed timing | RB §3.4 scenario D (supine, uncompressed, open neck): LOC 20–60 s, arrest 2–5 min; RB §9 #21: LOC 20–90 s | R2-04 §10.3 and §8.5: 1.0 L/min, LOC ~2.5–4 min with own-hand compression, `t_arr` ~5 min | RB's bleeding solver governs. §8.5 keeps its order of events and compresses its clock to match the solver | **Open**: run the solver on the §8.5 setup and update the times |
+
+---
+
+## Appendix B. Key references
+
+Load-bearing `[S]` sources, copied from the reference lists of the research files (verification status is in those files). `[S]` values are at search-summary level. Open the source before a number is shown to the player as a measurement.
+
+| Key | Reference | URL | Used for |
+|---|---|---|---|
+| R2-01:S14 | Neuroanatomy, Broca area (StatPearls) | https://www.ncbi.nlm.nih.gov/sites/books/NBK526096/ | Language dominance (§0.3, §1.5) |
+| R2-01:S17 | Ringman J.M. et al. Unilateral neglect in an acute stroke cohort. *Neurology* 2004 | https://www.neurology.org/doi/10.1212/01.WNL.0000133011.10689.CE | Neglect rates (§1.5) |
+| R2-01:S37 | Pronator drift (Neurosigns) | https://www.neurosigns.org/pronator-drift.html | Arm drift (§1.5) |
+| R2-01:S39 | Cerebellar neurological signs (StatPearls) | https://www.ncbi.nlm.nih.gov/books/NBK556080/ | Cerebellar falls (§1.5) |
+| R2-01:S44 | Holmes tremor (StatPearls) | https://www.ncbi.nlm.nih.gov/books/NBK562149/ | Tremors (§1.5, §5.5) |
+| R2-01:S50 | Strabismus in third cranial nerve palsy (10-year series) | https://pmc.ncbi.nlm.nih.gov/articles/PMC4307654/ | CN III angles (§2.4) |
+| R2-01:S54 | Pendular oscillation and ocular bobbing after pontine haemorrhage. *Cerebellum* 2019 | https://link.springer.com/article/10.1007/s12311-019-01086-6 | Bobbing (§2.3) |
+| R2-01:S63 | CT assessment of conjugate eye deviation in acute stroke. *Neurology* 2003 | https://www.neurology.org/doi/10.1212/01.WNL.0000042086.98735.75 | Gaze deviation (§1.5, §2.4) |
+| R2-01:S64 | Conjugate eye deviation with head version from a frontal eye field infarct. *Stroke* 2002 | https://www.ahajournals.org/doi/10.1161/str.33.2.642 | Gaze and head deviation (§1.5) |
+| R2-01:S65 | Wyllie E. et al. Versive head and eye movements during seizures. *Neurology* 1986 | https://pubmed.ncbi.nlm.nih.gov/3703259/ | Versive seizures (§1.8, §2.4) |
+| R2-01:S67 | Ping-pong gaze. *J Neuro-Ophthalmol* 2024 | https://journals.lww.com/jneuro-ophthalmology/fulltext/2024/03000/ping_pong_gaze__bouncing_back_from_structural.87.aspx | Roving and ping-pong gaze (§2.3) |
+| R2-01:S68 | Doll's eyes (StatPearls) | https://www.ncbi.nlm.nih.gov/books/NBK551716/ | Oculocephalic reflex (§2.7) |
+| R2-01:S76, S77 | Lucid interval (ScienceDirect Topics); Progressive epidural haematoma, incidence and risk factors | https://www.sciencedirect.com/topics/medicine-and-dentistry/lucid-interval ; https://www.ncbi.nlm.nih.gov/pmc/articles/PMC3536037/ | EDH (§1.7) |
+| R2-01:S87 | Rostrocaudal deterioration (Stroke Manual) | https://www.stroke-manual.com/rostro-caudal-deterioration/ | Herniation stages (§1.7) |
+| R2-01:S88 | Kernohan–Woltman notch phenomenon (LITFL) | https://litfl.com/kernohan-woltman-notch-phenomenon/ | Kernohan (§1.7) |
+| R2-01:S99 | Hosseini A.H., Lifshitz J. Brain injury forces of moderate magnitude elicit the fencing response. 2009 | https://pmc.ncbi.nlm.nih.gov/articles/PMC11421656/ | Fencing (§1.8, §3.7) |
+| R2-01:S100 | McCrory P.R. et al. Concussive convulsions | https://pubmed.ncbi.nlm.nih.gov/9519401/ | Concussive convulsion rate (§1.8) |
+| R2-01:S103 | Annegers J.F. et al. Seizures after traumatic brain injury. *NEJM* 1998 | https://www.nejm.org/doi/full/10.1056/NEJM199801013380104 | Post-traumatic seizures (§1.8) |
+| R2-01:S110 | Gallmetzer P. et al. Postictal paresis in focal epilepsies. *Neurology* 2004 | https://www.neurology.org/doi/abs/10.1212/WNL.62.12.2160 | Todd's paresis (§5.4) |
+| R2-01:S111 | Decerebrate and decorticate posturing (StatPearls) | https://www.ncbi.nlm.nih.gov/books/NBK559135/ | Posturing (§4.4, §5.7) |
+| R2-02:S1, S2 | Startle reflex (ScienceDirect Topics); Laryngeal auditory startle reflex. *Laryngoscope* 2026 | https://www.sciencedirect.com/topics/biochemistry-genetics-and-molecular-biology/startle-reflex ; https://pmc.ncbi.nlm.nih.gov/articles/PMC13357233/ | Startle latencies (§3.3) |
+| R2-02:S4 | First-trial postural reactions vs the acoustic startle. *J Neurophysiol* 2010 | https://journals.physiology.org/doi/full/10.1152/jn.01080.2009 | Habituation (§3.3) |
+| R2-02:S5 | Patrick U.W. *Handgun Wounding Factors and Effectiveness*. FBI Firearms Training Unit, 1989 | https://archive.org/details/fbi-handgun-wounding-factors-and-effectiveness | Heart-shot capability (§3.8) |
+| R2-02:S8 | Ellifritz G. An alternate look at handgun stopping power (non-peer-reviewed) | https://www.activeresponsetraining.net/an-alternate-look-at-handgun-stopping-power | Psychological stop calibration (§3.6) |
+| R2-02:S12 | Force Science turning studies (2023 summary) | https://www.forcescience.com/2023/02/force-science-validates-legacy-research-findings-part-ii/ | Turn-away time (§3.3) |
+| R2-02:S21 | Wojcik L.A., Thelen D.G. et al. Single-step recovery from a forward fall. *J Gerontol A* 1999 | https://academic.oup.com/biomedgerontology/article/54/1/M44/594110 | Step recovery (§3.3) |
+| R2-02:S25 | Timing and amplitude of arm muscle activity before impact in a forward fall. *J Biomech* 2023 | https://pmc.ncbi.nlm.nih.gov/articles/PMC10257944/ | Protective arms (§4.6) |
+| R2-02:S26 | Lempert T. et al. Syncope: a videometric analysis of 56 episodes. *Ann Neurol* 1994 | https://onlinelibrary.wiley.com/doi/abs/10.1002/ana.410360217 | Syncope, jerks (§3.6, §5.3) |
+| R2-02:S27 | Lempert T., von Brevern M. The eye movements of syncope. *Neurology* 1996 | https://pubmed.ncbi.nlm.nih.gov/8780096/ | Upgaze at LOC (§2.3) |
+| R2-02:S28, S29 | Walilko T.J. et al. Olympic boxer punches, *Br J Sports Med* 2005; Viano D.C. et al. Concussion in professional football, Part 10, *Neurosurgery* 2005 | https://pubmed.ncbi.nlm.nih.gov/16183766/ ; https://pubmed.ncbi.nlm.nih.gov/16331164/ | α model (§3.7) |
+| R2-02:S33 | Knockouts are accompanied by an immediate loss of muscle tone. *Med Res Arch* 2023 | https://esmed.org/MRA/mra/article/view/4007 | Tone loss (§3.7, §4.4) |
+| R2-02:S36 | Davis G.A. et al. Video signs of concussion. *Br J Sports Med* 2019 | https://pubmed.ncbi.nlm.nih.gov/30954947/ | "No protective action" (§3.9) |
+| R2-02:S37 | Nociceptive withdrawal reflex | https://pmc.ncbi.nlm.nih.gov/articles/PMC6509112/ | Withdrawal latency (§3.3) |
+| R2-02:S39 | PSPI pain score (automatic pain detection from facial actions) | https://pmc.ncbi.nlm.nih.gov/articles/PMC3296481/ | Pain face (§2.3) |
+| R2-02:S44 | Roelofs K. et al. Facing freeze. *Psychol Sci* 2010 | https://journals.sagepub.com/doi/abs/10.1177/0956797610384746 | Tonic immobility (§3.6) |
+| R2-02:S16, S55 | Survivor accounts (anecdotal); liver shot and winding (encyclopaedic) | See the R2-02 reference list | Awareness, liver and solar-plexus rows (L) |
+| R2-03:S1 | de Leva P. Adjustments to Zatsiorsky–Seluyanov's segment inertia parameters. *J Biomech* 1996;29(9):1223–1230 | https://ebm.ufabc.edu.br/wp-content/uploads/2013/12/Leva-1996.pdf | Segment masses (§4.1) |
+| R2-04:S3 | Theodore W.H. et al. The secondarily generalised tonic-clonic seizure: a videotape analysis. *Neurology* 1994 | https://pubmed.ncbi.nlm.nih.gov/8058138/ | GTC timing (§5.4) |
+| R2-04:S11 | Frequency of spinal reflex movements in brain-dead patients | https://www.sciencedirect.com/science/article/abs/pii/S0041134503012752 | Spinal reflexes (§5.5) |
+| R2-06:S2 | Arnal L.H. et al. Human screams occupy a privileged niche in the communication soundscape. *Curr Biol* 2015 | https://www.cell.com/fulltext/S0960-9822(15)00737-X | Scream roughness (§7.4) |
+| R2-06:S3 | Voice pitch is preserved from speech to screams, roars and pain cries. *R Soc Open Sci* 2020 | https://royalsocietypublishing.org/rsos/article/7/2/191642 | F0 continuity (§7.4) |
+
+Standard texts behind many `[K]` values (not re-opened in this pass): Plum and Posner (coma, pupils, breathing patterns); Wijdicks and Greer (brain death, spinal reflexes); Lempert 1994 (syncope); Rossen 1943 (cerebral arrest); Winter (biomechanics); the Godot 4.5-stable source and manual, as read for RB §4.10 and §8.2.
+
+---
+
+## Appendix C. Suspicious content
+
+- **None encountered in this synthesis.** The only material read was the project's own documents: `docs/research/04_neuro_death_eyes.md`, `docs/research2/01`–`06` and `docs/REALISM_BIBLE.md`. They were treated as data, and none contained instructions addressed to the reader.
+- One WebSearch was refused by the tool harness (session search budget 200/200 exhausted). That notice came from the local harness, not from a web page, and it was not treated as an instruction. No setting was changed in response.
+- No WebFetch was made, no shell command was run, nothing was downloaded, installed or executed, no code was copied from the web, and no file other than this document was created or edited.
+- The research files' own suspicious-content sections report no prompt-injection attempts. R2-01 §23 and R2-02 §16 note irrelevant patent-PDF links, forum threads and commercial blogs in result lists; none of these were opened, and none is the sole source of a load-bearing number. The other files report no web content (R2-03 §13, R2-04 §17, R2-05 §19, R2-06 §20).
+
+*End of document.*
