@@ -114,20 +114,20 @@ Physiology state (R1-04 §13)          DYING / REACTION LAYERS (R2-02, R2-04)
 
 ### 1.1 Contact duration sets the bandwidth
 
-- An impact force pulse of duration `τc` (roughly a half-sine) has a flat spectrum up to about `1/τc`, a first spectral zero at **`1.5/τc`**, and falls at ≥ 12 dB/octave above that `[K] (H)`.
+- An impact force pulse of duration `τc` (roughly a half-sine) has a spectrum that stays within 3 dB of its low-frequency value up to **~0.6/τc**, is about **−9.5 dB at 1/τc**, has its first spectral zero at **`1.5/τc`**, and has an envelope falling at 12 dB/octave above that `[K] (H)`. ✓ verified (arithmetic): the half-sine transform is `|F(f)| ∝ |cos(π f τc) / (1 − 4 f² τc²)|`; the apparent zero at `f τc = 0.5` cancels (value π/4, −2.1 dB), so the first true zero is at `f τc = 1.5`. **Corrected: was "a flat spectrum up to about 1/τc"** (at 1/τc the level is already ~10 dB down).
 - **Soft contacts are long, so they sound low and dull. Hard contacts are short, so they sound bright and "cracky".** This single rule explains why a punch thuds and a hammer on a shin cracks.
-- Contact duration of a mass `m` on an effective stiffness `k`: `τc = π √(m / k)` `[K] (H)`.
+- Contact duration of a mass `m` on an effective stiffness `k`: `τc = π √(m / k)` `[K] (H)`. ✓ verified [K] (H): half the natural period of a linear mass–spring contact against a rigid surface. For two moving bodies use the reduced mass `m₁m₂/(m₁+m₂)`; a Hertzian (non-linear) contact gives a similar order of magnitude with a weak speed dependence (`τc ∝ v^−1/5`).
 
 | Contact | Effective mass | Typical `τc` | Force-spectrum first zero (1.5/τc) | What is heard | Tag |
 |---|---|---|---|---|---|
-| Bare fist to face (Olympic-boxer data: effective mass 2.9 kg, fist 9.1 m/s, peak force ~3.4 kN) | 2.9 kg | **~12 ms** (from `τc = π·p / (2·F)` with p = 26.5 kg·m/s) | ~125 Hz | A dull thud; the audible "smack" comes from skin slap and air, not from the force pulse | [S14] numbers, [E] derivation |
+| Fist to face (Olympic-boxer data: **gloved** straight punches to a Hybrid III dummy face; effective mass 2.9 ± 2.0 kg, fist 9.14 ± 2.06 m/s, peak force 3,427 ± 811 N) | 2.9 kg | **~12 ms** gloved (from `τc = π·p / (2·F)` with p = 26.5 kg·m/s); **bare knuckle ~5–10 ms** `[E]` | ~125 Hz gloved; ~150–300 Hz bare | A dull thud; the audible "smack" comes from skin slap and air, not from the force pulse | [S14] numbers, [E] derivation. ✓ verified (arithmetic): π × 26.5 / (2 × 3,427) = 12.1 ms; the same cross-check is in `[R2-02 §1.3]`. **Corrected: was labelled "Bare fist"**: Walilko's boxers punched in competition gloves `[K] (M)`, which lengthen contact; a bare fist on the face is shorter and brighter, but still a thud |
 | Head (occiput) on concrete, 5 m/s | 4.5 kg | 2–8 ms (5 ms default) | 190–750 Hz | A "knock" or "crack" with a skull resonance near 1 kHz | `[R2-03 §6]` [E] |
 | Steel hammer on scalp over skull | 0.5–0.7 kg head | 1–3 ms | 0.5–1.5 kHz, plus skull modes | Hard "tock"; crack on fracture | [E] (L–M) |
-| Steel on bone under thin skin (shin, knuckle, teeth) | — | 0.2–1 ms | 1.5–7.5 kHz | Sharp "click/crack" | [E] (L–M) |
+| Steel on bone under thin skin (shin, knuckle, teeth) | — | 0.2–1 ms | 1.5–7.5 kHz | Sharp "click/crack" | [E] (L–M). ⚠ Plausible but narrow: 0.2–0.5 ms needs bare bone or enamel (teeth, exposed bone); with 2–5 mm of skin and periosteum over the shin or knuckle a 0.5 kg hammer head sees `k` ≈ 10⁶–10⁷ N/m, i.e. **~0.7–2 ms** (first zero ~0.75–2 kHz) `[E]`. Use 0.2–0.5 ms for teeth/exposed bone, 0.7–2 ms through skin |
 | Hip or trunk on floor | 15–40 kg | 20–80 ms | 20–75 Hz | Heavy "thump", more felt than heard; clothing and air make the audible part | [K; M21] (M), [E] |
 | Knuckle-to-skin sliding or palm slap | — | < 1–3 ms (air squeezed out between surfaces) | > 1 kHz | "Slap" | [K] (M) |
 
-Worked stiffness values for the `τc` formula `[E]`: head–concrete `k ≈ 1.8 × 10⁶ N/m` (gives 5 ms and ~320 g at 5 m/s, consistent with `[R2-03 §6.2]`); trunk–concrete `k ≈ 1.2 × 10⁵ N/m` (50 ms for 30 kg).
+Worked stiffness values for the `τc` formula `[E]`: head–concrete `k ≈ 1.8 × 10⁶ N/m` (gives 5 ms and ~320 g at 5 m/s, consistent with `[R2-03 §6.2]`); trunk–concrete `k ≈ 1.2 × 10⁵ N/m` (50 ms for 30 kg). ✓ verified (arithmetic): π√(4.5/1.8 × 10⁶) = 4.97 ms; peak force v√(mk) = 14.2 kN → 322 g; π√(30/1.2 × 10⁵) = 49.7 ms.
 
 ### 1.2 What rings and what does not
 
