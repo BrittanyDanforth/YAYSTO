@@ -2016,6 +2016,191 @@ def b8_room_constants():
 
 
 
+# ---------------------------------------------------------------------------
+# B7 look-dev and bakes (plan §8.2 B7 acceptance): no empty texels inside islands, tileable edge
+# error < 2/255, skin albedo luminance inside the head palette, textures match the exported UVs.
+# ---------------------------------------------------------------------------
+B7_TEX = os.path.join(gbc.SUBJECT_OUT, "textures")
+B7_JSON = os.path.join(B7_TEX, "textures.json")
+gbc.SCHEMAS.setdefault("gb.textures/1", ("sets", "tileables", "eyes", "decals", "painter", "room",
+                                         "material_map"))
+B7_SETS = ("head", "body", "shorts", "mouth", "skeleton", "organs", "brain")
+B7_PNG_MAX_MB = 12.0            # plan §4.3: each 2,048^2 PNG <= 12 MB
+
+
+def _b7():
+    if not os.path.exists(B7_JSON):
+        return None
+    return gbc.read_json(B7_JSON)["data"]
+
+
+@check("files", owner="B7")
+def b7_texture_files():
+    """textures.json lists every set; every listed file exists, has the stated size and fits the budget."""
+    d = _b7()
+    if d is None:
+        return False, "textures/textures.json missing (bake stage not run)"
+    import texgen
+    missing, bad, big = [], [], []
+    names = []
+    for k, rec in d["sets"].items():
+        names += [(f, rec["size"]) for f in rec["files"].values()]
+    for k, rec in list(d["tileables"].items()) + list(d["room"].items()):
+        names += [(f, rec["size"]) for f in rec["files"].values()]
+    for rec in d["painter"].values():
+        names += [(rec["files"]["rest_normal"], rec["size"]), (rec["files"]["valid"], rec["size"]),
+                  (rec["files"]["bone"], rec["bone_size"]), (rec["files"]["position"], None)]
+    names += [(f, None) for f in d["decals"].get("files", {}).values()]
+    eyes = d.get("eyes", {})
+    names += [(f, None) for f in eyes.get("iris", {}).get("files", {}).values()]
+    if "sclera" in eyes:
+        names.append((eyes["sclera"]["file"], None))
+    for fn, size in names:
+        p = os.path.join(B7_TEX, fn)
+        if not os.path.exists(p):
+            missing.append(fn)
+            continue
+        if os.path.getsize(p) > B7_PNG_MAX_MB * 1e6:
+            big.append(fn)
+        if size and fn.endswith(".png") and texgen.png_size(p)[0] != size:
+            bad.append(fn)
+    miss_sets = [s for s in B7_SETS if s not in d["sets"]]
+    ok = not missing and not bad and not big and not miss_sets
+    return ok, (f"{len(names)} files, sets {sorted(d['sets'])}" + (f"; missing {missing[:6]}" if missing else "")
+                + (f"; wrong size {bad[:6]}" if bad else "") + (f"; > 12 MB {big}" if big else "")
+                + (f"; sets not baked {miss_sets}" if miss_sets else ""))
+
+
+@check("files", owner="B7")
+def b7_no_empty_texels():
+    """Raw Cycles bakes cover the islands (misses <= 0.1 %, filled from neighbours) and the written
+    albedo has no black texels at all (islands filled, dilated 8 px, rest push-pull filled)."""
+    d = _b7()
+    if d is None:
+        return False, "no textures.json"
+    import texgen
+    out, ok = [], True
+    for name in B7_SETS:
+        rec = d["sets"].get(name)
+        if rec is None:
+            ok = False
+            out.append(f"{name} missing")
+            continue
+        frac = rec["coverage"]["empty_fraction"]
+        alb = texgen.read_png(os.path.join(B7_TEX, rec["files"]["albedo"]))
+        black = int((alb.max(axis=2) == 0).sum())
+        good = frac <= 0.001 and black == 0
+        ok &= good
+        out.append(f"{name} miss {frac * 100:.3f}% black {black}")
+    return ok, "; ".join(out)
+
+
+@check("files", owner="B7")
+def b7_tileable_seams():
+    """Every tileable (tissue, room, props) repeats seamlessly: edge error < 2/255 (recomputed from the PNGs)."""
+    d = _b7()
+    if d is None:
+        return False, "no textures.json"
+    import texgen
+    worst, bad = 0.0, []
+    for name, rec in list(d["tileables"].items()) + list(d["room"].items()):
+        for f in rec["files"].values():
+            e = texgen.tile_edge_error(texgen.read_png(os.path.join(B7_TEX, f)))
+            worst = max(worst, e)
+            if e >= 2.0:
+                bad.append(f"{f} {e:.2f}")
+    core = [k for k in ("muscle_fibre", "fat_lobule", "bone_cut", "diploe", "blood_crust", "cloth_weave")
+            if k not in d["tileables"]]
+    return not bad and not core, f"{len(d['tileables'])} tissue + {len(d['room'])} room/prop sets, worst " \
+        f"{worst:.3f}/255" + (f"; over 2/255: {bad}" if bad else "") + (f"; missing {core}" if core else "")
+
+
+@check("files", owner="B7")
+def b7_skin_luminance():
+    """Body and head skin albedo (median linear luminance) match each other within 10 % and sit within
+    25 % of the head palette's base colour at the current skin_tone (GH_Skin ramp)."""
+    d = _b7()
+    if d is None or "head" not in d["sets"] or "body" not in d["sets"]:
+        return False, "head/body sets missing"
+    h = d["sets"]["head"]["albedo_linear_luminance"]["median"]
+    b = d["sets"]["body"]["albedo_linear_luminance"]["median"]
+    head = gbc.import_head()
+    tone = head.gh_common.CONTROL_PROPS["skin_tone"][0]
+    stops = [(0.0, (0.61, 0.43, 0.35)), (0.25, (0.48, 0.30, 0.225)), (0.5, (0.30, 0.16, 0.10)),
+             (0.75, (0.13, 0.062, 0.038)), (1.0, (0.05, 0.026, 0.018))]
+    xs = [s[0] for s in stops]
+    base = [float(np.interp(tone, xs, [s[1][c] for s in stops])) for c in range(3)]
+    pal = 0.2126 * base[0] + 0.7152 * base[1] + 0.0722 * base[2]
+    ok = abs(b / h - 1.0) <= 0.10 and abs(h / pal - 1.0) <= 0.25 and abs(b / pal - 1.0) <= 0.25
+    return ok, f"median luminance head {h:.3f}, body {b:.3f} (ratio {b / h:.3f}); palette {pal:.3f} at " \
+        f"skin_tone {tone}"
+
+
+@check("files", owner="B7")
+def b7_eyes_decals_painter():
+    """Iris/sclera, the 64-stain decal atlas and the painter inputs (head, body, shorts) exist and are sane."""
+    d = _b7()
+    if d is None:
+        return False, "no textures.json"
+    eyes = d.get("eyes", {})
+    dec = d.get("decals", {})
+    pt = d.get("painter", {})
+    probs = []
+    if "iris" not in eyes or "sclera" not in eyes:
+        probs.append("eyes")
+    if dec.get("count", 0) < 32:
+        probs.append(f"decals {dec.get('count', 0)}")
+    for k in ("head", "body", "shorts"):
+        if k not in pt:
+            probs.append(f"painter {k}")
+        elif not (0.2 < pt[k]["valid_fraction"] < 0.95):
+            probs.append(f"painter {k} valid {pt[k]['valid_fraction']}")
+    return not probs, (f"iris + sclera, {dec.get('count', 0)} decals, painter {sorted(pt)}"
+                       + (f"; problems {probs}" if probs else ""))
+
+
+@check("scene", owner="B7", severity="warn")
+def b7_textures_match_uvs():
+    """The UV0 atlas of every textured mesh equals the one its textures were baked for (uv_hash).  A
+    mismatch means the geometry/UVs changed after the last bake stage (rerun ``--stage bake``), or the
+    inner-mesh atlases were not re-charted in this build (build.py must call bake.prepare_uvs)."""
+    d = _b7()
+    if d is None:
+        return False, "no textures.json"
+    bpy = _bpy()
+    import bake
+    bad, n = [], 0
+    recs = [(r["target"], r["uv_hash"]) for r in d["sets"].values()]
+    recs += [(r["mesh"], r["uv_hash"]) for r in d["painter"].values()]
+    for oname, h in recs:
+        o = bpy.data.objects.get(oname)
+        if o is None:
+            continue
+        n += 1
+        if bake.uv_hash(o) != h:
+            bad.append(oname)
+    return not bad, f"{n} meshes checked" + (f"; UVs differ from the bake: {sorted(set(bad))}" if bad else "")
+
+
+@check("scene", owner="B7", severity="warn")
+def b7_inner_atlas_quality():
+    """Re-charted inner atlases: overlap < 2 %, texel area distortion p10..p90 within 1.5 stops."""
+    bpy = _bpy()
+    import bake
+    out, ok = [], True
+    for name in bake.RECHART:
+        o = bpy.data.objects.get(name)
+        if o is None:
+            continue
+        cov, over, texel = bake.uv_stats(o, 512)
+        lo, hi = bake.uv_distortion(o)
+        good = over < 0.02 and lo > -1.5 and hi < 1.5
+        ok &= good
+        out.append(f"{name} cover {cov:.2f} overlap {over:.3f} distortion {lo:+.2f}/{hi:+.2f}")
+    return ok, "; ".join(out)
+
+
+
 def verify_all(groups=("tables", "scene", "files"), quiet=False):
     """Run every registered check of ``groups``; returns {name: {ok, severity, owner, group, detail}}."""
     res = {}

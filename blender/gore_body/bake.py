@@ -58,7 +58,7 @@ UV_MARGIN_PX = 8          # island margin of the re-charted atlases (at the set'
 
 SETS = {
     # name: target, source, size, cage extrusion (m), max ray (m), AO distance (m), surfaces
-    "head": dict(target="GB_Head", source="GB_Head_HR", size=2048, cage=0.003, ray=0.008, ao=0.03,
+    "head": dict(target="GB_Head", source="GB_Head_HR", size=2048, cage=0.004, ray=0.012, ao=0.03,
                  surfaces=["GBM_skin_head", "GBM_mouth_lining"], lod1=["GB_Head_LOD1"]),
     "body": dict(target="GB_Body", source="GB_Body_HR", size=2048, cage=0.003, ray=0.008, ao=0.06,
                  surfaces=["GBM_skin_torso", "GBM_skin_arm_L", "GBM_skin_arm_R", "GBM_skin_leg_L",
@@ -703,8 +703,23 @@ def _main_bsdf(mat):
 PASS_INPUT = {"albedo": "Base Color", "rough": "Roughness", "sss": "Subsurface Weight", "metal": "Metallic"}
 
 
+def _socket_into(nt, sock, dst):
+    """Feed the value of input socket ``sock`` (its link or default) into ``dst``."""
+    if sock.is_linked:
+        nt.links.new(sock.links[0].from_socket, dst)
+    else:
+        dv = sock.default_value
+        if dst.type == 'RGBA':
+            dst.default_value = tuple(dv)[:3] + (1.0,) if hasattr(dv, "__len__") else (dv, dv, dv, 1.0)
+        else:
+            dst.default_value = dv if not hasattr(dv, "__len__") else float(dv[0])
+
+
 def emission_variant(mat, what):
-    """Copy of ``mat`` whose surface is an Emission of its main BSDF input ``PASS_INPUT[what]``."""
+    """Copy of ``mat`` whose surface is an Emission of its main BSDF data.
+
+    ``albedo``: Base Color.  ``data``: RGB = (Roughness, Subsurface Weight, Metallic), so one bake
+    gives three ORM channels."""
     name = f"{mat.name}__{what}"
     old = bpy.data.materials.get(name)
     if old is not None:
@@ -716,14 +731,14 @@ def emission_variant(mat, what):
     em = nt.nodes.new('ShaderNodeEmission')
     em.inputs['Strength'].default_value = 1.0
     if bsdf is None:
-        em.inputs['Color'].default_value = (0.5, 0.5, 0.5, 1.0)
+        em.inputs['Color'].default_value = (0.5, 0.5, 0.0, 1.0)
+    elif what == "albedo":
+        _socket_into(nt, bsdf.inputs['Base Color'], em.inputs['Color'])
     else:
-        sock = bsdf.inputs[PASS_INPUT[what]]
-        if sock.is_linked:
-            nt.links.new(sock.links[0].from_socket, em.inputs['Color'])
-        else:
-            dv = sock.default_value
-            em.inputs['Color'].default_value = tuple(dv)[:3] + (1.0,) if hasattr(dv, "__len__") else (dv, dv, dv, 1.0)
+        comb = nt.nodes.new('ShaderNodeCombineColor')
+        for i, key in enumerate(("Roughness", "Subsurface Weight", "Metallic")):
+            _socket_into(nt, bsdf.inputs[key], comb.inputs[i])
+        nt.links.new(comb.outputs[0], em.inputs['Color'])
     for lk in list(out.inputs['Surface'].links):
         nt.links.remove(lk)
     nt.links.new(em.outputs[0], out.inputs['Surface'])
@@ -757,9 +772,37 @@ def _target_material(img):
     return mat
 
 
+def _retarget(obj, img):
+    """Point the bake-target image nodes of ``obj``'s materials at ``img``."""
+    for m in obj.data.materials:
+        if m is None or m.node_tree is None:
+            continue
+        nt = m.node_tree
+        node = nt.nodes.get("GB7_target")
+        if node is None and m.name == "GB7_bake_target":
+            node = next((n for n in nt.nodes if n.bl_idname == 'ShaderNodeTexImage'), None)
+        if node is not None:
+            node.image = img
+            nt.nodes.active = node
+
+
+def _upsample(a, size):
+    """Nearest 2x upsample of a (h, w, c) array to (size, size, c), then a 3x3 box smooth."""
+    f = size // a.shape[0]
+    u = np.repeat(np.repeat(a, f, 0), f, 1)
+    if f > 1:
+        acc = np.zeros_like(u)
+        for dy in (-1, 0, 1):
+            for dx in (-1, 0, 1):
+                acc += np.roll(u, (dy, dx), (0, 1))
+        u = acc / 9.0
+    return u
+
+
 def _read(img):
     size = img.size[0]
     a = np.empty(size * size * 4, np.float32)
+    img.update()
     img.pixels.foreach_get(a)
     return a.reshape(size, size, 4)[::-1].astype(float)
 
@@ -828,7 +871,7 @@ def bake_set(name, spec, out):
     source = bpy.data.objects.get(spec["source"]) if spec.get("source") else None
     size = _sz(spec["size"])
     q = _quick()
-    s_emit, s_nrm, s_ao = (1, 1, 4) if q else (4, 4, 32)
+    s_emit, s_nrm, s_ao = (1, 1, 4) if q else (1, 1, 16)
     visible = [target.name] + ([source.name] if source is not None else [])
     shade = source if source is not None else target
     tri_img, _bary = rasterize(target, size)
@@ -855,7 +898,7 @@ def bake_set(name, spec, out):
                 tex.image = img
                 nt.nodes.active = tex
         maps = {}
-        for what in ("albedo", "rough", "sss"):
+        for what in ("albedo", "data"):
             variants = {m.name: emission_variant(m, what) for m in base_mats if m is not None}
             if source is None:
                 for m in variants.values():
@@ -876,7 +919,11 @@ def bake_set(name, spec, out):
         vis_state = [(target, target.visible_diffuse, target.visible_shadow, target.visible_glossy)]
         if source is not None:
             target.visible_diffuse = target.visible_shadow = target.visible_glossy = False
-        maps["ao"] = _bake('AO', target, source, img, spec, s_ao)
+        # AO is low frequency: bake it at half resolution and upsample (4x cheaper)
+        ao_img = _bake_image(f"GB7_{name}_ao", max(64, size // 2))
+        _retarget(target if source is not None else shade, ao_img)
+        maps["ao"] = _bake('AO', target, source, ao_img, spec, s_ao)
+        bpy.data.images.remove(ao_img)
         for o, d, s, g in vis_state:
             o.visible_diffuse, o.visible_shadow, o.visible_glossy = d, s, g
         lookdev.lookdev_off(ld_state)
@@ -900,9 +947,10 @@ def bake_set(name, spec, out):
     nv = nrm * 2.0 - 1.0
     nv /= np.maximum(np.linalg.norm(nv, axis=-1, keepdims=True), 1e-6)
     nrm = nv * 0.5 + 0.5
-    rough = finish_map(maps["rough"][..., :1], covered)[..., 0]
-    sss = finish_map(maps["sss"][..., :1], covered)[..., 0]
-    ao = finish_map(maps["ao"][..., :1], covered)[..., 0]
+    data = finish_map(maps["data"][..., :3], covered)
+    rough, sss = data[..., 0], data[..., 1]
+    ao_half = finish_map(maps["ao"][..., :1], maps["ao"][..., 3] > 0.5)
+    ao = _upsample(ao_half, size)[..., 0]
     orm = np.stack([ao, rough, np.zeros_like(ao), sss], -1)
     files = {"albedo": f"{name}_albedo.png", "normal": f"{name}_normal.png", "orm": f"{name}_orm.png"}
     _write_png(os.path.join(out, files["albedo"]), u8(srgb_encode(alb)))

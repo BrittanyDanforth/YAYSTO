@@ -757,8 +757,8 @@ def _decal(kind, idx, n, lat, rng):
     if kind == "drop_round":
         r = rng.uniform(0.38, 0.6)
         f = _disc_field(X, Y, 0, 0, r, lat, 0.06, 9, off)
-        spines = lat.fbm((np.arctan2(Y, X) / (2 * np.pi)) % 1.0, np.full_like(X, off), 24, 1, octaves=1)
-        f = np.maximum(f, _disc_field(X, Y, 0, 0, r * (1.0 + 0.25 * smooth(spines, 0.62, 0.8)), lat, 0.02, 4, off)
+        spines = lat.fbm((np.arctan2(Y, X) / (2 * np.pi)) % 1.0, np.full_like(X, off), 40, 1, octaves=2)
+        f = np.maximum(f, _disc_field(X, Y, 0, 0, r * (1.0 + 0.16 * smooth(spines, 0.5, 0.75)), lat, 0.02, 4, off)
                        * 0.6)
         th = smooth(f, 0.0, 0.25) * (0.55 + 0.35 * smooth(f, 0.3, 0.9))
         rim = smooth(f, 0.0, 0.05) * (1.0 - smooth(f, 0.05, 0.22))
@@ -817,13 +817,13 @@ def _decal(kind, idx, n, lat, rng):
         ang = rng.uniform(-0.35, 0.35)
         Xr = X * math.cos(ang) + Y * math.sin(ang)
         Yr = -X * math.sin(ang) + Y * math.cos(ang)
-        h = rng.uniform(0.25, 0.45)
+        h = rng.uniform(0.3, 0.55)
         band = 1.0 - np.abs(Yr) / (h * (1.0 + (lat.fbm(Xr * 0.5 + 0.5, np.full_like(X, off), 3, 1, octaves=2,
                                                      tile=False) - 0.5) * 0.5))
         streak = lat.fbm(np.full_like(X, off), Yr * 0.5 + 0.5, 1, 40, octaves=2, tile=False)
         along = np.clip((Xr + 0.85) / 1.7, 0, 1)
         load = (1.0 - along) ** 0.8
-        th = smooth(band, 0.0, 0.25) * (0.25 + 0.65 * load) * (0.5 + 0.8 * smooth(streak, 0.35, 0.7))
+        th = smooth(band, 0.0, 0.35) * (0.25 + 0.65 * load) * (0.65 + 0.5 * smooth(streak, 0.3, 0.75))
         th = th * smooth(along, 0.0, 0.05) * (1.0 - smooth(along, 0.85, 1.0) * smooth(streak, 0.5, 0.2))
     elif kind == "pool":
         f = _disc_field(X, Y, 0, 0, rng.uniform(0.6, 0.8), lat, 0.28, 4, off)
@@ -1081,3 +1081,64 @@ PROP_MATERIAL_TEXTURES = {
     "GBPM_g10_black": "prop_g10", "GBPM_glove": "prop_glove", "GBPM_glove_pad": "prop_glove",
     "GBPM_steel_satin": "room_stainless", "GBPM_steel_polished": "room_stainless",
 }
+
+
+# ---------------------------------------------------------------------------
+# PNG reading (checks; pure numpy + zlib, 8-bit grey/RGB/RGBA, all five filter types)
+# ---------------------------------------------------------------------------
+def png_size(path):
+    """(width, height, channels) from a PNG header."""
+    import struct
+    with open(path, "rb") as fh:
+        head = fh.read(33)
+    w, h, _bd, ct = struct.unpack(">IIBB", head[16:26])
+    return w, h, {0: 1, 2: 3, 4: 2, 6: 4}[ct]
+
+
+def read_png(path):
+    """Decode an 8-bit PNG into a uint8 (H, W, C) array (row 0 = top)."""
+    import struct
+    import zlib
+    data = open(path, "rb").read()
+    pos, idat = 8, []
+    w = h = ct = None
+    while pos < len(data):
+        n, = struct.unpack(">I", data[pos:pos + 4])
+        tag = data[pos + 4:pos + 8]
+        body = data[pos + 8:pos + 8 + n]
+        pos += 12 + n
+        if tag == b"IHDR":
+            w, h, bd, ct = struct.unpack(">IIBB", body[:10])
+            if bd != 8:
+                raise ValueError("only 8-bit PNGs")
+        elif tag == b"IDAT":
+            idat.append(body)
+    c = {0: 1, 2: 3, 4: 2, 6: 4}[ct]
+    raw = np.frombuffer(zlib.decompress(b"".join(idat)), np.uint8).reshape(h, w * c + 1)
+    out = np.zeros((h, w * c), np.uint8)
+    prev = np.zeros(w * c, np.int32)
+    for r in range(h):
+        f = raw[r, 0]
+        line = raw[r, 1:].astype(np.int32)
+        if f == 0:
+            cur = line
+        elif f == 2:
+            cur = (line + prev) & 255
+        else:                                          # 1 sub, 3 average, 4 paeth: per-pixel loop
+            cur = np.zeros_like(line)
+            for i in range(w * c):
+                a = cur[i - c] if i >= c else 0
+                b = prev[i]
+                cc = prev[i - c] if i >= c else 0
+                if f == 1:
+                    pred = a
+                elif f == 3:
+                    pred = (a + b) // 2
+                else:
+                    p = a + b - cc
+                    pa, pb, pc = abs(p - a), abs(p - b), abs(p - cc)
+                    pred = a if pa <= pb and pa <= pc else (b if pb <= pc else cc)
+                cur[i] = (line[i] + pred) & 255
+        out[r] = cur
+        prev = cur
+    return out.reshape(h, w, c)

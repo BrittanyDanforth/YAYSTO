@@ -1184,13 +1184,14 @@ def _blood_material(g):
     n = t.noise(p, 300.0, 3.0)
     a = (age + (n - 0.5) * 0.4 * age * (1.0 - age)).clamp()
     clot = t.noise(p, 900.0, 4.0).smooth(0.5, 0.7) * (a * (1.0 - a) * 4.0).clamp()
-    fresh = t.mix(n, (0.06, 0.005, 0.006), (0.10, 0.008, 0.009))
+    # fresh venous blood #8E1420 thins to scarlet; pooled blood near-black red #5E070C
+    fresh = t.mix(n, (0.13, 0.005, 0.007), (0.22, 0.009, 0.012))
     old = t.mix(n, (0.022, 0.008, 0.006), (0.045, 0.014, 0.009))
     col = t.mix(a, fresh, old)
     col = t.mix(clot * 0.7, col, (0.07, 0.008, 0.006))
     # fresh clot already forms in pooled blood: near-black red, matte lumps
     fclot = t.noise(p, 160.0, 3.0).smooth(0.56, 0.7) * (1.0 - a)
-    col = t.mix(fclot * 0.85, col, (0.045, 0.003, 0.004))
+    col = t.mix(fclot * 0.85, col, (0.075, 0.003, 0.004))
     # (never a perfect mirror: pooled blood seen at a grazing angle would
     # reflect the key light as a chrome bar)
     rough = t.mix(a, t.mix(wet, 0.3, 0.1), 0.32 + n * 0.2) + clot * 0.1 + fclot * 0.4

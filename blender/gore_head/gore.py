@@ -882,13 +882,15 @@ def _build_exit():
     edge_lift = s.min(1.3) * 0.0028 * (0.5 + 0.5 * tip) * curl * evert_amt * opened
     # brain: pulped tissue herniating out toward the skull defect, a torn
     # track in the middle
+    # (2-30 mL of pulped brain is extruded, mostly at the exit: a lumpy,
+    # bloody mass pushes out through the skull defect to the skin surface)
     crat = t.smooth(0.84, 0.95, D) * is_brain
-    rc = R * 0.8
+    rc = R * 0.62
     x = (c.rho / rc).min(1.0)
     pulp = t.noise(c.np * 380.0, detail=3.0)
     lumps = t.noise(c.np * 900.0, detail=2.0)
-    track = t.smooth(0.35, 0.1, x)
-    crater_z = crat * (((1.0 - x * x) ** 1.5) * s * (0.0065 + pulp * 0.0035 + lumps * 0.0012) - track * s * 0.012)
+    track = t.smooth(0.25, 0.05, x)
+    crater_z = crat * (((1.0 - x * x) ** 1.2) * s * (0.0135 + pulp * 0.004 + lumps * 0.0015) - track * s * 0.004)
     brain_w = t.smooth(1.2, 0.75, c.rho / rc + pulp * 0.1) * crat * t.smooth(-0.35, 0.25, pulp).max(track)
     brain_blood = brain_w * (0.25 + 0.5 * t.smooth(-0.1, 0.45, t.noise(c.np * 240.0, detail=2.0))) \
         + track * crat * 0.7
@@ -896,7 +898,8 @@ def _build_exit():
     # tissue exposure, torn edge (no abrasion collar at an exit), fracture
     r_above = R * 0.75
     exposed = t.smooth(r_above * 1.25, r_above * 0.7, c.rho) * c.opened(c.lc(ABOVE_OPEN_AT))
-    edge = t.smooth(0.0012, 0.0, d_out) * opened * (1.0 - is_skin * 0.6)
+    # (no abrasion at an exit: the skin margin is torn, wet and dark red)
+    edge = t.smooth(0.0012, 0.0, d_out) * opened * (1.0 - is_skin)
     wound = (t.smooth(s * 0.0014, 0.0, d_out + t.noise(c.np * 700.0) * 0.0006) * opened) \
         .max(exposed * (1.0 - is_brain * 0.65)).max(brain_w)
     lines, _plate = c.cracks(R, n_around=8.0, width=0.00045)
@@ -905,7 +908,10 @@ def _build_exit():
     bleed = t.inp("Bleed")
     pool = c.pool(c.L, R * (0.5 + bleed), bleed * opened, drop=R * 0.6)
     flap_blood = flap * (0.35 + 0.5 * bleed) * t.smooth(-0.35, 0.35, t.noise(c.np * 330.0))
-    blood = (pool * is_skin).max(flap_blood).max(exposed * (1.0 - is_brain * 0.6)).max(brain_blood)
+    # a wet blood film spreading 10-20 mm around the margin before the runs start
+    film = t.smooth(0.017, 0.004, d_out + t.noise(c.np * 90.0, detail=2.0) * 0.005) * bleed * opened \
+        * (0.55 + 0.35 * t.smooth(-0.3, 0.4, t.noise(c.np * 160.0))) * is_skin
+    blood = (pool * is_skin).max(flap_blood).max(film).max(exposed * (1.0 - is_brain * 0.6)).max(brain_blood)
     tw = c.lc(LAYER_WALL)
     # walls: the core narrows toward the axis, the narrow tears of a stellate
     # exit close in a V toward their own line (their two sides never cross)
@@ -1077,9 +1083,10 @@ def _build_blunt():
     nl = t.noise(c.np * 120.0, detail=3.0)
     hours = t.inp("Age") * t.inp("Age") * 48.0
     # swelling: some at once, most within the first hours (peak ~24 h)
-    f_sw = 0.25 + 0.75 * t.smooth(0.02, 6.0, hours)
+    # (a goose egg of 5-10 mm is visible within the first hours)
+    f_sw = 0.35 + 0.65 * t.smooth(0.02, 3.0, hours)
     rsw = s * 0.017
-    swell = t.inp("Swelling") * (0.0035 + 0.0055 * s.min(1.3)) * f_sw \
+    swell = t.inp("Swelling") * (0.005 + 0.0075 * s.min(1.3)) * f_sw \
         * t.math('EXPONENT', -(c.rho / rsw) ** 2.0) * (1.0 + nl * 0.25) * soft
     # bruise: immediate redness only, a bruise over 30-60 min, deep after hours
     f_br = 0.18 + 0.47 * t.smooth(0.05, 1.0, hours) + 0.35 * t.smooth(3.0, 24.0, hours)
@@ -1147,10 +1154,13 @@ def _build_blunt():
     swell = swell + mg * 0.0006
     # blood: from the split, hematoma under the skin, contusion on the brain
     bleed = t.inp("Bleed")
-    pool = c.pool(c.L, s * 0.0045 * (0.5 + bleed), bleed * t.smooth(0.25, 0.45, D), drop=s * 0.003)
+    pool = c.pool(c.L, s * 0.0065 * (0.5 + bleed) * (1.0 + 0.5 * t.inp("Region").x), bleed * t.smooth(0.25, 0.45, D),
+                  stretch=3.8, drop=s * 0.004)
     hema = t.smooth(rsw * 1.1, rsw * 0.3, c.rho) * c.lc([0.0, 0.85, 0.35, 0.35, 0.0, 0.7, 0.0, 0.8])
     contusion = t.smooth(rd * 1.3, rd * 0.4, c.rho + nl * 0.002) * is_brain * t.smooth(0.5, 0.8, D)
-    teeth_blood = t.smooth(s * 0.03, s * 0.01, c.rho) * c.is_layer(LAYER_TEETH) * t.smooth(0.2, 0.4, D) * 0.0
+    # blood from the split lip and torn gum coats the teeth behind it
+    teeth_blood = t.smooth(s * 0.03, s * 0.008, c.rho + t.noise(c.np * 200.0) * 0.004) \
+        * (c.is_layer(LAYER_TEETH) + c.is_layer(LAYER_GUMS)) * t.smooth(0.2, 0.4, D) * 0.75
     blood = (pool * is_skin).max(hema * t.smooth(0.2, 0.5, D)).max(contusion).max(teeth_blood)
     blood = blood.max(t.smooth(0.0015, 0.0, -cut_split) * split_on * (0.55 + 0.45 * bleed))
     # abraded, crushed margins (2-4 mm, dry brown-red, patchy)
@@ -1174,8 +1184,8 @@ def _build_blunt():
 
 
 # blisters: Voronoi cells of this size (1/m)
-BLISTER_SCALE = 70.0
-BLISTER_KEEP = 0.8           # cells with a random value above this blister
+BLISTER_SCALE = 42.0          # few, large bullae (5-30 mm)
+BLISTER_KEEP = 0.55           # cells with a random value above this blister
 
 
 def _build_burn():
@@ -1203,7 +1213,14 @@ def _build_burn():
     ring = t.vec(c.theta.cos() * 1.3, c.theta.sin() * 1.3, c.seed * 7.0)
     lobes = t.noise(ring, detail=2.0)
     n2 = t.noise(c.np * 70.0, detail=3.0)
-    rn = rho_e / R * (1.0 + 0.3 * lobes) + 0.1 * n2
+    n3 = t.noise(c.np * 28.0 + t.vec(c.seed, 0.0, 0.0), detail=2.0)
+    # heat rises: the dose licks upward in tongues (anisotropic, asymmetric),
+    # and strong low-frequency variation makes the zones interlock unevenly
+    # instead of forming concentric rings
+    dn_ = c.down
+    up_ = -(c.u * dn_.x + c.v * dn_.y) / (dn_.x * dn_.x + dn_.y * dn_.y).sqrt().max(1e-4)
+    lick = t.smooth(-0.2, 1.0, up_ / R) * (0.5 + 0.5 * t.smooth(-0.3, 0.5, t.noise(t.vec(c.u * 90.0, c.seed * 2.0, 0.0))))
+    rn = rho_e / R * (1.0 + 0.5 * lobes) + 0.12 * n2 + 0.35 * n3 - 0.45 * lick
     b = t.smooth(1.02, 0.12, rn)          # soft edge: a 5-15 mm band of red skin
     dose = (b * (0.55 + 0.6 * D)).clamp()
     partial = t.smooth(0.2, 0.3, dose) * t.smooth(0.56, 0.48, dose)
@@ -1221,7 +1238,9 @@ def _build_burn():
     brad = 0.26 + vcol[1] * 0.2
     grow = t.smooth(0.008, 0.08, hours) * (0.55 + 0.45 * t.smooth(0.1, 8.0, hours))
     dome = (1.0 - (vd / brad) ** 2.0).max(0.0).sqrt()
-    blister = partial * keep * dome * grow * (brad / BLISTER_SCALE) * 0.55 * sd
+    # flattened domes (a tense bulla stands 1-3 mm), wrinkled roof
+    wrinkle = 1.0 + 0.12 * t.noise(c.np * 1400.0, detail=2.0)
+    blister = partial * keep * dome * grow * (brad / BLISTER_SCALE) * 0.22 * sd * wrinkle
     # sloughed epidermis: raw patches with lifted, curled rims
     # (a few patches, not a web of squiggles)
     pm = t.noise(c.np * 55.0 + t.vec(3.1, 1.7, 0.4), detail=2.0)
@@ -1457,7 +1476,7 @@ DRIP_KINDS = {
     "bullet": (1.3, 0.8, 0.0034, 0.075, 0.0011),
     "exit":   (3.5, 1.6, 0.0085, 0.105, 0.0017),
     "slash":  (1.0, 0.0, 0.0,    0.085, 0.0015),
-    "blunt":  (1.4, 0.9, 0.0042, 0.050, 0.0012),
+    "blunt":  (1.6, 0.9, 0.0085, 0.070, 0.0014),
 }
 
 
@@ -1488,7 +1507,8 @@ def _drip_seeds(t, pts, kind, kind_id, damage, bleed, drip):
         n_base = 0.8 + e * 0.45
     amount = t.math('FLOOR', n_base * (0.3 + bleed) + 0.5) * bleed.gt(0.02)
     if kind == "blunt":
-        amount = amount * D.gt(0.3)
+        # scalp lacerations bleed heavily (REALISM_BIBLE): more and longer runs
+        amount = t.math('FLOOR', amount * (1.0 + 0.8 * t.attr("hit_R", 'FLOAT_VECTOR').x) + 0.5) * D.gt(0.3)
     dup = t.node('GeometryNodeDuplicateElements', {'Geometry': pts, 'Amount': amount}, domain='POINT')
     g = t.out(dup, 'Geometry')
     first = t.compare('EQUAL', t.out(dup, 'Duplicate Index'), 0, 'INT')
@@ -1674,7 +1694,7 @@ def _build_fragments():
     # (kind, count, ring radius, lift max, lift min, size min, size max)
     # exit chips stay inside the wound (lifted at most ~4 mm); entrance chips
     # lie 2-14 mm below the outer table, spreading in a cone
-    specs = (("Exit", 10.0, 0.0058, 0.003, 0.0, 0.001, 0.005),
+    specs = (("Exit", 6.0, 0.0075, 0.003, 0.0, 0.001, 0.0045),
              ("Blunt", 6.0, 0.0045, -0.001, -0.0025, 0.0008, 0.003),
              ("Bullet", 7.0, 0.0, -0.016, -0.007, 0.0006, 0.0018))
     for kid, (kind, count, rb, lift_max, lift_min, sz0, sz1) in enumerate(specs):
@@ -1720,8 +1740,13 @@ def _build_fragments():
     g = t.out(t.node('GeometryNodeSetPosition', {'Geometry': g, 'Offset': jit}))
     g = t.out(t.node('GeometryNodeSetShadeSmooth', {'Mesh': g, 'Shade Smooth': False}))
     g = t.out(t.node('GeometryNodeSetMaterial', {'Geometry': g, 'Material': t.inp("Material")}))
-    g = t.store(g, "g_a", (1.0, 0.25, 0.28), 'FLOAT_VECTOR')
-    g = t.store(g, "g_b", (0.0, 0.0, 0.6), 'FLOAT_VECTOR')
+    # chips are only partly blood-coated: ivory outer table and the broken
+    # spongy diploe must show (fully red chips read as red gummies)
+    fn = t.noise(t.pos() * 700.0, detail=2.0, signed=False)
+    fn2 = t.noise(t.pos() * 1500.0 + t.vec(3.1, 0.0, 0.0), detail=1.0, signed=False)
+    g = t.store(g, "g_a", t.vec(0.3 + 0.5 * fn2, 0.0, t.smooth(0.42, 0.62, fn) * 0.85), 'FLOAT_VECTOR')
+    # (a little crack density only: high values stain the whole chip with seeping blood)
+    g = t.store(g, "g_b", (0.0, 0.0, 0.12), 'FLOAT_VECTOR')
     g = t.store(g, "g_wk", 1.0)
     t.result("Geometry", g)
     t.layout()
@@ -1806,7 +1831,7 @@ FILL_RING = 2
 # kinds whose wound bed fills with blood (skin layer, when bleeding), and how
 # far the fill reaches toward the centre line: a cut's bed is flooded; an
 # entrance hole holds a ring of dark clot around a still-open track
-FILL_EXTENT = {"slash": 1.06, "bullet": 0.62}
+FILL_EXTENT = {"slash": 1.06, "bullet": 0.62, "blunt": 0.8}
 FILL_KINDS = tuple(FILL_EXTENT)
 MAIN_INPUTS = (
     ("Geometry", 'NodeSocketGeometry'),
