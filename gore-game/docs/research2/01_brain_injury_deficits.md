@@ -18,6 +18,7 @@ This document goes deeper: **what each region does when destroyed, which side, h
 - About 115 `WebSearch` queries were run for this document (the session's shared search budget then ran out). `WebFetch` is blocked by network policy, so **no page was opened in full**. Values tagged [S#] come from search-result summaries of the listed pages. Before a number becomes a hard constant, QA should open the source (priority list in §21).
 - Numbers not found in search results come from the author's knowledge of standard texts (Plum & Posner's *Diagnosis of Stupor and Coma*, Adams & Victor, Leigh & Zee *The Neurology of Eye Movements*, Blumenfeld *Neuroanatomy through Clinical Cases*, ATLS, Brain Trauma Foundation guidelines).
 - Where a search summary contained an error that conflicts with standard neurology, it is noted in the text and corrected (for example §13.1 Weber syndrome, §17.1 seizure incidence).
+- **Independent fact-check pass (see §24).** Markers added in the text: **✓ verified** = consistent with standard references known to the reviewer; **? not re-verified** = could not be confirmed and keeps its (M)/(L) rating; **corrected: was X** = value changed. The shared web-search budget was already exhausted when the fact-check ran, so no fresh searches were possible; the checks rely on reviewer knowledge `[K]` and internal consistency.
 
 ### 0.2 Tags
 
@@ -39,11 +40,11 @@ This document goes deeper: **what each region does when destroyed, which side, h
 
 ### 0.4 The five rules the resolver must obey (H)
 
-1. **Crossing.** Everything above the pyramidal decussation (cortex, internal capsule, basal ganglia, thalamus, midbrain, pons) controls the **opposite** half of the body. The **cerebellum** controls the **same** side. A **brainstem** lesion gives **crossed signs**: cranial-nerve deficits (eye, face, tongue, swallowing) on the **same** side as the lesion, limb weakness on the **opposite** side `[K]` [S47][S53][S60].
+1. **Crossing.** Everything above the pyramidal decussation (cortex, internal capsule, basal ganglia, thalamus, midbrain, pons) controls the **opposite** half of the body. The **cerebellum** controls the **same** side. A **brainstem** lesion gives **crossed signs**: cranial-nerve deficits (eye, face, tongue, swallowing) on the **same** side as the lesion, limb weakness on the **opposite** side `[K]` [S47][S53][S60]. **✓ verified** (fact-check §24). Exceptions the resolver must encode `[K] (H)`, added by fact-check: (a) **CN IV nucleus/fascicle** (midbrain, before the nerve crosses in the anterior medullary velum) weakens the **contralateral** superior oblique; (b) **CN III nucleus**: the superior-rectus subnucleus supplies the **contralateral** eye and the single levator subnucleus gives **bilateral** ptosis; (c) cerebellar outflow crosses in the lower midbrain (decussation of the superior cerebellar peduncles), so a **midbrain** lesion of that pathway (red nucleus region, Claude/Benedikt) gives **contralateral** ataxia, while a cerebellar-hemisphere lesion gives ipsilateral ataxia; (d) below the pyramidal decussation (caudal medulla/upper cervical cord) the corticospinal deficit is **ipsilateral** (hemicord / Brown-Séquard pattern); (e) lateral medulla gives crossed **sensory** loss (ipsilateral face, contralateral body), not crossed weakness.
 2. **Consciousness** needs the brainstem reticular activating system plus thalami plus at least one working hemisphere. A one-sided hemisphere lesion does not by itself cause coma; bilateral hemisphere, bilateral thalamic or upper-brainstem damage does, and so does mass effect (herniation) [R1-04 §3.1] [S28].
 3. **Destroyed tissue fails at once; the rest follows a clock.** Direct destruction = deficit in the same frame. Concussive/penumbral dysfunction around a track = seconds to minutes, partly recovers. Bleeding and swelling = minutes to days (§15).
 4. **Destructive vs irritative lesions push the eyes opposite ways.** A destroyed hemisphere lets the eyes drift **toward** the lesion. A seizure focus drives them **away** from it. A destroyed pons makes them look **away** from the lesion (toward the paralysed limbs) (§14) [S63][S65] `[K]`.
-5. **The flaccid phase is what the player sees.** Paralysis from a new brain lesion is limp for hours to weeks; spasticity appears 1–6 weeks later (§2.3) [S1][S2]. Posturing (§18) is a separate brainstem-release phenomenon and can appear within seconds.
+5. **The flaccid phase is what the player sees.** Paralysis from a new brain lesion is limp for hours to weeks; spasticity appears 1–6 weeks later (§2.3) [S1][S2]. Posturing (§18) is a separate brainstem-release phenomenon and can appear within seconds. **✓ verified** (fact-check §24), with one precision: "flaccid" means **no active (voluntary or reflex) muscle drive**; passive tissue stiffness, joint-capsule limits and damping remain, so the ragdoll limb should not become frictionless `[K] (H)`.
 
 ---
 
@@ -86,7 +87,7 @@ Visual/behavioural summary for the whole map:
 
 - M1 is the precentral gyrus, a strip ~10–15 mm wide (front to back) running from the top of the medial surface (paracentral lobule) down the lateral convexity to the Sylvian fissure `[K] (H)`.
 - Somatotopy runs from medial to lateral: foot, lower leg, knee, thigh, hip, trunk, shoulder, arm, elbow, wrist, fingers, thumb, neck, brow, eyelid, face, lips, jaw, tongue, pharynx [S35]. Representations overlap considerably (gradual progression, not sharp borders) [S35].
-- **Hand knob**: an omega-shaped bend of the precentral gyrus; ~3.5 cm from the midline and 1.5–2 cm deep into the central sulcus [S34]; ~31 mm horizontally from the Cz scalp point [S34]. Electrostimulation MNI coordinates: wrist (27, −25, 70), finger extension (30, −26, 69), thumb/finger flexion (34–36, −11 to −22, 65–66) [S35].
+- **Hand knob**: an omega-shaped bend of the precentral gyrus; ~3.5 cm from the midline and 1.5–2 cm deep into the central sulcus [S34]; ~31 mm horizontally from the Cz scalp point [S34]. Electrostimulation MNI coordinates: wrist (27, −25, 70), finger extension (30, −26, 69), thumb/finger flexion (34–36, −11 to −22, 65–66) [S35]. **Fact-check: the omega shape and the medial-to-lateral somatotopy are ✓ verified; the individual numbers (3.5 cm, 1.5–2 cm, 31 mm, MNI triplets) could not be re-searched and stay (M).** Cross-check `[K] (M)`: meta-analytic fMRI centres of the M1 hand area lie near MNI x = ±35–40, y ≈ −20, z ≈ 55–60, i.e. slightly lower and more lateral than the electrostimulation wrist point; both are within the 30–40 mm lateral band used below. The "31 mm from Cz" is a horizontal (not along-scalp) distance; the TMS hand hotspot on the scalp is usually ~4–6 cm lateral to Cz.
 - Face lies below the hand, tongue and larynx lowest near the Sylvian fissure; leg and foot mostly on the medial surface facing the other hemisphere `[K] (H)`. Blood supply matches: the **middle cerebral artery** territory holds face and arm; the **anterior cerebral artery** territory holds the leg [S6].
 
 **Game mapping** `[E]`: parameterise the strip by `s` = 0 at the midline (top of the head) to 1 at the Sylvian fissure (measured along the cortical surface). Put the medial-surface part (foot, leg) at `s` < 0.
@@ -107,7 +108,7 @@ Visual/behavioural summary for the whole map:
 - **Contralateral weakness of the mapped part.** Destruction of a whole segment gives paralysis (MRC 0–1) of that part; a partial lesion gives weakness (MRC 2–4) `[K] (H)`.
 - Distal (hand, fingers) is affected more than proximal (shoulder), because proximal and axial muscles also receive ipsilateral and brainstem (reticulospinal) control `[K] (H)`.
 - A small cortical lesion can cause an isolated hand paralysis that looks like a nerve injury ("pseudoperipheral palsy"); this is < 1% of hospitalised ischaemic strokes and reflexes are often normal [S33].
-- **Face**: a cortical or capsular lesion weakens the **lower** face on the opposite side; the forehead and eye closure are largely spared because the upper face gets input from both hemispheres [S36]. In severe acute strokes upper-face weakness is also common, but milder [S36]. Emotional smiling may still move the weak side [S36].
+- **Face**: a cortical or capsular lesion weakens the **lower** face on the opposite side; the forehead and eye closure are largely spared because the upper face gets input from both hemispheres [S36]. In severe acute strokes upper-face weakness is also common, but milder [S36]. Emotional smiling may still move the weak side [S36]. **✓ verified** (standard upper-motor-neuron facial pattern `[K] (H)`).
 - **Tongue**: pushed out, it deviates toward the weak side (contralateral to the lesion) `[K] (M)`.
 - Severity scales with how much of the corticospinal output is destroyed: in stroke, motor outcome is inversely related to the fraction of the corticospinal tract hit by the lesion ("lesion load") [S32]; above ~7 cc of weighted tract lesion load, all patients had poor arm function at 3 months [S32].
 
@@ -117,10 +118,10 @@ Visual/behavioural summary for the whole map:
 |---|---|---|---|
 | Destruction | 0 s | Loss of voluntary force in the same frame | `[K] (H)` |
 | Flaccid ("cerebral shock") | Hours to 1–3 weeks | Limb limp, no resistance to passive movement, reflexes reduced or normal; Babinski sign may appear within hours | [S3] `[K] (M)` |
-| Rising tone | Days to weeks | Hyperreflexia; spasticity in 24.5% within 2 weeks; spasticity usually appears between 1 and 6 weeks | [S1][S2] |
+| Rising tone | Days to weeks | Hyperreflexia; spasticity in 24.5% within 2 weeks; spasticity usually appears between 1 and 6 weeks | [S1][S2] ✓ verified |
 | Spastic peak | 1–3 months | Flexed arm, extended leg ("Wernicke-Mann" posture), clonus | [S1] |
 
-- Overall spasticity after a first stroke with paresis: 39.5% [S1]. A lesion of the internal capsule or brainstem, severe weakness or early hyperreflexia predicts it [S1].
+- Overall spasticity after a first stroke with paresis: 39.5% [S1]. A lesion of the internal capsule or brainstem, severe weakness or early hyperreflexia predicts it [S1]. **✓ verified** against the reviewer's knowledge of the primary studies `[K] (M)`: the 24.5% figure matches Wissel et al. 2010 (*J Neurol*, prospective, first-ever stroke; measured at about 6 ± 3 days, then 26.7% at 6 weeks and 21.7% at 16 weeks), 39.5% matches the pooled prevalence in patients **with paresis** in Zeng et al. 2021 (*Front Neurol* meta-analysis; 25.3% in all stroke patients), and Sommerfeld 2004 [S2] found 19% at 3 months. Note that a minority show measurably raised tone within the **first week**, so "flaccid for 1–3 weeks" is the typical, not universal, course.
 - **Game rule** `[E]`: within any playable time frame (minutes to a few hours) a motor-cortex or capsule lesion is **flaccid**. Spastic posture should only appear if the game offers a "days later" time skip.
 
 ### 2.4 What it looks like from outside
@@ -138,7 +139,7 @@ Visual/behavioural summary for the whole map:
 |---|---|---|---|---|
 | `m1_strip_width` | 10–15 | mm | Anteroposterior thickness of precentral gyrus hit volume | [K] (M) |
 | `m1_segment_s_ranges` | table §2.1 | — | Medial surface negative `s` | [E] on [S34][S35] |
-| `hand_knob_lateral` | 35 (30–40) | mm from midline | 15–20 mm deep | [S34] (H) |
+| `hand_knob_lateral` | 35 (30–40) | mm from midline | 15–20 mm deep | [S34] (M) — fact-check: confidence lowered from (H); numbers not re-verified, band consistent with fMRI hand-area x ≈ 35–40 mm `[K]` |
 | `m1_visible_at` / `m1_full_at` | 0.10 / 0.60 | fraction of segment destroyed | smoothstep between | [E] |
 | `mrc_from_severity` | 5 − 5·sev (round down) | MRC | sev 0.5 → MRC 3 | [E] |
 | `joint_drive_scale` | (1 − sev)^1.5 | × max drive | Applied to the affected side's PhysicalBone3D motor targets | [E] |
@@ -147,7 +148,8 @@ Visual/behavioural summary for the whole map:
 | `arm_drift_time` | 3–10 | s | For sev 0.4–0.8 | [S37] [E] |
 | `weapon_drop_threshold` | hand sev > 0.7 | — | Drop delay 0.1–0.5 s | [E] |
 | `leg_buckle_threshold` | leg sev > 0.6 | — | Buckle 0.2–0.6 s after load | [E] |
-| `flaccid_duration` | 1–3 weeks (never shorter in game) | — | Tone stays zero on the affected side | [S3] (M) |
+| `flaccid_duration` | 1–3 weeks (never shorter in game) | — | Active drive (voluntary + reflex tone) stays zero on the affected side; **keep passive joint stiffness/damping and joint limits** (fact-check: flaccid ≠ frictionless) ✓ verified | [S3] (M) |
+| `flaccid_passive_damping` | 0.6–0.9 × the damping of a relaxed (not actively held) healthy limb; 0 active drive | — | Added by fact-check; hypotonia lowers resistance only modestly below a relaxed limb; avoids "rubber-hose" limbs | [E] |
 | `spasticity_onset` | 1–6 weeks; 24.5% by 2 weeks | — | Only for time skips | [S1][S2] (M) |
 
 ### Visual/behavioural checklist: M1
@@ -176,9 +178,10 @@ Visual/behavioural summary for the whole map:
 
 ### 3.3 Frontal eye field (caudal middle frontal gyrus, just in front of the precentral sulcus)
 
-- Destruction lets the eyes (and often the head) deviate **toward the lesion**, because the intact FEF pushes them over [S64]. The eyes can still be moved by reflex (doll's-eye manoeuvre) because the brainstem is intact `[K] (H)`.
-- The deviation lasts **days to about a week** and then fades as other pathways take over; afterwards saccades toward the opposite side stay slow and hypometric [S64].
-- In stroke series, forced conjugate eye deviation was found in 26.7% and partial in 6% of 116 patients [S63]; another series found 43% with conjugate deviation plus 33% with a lone abducting eye [S63]. An average deviation > 14–15° is associated with large middle-cerebral-territory infarcts [S63].
+- Location note (fact-check `[K] (M)`): in human functional imaging the FEF sits in the **precentral sulcus at its junction with the superior frontal sulcus** (classic texts: caudal middle frontal gyrus, Brodmann 8); for the hit-volume use the precentral-sulcus/SFS junction, ~2–4 cm³ per side.
+- Destruction lets the eyes (and often the head) deviate **toward the lesion**, because the intact FEF pushes them over [S64]. The eyes can still be moved by reflex (doll's-eye manoeuvre) because the brainstem is intact `[K] (H)`. **✓ verified** (direction).
+- The deviation lasts **days to about a week** and then fades as other pathways take over; afterwards saccades toward the opposite side stay slow and hypometric [S64]. **✓ verified** as typical course `[K] (M)`; large right-hemisphere lesions with neglect can keep a rightward gaze/head bias for weeks.
+- In stroke series, forced conjugate eye deviation was found in 26.7% and partial in 6% of 116 patients [S63]; another series found 43% with conjugate deviation plus 33% with a lone abducting eye [S63]. An average deviation > 14–15° is associated with large middle-cerebral-territory infarcts [S63]. **? not re-verified by fact-check** (no search available); the overall incidence (~20–35% of acute hemispheric strokes) is consistent with the reviewer's knowledge `[K] (M)`; keep the exact percentages and the 14–15° cut-off at (M).
 - Exception: a frontal haemorrhage can sometimes push the eyes the "wrong way" (away from the lesion) [S64].
 
 ### 3.4 Simulation parameters: SMA, premotor, FEF
@@ -269,6 +272,7 @@ Visual/behavioural summary for the whole map:
 | `SILENT` | Coma GCS V1, apnoea, locked-in | Nothing (locked-in: nothing despite full awareness) | Locked-in: normal | [S56] (H) |
 
 - **Pain vocalisation survives aphasia.** Screams, moans and cries are generated by brainstem and limbic circuits and are present in aphasic, frontal and even stuporous patients (that is what GCS V2 records) `[K] (H)`. A left-hemisphere wound therefore silences words, not screaming.
+- **Myth guard (fact-check) `[K] (H)`:** "survives" means the *capacity* to vocalise is kept, not that a wounded person screams. Many people who are shot or stabbed make no sound, grunt, gasp, or say a short phrase ("I'm hit"); pain is often delayed or not felt in the first seconds to minutes; anyone knocked unconscious by a head wound is silent (GCS V1) apart from snoring, gurgling or agonal gasps. Drive screaming from a probability that depends on consciousness, airway and injury type (see `06_sounds_voice_face.md`), never as a default reaction.
 - Persistent mutism after trauma is associated with bilateral hemisphere damage, especially frontal, or with upper-brainstem involvement; posterior fossa penetration can cause temporary mutism with intact cognition [S15 search summary] (M).
 
 ### 5.3 Simulation parameters: language
@@ -297,8 +301,8 @@ Visual/behavioural summary for the whole map:
 | Deficit | Side and lesion | Numbers | Appearance | Source |
 |---|---|---|---|---|
 | **Cortical sensory loss** (astereognosis, two-point, position sense) | Contra; postcentral gyrus/superior parietal | Dense hemianaesthesia points to thalamus rather than cortex | Cannot use the hand well without looking; drops things; weak response to touch | [S21] |
-| **Hemispatial neglect** | Contra space; right lesions far more often | Acute: 43% of right-hemisphere vs 20% of left-hemisphere strokes; at 3 months 17% vs 5% | Ignores everything on the left: people, threats, sounds, its own left limbs; head and eyes turned right | [S17][S18] |
-| **Anosognosia for hemiplegia** | Right hemisphere | ~32% very acute; 18% in the first week; 5% at 6 months | Denies or ignores the paralysis; tries to stand on a paralysed leg | [S19] |
+| **Hemispatial neglect** | Contra space; right lesions far more often | Acute: 43% of right-hemisphere vs 20% of left-hemisphere strokes; at 3 months 17% vs 5% | Ignores everything on the left: people, threats, sounds, its own left limbs; head and eyes turned right | [S17][S18] ✓ verified (Ringman 2004 figures) |
+| **Anosognosia for hemiplegia** | Right hemisphere | ~32% very acute; 18% in the first week; 5% at 6 months | Denies or ignores the paralysis; tries to stand on a paralysed leg | [S19] ✓ verified; fact-check: these are rates **among right-hemisphere stroke patients**, from the longitudinal study of Vocat et al. 2010 (*Brain*), which [S19] draws on `[K] (M)` |
 | **Somatoparaphrenia** | Right hemisphere; with neglect | Rare | Claims the paralysed arm belongs to someone else | [S19] |
 | **Pusher syndrome** | Right > left (≈17% vs ≈10% of hemiparetic patients in one series); parietal, insula, thalamus | 10.4% of acute stroke with hemiparesis overall | Pushes with the good arm and leg **toward the paralysed side** and resists correction; falls that way | [S20] |
 | **Optic ataxia** | Posterior parietal, contra hemifield/hand | — | Misreaches toward objects despite seeing them | [S21 search summary] |
@@ -457,7 +461,7 @@ Visual/behavioural summary for the whole map:
 
 ## 11. Internal capsule and deep white matter
 
-- The **posterior limb** carries the corticospinal and corticobulbar fibres for the whole opposite half of the body, packed into a band ~10–15 mm wide `[K] (M)`. A lacune of **2–20 mm** here causes **pure motor hemiparesis/hemiplegia affecting face, arm and leg about equally** [S31]. Pure motor stroke is the commonest lacunar syndrome (33–50%) [S31].
+- The **posterior limb** carries the corticospinal and corticobulbar fibres for the whole opposite half of the body, packed into a band ~10–15 mm wide `[K] (M)`. A lacune of **2–20 mm** here causes **pure motor hemiparesis/hemiplegia affecting face, arm and leg about equally** [S31]. Pure motor stroke is the commonest lacunar syndrome (33–50%) [S31]. **✓ verified** `[K] (H)` (Fisher's classic description; Medscape gives the same 2–20 mm size and 33–50% share; clinical series of pure motor stroke put it at up to ~45–57% of lacunar syndromes, so 33–57% is the honest range). Fact-check nuance: incomplete forms (face + arm, or arm + leg) are common, and the same syndrome also comes from the **basis pontis** and corona radiata, so "face = arm = leg" is the typical, not the only, pattern.
 - Genu: face and tongue (corticobulbar) fibres; anterior limb: frontothalamic fibres (abulia, confusion); retrolenticular part: optic radiation (hemianopia) `[K] (H)`.
 - Corticospinal fibres move toward the posterior half of the posterior limb as they descend [S31].
 - This is the most "tissue-efficient" place to paralyse half the body: a ~10 mm destruction gives dense hemiplegia, where the cortex needs a whole gyral strip `[E]` on [S31][S32].
@@ -470,7 +474,7 @@ Visual/behavioural summary for the whole map:
 |---|---|---|---|---|
 | `ic_post_width` | 10–15 | mm | Hit volume | [K] (M) |
 | `ic_post_visible_at` / `full_at` | 0.05 / 0.30 | fraction | 2–3 mm destroyed = weakness, ~10 mm = hemiplegia | [E] on [S31] |
-| `ic_face_arm_leg_ratio` | 1 : 1 : 1 | — | Unlike cortex | [S31] (H) |
+| `ic_face_arm_leg_ratio` | 1 : 1 : 1 | — | Unlike cortex; ✓ verified as the typical pattern — fact-check: roll an incomplete variant (face + arm, or arm + leg) with p ≈ 0.3 | [S31] (H), [E] |
 | `dai_grade3_LOC` | > 6 h, coma, posturing | — | | [S114] (M) |
 | `dai_severe_mortality` | 0.6 | p | Vegetative 0.2 | [S114] (M) |
 
@@ -493,11 +497,12 @@ Visual/behavioural summary for the whole map:
 | Any acute large lesion | Vertigo, nausea, **vomiting**, occipital headache, dysarthria (scanning), inability to walk | — | [S40][S41] |
 
 Numbers:
-- Nystagmus in 75% of cerebellar infarcts (horizontal ipsilateral-beating 47%, contralateral 5%, bilateral 11%, vertical 11%) [S41].
-- 90% show localising signs (truncal/limb ataxia, nystagmus, dysarthria); **71% of those with "only vertigo" cannot walk** [S41].
-- Cerebellar tremor is low frequency, **< 5 Hz** (typically 3–5 Hz), without a rest component; Holmes (rubral/midbrain) tremor is < 4.5 Hz (2–4.5 Hz) and combines rest, postural and intention components [S44].
+- Nystagmus in 75% of cerebellar infarcts (horizontal ipsilateral-beating 47%, contralateral 5%, bilateral 11%, vertical 11%) [S41]. **? not re-verified** (plausible; published cerebellar-stroke series range roughly 50–75%) `[K] (M)`.
+- 90% show localising signs (truncal/limb ataxia, nystagmus, dysarthria); **71% of those with "only vertigo" cannot walk** [S41]. **? not re-verified**; the qualitative point (a patient with cerebellar stroke and "just vertigo" usually cannot walk unaided because of truncal ataxia) is ✓ verified `[K] (H)`.
+- Cerebellar tremor is low frequency, **< 5 Hz** (typically 3–5 Hz), without a rest component; Holmes (rubral/midbrain) tremor is < 4.5 Hz (2–4.5 Hz) and combines rest, postural and intention components [S44]. **✓ verified** `[K] (H)` (Holmes tremor < 4.5 Hz is the movement-disorder-society consensus criterion).
+- **Fall direction ✓ verified** `[K] (H)`: hemispheric lesions give ipsilateral limb ataxia and lateropulsion/falls **toward** the lesion side.
 - Gait: reduced speed, cadence and step length; **increased step width, double-support time and especially stride-to-stride variability**, the core feature [S42]. Numbers below are author values (the retrieved summaries gave no means).
-- Deterioration after cerebellar haemorrhage (brainstem compression or hydrocephalus): mean 5 days, range 10 h – 10 days, median and mode 3 days; the first sign is falling consciousness [S40]. A vermian haemorrhage, absent corneal reflexes, impaired oculocephalic responses or early hydrocephalus predict deterioration [S40].
+- Deterioration after cerebellar haemorrhage (brainstem compression or hydrocephalus): mean 5 days, range 10 h – 10 days, median and mode 3 days; the first sign is falling consciousness [S40]. A vermian haemorrhage, absent corneal reflexes, impaired oculocephalic responses or early hydrocephalus predict deterioration [S40]. **Fact-check (? not re-verified; timing re-scoped):** a median of ~3 days (range hours to ~10 days) is the classic figure for **oedema around infarcted or contused cerebellar tissue** (swelling peaks at days 2–4) `[K] (M)`. A **haematoma** in the posterior fossa (traumatic or spontaneous) usually deteriorates much earlier, often within the first **hours to 24–48 h**, and can go from talking to apnoea within minutes once the fourth ventricle or medulla is compressed `[K] (M)`. Game rule: a cerebellar **track with bleeding** uses the §15 haematoma clock (minutes–hours); only a bloodless contusion/infarct uses the 3-day clock.
 
 ### 12.2 Gait and movement numbers for animation
 
@@ -523,7 +528,7 @@ Numbers:
 | `cb_nystagmus_prob` | 0.75 | p | Ipsilateral-beating 0.47 | [S41] (M) |
 | `cb_cannot_walk_prob` | 0.7 if sev > 0.3 | p | | [S41] (M), [E] |
 | `cb_vomit_prob_first_hour` | 0.6–0.8 | p | Repeated vomiting | [S40][S41] (M), [E] |
-| `cb_swelling_deterioration` | median 3 days (10 h–10 d) | — | Haematoma-driven compression faster (§15) | [S40] (M) |
+| `cb_swelling_deterioration` | median 3 days (10 h–10 d) | — | Haematoma-driven compression faster (§15): fact-check — for a bleeding track use minutes to 48 h, not days | [S40] (M), `[K]` |
 | `intention_tremor_hz` | 3–5 (Holmes 2–4.5) | Hz | | [S44] (H) |
 | `gait_params` | §12.2 | — | Drive procedural gait noise | [E] |
 
@@ -549,7 +554,7 @@ Numbers:
 | **Benedikt** (CN III + red nucleus ± peduncle) | CN III palsy | Tremor, involuntary choreoathetoid movements, ataxia ± weakness | [S47] |
 | **Dorsal midbrain (Parinaud)** | Bilateral: **upgaze palsy** (87–100%), **convergence-retraction nystagmus** on attempted upgaze, **light-near dissociation** (pupils react to near but not light), **eyelid retraction** (Collier sign); full triad in 65% | — | [S48] |
 | CN III **nucleus** | Ipsilateral CN III palsy, **both** lids droop (single central subnucleus), opposite eye cannot elevate | — | `[K]` (M) |
-| Trochlear (CN IV) | Weak depression in adduction; vertical double vision; head tilted **away** from the lesion side. Closed head trauma is its commonest cause | — | `[K]` (H) |
+| Trochlear (CN IV) | **Nerve** lesion (after the crossing; the usual traumatic case, at the tentorial edge): weak depression in adduction of the **same-side** eye, which rides slightly high; vertical double vision; head tilted **away** from the affected eye. Closed head trauma is its commonest cause | **Nucleus/fascicle** lesion (midbrain, before the crossing): the **opposite** eye is affected, so the head tilts **toward** the lesion side. Corrected: was "head tilted away from the lesion side" for all CN IV lesions | `[K]` (H), fact-check |
 | Bilateral tegmentum | Coma, fixed mid-position pupils, decerebrate [R1-04 §2.2] | | [R1-04] |
 | Late (weeks–months) | **Holmes (rubral) tremor**, < 4.5 Hz, rest + posture + intention | Contra | [S44] |
 
@@ -559,6 +564,7 @@ Numbers for the CN III eye:
 - Horizontal exodeviation in primary position: mean 40–44 PD in one series, 66 ± 29 PD in another, up to 84 ± 15 PD in very large cases [S50]. That is **~22–33°** outward, up to ~40° `[E]`.
 - Vertical (hypotropia): mean ~14 PD, **~8° down** [S50].
 - Ptosis: complete, the upper lid covers the pupil `[K] (H)`. Pupil: 6–9 mm, fixed `[K] (M)`.
+- Fact-check: the picture (large exotropia, small hypotropia, complete ptosis, fixed dilated pupil) is **✓ verified** `[K] (H)`; PD-to-degree conversions re-computed and correct (atan 0.40 = 21.8°, atan 0.66 = 33.4°, atan 0.84 = 40.0°). The series means [S50] were not re-searched (M). Two nuances: the vertical component is small and variable (some complete palsies are nearly level vertically; the eye also intorts because the superior oblique is unopposed), and the pupil is spared in many **ischaemic** palsies but almost never in **compressive or traumatic** ones, which are the game's cases.
 
 ### 13.2 Pons
 
@@ -575,8 +581,8 @@ Numbers for the CN III eye:
 
 - Traumatic CN VI palsy occurs in **1–2.7% of head injuries**; bilateral palsy is rare and usually comes with other intracranial or spinal injury [S51]. Raised ICP can stretch one or both sixth nerves over the petrous apex (a "false localising" sign) `[K] (H)`.
 - A lower-motor-neuron **facial palsy** (CN VII nucleus/nerve) looks different from the cortical kind (§2.4): the whole half-face is flat including the forehead, the eye does not close and the eyeball rolls up behind the open lids when the character tries to blink (Bell's phenomenon, visible), tears run over the lid `[K] (H)` [S69].
-- **Ocular bobbing** (pontine coma): fast conjugate **downward** jerk (~17.5° at ~129°/s peak), sometimes a ~0.5 s pause, then **slow drift back** to mid-position; recurs irregularly **2–15 times per minute** [S54]. **Ocular dipping** (inverse bobbing, more often diffuse/anoxic damage): slow downward drift over ~2 s, held 2–10 s, fast return, sometimes with a blink; next cycle 10–30 s later [S55]. **Reverse bobbing**: fast up, slow return [S55].
-- Massive pontine haemorrhage: invariably fatal but not instantaneous; death usually **24–48 h** after onset, 7–10 days not rare; overall pontine-haemorrhage mortality 30–60% [S57].
+- **Ocular bobbing** (pontine coma): fast conjugate **downward** jerk (~17.5° at ~129°/s peak), sometimes a ~0.5 s pause, then **slow drift back** to mid-position; recurs irregularly **2–15 times per minute** [S54]. Fact-check: the form (fast down, slow return, pontine, pinpoint pupils, absent horizontal movements in typical bobbing) is **✓ verified** `[K] (H)`. The 17.5° / 129°/s kinematics come from a **single-patient** recording [S54] and should be randomised (amplitude ~5–20°, peak velocity ~80–200°/s `[E]`); the rate was not re-verified (some texts give 2–12/min `[K] (L)`). **Ocular dipping** (inverse bobbing, more often diffuse/anoxic damage): slow downward drift over ~2 s, held 2–10 s, fast return, sometimes with a blink; next cycle 10–30 s later [S55]. **Reverse bobbing**: fast up, slow return [S55].
+- Massive pontine haemorrhage: invariably fatal but not instantaneous; death usually **24–48 h** after onset, 7–10 days not rare; overall pontine-haemorrhage mortality 30–60% [S57]. **✓ verified** as the typical course `[K] (M)`; fact-check nuance: with a destructive **penetrating** pontine track (rather than a spontaneous bleed) apnoea and collapse are usually immediate, per [R1-04 §2.2]; the 24–48 h clock applies to bleeds that leave the medulla working. Published overall pontine-haemorrhage mortality ranges wider (~30–90% depending on size and series).
 
 ### 13.3 Medulla
 
@@ -587,7 +593,7 @@ Numbers for the CN III eye:
 | Bilateral medial medulla | Bilateral tongue paralysis | Quadriplegia; **respiratory failure** and death common | [S60] |
 | Bilateral / central medulla | **Apnoea**, vasomotor collapse [R1-04 §2.2] | | [R1-04] |
 
-Wallenberg symptom frequencies (130 consecutive patients): sensory symptoms 96%; **vertigo/dizziness 88%, gait ataxia 88%, Horner 88%**; nystagmus 71%; **nausea/vomiting 65%; dysphagia 62%; hoarseness 41%** [S58]. Rostral lesions give dysphagia, facial weakness and dysarthria more often; caudal lesions give more severe gait ataxia and headache [S58]. **Intractable, violent hiccups** are characteristic [S59]. A smaller series reported vocal-cord paresis in all patients and a weak cough in 80% [S59 search summary] (L).
+Wallenberg symptom frequencies (130 consecutive patients): sensory symptoms 96%; **vertigo/dizziness 88%, gait ataxia 88%, Horner 88%**; nystagmus 71%; **nausea/vomiting 65%; dysphagia 62%; hoarseness 41%** [S58]. **? not re-verified by fact-check** (no search available). Sensory symptoms ~96% as the most common feature and Horner/ataxia/vertigo in the high-80s–90s are consistent with the reviewer's recollection of Kim 2003 `[K] (M)`; the hoarseness and dysphagia shares are the least certain (the reviewer recalls them as closer to each other, both ~50–65%) — QA should open the Brain paper before hard-coding them. For the game, rolling hoarseness at 0.4–0.6 and dysphagia at 0.5–0.65 covers both readings. Rostral lesions give dysphagia, facial weakness and dysarthria more often; caudal lesions give more severe gait ataxia and headache [S58]. **Intractable, violent hiccups** are characteristic [S59]. A smaller series reported vocal-cord paresis in all patients and a weak cough in 80% [S59 search summary] (L).
 
 Other medullary signs `[K] (H)`: pooled saliva (cannot swallow) → **wet, gurgling breathing**, drooling, choking and coughing when anything enters the throat; nasal regurgitation; skew deviation with the **ipsilateral eye lower** and head tilted toward that side [S61]; upbeat nystagmus with paramedian lesions, downbeat with midline lower-medullary lesions [S46].
 
@@ -621,7 +627,8 @@ Other medullary signs `[K] (H)`: pooled saliva (cannot swallow) → **wet, gurgl
 | `wallenberg_signs` | table §13.3 frequencies | p | Roll each sign independently | [S58] (M) |
 | `hiccup_rate` | 10–60 per min in bouts of minutes | — | Wallenberg flourish | [E] on [S59] |
 | `lateropulsion_force` | 5–15% body weight sideways toward lesion | — | Feed balance controller | [E] |
-| `tongue_dev_side` | toward lesion (medial medulla); toward weak side (cortex/capsule) | — | | [S60] `[K]` (H) |
+| `tongue_dev_side` | toward lesion (medial medulla); toward weak side (cortex/capsule) | — | ✓ verified (fact-check) | [S60] `[K]` (H) |
+| `cn4_side` | nerve lesion: ipsilateral eye; nucleus/fascicle lesion: contralateral eye | — | Added by fact-check; head tilts away from the affected eye | `[K]` (H) |
 
 ### Visual/behavioural checklist: brainstem (partial)
 - One eye droops shut; lifting the lid shows the eye turned down and out with a huge black pupil; the opposite arm and leg are paralysed.
@@ -640,9 +647,11 @@ Other medullary signs `[K] (H)`: pooled saliva (cannot swallow) → **wet, gurgl
 
 | Sign | Lesion | Direction | Magnitude | Timing | Appearance | Source |
 |---|---|---|---|---|---|---|
-| **Conjugate gaze deviation, destructive hemispheric** | FEF, large MCA territory, putamen/capsule | **Toward the lesion** (away from the paralysed side) | 15–40°; > 14–15° typical of large infarcts; head often turned too | Immediate; days (≈1 week) | Both eyes and head turned to the wounded side; doll's eyes can still move them | [S63][S64][S27] |
-| **Seizure (irritative) deviation, "versive"** | Frontal (or other) seizure focus | **Away from the focus** (>90% of patients) | Forced, extreme 30–45°; head turns with it | Seconds, during the seizure; may reverse when focal destructive deficit dominates after the seizure | Head and eyes wrench to one side, often the first sign of the fit | [S65][S71] |
-| **Pontine gaze palsy** | PPRF / CN VI nucleus | **Away from the lesion** (toward the paralysed side) | 10–30° at rest | Immediate, persistent | Eyes look at the paralysed limbs; doll's eyes fail | [S52][S53] `[K]` |
+| **Conjugate gaze deviation, destructive hemispheric** | FEF, large MCA territory, putamen/capsule | **Toward the lesion** (away from the paralysed side) ✓ verified | 15–40°; > 14–15° typical of large infarcts; head often turned too (magnitudes ? not re-verified) | Immediate; days (≈1 week) | Both eyes and head turned to the wounded side; doll's eyes can still move them | [S63][S64][S27] |
+| **Seizure (irritative) deviation, "versive"** | Frontal (or other) seizure focus | **Away from the focus** (>90% of patients) ✓ verified, **for forced version only** | Forced, extreme 30–45°; head turns with it | Seconds, during the seizure; may reverse when focal destructive deficit dominates after the seizure | Head and eyes wrench to one side, often the first sign of the fit | [S65][S71] |
+| **Pontine gaze palsy** | PPRF / CN VI nucleus | **Away from the lesion** (toward the paralysed side) ✓ verified | 10–30° at rest | Immediate, persistent | Eyes look at the paralysed limbs; doll's eyes fail | [S52][S53] `[K]` |
+
+Fact-check note on versive seizures `[K] (H)`: Wyllie 1986 [S65] found that only **forced, sustained, unnatural** head/eye turning ("version") lateralises (contralateral to the focus in > 90%); mild, non-forced head turning early in a seizure has no lateralising value and is often **ipsilateral**. Game: early in a focal-onset seizure allow a mild head turn in either direction (p ≈ 0.5 each), then the forced contraversive wrench in the seconds before generalisation.
 | **Thalamic eyes** | Thalamic haemorrhage/track | **Down and in**; occasionally **wrong-way** (away from lesion) | 10–25° down, 5–15° in | Immediate | "Peering at the tip of the nose"; small pupils | [S27][S29] |
 | **Upgaze palsy / setting sun** | Dorsal midbrain; hydrocephalus pressing it | Eyes cannot go up; with hydrocephalus tonically **down**, sclera visible above the iris | Up-range 0–10° | Minutes–hours with hydrocephalus | Lids retracted, eyes pushed down | [S48] `[K]` |
 | **Skew deviation / ocular tilt reaction** | Otolith pathway: vestibular nucleus to midbrain (INC) | Vertical misalignment. Pontomedullary lesion: **ipsilateral eye lower**; midbrain lesion: contralateral eye lower. Head tilts toward the lower eye | 2–10° vertical `[E]` | Immediate; weeks | One eye higher than the other; head tilted | [S61] `[K]` |
@@ -650,7 +659,7 @@ Other medullary signs `[K] (H)`: pooled saliva (cannot swallow) → **wet, gurgl
 | **One-and-a-half** | PPRF/CN VI nucleus + MLF | Ipsi eye fixed horizontally; other eye only abducts | — | Immediate | | [S52] |
 | **CN III palsy** | Midbrain, CN III nerve, uncal herniation | Ipsi eye **down and out** | 22–33° out, ~8° down; complete ptosis | Immediate (track) or minutes–hours (herniation) | See §13.1 | [S49][S50] |
 | **CN VI palsy** | Pons, petrous apex, raised ICP | Ipsi eye **in** | 6–22° in | Immediate or with ICP | "Crossed eyes" | [S51] |
-| **CN IV palsy** | Dorsal midbrain / nerve (blunt trauma) | Ipsi eye slightly **up**; head tilts away | 2–8° `[E]` | Immediate | Subtle | `[K]` |
+| **CN IV palsy** | Dorsal midbrain / nerve (blunt trauma) | Nerve lesion: ipsi eye slightly **up**, head tilts away from it. Nucleus/fascicle lesion: the **contralateral** eye is affected (corrected: was "Ipsi" for all lesion sites; fact-check) | 2–8° `[E]` | Immediate | Subtle | `[K]` |
 | **Resting divergence in coma / death** | Loss of tonic convergence | Both eyes slightly **out** | 5–15° | With unconsciousness | Slightly "wall-eyed", unfocused | [R1-04] `[K]` |
 
 ### 14.2 Spontaneous eye movements in the unconscious
@@ -696,7 +705,7 @@ Other medullary signs `[K] (H)`: pooled saliva (cannot swallow) → **wet, gurgl
 | Cortical blindness | Normal | **Normal** | Both | [S22] |
 | Hypoxia / dying | Dilate over 1–3 min | Lost | Both | [R1-04 §2] |
 
-Hutchinson sequence during uncal herniation [S74]: (1) brief **ipsilateral constriction** (irritation of the parasympathetic fibres on the outside of CN III); (2) **ipsilateral dilation**, often with brief contralateral constriction; (3) **bilateral fixed dilation**. The parasympathetic fibres lie on the surface of the nerve and are compressed first, which is why the pupil goes before eye movement [S74].
+Hutchinson sequence during uncal herniation [S74]: (1) brief **ipsilateral constriction** (irritation of the parasympathetic fibres on the outside of CN III); (2) **ipsilateral dilation**, often with brief contralateral constriction; (3) **bilateral fixed dilation**. The parasympathetic fibres lie on the surface of the nerve and are compressed first, which is why the pupil goes before eye movement [S74]. **✓ verified** `[K] (H)`. Fact-check additions `[K] (M)`: stage 1 is short and rarely witnessed clinically (make it 5–60 s and easy to miss); the first dilated pupil is on the side of the mass in roughly **85–90%** of cases, so a "false-side" pupil (p ≈ 0.1) is realistic; an **oval** or eccentric pupil is common during the transition.
 
 ### 14.5 Reflexes the player can trigger (by moving the head, touching the eye, flashing light, threatening the face)
 
@@ -713,8 +722,9 @@ Hutchinson sequence during uncal herniation [S74]: (1) brief **ipsilateral const
 
 | Event | Eyes | Other | Source |
 |---|---|---|---|
-| **Syncope** (drop in brain blood flow, including faint from pain or blood loss) | Open in most; **initial upward deviation** common; some have brief **downbeat nystagmus** first, then upward deviation | LOC **12.1 ± 4.4 s**; **multifocal arrhythmic myoclonic jerks in 90%**; head turns, lip-smacking, righting movements in 79% | [S70] |
+| **Syncope** (drop in brain blood flow, including faint from pain or blood loss) | Open in most; **initial upward deviation** common; some have brief **downbeat nystagmus** first, then upward deviation | LOC **12.1 ± 4.4 s**; **multifocal arrhythmic myoclonic jerks in 90%**; head turns, lip-smacking, righting movements in 79% | [S70] ✓ verified `[K] (H)`. Fact-check: measured in **healthy young volunteers** (induced faints, supine recovery); a faint from haemorrhage with ongoing low pressure lasts longer and may not end |
 | **Knockout** | Open, fixed unfocused stare, or rolled up | "Flash" KO < 3 s vs KO ≥ 3 s; tone lost completely at once; wake within seconds to a few minutes | [S98] `[K]` |
+| **Death (myth guard, fact-check)** | **Not left rolled back.** When consciousness is lost from falling brain perfusion (bleeding out, heart wound) the eyes may deviate up 10–30° for 2–10 s [R1-04 §11], then settle near straight ahead or slightly divergent; after death they stay there, lids usually part-open (an open lid drops 2–4 mm over 1–3 s) and pupils mid-to-wide and fixed [R1-04 §11.3–11.5] | Sustained upward deviation belongs to living states (syncope, seizures, some knockouts); a corpse whose eyes stay rolled up to the whites is a film convention | [R1-04] `[K] (M–H)` |
 | **Epileptic seizure** | Open (≈90–97%), forced deviation away from focus or upward; epileptic nystagmus possible; pupils dilated | §17 | [R1-04 §4.2][S65][S71] |
 
 ### 14.7 "Eyes crossing": all the ways the two eyes stop pointing at the same thing
@@ -775,16 +785,16 @@ Constants from [R1-04 §1]: ICP normal 5–15 mmHg (default 10); pressure–volu
 | Compensatory reserve (CSF pushed into the spinal sac + venous blood squeezed out) before ICP climbs | 50–70 mL for an acutely growing mass (default 60) | [K] (M) / [E] |
 | ICP beyond the reserve | ICP = ICP₀ × 10^((V_mass − V_reserve) / PVI) | [E] on [R1-04] |
 | Midline shift from a lateral mass | ≈ 0.10 mm per mL (30 mL → 3 mm; 50 mL → 5 mm; 70 mL → 7 mm; 90 mL → 9 mm), chosen so the Ropper thresholds below line up with the EDH timeline in §15.2 | [E] |
-| Consciousness vs horizontal pineal shift (Ropper) | 0–3 mm alert; 3–4 mm drowsy; 6–8.5 mm stupor; 8–13 mm coma | [S84] (M) |
-| Cushing response | Appears when CPP falls below ~15 mmHg (seen in almost every case below that) | [S85] (M) |
-| Plateau (Lundberg A) waves | ICP rises from near normal to **50–100 mmHg**, holds **5–20 min**, falls sharply; during them headache, nausea, stupor, **tonic posturing**; at the peak apnoea and decerebration | [S86] (M) |
+| Consciousness vs horizontal pineal shift (Ropper) | 0–3 mm alert; 3–4 mm drowsy; 6–8.5 mm stupor; 8–13 mm coma | [S84] (M) ✓ verified `[K] (H)` (matches the NEJM 1986 abstract; derived from acute hemispheral masses; the 4–6 mm gap is interpolated) |
+| Cushing response | Appears when CPP falls below ~15 mmHg (seen in almost every case below that) | [S85] (M); **? threshold not re-verified**; the two-stage sequence is ✓ verified `[K] (H)`; fact-check: the complete triad (hypertension + bradycardia + irregular breathing) is seen in only a minority (often quoted ~one third) of patients with raised ICP and is a late sign `[K] (L–M)` |
+| Plateau (Lundberg A) waves | ICP rises from near normal to **50–100 mmHg**, holds **5–20 min**, falls sharply; during them headache, nausea, stupor, **tonic posturing**; at the peak apnoea and decerebration | [S86] (M) ✓ verified `[K] (H)` (Lundberg's definition) |
 | Haematoma volume vs outcome (spontaneous intracerebral bleed, as a dose example) | ≥ 60 cm³ with GCS ≤ 8: 91% 30-day mortality; < 30 cm³ with GCS ≥ 9: 19% | [S94] (H) |
 
 ### 15.2 Epidural (extradural) haematoma, EDH
 
-- Usually a skull fracture tears the **middle meningeal artery**; ~75% of adult EDHs are temporal [S78].
-- **Lucid interval**: estimates range 20–50% of EDH patients; the textbook sequence (knocked out → wakes and talks → deteriorates) is seen in fewer than 20% [S76]. The interval lasts **minutes to hours**; deterioration, if it happens, is usually within 24 h [S76]. Progressive EDHs developed between 2 h and 7 days after injury, average 23 h [S77].
-- Treated outcome: not comatose → mortality 0–5%; comatose (GCS ≤ 8) → 11–41% [S78]. Guidelines evacuate any EDH > 30 cm³; < 30 cm³, < 15 mm thick and < 5 mm shift in an alert patient can be observed [S79]. The game has no neurosurgeon: **an untreated expanding EDH kills** `[K] (H)`.
+- Usually a skull fracture tears the **middle meningeal artery**; ~75% of adult EDHs are temporal [S78]. **✓ verified** `[K] (M)` (temporal/temporoparietal predominance and MMA source ~85% are textbook; in children the distribution is more even). Fact-check addition: roughly 10–15% of EDHs are **venous** (dural sinus, diploic veins; posterior-fossa EDH over the transverse sinus) and grow more slowly `[K] (M)`.
+- **Lucid interval**: estimates range 20–50% of EDH patients; the textbook sequence (knocked out → wakes and talks → deteriorates) is seen in fewer than 20% [S76]. The interval lasts **minutes to hours**; deterioration, if it happens, is usually within 24 h [S76]. Progressive EDHs developed between 2 h and 7 days after injury, average 23 h [S77]. **✓ verified** for the 20–50% band and the minutes-to-hours interval `[K] (M)`; the 23 h mean ? not re-verified. Note: a substantial minority of EDH patients (reported shares vary widely, roughly one fifth to two fifths) are never unconscious at all and simply deteriorate later `[K] (L)`; the game's "p ≈ 0.6 initial knockout" below is consistent with this.
+- Treated outcome: not comatose → mortality 0–5%; comatose (GCS ≤ 8) → 11–41% [S78]. **? not re-verified**; consistent with the reviewer's recollection (overall surgical mortality ~10%, near 0% in patients not in coma, ~20–40% in deep coma) `[K] (M)`. Guidelines evacuate any EDH > 30 cm³; < 30 cm³, < 15 mm thick and < 5 mm shift in an alert patient can be observed [S79]. The game has no neurosurgeon: **an untreated expanding EDH kills** `[K] (H)`.
 
 Default "classic" EDH timeline for the game (arterial source, untreated) `[E]` on [S76][S77][S78][S84][S85]:
 
@@ -809,7 +819,7 @@ Default "classic" EDH timeline for the game (arterial source, untreated) `[E]` o
 
 - Contusions expand (haemorrhage + oedema) in ~50% of patients (up to 75% in some series); haemorrhagic progression mostly in the first **12–24 h**; pericontusional oedema then grows over **2–3 days** [S83].
 - **"Talk and die"**: patients who speak after injury and later die. Incidence 2.4–7.8% of head injuries; 2.6% of head-injury deaths. **25% had no haematoma** at autopsy; the killers were swelling around contusions and ischaemic/hypoxic damage [S82].
-- Penetrating wounds: haematomas along the track, intraventricular bleeding and acute hydrocephalus cause secondary deterioration [S118]. In civilian series all deaths had admission GCS 3–8 [S118]; **non-reactive pupils, bihemispheric (non-bifrontal) tracks, posterior-fossa involvement and age > 35** predicted death [S95]; diencephalic, transventricular and posterior-fossa tracks had **100% mortality** in one series [S95]. Rare survivors of bihemispheric tracks exist [S121].
+- Penetrating wounds: haematomas along the track, intraventricular bleeding and acute hydrocephalus cause secondary deterioration [S118]. In civilian series all deaths had admission GCS 3–8 [S118]; **non-reactive pupils, bihemispheric (non-bifrontal) tracks, posterior-fossa involvement and age > 35** predicted death [S95]; diencephalic, transventricular and posterior-fossa tracks had **100% mortality** in one series [S95]. Rare survivors of bihemispheric tracks exist [S121]. Fact-check: the predictor list is **✓ verified** as consistent with the civilian GSW-head literature `[K] (M)` (low GCS/motor score, fixed pupils, bihemispheric or multilobar, transventricular and posterior-fossa tracks, suicide attempts and older age recur across series). The "100%" is **? not re-verified** and comes from small subgroups; use p(death) 0.9–1.0 for these tracks rather than a hard 1.0, which leaves room for the rare survivors seen in other series. Overall civilian GSW-head mortality is commonly ~70–90% including pre-hospital deaths `[K] (M)`.
 
 ### 15.5 Cushing response
 
@@ -822,9 +832,9 @@ Default "classic" EDH timeline for the game (arterial source, untreated) `[E]` o
 **Uncal (lateral transtentorial)** — temporal or lateral masses (EDH, ASDH, temporal contusion):
 - The medial temporal lobe (uncus) slides over the tentorial edge and compresses the **ipsilateral CN III** and midbrain [S90].
 - Sequence: ipsilateral pupil (Hutchinson stages, §14.4) → falling consciousness → **contralateral** hemiparesis (cerebral peduncle) → decerebrate → bilateral fixed pupils → brainstem failure `[K]` [S90][S74].
-- **Kernohan notch** (false localising): the opposite cerebral peduncle is pushed against the tentorium, producing hemiparesis on the **same** side as the mass and the blown pupil [S88]. Game probability 0.1–0.2 `[E]`.
+- **Kernohan notch** (false localising): the opposite cerebral peduncle is pushed against the tentorium, producing hemiparesis on the **same** side as the mass and the blown pupil [S88]. Game probability 0.1–0.2 `[E]`. **✓ verified** (mechanism and side) `[K] (H)`; the probability is an estimate (reported as uncommon; some series of herniating supratentorial masses report false-localising hemiparesis in the low tens of percent) `[K] (L)`.
 - Posterior cerebral artery compression can add an occipital infarct (hemianopia) in survivors `[K] (M)`.
-- Prognosis: survival 46% with a unilateral fixed dilated pupil versus 13% with bilateral [S89]; mortality 16% with both pupils reactive, 38% with one, 59% with none [S92]. In one surgical series the median time from pupil change to surgery was 133 min (30–900 min), showing the window lasts hours, not seconds [S89].
+- Prognosis: survival 46% with a unilateral fixed dilated pupil versus 13% with bilateral [S89]; mortality 16% with both pupils reactive, 38% with one, 59% with none [S92]. In one surgical series the median time from pupil change to surgery was 133 min (30–900 min), showing the window lasts hours, not seconds [S89]. **Fact-check:** the gradient (both reactive < one < none, unilateral fixed pupil far better than bilateral) is **✓ verified** `[K] (H)`; the exact percentages are **? not re-verified** (the 16/38/59 split is plausible for pooled CRASH + IMPACT data, which include milder injuries; IMPACT-only severe-TBI cohorts give higher values). Survival figures in [S89] are for **operated** patients; untreated, a bilateral fixed dilated pupil from a mass is near-uniformly fatal `[K] (M)`.
 
 **Central (rostrocaudal) herniation stages** (Plum & Posner) [S87] with author-added numbers `[K]`/`[E]`:
 
@@ -859,7 +869,7 @@ Default "classic" EDH timeline for the game (arterial source, untreated) `[E]` o
 |---|---|---|---|---|
 | `icp_reserve_ml` | 60 (50–70) | mL | Then exponential with PVI 25 mL | [K]/[E] |
 | `mls_per_ml` | 0.10 | mm/mL | Lateral masses | [E] |
-| `loc_from_mls` | 0–3 alert, 3–4 drowsy, 6–8.5 stupor, 8–13 coma | mm | Interpolate | [S84] (M) |
+| `loc_from_mls` | 0–3 alert, 3–4 drowsy, 6–8.5 stupor, 8–13 coma | mm | Interpolate; ✓ verified (fact-check) | [S84] (H) |
 | `cushing_cpp` | < 15 | mmHg | Tachy + HTN first, then brady | [S85] (M) |
 | `plateau_wave` | 50–100 mmHg for 5–20 min | — | Triggers posturing episodes | [S86] (M) |
 | `edh_lucid_prob` | 0.2–0.5 (textbook form < 0.2) | p | | [S76] (M) |
@@ -871,7 +881,7 @@ Default "classic" EDH timeline for the game (arterial source, untreated) `[E]` o
 | `kernohan_prob` | 0.1–0.2 | p | Ipsilateral hemiparesis | [S88] (L), [E] |
 | `herniation_stage_durations` | table §15.6 | min | Real time; game 4× | [E] on [S87] |
 | `tonsillar_apnoea` | sudden | — | Heart continues 4–10 min [R1-04 §2.4] | [S90] (M) |
-| `mortality_by_pupils` | 0.16 / 0.38 / 0.59 | p | Both / one / neither reactive (for survival-based outcomes) | [S92] (H) |
+| `mortality_by_pupils` | 0.16 / 0.38 / 0.59 | p | Both / one / neither reactive (for survival-based outcomes); pooled mild-to-severe data — for untreated severe injury raise to ~0.3 / 0.6 / 0.9 `[E]` | [S92] (M) — fact-check: confidence lowered from (H); gradient ✓, exact values not re-verified |
 
 ### Visual/behavioural checklist: TBI progression
 - A character hit on the side of the head goes down briefly, gets up, talks and complains of a headache, vomits; then over tens of minutes becomes sleepy and slurred, one arm weakens (opposite the wound), the pupil on the wounded side grows, and it slides into coma with stiffening spasms, a slow pounding pulse and irregular breathing, then both pupils go wide and breathing stops.
@@ -926,18 +936,18 @@ Default real-time sequence for a moderate concussion without structural injury `
 | Category | Timing | Incidence | Source |
 |---|---|---|---|
 | **Impact seizure / concussive convulsion** | Within 2 s of impact; tonic up to ~20 s then jerks up to 150 s | ~1 in 70 sport concussions; benign | [S100] [R1-04 §3.6] |
-| **Immediate post-traumatic seizure** | < 24 h | 1–4% of TBI | [S103] |
-| **Early** | 1–7 days | 4–25% of TBI (untreated) | [S103] |
-| **Late (epilepsy)** | > 7 days | 9–42%; up to ~50% after dural penetration and in military penetrating series | [S103] |
+| **Immediate post-traumatic seizure** | < 24 h | 1–4% of TBI | [S103] (? not re-verified; plausible) |
+| **Early** | 1–7 days | 4–25% of TBI (untreated) | [S103] ✓ verified `[K] (H)` (the "4–25% early, 9–42% late in untreated patients" ranges are the ones quoted by the Brain Trauma Foundation guidelines; they refer mainly to **moderate–severe** TBI; population-based rates across all severities, as in Annegers 1998, are far lower) |
+| **Late (epilepsy)** | > 7 days | 9–42%; up to ~50% after dural penetration and in military penetrating series | [S103] ✓ verified `[K] (H)` (Vietnam Head Injury Study: ~50% late epilepsy after penetrating wounds) |
 
 - One search summary stated that ~50% of penetrating head injuries have **immediate** seizures. This conflicts with the other figures and with the classification in the same source; it most likely refers to late epilepsy after penetrating injury. **Game value**: p(immediate seizure within the first hour) = 0.05–0.10 for a penetrating cortical track, 0.02–0.04 for blunt cortical contusion `[E]`.
 - Seizures arise from **cortex**. Pure cerebellar, brainstem or deep white-matter lesions do not cause epileptic seizures `[K] (H)`; motor-strip, frontal and temporal cortex hits are the most epileptogenic `[K] (M)`.
 
 ### 17.2 Generalised and focal-to-bilateral tonic–clonic seizures
 
-- In 120 video-EEG-recorded secondarily generalised seizures, mean duration was **62 s**; phases were onset of generalisation, pre-tonic clonic, tonic, **tremulousness**, clonic; only 27% showed all five, and phase durations varied widely [S104].
+- In 120 video-EEG-recorded secondarily generalised seizures, mean duration was **62 s**; phases were onset of generalisation, pre-tonic clonic, tonic, **tremulousness**, clonic; only 27% showed all five, and phase durations varied widely [S104]. **✓ verified** `[K] (M)` (Theodore et al. 1994, *Neurology*; other video series also put the convulsive part of a GTC at ~1–2 min; > 5 min = status epilepticus).
 - In the clonic phase, the atonic gaps between jerks **lengthen** until the jerks stop; jerks become slower and larger [S105].
-- Focal onset shows as **head/eye version** (away from the focus), unilateral face jerking, mouth deviation, automatisms first; the **figure-of-4** posture (one elbow extended, the other flexed across the chest) lateralises with PPV ~90%, the **extended elbow is contralateral to the focus**; the clonic phase and the ending are often asymmetric [S106].
+- Focal onset shows as **head/eye version** (away from the focus), unilateral face jerking, mouth deviation, automatisms first; the **figure-of-4** posture (one elbow extended, the other flexed across the chest) lateralises with PPV ~90%, the **extended elbow is contralateral to the focus**; the clonic phase and the ending are often asymmetric [S106]. **✓ verified** `[K] (H)` (Kotagal et al. 2000, *Neurology*: extended elbow contralateral to the epileptogenic zone, PPV ≈ 90%). Version: see the forced-vs-non-forced note under §14.1.
 
 Default game sequence `[E]` on [S104][S105][S106][R1-04 §4.2]:
 
@@ -956,7 +966,7 @@ Default game sequence `[E]` on [S104][S105][S106][R1-04 §4.2]:
 - **Hemifacial clonic**: continuous or bursts of clonic contractions of one side of the face, **seconds to 1 min** [S108].
 - **Jacksonian march**: clonic jerking spreads through **contiguous body parts on one side** in homunculus order: fingers → hand → arm → face, or foot → leg → arm → face; consciousness is usually preserved; the classic full march is **rare** [S108][S107]. March speed (not found in the retrieved sources): 5–30 s per homunculus segment `[E]`.
 - **Epilepsia partialis continua**: clonic jerking confined to one body part (hand, face, leg) at fairly regular intervals for **> 1 h**, sometimes days; caused by motor-cortex lesions including trauma [S109].
-- **Todd's paralysis** (postictal weakness of the seizing side): mean **173 s** (range 11 s – 22 min) in a video-EEG study of focal epilepsies; case reports up to 36–48 h [S110].
+- **Todd's paralysis** (postictal weakness of the seizing side): mean **173 s** (range 11 s – 22 min) in a video-EEG study of focal epilepsies; case reports up to 36–48 h [S110]. **✓ verified** `[K] (M)` (Gallmetzer et al. 2004; the figures match the reviewer's recollection). Fact-check context: those were chronic-epilepsy patients; after a seizure caused by a fresh structural wound, the postictal weakness adds to the lesion deficit and can look permanent.
 
 ### 17.4 Catalogue of involuntary movements for animation
 
@@ -973,7 +983,7 @@ Default game sequence `[E]` on [S104][S105][S106][R1-04 §4.2]:
 | Intention tremor | Cerebellar hemisphere | 3–5 Hz | Grows near the target | While reaching | [S44] |
 | Titubation | Vermis | 2–4 Hz `[K]` (L) | Head/trunk 1–3 cm | While sitting/standing | [S43] |
 | Decerebrate / decorticate spasms | Brainstem release, plateau waves | Tonic episodes | §18 | 5–60 s, on stimulus | [S86] [R1-04] |
-| Spinal reflex movements after brain death | Spinal cord | Slow, stereotyped (toe undulation, arm flexion/"Lazarus") | Limbs | Minutes–hours after brain death; 13–22% of brain-dead patients | [S113] |
+| Spinal reflex movements after brain death | Spinal cord | Slow, stereotyped (toe undulation, arm flexion/"Lazarus") | Limbs | Minutes–hours after brain death; 13–22% of brain-dead patients | [S113]; fact-check: other prospective series report higher rates (~40–55%) `[K] (M)`, so use p 0.2–0.5 |
 
 ### 17.5 Simulation parameters: seizures and movements
 
@@ -983,11 +993,11 @@ Default game sequence `[E]` on [S104][S105][S106][R1-04 §4.2]:
 | `p_immediate_seizure_blunt_contusion` | 0.02–0.04 | p | | [S103] (M), [E] |
 | `p_seizure_noncortical` | 0 | p | Brainstem, cerebellum, deep white matter only | [K] (H) |
 | `gtc_mean_duration` | 62 (30–120) | s | Phases variable; not all present (27% all five) | [S104] (H) |
-| `version_direction` | away from focus | — | | [S65][S106] (H) |
+| `version_direction` | away from focus (forced version); early non-forced turn either side (p 0.5) | — | Fact-check: only forced, sustained version lateralises | [S65][S106] (H) |
 | `figure4_prob` | 0.3–0.5 of focal-to-bilateral seizures | p | Extended elbow contralateral to focus | [S106] (M), [E] |
 | `frontal_seizure_duration` | 10–40 | s | | [S107] (M) |
 | `jackson_segment_time` | 5–30 | s per segment | Rare full march (p 0.1 of focal motor seizures) | [E] on [S108] |
-| `todd_duration` | 173 (11–1320) | s | Tail to 36 h | [S110] (M) |
+| `todd_duration` | 173 (11–1320) | s | Tail to 36 h; ✓ verified (fact-check) | [S110] (M) |
 | `epc_min_duration` | 3600 | s | | [S109] (M) |
 
 ### Visual/behavioural checklist: seizures and movements
@@ -1005,6 +1015,7 @@ Default game sequence `[E]` on [S104][S105][S106][R1-04 §4.2]:
 
 - **Decorticate** (abnormal flexion, GCS M3): lesion **above the red nucleus** (hemispheres, internal capsule, thalamus); rubrospinal flexion of the arms is unopposed [S111].
 - **Decerebrate** (extension, GCS M2): lesion **at or below the red nucleus but above the vestibular nuclei** (midbrain, upper pons); vestibulospinal extensor drive is released [S111].
+- **✓ verified** (descriptions and textbook lesion levels) `[K] (H)`. Fact-check nuance `[K] (M)`: the red-nucleus rule comes from animal work; in humans the correlation is loose (decerebrate posturing also occurs with large hemispheric masses, diffuse injury or metabolic coma, and the two can coexist or alternate in one patient). Use lesion level as the default driver but allow either posture with ICP/plateau-wave severity. A lesion **below the vestibular nuclei** (lower pons/medulla) gives **flaccidity**, not posturing.
 - Both are often **episodic**, triggered by stimulation (pain, moving the body, noise, suctioning) and by ICP plateau waves [S86] `[K]`. They can be asymmetric (decorticate on one side, decerebrate on the other) [R1-04 §4.1].
 
 ### 18.2 Joint targets for the ragdoll drive
@@ -1031,7 +1042,7 @@ Drive profile `[E]`: ramp-in 0.5–2 s, hold 5–60 s (plateau-wave episodes up 
 
 | Posture | When | Duration | Arms | Distinguishing cue |
 |---|---|---|---|---|
-| Fencing | At the moment of a knockout blow, consciousness lost | 2–10 s (max ~20 s), once | Asymmetric: one extended up/forward, one flexed | Seen in 66% of 35 analysed knockout videos, regardless of the side of impact [S99] |
+| Fencing | At the moment of a knockout blow, consciousness lost | 2–10 s (max ~20 s), once | Asymmetric: one extended up/forward, one flexed | Seen in 66% of 35 analysed knockout videos [S99] ✓ verified (≈ two thirds; same figure in [R1-04 §3.6]); "regardless of the side of impact" **? not re-verified** — fact-check: pick the extended arm from the direction the head is turned after impact (asymmetric-tonic-neck-reflex pattern: arm extends on the face side) and fall back to random if unknown `[K] (L)`; the duration is described only as "seconds" (2–10 s is `[E]`) |
 | Figure-of-4 | Tonic phase of a focal-to-bilateral seizure | 10–20 s | One elbow straight, the other bent across the chest | Followed by clonic jerking |
 | Decorticate | Coma from hemispheric/diencephalic damage | 5–60 s episodes, repeated | Both arms flexed onto the chest | Legs straight, triggered by touch |
 | Decerebrate | Coma with midbrain/upper-pons damage | 5–60 s episodes, repeated | Both arms straight, turned in | Neck arched back, jaw clenched |
@@ -1048,12 +1059,12 @@ Drive profile `[E]`: ramp-in 0.5–2 s, hold 5–60 s (plateau-wave episodes up 
 | `posture_drive_strength` | decorticate 0.5–0.7, decerebrate 0.6–0.8 | × max | | [E] |
 | `posture_ramp` / `hold` / `release` | 0.5–2 / 5–60 / 1–3 | s | | [E] |
 | `posture_trigger` | pain, movement, loud noise, plateau wave | — | | [S86] `[K]` (M) |
-| `fencing_prob_ko` / `duration` | 0.66 / 2–10 (≤ 20) | p / s | | [S99] (M) |
+| `fencing_prob_ko` / `duration` | 0.66 / 2–10 (≤ 20) | p / s | Probability ✓ verified; duration `[E]` | [S99] (M) |
 | `psh_onset` | ~6 days | — | Time skips only | [S112] (M) |
 
 ### Visual/behavioural checklist: posturing
 - Decorticate: fists pulled up to the chest, legs stiff and straight, toes pointed; comes and goes when the body is moved.
-- Decerebrate: arms rigid at the sides, rolled inward so the backs of the hands turn out, wrists bent, head pushed back, jaw clamped; spasms when touched.
+- Decerebrate: arms rigid at the sides, rolled inward so the **palms turn outward and backward** (corrected: was "backs of the hands turn out"; internal rotation plus full pronation turns the palm away from the body), wrists and fingers bent, head pushed back, jaw clamped, feet pointed; spasms when touched.
 - Fencing: at the instant of a knockout, one arm shoots up stiff, the other bends; it lasts a few seconds, then the body goes limp.
 
 ---
@@ -1084,9 +1095,9 @@ Game mapping `[E]`: E from arousal level and lid control (and eyelid swelling fr
 | 9–12 | Moderate | Drowsy or stuporous; opens eyes to voice or pain; words or moans; localises or withdraws; cannot stand | — | `[K]` |
 | 6–8 | Severe (coma) | Eyes closed or open only to pain; moans or silent; withdraws or postures; snoring/gurgling airway | Severe-TBI (GCS 3–8) mortality ~20–40% across modern cohorts (6-month 19.5% in one validation cohort; hospital 32.8% and 6-month 40% in others) | `[K]`, [S122] (M) |
 | 4–5 | Severe | No eye opening; silent or single moan; decorticate/decerebrate spasms | — | `[K]` |
-| 3 | Deepest | Flaccid, eyes closed or fixed open, no sound | Mortality 51% at GCS 3 in pooled IMPACT/CRASH data; **74% at GCS-P 1** (GCS 3 with both pupils unreactive) | [S92] (H) |
+| 3 | Deepest | Flaccid, eyes closed or fixed open, no sound | Mortality 51% at GCS 3 in pooled IMPACT/CRASH data; **74% at GCS-P 1** (GCS 3 with both pupils unreactive) | [S92] (M) — fact-check: GCS-P definition ✓ verified; percentages not re-verified |
 
-- **GCS-P** = GCS minus pupil reactivity score (2 = both unreactive, 1 = one unreactive, 0 = both react); range 1–15; mortality falls continuously from 79% at the bottom to 14% at the top [S92].
+- **GCS-P** = GCS minus pupil reactivity score (2 = both unreactive, 1 = one unreactive, 0 = both react); range 1–15 **✓ verified** `[K] (H)`; mortality falls continuously from the bottom to the top of the scale [S92]. **Corrected: was "from 79% at the bottom to 14% at the top"**, which contradicted the 74% at GCS-P 1 given in the row above (and the survival 0.21 in §19.3). Fact-check uses **74%** at GCS-P 1 throughout (the value in the table and in the claim list); the top-of-scale value is not re-verified and is omitted.
 - The ICH example: bleed ≥ 60 cm³ with GCS ≤ 8 → 91% 30-day mortality [S94].
 
 ### 19.3 Simulation parameters: GCS
@@ -1095,7 +1106,7 @@ Game mapping `[E]`: E from arousal level and lid control (and eyelid swelling fr
 |---|---|---|---|---|
 | `gcs_e/v/m` | computed per tick at 2–5 Hz | — | Store best-response values | [E] |
 | `gcs_p` | GCS − PRS | 1–15 | | [S92] (H) |
-| `survival_from_gcsp` | 0.21 at GCS-P 1 rising to 0.86 at 15 | p | Only if the game resolves "would survive" outcomes | [S92] (M) |
+| `survival_from_gcsp` | 0.26 at GCS-P 1 rising to ~0.85–0.95 at the top of the scale | p | Only if the game resolves "would survive" outcomes. **Corrected: was 0.21 at GCS-P 1 and 0.86 at 15** (0.21 contradicted the 74% mortality quoted in §19.2; top value not re-verified, range `[E]`). These are **treated** (hospital) outcomes; with no medical care in game, scale survival down | [S92] (M), [E] |
 
 ### Visual/behavioural checklist: GCS
 - GCS 13–14: talking nonsense-adjacent, asking again and again, walking like a drunk.
@@ -1133,16 +1144,16 @@ Approximate volumes for a 1,300–1,400 g adult brain. Lobe shares of cerebral c
 ### 20.2 Resolver rules `[E]`
 
 1. **Damage.** For each region r: `destroyed_r` = destroyed volume / region volume (0–1), from the wound track (permanent cavity) of [R1-01].
-2. **Stun.** Add concussive dysfunction for regions inside the stun radius around the track (≥ 18 mm for low-energy handgun tracks [R1-01 §6]; larger for higher energy): `stun_r` = 0.5–1.0, decaying with a half-life of 30 s – 10 min to a residual 0–0.3.
+2. **Stun.** Add concussive dysfunction for regions inside the stun radius around the track (≥ 18 mm for low-energy handgun tracks [R1-01 §6]; larger for higher energy): `stun_r` = 0.5–1.0, decaying with a half-life of 30 s – 10 min to a residual 0–0.3. **Myth guard (fact-check) `[K] (M)`:** this radius applies to tracks **inside the skull**. Do not add brain stun for hits elsewhere on the body ("hydrostatic shock" / remote pressure-wave incapacitation): remote brain effects of torso hits are reported in animal experiments but are not an established cause of instant human incapacitation; torso hits cause collapse through blood loss, spinal-cord hits, pain/psychological response or syncope (§14.6), not remote brain injury.
 3. **Ischaemia.** If the track cuts a named artery (MCA, ACA, PCA branch, basilar perforators), its territory gains `isch_r` rising to 1 over 10–20 s (brain function fails below ~20 mL/100 g/min [R1-04 §1]); in game time it never recovers.
 4. **Compression.** From §15 (mass, midline shift, herniation stage) add `comp_r` to the diencephalon and brainstem regions and to CN III on the mass side.
 5. **Dysfunction** `d_r(t) = clamp(destroyed_r + stun_r(t) + isch_r(t) + comp_r(t), 0, 1)`.
 6. **Severity** `sev_r = smoothstep(visible_at_r, full_at_r, d_r)` using the thresholds in §1 and each section; multiply by a per-character factor 0.85–1.15.
-7. **Side mapping.** Cortex, basal ganglia, thalamus, capsule, cerebral peduncle, corticospinal tracts in pons and upper medulla → contralateral body channels. Cerebellum → ipsilateral body. Cranial-nerve nuclei and nerves → ipsilateral eye/face/tongue/voice. Language regions → dominant side only (90% left).
+7. **Side mapping.** Cortex, basal ganglia, thalamus, capsule, cerebral peduncle, corticospinal tracts in pons and upper medulla → contralateral body channels. Cerebellum → ipsilateral body. Cranial-nerve nuclei and nerves → ipsilateral eye/face/tongue/voice. Language regions → dominant side only (90% left). Fact-check exceptions (see §0.4 rule 1) `[K] (H)`: CN IV nucleus/fascicle → contralateral superior oblique; CN III nucleus → contralateral superior rectus + bilateral ptosis; midbrain cerebellar-outflow (red nucleus / decussated superior cerebellar peduncle) → contralateral ataxia; corticospinal tract **at or below** the pyramidal decussation (lowest medulla, cervical cord) → ipsilateral weakness.
 8. **Combine** channels by taking the maximum severity of any region driving that channel (a leg paralysed by the capsule is not made "more paralysed" by M1 as well).
 9. **Probabilistic signs** (neglect, anosognosia, pusher, ballism, seizure, Kernohan, wrong-way eyes) are rolled once, when the region's severity first crosses its threshold, with the probabilities given in the sections.
 10. **Consciousness** is resolved last (rule 2 in §0.4, [R1-04 §3.1]) and overrides behaviour: an unconscious character shows only reflexes, posturing, eye signs and breathing patterns.
-11. **Blunt force** (hammer, punch, fall) has no track: apply stun to the region under the impact (coup) and to the frontal and temporal poles, plus the opposite pole for occipital or lateral blows (contrecoup) `[K] (H)`; add EDH risk for temporal-squama fractures (§15.2) and DAI for rotational blows (§11).
+11. **Blunt force** (hammer, punch, fall) has no track: apply stun to the region under the impact (coup) and to the frontal and temporal poles, plus the opposite pole for occipital or lateral blows (contrecoup) `[K] (H)`; add EDH risk for temporal-squama fractures (§15.2) and DAI for rotational blows (§11). **Fact-check refinement `[K] (H)`:** which side bruises depends on whether the head was **moving** or **still**. A **moving head that stops** against the floor or a wall (fall, being thrown) gives the classic **contrecoup** pattern: contusions opposite the impact, worst in the frontal and temporal poles, typically larger than the coup lesion. A **still head struck by an object** (hammer, bat, punch to a braced head) gives mainly **coup** injury under the impact point (with a depressed fracture if the contact area is small) and little contrecoup. Scale coup and contrecoup weights by head velocity at impact vs object velocity.
 
 ### 20.3 How the body goes down, by deficit (for the fall controller)
 
@@ -1187,6 +1198,7 @@ The resolver runs **on wound events only** (a few hundred operations per hit). C
 8. Neglect and anosognosia percentages [S17][S19]; pusher incidence [S20].
 9. CN III squint sizes [S50].
 10. Author-only numbers most worth checking: gait metrics (§12.2), eye-rig numbers (§14.8), central-herniation stage durations (§15.6), EDH bleed rate (§15.2), Jacksonian march speed (§17.3), posture joint angles (§18.2).
+11. Added by fact-check (items it could not re-verify without search): Wallenberg hoarseness/dysphagia shares [S58]; conjugate-deviation percentages and the 14–15° cut-off [S63]; cerebellar 75% nystagmus / 71% cannot-walk [S41]; pupil-reactivity and GCS-P percentages [S92][S89]; the "100% mortality" track subgroups [S95]; Cushing CPP < 15 mmHg threshold [S85]; fencing-response side [S99]; hand-knob numbers [S34][S35].
 
 ---
 
@@ -1323,3 +1335,97 @@ The resolver runs **on wound events only** (a few hundred operations per hit). C
 - Some result lists included irrelevant US patent PDFs (image-ppubs.uspto.gov) and commercial rehabilitation or law-firm blog pages. They were ignored as sources.
 - Content-quality issues, not injection: three search summaries contained medical errors or ambiguities that are corrected or flagged in the text: the CN III pupil called an "afferent" defect (§13.1), hemiparesis attributed to classic Claude syndrome (§13.1), and "~50% immediate seizures after penetrating injury" (§17.1).
 - No code, commands or executable links were copied into this document.
+- Fact-check pass: no web content was read (search budget exhausted), so no new untrusted text entered the document; nothing suspicious to report.
+
+---
+
+## 24. Fact-check (independent review of this document)
+
+### 24.1 Method and limits
+
+- Scope: the 20 load-bearing claims listed by the workflow, plus any other number that looked wrong or inconsistent, plus the common myths (bullets knocking people backward, eyes rolling back at death, "hydrostatic shock", everyone screaming).
+- **No fresh web searches were possible**: the session's shared budget (200 WebSearch calls) was used up before this pass, and WebFetch is blocked. Verdicts therefore rest on the reviewer's knowledge of the primary papers and standard texts (Plum & Posner, Adams & Victor, Leigh & Zee, Brain Trauma Foundation guidelines) and on internal-consistency checks. Anything the reviewer could not confirm is marked **? not re-verified** in the text and keeps an (M) or (L) rating; QA items were added to §21 (item 11).
+- Markers in the text: **✓ verified**, **? not re-verified**, **corrected: was X**.
+
+### 24.2 Per-claim verdicts
+
+| # | Claim (short) | Verdict | What changed in the text |
+|---|---|---|---|
+| 1 | Crossing: contralateral above the decussation, ipsilateral cerebellum, crossed brainstem signs | ✓ verified | Exceptions added to §0.4 rule 1 and §20.2 rule 7: CN IV nucleus → contralateral eye; CN III nucleus → contralateral superior rectus + bilateral ptosis; midbrain cerebellar outflow → contralateral ataxia; below the decussation → ipsilateral weakness; lateral medulla = crossed sensory loss |
+| 2 | Flaccid first; spasticity 1–6 weeks; 24.5% by 2 weeks; 39.5% overall | ✓ verified | 24.5% matches Wissel 2010 (measured ~6 days); 39.5% matches Zeng 2021 (patients with paresis). Clarified "zero tone" = zero active drive, passive stiffness kept; `flaccid_passive_damping` added |
+| 3 | Hand knob 3.5 cm lateral, 1.5–2 cm deep, MNI wrist (27, −25, 70); somatotopy; lower-face weakness | Partly: somatotopy and face ✓; numbers ? not re-verified | `hand_knob_lateral` confidence lowered (H → M); fMRI cross-check band added |
+| 4 | 2–20 mm PLIC lacune → pure motor hemiplegia face = arm = leg; 33–50% of lacunar syndromes | ✓ verified | Range note (up to ~57% in some series); incomplete variants (p ≈ 0.3) and pontine origin added |
+| 5 | Eyes toward destructive lesion, away from seizure focus, away from pontine lesion; 26.7% + 6%; > 14–15°; ~1 week | Directions ✓; numbers ? not re-verified | Added: only **forced** version lateralises (non-forced early turns often ipsilateral); `version_direction` updated |
+| 6 | Neglect 43% vs 20% (17% vs 5% at 3 months); anosognosia 32/18/5% | ✓ verified | Anosognosia rates are among **right-hemisphere** stroke patients (Vocat 2010) |
+| 7 | Cerebellar: ipsilateral ataxia, falls toward lesion, nystagmus 75%, 71% cannot walk, tremor < 5 Hz, deterioration median 3 days | Direction/tremor ✓; 75%/71% ? not re-verified; timing **re-scoped** | 3-day clock limited to oedema around infarct/contusion; bleeding posterior-fossa tracks use the minutes-to-48-h haematoma clock |
+| 8 | CN III: exotropia 40–66 PD (up to 84), hypotropia ~14 PD, complete ptosis, fixed dilated pupil | ✓ verified (picture and PD→° maths) | Series means not re-checked; vertical component variable; traumatic/compressive palsies involve the pupil |
+| 9 | Bobbing 17.5° at 129°/s, 0.5 s pause, 2–15/min; pontine pupils pinpoint; massive pontine bleed fatal in 24–48 h | Form, pupils, 24–48 h ✓; kinematics are **single-case**; rate ? | Randomise amplitude 5–20°, peak velocity 80–200°/s; penetrating pontine tracks cause immediate apnoea/collapse, not a 24–48 h course |
+| 10 | Wallenberg frequencies (96/88/88/88/71/65/62/41%) | ? not re-verified | Hoarseness/dysphagia flagged as least certain; game ranges 0.4–0.6 / 0.5–0.65 given |
+| 11 | Ropper: 0–3 mm alert, 3–4 drowsy, 6–8.5 stupor, 8–13 coma | ✓ verified | Confidence raised (M → H) |
+| 12 | Cushing below CPP ~15 mmHg; tachycardia + HTN then bradycardia; Lundberg A 50–100 mmHg, 5–20 min | Sequence and Lundberg ✓; CPP threshold ? | Added: full triad appears only in a minority and late |
+| 13 | EDH lucid interval 20–50% (classic < 20%), minutes–hours; progressive 2 h–7 d (mean 23 h); ~75% temporal; mortality 0–5% vs 11–41% | Main points ✓; mean 23 h and mortality ranges ? | Venous EDH (~10–15%, slower) and "never unconscious" minority added |
+| 14 | Pupils 16/38/59%; GCS 3 = 51%; GCS-P 1 = 74%; survival 46% vs 13% | Gradient ✓; percentages ? ; **internal inconsistency corrected** | "79% at the bottom" and survival 0.21 contradicted 74% → harmonised to 74% (survival 0.26); confidence H → M; note that the survival figures are for operated patients |
+| 15 | Hutchinson sequence; Kernohan notch → ipsilateral hemiparesis | ✓ verified | First dilated pupil on the mass side in ~85–90%; stage 1 brief and easily missed |
+| 16 | PTS immediate 1–4%, early 4–25%, late 9–42% (~50% penetrating); GTC mean 62 s; figure-of-4 PPV ~90%; Todd 173 s (11 s–22 min) | ✓ verified (immediate 1–4% ? only) | Noted that 4–25% / 9–42% are moderate–severe TBI figures (BTF), and the ~50% penetrating figure matches the Vietnam Head Injury Study |
+| 17 | Syncope LOC 12.1 ± 4.4 s, eyes open and up, myoclonus 90% | ✓ verified | Caveat: healthy volunteers; haemorrhagic syncope lasts longer and may not end |
+| 18 | Fencing response 66% of 35 KO videos, regardless of side, seconds | 66% ✓; side ? not re-verified | Side choice rule (arm extends on the face side, else random) `[K] (L)`; duration marked `[E]` |
+| 19 | Decorticate above red nucleus / decerebrate midbrain–upper pons; limb positions | ✓ verified | Human lesion-level correlation is loose; lesions below the vestibular nuclei → flaccid; checklist palm direction **corrected** |
+| 20 | GSW head predictors; 100% mortality for diencephalic, transventricular, posterior-fossa tracks | Predictors ✓ (M); "100%" ? | Use p(death) 0.9–1.0 rather than a hard 1.0 |
+
+### 24.3 Corrections (value changes)
+
+1. §13.1 trochlear row — corrected: was "head tilted away from the lesion side" for every CN IV lesion; now nerve lesion (ipsilateral eye) vs nucleus/fascicle lesion (contralateral eye, head tilts toward the lesion side).
+2. §14.1 CN IV row — corrected: was "Ipsi eye" for all lesion sites.
+3. §19.2 GCS-P text — corrected: was "mortality falls from 79% at the bottom to 14% at the top" (contradicted the 74% in the same table).
+4. §19.3 `survival_from_gcsp` — corrected: was 0.21 at GCS-P 1 and 0.86 at 15; now 0.26 and ~0.85–0.95 `[E]`.
+5. §18.5 checklist, decerebrate — corrected: was "backs of the hands turn out"; internal rotation plus pronation turns the **palms** outward and backward.
+6. Confidence changes: `hand_knob_lateral` H → M; `mortality_by_pupils` H → M; GCS 3 row H → M; `loc_from_mls` M → H.
+7. §12.1 / §12.3 cerebellar deterioration timing re-scoped (infarct/contusion oedema days vs haematoma hours).
+8. §20.2 rule 11 refined: coup vs contrecoup depends on head motion (moving head → contrecoup; still head struck → coup).
+
+### 24.4 Myth check
+
+| Myth | Status in this document | Fact `[K]` / computed `[E]` |
+|---|---|---|
+| Bullets knock people backward | Not claimed here ✓ | A 9 mm bullet (8 g at ~360 m/s) carries ~2.9 kg·m/s: fully absorbed by a 75 kg body that is ~0.04 m/s; fully stopped in a ~5 kg head, at most ~0.6 m/s, much less when it exits `[E]`. The shooter's hand takes the same momentum as recoil. Head-shot "snap" movements and falls come from loss of tone, reflexes and the character's own posture, not bullet push. |
+| Eyes roll back at the moment of death | Guard added (§14.6 "Death" row) | A brief upward deviation (2–10 s) can occur at loss of consciousness from hypoperfusion [R1-04 §11]; the eyes then settle near straight ahead or slightly divergent and stay there after death. |
+| "Hydrostatic shock" knocks people out from torso hits | Guard added (§20.2 rule 2) | Remote brain effects are described in animal experiments but are not an established cause of instant human incapacitation; do not apply brain stun to non-head hits. |
+| Everyone screams when shot | Guard added (§5.2) | Capacity to vocalise survives aphasia, but many victims are silent, gasp, grunt or speak briefly; unconscious characters are silent apart from airway noises. |
+| Any head shot drops the target instantly | Already handled ✓ (§4.1, [R1-01 §6]) | Immediate collapse needs brainstem/diencephalic destruction, massive hemispheric destruction or high-energy cavitation; low-energy unilateral frontal tracks can leave a person conscious and mobile. |
+| Movement after brain death means the person is alive | Already handled ✓ (§17.4) | Spinal reflexes; the fact-check widened their frequency to p 0.2–0.5. |
+
+### 24.5 Gaps
+
+Written into the sections by this pass: crossing exceptions (§0.4, §20.2); flaccid ≠ frictionless (§0.4, §2.5); FEF location (§3.3); forced vs non-forced version (§14.1, §17.5); Hutchinson false-side pupil ~10–15% (§14.4); venous EDH (§15.2); spontaneous vs penetrating pontine lesions (§13.2); coup vs contrecoup (§20.2); the three myth guards (§5.2, §14.6, §20.2).
+
+Recommended for a later pass (not written into the sections, because the numbers could not be checked):
+- **Post-hypoxic myoclonus**: after strangulation, drowning or cardiac arrest with return of circulation, generalised or multifocal myoclonic jerks within the first 24 h (myoclonic status, a poor-prognosis sign); chronic action myoclonus (Lance-Adams) appears weeks later in survivors `[K] (M)`. Cross-reference `04_agonal_involuntary_movement.md`.
+- **Visible signs of skull-base fracture** that accompany many of the deficits here (periorbital and mastoid bruising, which appear hours to days later; blood or CSF from the nose or ear): cross-reference `05_severe_trauma_morphology.md`.
+- **Player-testable upper-motor-neuron signs** in the acute phase (Babinski sign, absent abdominal reflexes, early hyperreflexia) for a character that is examined up close `[K] (H)`.
+- Primary-source opening for the §21 item 11 list before any of those numbers become hard constants.
+
+### 24.6 Simulation parameters changed or added by the fact-check
+
+| Parameter | Value / range | Unit | Notes | Tag |
+|---|---|---|---|---|
+| `flaccid_passive_damping` | 0.6–0.9 × relaxed healthy-limb damping; 0 active drive | — | New | [E] |
+| `cn4_side` | nerve: ipsi eye; nucleus/fascicle: contra eye | — | New | `[K]` (H) |
+| `version_direction` | forced: away from focus; early non-forced: either side, p 0.5 | — | Changed | [S65] `[K]` (H) |
+| `hutchinson_false_side_prob` | 0.10–0.15 | p | New; first dilated pupil opposite the mass | `[K]` (M) |
+| `survival_from_gcsp` | 0.26 at GCS-P 1 → ~0.85–0.95 at top | p | Corrected (was 0.21 → 0.86) | [S92] (M), [E] |
+| `mortality_by_pupils` | 0.16 / 0.38 / 0.59 (untreated severe: ~0.3 / 0.6 / 0.9) | p | Confidence H → M | [S92] (M), [E] |
+| `bobbing_down_amp` / `peak_vel` | 5–20 / 80–200 (single-case example 17.5 / 129) | ° / °/s | Randomise | [S54] (L), [E] |
+| `ic_incomplete_variant_prob` | 0.3 | p | Face + arm or arm + leg only | [E] on [S31] |
+| `penetrating_deep_track_death` | 0.9–1.0 | p | Diencephalic, transventricular, posterior-fossa tracks | [S95] (M), [E] |
+| `spinal_reflex_after_brain_death` | 0.2–0.5 | p | Widened from 0.13–0.22 | [S113] `[K]` (M) |
+| `coup_contrecoup_weight` | moving head: contrecoup ≥ coup; still head struck: coup ≫ contrecoup | — | New | `[K]` (H), [E] |
+| `brain_stun_nonhead_hits` | 0 | — | Myth guard against "hydrostatic shock" | `[K]` (M) |
+
+### 24.7 Visual/behavioural checklist (fact-check additions)
+
+- A limp arm is heavy and swings, but still has the slight stiffness of a relaxed limb; it does not flop like rope.
+- A seizure may start with a small head turn to either side; the violent, forced wrench of head and eyes is away from the wound, just before the whole body stiffens.
+- After a fall onto the back of the head, the worst damage (and the late deterioration) comes from the front of the brain; after a hammer blow to a still head, the damage is under the blow.
+- Shot characters are not thrown backward; they drop because their legs or consciousness fail.
+- At death the eyes do not stay rolled up to the whites; they settle roughly forward, slightly apart, lids part-open.
+- Many wounded characters stay quiet or only grunt; screaming is one possible reaction, not the default.

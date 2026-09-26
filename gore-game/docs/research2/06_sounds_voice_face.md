@@ -1074,7 +1074,7 @@ Steps map to arterial deoxy-Hb = `Hb × (1 − SaO₂)`: **trace 1.5–2.5, mild
 | Change | Onset | Full | Recovery | Tag |
 |---|---|---|---|---|
 | **Colour lag behind arterial saturation** | Lips and tongue **~5–15 s** (lung-to-tongue circulation); fingers and nail beds **~15–30 s**, longer in cold and shock | — | Same lags | [K; M27] (M) |
-| Apnoea or complete obstruction at rest, room air, normal lungs | SpO₂ holds > 90 % for **~60–120 s**, then falls steeply | Lips visibly blue at ~90–150 s (Hb 15) | Pink within ~10–30 s of airflow + lag | [K; M28] (M), `[R2-04 §8.2]` |
+| Apnoea or complete obstruction at rest, room air, normal lungs | SpO₂ holds > 90 % for **~60–120 s**, then falls steeply | Lips visibly blue at ~70–150 s (Hb 15); keep the `[R2-04 §8.2]` default of 60–120 s | Pink within ~10–30 s of airflow + lag | [K; M28] (M), `[R2-04 §8.2]` |
 | Same while struggling, seizing (oxygen use ×2) | ~30–60 s | Blue at ~40–80 s | as above | [K] (M), [E] |
 | Fear or pain pallor | 2–10 s | 20–60 s | 1–5 min | [E] on [K] |
 | Vasovagal pallor | 10–30 s before the faint | — | Minutes | `[R2-04 §8.1]` |
@@ -1101,7 +1101,7 @@ Animate the blanched spot refilling from its edges inward, first-order with τ =
 
 | Parameter | Value / range | Unit | Notes | Tag |
 |---|---|---|---|---|
-| `cyan_steps` | trace 1.5–2.5; mild 2.5–3.5; moderate 3.5–5; severe > 5 | g/dL deoxy-Hb | Arterial | [K; M21 of R2-04] (M), [E] |
+| `cyan_steps` | trace 1.5–2.5; mild 2.5–3.5; moderate 3.5–5; severe > 5 | g/dL deoxy-Hb | Arterial | `[R2-04 §8.2]` (M), [E] |
 | `ramps` | table §10.2 | sRGB | Tune under lighting | [E] |
 | `central_vs_peripheral` | central: tongue blue; peripheral: tongue pink | rule | | [K] (H) |
 | `colour_lag_face` / `extremity` | 8 (5–15) / 20 (15–30) | s | ×2 in shock | [K; M27] (M), [E] |
@@ -1112,7 +1112,7 @@ Animate the blanched spot refilling from its edges inward, first-order with τ =
 
 ### Visual/behavioural checklist (colour)
 - Blue lips and a blue tongue: the victim is not getting oxygen. Blue fingers with a pink tongue: cold or shut-down circulation.
-- An airway blocked at rest turns the lips blue in about one and a half to two and a half minutes; a struggling victim in under a minute and a half.
+- An airway blocked at rest turns the lips blue in about one to two minutes; a struggling victim's in under a minute and a half.
 - A bled-out victim goes white and grey-lilac, never blue.
 - Strangled, seizing or crushed: a dusky purple, congested face with pinpoint haemorrhages.
 - Pressing a nail bed: pink returns in under 2 s in the healthy, slowly in shock, never in the dead.
@@ -1233,7 +1233,7 @@ Lesion-specific pupil and gaze signs are in `[R2-01 §14]`; eyes when dying and 
 |---|---|---|
 | **Brainstem destroyed** | Tone lost within ~100 ms `[R2-02 §0.4]`: expression vanishes instantly; lids stay where they were (often open); the jaw drops as soon as the head moves or tilts back | `[R2-02]` `[R1-04 §2]` |
 | **Circulatory arrest** (heart destroyed, exsanguination to PEA) | Expression lasts until LOC at 8–15 s; an **anoxic grimace or tonic spasm** may follow (10–40 s); flaccid by ~1–1.5 min; gasps open the jaw wide `[R2-04 §2.2, §3]` | `[R2-04]` |
-| **Slow death** (hours) | Progressive: heavy lids → cannot close the lids fully → **drooping nasolabial folds** → mandibular breathing → slack | `[R2-04 §2.3]` [K; M14 of R2-04] |
+| **Slow death** (hours) | Progressive: heavy lids → cannot close the lids fully → **drooping nasolabial folds** → mandibular breathing → slack | `[R2-04 §2.3]` (palliative signs, R2-04 M14) |
 | Jaw tone after LOC | Supine jaw opens within 0.5–5 s `[R2-04 §7.3]` | `[R2-04]` |
 
 ### 13.2 What a face without tone does (gravity only) `[E]` on `[K]`
@@ -1253,7 +1253,7 @@ Lesion-specific pupil and gaze signs are in `[R2-01 §14]`; eyes when dying and 
 ### 13.3 No frozen expression
 
 - **The pain or fear face does not persist after death.** It releases at loss of consciousness. The final facial "expression" is produced by gravity and posture `[K] (H)`.
-- **Cadaveric spasm** (instant rigor fixing the last posture) is rare and almost always involves the **hands**, not the face `[K; M19 of R2-04] (M)`. Do not fix a scream on the corpse.
+- **Cadaveric spasm** (instant rigor fixing the last posture) is rare and almost always involves the **hands**, not the face `[K] (M)` (forensic texts, R2-04 M19). Do not fix a scream on the corpse.
 - Rigor later fixes whatever gravity produced (jaw and lids first, from ~1–3 h) `[R1-04 §12]`.
 
 ### 13.4 The Hippocratic face (dying over hours to days)
@@ -1293,4 +1293,285 @@ Details and times are in `[R1-04 §11–§12]`. For FaceGen, flag these per hour
 - Over the next hours: paler, duller eyes, drying lips, a jaw that becomes fixed where it fell.
 - Only those who die slowly get the hollow-eyed, sharp-nosed, lead-coloured face.
 
-<!-- CONTINUE-3 -->
+---
+
+## 14. Implementation in Godot 4.5
+
+Engine facts here are `[K] (M)` from the author's knowledge of Godot 4.x; they were not re-verified in this session. Check them against the 4.5 class reference before building.
+
+### 14.1 Audio architecture
+
+- **Per character** `[E]`:
+  - `MouthEmitter`: an `AudioStreamPlayer3D` on a `BoneAttachment3D` at the mouth, playing an `AudioStreamGenerator` for `BreathSynth` + `VoiceSynth` (or an `AudioStreamPolyphonic` if voice is sample-based);
+  - `AirwayWoundEmitter`: at a sucking chest wound or open neck airway, only while one exists;
+  - fluid emitters: at the **landing point** of jets and drips, not at the wound (§3.1); capped at 4–6 per character, as the VFX caps in `[R1-06 §8]`.
+- **Global pool**: 24–32 `AudioStreamPlayer3D` for impacts and falls, each with an `AudioStreamRandomizer` over baked variants.
+- **Buses**: `Impacts`, `Fluids`, `Breath`, `Voice`, `World` → `Master` with a limiter. Room reverb through `Area3D` reverb-bus settings.
+- **Realism dynamic range** `[E]`: map the SPL range [40, 110] dB to [−60, 0] dB by default (`realism_range_db` 60); a wider setting for headphone users.
+- **Air absorption**: the `AudioStreamPlayer3D` distance filter defaults to a strong high cut (cutoff 5 kHz, −24 dB) `[K] (M)`. Real air absorption is small below ~30 m (§1.3); set the cutoff to 10–12 kHz and the attenuation to about −6 dB `[E]`.
+- **Occlusion**: a ray from listener to source; if blocked, `LP 1–2 kHz` and −6 to −15 dB `[E]`.
+
+### 14.2 How to make the sounds procedurally without killing the frame rate
+
+- **Bake one-shots at load** `[E]`: render each impact, fall, drip and crunch recipe into 8–16 variants per material state and body region as `AudioStreamWAV` (16-bit, 48 kHz, mono), and play them through `AudioStreamRandomizer` (pitch ±3–8 %, level ±1–3 dB). Memory: 16 variants × 0.3 s × 48,000 × 2 bytes ≈ **460 KB per recipe** (arithmetic).
+- **Real-time generators only for continuous, physiology-coupled sound**: breath (with snore, stridor, gurgle, rattle layers), moans, whimpers, grunts, spurting patter and streams. Use one `AudioStreamGenerator` per active character mouth; `mix_rate` 24 kHz while only breathing, 48 kHz while vocalising; `buffer_length` ~0.1 s; each frame, push as many frames as the playback reports available `[K] (M)`.
+- **Cost** `[E]` (M): per-sample DSP in GDScript is slow. A five-formant voice needs roughly 50–100 operations per sample, i.e. millions per second per voice. Budget **1–2 real-time voices in GDScript**. For more, move the DSP into a GDExtension, or mix **pre-rendered grains** (bubbles, crackles, clicks, glottal-pulse periods) instead of computing every sample.
+- **Audio LOD** `[E]`: beyond ~15 m, drop quiet breathing (keep gasps, stridor, screams); beyond ~30 m, keep only screams, shots, falls and clatter; dead characters have no generator (passive huffs are baked one-shots).
+
+### 14.3 Physiology → audio and face inputs
+
+| Physiology variable (R1-04 §13 state) | Drives | Mapping |
+|---|---|---|
+| `pain` (0–10), `arousal` | Vocal type, F0, NLP, roughness, level (§6.3); pain face (§8) | Formulas §6.3; PSPI ≈ 1.6 × pain |
+| `gcs_v`, `consciousness` | Vocal generator state (§6.5, §7.1); voluntary AUs gate | V5…V1; LOC → only passive sounds |
+| `rr`, `tidal_volume`, `route` | `FLOW(t)` and breath noise (§5.3) | Level ∝ flow |
+| `airway_fluid_mL` | Gurgle, wet voice, rattle | λ formula §5.3; audible ≥ 5–10 mL |
+| `airway_narrowing` (0–1) | Stridor frequency and level; aphonia | §5.3 step 4 |
+| `open_chest_wound_mm`, `sealed` | Sucking-wound recipe | §5.4 |
+| `neck_airway_open`, `level_vs_cords` | Neck hiss and bubbling; aphonia or wet voice | §5.5, §7.2 |
+| `blood_loss_frac`, `map` | Voice budget; spurt patter rate, level and centroid; pallor | §6.5, §3.2, §10 |
+| `spo2`, `hb` | Cyanosis ramp; voice budget | §10.2, §6.5 |
+| `perf_face`, `perf_periph`, `skin_temp` | Pallor, acrocyanosis, capillary refill, sweat | §10–§11 |
+| `jaw_state`, `lip_state`, `tongue_state`, `teeth_state`, `nose_state`, `larynx_state`, `rln_L/R` | Speech processing chains; AU caps | §7.2–§7.3 |
+| `facial_nerve_L/R` (type, HB grade, branches) | Palsy gains | §9 |
+| `tone` (0–1) | AU scaling, gravity sag, jaw drop | §13 |
+| `core_temp`, `shivering` | Voice tremor, chattering | `[R2-04 §6]` |
+| `scream_seconds_10min` | Hoarseness | §6.5 |
+| `t_arr`, `t_dead` | Stop sweat, micro-motion, colour lags; post-mortem flags | §11, §13 |
+
+### 14.4 Face rig and skin shader
+
+- **Blendshapes**: the 52-shape set plus custom shapes for AU11, AU21, AU31, AU38, split `cheekPuff_L/R` and `browInnerUp_L/R`, and gravity correctives (`sag_supine`, `sag_upright`, `sag_prone`): about 60–64 shapes `[E]`.
+- **Per-frame pipeline** `[E]`:
+  1. collect AU targets from every active source (pain, fear, effort, breath, voice, reflexes such as the startle blink);
+  2. combine by maximum per AU; add asymmetry and micro-motion (§8.4);
+  3. multiply each AU by the palsy gain of its side and branch (§9);
+  4. multiply by `tone` (and by the consciousness gate for voluntary AUs);
+  5. add gravity correctives with weight `(1 − tone)` by body orientation (§13.2);
+  6. write lids and gaze through the eye rig (`[R2-01 §14]`, `[R2-04 §7]`);
+  7. write weights to the `MeshInstance3D` at 30–60 Hz.
+- **Skin shader instance uniforms** (budget ≤ 16 per shader `[R1-06]`) `[E]`: `hb_rel`, `sat_art`, `perf_face`, `perf_periph`, `congestion`, `flush`, `pallor_green`, `wet`, `mottling` (`[R2-04 §8.3]`), `livor` (`[R1-04 §12]`): 10 uniforms. A static **region mask texture** (lips, oral mucosa, nail beds, conjunctiva, ear lobes/nose tip, cheeks) selects which ramp of §10.2 applies. Melanin is a per-character material constant. Capillary-refill blanching is painted into the damage/texture-space layer `[R1-06 §6]` and fades back with the §10.5 time constant.
+- **Update rates**: AUs 30–60 Hz; pupils 30 Hz; colour drivers 5 Hz with the §10.4 lags; sweat and tears as particles or texture-space painting when their volume changes.
+
+### 14.5 Pseudocode (written for this document; not taken from any source)
+
+```
+# VoiceSynth, one audio block (N samples)
+func render_voice_block(N, st):            # st = current utterance state
+    budget = voice_budget(physiology)      # §6.5: max_db, max_dur, hnr_cap, f0_range_scale
+    if st.elapsed >= min(st.duration, budget.max_dur): end_utterance(st); request_gasp_if_loud(st)
+    for i in N:
+        f0 = st.contour.sample(st.t) * st.f0_scale * nlp_jump(st)      # §6.3
+        pulse = glottal_pulse(st.phase, st.oq)                          # Rosenberg/LF shape
+        pulse *= 1.0 + shimmer_noise() - subharmonic_dip(st)            # NLP
+        pulse *= 1.0 + st.rough_depth * sin(TAU * st.rough_rate * st.t) # roughness AM 30–150 Hz
+        src = pulse + aspiration_noise(st.phase) * breath_gain(st.hnr)  # breathiness
+        y = formant_cascade(src, jaw_to_f1(st.jaw_mm), st.f2, st.vtl)   # §6.1
+        y = radiate(y) * db_to_lin(min(st.level_db, budget.max_db) - 100)
+        out[i] = apply_damage_chain(y, st.damage_flags)                 # §7.3
+        advance(st, f0)
+```
+
+```
+# FaceGen, one frame
+targets = {}                                   # AU -> weight
+for src in active_sources: for au in src.aus: targets[au] = max(targets.get(au, 0), src.weight(au))
+for au in targets:
+    side_gain = palsy_gain(au, side)           # §9
+    targets[au] *= side_gain * tone * (consciousness_gate(au))
+apply_gravity_sag(1.0 - tone, body_orientation)   # §13.2
+write_blendshapes(targets)
+```
+
+### Simulation parameters (implementation)
+
+| Parameter | Value / range | Unit | Notes | Tag |
+|---|---|---|---|---|
+| `impact_pool` | 24–32 | players | Global | [E] |
+| `fluid_emitters_per_char` | 4–6 | — | At landing points | [E] on `[R1-06 §8]` |
+| `baked_variants` | 8–16 | per recipe × state | ≈ 460 KB per recipe at 16 | [E] |
+| `generator_mix_rate` | 24,000 breathing; 48,000 vocalising | Hz | | [E] |
+| `generator_buffer` | ~0.1 | s | | [E] |
+| `realtime_voices_gdscript` | 1–2 | — | More needs GDExtension or grain mixing | [E] (M) |
+| `realism_range_db` | 60 (40–80) | dB | SPL 40–110 → −60–0 dB | [E] |
+| `attenuation_filter` | cutoff 10–12 kHz, −6 dB | — | Instead of the strong default | [E] |
+| `audio_lod` | 15 m: no quiet breathing; 30 m: loud events only | m | | [E] |
+| `face_update` / `colour_update` | 30–60 / 5 | Hz | | [E] |
+| `skin_instance_uniforms` | 10 of 16 | — | Region mask selects ramps | [E] on `[R1-06]` |
+
+### Visual/behavioural checklist (implementation)
+- Blood sounds come from where the blood lands.
+- Breathing and voice come from the mouth bone and move with the head; a sucking wound sounds at the wound.
+- Distant characters stay audible only for loud events; nothing breathes after death except when moved.
+
+---
+
+## 15. Master state table: what the player hears and sees
+
+| State | Breathing sound | Voice | Face (key AUs) | Eyes and lids | Skin | Other sounds |
+|---|---|---|---|---|---|---|
+| Alert, unhurt, threatened | Audible mouth breathing 35–50 dBA | Pleading, shouting, raised F0 | Fear set (1+2+4+5+7+20+26) | Wide, white above the iris; scanning 2–4 saccades/s; pupils +0.5–1.5 mm | Pallor within seconds; palms sweat | Footsteps, clothing |
+| **First 0.3 s after a hit** | Breath catches | Startle yelp or impact grunt 60–150 ms after | Startle blink at ~30 ms, then 4+7+20+21 | Blink, then wide | — | Impact sound (§2) |
+| **Acute severe pain (0–10 s)** | Hold, then hiss or catching breaths | Yell or scream per §6.3; one per breath with gasps | Pain set, eyes shut (PSPI 13–16) | Squeezed shut; pupil +0.3–1 mm | Pallor starts | Clutching, clothing |
+| Terror | Panting | Terror screams | Terror set, eyes wide | Wide, fixed on the threat | Pale, sweating | — |
+| Sustained pain (minutes) | Irregular, sighs | Moans, whimpers, crying, pleading | Pain bursts every 3–15 s | Wet, reddening, tears | Pale, sweaty | Sobs, sniffs |
+| Shock class II | 20–30/min, audible | Anxious speech, "I'm cold", "water" | Fear/pain, reduced | Normal to wide | Pale, cool, sweat beads | Teeth chattering if shivering |
+| **Shock class III** | 30–40/min, shallow, dry mouth clicks, sighs | Short breathy phrases, slurred, repetitive; ≤ 85–90 dB | Shock face; grimace only when moved | 5–8 mm, sunken, slow blinks | Grey, clammy; lips `#C9A09E` `[R1-04]`; CRT 3–4 s | Restless movements |
+| **Shock class IV, pre-LOC** | Faint, irregular | Moans, single words, then silence | Slack | Half-closed, vacant | Waxy; lips grey-lilac | — |
+| Stupor (GCS 9–12, V2–3) | Snoring if supine | Moans to pain | Grimace to pain only | Drooping, roving | Per physiology | — |
+| Coma, brainstem intact | Snoring or gurgling | Passive groans | Slack; palsy cheek puff if hemiplegic | Slit open 1–5 mm; roving; doll's eyes | Per physiology | — |
+| Seizure (tonic → clonic → post-ictal) | Apnoea → grunting jerks → loud snoring | Epileptic cry at onset | Clenched → rhythmic grimaces → slack | Open, deviated → half-closed | Blue-purple congested at 10–30 s → pale | Tongue-bite, froth bubbling |
+| **Blood in the airway, conscious** | Gurgling, wet coughs | Wet, gargled; spits every 5–30 s | Effort, air hunger | Wide, frightened | Pale; blue if flooding | Coughing spray, spitting |
+| Blood in the airway, unconscious supine | Loud gurgling, bubbles at lips and nostrils | — | Slack | — | Turning blue | — |
+| **Sucking chest wound** | 30–40/min; hiss or whistle (small hole) or slurp and bubble (large hole) at the wound | 1–4 words per breath; grunting | Air hunger | Wide | Grey, then blue | Froth at the wound |
+| **Throat cut through the windpipe** | Rushing and bubbling at the neck | Aphonic below the cords; wet bubbly voice above | Air hunger, terror | Wide | Pale; blue as blood is aspirated | Spray from the neck with coughs |
+| Larynx crushed | Stridor rising, then silence if closed | Hoarse → whisper → none | Air hunger; hands to throat | Wide | Blue | — |
+| **Agonal (after `t_arr`)** | Snorting gasps every 10–60 s for 1–5 min | Occasional passive groan | Jaw gapes with each gasp; otherwise slack | Half-open, fixed; pupils widening | Livid (full blood) or white (bled out) | Drip patter at the landing points |
+| Dead 0–30 min | Silence | None (passive huff when moved) | Death mask (§13) | Lids where they were; glisten fading | Pallor mortis | Drips slowing, then stopping |
+| Dead, hours | Silence | — | Rigor-fixed jaw | Dry band; sunken | Livor below; lips browning | — |
+
+---
+
+## 16. Common realism mistakes (with the fix)
+
+| Mistake | Why it is wrong | Fix |
+|---|---|---|
+| Film-style "crack-smack" on every punch | Real blows are dull thuds; cracks need bone, teeth or a fracture (§2.1) | Physical recipes; `impact_stylisation` for players who want the convention |
+| Hearing the bullet hit at the same instant as the shot | Impact sound travels back; from ~20 m it is a separate, delayed "whop" (§2.2) | Delay = d/v + d/343 |
+| **Blood jets that hiss at the wound** | Jet speed ≤ 5.5 m/s is silent; the sound is at the landing point (§3.1) | Emit spurt patter where the jet lands |
+| **Drips that "plink" on the floor** | Floor pools are 2.5 mm deep; no ringing bubble (§3.1) | "Pat" on pools; "plink" only in deep liquid |
+| An audible heartbeat from the victim | A heartbeat cannot be heard at a distance | Use visible jets and pulse, never a heartbeat sound |
+| Loud screaming while bled out | Class III–IV cannot generate the pressure (§6.5) | Voice budget by blood loss and SpO₂ |
+| Screams that sound like singing or speech | Real screams are rough (30–150 Hz AM) and full of nonlinear phenomena `[S2]` `[S3]` | Roughness and NLP injection (§6.6) |
+| Every character screams at the same pitch | Pitch is individual and preserved into screams `[S3]` | Derive vocal F0 from each character's speaking F0 |
+| A clearly speaking victim with a shattered jaw or tracheal wound | Articulators or airflow are gone (§7.2) | Processing chains and aphonia rules |
+| A left-hemisphere wound silences screaming | Pain vocalisation survives aphasia `[R2-01 §5.2]` | Remove words only |
+| Pain face with eyes wide open | Pain closes the eyes; fear opens them (§8.3) | AU43/6/7 in pain; AU5 in fear |
+| Identical grimaces on every NPC | Pain faces differ between people `[K; M10]` | Per-character pain-face type and gain |
+| Waxy, motionless living face | Living faces swallow, blink, twitch and flare nostrils | Micro-motion layer (§8.4) |
+| Dead face that keeps its last expression | Tone is lost; gravity shapes the face (§13.3) | Tone → 0, sag correctives |
+| Dead eyes neatly closed | Lids stay where they were `[R1-04 §11]` | Distribution in `[R1-04 §11.3]` |
+| Facial palsy that spares the forehead after a temporal bone fracture, or paralyses it after a cortical wound | Central spares the forehead; peripheral does not (§9.1) | Per-type AU gains |
+| Blue lips on a bled-out body | Too little haemoglobin for cyanosis `[R2-04 §8.2]` | Grey-lilac lips, waxy skin |
+| Instant colour changes | Colour lags saturation by 5–30 s; pallor builds over tens of seconds (§10.4) | First-order lags |
+| Death rattle in a fast death | Needs hours of unconsciousness `[R2-04 §2.4]` | Gate on time unconscious |
+| Silent sucking chest wound, or one that hisses with no breathing | The sound follows the victim's breaths (§5.4) | Drive from `FLOW(t)` |
+| Body falls with no head knock and no breath forced out | Head impacts are the sharpest part of a fall; the chest expels air (§4) | `SKULL_KNOCK` + chest huff |
+| Clean, silent tears only in "sad" scenes | Reflex tearing follows nose, eye and severe pain triggers within seconds (§12.4) | Tear generator driven by triggers |
+
+---
+
+## 17. Load-bearing claims (quick reference)
+
+1. **Contact duration sets the sound**: spectrum flat to ~1/τc, first zero at 1.5/τc. Fist-to-face ~12 ms (from 26.5 kg·m/s and ~3.4 kN `[S14]`), head-to-concrete 2–8 ms, trunk-to-floor 20–80 ms, steel-on-bone 0.2–1 ms `[K] (H)` physics, `[E]` values.
+2. **Soft tissue does not ring; bone rings for 3–20 ms**; the living skull's first resonances lie around ~1 kHz with damping of a few per cent to ~10 % `[K; M1] (M)`.
+3. **Speech levels at 1 m**: normal 62, raised 68, loud 75, shouted 82 dB SPL `[K; M2] (H)`; maximal screams ~90–105 dB `[K] (L–M)`.
+4. **Impact sound at the shooter arrives d/v_bullet + d/343 s after the shot** (≈115 ms at 20 m with a handgun) `[K] (H)`.
+5. **Blood jets are silent at the wound** (exit ≤ 5.5 m/s); the sound is spray landing `[K] (H)` with `[R1-06 §8.1]`.
+6. **Bubble ("plink") frequency in blood ≈ 3.2 / radius(m)** Hz; floor pools (2.5 mm) are too shallow to plink `[K; M3] (H)`, `[R1-03 §10]`.
+7. **Breath-sound power rises ~flow^1.75–2**; tracheal sound 100–1,500 Hz `[K; M4] (M)`.
+8. **CORSA**: crackles < 20 ms (fine 2CD < 10 ms, coarse > 10 ms); wheezes ≥ 100 ms and > 100 Hz; stridor is loud, high-pitched and inspiratory with upper-airway narrowing `[K; M5] (H)`.
+9. **Small chest holes hiss or whistle (20–50 m/s), large ones slurp and bubble (5–10 m/s)** `[K] (H)` physics, `[E]` values, threshold from `[R1-04 §9]`.
+10. **Tracheal wound below the cords → aphonia** `[K] (H)`; aspiration killed 36.5 % of cut-throat victims in a 74-case series `[S8]`.
+11. **Screams: roughness AM 30–150 Hz** `[S2]`; pain vocal F0, loudness and nonlinear phenomena rise with pain `[S3]`; individual pitch is preserved into screams `[S3]`.
+12. **SPL rises 8–9 dB per doubling of subglottal pressure**; screaming needs ~30–60 cmH₂O `[K; M7] (M)`, so the voice fades with shock.
+13. **Pain face**: AU4 + AU6/7 + AU9/10 + AU43 (PSPI 0–16) `[S1]`; eyes shut in pain vs wide (AU5) in fear `[K] (M)`.
+14. **Fear prototype**: AU1+2+4+5+7+20+26 `[K; M11] (H)`.
+15. **Central facial palsy spares the forehead and eye closure and may spare emotional smiling; peripheral palsy takes the whole half-face with incomplete eye closure and Bell's phenomenon** `[S4]` `[S5]` `[K] (H)`.
+16. **Cyanosis is central when the tongue is blue and peripheral when only the extremities are**; lips lag arterial saturation by ~5–15 s and fingers by ~15–30 s `[K; M27] (M)`.
+17. **Capillary refill ≤ 2 s is normal**; > 3 s means poor perfusion `[K] (H)`.
+18. **Apnoea at rest on room air: SpO₂ holds > 90 % for ~1–2 min, then falls steeply**; struggling halves this `[K; M28] (M)`.
+19. **Broca speech ≈ 10–50 words/min with 1–5 s pauses vs 150–190 normal; Wernicke's jargon is fluent with normal prosody; ataxic speech is scanning with explosive loudness** `[S10]` `[S11]` `[S12]` `[K; M9] (H)`.
+20. **The face does not keep its last expression after death**; cadaveric spasm is rare and affects the hands `[K] (H–M)`.
+21. **Saccade duration ≈ 21 ms + 2.2 ms/°** `[K; M18] (H)`; blink rate 15–20/min at rest, slow (300–500 ms) blinks in shock `[K] (M)`.
+22. **Basal tears 1–2 µL/min; the conjunctival sac overflows beyond ~25–30 µL**; a blow to the nose makes the eyes water within seconds `[K; M19] (M–H)`, `[E]`.
+
+---
+
+## 18. QA priority list (open the source and confirm before hard-coding)
+
+1. **Measure the game's own foley at 1 m** (meat and bone slaps, ballistic gelatin strikes, 5 kg padded-ball drops on concrete, tile and wood) with a calibrated meter; replace the `[E]` (L) dB values of §2–§4.
+2. Skull resonance frequencies and damping in vivo `[M1]`; long-bone modes `[M33]`.
+3. Speech-level table `[M2]` `[M31]` and the scream level range.
+4. Minnaert and drip-sound mechanism `[M3]`; check that blood drips into a 2–3 mm pool never produce a ringing bubble (a short test with animal blood or a blood simulant of matching viscosity and surface tension).
+5. Breath-sound flow exponent and spectra `[M4]`; CORSA definitions `[M5]`; snoring and stridor frequency ranges.
+6. Scream acoustics `[S2]` `[M8]` `[M34]` and pain-vocalisation findings `[S3]` `[M15]`: roughness band, F0 ranges, NLP fractions. The §6.3 formulas are `[E]` fits to these trends.
+7. Subglottal pressure–SPL–F0 relations `[M7]`.
+8. Formant values `[M6]` and vocal-tract scaling.
+9. Dysarthria features `[M9]` `[S10]`; aphasia speech rates `[S11]` `[S12]`.
+10. Pain-face clusters and expressivity shares `[M10]`; FACS prototypes `[M11]`.
+11. Central palsy details `[S4]`; House–Brackmann wording `[M12]`; Bell's phenomenon prevalence `[S5]`; temporal-bone palsy rates `[M23]`.
+12. Cyanosis ramps (render tests against clinical photographs under D65); colour lag `[M27]`; apnoea desaturation times `[M28]`.
+13. Pupillary dilation to pain `[M14]`; tear volumes and rates `[M19]`.
+14. Sweat gland densities `[M30]`.
+15. Godot 4.5 class names and defaults used in §14 (generator, polyphonic, randomizer, 3D attenuation filter defaults, limiter effect, reverb areas).
+
+---
+
+## 19. References
+
+### 19.1 Sources located by web search in sibling sessions (`[S#]`)
+
+Found by web search in earlier sessions of this project and listed in the sibling documents named in brackets. They were read then through search summaries only and **were not re-read in this session**.
+
+- **[S1]** Prkachin KM; Prkachin & Solomon Pain Intensity (PSPI), as summarised in: Automatically detecting pain using facial actions. https://pmc.ncbi.nlm.nih.gov/articles/PMC3296481/ ; https://pmc.ncbi.nlm.nih.gov/articles/PMC6942457/ (R2-02 [S39])
+- **[S2]** Arnal LH, Flinker A, Kleinschmidt A, Giraud AL, Poeppel D. Human screams occupy a privileged niche in the communication soundscape. *Curr Biol* 2015. https://www.cell.com/fulltext/S0960-9822(15)00737-X (R2-02 [S40])
+- **[S3]** Vocal communication of simulated pain. *Bioacoustics* 2018. https://www.tandfonline.com/doi/abs/10.1080/09524622.2018.1463295 ; Vocal communication and perception of pain in childbirth vocalizations. 2025. https://pubmed.ncbi.nlm.nih.gov/40176506/ ; Individual differences in human voice pitch are preserved from speech to screams, roars and pain cries. *R Soc Open Sci* 2020. https://royalsocietypublishing.org/rsos/article/7/2/191642 (R2-02 [S41])
+- **[S4]** Analysis of upper facial weakness in central facial palsy following acute ischemic stroke. https://www.ncbi.nlm.nih.gov/pmc/articles/PMC11767383/ (R2-01 [S36])
+- **[S5]** Bell's phenomenon. https://en.wikipedia.org/wiki/Bell%27s_phenomenon ; American Academy of Ophthalmology, why eyes roll back during a knockout. https://www.aao.org/eye-health/ask-ophthalmologist-q/boxers-eyes-rolling-back-in-head-after-knockout (R2-02 [S54]; R2-01 [S69])
+- **[S6]** Davis GA et al. International consensus definitions of video signs of concussion in professional sports (includes the "blank or vacant look" sign). *Br J Sports Med* 2019. https://pubmed.ncbi.nlm.nih.gov/30954947/ (R2-02 [S36])
+- **[S7]** Measurement of head impact due to standing fall in adults using anthropomorphic test dummies (head impact 2.0–7.4 m/s). *Ann Biomed Eng* 2015. https://link.springer.com/article/10.1007/s10439-015-1255-1 (R2-02 [S51])
+- **[S8]** An autopsy study of 74 cases of cut throat injuries. https://www.sciencedirect.com/science/article/pii/S2090536X14000781 (R2-04 [S19]; R1-02 [R13])
+- **[S9]** Pupillometry in brain death: differences in pupillary diameter between paediatric and adult subjects. https://pubmed.ncbi.nlm.nih.gov/26184095/ (R2-04 [S18]; R2-01 [S73])
+- **[S10]** Scanning dysarthria (GPnotebook). https://gpnotebook.com/pages/neurology/scanning-dysarthria (R2-01 [S16])
+- **[S11]** Wernicke aphasia (StatPearls). https://www.ncbi.nlm.nih.gov/sites/books/NBK441951/ (R2-01 [S12])
+- **[S12]** Associations between lesion size, lesion location and aphasia in acute stroke. https://www.tandfonline.com/doi/full/10.1080/02687038.2020.1727838 ; The neuroanatomy of Broca's aphasia. https://www.frontiersin.org/journals/language-sciences/articles/10.3389/flang.2025.1496209/full (R2-01 [S13])
+- **[S14]** Walilko TJ, Viano DC, Bir CA. Biomechanics of the head for Olympic boxer punches to the face (effective mass, fist speed, force). *Br J Sports Med* 2005. https://pubmed.ncbi.nlm.nih.gov/16183766/ (R2-02 [S28])
+- **[S15]** Lempert T, von Brevern M. The eye movements of syncope. *Neurology* 1996. https://pubmed.ncbi.nlm.nih.gov/8780096/ (R2-02 [S27]; R2-04 [S2])
+- **[S16]** On the pathophysiology and treatment of akinetic mutism. https://www.sciencedirect.com/science/article/pii/S0149763419301447 (R2-01 [S9])
+
+(ID S13 is unused.)
+
+### 19.2 Literature and standards recalled from memory (`[K; M#]`; not opened in this session; verify)
+
+- **[M1]** Håkansson B, Brandt A, Carlsson P, Tjellström A. Resonance frequencies of the human skull in vivo. *J Acoust Soc Am* 1994;95(3):1474–1481.
+- **[M2]** ANSI S3.5-1997. Methods for calculation of the Speech Intelligibility Index (standard speech spectrum levels for normal, raised, loud and shouted speech).
+- **[M3]** Minnaert M. On musical air-bubbles and the sounds of running water. *Phil Mag* 1933;16:235–248; Phillips S, Agarwal A, Jordan P. The sound produced by a dripping tap is driven by resonant oscillations of an entrapped air bubble. *Sci Rep* 2018;8:9515.
+- **[M4]** Gavriely N, Cugell DW. *Breath Sounds Methodology*. CRC Press, 1995; Pasterkamp H, Kraman SS, Wodicka GR. Respiratory sounds: advances beyond the stethoscope. *Am J Respir Crit Care Med* 1997;156:974–987.
+- **[M5]** Sovijärvi ARA, Dalmasso F, Vanderschoot J, et al. Definition of terms for applications of respiratory sounds (CORSA). *Eur Respir Rev* 2000;10(77):597–610.
+- **[M6]** Peterson GE, Barney HL. Control methods used in a study of the vowels. *J Acoust Soc Am* 1952;24:175–184.
+- **[M7]** Titze IR, Sundberg J. Vocal intensity in speakers and singers. *J Acoust Soc Am* 1992;91:2936–2946; Titze IR. *Principles of Voice Production*. 1994.
+- **[M8]** Frühholz S, Dietziker J, Staib M, Trost W. Neurocognitive processing efficiency for discriminating human non-alarm rather than alarm scream calls. *PLoS Biol* 2021;19(4):e3000751.
+- **[M9]** Darley FL, Aronson AE, Brown JR. Differential diagnostic patterns of dysarthria. *J Speech Hear Res* 1969;12:246–269; Duffy JR. *Motor Speech Disorders*. Elsevier.
+- **[M10]** Prkachin KM. The consistency of facial expressions of pain: a comparison across modalities. *Pain* 1992;51:297–306; Kunz M, Lautenbacher S. The faces of pain: a cluster analysis of individual differences in facial activity patterns of pain. *Eur J Pain* 2014;18(6):813–823; Kunz M, Meixner D, Lautenbacher S. Facial muscle movements encoding pain — a systematic review. *Pain* 2019;160(3):535–549.
+- **[M11]** Ekman P, Friesen WV, Hager JC. *Facial Action Coding System* (2nd ed.). 2002; EMFACS emotion prototypes.
+- **[M12]** House JW, Brackmann DE. Facial nerve grading system. *Otolaryngol Head Neck Surg* 1985;93:146–147.
+- **[M13]** Jimenez J, Scully T, Barbosa N, et al. A practical appearance model for dynamic facial color. *ACM Trans Graph* (SIGGRAPH Asia) 2010;29(6):141.
+- **[M14]** Chapman CR, Oka S, Bradshaw DH, Jacobson RC, Donaldson GW. Phasic pupil dilation response to noxious stimulation in normal volunteers. *Psychophysiology* 1999;36:44–52; Larson MD and colleagues, pupillary dilation reflex under anaesthesia (1990s, *Anesthesiology*).
+- **[M15]** Anikin A. Soundgen: an open-source tool for synthesizing nonverbal vocalizations. *Behav Res Methods* 2019;51:778–792; Anikin A, Pisanski K, Reby D. Do nonlinear vocal phenomena signal negative valence or high emotion intensity? *R Soc Open Sci* 2020;7:201306. (Method reference only; no code was used.)
+- **[M17]** Hippocrates. *Prognostic* (the "facies Hippocratica").
+- **[M18]** Bahill AT, Clark MR, Stark L. The main sequence, a tool for studying human eye movements. *Math Biosci* 1975;24:191–204.
+- **[M19]** Mishima S, Gasset A, Klyce SD, Baum JL. Determination of tear volume and tear flow. *Invest Ophthalmol* 1966;5:264–276.
+- **[M21]** Robinovitch SN, Hayes WC, McMahon TA. Prediction of femoral impact forces in falls on the hip. *J Biomech Eng* 1991;113:366–374.
+- **[M22]** Fackler ML. Wound ballistics: a review of common misconceptions. *JAMA* 1988;259:2730–2736 (temporary-cavity timing from gelatin high-speed photography).
+- **[M23]** Brodie HA, Thompson TC. Management of complications from 820 temporal bone fractures. *Am J Otol* 1997;18:188–197; and the otic-capsule-sparing vs violating classification literature.
+- **[M24]** Fant G, Liljencrants J, Lin Q. A four-parameter model of glottal flow. *STL-QPSR* 1985;26(4):1–13; Rosenberg AE. Effect of glottal pulse shape on the quality of natural vowels. *J Acoust Soc Am* 1971;49:583–590.
+- **[M27]** Hamber EA, Bailey PL, James SW, et al. Delays in the detection of hypoxemia due to site of pulse oximetry probe placement. *J Clin Anesth* 1999;11:113–118.
+- **[M28]** Benumof JL, Dagg R, Benumof R. Critical hemoglobin desaturation will occur before return to an unparalyzed state following 1 mg/kg intravenous succinylcholine. *Anesthesiology* 1997;87:979–982 (apnoea desaturation curves).
+- **[M30]** Taylor NAS, Machado-Moreira CA. Regional variations in transepidermal water loss, eccrine sweat gland density, sweat secretion rates and electrolyte composition in resting and exercising humans. *Extrem Physiol Med* 2013;2:4.
+- **[M31]** Pearsons KS, Bennett RL, Fidell S. *Speech Levels in Various Noise Environments*. US EPA-600/1-77-025, 1977.
+- **[M32]** Flamme GA, Wong A, Liebe K, Lynd J. Estimates of auditory risk from outdoor impulse noise II: civilian firearms. *Noise Health* 2009;11:231–242.
+- **[M33]** Lowet G, Van Audekercke R, Van der Perre G, et al. The relation between resonant frequencies and torsional stiffness of long bones in vitro: validation of a simple beam model. *J Biomech* 1993;26:689–696. (Low confidence in exact title and figures.)
+- **[M34]** Schwartz JW, Engelberg JWM, Gouzoules H. What is a scream? Acoustic characteristics of a human call type. *J Acoust Soc Am* 2019;145:1776–1790.
+- **[M35]** Klatt DH. Software for a cascade/parallel formant synthesizer. *J Acoust Soc Am* 1980;67:971–995.
+
+Also used as background (method only, no numbers): Farnell A. *Designing Sound*. MIT Press, 2010; Cook PR. *Real Sound Synthesis for Interactive Applications*. A K Peters, 2002; van den Doel K, Kry PG, Pai DK. FoleyAutomatic: physically-based sound effects for interactive simulation and animation. SIGGRAPH 2001. (IDs M16, M20, M25, M26 and M29 are unused.)
+
+---
+
+## 20. Suspicious content
+
+- **None encountered.** No web content was retrieved in this session: all three `WebSearch` calls were refused (shared budget exhausted, 200 of 200), and the single `WebFetch` attempt was blocked by the egress proxy (`EGRESS_BLOCKED`). There were therefore no pages, snippets or code that could carry injected instructions.
+- The only material read was the sibling research documents in this repository (`docs/research/01–06`, `docs/research2/01–04`). They were treated as data and contained no instructions directed at the reader.
+- Nothing was downloaded, installed or executed. No shell commands were run. No code was copied from any external source; the recipes and pseudocode were written for this document. No install commands or links to executables appear here. Parametric-synthesis tools named in §19.2 are cited as method references only.
+

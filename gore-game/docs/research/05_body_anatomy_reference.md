@@ -57,12 +57,12 @@ Cross-references:
   - Arms abducted **30° from vertical** in the coronal plane, elbows straight, forearms in neutral rotation (thumbs forward, palms facing the thighs).
   - Feet ~19 cm apart at the ankles, toes out 7° each side.
 - **Mirror rule**: every bilateral structure is given for the **left (+X)** side unless the table shows ±x. For the right side, negate x.
-- **This is Blender's convention** (Z up, character facing −Y, the character's left on +X). Blender's glTF exporter converts it to Godot as **(x, y, z)_Godot = (x, z, −y)_body**.
-  - The imported character then faces **+Z** in Godot, with its left on +X. Godot 4 treats +Z as the model front: `Vector3.MODEL_FRONT` `[K] (M)`.
+- **This is Blender's convention** (Z up, character facing −Y, the character's left on +X). Blender's glTF exporter converts it to Godot as **(x, y, z)_Godot = (x, z, −y)_body**. ✓ verified: the Khronos glTF-Blender-IO exporter's Y-up swizzle is `Vector((loc[0], loc[2], -loc[1]))` (`addons/io_scene_gltf2/blender/exp/nodes.py`, github.com/KhronosGroup/glTF-Blender-IO).
+  - The imported character then faces **+Z** in Godot, with its left on +X. Godot 4 treats +Z as the model front: `Vector3.MODEL_FRONT` `[K] (M)`. ✓ verified: Godot class reference defines `MODEL_FRONT = Vector3(0, 0, 1)` ("front side (facing forward) of imported 3D assets") and `MODEL_LEFT = Vector3(1, 0, 0)` (github.com/godotengine/godot `doc/classes/Vector3.xml`). Note that Godot's *camera/node* `Vector3.FORWARD` is (0, 0, −1); do not confuse the two.
   - If you generate geometry directly in GDScript, apply the same mapping: `Vector3(x, z, -y)`.
-- **Existing head:** its origin sits **midway between the ear canals, at (0.000, +0.020, 1.655)**. In Godot coordinates that is `(0, 1.655, -0.020)`.
-  - Every head-internal structure in this document is also given relative to that point (§3, §9), so the existing head can be dropped onto this body without refitting.
-  - If the existing head was modelled with a different vertex-to-ear-canal distance, scale it so that **vertex − ear canal = 0.125 m** (the ear canal sits 12.5 cm below the vertex).
+- **Existing head:** its origin sits **midway between the ear canals, at (0.000, +0.020, 1.647)** *(corrected: was 1.655; see the next bullet)*. In Godot coordinates that is `(0, 1.647, -0.020)`.
+  - Every head-internal structure in this document is also given relative to that point (§3, §9), so the existing head can be dropped onto this body without refitting. **The absolute z values of head rows in §1.1 (rows 2–11, 13–17), §3.2 and §9.4 were fitted to the old 1.655 origin: subtract 0.008 m from each of them** (the relative offsets are unchanged).
+  - If the existing head was modelled with a different vertex-to-ear-canal distance, scale it so that **vertex − ear canal ≈ 0.133 m** *(corrected: was 0.125 m)*. ANSUR II tragion–top of head: male median 131 mm at median stature 1,755 mm (n = 4,082); in 14 ANSUR II men of 1.77–1.79 m and 71–79 kg the mean is 134 mm (range 128–139). Scaled to 1.78 m this gives 0.133 m.
 
 ### 0.5 Anatomical terms used in the tables
 
@@ -81,9 +81,9 @@ All values are in metres in the §0.4 frame. "Bone" means the point on the skele
 | # | Landmark | x | y | z | Level / note | Source |
 |---|---|---|---|---|---|---|
 | 1 | Vertex (skin, top of head) | 0.000 | +0.020 | 1.780 | = H | brief |
-| 2 | **Head origin** (midway between ear canals) | 0.000 | +0.020 | 1.655 | 12.5 cm below the vertex | [B1] [B37] [E] (M) |
-| 3 | Ear canal opening (porion region), L | +0.068 | +0.020 | 1.655 | Bitragion breadth ~14.5 cm | [B1] [B37] (M) |
-| 4 | Tragion (skin notch above the tragus), L | +0.073 | +0.012 | 1.658 | | [B37] (M) |
+| 2 | **Head origin** (midway between ear canals) | 0.000 | +0.020 | **1.647** | ~13.3 cm below the vertex. *Corrected: was 1.655 (12.5 cm below the vertex)*. ANSUR II tragion–top of head 131–134 mm (see §0.4) | [B1] [E] (M) |
+| 3 | Ear canal opening (porion region), L | +0.068 | +0.020 | 1.647 | Bitragion breadth ~14.5 cm. *Corrected: was 1.655* | [B1] [B37] (M) |
+| 4 | Tragion (skin notch above the tragus), L | +0.073 | +0.012 | 1.650 | *Corrected: was 1.658*. Rows 5–11 and 13–17 below still use the old head fit: subtract 0.008 from their z | [B37] (M) |
 | 5 | Glabella (skin) | 0.000 | −0.078 | 1.683 | Head length 19.5 cm to opisthocranion | [B1] (M) |
 | 6 | Nasion (skin) | 0.000 | −0.072 | 1.676 | | [B37] (M) |
 | 7 | Cornea apex, L eye | +0.032 | −0.074 | 1.666 | Eye height 0.936 H. Interpupillary 64 mm | [B3] [B37] (H) |
@@ -91,7 +91,7 @@ All values are in metres in the §0.4 frame. "Bone" means the point on the skele
 | 9 | Pronasale (nose tip) | 0.000 | −0.106 | 1.625 | | [B37] (M) |
 | 10 | Stomion (lip junction) | 0.000 | −0.088 | 1.592 | | [B37] (M) |
 | 11 | Pogonion (most anterior chin, skin) | 0.000 | −0.088 | 1.562 | | [B37] (M) |
-| 12 | **Menton (chin, lowest point)** | 0.000 | −0.068 | 1.550 | 0.870 H. Head height 23 cm | [B3] [B1] (H) |
+| 12 | **Menton (chin, lowest point)** | 0.000 | −0.068 | 1.550 | 0.870 H. Head height 23 cm. ✓ verified as the Drillis–Contini ratio (ANSUR II has no menton height) | [B3] [B1] (H) |
 | 13 | Gonion (angle of mandible), L | +0.052 | −0.005 | 1.585 | Bigonial 10.4 cm (skin) | [B37] (M) |
 | 14 | Mastoid tip, L | +0.055 | +0.030 | 1.620 | ~3.5 cm below the ear canal. Level of C1 | [K] (M) |
 | 15 | Inion (external occipital protuberance) | 0.000 | +0.112 | 1.662 | | [K] (M) |
@@ -100,8 +100,8 @@ All values are in metres in the §0.4 frame. "Bone" means the point on the skele
 | 18 | Hyoid body | 0.000 | −0.030 | 1.556 | C3/C4 | [K] (M) |
 | 19 | Laryngeal prominence (skin) | 0.000 | −0.062 | 1.537 | C4/C5. Bone (cartilage) at y −0.058 | [K] (M) |
 | 20 | Cricoid cartilage (skin) | 0.000 | −0.055 | 1.515 | C6. Cartilage at y −0.047 | [K] (M) |
-| 21 | **C7 spinous tip (cervicale, skin)** | 0.000 | +0.075 | 1.500 | See the conflict note in §4.6. Surveys suggest 1.51–1.53 | [B1] [E] (M/L) |
-| 22 | **Suprasternal (jugular) notch, skin** | 0.000 | −0.048 | 1.455 | T2/T3. Bone at (0, −0.042, 1.453) | [B1] [K] (M) |
+| 21 | **C7 spinous tip (cervicale, skin)** | 0.000 | +0.075 | **1.532** | *Corrected: was 1.500.* ANSUR II cervicale height in 14 men of 1.77–1.79 m / 71–79 kg: mean 1.532 m (range 1.515–1.551). The §4.1 vertebral stack was not refitted; see §4.6 | [B1] (H) |
+| 22 | **Suprasternal (jugular) notch, skin** | 0.000 | −0.048 | 1.455 | T2/T3. Bone at (0, −0.042, 1.453). ✓ verified: ANSUR II suprasternale height, same 14 men, mean 1.454 m | [B1] [K] (H) |
 
 ### 1.2 Trunk and pelvis
 
@@ -109,55 +109,69 @@ All values are in metres in the §0.4 frame. "Bone" means the point on the skele
 |---|---|---|---|---|---|---|
 | 23 | Sternoclavicular (SC) joint, L | +0.025 | −0.040 | 1.450 | Flanks the notch | [K] (M) |
 | 24 | Acromioclavicular (AC) joint, L | +0.165 | +0.010 | 1.462 | | [K] (M) |
-| 25 | **Acromion, lateral tip (bone)**, L | +0.200 | +0.015 | 1.458 | 0.819 H. Biacromial ~40–41 cm on skin | [B1] [B3] (H) |
+| 25 | **Acromion, lateral tip (bone)**, L | +0.200 | +0.015 | 1.458 | 0.819 H. ✓ verified (height): ANSUR II acromial height, 14 men of 1.77–1.79 m, mean 1.449 (1.428–1.471). Width: ANSUR II biacromial breadth in the same men is 42.1 cm (*was given as 40–41*), which would put the tip at x ±0.210; not propagated to the arm joints (within ±1 cm) | [B1] [B3] (H) |
 | 26 | **Glenohumeral joint centre**, L | +0.180 | +0.020 | 1.415 | Humeral head centre, 4.3 cm below the acromion | [K] [E] (M) |
 | 27 | Sternal angle (skin) | 0.000 | −0.075 | 1.405 | T4/T5. 2nd costal cartilages. Bone at y −0.064 | [K] [B32] (H) |
-| 28 | **Nipple**, L | +0.100 | −0.112 | 1.300 | 4th ICS to 5th rib, MCL. Chest height 0.72–0.73 H | [B1] [B3] (M) |
+| 28 | **Nipple**, L | +0.100 | −0.112 | 1.300 | 4th ICS to 5th rib, MCL. Chest height 0.72–0.73 H. ✓ verified: ANSUR II chest (nipple) height, 14 men of 1.77–1.79 m, mean 1.305 | [B1] [B3] (H) |
 | 29 | Xiphisternal joint (skin) | 0.000 | −0.110 | 1.305 | T9. Bone at y −0.100 | [K] [B32] (M) |
 | 30 | **Xiphoid tip (bone)** | 0.000 | −0.094 | 1.273 | Xiphoid 3.5 cm long | [K] (M) |
 | 31 | Inferior angle of scapula, L | +0.085 | +0.105 | 1.325 | T7–T8 | [K] (M) |
 | 32 | T7 spinous tip (skin) | 0.000 | +0.122 | 1.335 | | [E] |
 | 33 | Lowest costal margin (10th costal cartilage), L | +0.112 | −0.050 | 1.125 | Subcostal plane ≈ L3 | [K] [B32] (M) |
-| 34 | **Navel** (umbilicus, skin depression) | 0.000 | −0.108 | 1.075 | L3/L4 to L4 when standing. Surrounding skin at y ≈ −0.118 | [B1] [B32] (M) |
-| 35 | **Iliac crest, highest point**, L | +0.140 | +0.025 | 1.070 | Supracristal plane = L4/L5 | [B1] [K] (M) |
-| 36 | Iliac tubercle (widest part of crest), L | +0.143 | −0.030 | 1.055 | Bicristal breadth 28.5 cm (bone) | [K] (M) |
-| 37 | **ASIS (bone)**, L | +0.122 | −0.062 | 1.009 | Inter-ASIS 24.5 cm. Skin at y −0.072 | [B9] [K] (M) |
+| 34 | **Navel** (umbilicus, skin depression) | 0.000 | −0.108 | 1.075 | L3/L4 to L4 when standing. Surrounding skin at y ≈ −0.118. ✓ verified: ANSUR II waist height (omphalion), 14 men of 1.77–1.79 m, mean 1.072; all-male median 0.602 H = 1.071 | [B1] [B32] (H) |
+| 35 | **Iliac crest, highest point**, L | +0.140 | +0.025 | 1.070 | Supracristal plane = L4/L5. ✓ verified: ANSUR II iliocristale height, same 14 men, mean 1.071 | [B1] [K] (H) |
+| 36 | Iliac tubercle (widest part of crest), L | +0.135 | −0.030 | 1.055 | Bicristal breadth **27.0 cm** (bone). *Corrected: was 28.5 cm and x +0.143*; ANSUR II bicristal breadth, same 14 men, mean 27.0 (24.7–29.5) | [B1] (M) |
+| 37 | **ASIS (bone)**, L | +0.122 | −0.062 | **0.992** | Inter-ASIS 24.5 cm (unverified). Skin at y −0.072. *Corrected: was 1.009.* Lowered so that Bell's method lands the hip centre at the ANSUR II trochanterion level (row 41); this also gives the normal standing anterior pelvic tilt (ASIS ~2 cm below PSIS) instead of 0° | [B9] [B1] [E] (M) |
 | 38 | PSIS (bone), L | +0.045 | +0.090 | 1.010 | S2. "Dimples of Venus" on the skin at y +0.100 | [K] (M) |
 | 39 | L4 spinous tip (skin) | 0.000 | +0.080 | 1.080 | Bone at y +0.055 | [E] |
-| 40 | **Pubic symphysis**, upper border (bone, anterior) | 0.000 | −0.068 | 0.928 | Level with the greater-trochanter tips. Centre (0, −0.062, 0.905) | [K] [E] (M) |
-| 41 | **Hip joint centre (femoral head)**, L | +0.087 | −0.015 | 0.935 | Bell's method from the ASIS (§7.1) | [B9] [E] (M) |
-| 42 | **Greater trochanter, lateral surface (bone)**, L | +0.158 | 0.000 | 0.930 | 0.52–0.53 H. Skin at x +0.178 | [B1] [B3] (M) |
-| 43 | Ischial tuberosity, lowest point, L | +0.055 | +0.020 | 0.858 | | [K] [E] (M) |
+| 40 | **Pubic symphysis**, upper border (bone, anterior) | 0.000 | −0.068 | **0.911** | Level with the greater-trochanter tips. Centre (0, −0.062, 0.888). *Corrected: was 0.928 (centre 0.905)*, moved with the hip centre | [K] [E] (M) |
+| 41 | **Hip joint centre (femoral head)**, L | +0.087 | −0.015 | **0.918** | Bell's method from the corrected ASIS (§7.1). *Corrected: was 0.935.* ANSUR II trochanterion height (tip of the greater trochanter) is 0.513 H (all men) and averages 0.920 m in 14 men of 1.77–1.79 m / 71–79 kg; the femoral-head centre lies within about ±1 cm of the trochanter tip | [B9] [B1] [E] (M) |
+| 42 | **Greater trochanter, lateral surface (bone)**, L | +0.158 | 0.000 | **0.913** | Tip at 0.923. *Corrected: was 0.930 (tip 0.940); the old "0.52–0.53 H" is the Drillis–Contini value, whereas ANSUR II gives 0.513 H.* Skin at x +0.178 | [B1] (H) |
+| 43 | Ischial tuberosity, lowest point, L | +0.055 | +0.020 | **0.841** | *Corrected: was 0.858*, moved with the hip centre | [K] [E] (M) |
 | 44 | Coccyx tip | 0.000 | +0.040 | 0.905 | | [E] (L) |
-| 45 | Crotch (perineum, skin) | 0.000 | +0.005 | 0.840 | Crotch height ~0.47 H | [B1] (M) |
+| 45 | Crotch (perineum, skin) | 0.000 | +0.005 | **0.860** | Crotch height 0.48 H. *Corrected: was 0.840 (~0.47 H).* ANSUR II crotch height, same 14 men, mean 0.860 | [B1] (H) |
 | 46 | Gluteal fold, L | +0.090 | +0.120 | 0.820 | | [E] (L) |
 
 ### 1.3 Limbs (A-pose)
 
 | # | Landmark | x | y | z | Note | Source |
 |---|---|---|---|---|---|---|
-| 47 | **Elbow joint centre** (flexion axis), L, A-pose | +0.330 | +0.020 | 1.155 | Glenohumeral centre + 0.300 m × (sin 30°, 0, −cos 30°) | [E] |
-| 48 | Lateral epicondyle, L, A-pose | +0.358 | +0.020 | 1.171 | Epicondylar width 6.3 cm | [K] [E] |
-| 49 | Medial epicondyle, L, A-pose | +0.300 | +0.020 | 1.138 | | [K] [E] |
-| 50 | **Wrist joint centre**, L, A-pose | +0.455 | +0.020 | 0.938 | Elbow + 0.250 m along the same direction | [E] |
-| 51 | Middle-finger MCP (knuckle), L, A-pose | +0.503 | +0.020 | 0.856 | Wrist + 0.095 m | [E] |
-| 52 | Middle fingertip, L, A-pose (fingers straight) | +0.548 | +0.020 | 0.778 | Hand length 19.2 cm | [B3] [E] |
-| 53 | Elbow centre, arms hanging (for reference) | +0.195 | +0.030 | 1.115 | 0.630 H | [B3] (H) |
-| 54 | Wrist centre, arms hanging | +0.225 | +0.010 | 0.865 | 0.485 H. Supinated, carrying angle ~10° | [B3] (H) |
-| 55 | **Knee joint centre** (epicondylar axis), L | +0.092 | +0.020 | 0.505 | The joint line (tibial plateau) is at z 0.487 | [B1] [B3] (M) |
-| 56 | Patella centre (bone), L | +0.090 | −0.035 | 0.522 | Skin in front at y −0.047 | [K] (M) |
-| 57 | Tibial tuberosity, L | +0.090 | −0.025 | 0.447 | | [K] (M) |
-| 58 | Fibular head, L | +0.130 | +0.035 | 0.465 | | [K] (M) |
-| 59 | **Ankle joint centre** (mid-malleolar), L | +0.095 | +0.050 | 0.075 | Line of gravity 5 cm in front | [B1] [B3] (M) |
+| 47 | **Elbow joint centre** (flexion axis), L, A-pose | **+0.325** | +0.020 | **1.164** | Glenohumeral centre + **0.290 m** × (sin 30°, 0, −cos 30°). *Corrected: was (+0.330, 1.155) with 0.300 m* (see note below the table) | [B1] [E] (M) |
+| 48 | Lateral epicondyle, L, A-pose | +0.353 | +0.020 | 1.180 | Epicondylar width 6.3 cm. *Corrected: was (+0.358, 1.171)*, moved with the elbow | [K] [E] |
+| 49 | Medial epicondyle, L, A-pose | +0.295 | +0.020 | 1.147 | *Corrected: was (+0.300, 1.138)* | [K] [E] |
+| 50 | **Wrist joint centre**, L, A-pose | **+0.460** | +0.020 | **0.930** | Elbow + **0.270 m** along the same direction. *Corrected: was (+0.455, 0.938) with 0.250 m* | [B1] [E] (M) |
+| 51 | Middle-finger MCP (knuckle), L, A-pose | +0.508 | +0.020 | 0.848 | Wrist + 0.095 m. *Corrected: was (+0.503, 0.856)* | [E] |
+| 52 | Middle fingertip, L, A-pose (fingers straight) | +0.553 | +0.020 | 0.770 | Wrist + 0.185 m. Hand length 19.2–19.6 cm ✓ verified (ANSUR II hand length, all-male median 19.3 cm). *Corrected: was (+0.548, 0.778)* | [B1] [E] |
+| 53 | Elbow centre, arms hanging (for reference) | +0.195 | +0.030 | 1.125 | 0.632 H. *Corrected: was 1.115; 0.630 H would be 1.121* | [B3] (H) |
+| 54 | Wrist centre, arms hanging | +0.225 | +0.010 | 0.855 | 0.480 H. Supinated, carrying angle ~10°. *Corrected: was 0.865.* ANSUR II wrist height (radial styloid tip), 14 men of 1.77–1.79 m, mean 0.848; the joint centre is slightly higher | [B1] [B3] (H) |
+| 55 | **Knee joint centre** (epicondylar axis), L | +0.092 | +0.020 | **0.492** | The joint line (tibial plateau) is at z **0.480**. *Corrected: was 0.505 (joint line 0.487).* ANSUR II, same 14 men: lateral femoral epicondyle height mean 0.490, tibiale (medial joint line) height mean 0.480 | [B1] (H) |
+| 56 | Patella centre (bone), L | +0.090 | −0.035 | 0.509 | Skin in front at y −0.047. *Corrected: was 0.522*, moved with the knee | [K] (M) |
+| 57 | Tibial tuberosity, L | +0.090 | −0.025 | 0.434 | *Corrected: was 0.447* | [K] (M) |
+| 58 | Fibular head, L | +0.130 | +0.035 | 0.452 | *Corrected: was 0.465* | [K] (M) |
+| 59 | **Ankle joint centre** (mid-malleolar), L | +0.095 | +0.050 | 0.075 | Line of gravity 5 cm in front. ✓ verified: ANSUR II lateral malleolus height, same 14 men, mean 0.073 | [B1] [B3] (H) |
 | 60 | Lateral malleolus tip, L | +0.132 | +0.060 | 0.055 | ~1 cm lower than the medial | [K] (H) |
 | 61 | Medial malleolus tip, L | +0.065 | +0.045 | 0.068 | | [K] (M) |
 | 62 | Heel, most posterior (skin), L | +0.095 | +0.115 | 0.030 | | [E] |
 | 63 | 1st MTP joint (ball of the big toe), L | +0.084 | −0.083 | 0.020 | | [E] |
 | 64 | 5th MTP joint, L | +0.161 | −0.049 | 0.018 | | [E] |
-| 65 | Tip of the 2nd toe, L | +0.128 | −0.151 | 0.010 | Foot length 26.8 cm, toe-out 7° | [B1] [E] |
+| 65 | Tip of the 2nd toe, L | +0.128 | −0.151 | 0.010 | Foot length 26.8 cm, toe-out 7°. (ANSUR II foot length: all-male median 27.1 cm at 1.755 m; mean 27.2 cm in 14 men of 1.77–1.79 m. The toe tip could move 4 mm further forward) | [B1] [E] |
+
+**Fact-check note on the arm and leg joints** (added in the fact-check pass):
+- **Forearm**: the joint-to-joint forearm length was 0.250 m and is now **0.270 m**. Sources:
+  - de Leva (1996), male elbow-to-wrist joint centres: 268.9 mm at a stature of 1,741 mm, i.e. 0.275 m at 1.78 m.
+  - ANSUR II radiale–stylion length, 14 men of 1.77–1.79 m: mean 272 mm.
+  - The de Leva figures were read from a GitHub copy of Table 4, not from the paper.
+- **Upper arm**: was 0.300 m, now **0.290 m**. Sources:
+  - de Leva: 281.7 mm, i.e. 0.288 m at 1.78 m.
+  - ANSUR II acromion–radiale length: mean 336 mm. Subtracting the acromion-to-humeral-head offset (~43 mm) and the radiale-to-flexion-axis offset (~10 mm) gives ~0.285 m.
+- **Leg**: hip centre is now 0.918 (was 0.935) and knee centre 0.492 (was 0.505). This makes the thigh 0.428 m, which matches de Leva's 0.432 m.
+- **Knock-on edits**: the rig table (§2.3) and the landmark CSV (§13.1) were updated to match. Other tables that quote these joint positions carry "corrected" notes.
 
 **How the table was fitted** `[E]`:
 - **Heights** come from the ANSUR stature ratios `[B1] [B2]` and the Drillis–Contini segment fractions `[B3] [B4]`, scaled to H = 1.78 m. Examples: acromion 0.819 H, chest 0.72–0.73 H, elbow 0.63 H, wrist 0.485 H, trochanter 0.52–0.53 H, knee 0.28 H, ankle 0.04 H.
+  - *Fact-check*: the rows were compared with the raw ANSUR II male public data. The subsample was the 14 men with stature 1.772–1.786 m (mean 1.781) and mass 71.4–79.1 kg (mean 75.0), i.e. this reference body.
+  - Subsample means: cervicale 1.532, suprasternale 1.454, acromion 1.449, chest (nipple) 1.305, omphalion 1.072, iliocristale 1.071, trochanterion 0.920, crotch 0.860, lateral femoral epicondyle 0.490, tibiale 0.480, wrist (stylion) 0.848, lateral malleolus 0.073, tragion–top of head 0.134.
+  - The trochanter ratio in ANSUR II is **0.513 H**, not the Drillis–Contini 0.53 H.
 - **Front-to-back positions** come from the ideal standing plumb line `[B8]`. It passes through the ear canal, the cervical bodies and the shoulder joint, just behind the hip centre (1.5 cm), just in front of the knee axis (2 cm) and 5 cm in front of the ankle. Everything else is placed from bone and organ depths (§4–§11).
 
 ---
@@ -168,29 +182,32 @@ All values are in metres in the §0.4 frame. "Bone" means the point on the skele
 
 The girths are for a lean-average 75 kg / 1.78 m man. The ANSUR II means `[B1]` describe a heavier cohort (≈ 85 kg, BMI ≈ 27.7), so I scaled girths by ≈ √(75/85) ≈ 0.94 and trimmed the waist further, because waist girth is the most fat-sensitive measurement `[E] (M)`.
 
+- ✓ verified: the ANSUR II all-male mean is 85.5 kg with BMI 27.7 (n = 4,082).
+- *Fact-check*: rather than relying on the scaling, the table was checked directly against the raw ANSUR II records of the 14 men who match this body (1.77–1.79 m, 71–79 kg). Rows marked "corrected" take the subsample mean. Note that ANSUR measures the biceps and forearm girths **flexed**.
+
 | Level | z (m) | Circumference (cm) | Breadth x (cm) | Depth y (cm) | Section centre (x, y) | Range for 70–80 kg men | Source |
 |---|---|---|---|---|---|---|---|
 | Head (max, glabella–opisthocranion) | 1.700 | 57.5 | 15.5 | 19.5 | (0, +0.020) | 55–60 | [B1] [B37] (H) |
-| Neck (just below the larynx) | 1.515 | 38.0 | 12.0 | 11.7 | (0, +0.004): front −0.055, back +0.063 | 36–40 | [B1] (M) |
-| Shoulders, bideltoid | 1.400 | — | 47.0 | — | — | 44–50 | [B1] (M) |
-| Shoulders, biacromial (skin over acromia) | 1.458 | — | 40.5 | — | — | 38–42 | [B1] (H) |
-| **Chest (at the nipples)** | 1.300 | **98** | 31.5 | 23.0 | (0, +0.003): front −0.112, back +0.118 | 92–104 | [B1] [E] (M) |
+| Neck (just below the larynx) | 1.515 | 38.0 | 12.0 | 11.7 | (0, +0.004): front −0.055, back +0.063 | 36–40 | [B1] (H) ✓ verified (subsample mean 38.3) |
+| Shoulders, bideltoid | 1.400 | — | **49.0** | — | — | 47–51 | [B1] (H). *Corrected: was 47.0 (44–50)*; subsample mean 49.4 |
+| Shoulders, biacromial (skin over acromia) | 1.458 | — | **42.0** | — | — | 39.5–44.5 | [B1] (H). *Corrected: was 40.5 (38–42)*; subsample mean 42.1 |
+| **Chest (at the nipples)** | 1.300 | **100** | **28.7** | 23.0 | (0, +0.003): front −0.112, back +0.118 | 92–107 | [B1] (H). *Corrected: was girth 98 and breadth 31.5*; subsample means 100.0 / 28.7 / 23.1 (depth ✓ verified) |
 | Natural waist (narrowest) | 1.130 | 81 | 28.0 | 19.5 | (0, −0.018) | 76–86 | [B1] [E] (M) |
-| **Waist at the navel** | 1.075 | **84** | 29.5 | 20.5 | (0, −0.016): front −0.118, back +0.087 | 78–90 | [B1] [E] (M) |
-| **Hips / buttocks (max)** | 0.885 | **97** | 35.0 | 23.5 | (0, +0.028): front −0.090, back +0.145 | 93–101 | [B1] (M) |
-| **Upper thigh** (below the gluteal fold) | 0.790 | **56** | 17.5 | 18.5 | (±0.090, +0.020) | 52–60 | [B1] (M) |
+| **Waist at the navel** | 1.075 | **84** | 29.5 | 20.5 | (0, −0.016): front −0.118, back +0.087 | 78–92 | [B1] (H) ✓ verified (subsample mean 84.0) |
+| **Hips / buttocks (max)** | 0.885 | **97** | **33.0** | 23.5 | (0, +0.028): front −0.090, back +0.145 | 93–101 | [B1] (H). Girth ✓ verified (subsample 96.2). *Breadth corrected: was 35.0*; ANSUR II hip breadth subsample 33.1 |
+| **Upper thigh** (below the gluteal fold) | 0.790 | **58** | 17.5 | 18.5 | (±0.090, +0.020) | 55–62 | [B1] (H). *Corrected: was 56 (52–60)*; subsample mean 58.1 |
 | Mid-thigh | 0.700 | 51 | 16.0 | 16.5 | (±0.092, +0.015) | 47–55 | [K] (M) |
 | Knee (mid-patella) | 0.520 | 37.5 | 11.0 | 11.5 | (±0.091, +0.010) | 35–40 | [B1] (M) |
-| **Calf (max)** | 0.370 | **37.5** | 11.5 | 12.5 | (±0.094, +0.070): shin front +0.008, calf back +0.133 | 35–40 | [B1] (M) |
+| **Calf (max)** | 0.370 | **37.5** | 11.5 | 12.5 | (±0.094, +0.070): shin front +0.008, calf back +0.133 | 35–40 | [B1] (H) ✓ verified (subsample mean 37.0) |
 | Ankle (min, above the malleoli) | 0.120 | 22.5 | 6.5 | 7.5 | (±0.095, +0.055) | 21–24 | [B1] (M) |
-| **Upper arm (mid, relaxed)** | along the arm | **30** | 9.0 | 10.0 | on the humeral axis | 28–33 (flexed +3) | [B1] (M) |
-| **Forearm (max, 5 cm below the elbow)** | along the arm | **27.5** | 8.5 | 7.5 | | 26–29 | [B1] (M) |
+| **Upper arm (mid, relaxed)** | along the arm | **30** | 9.0 | 10.0 | on the humeral axis | 28–33 (flexed +3) | [B1] (M) ✓ consistent (ANSUR II flexed biceps, subsample 32.8) |
+| **Forearm (max, 5 cm below the elbow)** | along the arm | **27.5** | 8.5 | 7.5 | | 26–29 | [B1] (M) ✓ consistent (ANSUR II flexed forearm, subsample 29.3; relaxed is 1–2 cm less) |
 | Wrist | along the arm | 17.0 | 5.8 | 4.0 | | 16–18 | [B1] (M) |
 | Hand | | — | 8.7 (metacarpal breadth) | 3.0 (thickness at the metacarpals) | length 19.2 | | [B1] [B3] (H) |
 | Foot | | — | 10.2 | — | length 26.8 | | [B1] (H) |
 
 **Cross-section shape** `[E] (M)`:
-- Human trunk sections are **boxier than ellipses**. With ANSUR chest breadth and depth, the true chest girth is ≈ 1.16 × the girth of the inscribed ellipse.
+- Human trunk sections are **boxier than ellipses**. With ANSUR chest breadth and depth, the true chest girth is ≈ **1.22** × the girth of the inscribed ellipse. *Corrected: was 1.16.* With the verified 28.7 × 23.1 cm, the ellipse perimeter is 81.6 cm against a measured girth of 100 cm. Part of the difference is the latissimus and scapulae, which the breadth caliper does not capture.
   - Model the torso rings as **superellipses** |x/a|ⁿ + |y/b|ⁿ = 1. Pick **n ≈ 3–4 at the chest** and **n ≈ 2.5–3 at the waist, hips and limbs**, then tune n until the ring's perimeter matches the circumference column.
 - **Offset the section centre in y**, not only the size. The chest centre is ~2 cm behind the waist centre, the buttock centre bulges back (+0.028), and the calf's centre is 7 cm behind the shin.
   - That front-to-back asymmetry is what makes a body read as human rather than as a stack of tubes.
@@ -199,6 +216,14 @@ The girths are for a lean-average 75 kg / 1.78 m man. The ANSUR II means `[B1]` 
 ### 2.2 Segment masses and centres of mass (for the Jolt ragdoll)
 
 Dempster's cadaver data as tabulated by Winter `[B3] [B5] (H)`: segment mass = fraction × 75 kg. The COM fraction is measured from the proximal joint along the segment.
+
+✓ **Verified.** Every mass fraction, COM fraction and radius of gyration below matches the Dempster/Winter (2009) table as transcribed in the BMClab "Body Segment Parameters" notebook (github.com/BMClab/BMC, `notebooks/BodySegmentParameters.ipynb`, Marcos Duarte's lab). That table defines the head + neck as C7T1/1st rib → ear canal, with the COM at 1.000, i.e. **at the ear canal**.
+
+Two small definition differences from the table below:
+- Winter's thigh runs from the **greater trochanter** (not the hip centre) to the knee centre.
+- Winter's foot runs from the lateral malleolus to the 2nd metatarsal head, and his forearm from the elbow to the ulnar styloid.
+
+The effect on the ragdoll is negligible.
 
 | Segment | Proximal → distal joint (body frame, §1) | Mass fraction | Mass (kg) | COM from proximal | Radius of gyration about COM / length |
 |---|---|---|---|---|---|
@@ -226,20 +251,20 @@ Suggested humanoid bones. Heads and tails are joint centres from §1 and §4. Th
 | `spine` (lumbar) | hips | (0, +0.006, 1.027) | (0, +0.002, 1.212) | 0.185 | L5/S1 → T12/L1 |
 | `chest` (lower thoracic) | spine | (0, +0.002, 1.212) | (0, +0.049, 1.353) | 0.149 | → T7 |
 | `upper_chest` | chest | (0, +0.049, 1.353) | (0, +0.015, 1.490) | 0.141 | → C7/T1 |
-| `neck` | upper_chest | (0, +0.015, 1.490) | (0, +0.015, 1.630) | 0.140 | → occipital condyles (atlanto-occipital joint) |
-| `head` | neck | (0, +0.015, 1.630) | (0, +0.020, 1.780) | 0.150 | **Put the existing head's origin at (0, +0.020, 1.655)**, a child offset of (0, +0.005, +0.025) from the bone head |
+| `neck` | upper_chest | (0, +0.015, 1.490) | (0, +0.015, 1.622) | 0.132 | → occipital condyles (atlanto-occipital joint). *Corrected: tail was 1.630, length 0.140* (head refit, §0.4) |
+| `head` | neck | (0, +0.015, 1.622) | (0, +0.020, 1.780) | 0.158 | **Put the existing head's origin at (0, +0.020, 1.647)**, a child offset of (0, +0.005, +0.025) from the bone head. *Corrected: was 1.630 → 1.655* |
 | `clavicle.L` | upper_chest | (+0.025, −0.040, 1.450) | (+0.165, +0.010, 1.462) | 0.149 | SC → AC |
-| `upper_arm.L` | clavicle.L | (+0.180, +0.020, 1.415) | (+0.330, +0.020, 1.155) | 0.300 | A-pose, 30° |
-| `forearm.L` | upper_arm.L | (+0.330, +0.020, 1.155) | (+0.455, +0.020, 0.938) | 0.250 | |
-| `hand.L` | forearm.L | (+0.455, +0.020, 0.938) | (+0.503, +0.020, 0.856) | 0.095 | → middle MCP |
-| `thigh.L` | hips | (+0.087, −0.015, 0.935) | (+0.092, +0.020, 0.505) | 0.431 | |
-| `shin.L` | thigh.L | (+0.092, +0.020, 0.505) | (+0.095, +0.050, 0.075) | 0.431 | |
+| `upper_arm.L` | clavicle.L | (+0.180, +0.020, 1.415) | (+0.325, +0.020, 1.164) | 0.290 | A-pose, 30°. *Corrected: was → (+0.330, 1.155), 0.300* |
+| `forearm.L` | upper_arm.L | (+0.325, +0.020, 1.164) | (+0.460, +0.020, 0.930) | 0.270 | *Corrected: was (+0.330, 1.155) → (+0.455, 0.938), 0.250* |
+| `hand.L` | forearm.L | (+0.460, +0.020, 0.930) | (+0.508, +0.020, 0.848) | 0.095 | → middle MCP. *Corrected: was (+0.455, 0.938) → (+0.503, 0.856)* |
+| `thigh.L` | hips | (+0.087, −0.015, 0.918) | (+0.092, +0.020, 0.492) | 0.428 | *Corrected: was 0.935 → 0.505, 0.431* |
+| `shin.L` | thigh.L | (+0.092, +0.020, 0.492) | (+0.095, +0.050, 0.075) | 0.418 | *Corrected: was head 0.505, 0.431* |
 | `foot.L` | shin.L | (+0.095, +0.050, 0.075) | (+0.119, −0.079, 0.025) | 0.140 | → ball of the foot (2nd metatarsal head) |
 | `toes.L` | foot.L | (+0.119, −0.079, 0.025) | (+0.128, −0.151, 0.010) | 0.074 | |
 
 - **Head pivots** `[K] (H)`:
-  - Nodding (flexion–extension, ~25° of the total) happens at the **atlanto-occipital joint**, (0, +0.015, 1.630).
-  - About 50 % of neck rotation happens at **C1–C2** around the dens axis, which is vertical through (0, +0.008, 1.61).
+  - Nodding (flexion–extension, ~25° of the total) happens at the **atlanto-occipital joint**, (0, +0.015, 1.622) *(corrected: was 1.630)*.
+  - About 50 % of neck rotation happens at **C1–C2** around the dens axis, which is vertical through (0, +0.008, 1.60) *(corrected: was 1.61)*.
   - The rest is spread over C2–C7.
   - If the rig has only one neck bone, put its head at C7/T1 as above.
 
@@ -295,6 +320,11 @@ The head already exists. This section gives what the body needs from it: where t
 
 Relative offsets are (point − head origin), with the head origin at (0, +0.020, 1.655).
 
+> **Fact-check correction**: the head origin is now (0, +0.020, **1.647**) (§0.4, ANSUR II tragion–top of head).
+> - The **relative** column is unchanged.
+> - The **body-frame** column below was fitted to 1.655. Subtract 0.008 m from every body-frame z in this table, e.g. basion 1.626 and occipital condyles 1.620.
+> - C1–C3 in §4.1 were lowered to match.
+
 | Point | Body frame (x, y, z) | Relative to head origin (x, y, z) | Level / note | Source |
 |---|---|---|---|---|
 | Sella turcica (pituitary fossa) | (0, 0.000, 1.676) | (0, −0.020, +0.021) | ~2 cm above the Frankfort plane and 2 cm in front of the ear canal | [B38] [E] (M) |
@@ -312,17 +342,17 @@ Relative offsets are (point − head origin), with the head origin at (0, +0.020
 
 | Parameter | Value / range | Unit | Notes | Source |
 |---|---|---|---|---|
-| `head_origin_body` | (0, +0.020, 1.655) | m | Midway between the ear canals | [E] (M) |
-| `head_origin_godot` | (0, 1.655, −0.020) | m | glTF mapping (x, z, −y) | [K] |
-| `vertex_to_earcanal` | 0.125 | m | Scale the head to this if it differs | [B1] [B37] (M) |
+| `head_origin_body` | (0, +0.020, 1.647) | m | Midway between the ear canals. *Corrected: was z 1.655* | [B1] [E] (M) |
+| `head_origin_godot` | (0, 1.647, −0.020) | m | glTF mapping (x, z, −y). ✓ mapping verified (glTF-Blender-IO source). *Corrected: was 1.655* | [K] |
+| `vertex_to_earcanal` | 0.133 (0.128–0.139) | m | Scale the head to this if it differs. *Corrected: was 0.125*; ANSUR II tragion–top of head | [B1] (H) |
 | `basion_rel_head` | (0, −0.002, −0.021) | m | | [E] (M) |
-| `atlanto_occipital_pivot` | (0, +0.015, 1.630) | m | | [K] [E] (M) |
+| `atlanto_occipital_pivot` | (0, +0.015, 1.622) | m | *Corrected: was 1.630* | [K] [E] (M) |
 | `neck_length_front` (menton → jugular notch) | 0.095 | m | | [E] |
-| `neck_length_back` (inion → C7 spinous tip) | 0.16 (0.13–0.17) | m | | [E] (L) |
+| `neck_length_back` (inion → C7 spinous tip) | 0.12 (0.11–0.14) | m | *Corrected: was 0.16 (0.13–0.17).* With ANSUR II cervicale at 1.532 and the refitted inion at 1.654 | [B1] [E] (M) |
 
 ### 3.4 Visual/behavioural checklist: head–neck
 
-- The **back of the neck is longer than the front**. The occiput overhangs the nape, and the hairline and inion sit 16 cm above C7. The chin sits only ~9.5 cm above the jugular notch.
+- The **back of the neck is longer than the front**. The occiput overhangs the nape, and the hairline and inion sit ~12 cm above C7 *(corrected: was 16 cm)*. The chin sits only ~9.5 cm above the jugular notch. The collar line from the jugular notch to C7 therefore rises ~8 cm from front to back (ANSUR II: cervicale − suprasternale = 7.8 cm).
 - The **mastoid tip lies just behind and below the ear lobe**, at the level of C1. A lateral gunshot at ear-lobe height passes through the region of the C1 arch and the cervicomedullary junction (§9).
 - **The larynx moves.** The hyoid and thyroid cartilage rise ~2 cm on swallowing, and the laryngeal prominence is visible in lean men.
 
@@ -340,13 +370,13 @@ Relative offsets are (point − head origin), with the head origin at (0, +0.020
 
 | Level | Body centre y | Body centre z | Body height (mm) | Width (mm) | Depth (mm) | Disc below (mm) | Canal AP × W (mm) | Spinous tip Δy (mm) | Transverse-process span (mm) | Cord centre y | Surface / organ landmarks at this level |
 |---|---|---|---|---|---|---|---|---|---|---|---|
-| C1 (atlas, ring) | +0.020 | 1.618 | 10 (anterior arch) | 78 (outer, incl. transverse processes) | 45 (outer ring) | — (no disc; C1–C2 synovial) | 30 × 28 (incl. dens) | 30 (posterior tubercle) | 78 | +0.024 | Mastoid tip, ear lobe |
-| C2 (axis) | +0.012 | 1.596 | 23 (+15 dens = 38) | 17 | 15.5 | 5 | 16 × 24 | 43 (large, bifid) | 58 | +0.027 | Angle of mandible |
-| C3 | +0.007 | 1.574 | 14 | 16.5 | 15.5 | 5 | 14.5 × 23 | 40 | 52 | +0.023 | Hyoid (C3/4) |
-| C4 | +0.004 | 1.555 | 14 | 17.5 | 15.5 | 5 | 14 × 24 | 40 | 52 | +0.020 | Upper border of the thyroid cartilage; carotid bifurcation |
+| C1 (atlas, ring) | +0.020 | 1.610 *(corrected: was 1.618; head refit)* | 10 (anterior arch) | 78 (outer, incl. transverse processes) | 45 (outer ring) | — (no disc; C1–C2 synovial) | 30 × 28 (incl. dens) | 30 (posterior tubercle) | 78 | +0.024 | Mastoid tip, ear lobe |
+| C2 (axis) | +0.012 | 1.590 *(was 1.596)* | 23 (+15 dens = 38) | 17 | 15.5 | 5 | 16 × 24 | 43 (large, bifid) | 58 | +0.027 | Angle of mandible |
+| C3 | +0.007 | 1.570 *(was 1.574)* | 14 | 16.5 | 15.5 | 5 | 14.5 × 23 | 40 | 52 | +0.023 | Hyoid (C3/4) |
+| C4 | +0.004 | 1.553 *(was 1.555)* | 14 | 17.5 | 15.5 | 5 | 14 × 24 | 40 | 52 | +0.020 | Upper border of the thyroid cartilage; carotid bifurcation |
 | C5 | +0.003 | 1.536 | 13.5 | 18.5 | 16 | 5 | 14 × 24 | 42 | 53 | +0.019 | Laryngeal prominence, glottis |
 | C6 | +0.004 | 1.518 | 13.5 | 20 | 16.5 | 5 | 14 × 24 | 45 | 55 | +0.020 | Cricoid; start of the trachea and oesophagus; carotid tubercle |
-| C7 | +0.010 | 1.500 | 15 | 22 | 16.5 | 5 | 14 × 23 | 57 (vertebra prominens) | 70 | +0.026 | C7 spinous tip (cervicale) |
+| C7 | +0.010 | 1.500 | 15 | 22 | 16.5 | 5 | 14 × 23 | 57 (vertebra prominens) | 70 | +0.026 | C7 spinous tip (cervicale). The **skin** landmark is now 1.532 (ANSUR II, §1.1 row 21); the body centre was not refitted (§4.6) |
 | T1 | +0.019 | 1.481 | 16 | 26 | 16.5 | 4.5 | 14 × 19 | 60 | 75 | +0.035 | Lung apex (posterior); 1st rib |
 | T2 | +0.028 | 1.461 | 17 | 27 | 17.5 | 4.5 | 14 × 17 | 60 | 70 | +0.044 | Jugular notch (T2/T3); superior angle of the scapula |
 | T3 | +0.036 | 1.441 | 17.5 | 27 | 18.5 | 4.5 | 14 × 16 | 61 | 67 | +0.053 | Scapular spine root (spinous level) |
@@ -367,6 +397,16 @@ Relative offsets are (point − head origin), with the head origin at (0, +0.020
 | S1 (body centre) | +0.014 | 1.012 | — | 50 | 30 | — | 15 × 30 (sacral canal) | — | — | sac to S2 | Promontory; S1 endplate centre (0, +0.006, 1.027) |
 
 **Interpolate between rows** for anything at a disc level (for example T4/T5 = mean of T4 and T5).
+
+**Fact-check status of this table**:
+- **Positions were not independently verified.** No morphometric source (Panjabi et al.) could be retrieved.
+- **What was verified is the skin landmarks that pin the table:**
+  - Iliac crests at L4/L5: ANSUR II iliocristale 1.071 against the L4/L5 disc at ~1.068 ✓.
+  - Jugular notch: ANSUR II suprasternale 1.454 against the T2/T3 disc at ~1.451 ✓ (internally consistent). The T2/T3 level itself is the textbook value and was not re-sourced.
+  - Aortic hiatus T12, oesophageal hiatus T10, caval opening T8 ✓ (StatPearls diaphragm anatomy, mirrored at github.com/clint-llm/clint-llm.github.io).
+  - Aortic bifurcation L4 and IVC formation at L5 ✓ (StatPearls, same mirror).
+- **Two conflicts remain** with ANSUR II. First, the cervicale (skin) is 1.532, ~3 cm above the C7 body centre used here. Second, the refitted head (§0.4) lowers the skull base by 8 mm, so C1–C4 were lowered by 8 → 2 mm, which thins the upper cervical discs by ~2 mm each.
+- Expect **±2–3 cm** in the C4–T3 region until a proper refit is done.
 
 **Body-local geometry of a vertebra** (for procedural generation) `[K] (M)`:
 - **Body**: a short elliptic cylinder, width × depth × height as in the table. It is slightly concave on its front and sides (waisted by 1–2 mm). The posterior face is flat or slightly concave toward the canal.

@@ -100,13 +100,15 @@ This document builds on round one and does not repeat it:
 
 | Muscle (movement) | EMG onset (ms) | Visible onset (ms) `[E]` | Visible peak (ms) `[E]` | Source |
 |---|---|---|---|---|
-| Orbicularis oculi (blink) | 20–50; pooled mean 30 ± 1 | lid starts 40–60; closed by 80–120 | lid stays closed 100–300 in total | [S1] [S2] |
-| Masseter (jaw clench) | 55–85; 67 ± 2 | 80–110 | 150–250 | [S1] [S2] |
-| Sternocleidomastoid (head "duck" / flexion) | 55–85; 62 ± 13 | 90–130 | 180–300 | [S1] [S2] |
-| Biceps brachii (elbows flex, arms pull in) | 85–100 | 120–160 | 200–350 | [S1] |
+| Orbicularis oculi (blink) | 20–50; pooled mean 30 ± 1 | lid starts 40–60; closed by 80–120 | lid stays closed 100–300 in total | [S1] [S2]. ✓ verified [K] for the range (classic auditory blink 30–40 ms). Pooled mean ⚠ not re-verified |
+| Masseter (jaw clench) | 55–85; 67 ± 2 | 80–110 | 150–250 | [S1] [S2]. ✓ range [K]. Pooled mean ⚠ not re-verified |
+| Sternocleidomastoid (head "duck" / flexion) | 55–85; 62 ± 13 | 90–130 | 180–300 | [S1] [S2]. ✓ range [K]; SCM is the most consistently recruited startle muscle. Pooled mean ⚠ not re-verified |
+| Biceps brachii (elbows flex, arms pull in) | 85–100 | 120–160 | 200–350 | [S1]. ✓ consistent with the classic rostro-caudal spread [K] |
 | Trunk flexors | ~90–120 | 130–180 | 250–400 | [K] |
-| Hamstrings / quadriceps (knees flex, crouch) | 100–125 | 140–200 | 250–450 | [S1] |
-| Tibialis anterior | 130–140 | 170–220 | 300–450 | [S1] |
+| Hamstrings / quadriceps (knees flex, crouch) | 100–125 | 140–200 | 250–450 | [S1]. ✓ consistent [K] |
+| Tibialis anterior | 130–140 | 170–220 | 300–450 | [S1]. ✓ consistent [K] |
+
+Fact-check note on this table: the ranges and the head-to-foot order match the classic human startle recordings (Wilkins et al. 1986; Brown et al. 1991) `[K]` (H). The LASR pooled means (30 ± 1, 67 ± 2, 62 ± 13 ms) could not be re-checked. The very different spreads (±1 and ±2 against ±13) suggest the paper mixes standard errors and standard deviations, so use the ranges, not the ±, for jitter. In most classic data the masseter fires at about the same time as the SCM or slightly before it. The engine can treat the two as simultaneous (60–70 ms).
 
 - **Visible onset** = EMG onset + electromechanical delay (~20–40 ms) + the time to move the segment far enough to see (20–80 ms) `[E]`.
 - **Pattern**: a bilaterally synchronous flexion of the upper body into a defensive posture, spreading from the head downward. The sequence is `[S3]`:
@@ -118,8 +120,8 @@ This document builds on round one and does not repeat it:
   6. fist clench;
   7. trunk flexion;
   8. knee bend.
-- Landis and Hunt (1939) filmed people startled by a **pistol shot** with high-speed cameras. They found stereotyped responses (wincing, lip stretching, head and trunk movement) **within 200 ms** `[S3]`.
-- **First-trial effect**: the first unexpected stimulus gives the largest kinematic and EMG response. Amplitude falls significantly after the first exposure `[S4]`. So the first shot in an encounter produces a big flinch, and later shots produce smaller ones.
+- Landis and Hunt (1939) filmed people startled by a **pistol shot** with high-speed cameras. They found stereotyped responses (wincing, lip stretching, head and trunk movement) **within 200 ms** `[S3]`. ✓ verified [K] for the stimulus and method. Fact-check: the *onsets* of all components fall within ~200 ms. The *whole* pattern is classically described as over in roughly **0.5 s** `[K]` (M), which matches `startle_release` below.
+- **First-trial effect**: the first unexpected stimulus gives the largest kinematic and EMG response. Amplitude falls significantly after the first exposure `[S4]`. ✓ verified [K]: Oude Nijhuis, Allum, Valls-Solé, Overeem & Bloem, *J Neurophysiol* 2010. In classic startle data the blink habituates least, which supports the "blink never disappears" rule below. So the first shot in an encounter produces a big flinch, and later shots produce smaller ones.
 - **StartReact** `[K]`: a startling stimulus releases an action the person was already preparing (running, raising the hands) ~50–100 ms earlier than normal.
 - **Grip clench** `[K]`: startle, sudden loss of balance and sudden effort in one limb can close the hand involuntarily. The police literature describes this as a cause of unintentional discharges.
 
@@ -139,16 +141,17 @@ This document builds on round one and does not repeat it:
 
 ### 1.2 The pain and withdrawal reflex arc
 
-- **Nociceptive withdrawal reflex (RIII)**: latency **~100 ms**, consistent with Aδ-fibre conduction. It is closely tied to pain perception `[S37]`.
+- **Nociceptive withdrawal reflex (RIII)**: latency **~100 ms**, consistent with Aδ-fibre conduction. It is closely tied to pain perception `[S37]`. ✓ verified [K]. The classic RIII (Willer 1977) is evoked from the sural nerve at the ankle and recorded in the biceps femoris, with onset ~90–100 ms inside a 90–180 ms window. Because this is a leg reflex, arm and hand withdrawal onsets should be ~10–30 ms shorter (shorter afferent path) `[E]`.
 - **Conduction arithmetic** `[K]` `[E]`:
   - Aδ fibres conduct at 5–30 m/s and C fibres at 0.5–2 m/s.
   - Over ~0.8 m from the hand to the spinal cord, that is **27–160 ms** for Aδ ("first pain": sharp and well localised) and **0.4–1.6 s** for C ("second pain": burning and diffuse).
   - So pain arrives in two waves about 1 s apart. This is most obvious in the hands and feet.
-- **Radiant heat** (laser) evokes withdrawal EMG in two windows: **~250 ms (mean 187–278 ms)** and **> 1,000 ms (mean 1,172–1,460 ms)**, from Aδ and C fibres respectively `[S37]`. The data are from people with spinal cord injury, the best human heat-withdrawal latencies found in this session.
+- **Radiant heat** (laser) evokes withdrawal EMG in two windows: **~250 ms (mean 187–278 ms)** and **> 1,000 ms (mean 1,172–1,460 ms)**, from Aδ and C fibres respectively `[S37]`. The data are from people with spinal cord injury, the best human heat-withdrawal latencies found in this session. ⚠ Numbers not re-verified. The two-component pattern is physiologically sound `[K]`.
+  - **Fact-check caveat (gap)**: these windows were measured for **lower-limb** stimulation (~1 m of afferent path) in spinal subjects, who have no supraspinal inhibition. The C-fibre latency scales with path length (~1 m/s). Use hand/forearm ≈ 0.6–1.0 s and face ≈ 0.2–0.5 s for the late component. The Aδ component shortens much less (~150–250 ms at the hand) `[E]` on `[K]`.
 - **Stress-induced analgesia** means the reflex (L1) fires even when the person does not consciously feel pain (L4):
   - "The effects of pain are often delayed due to survival patterns secondary to 'fight or flight'" `[S6]`.
   - In the FBI study *Violent Encounters*, many officers reported not feeling pain until the event had stabilised `[S17]`.
-  - At Anzio, only **32 %** of severely wounded soldiers asked for narcotics, against **83 %** of civilians with comparable injuries `[S15]`.
+  - At Anzio, only **32 %** of severely wounded soldiers asked for narcotics, against **83 %** of civilians with comparable injuries `[S15]`. **Corrected (context): was "civilians with comparable injuries" at Anzio.** The 32 % vs 83 % comparison comes from Beecher's later work (1956). It compared soldiers with civilian men who had comparable **surgical** wounds. The soldiers were questioned hours after wounding, not during the fight `[K]` (M). The finding shows that **context and meaning** change pain reports. It supports `pain_gain`, but it is not a direct measurement of pain during combat. The percentages are ✓ consistent with the usual citations `[K]`.
 - **Engine rule** `[E]`:
   - Keep `reflex_gain` (L1) independent of arousal.
   - Scale conscious-pain behaviour (L4) by `pain_gain = 1 − 0.7 × arousal`, clamped to 0.2–1.0.
@@ -169,6 +172,8 @@ Momentum p = m·v. The velocity given to the whole body, or to one free segment,
 | Olympic boxer straight punch (effective mass 2.9 kg) | 2.9 kg | 9.14 | 26.5 | 0.35 | — | — |
 | Hook punch (hand ΔV 11 m/s; 2.9 kg assumed) | 2.9 kg | 11.0 | ~32 | ~0.43 | — | — |
 
+✓ verified (arithmetic): every p and Δv in the table was recomputed. The inputs are standard catalogue values `[K]`: .22 LR 40 gr = 2.6 g; 00 buck is 9 × 53.8 gr ≈ 31.4 g at ~370–400 m/s. The punch momentum is 2.9 × 9.14 = 26.5 kg·m/s, which is **9.2×** the 9 mm figure. Cross-check `[E]`: Walilko's peak force of 3,427 N as a ~12 ms half-sine pulse gives an impulse of (2/π) × 3,427 × 0.012 ≈ 26 N·s, which is consistent.
+
 **What the table means** `[E]`:
 
 1. **Whole body.**
@@ -179,6 +184,7 @@ Momentum p = m·v. The velocity given to the whole body, or to one free segment,
    - **backward 0.13–0.22 m/s**;
    - **sideways 0.32–0.45 m/s**.
    - Hip strategy adds 20–30 %.
+   - ✓ verified (arithmetic): 0.04–0.07 m × 3.20 s⁻¹ = 0.13–0.22 m/s. The backward margin is the *functional* one. Clinical limits of stability are ~4° backward against ~8° forward of sway, and 4° at 0.96 m is 0.067 m `[K]`. The anatomical heel margin (~0.10 m) is larger, so these thresholds are conservative. A 00 buckshot load (0.17 m/s) therefore sits **inside** the backward range and can force at most one small step.
 3. **Result for firearms and punches:**
    - Handgun bullets (0.01–0.05 m/s) never force a step.
    - A shotgun load to the chest (0.17 m/s backward) can, at most, provoke a small corrective backward step in a relaxed person standing on their heels.
@@ -192,7 +198,7 @@ Momentum p = m·v. The velocity given to the whole body, or to one free segment,
 
 | Parameter | Value / range | Unit | Notes | Tag |
 |---|---|---|---|---|
-| `startle_emg_onset` | blink 30, masseter 67, SCM 62, biceps 85–100, thigh 100–125, tibialis anterior 130–140 | ms | Schedule per bone group | [S1] [S2] |
+| `startle_emg_onset` | blink 30, masseter 67, SCM 62, biceps 85–100, thigh 100–125, tibialis anterior 130–140 | ms | Schedule per bone group. Jitter within the ranges of the §1.1 table, not by the pooled ± | [S1] [S2] ✓ ranges [K] |
 | `startle_visible_offset` | +30–80 | ms | Add to EMG onset | [E] |
 | `startle_peak` | 200–300 (head/arms), 300–450 (legs) | ms | | [S3] [E] |
 | `startle_release` | 300–800 | ms | Blend back to the prior pose or next behaviour | [E] |
@@ -202,13 +208,13 @@ Momentum p = m·v. The velocity given to the whole body, or to one free segment,
 | `startle_arousal_scale` | 1 − 0.5 × arousal | × | Fighters flinch less | [E] |
 | `startreact_advance` | 50–100 | ms | Only for an action already queued | [K] |
 | `involuntary_trigger_pull_p` | 0.05–0.2 | p | Armed, finger on trigger, on startle or sudden balance loss | [E] on [K] |
-| `nwr_latency` | 90–130 (mean 100) | ms | Mechanical or electrical noxious stimulus | [S37] |
-| `heat_withdrawal_emg` | 190–280 early; 1,170–1,460 late | ms | After the skin reaches the pain threshold | [S37] |
+| `nwr_latency` | 90–130 (mean 100) | ms | Mechanical or electrical noxious stimulus; leg values; arm ~10–30 ms shorter | [S37] ✓ [K] |
+| `heat_withdrawal_emg` | 190–280 early; 1,170–1,460 late (leg/foot); scale the late window by path length (hand 600–1,000, face 200–500) | ms | After the skin reaches the pain threshold | [S37] ⚠ not re-verified + [E] |
 | `first_second_pain_gap` | 0.4–1.6 | s | Distance-dependent (hand/foot longest) | [E] |
 | `pain_gain` | clamp(1 − 0.7 × arousal, 0.2, 1) | × | Scales L4 pain behaviour only | [E] on [S6] [S15] [S17] |
 | `f_ret` (momentum retained) | stopped in body 1.0; through-and-through handgun in limb 0.1–0.3; rifle through-and-through 0.05–0.2; shotgun close range 0.8–1.0 | fraction | | [E] |
 | `k_attach` | 1.5–3 | × | Effective mass multiplier for an attached segment | [E] |
-| `step_threshold_v` | fwd 0.38–0.51; back 0.13–0.22; side 0.32–0.45 | m/s | XcoM, ω₀ = 3.2 | [E] |
+| `step_threshold_v` | fwd 0.38–0.51; back 0.13–0.22; side 0.32–0.45 | m/s | XcoM, ω₀ = 3.2 | [E] ✓ arithmetic |
 
 ### Visual/behavioural checklist (reflex layer)
 - On the shot's sound, a nearby conscious person blinks (~2–3 frames after the report), ducks the head and hunches the shoulders. Hands come up and in, and the knees dip slightly. The flinch is over in about half a second.
@@ -235,7 +241,9 @@ Momentum p = m·v. The velocity given to the whole body, or to one free segment,
   - "Even if the heart is instantly destroyed, there is sufficient oxygen in the brain to support full and complete voluntary action for **10–15 seconds**."
   - Psychological factors are "probably the most important" in rapid incapacitation from torso wounds, but "can never be counted on".
   - The listed psychological drivers are awareness of the injury; fear of injury, death, blood or pain; intimidation by the weapon; **preconceived notions of what people do when they are shot**; and the simple desire to quit.
-- The FBI's 2014 paper `[S6]`: "Those who do stop commonly do so because they decide to, not because they have to." If the psychological factors are absent, "incapacitation can be significantly delayed even with major, unsurvivable wounds".
+  - ✓ verified [K] (H): the 10–15 s quotation and the list of psychological factors are the widely reproduced text of Patrick 1989. The paper's wider conclusion is also consistent: people stimulated by fear, adrenaline, drugs, alcohol or sheer will "may not be incapacitated even if mortally wounded". The exact "never be counted on" wording was not re-checked.
+  - Fact-check nuance `[K]`: 10–15 s is the *upper* bound for **full** function. Human data on circulatory arrest (neck-cuff occlusion, induced ventricular fibrillation) put loss of consciousness at ~6–12 s, with degradation (greying vision, weakness) in the last 2–5 s. §2.5 already models this.
+- The FBI's 2014 paper `[S6]`: "Those who do stop commonly do so because they decide to, not because they have to." If the psychological factors are absent, "incapacitation can be significantly delayed even with major, unsurvivable wounds". ⚠ The quotations could not be re-verified (no search budget, no web access). The *meaning* matches the verified 1989 FBI position, so the modelling conclusion stands. If the wording is uncertain, attribute the sentence to the FBI 1989/2014 position, not as a verbatim quote.
 - The US Army's casualty model assesses impairment at fixed times after wounding: **0 s, 30 s, 5 min, 1 h, 24 h and 3 days** `[S60]`. Incapacitation is time-dependent, not one instant. Use the same idea: evaluate capability on a clock, not only at the moment of the hit.
 - Baseline voluntary reaction times for L4 behaviour `[S64]` `[K]`: simple auditory reaction ~150–280 ms, visual ~190–330 ms. Choice reactions and high stress are slower. Multiply by `rt_mult_cognitive` (§10).
 
@@ -243,19 +251,19 @@ Momentum p = m·v. The velocity given to the whole body, or to one free segment,
 
 | Metric | Value | Source |
 |---|---|---|
-| Average handgun hits needed to stop an assailant | ~2 (1.5–2.4 across calibres) | [S8] (M–L) |
-| Stopped by the first torso or head hit, 9 mm | 47 % | [S8] |
-| "One-shot stop" (stopped after being shot once), 9 mm | 34 % | [S8] |
-| Never incapacitated, .38 / 9 mm / .40 / .45 | 13–17 % | [S8] |
-| Shotgun: stopped by one hit / never stopped | 86 % / 12 % | [S8] |
+| Average handgun hits needed to stop an assailant | ~2 (**1.4–2.5** across calibres; corrected: was 1.5–2.4) | [S8] (M–L). Fact-check `[K]` (M): in Ellifritz's table, .22 LR is ≈1.4 and 9 mm / .380 ≈2.45. The mean of ~2 is ✓ |
+| Stopped by the first torso or head hit, 9 mm | 47 % | [S8]. ✓ verified [K] (M) |
+| "One-shot stop" (stopped after being shot once), 9 mm | 34 % | [S8]. ✓ verified [K] (M) |
+| Never incapacitated, .38 / 9 mm / .40 / .45 | 13–17 % | [S8]. ✓ verified [K] (M): .38 17 %, 9 mm 13 %, .40 13 %, .45 14 % |
+| Shotgun: stopped by one hit / never stopped | 86 % / 12 % | [S8]. 12 % ✓ [K] (M). The one-hit figure is 86–88 % depending on which column is read; ⚠ not re-verified |
 | .25 ACP (68 people): never incapacitated / stopped by one hit | 35 % / 49 % | [S8] |
 | People killed by police who were shot more than once | 79 %, mean 5.98 wounds (civilian-shooter homicides: 65 %, mean 3.94) | [S61] |
-| Police hit rate | 18 % (NYPD gunfights) to 35 % (Dallas); FBI quotes 20–30 % | [S61] [S6] |
-| Voluntary action after the heart is destroyed | 10–15 s | [S5] [S9] |
-| Shots a determined attacker can fire in 1.06 s | 4 | [S9] |
-| Time for a person to fall from standing after a hit that removes muscle tone | ⅔ s to ≥ 1 s | [S10] |
-| Extra shots fired after a "stop" cue (lab) | mean 2.18; last shot mean 0.36 s after the cue | [S11] |
-| Time for an assailant to turn 180° and show the back | mean 0.54 s (fastest 0.37 s); fastest 0.26 s in a later study; back of the head toward the shooter in < ⅓ s | [S12] |
+| Police hit rate | 18 % (NYPD gunfights) to 35 % (Dallas); FBI quotes 20–30 % | [S61] [S6]. NYPD 18 % in gunfights (RAND 2008; ~30 % when no one fires back) ✓ [K] (M). The FBI 20–30 % ⚠ not re-verified |
+| Voluntary action after the heart is destroyed | 10–15 s | [S5] [S9]. ✓ verified [K] (quotation) |
+| Shots a determined attacker can fire in 1.06 s | 4 | [S9]. Physically ✓ (split times of 0.25 s are normal) [K] |
+| Time for a person to fall from standing after a hit that removes muscle tone | ⅔ s to ≥ 1 s | [S10]. ⚠ Source not re-verified. ✓ physically consistent `[E]`: a free fall of the COM (0.96 → ~0.2 m) is the 0.39 s lower bound; knee folding and toppling stretch it to 0.6–1.2 s |
+| Extra shots fired after a "stop" cue (lab) | mean 2.18; last shot mean 0.36 s after the cue | [S11]. ⚠ not re-verified. Consistent with stop-signal reaction times of ~0.2–0.4 s `[K]` |
+| Time for an assailant to turn 180° and show the back | mean 0.54 s (fastest 0.37 s); fastest 0.26 s in a later study; back of the head toward the shooter in < ⅓ s | [S12]. ⚠ Exact values not re-verified. The order of magnitude is ✓ `[K]` (Lewinski's turning studies are widely cited as "a suspect can turn his back within about half a second") |
 | Miami 1986: attacker kept fighting | After a 9 mm hit through the arm (brachial artery) and right lung, stopping near the heart; described as non-survivable and early in the fight | [S62]. The duration of several minutes is [K] |
 
 **Interpretation for the game** `[E]`:
@@ -301,7 +309,7 @@ Momentum p = m·v. The velocity given to the whole body, or to one free segment,
 ### 2.4 Not noticing the hit
 
 Evidence:
-- **Perceptual narrowing**: in 157 officers interviewed after shootings, 84 % reported diminished sound, 79 % tunnel vision, 74 % acting "on automatic pilot" and 62 % slow motion `[S18]`. This was measured in shooters, not victims. Use it as the model for anyone in high arousal `[E]`.
+- **Perceptual narrowing**: in 157 officers interviewed after shootings, 84 % reported diminished sound, 79 % tunnel vision, 74 % acting "on automatic pilot" and 62 % slow motion `[S18]`. This was measured in shooters, not victims. Use it as the model for anyone in high arousal `[E]`. ✓ verified [K] (H): Artwohl & Christensen, *Deadly Force Encounters* (1997). The same survey also reports heightened visual clarity 71 %, memory loss for parts of the event 52 %, dissociation 39 % and **temporary paralysis 7 %**. That last figure is a useful ceiling for the "freeze" probability of armed, trained people.
 - **Survivor accounts** `[S16]` (anecdotal):
   - Stabbing felt "like being punched" or "someone slapping me".
   - One victim stabbed 31 times "couldn't understand why he was punching me".
@@ -339,8 +347,8 @@ This short sequence reads as very real and should be a first-class behaviour.
 | 15–60 s | Agonal gasps, pulseless. See `[R1-04 §2.4]` and `[R1-03 §3.6]` |
 
 **Partial or tamponading cardiac wounds** (stabs, small bullets) `[S13]` `[S14]`:
-- In 7 witnessed suicides by stab wound to the heart: **4 stayed active for 2–10 min**, **2 for ~10 s**, **1 was incapacitated immediately** `[S13]`.
-- Wounds of the ulnar artery, great saphenous vein, and the edge of the lung or liver allowed activity for **several hours** `[S13]`.
+- In 7 witnessed suicides by stab wound to the heart: **4 stayed active for 2–10 min**, **2 for ~10 s**, **1 was incapacitated immediately** `[S13]`. ⚠ The breakdown could not be re-verified. The paper itself (Karger, Niemeyer & Brinkmann, *Int J Legal Med* 1999;112:188–191) is ✓ real `[K]`, and its general finding (purposeful activity for tens of seconds to minutes after cardiac stab wounds) is ✓ consistent with round one `[R1-03 §5]`. Treat 4/2/1 of 7 as a small-sample shape, not a probability.
+- Wounds of the ulnar artery, great saphenous vein, and the edge of the lung or liver allowed activity for **several hours** `[S13]`. ⚠ not re-verified. Physiologically plausible `[K]`: none of these bleeds fast enough to cause shock within minutes.
 - Case reports describe prolonged, methodical activity after an ultimately fatal gunshot wound to the heart `[S14]`.
 
 **Distance covered** `[E]`:
@@ -357,20 +365,20 @@ This short sequence reads as very real and should be a first-class behaviour.
 | Parameter | Value / range | Unit | Notes | Tag |
 |---|---|---|---|---|
 | `stop_mechanism` | CNS / circulatory / mechanical / psychological | enum | Evaluate all four every decision tick | [S7] [K] |
-| `heart_destroyed_voluntary_window` | 10–15 (default 12) | s | Full function about the first 5 s | [S5] [S9] |
+| `heart_destroyed_voluntary_window` | 10–15 (default 12) | s | Full function about the first 5 s. Consciousness usually lost at ~6–12 s after flow stops | [S5] [S9] ✓ [K] |
 | `heart_destroyed_greyout_start` | 5–10 | s | Stride shortens, reaches for support | [E] on [R1-04 §1] |
-| `cardiac_stab_activity` | 4/7: 120–600 s; 2/7: ~10 s; 1/7: 0 s | s | Sample one class | [S13] |
+| `cardiac_stab_activity` | 4/7: 120–600 s; 2/7: ~10 s; 1/7: 0 s | s | Sample one class; n = 7, so the shape is indicative only | [S13] ⚠ breakdown not re-verified |
 | `psych_stop_p` | see §2.3 table | p | Per mindset, with multipliers | [E] on [S8] |
-| `never_stop_p_committed` | 0.13–0.17 | p | Until physiology fails | [S8] |
-| `hits_to_stop_mean` | ~2 | hits | Validation target for handgun sims | [S8] |
+| `never_stop_p_committed` | 0.13–0.17 | p | Until physiology fails | [S8] ✓ [K] (M) |
+| `hits_to_stop_mean` | ~2 (range by calibre 1.4–2.5) | hits | Validation target for handgun sims | [S8] ✓ mean; range corrected |
 | `vasovagal_p` | 0.02–0.05 | p | Non-combatant who sees their own blood; prodrome 10–60 s | [E] on [S26] [S63] |
 | `unaware_p` | 0.3–0.5 (high arousal), 0.05–0.15 (low), 0.4–0.6 (stab to back or flank) | p | | [E] on [S16] [S18] |
 | `discovery_latency` | lognormal, median 5 s, P90 60 s | s | | [E] |
 | `wound_check_seq` | look 0.3–1.0 s, touch 0.4–1.2 s, look at hand 1–2 s | s | Needs a free, working hand | [K] [E] |
-| `turn_away_180` | 0.26–0.54 | s | Explains back wounds | [S12] |
+| `turn_away_180` | 0.26–0.54 | s | Explains back wounds | [S12] ⚠ order of magnitude ✓ [K] |
 | `simple_rt_base` | auditory 150–280, visual 190–330 | ms | L4 decisions; ×`rt_mult_cognitive` | [S64] [K] |
 | `capability_eval_times` | 0 s, 30 s, 5 min, 1 h (then continuous) | — | ORCA-style checkpoints for AI and debugging | [S60] [E] |
-| `shooter_overrun` | 0.3–0.5 s; ~2 extra shots | s | For NPC shooters | [S11] |
+| `shooter_overrun` | 0.3–0.5 s; ~2 extra shots | s | For NPC shooters | [S11] ⚠ not re-verified; consistent with stop-signal RT [K] |
 
 ### Visual/behavioural checklist (incapacitation)
 - Most people who are shot **do something other than fall over at once**. They flinch, look at the wound, clutch it, turn away, run, sit down, or keep attacking.
@@ -396,8 +404,8 @@ The head and brain are covered in `[R1-04 §2–4]`. Rows 1–2 below only route
 | 5a | Neck vessels (carotid / jugular) | Arterial jet or venous pour | **Both hands clamp the neck in 0.3–0.8 s**, blood between the fingers. Carotid: contralateral weakness can appear within 5–20 s if collaterals are poor | Controlled descent as blood pressure falls; see `[R1-03]` for timing | Arms are busy holding the neck | [K] [E] |
 | 5b | Larynx / trachea | Air leak | Coughs and sprays blood, bubbling and whistling, voice lost or hoarse. Crackling under the skin (subcutaneous emphysema) over minutes | 0.2–0.4 | Mobility | [K] |
 | 6 | Cervical cord C3–C7 | Quadriplegia below the level. Breathing is diaphragmatic if C3–C5 are intact | Awake, cannot move below the level. Arm function by level: C5 shoulder, C5–6 elbow flexion, C7 elbow extension, C8–T1 hand | 1.0; cut strings, awake | Face, voice, whatever arm function the level leaves | [K] [R1-04 §6] |
-| 7 | Thoracic / lumbar cord (48–64 % of spinal gunshot wounds are thoracic) | **Legs flaccid within 100 ms** | Arms fling out to catch the fall. Cannot rise. Drags himself with the arms. "I can't feel my legs." Burning band of pain at the level | 1.0; paraplegic drop (§5.1 E) | Arms, trunk above the level; can still fight or shoot | [S46] [K] |
-| 8 | Shoulder girdle / humerus | Arm cannot be held against gravity; drops to the side | Other hand grabs the wrist or forearm and holds it against the belly. Shoulder hunched, trunk leans toward the injured side. **Radial nerve palsy (wrist drop) in 26.5 % of ballistic humeral shaft fractures** | 0.1–0.3 | Legs, other arm | [S47] [K] |
+| 7 | Thoracic / lumbar cord (48–64 % of spinal gunshot wounds are thoracic) | **Legs flaccid within 100 ms** | Arms fling out to catch the fall. Cannot rise. Drags himself with the arms. "I can't feel my legs." Burning band of pain at the level | 1.0; paraplegic drop (§5.1 E) | Arms, trunk above the level; can still fight or shoot | [S46] [K]. Thoracic predominance ✓ consistent with civilian series `[K]` (M); 48–64 % ⚠ not re-verified |
+| 8 | Shoulder girdle / humerus | Arm cannot be held against gravity; drops to the side | Other hand grabs the wrist or forearm and holds it against the belly. Shoulder hunched, trunk leans toward the injured side. **Radial nerve palsy (wrist drop) in 26.5 % of ballistic humeral shaft fractures** | 0.1–0.3 | Legs, other arm | [S47] [K]. 30/113 = 26.5 % ✓ (arithmetic). The source paper is unconfirmed (⚠). The figure is plausible against 7–17 % (pooled ~12 %) for closed fractures `[K]` |
 | 9 | Forearm / hand | Hand flicks from the impulse. Grip fails with tendon, nerve or bone damage | Hand pulled against the chest, then stares at it. Shakes the hand, tucks it into the armpit | 0.05–0.15 | All but that hand | [K] [E] |
 | 10 | Chest wall / lung (not heart) | Sharp pain on each breath | Breath-hold, then shallow fast breathing (25–40/min). Hand flat over the wound. Cough, maybe blood. Short phrases. Leans forward with hands on knees ("tripod"), then sits or kneels | 0.2–0.4 now; 0.6 sit/kneel within 60 s | Most. Voice limited. Tension pneumothorax over minutes | [S49] [K] [E] |
 | 11 | Heart / great vessels | Blood pressure collapses | §2.5 | Delayed 8–15 s | Everything for ~5–10 s | [S5] [S13] |
@@ -411,6 +419,7 @@ The head and brain are covered in `[R1-04 §2–4]`. Rows 1–2 below only route
 | 19 | Tibia / fibula | Cannot bear weight; foot flops | Falls, holds the shin | 0.7–0.9 (loaded) | Arms | [K] [E] |
 | 20 | Ankle / foot | Intense pain (dense innervation) | Hops on the good leg, limps | 0.3–0.5 | Most | [K] [E] |
 | 21 | Buttock / back of thigh (sciatic nerve) | Foot drop, weak knee flexion | Partial collapse, drags the foot | 0.4–0.6 | Most | [K] |
+| 22 | Groin / front of the upper thigh (**femoral nerve**; fact-check gap) | Quadriceps paralysed: the knee cannot be held straight against load | On the next loaded step the **knee buckles into flexion** and the person drops onto that knee. They can stand only by locking the knee back in hyperextension, hand pushing on the thigh. Numb front of the thigh. Often combined with a femoral artery or vein injury (`[R1-03]`) | 0.6–0.8 (loaded) | Arms; can hop or crawl | [K] (H) |
 
 **Weapon or grip loss** `[E]`:
 
@@ -432,7 +441,7 @@ A startle can instead **tighten** the grip (§1.1).
 | `loaded_leg_giveway_delay` | 0.1–0.3 | s | Femur, tibia, pelvis or knee with the leg loaded | [K] [E] |
 | `unloaded_leg_giveway` | at the next stance phase, 0.2–0.5 | s | | [E] |
 | `femur_deformity` | foot external rotation 45–90°, shortening 2–5 cm, visible mid-thigh angulation 10–30° | ° / cm | Pose targets when the fracture is simulated | [K] |
-| `radial_palsy_p_ballistic_humerus` | 0.265 | p | Wrist drop: wrist and fingers hang in 40–70° flexion | [S47] |
+| `radial_palsy_p_ballistic_humerus` | 0.265 (use 0.2–0.3) | p | Wrist drop: wrist and fingers hang in 40–70° flexion | [S47] ⚠ source unconfirmed |
 | `neck_clamp_latency` | 0.3–0.8 | s | Both hands | [E] |
 | `hand_to_wound_latency` | 0.4–0.8 (torso), 0.3–0.6 (face) | s | Nearest working hand | [E] |
 | `double_over_angle` | hip/trunk flexion 20–60° | ° | Abdominal and groin hits | [K] [E] |
@@ -457,18 +466,18 @@ A startle can instead **tighten** the grip (§1.1).
 
 | Strategy | Used when | Latency | Kinematics | Source |
 |---|---|---|---|---|
-| **Ankle** | Small perturbation; COM well inside the base of support | EMG 73–110 ms. Ankle muscles fire first, then thigh, then trunk | Body sways as an inverted pendulum; sway ≲ 2–4° | [S19] |
+| **Ankle** | Small perturbation; COM well inside the base of support | EMG 73–110 ms. Ankle muscles fire first, then thigh, then trunk | Body sways as an inverted pendulum; sway ≲ 2–4° | [S19]. ✓ verified [K] (M): Horak & Nashner (1986) report the ankle strategy as distal-to-proximal EMG (gastrocnemius, then hamstrings, then paraspinals) at roughly 70–110 ms |
 | **Hip** | Larger or faster perturbation, or narrow support | Similar latency | Hips flex or extend against the COM motion; trunk counter-rotates; arms windmill | [S19] |
-| **Step (change of support)** | XcoM leaves the base of support | EMG 90–130 ms; recovery-step toe-off **0.24 ± 0.03 s** | Step 0.3–0.8 m; balance regained within about 1 s for large perturbations | [S20] |
+| **Step (change of support)** | XcoM leaves the base of support | EMG 90–130 ms; recovery-step toe-off **0.24 ± 0.03 s** | Step 0.3–0.8 m; balance regained within about 1 s for large perturbations | [S20]. Toe-off ⚠ not re-verified. 0.24 s is the fast end of the compensatory-step literature, where foot-off is typically ~0.25–0.35 s `[K]`. Use 0.22–0.35 s, slower when injured |
 | **Reach / grasp** | Support nearby, or the step fails | Arm EMG ~100 ms; reach 200–400 ms | Grabs a wall, rail, person, or the attacker (clinch) | [S25] [K] |
 | **Trip recovery (walking)** | Foot obstructed | Reflex 60–140 ms | Early swing: elevate the foot over the obstacle. Late swing: lower the foot and shorten the step | [S23] |
 
 ### 4.2 How far recovery can go, and how many steps
 
-- **Single-step limit**: after a release from a forward lean, young adults can recover with one step from leans up to **32.2°**, older adults only **23.5°** `[S21]`. The smallest lean tested was ~14°.
+- **Single-step limit**: after a release from a forward lean, young adults can recover with one step from leans up to **32.2°**, older adults only **23.5°** `[S21]`. The smallest lean tested was ~14°. ✓ verified [K] (M): the same lean-release paradigm (Thelen et al. 1997, *J Gerontol A*) gave ≈32.5° young vs ≈23.9° older. Wojcik et al. 1999 split the result by sex, and females recover from smaller leans than males. A ~32° / ~23–24° pair is robust.
   - **Use the lean limit as the strength-dependent capability** `[E]`: `max_single_step_lean = 23.5° + 8.7° × leg_capacity`, where `leg_capacity` runs from 0 to 1.
   - Injury, blood loss, concussion and intoxication reduce `leg_capacity`.
-- **Sideways**: after large lateral perturbations, young adults mostly take **one sidestep**. Weaker (older) people take **multiple steps**, and about half of those multi-step responses use a **crossover step** (the far leg crosses in front or behind) `[S22]`. A crossover is less stabilising and is a typical "stumble" look.
+- **Sideways**: after large lateral perturbations, young adults mostly take **one sidestep**. Weaker (older) people take **multiple steps**, and about half of those multi-step responses use a **crossover step** (the far leg crosses in front or behind) `[S22]`. A crossover is less stabilising and is a typical "stumble" look. ⚠ The 50 % figure was not re-verified. The qualitative pattern (older or weaker people use more multi-step and crossover responses) is ✓ consistent with Maki & McIlroy's work on lateral stepping `[K]`.
 - **Stagger model** `[E]`:
 
   | Balance loss (excess XcoM velocity) | Steps | Result |
@@ -499,11 +508,11 @@ A startle can instead **tighten** the grip (§1.1).
 
 | Parameter | Value / range | Unit | Notes | Tag |
 |---|---|---|---|---|
-| `apr_latency` | 73–110 | ms | Automatic postural response, ankle first | [S19] |
-| `step_toe_off` | 0.24 ± 0.03 | s | After the perturbation | [S20] |
+| `apr_latency` | 73–110 | ms | Automatic postural response, ankle first | [S19] ✓ [K] (M) |
+| `step_toe_off` | 0.24 ± 0.03 (healthy, fast); use 0.22–0.35, ×1/`leg_capacity` when injured | s | After the perturbation | [S20] ⚠ + [K] [E] |
 | `balance_regain_time` | ~1 | s | Large perturbations | [S20] |
-| `max_single_step_lean` | 23.5 + 8.7 × `leg_capacity` | ° | Young healthy = 32.2 | [S21] [E] |
-| `lateral_crossover_p` | 0.5 of multi-step responses | p | Weak or injured | [S22] |
+| `max_single_step_lean` | 23.5 + 8.7 × `leg_capacity` | ° | Young healthy = 32.2 | [S21] [E] ✓ [K] (Thelen 1997: ≈32.5 / 23.9) |
+| `lateral_crossover_p` | 0.5 of multi-step responses | p | Weak or injured | [S22] ⚠ not re-verified |
 | `trip_reflex_latency` | 60–140 | ms | Elevating or lowering strategy | [S23] |
 | `stagger_steps` | 1 / 2–3 / 3–6 by severity | steps | Table above | [E] |
 | `stagger_step_duration` | 0.25–0.40 | s | | [E] |
@@ -535,9 +544,9 @@ A startle can instead **tighten** the grip (§1.1).
 | **G. Hypoperfusion sag** | Heart, aorta or major bleed at the end of consciousness | 1–3 s of greying and staggering | 1–2 s | 2–4 s | Slows, sways, sags to the knees, slumps forward or sideways | fades from partial to none | 2–4 m/s | [S26] [E] |
 
 **Check against data**:
-- The time to fall from standing after a tone-abolishing hit is ⅔ s to ≥ 1 s `[S10]`.
-- Unavoidable falls take 700–1,200 ms from balance loss to impact `[S25]`.
-- Measured head impact velocities for standing-height falls with test dummies: 95 % prediction interval **2.02–7.41 m/s** `[S51]`.
+- The time to fall from standing after a tone-abolishing hit is ⅔ s to ≥ 1 s `[S10]`. ⚠ Source not re-verified. ✓ physically consistent (see §2.2).
+- Unavoidable falls take 700–1,200 ms from balance loss to impact `[S25]`. ⚠ not re-verified. ✓ consistent with the classic ~0.7 s from fall onset to hip impact in lateral falls `[K]`.
+- Measured head impact velocities for standing-height falls with test dummies: 95 % prediction interval **2.02–7.41 m/s** `[S51]`. ⚠ The interval was not re-verified (Hajiaghamemar et al., *Ann Biomed Eng* 2015 is real `[K]`). The upper end ✓ agrees with the independent rigid-rod result of §5.2 (7.2 m/s at the crown). No real fall can much exceed √(3gL) ≈ 7.2 m/s at the crown without an added push, so 7.4 m/s is a sound ceiling.
 
 ### 5.2 Arithmetic for the rigid topple `[E]`
 
@@ -547,11 +556,13 @@ A startle can instead **tighten** the grip (§1.1).
 - Phase from 0.5 rad to horizontal, integrating by energy: 0.25 s + 0.17 s = **0.42 s**.
 - **Total: 1.0 s (10° start), 1.26 s (5°), 1.58 s (2°).**
 - Speed of the top of the head at impact: L × θ̇ = 1.75 × 4.09 ≈ **7.2 m/s**. The head centre (~1.6 m) moves at ~6.5 m/s. This matches the upper tail of `[S51]`.
+- ✓ verified (arithmetic, re-derived): the cosh phase gives 0.59 / 0.84 / 1.16 s. The energy phase gives ∫dθ/(2ω sin(θ/2)) = (1/ω)·ln[tan(π/8)/tan(0.125)] = 0.41 s. Totals are 1.00 / 1.25 / 1.57 s, and θ̇ at horizontal is √(2ω²) = 4.10 s⁻¹.
+- Fact-check robustness `[E]`: a real body is not a uniform rod. Take the COM at 0.96 m and a whole-body sagittal moment of inertia about the COM of ~12 kg·m² for 75 kg. Then I_feet/m ≈ 0.16 + 0.92 = 1.08 m² and ω² = g·0.96/1.08 = 8.7 (ω = 2.95 s⁻¹). The fall is ~2 % faster than the rod value, which does not matter. In real "timber" knockouts the knees and ankles are rarely fully locked, so most look 10–30 % faster than the rigid value. Use 0.8–1.6 s.
 - **Crumple (A)**: the COM drops ~0.7 m. Free fall alone takes 0.38 s. With the knees folding and then toppling, 0.6–1.0 s. The head falls from kneeling height (~0.9 m): √(2 × 9.81 × 0.9) ≈ 4.2 m/s.
 
 ### 5.3 Protective behaviour while conscious
 
-- **Arms**: a startle-like burst in biceps and triceps ~**100 ms** after balance is lost, then the arms move quickly into a protective orientation `[S25]`. Young adults show early (< 200 ms) arm reactions in **91 %** of evoked falls `[S25]`. The drop took 601–816 ms in the lab, so there is time.
+- **Arms**: a startle-like burst in biceps and triceps ~**100 ms** after balance is lost, then the arms move quickly into a protective orientation `[S25]`. Young adults show early (< 200 ms) arm reactions in **91 %** of evoked falls `[S25]`. The drop took 601–816 ms in the lab, so there is time. ⚠ The 91 % and 601–816 ms figures were not re-verified. The ~100 ms arm burst is ✓ consistent with the known latencies of upper-limb balance reactions (~80–140 ms) `[K]`.
 - **Posture for arrest** `[K]` `[E]`:
   - shoulders flexed 60–100°;
   - elbows 10–30° flexed, yielding on impact;
@@ -559,8 +570,9 @@ A startle can instead **tighten** the grip (§1.1).
   - fingers spread;
   - head turned aside (forward fall) or chin tucked (backward fall);
   - knees first when falling forward; hip and side landing when falling sideways; a roll if moving.
-- **Hands do not guarantee head protection**. In 227 filmed real falls (older adults), hands hit the ground in **74 %** of falls and the head in **37 %**. Hand impact did **not** reduce the chance of head impact `[S24]`.
-  - Causes in that study: incorrect weight shift 41 %, trip 21 %, hit or bump 11 %, loss of support 11 %, **collapse 11 %** `[S24]`.
+- **Hands do not guarantee head protection**. In 227 filmed real falls (older adults), hands hit the ground in **74 %** of falls and the head in **37 %**. Hand impact did **not** reduce the chance of head impact `[S24b]`. **Corrected (attribution): was `[S24]` Robinovitch, *Lancet* 2013.** The head and hand figures come from the companion paper by Schonnop et al., *CMAJ* 2013 ("Prevalence of and factors associated with head impact during falls in older adults in long-term care"). It analysed the same Simon Fraser University video dataset, 227 falls by 133 residents. The values are ✓ verified [K] (M–H). In that paper head impact was more likely in **forward** falls.
+  - Causes in that study: incorrect weight shift 41 %, trip 21 %, hit or bump 11 %, loss of support 11 %, **collapse 11 %** `[S24]`. ✓ verified [K] (H): Robinovitch et al., *Lancet* 2013, 227 falls by 130 residents.
+  - Caveat: all these are frail older adults in care homes, so treat them as a floor for protective failure, not as young-adult values (§5 table already says so).
 - **Other conscious protective acts** `[K]`:
   - turning the face away from the attacker or ground;
   - raising the forearms in front of the face;
@@ -595,15 +607,21 @@ Healthy volunteers were made to faint on video (Lempert 1994, 42 complete syncop
 
 | Finding | Value |
 |---|---|
-| Duration of unconsciousness | **12.1 ± 4.4 s** |
-| Myoclonic jerks (multifocal, arrhythmic, in proximal and distal muscles; generalised jerks common) | **90 %** |
-| Other movements (head turns, oral automatisms, righting movements) | **79 %** |
-| Eyes | **Open** throughout; early **upward deviation** common |
+| Duration of unconsciousness | **12.1 ± 4.4 s** ✓ verified [K] (H) |
+| Myoclonic jerks (multifocal, arrhythmic, in proximal and distal muscles; generalised jerks common) | **90 %** ✓ verified [K] (H) |
+| Other movements (head turns, oral automatisms, righting movements) | **79 %** ✓ verified [K] (M) |
+| Eyes | **Open** throughout; early **upward deviation** common ✓ verified [K] (H) |
+
+Fact-check context `[K]`: the faints were induced in 59 healthy volunteers by hyperventilation, orthostasis and a Valsalva manoeuvre, giving 56 episodes of which 42 were complete syncopes.
 
 Eye movements in fainting (14 subjects) `[S27]`:
 - 7: tonic upward deviation;
 - 6: downbeat nystagmus, then upward deviation;
 - 1: eyes stayed in the primary position.
+
+⚠ These counts were not re-verified. The qualitative result (upward deviation predominates, sometimes preceded by downbeat nystagmus; lateral deviation occurs less often) is ✓ consistent `[K]`.
+
+**Myth check: "the eyes roll back at the moment of death".** The upward deviation above is **transient**. It lasts seconds, at the start of hypoxic loss of consciousness, and relaxes as the brainstem fails. Once the person is dead or brainstem-dead, the globes rest **near straight ahead or slightly divergent**, with lids open or half-open and fixed, dilated pupils. They are not rolled up to the whites (`[R1-04 §11]`, `[R1-04 §14]` myths table) `[K]` (H). Blend upgaze back to neutral or slight divergence over 5–60 s as the physiology clock passes death.
 
 Game use `[E]`:
 - A victim bleeding out, or with a destroyed heart, passes through the same picture at the end of the consciousness window: eyes open and turned up, a few irregular jerks for 5–15 s, head turning, lip smacking.
@@ -616,19 +634,19 @@ Game use `[E]`:
 |---|---|---|---|---|
 | `fall_archetype` | A–G | enum | Selected by §11 | [E] |
 | `crumple_ground_time` | 0.6–1.2 | s | Archetype A | [S10] [R1-04] |
-| `topple_ground_time` | 1.0–1.6 | s | Rigid; θ₀ 10° to 2° | [E] |
+| `topple_ground_time` | 1.0–1.6 rigid (✓ arithmetic); use 0.8–1.6 when knees and ankles are not fully locked | s | Rigid; θ₀ 10° to 2° | [E] |
 | `topple_head_v` | 5–7 | m/s | | [E] [S51] |
 | `crumple_head_v` | 3–5 | m/s | | [E] |
-| `protective_arm_onset` | ~100 (burst), < 200 (orientation) | ms | Conscious only | [S25] |
-| `protective_arm_p_conscious` | 0.9 | p | Young, alert | [S25] |
-| `hand_impact_p` / `head_impact_p` | 0.74 / 0.37 | p | Older-adult falls; use as a floor for impaired characters | [S24] |
+| `protective_arm_onset` | ~100 (burst), < 200 (orientation) | ms | Conscious only | [S25] ✓ consistent [K] |
+| `protective_arm_p_conscious` | 0.9 | p | Young, alert | [S25] ⚠ 91 % not re-verified |
+| `hand_impact_p` / `head_impact_p` | 0.74 / 0.37 | p | Older-adult falls; use as a floor for impaired characters | [S24b] (corrected: was [S24]) ✓ |
 | `arrest_pose` | shoulders 60–100° flexed, elbows 10–30°, wrists 60–90° extended | ° | IK targets to the ground contact point | [E] |
 | `unconscious_protect` | 0 | — | "No protective action – floppy" | [S36] |
 | `head_bounce` | 1–5 | cm | Hard floor | [E] |
 | `fall_dir_default` | fwd 0.45 / back 0.25 / side 0.30 | p | Stationary upright only | [E] (L) |
-| `syncope_loc` | 12.1 ± 4.4 | s | Faint, not bleeding | [S26] |
-| `syncope_myoclonus_p` | 0.9 | p | Multifocal, arrhythmic, 5–15 s | [S26] |
-| `syncope_eye_up_p` | 0.93 (13/14) | p | Some start with downbeat nystagmus | [S27] |
+| `syncope_loc` | 12.1 ± 4.4 | s | Faint, not bleeding | [S26] ✓ [K] (H) |
+| `syncope_myoclonus_p` | 0.9 | p | Multifocal, arrhythmic, 5–15 s | [S26] ✓ [K] (H) |
+| `syncope_eye_up_p` | 0.93 (13/14) | p | Some start with downbeat nystagmus. Transient (2–10 s), then relaxes toward neutral; never "rolled back" in the dead | [S27] ⚠ counts not re-verified |
 
 ### Visual/behavioural checklist (falls)
 - **Conscious** fall: arms shoot out, hands hit first, the head is turned aside, and the body rolls onto a hip or shoulder. The person immediately tries to move or get up.
@@ -646,17 +664,17 @@ Game use `[E]`:
 
 | Punch | Hand velocity | Force | Head linear acceleration | Head rotational acceleration | Source |
 |---|---|---|---|---|---|
-| Olympic boxer, straight punch to the face | 9.14 ± 2.06 m/s | 3,427 ± 811 N (effective mass 2.9 kg) | 58 ± 13 g | 6,343 ± 1,789 rad/s² | [S28] |
-| Hook | ΔV 11.0 ± 3.4 m/s | 4,405 ± 2,318 N (neck load 855 N) | 71.2 ± 32.2 g | 9,306 ± 4,485 rad/s² | [S29] |
-| Punches that caused loss of consciousness vs those that did not (hooks to the side of the jaw) | — | — | 81.5 ± 39.8 g vs 47.9 ± 21.4 g | **5.9 ± 2.4 vs 3.5 ± 1.6 krad/s²** | [S31] |
-| Proposed thresholds | concussion ~4,500 rad/s²; diffuse axonal injury / acute subdural haematoma ~10,000 rad/s² | | | | [S30] |
+| Olympic boxer, straight punch to the face | 9.14 ± 2.06 m/s | 3,427 ± 811 N (effective mass 2.9 kg) | 58 ± 13 g | 6,343 ± 1,789 rad/s² | [S28] ✓ verified [K] (H); effective mass is 2.9 ± 2.0 kg |
+| Hook | ΔV 11.0 ± 3.4 m/s | 4,405 ± 2,318 N (neck load 855 N) | 71.2 ± 32.2 g | 9,306 ± 4,485 rad/s² | [S29] ✓ verified [K] (M–H) for ΔV, g and rad/s²; force and neck load ⚠ not re-verified |
+| Punches that caused loss of consciousness vs those that did not (hooks to the side of the jaw) | — | — | 81.5 ± 39.8 g vs 47.9 ± 21.4 g | **5.9 ± 2.4 vs 3.5 ± 1.6 krad/s²** | [S31] ⚠ not re-verified (video reconstruction; small n) |
+| Proposed thresholds | concussion ~4,500 rad/s²; diffuse axonal injury / acute subdural haematoma ~10,000 rad/s² | | | | [S30]. Fact-check `[K]` (M): ~4,500 is the **25 %-risk concussion** level. Zhang et al. 2004 (NFL reconstructions) give 4,600 / 5,900 / 7,900 rad/s² for 25 / 50 / 80 % concussion risk. Most of those concussions involved **no** loss of consciousness, so they are not loss-of-consciousness thresholds. ~10,000 rad/s² matches the bridging-vein (acute subdural) tolerance for short (< 10 ms) pulses (Depreitere et al. 2006). ✓ in substance |
 | Headgear effect (hook) | — | — | — | falls to ~1,740 rad/s² | [S30] |
 
 - Boxing punches have a **65 mm** effective lever arm about the head's centre of gravity, against 34 mm in American football, so they are **rotation-heavy** `[S29]`.
 - The rotational mechanism explains why the chin and jaw are "knockout buttons": about 90 % of brain shear strain is attributed to rotation `[S32]`.
-- In MMA knockouts, **53.9 %** of the knockout strikes landed on the jaw region `[S34]`.
+- In MMA knockouts, **53.9 %** of the knockout strikes landed on the jaw region `[S34]`. ✓ verified [K] (M): Hutchison, Lawrence, Cusimano & Schweizer, *Am J Sports Med* 2014.
 - **Game conversion** `[E]`: α_peak ≈ F × r_eff / I_eff, with r_eff = 0.065 m and I_eff = 0.035 kg·m² (head plus neck coupling).
-  - Check: 3,427 × 0.065 / 0.035 = 6,364 rad/s² against 6,343 measured.
+  - Check: 3,427 × 0.065 / 0.035 = 6,364 rad/s² against 6,343 measured. ✓ arithmetic. This is a calibration fit to one data point, not an independent validation.
   - Location multipliers: side of the jaw 1.0; chin (uppercut) 0.9; temple 0.9; back of the head 0.6; straight to the forehead 0.5.
   - Untrained bare-knuckle punches (500–1,500 N, `[R1-02]`) give ~900–2,800 rad/s².
 - **Head snap** `[E]`:
@@ -674,18 +692,23 @@ Game use `[E]`:
 | 7,000–10,000 | P(loss of consciousness) 0.6–0.9 |
 | > 10,000 | P(loss of consciousness) > 0.9; risk of diffuse axonal injury or acute subdural haematoma |
 
-- **Logistic model**: P_LOC = 1 / (1 + exp(−(α − 6,000) / 1,200)). This gives 0.11 at 3,500, 0.22 at 4,500, 0.5 at 6,000 and 0.94 at 9,300.
+- **Logistic model**: P_LOC = 1 / (1 + exp(−(α − 6,000) / 1,200)). This gives 0.11 at 3,500, 0.22 at 4,500, 0.5 at 6,000 and 0.94 at 9,300. ✓ arithmetic.
+  - Fact-check caution `[E]`: the midpoint sits at the *concussion* 50 % level of Zhang 2004. Loss of consciousness needs more on average. Mean hook accelerations of ~9,300 rad/s² do **not** knock out 94 % of professional boxers in practice, because trained fighters brace and many hooks land partly on the guard.
+  - The model is acceptable for an **unbraced, unaware** target, which is the typical game victim. For a braced or aware target, shift the midpoint to 7,500–8,000 rad/s².
 - **Accumulation**: each head blow within 60 s lowers the midpoint by 5 %. A second head blow while already rocked lowers it by 20 %.
 
 ### 6.3 Knockout phenomenology
 
-- **Tone is lost immediately**, at a speed rivalling or exceeding a voluntary movement `[S33]`.
-- **Posture**: tonic "fencing" posturing in ~66 % of knockout videos (`[R1-04 §3.6]`, `[S35]`).
+- **Tone is lost immediately**, at a speed rivalling or exceeding a voluntary movement `[S33]`. ⚠ The ≤ 100 ms figure was not re-verified. It is ✓ consistent with video: the knees go before the head recoils from the blow, so tone is lost within 0.1–0.2 s `[K]`.
+- **Posture**: tonic "fencing" posturing in ~66 % of knockout videos (`[R1-04 §3.6]`, `[S35]`). ✓ consistent [K] (M): Hosseini & Lifshitz 2009 describe the fencing response in about two-thirds of the knockouts they reviewed.
 - **Body collapse pattern** `[E]`:
   - limp crumple (A) 55 %;
   - stiff topple (B) 30 %;
   - "delayed" stagger for 1–3 steps, then a fall (F with loss of consciousness) 15 %.
-- **Eyes**: open, glassy, drifting up or apart, or "rolled back" (Bell's phenomenon, the upward roll with loss of consciousness, present in ~75 % of people) `[S54]`. Lids half-open.
+- **Eyes**: open, glassy, drifting up or apart, or "rolled back" `[S54]`. Lids half-open. **Corrected (mechanism): was "Bell's phenomenon, the upward roll with loss of consciousness, present in ~75 % of people".**
+  - Bell's phenomenon is the up-and-out roll of the globe during **forced lid closure** in a conscious person. It is present in roughly 75–90 % of normal people `[K]` (M).
+  - The upward deviation of a knocked-out or fainting person is a separate **tonic upgaze of loss of consciousness**, the same sign seen in syncope (§5.6; 13/14 in `[S27]`). It is transient (seconds) and relaxes to a neutral or slightly divergent position.
+  - The `ko_eyes` probabilities below remain `[E]`.
 - **Airway**: snoring or stertor if lying on the back `[R1-04 §3.6]`.
 - **Duration**: 5–60 s, tail to 300 s `[R1-04 §3.7]`.
 - **Waking**:
@@ -693,16 +716,16 @@ Game use `[E]`:
   2. blank stare;
   3. tries to rise and fails (motor incoordination);
   4. confused and repeats questions.
-- **Blows after a knockout**: in MMA the mean time from the knockout strike to the referee stopping the fight is **3.5 s (range 0–20 s)** `[S34]`. So an unconscious body commonly takes several more blows.
+- **Blows after a knockout**: in MMA the mean time from the knockout strike to the referee stopping the fight is **3.5 s (range 0–20 s)** `[S34]`. So an unconscious body commonly takes several more blows. ✓ verified [K] (M). The same paper reports a mean of **~2.6 further strikes** (range 0–20) landing in that interval `[K]` (L–M, recollection, not re-checked).
   - Show these as **purely passive**: the head bounces, there is no guard and no flinch. Posturing is possible.
 - **Flash knockdown**: down briefly with no, or only momentary, loss of consciousness. Gets up at once. Mild concussion `[S56]`.
-- Of UFC matches reviewed (n = 503), 12 % ended in knockout and 24 % in technical knockout `[S34]`.
+- Of UFC matches reviewed (n = 503), 12 % ended in knockout and 24 % in technical knockout `[S34]`. ⚠ Not re-verified. The sample size is doubtful: Hutchison 2014 is usually cited as covering **844 UFC fights (2006–2012)** `[K]` (L–M). The percentages are plausible, but treat the n as unconfirmed.
 
 ### 6.4 Getting "rocked"
 
-- **Definition**: "motor incoordination" = unsteady on the feet, including losing balance, staggering or stumbling, struggling to get up, or falling `[S36]`.
-- In the NFL, "slow to get up" was the most sensitive video sign (66 %). A blank or vacant look and an impact seizure were the most specific (100 %) `[S36]`.
-- Frequencies among concussed athletes: slow to get up 65.9 %, motor incoordination 28.4 % `[S36]`.
+- **Definition**: "motor incoordination" = unsteady on the feet, including losing balance, staggering or stumbling, struggling to get up, or falling `[S36]`. ✓ verified [K] (H). Davis et al. 2019 agreed six video signs: lying motionless, motor incoordination, impact seizure, tonic posturing, no protective action–floppy, and blank/vacant look.
+- In the NFL, "slow to get up" was the most sensitive video sign (66 %). A blank or vacant look and an impact seizure were the most specific (100 %) `[S36]`. ⚠ Not re-verified. Note that "slow to get up" is an NFL-specific extra sign, not one of the six consensus signs.
+- Frequencies among concussed athletes: slow to get up 65.9 %, motor incoordination 28.4 % `[S36]`. ⚠ not re-verified. These are *sensitivity* figures among concussed players, so they are not the probability that a hit person shows the sign.
 - **Game model** `[E]`:
   - Severe phase 5–60 s, residual 5–30 min.
   - Postural sway ×2–3.
@@ -739,13 +762,13 @@ Game use `[E]`:
 |---|---|---|---|---|
 | `punch_r_eff` / `head_I_eff` | 0.065 / 0.035 | m / kg·m² | α = F·r/I | [S29] [E] |
 | `alpha_loc_mult` | jaw 1.0, chin 0.9, temple 0.9, occiput 0.6, forehead 0.5 | × | | [E] on [S31] [S34] |
-| `P_LOC(α)` | 1/(1+exp(−(α−6000)/1200)) | p | Midpoint −5 % per head blow within 60 s | [E] on [S30] [S31] |
+| `P_LOC(α)` | 1/(1+exp(−(α−6000)/1200)) unbraced; midpoint 7,500–8,000 if braced or aware | p | Midpoint −5 % per head blow within 60 s | [E] on [S30] [S31]; braced shift added by fact-check [E] |
 | `head_snap_peak_t` | 50–100 | ms | | [S33] [E] |
 | `head_snap_amp` | 20–60, clamped to the neck range | ° | | [E] |
 | `ko_tone_loss` | ≤ 100 | ms | | [S33] |
 | `ko_collapse_mix` | crumple 0.55 / topple 0.30 / delayed 0.15 | p | | [E] |
-| `ko_eyes` | open 0.8; rolled up (Bell's) 0.5 of those | p | | [S54] [K] |
-| `post_ko_passive_strikes` | 3.5 (0–20) | s | Expected player behaviour | [S34] |
+| `ko_eyes` | open 0.8; tonic upgaze 0.5 of those (corrected label: was "Bell's"); upgaze lasts 2–10 s, then neutral or slightly divergent | p | | [S54] [K] [E] |
+| `post_ko_passive_strikes` | 3.5 (0–20) | s | Expected player behaviour | [S34] ✓ [K] (M) |
 | `rocked_duration` | 5–60 (severe), 300–1,800 (residual) | s | | [E] |
 | `rocked_knee_buckle_rate` | 0.1–0.3 | /s | First 10 s | [E] |
 | `rocked_rt_mult` | 1.3–1.8 | × | | [E] |
@@ -809,9 +832,9 @@ Game use `[E]`:
 
 ## 8. Burns: withdrawal and behaviour
 
-- **Pain threshold**: ~**43–45 °C** at the skin (values of 43 °C and 44.6 °C are reported). Burn injury begins when the dermo-epidermal junction exceeds 44 °C `[S38]` `[R1-02 §6.2]`.
-- **Reaction time used by standards**: ISO 13732-1 takes **0.5 s** as the minimum contact period for unintentional touching of a hot surface by healthy adults `[S38]`.
-- **Real contact with hot metal above 70 °C** typically lasts **1–5 s** before release, because of grip, surprise and slow letting go `[S38]`.
+- **Pain threshold**: ~**43–45 °C** at the skin (values of 43 °C and 44.6 °C are reported). Burn injury begins when the dermo-epidermal junction exceeds 44 °C `[S38]` `[R1-02 §6.2]`. ✓ verified [K] (H). Heat-pain thresholds in quantitative sensory testing cluster at 43–46 °C, near the TRPV1 activation temperature (~43 °C). The 44 °C burn onset is from Moritz & Henriques (1947).
+- **Reaction time used by standards**: ISO 13732-1 takes **0.5 s** as the minimum contact period for unintentional touching of a hot surface by healthy adults `[S38]`. ⚠ Partly verified `[K]` (M): 0.5 s is the **shortest contact period for which ISO 13732-1 tabulates burn thresholds**. Product-safety practice (IEC Guide 117 and the older EN 563) normally uses **1 s** as the design contact period for an unintentional touch with a normal reaction, and **4 s** for slower reactions (children, older adults, impaired people). Use **0.5–1 s** for an alert adult and **4 s** for an impaired character.
+- **Real contact with hot metal above 70 °C** typically lasts **1–5 s** before release, because of grip, surprise and slow letting go `[S38]`. **Corrected (interpretation) ⚠: not re-verified, and probably a misreading.** In the ISO 13732-1 tables, bare metal causes a burn at about **65–70 °C for a 1 s contact**, ~**58–60 °C for 4 s** and ~**55 °C for 10 s**. For all materials the thresholds are 51 °C for 1 min, 48 °C for 10 min and 43 °C for 8 h `[K]` (M). The "1–5 s" most likely reflects the standard's 1 s and 4 s design contact periods, not measured human behaviour. Keep 1–5 s only for a person who **grips** or **falls against** the surface, and tag it `[E]`.
 - **Latency chain** `[E]`:
   1. time for the skin to reach the pain threshold (with a torch at the default flux of `[R1-02 §6.3]`, well under ~0.3 s);
   2. plus heat-withdrawal EMG of 190–280 ms (Aδ) `[S37]`;
@@ -832,11 +855,12 @@ Game use `[E]`:
 
 | Parameter | Value / range | Unit | Notes | Tag |
 |---|---|---|---|---|
-| `heat_pain_threshold` | 43–45 | °C | Skin / dermo-epidermal junction | [S38] |
-| `burn_withdraw_onset` | t(threshold) + 0.19–0.28 | s | ≈ 0.2–0.6 s after flame contact | [S37] [E] |
-| `burn_second_pain` | +1.2–1.5 | s | Sustained behaviour | [S37] |
-| `unintentional_contact_min` | 0.5 | s | ISO reference | [S38] |
-| `hot_metal_contact_real` | 1–5 | s | Grip or surprise | [S38] |
+| `heat_pain_threshold` | 43–45 | °C | Skin / dermo-epidermal junction | [S38] ✓ [K] |
+| `burn_withdraw_onset` | t(threshold) + 0.19–0.28 | s | ≈ 0.2–0.6 s after flame contact. The latency was measured on the leg; hand ~0.15–0.25 | [S37] [E] |
+| `burn_second_pain` | +1.2–1.5 (leg/foot); hand +0.6–1.0; face +0.2–0.5 | s | Sustained behaviour. Scaled by C-fibre path length (fact-check gap) | [S37] [E] |
+| `unintentional_contact_min` | 0.5–1 (alert), 4 (impaired) | s | ISO 13732-1 minimum tabulated period 0.5 s; IEC Guide 117 design values 1 s / 4 s | [S38] [K] (corrected: was 0.5) |
+| `hot_metal_contact_real` | 1–5 | s | Only when gripping or pinned against the surface | [E] (corrected tag: was [S38]) |
+| `metal_burn_threshold` | ~65–70 at 1 s, ~58–60 at 4 s, ~55 at 10 s, 51 at 1 min, 48 at 10 min, 43 at 8 h | °C | Bare metal; lower-conductivity materials need higher temperatures for short contacts | [K] (M) (gap added) |
 | `hand_snatch` | 20–40 in 200–300 ms | cm | | [E] |
 | `face_turn_away` | 100–250 | ms | After the flash or heat | [E] |
 | `restrained_scream_rate` | 1 per 1.5–4 | s | Breath-limited | [E] |
@@ -857,7 +881,7 @@ Game use `[E]`:
   - orbital tightening (AU6/AU7);
   - levator contraction, i.e. nose wrinkle and upper-lip raise (AU9/AU10);
   - eye closure (AU43).
-- The Prkachin–Solomon Pain Intensity score (PSPI) = AU4 + max(AU6, AU7) + max(AU9, AU10) + AU43, on a 0–16 scale `[S39]`.
+- The Prkachin–Solomon Pain Intensity score (PSPI) = AU4 + max(AU6, AU7) + max(AU9, AU10) + AU43, on a 0–16 scale `[S39]`. ✓ verified [K] (H). AU4, AU6/7 and AU9/10 are each scored 0–5 and **AU43 is binary (0/1)**, which gives the maximum of 16. Drive the eye-closure blendshape as a near-binary state (closed or not), not a smooth 0–5 ramp.
 - Map to the game's pain level (0–10) as **PSPI ≈ 1.6 × pain** `[E]`. Add a lip stretch (AU20) and a clenched jaw at moderate pain, and an open mouth (AU25–27) during vocalisation `[K]`.
 - **Timing** `[E]`:
   - onset 150–400 ms after the pain is perceived;
@@ -871,8 +895,8 @@ Game use `[E]`:
 |---|---|---|---|---|
 | Impact grunt / "oof" | Blows to the torso, shots, landing from a fall | Forced expiration, noisy, low F0 | 100–300 ms | [K] |
 | Startle cry / yelp | Unexpected hit, sudden pain | Brief jump in F0 | 150–400 ms | [K] |
-| **Scream** | Severe acute pain, terror, burns | Loud, high F0, **amplitude modulated at 30–150 Hz ("roughness")**; normal speech modulates at 4–5 Hz | 0.5–3 s per breath | [S40] |
-| Pain cry (intensity-graded) | Rising pain | Mean F0, F0 range, loudness and **non-linear phenomena (rough, chaotic voicing)** all rise with pain; cries get longer and less stable | 0.5–3 s | [S41] |
+| **Scream** | Severe acute pain, terror, burns | Loud, high F0, **amplitude modulated at 30–150 Hz ("roughness")**; normal speech modulates at 4–5 Hz | 0.5–3 s per breath | [S40] ✓ verified [K] (H) (Arnal et al. 2015) |
+| Pain cry (intensity-graded) | Rising pain | Mean F0, F0 range, loudness and **non-linear phenomena (rough, chaotic voicing)** all rise with pain; cries get longer and less stable | 0.5–3 s | [S41] ✓ consistent [K] (M) (Raine, Pisanski, Reby et al.). These were **simulated** (acted) pain vocalisations |
 | Moan / groan | Sustained pain; semi-conscious (GCS verbal 2) | Low F0, voiced, on expiration | 0.5–2 s | [K] |
 | Words | Conscious: "I'm shot", "help", "stop", names, prayer, swearing | — | — | [K] |
 | Expiratory grunting breaths | Splinting for chest or abdominal pain | Short, voiced exhalations | every breath | [K] |
@@ -896,11 +920,11 @@ Game use `[E]`:
 | Behaviour | Typical cause | Detail | Tag |
 |---|---|---|---|
 | Guarding / splinting | Any wound | Muscles over the wound tense; limb held against the body | [K] |
-| **Pressing or holding the wound** | Any reachable wound | Touch reduces pain through subcortical gating of nociceptive input (it even suppresses the nociceptive blink reflex) | [S43] |
+| **Pressing or holding the wound** | Any reachable wound | Touch reduces pain through subcortical gating of nociceptive input (it even suppresses the nociceptive blink reflex) | [S43] ✓ verified [K] (M) (Mancini, Beaumont, Hu, Haggard & Iannetti, *Pain* 2015) |
 | Doubling over | Abdomen, groin | Hip/trunk flexion 30–90° | [K] |
 | Fetal curl on the ground | Abdominal or groin pain, fear | Hips 90–120°, knees 100–130°, arms wrapped around the body, head flexed | [K] [E] |
-| **Writhing / rolling** | Colicky visceral pain, burns, extreme acute pain | Restless, tries position after position | [S42] |
-| **Lying absolutely still** | Peritoneal irritation, fractures, chest wall pain, shock | Any movement hurts, or there is no energy; peritonitis: on the back with the knees drawn up | [S42] |
+| **Writhing / rolling** | Colicky visceral pain, burns, extreme acute pain | Restless, tries position after position | [S42] ✓ verified [K] (H), textbook sign |
+| **Lying absolutely still** | Peritoneal irritation, fractures, chest wall pain, shock | Any movement hurts, or there is no energy; peritonitis: on the back with the knees drawn up | [S42] ✓ verified [K] (H), textbook sign |
 | Rocking, rubbing, shaking the limb | Limb pain, burns | | [K] |
 | Crawling away | Legs useless, threat present | Pulls with the forearms | [K] |
 | Rolling onto the side | Face or jaw wounds, vomiting | Drains blood and keeps the airway clear | [K] |
@@ -909,7 +933,7 @@ Game use `[E]`:
 
 - **Freeze**: angry faces reduce body sway and slow the heart (bradycardia) `[S44]`. In a violent encounter, show 0.5–3 s of stillness with a fixed stare after a threat or a first hit `[E]`.
 - **Tonic immobility**: reversible physical immobility and muscular rigidity lasting **seconds to hours** `[S44]`. P = 0.02–0.1 for a non-combatant under an overwhelming attack `[E]`. The eyes are open and the body stiff, with little or no vocalisation.
-- **Dissociation**: blank stare, delayed or absent responses, detached calm, perceptual narrowing (84 % reduced hearing, 79 % tunnel vision in shooting survivors `[S18]`).
+- **Dissociation**: blank stare, delayed or absent responses, detached calm, perceptual narrowing (84 % reduced hearing, 79 % tunnel vision in officers involved in shootings `[S18]`). **Corrected: was "in shooting survivors".** The respondents were the officers who fired, not people who had been shot.
 - **Shock behaviour over minutes**: anxious and restless (class II), confused (class III), lethargic and unresponsive (class IV) `[R1-03 §3]`.
 
 ### 9.5 Pain over longer periods `[E]`
@@ -924,9 +948,9 @@ Game use `[E]`:
 
 | Parameter | Value / range | Unit | Notes | Tag |
 |---|---|---|---|---|
-| `pspi` | 1.6 × pain (0–16) | — | AU4, AU6/7, AU9/10, AU43 blendshape weights | [S39] [E] |
+| `pspi` | 1.6 × pain (0–16) | — | AU4, AU6/7, AU9/10, AU43 blendshape weights; AU43 is binary | [S39] ✓ [K] + [E] |
 | `pain_face_onset` / `peak` | 150–400 / 500–1,500 | ms | | [E] |
-| `scream_roughness_am` | 30–150 | Hz | Amplitude modulation for audio synthesis or selection | [S40] |
+| `scream_roughness_am` | 30–150 | Hz | Amplitude modulation for audio synthesis or selection | [S40] ✓ [K] (H) |
 | `scream_f0` | 300–900+ (male), ×1.7–2 (female) | Hz | Derive from the speaking F0 | [K] (L) |
 | `vocal_per_breath` | 1 | — | 1.5–4 s cycle | [E] |
 | `chest_wound_vocal_cap` | 0.3–1 s bursts, −6 to −12 dB | s / dB | | [E] |
@@ -1215,41 +1239,48 @@ Engine API details are `[K]`. Verify them against the Godot 4.5 documentation; t
 | 3 | Heart shot = instant drop | 10–15 s of voluntary action; stabs 10 s to 10 min | Physiological clock (§2.5) | [S5] [S13] |
 | 4 | Instant pain scream on every hit | Pain often delayed or absent under arousal; wound discovered later | Awareness and `pain_gain` (§1.2, §2.4) | [S6] [S15] [S16] |
 | 5 | Unconscious bodies brace their fall | No protective action ("floppy") | Tone to 0; no IK (§5.4) | [S36] |
-| 6 | Conscious falls look like ragdolls | Arms out in ~100–200 ms; hands land first in 74 % of falls | Protective IK (§5.3) | [S24] [S25] |
+| 6 | Conscious falls look like ragdolls | Arms out in ~100–200 ms; hands land first in 74 % of falls | Protective IK (§5.3) | [S24b] [S25] (corrected: was [S24]) |
 | 7 | Knockouts drift down slowly | Tone lost within ~100 ms; plank or crumple | §6.3 | [S33] |
 | 8 | A shot leg is just a limp | A broken femur under load gives way in 0.1–0.3 s and the body falls to that side | §3 | [S48] [E] |
 | 9 | Screams are clean tones | Screams are rough (30–150 Hz amplitude modulation), breath-limited, and weaker with chest wounds or low blood pressure | §9.2 | [S40] [S41] |
 | 10 | Brain-injured characters behave normally until they die | Deficits: paralysed side, gaze deviation, aphasia, confusion, seizures | §10 | [R1-04] |
 | 11 | Every stab is noticed | Often felt as a punch; noticed later | §2.4, §7 | [S16] |
 | 12 | Faint = instant death pose | Syncope: eyes open and turned up, jerks in 90 %, ~12 s, then recovery | §5.6 | [S26] [S27] |
+| 13 | "Hydrostatic shock": a torso hit with a fast bullet switches the brain off at a distance | The FBI (1987 workshop, 1989 paper) and Fackler found **no reliable remote incapacitating effect** at handgun velocities. The handgun temporary cavity is small and mostly harmless to elastic tissue. Remote effects of the pressure wave are contested: some animal work reported brief EEG or neural changes after high-velocity rifle hits (Suneson et al. ~1990; Courtney & Courtney 2007–2008). None of it shows a reliable instant human drop from a non-CNS hit. Rifle cavitation **does** destroy inelastic organs (liver, spleen, brain) near the track | No remote-shock "off switch". Model local cavity damage only (`[R1-01]`). Instant drops come only from CNS hits, mechanical failure or psychological drops (§2.1) | [S5] [S7] [K] (M) — fact-check addition |
+| 14 | Eyes roll back to the whites at the moment of death | Upgaze belongs to the first seconds of hypoxic loss of consciousness (syncope, knockout) and is transient. The dead rest near straight ahead or slightly divergent, lids open or half-open, pupils fixed | Upgaze 2–10 s, then relax (§5.6) | [S27] `[R1-04 §11, §14]` — fact-check addition |
+| 15 | Everyone who is shot screams | Many shot people are silent, grunt, or say "I'm hit". Pain is often delayed (§1.2, §2.4). Screaming is most likely with fractures under load, burns, genital or eye wounds, and after the wound is discovered. Chest wounds, shock and a focused fighter give little or no sound | Vocal set driven by awareness, `pain_gain`, airway and blood pressure (§9.2) | [S6] [S15] [S16] [K] — fact-check addition |
+| 16 | A shot person spins round or flies in the direction of the bullet | Momentum is too small (§1.3). Spinning or falling back comes from the person's **own** movement: turning away (0.3–0.5 s, [S12]), a flinch or withdrawal, a leg that gives way, or the lean at the moment tone is lost | Direction rules of §5.5 | [E] [S12] — fact-check addition |
 
 ---
 
 ## 15. Load-bearing numbers (quick reference)
 
-1. Startle EMG onsets: blink **30 ms**, sternocleidomastoid **62 ms**, masseter **67 ms**, biceps 85–100 ms, thigh 100–125 ms, tibialis anterior 130–140 ms. Stereotyped whole-body flinch within **200 ms** of a pistol shot [S1] [S2] [S3].
-2. The first startle is the largest, and it habituates with repetition [S4].
-3. Withdrawal reflex ~**100 ms**. Heat withdrawal **190–280 ms** (Aδ) and **1.2–1.5 s** (C) [S37].
-4. Knock-back: 9 mm **0.038 m/s**, buckshot **0.17 m/s**; the backward step threshold is **0.13–0.22 m/s**. A punch carries ~26–32 kg·m/s (0.35–0.43 m/s) [R1-01] [S28] [S29] [E].
-5. FBI: "sufficient oxygen in the brain to support full and complete voluntary action for **10–15 seconds**" after heart destruction. Psychological stops "can never be counted on" [S5].
-6. "Those who do stop commonly do so because they decide to" [S6].
-7. Handguns: **~2 hits** to stop; **47 %** stopped by the first hit (9 mm); **13–17 %** never stopped. Shotgun 86 % / 12 % [S8].
-8. Cardiac stab suicides: **4/7 active 2–10 min, 2/7 ~10 s, 1/7 immediate** [S13].
-9. Standing fall after a tone-abolishing hit: **⅔ s to ≥ 1 s**. Unavoidable falls **0.7–1.2 s** [S10] [S25].
-10. Turn 180° in **0.26–0.54 s** (explains back wounds) [S12].
-11. Single-step recovery limit **32.2°** (young) vs **23.5°** (older). Recovery-step toe-off **0.24 ± 0.03 s**. Postural EMG **73–110 ms** [S19] [S20] [S21].
-12. Real falls: hands **74 %**, head **37 %**; hands did not prevent head impact. "Collapse" caused **11 %** [S24].
-13. Protective arm burst **~100 ms**; early arm reaction in **91 %** of young adults' falls [S25].
-14. Head impact velocities for standing falls: **2.0–7.4 m/s** [S51]. Rigid topple **1.0–1.6 s**, ~**6.5–7 m/s** head impact [E].
-15. Syncope: **12.1 ± 4.4 s**, myoclonus **90 %**, eyes open and turned up [S26] [S27].
-16. Knockouts: rotational acceleration **5.9 vs 3.5 krad/s²** with vs without loss of consciousness; threshold ~**4,500**; hook mean **9,306 rad/s²**; tone lost ≤ **100 ms** [S29] [S30] [S31] [S33].
-17. MMA: **53.9 %** of knockouts from jaw strikes; **3.5 s** (0–20 s) of blows after the knockout before stoppage [S34].
-18. Video signs: slow to get up (66 % sensitive); motor incoordination = staggering, stumbling, struggling to get up [S36].
-19. Officers in shootings: reduced hearing **84 %**, tunnel vision **79 %**, autopilot **74 %**, slow motion **62 %** [S18].
-20. Anzio: **32 %** of severely wounded soldiers vs **83 %** of civilians wanted narcotics [S15].
-21. Screams: roughness **30–150 Hz**. Pain vocal F0, loudness and non-linear phenomena rise with intensity [S40] [S41].
-22. Pain face: brow lowering, orbital tightening, levator contraction, eye closure (PSPI 0–16) [S39].
-23. Radial nerve palsy in **26.5 %** of ballistic humeral shaft fractures. Thoracic cord **48–64 %** of spinal gunshot wounds [S46] [S47].
+Fact-check status per item (see §18): ✓ = verified (arithmetic or [K] (H/M)); ⚠ = plausible but not re-verified; **corrected** = changed.
+
+1. Startle EMG onsets: blink **30 ms**, sternocleidomastoid **62 ms**, masseter **67 ms**, biceps 85–100 ms, thigh 100–125 ms, tibialis anterior 130–140 ms. Stereotyped whole-body flinch within **200 ms** of a pistol shot [S1] [S2] [S3]. ✓ ranges and order; ⚠ pooled means.
+2. The first startle is the largest, and it habituates with repetition [S4]. ✓
+3. Withdrawal reflex ~**100 ms**. Heat withdrawal **190–280 ms** (Aδ) and **1.2–1.5 s** (C) [S37]. ✓ RIII; ⚠ heat values, which were measured on the leg (scale by path length).
+4. Knock-back: 9 mm **0.038 m/s**, buckshot **0.17 m/s**; the backward step threshold is **0.13–0.22 m/s**. A punch carries ~26–32 kg·m/s (0.35–0.43 m/s) [R1-01] [S28] [S29] [E]. ✓ arithmetic
+5. FBI: "sufficient oxygen in the brain to support full and complete voluntary action for **10–15 seconds**" after heart destruction. Psychological stops "can never be counted on" [S5]. ✓
+6. "Those who do stop commonly do so because they decide to" [S6]. ⚠ wording not re-verified; the substance ✓ matches FBI 1989.
+7. Handguns: **~2 hits** to stop (by calibre **1.4–2.5**, corrected: was 1.5–2.4); **47 %** stopped by the first hit (9 mm); **13–17 %** never stopped. Shotgun 86 % / 12 % [S8]. ✓ (M), apart from the range correction.
+8. Cardiac stab suicides: **4/7 active 2–10 min, 2/7 ~10 s, 1/7 immediate** [S13]. ⚠
+9. Standing fall after a tone-abolishing hit: **⅔ s to ≥ 1 s**. Unavoidable falls **0.7–1.2 s** [S10] [S25]. ⚠ source; ✓ physics.
+10. Turn 180° in **0.26–0.54 s** (explains back wounds) [S12]. ⚠
+11. Single-step recovery limit **32.2°** (young) vs **23.5°** (older). Recovery-step toe-off **0.24 ± 0.03 s**. Postural EMG **73–110 ms** [S19] [S20] [S21]. ✓ lean and EMG; ⚠ toe-off (use 0.22–0.35 s).
+12. Real falls: hands **74 %**, head **37 %**; hands did not prevent head impact [S24b] (**corrected attribution**: Schonnop et al., *CMAJ* 2013). "Collapse" caused **11 %** [S24] ✓.
+13. Protective arm burst **~100 ms**; early arm reaction in **91 %** of young adults' falls [S25]. ✓ ~100 ms; ⚠ 91 %.
+14. Head impact velocities for standing falls: **2.0–7.4 m/s** [S51]. Rigid topple **1.0–1.6 s**, ~**6.5–7 m/s** head impact [E]. ⚠ S51 interval; ✓ topple arithmetic (use 0.8–1.6 s when not fully rigid).
+15. Syncope: **12.1 ± 4.4 s**, myoclonus **90 %**, eyes open and turned up [S26] [S27]. ✓ (upgaze transient; not a death sign).
+16. Knockouts: rotational acceleration **5.9 vs 3.5 krad/s²** with vs without loss of consciousness; threshold ~**4,500**; hook mean **9,306 rad/s²**; tone lost ≤ **100 ms** [S29] [S30] [S31] [S33]. ✓ hook mean; ✓ 4,500 as the 25 %-risk *concussion* level (not a loss-of-consciousness threshold); ⚠ 5.9 / 3.5 and ≤ 100 ms.
+17. MMA: **53.9 %** of knockouts from jaw strikes; **3.5 s** (0–20 s) of blows after the knockout before stoppage [S34]. ✓ (M)
+18. Video signs: slow to get up (66 % sensitive); motor incoordination = staggering, stumbling, struggling to get up [S36]. ✓ definition; ⚠ 66 %.
+19. Officers in shootings: reduced hearing **84 %**, tunnel vision **79 %**, autopilot **74 %**, slow motion **62 %** [S18]. ✓ These are officers who fired, not people who were shot.
+20. Anzio: **32 %** of severely wounded soldiers vs **83 %** of civilians wanted narcotics [S15]. ✓ numbers; **corrected context**: the civilian comparison is Beecher's later (1956) study of civilians with surgical wounds.
+21. Screams: roughness **30–150 Hz**. Pain vocal F0, loudness and non-linear phenomena rise with intensity [S40] [S41]. ✓
+22. Pain face: brow lowering, orbital tightening, levator contraction, eye closure (PSPI 0–16) [S39]. ✓ AU43 is binary.
+23. Radial nerve palsy in **26.5 %** of ballistic humeral shaft fractures. Thoracic cord **48–64 %** of spinal gunshot wounds [S46] [S47]. ✓ arithmetic; ⚠ source.
+24. Burns: heat pain threshold 43–45 °C ✓. The ISO 0.5 s is the **minimum tabulated** contact period; design practice uses 1 s (alert) and 4 s (impaired). "1–5 s real contact" is **corrected** to an `[E]` value for gripping or pinned contact only.
 
 ---
 
@@ -1260,6 +1291,7 @@ Engine API details are `[K]`. Verify them against the Godot 4.5 documentation; t
 - A search for "Pinizzotto" also returned unrelated 2026 news about a Toronto police constable with that surname. It was ignored as irrelevant.
 - `WebFetch` was not used. Nothing was downloaded or executed. No code was copied from the web. The pseudocode in §11.3 was written for this document.
 - The shared web-search budget ran out at the end of the session. Three searches were refused (see §0.1).
+- **Fact-check pass (2026-09-26)**: no web content was read in the fact-check. The first search attempt was refused because the budget was exhausted (200/200). One `WebFetch` to a PubMed abstract was blocked by the egress proxy (`EGRESS_BLOCKED`). No untrusted text entered this pass, so there was nothing to flag. Nothing was downloaded, executed or installed, and no shell command touched the document.
 
 ---
 
@@ -1290,7 +1322,8 @@ All sources were read only through search-result summaries (see §0.1).
 - **[S21]** Wojcik LA, Thelen DG et al. Age and gender differences in single-step recovery from a forward fall. *J Gerontol A* 1999. https://academic.oup.com/biomedgerontology/article/54/1/M44/594110
 - **[S22]** Kinematics and strategies of recovery steps during lateral losses of balance. *BMC Geriatrics* 2020. https://bmcgeriatr.biomedcentral.com/articles/10.1186/s12877-020-01650-4
 - **[S23]** Eng JJ, Winter DA, Patla AE. Strategies for recovery from a trip in early and late swing. *Exp Brain Res* 1994. https://pubmed.ncbi.nlm.nih.gov/7705511/
-- **[S24]** Robinovitch SN et al. Video capture of the circumstances of falls in elderly people residing in long-term care. *Lancet* 2013. https://pubmed.ncbi.nlm.nih.gov/23083889/
+- **[S24]** Robinovitch SN et al. Video capture of the circumstances of falls in elderly people residing in long-term care. *Lancet* 2013. https://pubmed.ncbi.nlm.nih.gov/23083889/ (source for fall causes only)
+- **[S24b]** Schonnop R, Yang Y, Feldman F, Robinson E, Loughin M, Robinovitch SN. Prevalence of and factors associated with head impact during falls in older adults in long-term care. *CMAJ* 2013;185(17):E803–E810. Source for hands 74 % / head 37 %. Added by the fact-check from the checker's own knowledge `[K]`. It was **not accessed** in this session, so no URL is given; find it by title on PubMed.
 - **[S25]** The timing and amplitude of the muscular activity of the arms preceding impact in a forward fall. *J Biomech* 2023. https://pmc.ncbi.nlm.nih.gov/articles/PMC10257944/ ; Age-related changes in the capacity to select early-onset upper-limb reactions. https://pubmed.ncbi.nlm.nih.gov/31377381/
 - **[S26]** Lempert T et al. Syncope: a videometric analysis of 56 episodes of transient cerebral hypoxia. *Ann Neurol* 1994. https://onlinelibrary.wiley.com/doi/abs/10.1002/ana.410360217
 - **[S27]** Lempert T, von Brevern M. The eye movements of syncope. *Neurology* 1996. https://pubmed.ncbi.nlm.nih.gov/8780096/

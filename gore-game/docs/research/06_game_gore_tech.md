@@ -2,7 +2,7 @@
 
 Project: Gore Head (Godot 4.5, Forward+, GDScript + Godot shaders, Jolt physics, procedural assets from Blender).
 Audience: rendering, VFX, physics, animation, tools and performance engineers.
-Status: research reference v1, 2026-09-26. The subject is a fictional, procedurally generated adult only.
+Status: research reference v1, 2026-09-26. Independently fact-checked on 2026-09-26: see **Section 19**; rows marked "✓ verified" or "corrected: was X". The subject is a fictional, procedurally generated adult only.
 
 Companion documents in this folder:
 - **01** Gunshot wound morphology and head-shot spatter.
@@ -71,7 +71,7 @@ This document is the engine-side design those documents point to (03 §12 says "
   - GPU ≤ 13.5 ms.
   - Main-thread CPU ≤ 12 ms.
   - The remaining ~3 ms is headroom for spikes. Gore is spiky: one shotgun blast triggers raycasts, paint, particles, decals and possibly a mesh swap in the same frame.
-- **Minimum-spec GPU: GTX 1660** (6 GB GDDR5, 192 GB/s, ~5.0 FP32 TFLOPS). **Recommended: RTX 3060** (12 GB, 360 GB/s, ~12.7 TFLOPS) [K-H R23]. In rasterised games the RTX 3060 is roughly 1.7–2.0× faster than the GTX 1660 [K-M].
+- **Minimum-spec GPU: GTX 1660** (6 GB GDDR5, 192 GB/s, ~5.0 FP32 TFLOPS). **Recommended: RTX 3060** (12 GB, 360 GB/s, ~12.7 TFLOPS) [K-H R23]. ✓ verified (specs, F21/F22). In rasterised games the RTX 3060 is roughly **1.6×** faster than the GTX 1660: TechPowerUp's aggregate relative-performance chart puts the RTX 3060 12 GB at 157 % of the GTX 1660 [F22]. *(corrected: was 1.7–2.0× [K-M])*
 - **CPU reference:** 6-core desktop part (Ryzen 5 3600 / Core i5-10400 class) [G].
 - **Resolution:** 1920×1080 native. Fallback: FSR 2.2 at 0.77 render scale on the 1660 (Godot offers FSR 1.0, FSR 2.2 and MetalFX) [S46].
 - **Rest space:** the model space of the character mesh in its **bind (rest) pose**. All wound volumes, vessels, organs and paint brushes are stored in rest space so they stay attached to the correct tissue whatever the pose.
@@ -143,7 +143,8 @@ This document is the engine-side design those documents point to (03 §12 says "
   - **Triangle selection.** Triangles with every vertex outside [0, 1] are dropped. An optional front- or back-face filter uses the sign of `dot(ray, triangle normal)`. "Radius" traces add a third axis along the ray to limit depth.
   - **The gore is a new surface** that reuses the mesh's own triangle indices with the new UVs, drawn with a gore shader. It deforms with the skeleton for free.
   - **Limits and lifetime:**
-    - `MAX_GORE_RECORDS 500`, `MAX_GORE_VERTS 3000` and `MAX_GORE_INDECIES 6000` per operation.
+    - `MAX_GORE_VERTS 3000` and `MAX_GORE_INDECIES 6000` are the static scratch arrays for **one** gore operation. `MAX_GORE_RECORDS 500` is a **global** pool of stored gore records: when the map holds more than 500, the oldest tag group is erased first (`while (GoreRecords.size()>MAX_GORE_RECORDS)`). It is not a per-operation or per-character limit. ✓ verified (numbers) against OpenJK `code/`, `codemp/rd-vanilla` and `codemp/rd-rend2/G2_gore_r2.h` via GitHub code search [F17, F18]. *(corrected: was "all three per operation")*
+    - The placement code uses the **transformed (posed) vertices** (`TS.TransformedVertsArray`), computes `s = DotProduct(delta, saxis) + 0.5f` (same for t), drops triangles whose three vertices all fall outside [0, 1], and optionally culls front or back faces by `DotProduct(rayEnd, n)` ✓ verified [F18].
     - Each record has a delete time, a fade time, a fade-RGB flag and growth parameters (grow start and end time, grow factor, start-scale fraction).
     - UVs are stored per level of detail (`MAX_LODS 8`).
 - **Lesson.** Projecting onto the posed mesh and keeping the result in mesh space (not world space) is the key to wounds that stay on deforming skin. Our rest-space design generalises this.
@@ -163,9 +164,10 @@ This document is the engine-side design those documents point to (03 §12 says "
 - **VATS** (Fallout 3, New Vegas, 4) pauses or slows time and offers per-part targeting (head, torso, arms, legs) with a hit chance for each. Each limb has its own health and becomes "crippled" at zero. Kill shots may sever or explode parts.
 - **Data.** The niftools format definition has an enum `BSDismemberBodyPartType`, described as **"Biped bodypart data used for visibility control of triangles"** [S61]. It lists:
   - body sections: `BP_TORSO`, `BP_HEAD`, `BP_HEAD2`, `BP_LEFTARM/2`, `BP_RIGHTARM/2`, `BP_LEFTLEG/2/3`, `BP_RIGHTLEG/2/3`, `BP_BRAIN`;
-  - **section caps** `BP_SECTIONCAP_*` (values 101–113);
-  - **torso caps** `BP_TORSOCAP_*` (201–213);
-  - torso sections `BP_TORSOSECTION_*` (1000–9000).
+  - **section caps** `BP_SECTIONCAP_*` (values 101–113) ✓ verified;
+  - **torso caps** `BP_TORSOCAP_*` (201–213) ✓ verified;
+  - torso sections `BP_TORSOSECTION_*` (1000–13000, in steps of 1000: HEAD = 1000 … RIGHTLEG3 = 12000, BRAIN = 13000). *(corrected: was 1000–9000)* Verified against the generated niflib enum [F19].
+  - **Skyrim** uses the same enum with `SBP_*` values (30–61, 130–150, 230). These are mostly armour-slot partitions. The only dismemberment entries are decapitation (`SBP_50_DECAPITATEDHEAD`, `SBP_51_DECAPITATE`, `SBP_150_DECAPITATEDHEAD`, `SBP_230_HEAD`) [F19]. Skyrim therefore severs only heads; limb partitions plus caps are a Fallout 3/New Vegas feature. Fallout 4 uses a newer mesh format with its own segment data, which I did not check [K-M].
 
   So each skinned mesh is pre-partitioned. Severing hides a partition, shows the matching caps on the body and on the severed piece, and spawns the limb.
 - **Lesson.** Pre-split partitions with caps are cheap, predictable and artist-controlled. Our dismemberment copies this (Section 9).
@@ -262,8 +264,8 @@ This document is the engine-side design those documents point to (03 §12 says "
 | Parameter | Value / range | Unit | Notes | Source |
 |---|---|---|---|---|
 | `gore_zone_count` | 16–26 (hit/damage regions) | zones | SoF used 26. Our ragdoll has 17–19 bodies. Map several zones per body where needed (face vs scalp) | [K-M R9], [G] |
-| `max_gore_records_per_char` | 500 (reference) | records | GHOUL2 limit. We use UV painting, so the limit applies to SDF wounds only (64 per character, Section 4) | [S60] |
-| `projected_mark_max_verts` | 3,000 (reference) | vertices | GHOUL2 per-operation cap | [S60] |
+| `max_gore_records_per_char` | 500 (reference) | records | In GHOUL2 this is a **global** pool with oldest-first eviction, not a per-character cap *(corrected)*. We use UV painting, so a cap applies to SDF wounds only (64 per character, Section 4) | [S60], [F17] ✓ verified |
+| `projected_mark_max_verts` | 3,000 (reference) | vertices | GHOUL2 per-operation cap (indices: 6,000) | [S60], [F17] ✓ verified |
 | `wound_grow_time` | 0.2–2.0 | s | GHOUL2 supports growth. Use it for bleeding margins and bruise bloom (doc 02) | [S59], [G] |
 | `xray_duration` | 1.5–3.0 | s (real time) | Sniper Elite style | [K-M R10], [G] |
 | `dismember_zones` | 12–16 per body side (Section 9) | zones | Fallout-style partitions and caps | [S61], [G] |
@@ -283,14 +285,14 @@ This document is the engine-side design those documents point to (03 §12 says "
 | Version | Stable date | Relevant content | Source |
 |---|---|---|---|
 | 4.4 | 3 Mar 2025 | Jolt added as a built-in alternative 3D physics engine | [S21], [S5] |
-| **4.5** | **15 Sep 2025** (4.5.1: 15 Oct 2025; 4.5.2: 19 Mar 2026) | **Stencil buffer support** in spatial shaders and BaseMaterial3D; SMAA; BoneConstraint3D; LookAtModifier3D (present) | [S21], [S24], [S44], [S45], [S46] |
-| 4.6 | 26 Jan 2026 | **Jolt becomes the default for new 3D projects**. New IK system: IKModifier3D, TwoBoneIK3D, SplineIK3D, FABRIK3D, CCDIK3D, JacobianIK3D. SSR overhaul (full- and half-resolution modes) | [S21], [S22] |
-| 4.7 | 18 Jun 2026 (4.7.2: 18 Aug 2026) | AreaLight3D, HDR output, clearcoat fixes, per-pass uniform pools for speed, particle scale/rotation improvements | [S21], [S23] |
-| 4.8 | in development | `PhysicalBone3D.get_joint_rid()` (PR 112002). Jolt 6DOF spring max force/torque exposed (PR 119332) | [S48], [S47] |
+| **4.5** | **15 Sep 2025** (4.5.1: 15 Oct 2025; 4.5.2: 19 Mar 2026) | **Stencil buffer support** in spatial shaders and BaseMaterial3D (PR 80710); SMAA; BoneConstraint3D (PR 100984); **shader baker** for export (PR 102552); LookAtModifier3D (present since 4.4, PR 98446) | [S21], [S24], [S44], [S45], [S46]; ✓ verified: 4.5-stable release tag dated 15 Sep, milestone "4.5" due 2025-09-15, 4.5.2 tag dated 19 Mar [F1, F2, F4, F5] |
+| 4.6 | 26 Jan 2026 | **Jolt becomes the default for new 3D projects** (PR 105737, milestone 4.6). New IK system: IKModifier3D, TwoBoneIK3D, SplineIK3D, FABRIK3D, CCDIK3D, JacobianIK3D (PR 110120, milestone 4.6). SSR overhaul (full- and half-resolution modes). Direct3D 12 becomes the default RD driver for new Windows projects (PR 113213) | [S21], [S22]; ✓ verified: 4.6 milestone closed 2026-01-26, release tag dated 26 Jan [F3, F6, F7]. SSR detail not re-checked |
+| 4.7 | 18 Jun 2026 (4.7.2: 18 Aug 2026) | AreaLight3D, HDR output, clearcoat fixes, per-pass uniform pools for speed, particle scale/rotation improvements | [S21], [S23]; release date ✓ verified (tag dated 18 Jun) [F8]. Feature list not re-checked |
+| 4.8 | in development (milestone still open on 2026-09-26) | `PhysicalBone3D.get_joint_rid()` (PR 112002, **merged 22 Jun 2026**). Generic6DOFJoint3D angular/linear **drive** torque/force limits (PR 119332, **merged 26 Jun 2026**). That PR unifies the spring and motor limits into one "drive" limit and deprecates the separate motor-limit parameters, so the 4.8 API names will differ from the 4.5 ones | [S48], [S47]; ✓ verified [F9, F10] |
 
 **Recommendation:**
 - Build on 4.5 as requested.
-- **In 4.5, select Jolt explicitly** under Project Settings > Physics > 3D > Physics Engine. It became the default for new projects only in 4.6 [S22] [K-M for the menu path].
+- **In 4.5, select Jolt explicitly** under Project Settings > Physics > 3D > Physics Engine. It became the default for new projects only in 4.6 [S22] [K-M for the menu path]. ✓ verified: the 4.5 manual gives exactly this path ("Project Settings > Physics > 3D > Physics Engine", then "Save & Restart") and says Godot Physics is still the default in 4.5 [F43]; PR 105737 made Jolt the default in 4.6 [F6].
 - Keep the code free of 4.6+ APIs. Plan a move to 4.6 or later if built-in IK (wound clutching) or the new SSR (blood pools) is wanted.
 
 ### 2.2 Skinning happens before your vertex shader: `VERTEX` is post-skin
@@ -298,23 +300,24 @@ This document is the engine-side design those documents point to (03 §12 says "
 - In the RenderingDevice renderers (Forward+ and Mobile), `servers/rendering/renderer_rd/shaders/skeleton.glsl` is a **compute shader** (`#[compute]`, local size 64) [S2, S3]:
   - It applies blend shapes, then weighted bone matrices (up to **8 bones per vertex**).
   - It writes positions plus octahedral-encoded normals and tangents into a **destination vertex buffer (`dst_vertices`)**.
-  - This is identical in `4.5-stable` [S3].
-- The spatial `vertex()` function therefore receives **already-skinned** `VERTEX`, `NORMAL` and `TANGENT` in model space [S1, S2]. `BONE_INDICES`, `BONE_WEIGHTS` and `CUSTOM0–3` are read-only vertex built-ins [S1, S44].
+  - This is identical in `4.5-stable` [S3]. ✓ verified independently at `4.5.1-stable`: `#[compute]`, `local_size_x = 64`, blend shapes added before the bone transform, `if (params.skin_weight_offset == 4) { //using 8 bones/weights`, output to `dst_vertices` with octahedral normals/tangents [F11].
+- The spatial `vertex()` function therefore receives **already-skinned** `VERTEX`, `NORMAL` and `TANGENT` in model space [S1, S2]. `BONE_INDICES`, `BONE_WEIGHTS` and `CUSTOM0–3` are read-only vertex built-ins [S1, S44]. ✓ verified in the 4.5 manual branch: `in vec4 CUSTOM0` ("When using extra UVs, xy is UV3 and zw is UV4"), `in uvec4 BONE_INDICES`, `in vec4 BONE_WEIGHTS`; VERTEX/NORMAL/TANGENT "presented in model space" unless `world_vertex_coords` [F12].
 - **Consequences:**
   - A spatial shader has no built-in access to bone matrices and no built-in rest position [K-M].
   - To evaluate wounds in rest space, **store the rest position per vertex in `CUSTOM0`** (RGBA float) at import. Use `CUSTOM0.w` for a segment ID (Section 9), then pass it to `fragment()` as a varying.
   - Do this in an `EditorScenePostImport` script that copies `ARRAY_VERTEX` into `ARRAY_CUSTOM0`. It can also be done through extra UV sets from Blender (`CUSTOM0.xy = UV3`, `CUSTOM0.zw = UV4` [S1]), but Blender's glTF exporter flips V, so that path needs a correction [K-M].
+  - **Precision (added in the fact-check) [D].** Declare the channel as `Mesh.ARRAY_CUSTOM_RGBA_FLOAT` (32-bit) in the surface format flags (`ARRAY_FORMAT_CUSTOM0_SHIFT` [F13]), not `ARRAY_CUSTOM_RGBA_HALF`. A half float has 10 mantissa bits, so between 1 m and 2 m it steps in 2⁻¹⁰ m ≈ **0.98 mm**. With the rest-space origin at the feet, every head vertex (≈ 1.5–1.8 m) would be quantised to ~1 mm, which is coarser than the 1–2 mm abrasion collar and the ≤ 1 mm stippling this design wants to resolve. If half precision is needed for memory, store the position relative to a per-segment origin (for example, the head centre, |p| < 0.16 m gives ~0.12 mm steps). The same rule applies to the RGBA16F position map in Section 4.1.
 - `MeshInstance3D.bake_mesh_from_current_skeleton_pose()` exists but "Mesh data needs to be received from the GPU, stalling the RenderingServer" [S34]. Use it only rarely, for example once to freeze a severed part, and never per frame.
 
 ### 2.3 Getting wound data into shaders
 
 | Mechanism | Limits | Use for | Source |
 |---|---|---|---|
-| Material uniform arrays (`uniform vec4 w[192]`) | Uniform buffer up to **65,536 bytes (4,096 vec4)** on desktop. Arrays are allowed; structs are not | Per-character wound list (64 wounds × 3 vec4 = 3 KB). Requires a **unique ShaderMaterial per character**, which is fine for 1–3 characters | [S8] |
-| Per-instance uniforms (`instance uniform`) | **Practical maximum 16 per shader. Scalars and vectors only: no arrays, no textures.** Set with `set_instance_shader_parameter()` | Per-body scalars: pallor, cyanosis, wetness, segment-visibility bits, eye state (pupil mm, corneal opacity) | [S8] |
+| Material uniform arrays (`uniform vec4 w[192]`) | Uniform buffer up to **65,536 bytes (4,096 vec4)** on desktop (**16,384 bytes / 1,024 vec4 on mobile**). `vec2`/`vec3` uniforms are padded to `vec4`. Arrays are allowed; structs are not | Per-character wound list (64 wounds × 3 vec4 = 3 KB). Requires a **unique ShaderMaterial per character**, which is fine for 1–3 characters | [S8]; ✓ verified in the 4.5 manual branch [F14] |
+| Per-instance uniforms (`instance uniform`) | **Practical maximum 16 per shader. Scalars and vectors only: no arrays, no textures.** Set with `set_instance_shader_parameter()` | Per-body scalars: pallor, cyanosis, wetness, segment-visibility bits, eye state (pupil mm, corneal opacity) | [S8]; ✓ verified: "There is a practical maximum limit of 16 instance uniforms per shader"; "Per-instance uniforms do not support textures or arrays, only regular scalar and vector types" [F14] |
 | Data textures (Image → ImageTexture, or Texture2DRD) | Any size. Update cost is proportional to upload size | >64 wounds; a 3D wound-lookup grid; vessel/organ lookup | [S37], [K-H] |
 | Global uniforms (Project Settings > Shader Globals; `global_shader_parameter_set`) | Project-wide | Arena blood splat map and bounds, `time_minutes`, X-ray amount | [S8]; sampler support [K-M] |
-| `Texture2DRD` written by compute on the **main** RenderingDevice | Must run through `RenderingServer.call_on_render_thread()`. A local RenderingDevice "cannot draw to the screen nor share data with the global RenderingDevice" | Damage atlases, floor splat map, flow | [S37], [S38], [S39] |
+| `Texture2DRD` written by compute on the **main** RenderingDevice | Must run through `RenderingServer.call_on_render_thread()`. A local RenderingDevice "cannot draw to the screen nor share data with the global RenderingDevice" | Damage atlases, floor splat map, flow | [S37], [S38], [S39]; ✓ verified in the 4.5-stable class reference [F15]. Nuance: a local device's results *can* reach a material through a CPU readback into an `ImageTexture`, but that costs a GPU→CPU→GPU round trip and a stall, so it is unsuitable per frame |
 
 ### 2.4 Stencil (new in 4.5)
 
@@ -322,8 +325,8 @@ This document is the engine-side design those documents point to (03 §12 says "
   - `read`, `write`, `write_depth_fail`;
   - `compare_{always, less, equal, less_or_equal, greater, not_equal, greater_or_equal}`.
 
-  The current master manual spells the depth-fail mode `write_if_depth_fail` [S1]. **Use the 4.5 spelling.**
-- **"You can only read from the stencil buffer in the transparent pass. Any attempt to read in the opaque pass will fail."** [S1] The manual names outlines, **X-ray** and portals as intended uses [S1].
+  The current master manual spells the depth-fail mode `write_if_depth_fail` [S1]. **Use the 4.5 spelling.** ✓ verified: the 4.5-stable `scene_shader_forward_clustered.cpp` registers exactly `read`, `write`, `write_depth_fail` and `compare_{less, equal, less_or_equal, greater, not_equal, greater_or_equal, always}` [F16]. *Clarification (fact-check): the engine source on master still registers `write_depth_fail` (Forward+ and Mobile), so `write_if_depth_fail` in the master manual is a documentation error, not a renamed mode.* The stencil state is applied only in the colour pass (`use_stencil = stencil_enabled && version == PIPELINE_VERSION_COLOR_PASS`), not in the depth prepass [F16].
+- **"You can only read from the stencil buffer in the transparent pass. Any attempt to read in the opaque pass will fail."** [S1] The manual names outlines, **X-ray** and portals as intended uses [S1]. ✓ verified independently: the PR that added stencil (godotengine/godot #80710, milestone 4.5) says the depth-prepass conflict "has been resolved by simply not supporting opaque-pass stencil-read materials", and lists Forward+, Mobile and Compatibility as supported [F4].
 - BaseMaterial3D also exposes a stencil mode; the official ragdoll demo draws outlines with it [S52].
 - **Consequences:**
   - Stencil is ideal for the X-ray kill cam (Section 11).
@@ -331,12 +334,14 @@ This document is the engine-side design those documents point to (03 §12 says "
 
 ### 2.5 Decals
 
-- **Forward+ renders decals with clustering.** The default limit is **512 clustered elements per camera view**, shared by omni, spot and area lights, decals and reflection probes [S6]. The setting is `rendering/limits/cluster_builder/max_clustered_elements` [K-M for the name].
-- **Screen coverage matters more than decal count** for performance. Use distance fade [S6]. Defaults are `distance_fade_begin` 40 m and `distance_fade_length` 10 m [S12].
-- **Decals are projected every frame.** The fragment shader transforms the current view-space position by the decal's matrix and tests it against the box [S25]:
+- **Forward+ renders decals with clustering.** The default limit is **512 clustered elements per camera view**, shared by omni lights, spot lights, decals and reflection probes. ✓ verified in the 4.5 manual: "a default limit of 512 *clustered elements* … A clustered element is an omni light, a spot light, a decal or a reflection probe", adjustable under Project Settings > Rendering > Limits > Cluster Builder > Max Clustered Elements [F20]. *(corrected: was "omni, spot and area lights": `AreaLight3D` does not exist in 4.5; it arrives in 4.7, where the master manual adds it.)*
+- **Screen coverage matters more than decal count** for performance. Use distance fade [S6]. Defaults are `distance_fade_begin` 40 m and `distance_fade_length` 10 m [S12]. ✓ verified: "a few large decals that cover up most of the screen will be more expensive to render than many small decals" [F20]; defaults 40/10, `distance_fade_enabled` false, `normal_fade` 0.0, `upper_fade`/`lower_fade` 0.3 in 4.5-stable Decal.xml [F23].
+- **Cull mask (added in the fact-check).** `Decal.cull_mask` defaults to all 20 layers (1048575) [F23]. Put the victim, its inner meshes and debris on their own visual layer and **remove that layer from every world decal's cull mask**. Otherwise a wall or floor splat whose box overlaps a lying body also projects onto the skin and slides as the body moves.
+- **Renderer limits (added).** Decals are Forward+ and Mobile only (not Compatibility). On Mobile only 8 decals can affect one Mesh resource [F20, F23]. This does not affect the Forward+ PC target.
+- **Decals are projected every frame.** The fragment shader transforms the current view-space position by the decal's matrix and tests it against the box [S25]. ✓ verified at 4.5-stable: `vec3 uv_local = (decals.data[decal_index].xform * vec4(vertex, 1.0)).xyz;` followed by the box test and the `upper_fade`/`lower_fade` power curve, with `vertex` in view space [F24]:
   - On a skinned character, a decal therefore **does not follow skin deformation**. Parenting it to a `BoneAttachment3D` gives only rigid following.
   - A decal also **projects through the whole box**, onto the far side of a limb. `normal_fade` (0–1) and `upper_fade`/`lower_fade` (default 0.3) reduce this [S12, S25].
-- **Decals cannot run custom shaders.** They affect albedo, normal, ORM and emission only [S6]. They **cannot affect transparency**, so they cannot cut holes [S12].
+- **Decals cannot run custom shaders.** They affect albedo, normal, ORM and emission only [S6]. They **cannot affect transparency**, so they cannot cut holes [S12]. ✓ verified: "decals use purely fixed rendering logic. This means decals cannot use custom shaders"; "Decals cannot affect material properties other than the ones listed above, such as height" [F20]; "Decals cannot affect an underlying material's transparency, regardless of its transparency mode" [F23].
 - Decal textures live in a shared atlas (sRGB for albedo and emission, linear for normal and ORM) [S25].
   - Adding a new unique texture at runtime marks the atlas dirty and rebuilds it [K-M]. **Preload every blood decal texture during loading.**
   - Changing `modulate`, size or rotation is free.
@@ -344,17 +349,18 @@ This document is the engine-side design those documents point to (03 §12 says "
 ### 2.6 GPU particles
 
 - Collision shapes are box, sphere, heightfield and SDF [S7]:
-  - **The SDF must be baked in the editor.** "No runtime baking method exists for exported projects" [S16]. Resolution runs 16³ to 512³ [S16], and SDF has "larger" overhead than a heightfield [S7].
-  - **The heightfield updates at runtime** ("When Moved" or "Always"), at resolution 256² to 8,192² (default 1,024²). It can follow the camera and filters meshes by layer mask [S17, S19].
-- **The engine caps collision shapes and attractors at 32 each per particle system** (`MAX_COLLIDERS = 32`, `MAX_ATTRACTORS = 32`) [S19].
-- Particles collide **only** with `GPUParticlesCollision3D` nodes, not with physics bodies or skinned meshes [S15]. `COLLISION_RIGID` supports bounce and friction (0–1). `COLLISION_HIDE_ON_CONTACT` is also available [S18].
+  - **The SDF must be baked in the editor.** "No runtime baking method exists for exported projects" [S16]. Resolution runs 16³ to 512³ [S16], and SDF has "larger" overhead than a heightfield [S7]. ✓ verified at 4.5-stable: "Baking … is only possible within the editor, as there is no bake method exposed for use in exported projects"; resolutions 16³–512³, **default 64³** [F25].
+  - **The heightfield updates at runtime** ("When Moved" or "Always"), at resolution 256² to 8,192² (default 1,024²). It can follow the camera and filters meshes by layer mask [S17, S19]. ✓ verified at 4.5-stable [F26]. **Caveat (added in the fact-check):** in the default `UPDATE_MODE_WHEN_MOVED` the heightmap is re-rendered only when the *heightfield node itself* moves, not when meshes inside it move [F27]. A heightfield that must include the moving or falling body (Section 2.11) therefore needs `UPDATE_MODE_ALWAYS`, which re-renders the top-down depth every frame. Keep that heightfield small (for example 512² over 4 × 4 m, Section 2 parameters) and budget it inside "Particle simulation" in Section 13.3.
+- **The engine caps collision shapes and attractors at 32 each per particle system** (`MAX_COLLIDERS = 32`, `MAX_ATTRACTORS = 32`) [S19]. ✓ verified in 4.5-stable `particles_storage.h`, which also defines `MAX_3D_TEXTURES = 7` (the per-system limit on SDF/heightfield textures) [F28].
+- Particles collide **only** with `GPUParticlesCollision3D` nodes, not with physics bodies or skinned meshes [S15]. `COLLISION_RIGID` supports bounce and friction (0–1). `COLLISION_HIDE_ON_CONTACT` is also available [S18]. ✓ verified: "GPU particles are processed entirely on the GPU, they don't have access to the game's physical world" [F27]; collision modes and 0–1 ranges in 4.5-stable ParticleProcessMaterial.xml [F29].
 - **Sub-emitters** have modes constant, at start, at end and at collision [S18]:
   - They can chain [S41].
   - The total number of live sub-particles is **capped by the sub-emitter's `amount`** [S41].
   - Explosiveness has no effect on a sub-emitter [S41].
-- **Changing `amount` restarts the system.** Vary the count with `amount_ratio` instead [S14]. CPU-controlled spawning uses `emit_particle()` with emit flags [S14].
-- **Trails** use "a mesh skinning system" with RibbonTrailMesh or TubeTrailMesh (`trail_enabled`, `trail_lifetime`) [S14].
-- **There is no GPU → CPU event channel.** A particle landing cannot spawn a `Decal` node or a physics event [K-H]. Section 8.4 gives the workarounds.
+  - ✓ verified: `SUB_EMITTER_CONSTANT` 1, `AT_END` 2, `AT_COLLISION` 3, `AT_START` 4 exist in 4.5-stable [F29]; "the total number of active particles from the sub-emitter is always capped by the `Amount` property on the sub-emitter particle system"; chaining and "Explosiveness … has no effect" confirmed in the 4.5 manual [F30]. Also: "A particle system which is its own sub-emitter does not work" [F30].
+- **Changing `amount` restarts the system.** Vary the count with `amount_ratio` instead [S14]. CPU-controlled spawning uses `emit_particle()` with emit flags [S14]. ✓ verified at 4.5-stable: "Changing this value will cause the particle system to restart"; changing `amount_ratio` "doesn't cause the particle system to restart" [F31]. Note that GPU memory is still allocated for the full `amount` whatever the ratio [F31].
+- **Trails** use "a mesh skinning system" with RibbonTrailMesh or TubeTrailMesh (`trail_enabled`, `trail_lifetime`) [S14]. ✓ verified [F31].
+- **There is no GPU → CPU event channel.** A particle landing cannot spawn a `Decal` node or a physics event [K-H]. Section 8.4 gives the workarounds. ✓ verified: GPUParticles3D at 4.5-stable has a single signal, `finished`, and no method that reports collisions or per-particle positions. The only readback is `capture_aabb()` [F31].
 
 ### 2.7 Compute shaders and render-to-texture
 
@@ -364,8 +370,8 @@ This document is the engine-side design those documents point to (03 §12 says "
   2. Do the work inside `RenderingServer.call_on_render_thread()`.
   3. Wrap it in a `Texture2DRD`.
 
-  The official `compute/texture` demo does exactly this: a water-ripple simulation in three ping-pong textures sampled by a material [S37, S38, S39].
-- **Avoid `sync()` on a local device.** It stalls the CPU; wait 2–3 frames instead [S9]. Very long dispatches risk a Windows TDR (driver timeout reset) [S9].
+  The official `compute/texture` demo does exactly this: a water-ripple simulation in three ping-pong textures sampled by a material [S37, S38, S39]. ✓ verified: `call_on_render_thread` exists so that code touching "RenderingDevice and similar RD classes" runs "on the render thread"; Texture2DRD uses "a 2D texture created directly on the RenderingDevice as a texture for materials" [F15].
+- **Avoid `sync()` on a local device.** It stalls the CPU; wait 2–3 frames instead [S9]. Very long dispatches risk a Windows TDR (driver timeout reset) [S9]. ✓ verified in the 4.5 manual; the TDR timeout is "usually 5 to 10 seconds", far above any gore dispatch [F32].
 - **SubViewport painting** is the no-compute alternative:
   - Use `render_target_clear_mode = CLEAR_MODE_NEVER` to accumulate.
   - Use `render_target_update_mode = UPDATE_ONCE` to render only when painting [S36].
@@ -373,8 +379,9 @@ This document is the engine-side design those documents point to (03 §12 says "
 
 ### 2.8 Subsurface scattering (skin, flesh, brain)
 
-- SSS is available **only in Forward+** [S29].
-- It is a **screen-space separable blur** with horizontal and vertical passes, 8×8 workgroups, and **11, 17 or 25 taps** by quality. It has a dedicated **skin kernel** in the style of Jimenez's separable SSS, and a depth-scaled radius [S33, K-H R5].
+- SSS is available **only in Forward+** [S29]. ✓ verified in the 4.5 manual branch (not in Mobile or Compatibility) [F33].
+- It is a **screen-space separable blur** with horizontal and vertical passes, 8×8 workgroups, and **11, 17 or 25 taps** by quality. It has a dedicated **skin kernel** in the style of Jimenez's separable SSS, and a depth-scaled radius [S33, K-H R5]. ✓ verified at 4.5-stable: `local_size_x = 8, local_size_y = 8`, `USE_11/17/25_SAMPLES`, `skin_kernel` arrays, `params.vertical` pass direction, `mix(params.scale, depth_scale, params.depth_scale)` [F34]. `ss_effects.cpp` registers the variants in the order 11, 17, 25, which maps to quality Low, Medium, High [F35].
+- **Default quality (added in the fact-check):** `rendering/environment/subsurface_scattering/subsurface_scattering_quality` defaults to **1 = Low (11 taps)** [F35]. The 17-tap (Medium) and 25-tap (High) settings in Section 12.2 must be set explicitly, at runtime through `RenderingServer.sub_surface_scattering_set_quality()` [K-M for the method name] or in Project Settings. Other defaults: `subsurface_scattering_scale` 0.05 and `subsurface_scattering_depth_scale` 0.01 [F35].
 - Material built-ins: `SSS_STRENGTH`, `SSS_TRANSMITTANCE_COLOR`, `SSS_TRANSMITTANCE_DEPTH` and `SSS_TRANSMITTANCE_BOOST`. The render mode `sss_mode_skin` selects the skin profile. `BACKLIGHT` is the "cheaper approximation" [S1].
 - Transparent materials do not receive screen-space SSS [K-M].
 
@@ -389,6 +396,7 @@ This document is the engine-side design those documents point to (03 §12 says "
   - Hinge for elbows and knees.
   - Cone for shoulders, hips and neck, with **swing span 20–90° and twist span 20–45°**.
   - **Not** the default pin joint, which causes crumpling.
+  - ✓ verified, with a version caveat: this advice ("it's usually best to limit Swing Span between 20 and 90 degrees, and the Twist Span between 20 and 45 degrees"; PinJoint "Leads to 'crumpling'") is in the **current master** manual only. The **4.5** manual branch says only that PhysicalBones get "an unconstrained pin joint assigned by default" and gives no joint types per bone or numeric limits [F36]. The advice still applies to 4.5 because the joint types are unchanged, but these are generic starting values. Use the anatomical limits in Section 10.1 where they differ (for example shoulder swing 90–110°, hip flexion 120°).
 - **SkeletonModifier3D:**
   - It runs **after** the AnimationMixer and blends by `influence` [S11].
   - `Skeleton3D.modifier_callback_mode_process` chooses physics-rate, idle-rate or manual processing [S35].
@@ -397,9 +405,9 @@ This document is the engine-side design those documents point to (03 §12 says "
   - It has `_integrate_forces(state)`, `custom_integrator`, `apply_impulse()` and `apply_central_impulse()` [S13].
   - It is **kinematic when not simulating** [S28].
   - Its 6DOF joint data exposes per-axis `angular_spring_enabled/stiffness/damping/equilibrium_point` and linear equivalents. Cone joint data exposes swing and twist spans [S28].
-  - **The internal joint RID, and so motors, is not reachable from script before 4.8** [S48].
+  - **The internal joint RID, and so motors, is not reachable from script before 4.8** [S48]. ✓ verified: the 4.5-stable class reference lists no `get_joint_rid` (methods: `_integrate_forces`, `apply_central_impulse`, `apply_impulse`, `get_bone_id`, `get_simulate_physics`, `is_simulating_physics`) [F37]. The 4.5-stable implementation exposes 6DOF `joint_constraints/{x,y,z}/…` limit and spring properties and cone `swing_span`/`twist_span`/`bias`/`softness`/`relaxation`, with **no motor properties**, and sets `BODY_MODE_KINEMATIC` when simulation stops [F38]. PR 112002 (`get_joint_rid()`) was merged on 22 Jun 2026 for 4.8 [F9].
 - **Godot's Jolt module:**
-  - Maps 6DOF springs to Jolt motors in Position mode, using stiffness/damping or **frequency/damping**. Motors are velocity motors [S26].
+  - Maps 6DOF springs to Jolt motors in Position mode, using stiffness/damping or **frequency/damping**. Motors are velocity motors [S26]. ✓ verified at 4.5-stable: springs call `SetMotorState(axis, EMotorState::Position)` with `ESpringMode::FrequencyAndDamping` or stiffness mode. A per-axis `spring_limit` is applied through `SetTorqueLimit`/`SetForceLimit`, but it is initialised to `FLT_MAX` and is not exposed through the node API in 4.5, so springs are effectively **uncapped** [F39, F40]. PR 119332 (4.8) exposes it as a unified "drive" limit [F10].
   - Cone-twist maps to Jolt's `SwingTwistConstraint`, with swing and twist motors [S27].
   - **Unsupported properties are ignored with a warning** [S5, S26, S27]:
     - PinJoint3D: bias, damping, impulse clamp.
@@ -407,16 +415,18 @@ This document is the engine-side design those documents point to (03 §12 says "
     - ConeTwistJoint3D: bias, softness, relaxation.
     - Generic6DOFJoint3D: limit softness, restitution, damping, ERP.
     - SliderJoint3D: its angular properties and limit softness/restitution/damping.
-- **Jolt project defaults** [S20]:
+- **Jolt project defaults** [S20] (✓ all verified at `4.5.1-stable` `jolt_project_settings.cpp` and by GitHub code search of master [F41, F42]):
   - Velocity steps 10; position steps 2.
   - Sleep below 0.03 m/s for 0.5 s.
   - CCD movement threshold 0.75; CCD max penetration 0.25.
   - Penetration slop 0.02 m; speculative contact distance 0.02 m; Baumgarte 0.2.
   - Max bodies 10,240; max body pairs 65,536; max contact constraints 20,480.
   - Max linear velocity 500 m/s; max angular velocity 2,700°/s.
+  - Also: bounce velocity threshold 1.0 m/s (below this, restitution is ignored), `enable_ray_cast_face_index` false, temporary memory buffer 32 MB [F41].
 - **Queries and threading:**
-  - Ray-cast `face_index` is **−1 by default**. Enable "Physics > Jolt Physics 3D > Queries > Enable Ray Cast Face Index", which costs "about 25 %" more memory for `ConcavePolygonShape3D` [S5].
-  - The module supports "Run On Separate Thread", though it "has not been tested very thoroughly" [S5].
+  - Ray-cast `face_index` is **−1 by default**. Enable "Physics > Jolt Physics 3D > Queries > Enable Ray Cast Face Index", which costs "about 25 %" more memory for `ConcavePolygonShape3D` [S5]. ✓ verified in the 4.5 manual branch [F43].
+  - The module supports "Run On Separate Thread", though it "has not been tested very thoroughly" [S5]. ✓ verified: "it should be considered experimental" [F43].
+  - Other 4.5 differences worth knowing (added in the fact-check) [F43]: contact impulses reported by Jolt are **estimated**, not exact, so do not drive bone-fracture thresholds from `get_contact_impulse()` alone (use relative velocity × mass as well). Kinematic bodies do not report contacts with static or kinematic bodies by default. Area3D–SoftBody3D interaction is unsupported.
 - **Jolt itself:**
   - Its motors apply `stiffness·(target − current) + damping·(target_vel − current_vel)`, with a frequency/damping spring mode [S54].
   - Its native ragdolls support hard keying, soft keying and motor driving [S55].
@@ -441,7 +451,7 @@ This document is the engine-side design those documents point to (03 §12 says "
 | Rest-pose position or bone matrices inside a spatial shader | [S2], [S1] | Bake rest position into `CUSTOM0` at import |
 | Stencil read in the opaque pass | [S1] | `discard` holes plus interior meshes. Stencil only for the transparent X-ray view |
 | Runtime SDF bake for particle collision | [S16] | Bake the static arena SDF in the editor. Runtime heightfield for dynamic floor objects. Box/sphere colliders on bones (≤ 32 per system) |
-| Particle collision with skinned bodies | [S15] | `GPUParticlesCollisionSphere3D`/`Box3D` attached to 4–8 bones. Top-down heightfield including the body layer |
+| Particle collision with skinned bodies | [S15] | `GPUParticlesCollisionSphere3D`/`Box3D` attached to 4–8 bones. Top-down heightfield including the body layer (needs `UPDATE_MODE_ALWAYS`, since "When Moved" ignores moving meshes [F27]) |
 | GPU particle landing → decal or CPU event | [K-H] | GPU "stain particles" that freeze on collision. CPU-simulated "hero drops" for stains that matter (Section 8.4) |
 | Arrays or textures in instance uniforms; > 16 instance uniforms | [S8] | Unique ShaderMaterial per character, or a data texture indexed by one instance-uniform ID |
 | Script access to PhysicalBone3D joint motors (4.5) | [S48] | PD torques in `_integrate_forces`, or 6DOF angular springs through `joint_constraints/*` properties |
@@ -459,24 +469,24 @@ This document is the engine-side design those documents point to (03 §12 says "
 
 | Parameter | Value / range | Unit | Notes | Source |
 |---|---|---|---|---|
-| `godot_version` | 4.5.x (4.5.2) | — | Select Jolt explicitly | [S21], [S22] |
-| `skin_weights_per_vertex_max` | 8 | bones | Import with 4 unless the face needs 8 | [S2] |
-| `uniform_buffer_max` | 65,536 | bytes | Desktop | [S8] |
-| `instance_uniforms_max` | 16 | per shader | No arrays or textures | [S8] |
-| `clustered_elements_max` | 512 (default) | per view | Lights + decals + probes | [S6] |
-| `particle_colliders_max` | 32 | per system | Also 32 attractors | [S19] |
-| `particle_sdf_resolution` | 64³–128³ for a 6–10 m room | voxels | 16³–512³ allowed. Editor bake only | [S16], [G] |
-| `particle_heightfield_resolution` | 512² over 4×4 m around the victim (7.8 mm/texel) | texels | 256²–8,192² allowed. Default 1,024² | [S17], [S19], [G] |
-| `sss_taps` | 17 (1660) / 25 (3060) | taps | 11/17/25 available | [S33], [G] |
-| `jolt_velocity_steps` | 10 (default) → 12–16 for stacked ragdoll contact | iterations | Raise only if joints stretch | [S20], [G] |
-| `jolt_position_steps` | 2 (default) → 3–4 | iterations | Same | [S20], [G] |
-| `jolt_raycast_face_index` | enabled | bool | +~25 % memory on concave shapes | [S5] |
-| `physics_ticks_per_second` | 60 | Hz | Enable physics interpolation | [S51], [G] |
+| `godot_version` | 4.5.x (4.5.2) | — | Select Jolt explicitly | [S21], [S22]; ✓ verified [F1–F3, F6] |
+| `skin_weights_per_vertex_max` | 8 | bones | Import with 4 unless the face needs 8 | [S2]; ✓ verified [F11] |
+| `uniform_buffer_max` | 65,536 | bytes | Desktop (16,384 on mobile) | [S8]; ✓ verified [F14] |
+| `instance_uniforms_max` | 16 | per shader | No arrays or textures | [S8]; ✓ verified [F14] |
+| `clustered_elements_max` | 512 (default) | per view | Omni + spot lights + decals + reflection probes (no area lights in 4.5) | [S6]; ✓ verified [F20] |
+| `particle_colliders_max` | 32 | per system | Also 32 attractors; 7 SDF/heightfield textures | [S19]; ✓ verified [F28] |
+| `particle_sdf_resolution` | 64³–128³ for a 6–10 m room | voxels | 16³–512³ allowed (default 64³). Editor bake only | [S16], [G]; ✓ verified [F25] |
+| `particle_heightfield_resolution` | 512² over 4×4 m around the victim (7.8 mm/texel) | texels | 256²–8,192² allowed. Default 1,024². `UPDATE_MODE_ALWAYS` if it must see the moving body | [S17], [S19], [G]; ✓ verified [F26, F27] |
+| `sss_taps` | 17 (1660) / 25 (3060) | taps | 11/17/25 available. **Project default is Low = 11**: set it explicitly | [S33], [G]; ✓ verified [F34, F35] |
+| `jolt_velocity_steps` | 10 (default) → 12–16 for stacked ragdoll contact | iterations | Raise only if joints stretch | [S20], [G]; default ✓ verified [F41] |
+| `jolt_position_steps` | 2 (default) → 3–4 | iterations | Same | [S20], [G]; default ✓ verified [F41] |
+| `jolt_raycast_face_index` | enabled | bool | +~25 % memory on concave shapes | [S5]; ✓ verified [F43] |
+| `physics_ticks_per_second` | 60 | Hz | Enable physics interpolation (for render rates above 60 Hz; it is **not** needed for slow motion, see Section 11.2) | [S51], [G] |
 
 ### Visual/behavioural checklist (engine constraints)
 - Nothing on the character slides when a joint bends. Test this with an elbow and a knee flexing through their full range.
 - No wound "shows through" onto the far side of a limb.
-- The first blood or the first gore mesh never causes a hitch. All gore materials, particle systems and decal textures are warmed up during loading. Godot compiles pipelines when a material is first drawn [K-M].
+- The first blood or the first gore mesh never causes a hitch. All gore materials, particle systems and decal textures are warmed up during loading. Godot compiles pipelines when a material is first drawn [K-M]. *(Refined in the fact-check: since 4.4, Forward+ and Mobile compile **ubershader pipelines at load time**, when an ArrayMesh loads and when the surface cache is built, and compile specialised pipelines in the background (PR 90400). 4.5 adds a **shader baker** export option that precompiles shaders for the target API (PR 102552) [F44, F5]. Draw-time compilation can still happen for variants first seen mid-game, such as a new material/feature combination. So still instance every gore material, particle system and inner mesh once, off-screen, during loading. Then verify with the `RENDERING_INFO_PIPELINE_COMPILATIONS_DRAW` performance monitor, which should stay at 0 during a scripted gore test [F44].)*
 
 ---
 
@@ -601,6 +611,10 @@ Victim (Node3D)
 - Body surface area (DuBois) for 178 cm and 75 kg = 0.007184 × 75^0.425 × 178^0.725 ≈ **1.93 m²**.
 - A 2,048² atlas at ~70 % UV use holds 2.94 M texels → **~0.66 mm² per texel, i.e. ~0.8 mm texels** over the whole body.
 - The head and neck are ~9 % of body surface area (rule of nines) ≈ 0.17 m². A separate 2,048² head atlas therefore gives **~0.24 mm texels**. That is enough for stippling (doc 01 §3) and abrasion collars (1–2 mm).
+- ✓ verified (fact-check, recomputed): 75^0.425 = 6.26 and 178^0.725 = 42.8, so BSA = 0.007184 × 6.26 × 42.8 = **1.93 m²**. 2,048² × 0.70 = 2.936 M texels; 1.93 × 10⁶ mm² / 2.936 M = 0.657 mm² per texel, and √0.657 = **0.81 mm**. Head: 0.09 × 1.93 = 0.174 m², giving 0.059 mm² per texel, √ = **0.24 mm** [D]. The Lund–Browder chart splits the adult head and neck as ~7 % + ~2 %, so 9 % is the right total [K-H].
+- **Position-map caveats (added in the fact-check) [D]:**
+  - The position map (1,024²) is half the atlas resolution (2,048²), so each position texel serves 2 × 2 atlas texels through bilinear filtering. Inside a UV chart this is harmless. At chart borders, bilinear taps mix in gutter texels, so **dilate the position and normal maps** by ≥ 2 texels, or bake them at the atlas resolution (a 2,048² RGBA16F map is 33.6 MB).
+  - **RGBA16F precision:** positions between 1 m and 2 m from the origin quantise to ~0.98 mm steps. For the head atlas, store head-relative positions: ~0.12 mm steps within ±0.16 m. Otherwise use RGBA32F. See Section 2.2.
 
 ### 4.2 Exact hit on a deforming body
 
@@ -651,6 +665,8 @@ Victim (Node3D)
   - plus a **3D lookup grid** (RGBA8, 4 wound indices per cell), 32 × 16 × 80 cells over the 0.8 × 0.4 × 2.0 m rest bounds (2.5 cm cells, 164 KB).
 
   Each fragment tests only the ≤ 4 wounds in its cell [D, G].
+- **Grid bounds correction (fact-check) [D].** A 0.8 m-wide box contains the body only if the bind pose has the arms at the sides. Rigs are normally bound in a **T-pose** (fingertip span ≈ stature, ~1.78 m for a 178 cm adult [K-H]) or an **A-pose** (~1.3–1.5 m span at 45° [D]). For a T-pose use ~1.8 × 0.4 × 2.0 m: 72 × 16 × 80 = 92,160 cells × 4 B ≈ **369 KB**. For an A-pose use ~1.5 m: 60 × 16 × 80 ≈ **307 KB**. Alternatively keep one small grid per limb segment. *(corrected: was 0.8 m wide / 164 KB, which leaves the arms outside the grid)*
+- **Cell overflow [G].** A close-range shotgun blast puts up to 9 pellet tracks inside one or two 2.5 cm cells, more than the 4 index slots. At ≤ 1 m the shot behaves as a single mass (doc 01), so merge co-located pellet tracks into one wound volume before insertion. Otherwise keep the 4 largest wounds per cell and paint the rest.
 - **Beyond 64 wounds:** retire the oldest closed (non-open) wounds into the paint atlas, where their marks stay, and keep open wounds as SDFs [G].
 
 ### Simulation parameters (anatomy and hits)
@@ -663,7 +679,8 @@ Victim (Node3D)
 | `rest_proxy_tris` | 30–60k | triangles | Decimated rest mesh, error ≤ 1 mm | [G] |
 | `march_step` | 1–2 | mm | Anatomy traversal | [G] |
 | `sdf_wounds_max` | 64 | per character | Retire oldest closed ones to paint | [G] |
-| `wound_grid` | 32×16×80, 2.5 cm cells, 4 indices per cell | cells | RGBA8 Texture3D | [D], [G] |
+| `wound_grid` | 72×16×80 for a T-pose bind (60×16×80 for an A-pose), 2.5 cm cells, 4 indices per cell (~0.3–0.37 MB) | cells | RGBA8 Texture3D. *(corrected: was 32×16×80 over 0.8 m width, too narrow for T/A-pose arms)* | [D], [G] |
+| `bsa_default` check | 1.93 m²; 0.81 mm (body) / 0.24 mm (head) texels | — | ✓ verified (arithmetic) | [D] |
 | `vessel_hit_rule` | d < r_v + r_t injured; d < r_t − 0.5 r_v transected | — | Cavity tears with probability | [G], [K-M] |
 | `skin_thickness` | 1–4 (face 1–2, back 3–4, eyelid ~0.5) | mm | Depth map default | [K-M] |
 | `subcut_fat` | lean 5–15, average 10–30, obese 30–80 (abdomen) | mm | Procedural body parameter | [K-M] |
@@ -729,6 +746,12 @@ paint = texture(damage_atlas, UV)                                 // tier a (Sec
 ### 5.3 Large holes: discard plus interior layers (tier c)
 
 - **Discard behaviour.** Opaque materials that `discard` also apply it in the depth prepass and shadow passes, so the hole appears in shadows [K-M]. `discard` "has a performance cost" [S8]. Keep it only in the skin and inner-layer shaders, and only branch into it inside wound cells.
+  - **Correction (fact-check):** branching is not enough. The 4.5 manual says `discard` "will prevent the depth prepass from being effective on any surfaces using the shader" [F14]. The cost attaches to the **presence** of `discard` in the compiled shader, not to whether the branch is taken. So:
+    - build **two variants of the skin shader**, one without `discard` (tier a + b only) and one with it;
+    - switch a body surface to the discard variant only when its first `open = true` wound appears;
+    - keep the analytic cavity shading (5.2) in the no-discard variant, which is why it was designed without `discard`.
+
+    With modular surfaces (Section 9.2), only the surfaces that actually carry an open wound pay the cost.
 - **Interior stack.** All layers are skinned to the same skeleton and are hidden until a wound with `open = true` lies within 5–10 cm of their bounds [G]:
   1. **Muscle shell.** The body mesh offset inward by (skin + fat) from the depth maps, then decimated to 30–50 % of the body triangle count. It is authored in Blender with shrinkwrap/displace plus weight transfer. It evaluates the same wound SDFs, so the hole continues through it with a slightly smaller radius (tracks narrow in muscle, doc 01).
   2. **Skeleton / ribs / skull.** Authored meshes with pre-fractured variants (5.5).
@@ -816,7 +839,8 @@ paint = texture(damage_atlas, UV)                                 // tier a (Sec
 | `tissue_state` (body) | RGBA8 | 2,048² | 16.8 MB | R bruise (0–1, with age in `blood_state.G` or a paired map), G burn degree (0–3), B soot/stipple, A abrasion | [D], [G] |
 | `blood_state` and `tissue_state` (head) | as above | 2,048² each | 50.4 MB | Face and scalp detail | [D], [G] |
 | Position map and normal map | RGBA16F / RGBA8 | 1,024² each | 8.4 + 4.2 MB | Paint lookups only | [D], [G] |
-| **Total per hero character** | | | **~113 MB** | Fits in 6 GB alongside the scene | [D] |
+| Position + normal map for the **head** atlas (Section 4.1 specifies one set per atlas) | RGBA16F / RGBA8 | 1,024² each | 8.4 + 4.2 MB | Missing from the original total (added in the fact-check) | [D] |
+| **Total per hero character** | | | **~126 MB** (113 MB without the head position/normal maps; ~150–170 MB with full mip chains on the four atlases) | Fits in 6 GB alongside the scene | [D]; *(corrected: was ~113 MB)*. Arithmetic ✓ verified: RGBA16F 2,048² = 4,194,304 × 8 B = 33.55 MB (decimal), RGBA8 2,048² = 16.78 MB |
 
 - **Mips.** Regenerate mips only for the dirty rectangle after painting, or sample with `textureLod` at a distance-based LOD. Otherwise distant bodies alias [K-M].
 - **UVs.** Use a non-overlapping, uniform-density unwrap (the atlas UV set, separate from tiling detail UVs) with **≥ 8 px gutters at 2,048²** [K-M].
@@ -919,7 +943,7 @@ paint = texture(damage_atlas, UV)                                 // tier a (Sec
 **Each step (30 Hz):**
 1. **Gravity in rest space.** For the agent's dominant bone: `g_rest = R_b⁻¹ · g_world`, where `R_b` is the rotation from rest to current pose. Project `g_rest` onto the triangle plane.
 2. **Speed.**
-   - Thin-film formula `u = ρ·g·sinθ·h² / (3μ)`: h = 0.2 mm on a vertical surface gives ~2 cm/s.
+   - Thin-film formula `u = ρ·g·sinθ·h² / (3μ)`: h = 0.2 mm on a vertical surface gives ~2 cm/s. *(Fact-check [D]: with ρ = 1,060 kg/m³ and whole-blood viscosity 4 mPa·s (typical at the ~100–500 s⁻¹ shear rates of such a film [K-H]), u = 1,060 × 9.81 × (2×10⁻⁴)² / (3 × 0.004) ≈ **3.5 cm/s**. ~2 cm/s corresponds to μ ≈ 7 mPa·s (low shear or partly clotted). Use 2–3.5 cm/s; the value stays inside the clamp, so no parameter changes.)*
    - Clamp to 0.5–10 cm/s (doc 03 §10.2).
    - **Stop–go pinning:** with probability 0.1–0.3 per step, pin for 0.2–1.5 s. This reproduces the jerky advance of the contact line [G].
 3. **Move** across triangle edges using a prebuilt adjacency table (C++).
@@ -985,7 +1009,7 @@ paint = texture(damage_atlas, UV)                                 // tier a (Sec
 | `stream_threshold` | 15–30 | mL/min | Agents → stream | doc 03 |
 | `wall_particle_friction` | 0.3–0.6, bounce 0 | — | Slide on the SDF | [S18], [G] |
 | `floor_splat` | RG16F 2,048² over 8×8 m | — | 3.9 mm texels | [D], [G] |
-| `pool_eq_thickness` | 2.5 (1.6–3.3) | mm | | doc 03 §10.3 |
+| `pool_eq_thickness` | 2.5 (1.6–3.3) | mm | Capillary length of blood √(γ/ρg) ≈ 2.3 mm; puddle height 2·l_c·sin(θ/2) gives 2.3–3.3 mm for contact angles 60–90° [D]. 500 mL → 0.2 m² → Ø 50 cm; 1 L → Ø 71 cm | doc 03 §10.3; ✓ verified (arithmetic, consistent with doc 03's own fact-check). Doc 03 warns that real pools can be thinner (edge pinning); the absorbent-floor flag covers that |
 | `pool_spread_tick` | 10–20 Hz, ≤ 1–3 cells per tick | — | Cellular automaton | [G] |
 | `pool_gel_time` | 5–15 | min | Mobility → 0 | doc 03 |
 
@@ -1008,15 +1032,15 @@ paint = texture(damage_atlas, UV)                                 // tier a (Sec
 | Ooze | Q < 1 mL/min | Paint only: film thickness grows, beads at the wound | — | doc 03, [G] |
 | Drip | 1–15 mL/min | Agents (Section 7) plus pendant drops | Drip ticks | doc 03 §10.2 |
 | Stream | 15–300 mL/min | Painted film plus trail ribbon to the ground | Continuous trickle and splash | doc 03, [G] |
-| Jet (arterial) | Arterial, `tissue_factor` > 0.5, Q > ~300 mL/min | Pulsed ribbon or tube trail on a ballistic path, plus 30–80 breakup drops per s | Rhythmic spurting and splatter at heart rate | doc 03 §12 |
+| Jet (arterial) | Arterial, `tissue_factor` > 0.5, Q > ~300 mL/min | Pulsed ribbon or tube trail on a ballistic path, plus 30–80 breakup drops per s | Rhythmic spurting and splatter at heart rate | doc 03 §12 (ribbon, 30–80 drops/s ✓ consistent). **Fact-check note:** the "Q > ~300 mL/min" gate is a [G] value from this document; it is not in doc 03. Spurting is driven by **pressure**, not by flow. A small cut artery (digital, radial after spasm at 20–60 mL/min, scalp arteries) still spurts visibly in pulses [K-H]. Recommended gate: arterial wound open to the skin AND local orifice pressure above the doc 03 jet cut-off (MAP ≳ 25–30 mmHg, doc 03 §6.2). Flow then sets only the jet **thickness** and breakup-drop count, and pressure sets the height |
 | Frothy (lung) | Lung or airway wound | Pink foam particles, bubbles in sync with breathing | Gurgling, sucking | doc 03 §9.3, doc 04 §9 |
 
 **Jet dynamics** (doc 03 §4, §12):
-- Launch speed `v0 = √(2·g·h_jet)`. The real jet height is 0.35–0.65 × the ideal pressure head, i.e. **0.55–1.0 m vertical at normal blood pressure**, which gives v0 ≈ 3.3–4.4 m/s [D].
+- Launch speed `v0 = √(2·g·h_jet)`. The real jet height is 0.35–0.65 × the ideal pressure head, i.e. **0.55–1.0 m vertical at normal blood pressure**, which gives v0 ≈ 3.3–4.4 m/s [D]. ✓ verified (arithmetic): 120 mmHg × 133.32 Pa / (1,060 × 9.81) = 1.54 m ideal; × 0.35–0.65 = 0.54–1.0 m; √(2 × 9.81 × 0.55) = 3.28 m/s and √(2 × 9.81 × 1.0) = 4.43 m/s. Consistent with doc 03 §6.2, whose own fact-check notes that no measured human jet heights were found (Cv is a tuning value).
 - Height scales with instantaneous pressure. It pulses at HR with modulation depth 0.5–0.8 (arterial) and **shrinks as MAP falls**.
-- The jet stops below the critical closing pressure for small arteries (20–40 mmHg).
+- The jet stops below the critical closing pressure for small arteries (20–40 mmHg). (Doc 03 §6.2 uses "MAP < 25–30 mmHg: no jet", which falls inside this range; use 25–30 for consistency.)
 
-**Caps:** ≤ 6 jets and ≤ 20 drips/streams (doc 03 §12). The physiology still accounts for the volume of every wound, including ones whose VFX is culled.
+**Caps:** ≤ 6 jets and ≤ 20 drips/streams (doc 03 §12). The physiology still accounts for the volume of every wound, including ones whose VFX is culled. ✓ consistent with doc 03 §12 ("≤ 6 jets, ≤ 20 drips"). The 32 surface-flow agents and the 1 / 15 / 300 mL/min regime edges are [G] values of this document. The 15 mL/min drip → stream edge is the lower end of doc 03's "above ~15–30 mL/min" [D].
 
 ### 8.2 Spatter from impacts (numbers from doc 01 §7)
 
@@ -1050,7 +1074,7 @@ paint = texture(damage_atlas, UV)                                 // tier a (Sec
 | Path | What | How | Budget | Source |
 |---|---|---|---|---|
 | GPU stain particles | Mist and fine spatter (< 1 mm) | Custom particle process shader: on collision, zero velocity, orient to the collision normal, extend lifetime to 10–30 min, switch to a stain sprite. Or an at-collision sub-emitter that spawns stain particles (the sub-emitter's amount caps the total) | ≤ 8,000 persistent stain particles | [S18], [S41], [K-M] |
-| CPU hero drops | Drops ≥ 1 mm and drips | C++ ballistic step with drag at 60 Hz plus a Jolt raycast per step. On hit, place a `Decal` (walls, props) or add volume and time to the floor splat map, with the stain size and ellipse from doc 03 (spread 3–5 × drop diameter; L/W = 1/sin α) | ≤ 200 in flight; each raycast ~µs in C++ | doc 03 §10.1, [E] |
+| CPU hero drops | Drops ≥ 1 mm and drips | C++ ballistic step with drag at 60 Hz plus a Jolt raycast per step. On hit, place a `Decal` (walls, props) or add volume and time to the floor splat map, with the stain size and ellipse from doc 03 (spread 3–5.5 × drop diameter *(corrected: was 3–5×, per the doc 03 fact-check)*; L/W = 1/sin α) | ≤ 200 in flight; each raycast ~µs in C++ | doc 03 §10.1, [E] |
 | Victim's own body | Drops landing on the victim | Paint into the victim atlas when the drop's ray hits a PhysicalBone3D shape (Section 4.2 path) | ≤ 60 per s | [G] |
 
 **Decal pool:**
@@ -1077,12 +1101,13 @@ paint = texture(damage_atlas, UV)                                 // tier a (Sec
 | Parameter | Value / range | Unit | Notes | Source |
 |---|---|---|---|---|
 | `regime_ooze_max` | 1 | mL/min | | [G] |
-| `regime_drip_max` | 15 | mL/min | | doc 03 |
-| `regime_stream_max` | 300 | mL/min | | [G] |
-| `jet_height_normal_bp` | 0.55–1.0 | m | 0.35–0.65 × ideal | doc 03 |
-| `jet_v0` | 3.3–4.4 | m/s | √(2gh) | [D] |
+| `regime_drip_max` | 15 | mL/min | Lower end of doc 03's 15–30 | doc 03; ✓ consistent |
+| `regime_stream_max` | 300 | mL/min | Use it only for **venous/non-pulsatile** flow. Arterial wounds jet whenever the orifice pressure exceeds ~25–30 mmHg, whatever the flow (fact-check) | [G] |
+| `jet_height_normal_bp` | 0.55–1.0 | m | 0.35–0.65 × ideal | doc 03; ✓ verified (arithmetic) |
+| `jet_v0` | 3.3–4.4 | m/s | √(2gh) | [D]; ✓ verified (arithmetic) |
+| `jet_cutoff_pressure` (added) | 25–30 | mmHg | Below this, no jet: welling flow only | doc 03 §6.2 |
 | `jet_pulse_depth` | 0.5–0.8 | × mean | At HR | [G] |
-| `jets_max / drips_max` | 6 / 20 | — | | doc 03 §12 |
+| `jets_max / drips_max` | 6 / 20 | — | | doc 03 §12; ✓ consistent |
 | `jet_breakup_drops` | 30–80 | per s per jet | | doc 03 §12 |
 | `backspatter_count` | 30–320 | per head shot | | doc 01 §7 |
 | `backspatter_v0 / cone` | 13–61 (24) m/s / 57° | — | | doc 01 §7 |
@@ -1218,7 +1243,11 @@ So the dismemberment system mainly serves **fingers, hand/wrist, jaw/face avulsi
 - neck, head;
 - per side: clavicle (optional), upper arm, forearm, hand, thigh, shank, foot.
 
-**Masses for 75 kg (Winter/Dempster segment fractions) [K-H R17]:**
+**Masses for 75 kg (Winter/Dempster segment fractions) [K-H R17]:** ✓ verified in the fact-check against the Winter (2009) / Dempster table reproduced in the BMClab Biomechanics and Motor Control notebooks: hand 0.0060, forearm 0.0160, upper arm 0.0280, foot 0.0145, leg (shank) 0.0465, thigh 0.1000, head and neck 0.0810, thorax 0.2160, abdomen 0.1390, pelvis 0.1420, trunk 0.4970 [F45]. The fractions sum to 1.000 [D].
+
+**Alternative data set (added in the fact-check).** Dempster's fractions come from cadavers (8 elderly males [K-H]). The Zatsiorsky–Seluyanov values adjusted by de Leva (1996) come from scanning living young adults [F45] (gamma-ray scanning [K-H]), use joint centres as segment ends, and differ markedly for the thigh and trunk. The notebook's de Leva **female** values are head 6.68 %, trunk 42.57 %, upper arm 2.55 %, forearm 1.38 %, hand 0.56 %, thigh 14.78 %, shank 4.81 %, foot 1.29 % [F45]. The de Leva **male** values, from my knowledge and not re-verified, are head 6.94 %, trunk 43.46 %, upper arm 2.71 %, forearm 1.62 %, hand 0.61 %, thigh 14.16 %, shank 4.33 %, foot 1.37 % [K-H].
+- **Which to use:** because our ragdoll bodies start at the hip joint centre, de Leva's thigh (~10.6 kg rather than 7.5 kg at 75 kg) better matches the capsule geometry, and it gives a lower, heavier-legged fall.
+- **Either set is defensible [G].** Keep Winter/Dempster if matching published biomechanics tables matters more; switch to de Leva if leg-dominated falls look too "top-heavy".
 
 | Segment | Fraction of body mass | Mass (75 kg) | Notes |
 |---|---|---|---|
@@ -1239,7 +1268,7 @@ So the dismemberment system mainly serves **fingers, hand/wrist, jaw/face avulsi
 |---|---|---|
 | Neck (C-spine) | 6DOF or cone | Flexion 45–50°, extension 45–60°, lateral flexion 45°, rotation 60–80° |
 | Lumbar and thoracic | 6DOF | Flexion 80–90°, extension 20–30°, lateral 25–35°, rotation 30–45° (split across two joints) |
-| Shoulder | Cone | Swing ≤ 90–110° (the manual suggests 20–90° [S4]); twist ±70° |
+| Shoulder | Cone | Swing ≤ 90–110° (the current master manual suggests 20–90° [S4]; the 4.5 manual gives no values [F36]); twist ±70° |
 | Elbow | Hinge | 0–145° (hyperextension ≤ 5°) |
 | Forearm twist | Folded into the wrist | ±80° |
 | Wrist | 6DOF | Flexion 70–80°, extension 60–70°, radial/ulnar 20°/30° |
@@ -1251,7 +1280,7 @@ So the dismemberment system mainly serves **fingers, hand/wrist, jaw/face avulsi
 
 ### 10.2 Jolt settings for ragdolls
 
-- Keep the defaults first: 10 velocity steps, 2 position steps [S20].
+- Keep the defaults first: 10 velocity steps, 2 position steps [S20]. ✓ verified [F41, F42].
 - If joints stretch under stacked contact (a body folded over furniture), raise them to 12–16 and 3–4 [G].
 - Avoid mass ratios above ~10:1 across one joint [K-M]. This is why the neck mass is raised in 10.1.
 - **Sleep:** the default 0.03 m/s for 0.5 s [S20] lets corpses sleep within about a second of settling.
@@ -1265,7 +1294,8 @@ So the dismemberment system mainly serves **fingers, hand/wrist, jaw/face avulsi
 - **Momentum is small [D].**
   - 9 mm (7.45 g at 360 m/s): p = **2.7 N·s**. .45 ACP (14.9 g at 255 m/s): 3.8 N·s. 12-gauge 00 buck (9 × 3.5 g at 400 m/s): **12.6 N·s**.
   - A 75 kg body gains only **0.04 m/s** from a pistol and **0.17 m/s** from a shotgun.
-  - A 5 kg head that fully absorbs a pistol bullet gains ≤ 0.5 m/s.
+  - A 5 kg head that fully absorbs a pistol bullet gains **~0.55 m/s (9 mm) to ~0.75 m/s (.45 ACP)**. *(corrected: was "≤ 0.5 m/s"; 2.7/5 = 0.54 and 3.8/5 = 0.76)*
+  - ✓ verified (arithmetic, fact-check): 0.00745 × 360 = 2.68; 0.0149 × 255 = 3.80; 9 × 0.0035 × 400 = 12.6 N·s; 2.68/75 = 0.036 m/s; 12.6/75 = 0.168 m/s. The masses and velocities match doc 01 §1 (9 mm 7.5–8.0 g at 350–380 m/s; .45 ACP 14.9 g at 250–260 m/s; 00 buck 9 × 8.4 mm pellets, 31.4 g, ~400 m/s, pellet count sourced there). Across doc 01's velocity range, 9 mm gives 2.6–3.0 N·s. A through-and-through shot transfers only part of this momentum, so these are upper bounds.
   - **Realistic reactions come from the nervous system, not bullet momentum:** flinch, withdrawal, collapse.
 
   So apply the true impulse with `apply_impulse()` [S13] and drive the visible reaction through tone changes.
@@ -1290,8 +1320,8 @@ So the dismemberment system mainly serves **fingers, hand/wrist, jaw/face avulsi
 |---|---|---|---|
 | Neck | ~0.08 kg·m² | ~50 N·m/rad | 20–40 N·m |
 | Lumbar (upper body) | ~4–5 | ~2,800 | 200–300 |
-| Shoulder (whole arm) | ~0.25 | ~160 | 60–100 |
-| Elbow (forearm + hand) | ~0.06 | ~38 | 50–80 |
+| Shoulder (whole arm) | ~0.25 with the elbow flexed; **~0.5 with the arm straight** (fact-check [D]: upper arm 2.1 kg at 0.14 m, forearm 1.2 kg at 0.44 m, hand 0.45 kg at 0.69 m, plus segment self-inertia ≈ 0.5 kg·m²) | ~160 (flexed) to ~320 (straight) | 60–100 |
+| Elbow (forearm + hand) | ~0.06 (0.06–0.08 with segment self-inertia [D]) | ~38 (38–50) | 50–80 |
 | Wrist | ~0.004 | ~2.5 | 8–15 |
 | Hip (whole leg) | ~2.6 | ~1,640 | 200–300 |
 | Knee (shank + foot) | ~0.4 | ~250 | 200–250 |
@@ -1344,11 +1374,11 @@ Worked example, elbow [D]: forearm + hand 1.65 kg, CoM 0.18 m from the joint, gi
 | Parameter | Value / range | Unit | Notes | Source |
 |---|---|---|---|---|
 | `ragdoll_bodies` | 17–19 | — | Remove fingers | [S4], [G] |
-| `segment_mass_fractions` | table 10.1 | — | Winter/Dempster | [K-H R17] |
+| `segment_mass_fractions` | table 10.1 | — | Winter/Dempster (de Leva alternative in 10.1) | [K-H R17]; ✓ verified [F45] |
 | `joint_limits` | table 10.1 | ° | AAOS +10 % passive | [K-H R18], [G] |
 | `ragdoll_friction / bounce` | 0.6–0.9 / 0–0.05 | — | | [G] |
 | `ragdoll_ang_damp` | 0.5–2 | 1/s | | [G] |
-| `impulse_9mm / 45acp / 00buck` | 2.7 / 3.8 / 12.6 | N·s | Apply the true value | [D] |
+| `impulse_9mm / 45acp / 00buck` | 2.7 / 3.8 / 12.6 | N·s | Apply the true value (upper bound; less for through-and-through) | [D]; ✓ verified (arithmetic, doc 01 inputs) |
 | `flinch_influence` | 0.3–0.6 → 0 over 0.2–0.5 s | — | Partial ragdoll | [S4], [S11], [G] |
 | `pd_kp / kd` | I·ω² / 2ζIω | — | f and ζ per tone state | [D], [G] |
 | `tone_table` | table 10.4 | — | From doc 04 motor states | [G] |
@@ -1370,7 +1400,7 @@ Worked example, elbow [D]: forearm + hand 1.65 kg, CoM 0.18 m from the joint, gi
 
 ### 11.1 Stencil approach in Godot 4.5
 
-1. **Skin material, opaque pass:** stencil `write`, `compare_always`, reference 1. Writing in the opaque pass is allowed; only reading is restricted [S1, S44].
+1. **Skin material, opaque pass:** stencil `write`, `compare_always`, reference 1. Writing in the opaque pass is allowed; only reading is restricted [S1, S44]. ✓ verified: PR 80710 drops only opaque-pass stencil *reads*, and its own "standard x-ray" preset uses the same write-then-read pattern [F4].
 2. **X-ray materials** (skeleton, organs, bullet track, fracture fragments): **transparent pass**, `depth_test_disabled`, stencil `read`, `compare_equal`, reference 1 [S1, S44]. They draw only inside the body's silhouette.
 3. **Skin during the X-ray:**
    - swap to a transparent variant (Fresnel rim, alpha 0.1–0.25);
@@ -1386,6 +1416,10 @@ Alpha-blended, overlapping layers are "significantly slower" [S29]. The kill cam
   - A 1.5–3 s real-time X-ray window.
   - Return over 0.3–0.5 s.
 - **Enable 3D physics interpolation** so the ragdoll and debris stay smooth at low time scale [S51]. Confirm how physics tick counts behave under `time_scale` in 4.5 before tuning [K-L].
+  - **Answered in the fact-check [F46]:** `Engine.time_scale` scales `delta` but "does not automatically adjust `physics_ticks_per_second`". At 0.05× the engine still runs 60 physics ticks per **real** second, each covering 0.83 ms of game time, so ragdolls and debris stay smooth **without** interpolation. Interpolation matters only when the render rate exceeds the tick rate. Two consequences:
+    - PD gains computed from `state.step` in `_integrate_forces` remain valid.
+    - Any per-tick logic written in "ticks" rather than seconds runs 20× more often per game second.
+  - **Audio (added):** `time_scale` "does not affect audio playback speed". For the slowed "inside the body" sound, set `AudioServer.playback_speed_scale` to match (or use pitch-shift/low-pass effects) and restore it on exit [F46].
 - **Camera:** attach it to a proxy that follows the bullet ray, then orbit the victim. Keep the X-ray camera's near plane at ≥ 5 cm to protect depth precision [S42].
 
 ### 11.3 Assets
@@ -1432,7 +1466,7 @@ Alpha-blended, overlapping layers are "significantly slower" [S29]. The kill cam
 
 | Effect | GTX 1660 | RTX 3060 | Notes | Source |
 |---|---|---|---|---|
-| SSS | 17 taps | 25 taps | Forward+ only | [S29], [S33] |
+| SSS | 17 taps (Medium) | 25 taps (High) | Forward+ only. Project default is Low (11 taps): set explicitly | [S29], [S33]; ✓ verified [F33–F35] |
 | SSAO | Half-res, medium | Full-res, high | Grounds pools and debris | [K-M] |
 | SSIL | Off | Optional | | [G] |
 | SSR | Off (reflection probe) | On for pools; the 4.6+ SSR is cheaper | 4.6 overhaul | [S22], [G] |
@@ -1455,8 +1489,10 @@ Alpha-blended, overlapping layers are "significantly slower" [S29]. The kill cam
 | GPU | FP32 | Memory | Bandwidth | Relative raster speed |
 |---|---|---|---|---|
 | GTX 1660 | ~5.0 TFLOPS | 6 GB GDDR5 | 192 GB/s | 1.0 |
-| GTX 1660 Super | ~5.0 TFLOPS | 6 GB GDDR6 | 336 GB/s | ~1.1–1.15 [K-M] |
-| RTX 3060 (12 GB) | ~12.7 TFLOPS | 12 GB GDDR6 | 360 GB/s | ~1.7–2.0 [K-M] |
+| GTX 1660 Super | ~5.0 TFLOPS | 6 GB GDDR6 | 336 GB/s | **~1.09** [F22] *(corrected: was ~1.1–1.15 [K-M])* |
+| RTX 3060 (12 GB) | ~12.7 TFLOPS | 12 GB GDDR6 | 360 GB/s | **~1.57** [F22] *(corrected: was ~1.7–2.0 [K-M])* |
+
+✓ verified (specs): 192 / 336 / 360 GB/s and 5.0 / 5.0 / 12.7 TFLOPS [F21]; GTX 1660 = TU116, 1,408 shaders, 48 ROPs, boost 1,785 MHz [F22]. The relative-speed column is TechPowerUp's aggregate game benchmark. Compute-heavy passes (particles, painting) may scale closer to the 2.5× FP32 ratio, and bandwidth-bound passes closer to the 1.9× bandwidth ratio [D].
 
 ### 13.2 "Heavy gore" reference scene (what the budget must survive)
 
@@ -1492,9 +1528,19 @@ Alpha-blended, overlapping layers are "significantly slower" [S29]. The kill cam
 | Transparent (mist, jets, X-ray) | 0.5–1.5 | 0.3–0.8 | **Main risk: overdraw of mist near the camera** |
 | Post (tonemap, glow, SMAA/TAA) | 0.6–1.0 | 0.3–0.6 | |
 | UI | ~0.1 | ~0.05 | |
-| **Total** | **7.5–13.5** | **4–7** | Target ≤ 13.5 on the 1660 |
+| **Total** | **7.5–13.0** | **4–7** | Target ≤ 13.5 on the 1660 |
+
+*Fact-check of the totals [D]:*
+- The 1660 column sums to 7.45–13.0 ms. *(corrected: the upper total was 13.5, which is the target, not the sum)*
+- The 3060 column sums to 3.9–7.2 ms, which implies a 1.8–1.9× speed-up. TechPowerUp's aggregate ratio is 1.57× [F22]. Scaling the 1660 column by that gives **~4.7–8.3 ms on the RTX 3060**, so the `gpu_budget_3060` target of ≤ 8 ms (Section 13) may be exceeded in the worst case.
+- Treat both columns as [E] until profiled.
 
 **Overdraw arithmetic [D].** One mist sprite covering half the 1080p screen blends ~1.04 Mpx. Ten stacked sprites blend ~10 Mpx per frame, i.e. ~0.6 Gpx/s of blending at 60 fps. Blended RGBA16F traffic at that rate is a real fraction of the 1660's 192 GB/s. Hence **cap mist screen coverage at ~15–20 % of the screen and ≤ 4 layers**.
+- *Quantified in the fact-check [D]:*
+  - **Bandwidth.** 10.4 Mpx × 16 B (8 B read + 8 B write for RGBA16F) ≈ 166 MB per frame. At 192 GB/s that is **~0.9 ms per frame** of raw blend traffic before any texture fetches, about 5 % of the bandwidth.
+  - **ROPs.** Blend throughput is not the limit: 48 ROPs × 1.785 GHz ≈ 86 Gpx/s, roughly half that for 64-bit blending [F22, K-M], which is ~70× the 0.6 Gpx/s needed.
+  - **Shading.** The larger risk is **per-fragment shading** if mist sprites are lit through the clustered lights with shadow sampling.
+  - **Recommendation.** Make mist `unshaded` (or vertex-lit), and sample a low-resolution lighting term instead of computing it per pixel. The 15–20 % / 4-layer cap then leaves a large margin.
 
 ### 13.4 CPU budget (main thread, 6-core reference) [E]
 
@@ -1508,7 +1554,7 @@ Alpha-blended, overlapping layers are "significantly slower" [S29]. The kill cam
 | Animation and skeleton modifiers (2 characters) | 0.2–0.6 | |
 | Game logic (GDScript) | 1–3 | |
 | Render CPU (culling, ~1,000–2,000 draws) | 2–4 | |
-| **Total** | **~4–9** | Target ≤ 12 |
+| **Total** | **~4–10** | Target ≤ 12. *(corrected: was ~4–9; the listed maxima sum to 9.7 ms, including the worker-thread rivulet agents)* |
 
 ### 13.5 LOD, culling, visibility
 
@@ -1544,7 +1590,7 @@ Restore in reverse when time < 11 ms for 3 s. **Never degrade the wounds, the ph
 | Parameter | Value / range | Unit | Notes | Source |
 |---|---|---|---|---|
 | `gpu_budget_1660` | ≤ 13.5 | ms | 1080p | [G] |
-| `gpu_budget_3060` | ≤ 8 | ms | Headroom for SSR/SSIL | [G] |
+| `gpu_budget_3060` | ≤ 8 | ms | Headroom for SSR/SSIL. The fact-check rescaling (1.57× [F22]) gives 4.7–8.3 ms for the heavy scene, so SSR/SSIL may not fit in the worst case: profile first | [G] |
 | `cpu_main_budget` | ≤ 12 | ms | | [G] |
 | `mist_screen_coverage_max` | 15–20 %, ≤ 4 layers | — | Overdraw | [D], [G] |
 | `hero_tris_lod0` | 100–150k (body + head) | triangles | | [G] |
@@ -1609,28 +1655,28 @@ Restore in reverse when time < 11 ms for 3 s. **Never degrade the wounds, the ph
 
 ## 16. Load-bearing claims (quick reference)
 
-| # | Claim | Value | Source |
-|---|---|---|---|
-| 1 | Godot RD renderers skin in a compute pre-pass; `VERTEX` in `vertex()` is post-skin, model space | up to 8 weights per vertex | [S2], [S3], [S1] |
-| 2 | Rest position must be supplied per vertex (e.g. `CUSTOM0`) for rest-space wounds | — | [D] from [S1], [S2] |
-| 3 | Decals are projected per frame from view-space position through the decal box, so they slide on skin and project through limbs | — | [S25], [S12] |
-| 4 | Forward+ clustered elements (lights + decals + probes) default limit per view | 512 | [S6] |
-| 5 | Decals: no custom shaders; albedo/normal/ORM/emission only; cannot affect transparency | — | [S6], [S12] |
-| 6 | Stencil in 4.5: read only in the transparent pass; modes read/write/write_depth_fail/compare_* | — | [S1], [S44] |
-| 7 | Instance uniforms: max 16 per shader, no arrays or textures; uniform buffer 64 KB on desktop | 16; 65,536 B | [S8] |
-| 8 | GPU particle collision shapes and attractors per system | 32 / 32 | [S19] |
-| 9 | Particle SDF collision bakes in the editor only; heightfield updates at runtime (256²–8,192²) | — | [S16], [S17] |
-| 10 | Changing `GPUParticles3D.amount` restarts the system; use `amount_ratio` | — | [S14] |
-| 11 | Compute results reach materials only via the global RenderingDevice + `call_on_render_thread` + `Texture2DRD`; a local device cannot share | — | [S37], [S38], [S39] |
-| 12 | SSS is Forward+-only, separable screen-space, 11/17/25 taps with a skin kernel | — | [S29], [S33] |
-| 13 | Jolt defaults: velocity steps 10, position steps 2; sleep 0.03 m/s for 0.5 s; max bodies 10,240 | — | [S20] |
-| 14 | Jolt ray `face_index` is −1 unless enabled (+~25 % concave-shape memory) | — | [S5] |
-| 15 | PhysicalBone3D joint RID (motors) not script-accessible until 4.8; 4.5 offers 6DOF springs and `_integrate_forces` | — | [S48], [S28], [S13] |
-| 16 | Jolt is the default engine for new projects only from 4.6; select it in 4.5. 4.5 released 15 Sep 2025 | — | [S21], [S22] |
-| 17 | Segment masses (Winter): head+neck 8.1 %, trunk 49.7 %, thigh 10 %, shank 4.65 %, foot 1.45 %, upper arm 2.8 %, forearm 1.6 %, hand 0.6 % | — | [K-H R17] |
-| 18 | Bullet momentum is small: 9 mm 2.7 N·s, 00 buck 12.6 N·s, giving 0.04–0.17 m/s to a 75 kg body | — | [D] |
-| 19 | Atlas texel size: 2,048² gives ~0.8 mm over a 1.93 m² body and ~0.24 mm for the head | — | [D] |
-| 20 | GPU budget at 1080p for the heavy scene: 7.5–13.5 ms on a GTX 1660; 4–7 ms on an RTX 3060 | — | [E] |
+| # | Claim | Value | Source | Fact-check (2026-09-26) |
+|---|---|---|---|---|
+| 1 | Godot RD renderers skin in a compute pre-pass; `VERTEX` in `vertex()` is post-skin, model space | up to 8 weights per vertex | [S2], [S3], [S1] | ✓ verified [F11, F12] |
+| 2 | Rest position must be supplied per vertex (e.g. `CUSTOM0`) for rest-space wounds | — | [D] from [S1], [S2] | ✓ verified (no bone-matrix built-ins; CUSTOM0–3 are `in`) [F12]. Added: use a 32-bit float custom format (half gives ~1 mm steps at 1–2 m) |
+| 3 | Decals are projected per frame from view-space position through the decal box, so they slide on skin and project through limbs | — | [S25], [S12] | ✓ verified [F24] |
+| 4 | Forward+ clustered elements (omni + spot lights + decals + reflection probes) default limit per view | 512 | [S6] | ✓ verified [F20]. *(corrected: "area lights" removed for 4.5)* |
+| 5 | Decals: no custom shaders; albedo/normal/ORM/emission only; cannot affect transparency | — | [S6], [S12] | ✓ verified [F20, F23] |
+| 6 | Stencil in 4.5: read only in the transparent pass; modes read/write/write_depth_fail/compare_* | — | [S1], [S44] | ✓ verified [F4, F16] |
+| 7 | Instance uniforms: max 16 per shader, no arrays or textures; uniform buffer 64 KB on desktop | 16; 65,536 B | [S8] | ✓ verified [F14] (16 KB on mobile) |
+| 8 | GPU particle collision shapes and attractors per system | 32 / 32 | [S19] | ✓ verified [F28] |
+| 9 | Particle SDF collision bakes in the editor only; heightfield updates at runtime (256²–8,192²) | — | [S16], [S17] | ✓ verified [F25–F27]. Caveat: "When Moved" ignores moving meshes |
+| 10 | Changing `GPUParticles3D.amount` restarts the system; use `amount_ratio` | — | [S14] | ✓ verified [F31] |
+| 11 | Compute results reach materials only via the global RenderingDevice + `call_on_render_thread` + `Texture2DRD`; a local device cannot share | — | [S37], [S38], [S39] | ✓ verified [F15] (a slow CPU-readback path also exists) |
+| 12 | SSS is Forward+-only, separable screen-space, 11/17/25 taps with a skin kernel | — | [S29], [S33] | ✓ verified [F33–F35]. Default quality is Low (11) |
+| 13 | Jolt defaults: velocity steps 10, position steps 2; sleep 0.03 m/s for 0.5 s; max bodies 10,240 | — | [S20] | ✓ verified [F41, F42] |
+| 14 | Jolt ray `face_index` is −1 unless enabled (+~25 % concave-shape memory) | — | [S5] | ✓ verified [F43] |
+| 15 | PhysicalBone3D joint RID (motors) not script-accessible until 4.8; 4.5 offers 6DOF springs and `_integrate_forces` | — | [S48], [S28], [S13] | ✓ verified [F9, F37, F38]; spring limit = FLT_MAX in 4.5 [F39, F40] |
+| 16 | Jolt is the default engine for new projects only from 4.6; select it in 4.5. 4.5 released 15 Sep 2025 | — | [S21], [S22] | ✓ verified [F1–F3, F6, F7] |
+| 17 | Segment masses (Winter): head+neck 8.1 %, trunk 49.7 %, thigh 10 %, shank 4.65 %, foot 1.45 %, upper arm 2.8 %, forearm 1.6 %, hand 0.6 % | — | [K-H R17] | ✓ verified [F45]. de Leva alternative added |
+| 18 | Bullet momentum is small: 9 mm 2.7 N·s, 00 buck 12.6 N·s, giving 0.04–0.17 m/s to a 75 kg body | — | [D] | ✓ verified (arithmetic; inputs from doc 01). Head speed corrected to 0.55–0.75 m/s |
+| 19 | Atlas texel size: 2,048² gives ~0.8 mm over a 1.93 m² body and ~0.24 mm for the head | — | [D] | ✓ verified (arithmetic). Memory corrected to ~126 MB |
+| 20 | GPU budget at 1080p for the heavy scene: 7.5–13.0 ms on a GTX 1660; 4–7 ms (per-pass estimate) or 4.7–8.3 ms (scaled by the measured 1.57× ratio) on an RTX 3060 | — | [E] | *(corrected: 1660 upper total was 13.5; RTX 3060 range widened)*. Still [E]: must be profiled |
 
 ---
 
@@ -1641,6 +1687,12 @@ Restore in reverse when time < 11 ms for 3 s. **Never degrade the wounds, the ph
 - **Several README files contained package-install instructions**, for example a Unity Package Manager Git URL in SkinnedMeshDecals. These are normal README content, not instructions to me. I did not follow them and have not reproduced them.
 - **Data-quality note:** one fetch summary misreported Godot 4.5's release year as 2024. The authoritative website data gives **15 September 2025** [S21], and that is the date used here.
 - **Bash was not used.** Nothing was downloaded, installed or executed. No code was copied from the web into the project. The shader and pseudo-code outlines in this document were written for it.
+- **Fact-check pass (2026-09-26):**
+  - No prompt-injection text was found in any page, source file, pull-request description or code-search result read during the fact-check.
+  - Pull-request descriptions contained normal build/test instructions and links to demo projects (for example a stencil demo repository, and a shell command in a Metal shader-baker PR). These are ordinary PR content, not instructions to me. I did not follow, open or reproduce them.
+  - A TechPowerUp page was read from a third-party GitHub mirror (a student project's HTML snapshot), because techpowerup.com itself was blocked. I treated it as data only, and its numbers agree with a second GitHub-hosted spec table [F21, F22].
+  - One fetch summary gave Godot 4.6's release year as "2025". The 4.6 milestone closing date (2026-01-26) and the release sequence show that **26 Jan 2026** is correct, and that is the date used.
+  - In the fact-check, Bash was used once, for a read-only line count of this file, and not afterwards. Nothing was downloaded or executed.
 
 ---
 
@@ -1770,3 +1822,135 @@ In total, 68 sources (S1–S68) were read this session. All are on github.com or
 - **R24** Capcom. Resident Evil 2 (2019), RE Engine.
 - **R26** Tatarchuk N. "Practical Parallax Occlusion Mapping." GDC/I3D 2006; van Dongen J. "Interior Mapping." CGI 2008.
 - Companion documents 01–04 in this folder (their own sources apply to all physiology numbers quoted here).
+
+---
+
+## 19. Fact-check (independent verification, 2026-09-26)
+
+### 19.1 Method and limits
+
+- **Scope.** An independent fact-checker re-verified the load-bearing claims of this document, plus other numbers that looked off. Every claim was treated as unverified until checked against material found separately from the author's citations.
+- **WebSearch was unavailable.** The session's search budget was already exhausted.
+- **WebFetch worked only for GitHub.** docs.godotengine.org and techpowerup.com were blocked by the egress proxy.
+- **Independence strategy.** Where the author read `master` files, I read the **4.5 manual branch** (`godot-docs/4.5`) and the **`4.5-stable` / `4.5.1-stable` tags**. I also used GitHub code search, pull-request records and milestone dates, and release-tag pages. For non-Godot facts I used different artefacts from the author's:
+  - OpenJK code search across `code/`, `codemp/rd-vanilla` and `codemp/rd-rend2`;
+  - the generated **niflib** enum, not nif.xml;
+  - a biomechanics teaching notebook for the segment masses;
+  - a TechPowerUp snapshot plus an NVIDIA-sourced spec table for GPU data.
+- **Arithmetic** was recomputed by hand.
+- Markers used in the body: **✓ verified** for rows checked, and ***(corrected: was X)*** for changed values.
+
+### 19.2 Per-claim verdicts (the 20 load-bearing claims)
+
+| # | Claim | Verdict | Evidence / change |
+|---|---|---|---|
+| 1 | Compute skinning pre-pass, 8 weights, identical at 4.5, `VERTEX` post-skin model space | **Confirmed** | `4.5.1-stable` skeleton.glsl: `#[compute]`, local size 64, `skin_weight_offset == 4 //using 8 bones/weights`, blend shapes then bones, `dst_vertices` [F11]; 4.5 manual: model space [F12] |
+| 2 | Rest position must be baked into CUSTOM0 (read-only); no bone matrices/bind pose in spatial shaders | **Confirmed** (+ gap) | 4.5 manual: `in vec4 CUSTOM0`, only BONE_INDICES/WEIGHTS as bone built-ins [F12]. Added: use `ARRAY_CUSTOM_RGBA_FLOAT`; half precision gives ~1 mm steps at 1–2 m [D] |
+| 3 | Decals re-projected per frame; slide and project through; no custom shaders; albedo/normal/ORM/emission; no transparency | **Confirmed** | 4.5-stable shader `uv_local = (xform * vec4(vertex,1)).xyz` in view space [F24]; 4.5 manual [F20]; Decal.xml 4.5 [F23] |
+| 4 | 512 clustered elements per view shared by lights, decals, probes; cost ∝ coverage | **Confirmed with correction** | 4.5 manual: omni, spot, decal, reflection probe [F20]. "Area lights" removed: AreaLight3D is 4.7+ |
+| 5 | Stencil modes read/write/write_depth_fail/compare_*; read only in transparent pass; suits X-ray, not opaque holes | **Confirmed** | 4.5-stable forward_clustered registers exactly these modes [F16]; PR #80710: "not supporting opaque-pass stencil-read materials" [F4]. Clarified that master *source* still uses `write_depth_fail` (the manual's `write_if_depth_fail` is a docs typo) |
+| 6 | Instance uniforms ≤ 16, scalars/vectors only; 65,536 B / 4,096 vec4 desktop | **Confirmed** | 4.5 manual quotes [F14]. Added the mobile limit of 16,384 B and vec4 padding |
+| 7 | MAX_COLLIDERS/ATTRACTORS 32; SDF editor bake 16³–512³; heightfield 256²–8,192² (default 1,024²); collide only with collision nodes; no GPU→CPU event | **Confirmed** (+ caveat) | 4.5-stable particles_storage.h [F28]; SDF/heightfield XML [F25, F26]; manual [F27]; GPUParticles3D has only a `finished` signal [F31]. Added: heightfield "When Moved" does not track moving meshes, so use Always for the body |
+| 8 | Changing `amount` restarts; use `amount_ratio`; sub-emitter capped by its own amount | **Confirmed** | GPUParticles3D.xml 4.5 [F31]; subemitters manual 4.5 [F30]; AT_START exists (value 4) [F29] |
+| 9 | Compute → materials only via global RD + call_on_render_thread + Texture2DRD; local RD cannot share | **Confirmed (nuance)** | RenderingServer.xml 4.5: local device "Cannot draw to the screen nor share data with the global RenderingDevice" [F15]. A slow CPU-readback path exists but is unsuitable per frame |
+| 10 | SSS Forward+ only; separable; 11/17/25 taps; skin kernel | **Confirmed** (+ gap) | 4.5 manual [F33]; 4.5-stable shader [F34]; `ss_effects.cpp` order 11/17/25 [F35]. Added: project default quality = Low (11 taps) [F35] |
+| 11 | Jolt defaults (10/2 steps; sleep 0.03 m/s, 0.5 s; 10,240 bodies); face_index −1 (+~25 % memory); softness/bias/restitution ignored with warning | **Confirmed** | `4.5.1-stable` jolt_project_settings.cpp and master code search [F41, F42]; 4.5 manual [F43]; 6DOF warnings in 4.5-stable source [F39] |
+| 12 | 4.5: no script access to PhysicalBone3D joint motors; get_joint_rid in 4.8 (PR 112002); use PD torques or 6DOF springs (uncapped until 4.8) | **Confirmed** | PhysicalBone3D.xml 4.5 has no `get_joint_rid` [F37]; physical_bone_3d.cpp 4.5 has no motor properties [F38]; PR 112002 merged 22 Jun 2026, milestone 4.8 [F9]; Jolt 6DOF `spring_limit = FLT_MAX`, not exposed [F39, F40]; PR 119332 merged 26 Jun 2026 as unified "drive" limits [F10] |
+| 13 | 4.5 released 15 Sep 2025; Jolt default only from 4.6 (26 Jan 2026); TwoBoneIK3D absent in 4.5; LookAtModifier3D and BoneConstraint3D present | **Confirmed** | 4.5-stable tag 15 Sep, milestone due 2025-09-15 [F1, F2]; PR 105737 in milestone 4.6, closed 2026-01-26 [F6]; 4.6 tag 26 Jan [F3]; IKModifier3D/TwoBoneIK3D PR 110120 in 4.6 [F7]; LookAtModifier3D PR 98446 in 4.4; BoneConstraint3D PR 100984 in 4.5 [F5] |
+| 14 | GHOUL2 projects onto posed mesh and stores per-vertex gore UVs on own triangles; MAX_GORE_RECORDS 500, VERTS 3000, INDECIES 6000 | **Confirmed with correction** | Numbers and algorithm confirmed [F17, F18]. Corrected: MAX_GORE_RECORDS is a **global** pool with oldest-first eviction, not per operation |
+| 15 | Bethesda BSDismemberBodyPartType partitions; section caps 101–113; torso caps 201–213 | **Confirmed with correction** | niflib enum [F19]. Corrected: torso sections are 1000–13000 (was 1000–9000). Added: Skyrim uses the enum only for armour slots and decapitation |
+| 16 | 2,048² over 1.93 m² at 70 % → ~0.8 mm; head ~0.24 mm; ~113 MB per hero | **Arithmetic confirmed; memory corrected** | Recomputed 1.93 m², 0.81 mm, 0.24 mm [D]. Total memory is ~126 MB once the head's position and normal maps (specified in 4.1) are counted; ~150–170 MB with mips. Added: half-float position precision issue |
+| 17 | Momentum 2.7 / 3.8 / 12.6 N·s → 0.04–0.17 m/s; reactions from tone | **Confirmed** (minor fix) | Arithmetic confirmed; inputs match doc 01 §1. Corrected the 5 kg head from ≤ 0.5 to 0.55–0.75 m/s |
+| 18 | Winter/Dempster masses; manual cone-joint swing 20–90°, twist 20–45°, not pin | **Confirmed (version caveat)** | All ten fractions match the BMClab Winter (2009) table [F45]. The joint advice is in the **master** manual; the 4.5 manual has no numeric joint advice [F36]. Added de Leva alternative (thigh 14 % vs 10 %) |
+| 19 | Flow → VFX regimes; jets 0.55–1.0 m, v0 3.3–4.4 m/s; caps 6/20/32; pools 2.5 mm | **Mostly confirmed; one design correction** | Jet arithmetic, 6/20 caps and 2.5 mm pool match doc 03 §6.2, §10.3 and §12 [D]. The 32-agent cap and the regime edges are [G]. Corrected: "Q > 300 mL/min" for jets is not from doc 03, and arterial spurting is pressure-gated (small arteries spurt at low flow). Stain spread updated to 3–5.5× from the doc 03 fact-check |
+| 20 | GPU 7.5–13.5 ms (1660), 4–7 ms (3060); mist overdraw main risk, cap 15–20 % / 4 layers | **Corrected / refined** | Pass maxima sum to **13.0**, not 13.5. The measured 3060/1660 ratio is **1.57×** (not 1.7–2.0×) [F22], giving ~4.7–8.3 ms. The overdraw arithmetic now quantifies ~0.9 ms/frame of blend traffic at 10 half-screen layers; per-fragment lighting is the bigger risk, so make mist unshaded. Still [E] |
+
+### 19.3 Other corrections made in the body
+
+- **Section 0.3 and 13.1:** RTX 3060 relative raster speed changed to ~1.57× (was 1.7–2.0×). GTX 1660 Super ~1.09× (was 1.1–1.15×) [F22].
+- **Section 2.1:** 4.8 items marked as merged on 22 and 26 Jun 2026, in a milestone still open on 2026-09-26. PR 119332 renames the concept to "drive" limits.
+- **Section 4.4:** the wound-grid rest bounds were 0.8 m wide, which excludes the arms of a T- or A-pose bind. Changed to ~1.5–1.8 m (~0.3–0.37 MB). Added a pellet-overflow rule.
+- **Section 5.3:** `discard` defeats the depth prepass for every surface using the shader, whether or not the branch is taken [F14]. Added the two-variant skin-shader rule.
+- **Section 7.1:** the thin-film speed for h = 0.2 mm is ~3.5 cm/s at μ = 4 mPa·s (was ~2 cm/s). The clamp is unchanged.
+- **Section 10.4:** shoulder effective inertia is ~0.5 kg·m² with the arm straight (0.25 applies only with the elbow flexed). Elbow 0.06–0.08.
+- **Section 11.2:** `time_scale` keeps 60 physics ticks per real second, so slow motion is smooth without interpolation. Audio needs `AudioServer.playback_speed_scale` [F46].
+- **Section 13.4:** CPU total ~4–10 ms (was ~4–9).
+
+### 19.4 Gaps filled
+
+1. **Pipeline stutter (Section 2 checklist).** 4.4 ubershaders plus load-time pipeline compilation (PR 90400), and the 4.5 shader baker (PR 102552). Verify warm-up with `RENDERING_INFO_PIPELINE_COMPILATIONS_DRAW` = 0 [F44, F5].
+2. **SSS default.** The project default is Low (11 taps), so the Medium/High settings must be set explicitly [F35].
+3. **Decal cull mask.** It defaults to all layers. Exclude the victim's layer from world decals [F23].
+4. **Heightfield update mode.** "When Moved" ignores moving meshes [F27].
+5. **Discard cost** is per shader, not per branch [F14].
+6. **Custom-attribute precision.** Use 32-bit CUSTOM0 and relative or 32-bit position maps [D].
+7. **Head position/normal maps** were missing from the memory total [D].
+8. **Jolt behaviour.** Contact impulses are estimates. Kinematic–static contacts are off by default. Run-on-thread is experimental [F43].
+9. **Jolt 6DOF springs** carry an internal `FLT_MAX` torque limit in 4.5 [F40].
+10. **de Leva (1996) segment fractions** as an alternative to Dempster [F45, K-H].
+11. **Slow-motion audio** and physics-tick behaviour under `time_scale` [F46].
+12. **Arterial jet gating** should use pressure, not flow (doc 03 §6.2).
+
+### 19.5 Not verified (left as tagged)
+
+- AAA game descriptions (Sections 1.3, 1.5–1.11).
+- Frame-time estimates [E].
+- The 4.6 SSR overhaul and the 4.7 feature list.
+- The Jolt benchmark body count (S56).
+- The "8 elderly male cadavers" detail of Dempster's sample.
+- de Leva **male** values (only the female values were visible in [F45]).
+- `RenderingServer.sub_surface_scattering_set_quality` method name.
+- The MultiMesh, LOD and occlusion statements in 2.10.
+- Tissue colours (5.4), which are [K-M].
+
+### 19.6 Fact-check sources (read 2026-09-26)
+
+| # | Source |
+|---|---|
+| F1 | Godot 4.5-stable release tag (dated 15 Sep): https://github.com/godotengine/godot/releases/tag/4.5-stable |
+| F2 | Milestone "4.5" (due 2025-09-15, closed 2025-09-18): https://github.com/godotengine/godot/milestone/22 ; 4.5.2-stable tag (dated 19 Mar): https://github.com/godotengine/godot/releases/tag/4.5.2-stable |
+| F3 | Godot 4.6-stable release tag (dated 26 Jan): https://github.com/godotengine/godot/releases/tag/4.6-stable ; milestone "4.6" closed 2026-01-26: https://github.com/godotengine/godot/milestone/23 |
+| F4 | PR #80710 "Add stencil support to spatial materials" (milestone 4.5): https://github.com/godotengine/godot/pull/80710 |
+| F5 | 4.5/4.4 feature PRs: #102552 shader baker (4.5) https://github.com/godotengine/godot/pull/102552 ; #100984 BoneConstraint3D (4.5) https://github.com/godotengine/godot/pull/100984 ; #109970 SMAA debanding (4.5, implies SMAA present) https://github.com/godotengine/godot/pull/109970 ; #98446 LookAtModifier3D (4.4) https://github.com/godotengine/godot/pull/98446 |
+| F6 | PR #105737 "Use Jolt Physics by default in newly created projects" (milestone 4.6): https://github.com/godotengine/godot/pull/105737 |
+| F7 | PR #110120 "Add SkeletonModifier3D IKs as IKModifier3D" (4.6): https://github.com/godotengine/godot/pull/110120 ; PR #113213 D3D12 default (4.6): https://github.com/godotengine/godot/pull/113213 |
+| F8 | Godot 4.7-stable release tag (dated 18 Jun): https://github.com/godotengine/godot/releases/tag/4.7-stable |
+| F9 | PR #112002 "Add get_joint_rid() to PhysicalBone3D" (merged 22 Jun 2026, milestone 4.8): https://github.com/godotengine/godot/pull/112002 |
+| F10 | PR #119332 "Add angular spring max torque and linear max force to Generic6DOFJoint3D" (merged 26 Jun 2026, milestone 4.8): https://github.com/godotengine/godot/pull/119332 |
+| F11 | skeleton.glsl at 4.5.1-stable: https://raw.githubusercontent.com/godotengine/godot/4.5.1-stable/servers/rendering/renderer_rd/shaders/skeleton.glsl |
+| F12 | Spatial shader reference, 4.5 manual branch: https://raw.githubusercontent.com/godotengine/godot-docs/4.5/tutorials/shaders/shader_reference/spatial_shader.rst |
+| F13 | ArrayMesh class reference at 4.5-stable: https://raw.githubusercontent.com/godotengine/godot/4.5-stable/doc/classes/ArrayMesh.xml |
+| F14 | Shading language, 4.5 manual branch: https://raw.githubusercontent.com/godotengine/godot-docs/4.5/tutorials/shaders/shader_reference/shading_language.rst |
+| F15 | RenderingServer and Texture2DRD at 4.5-stable: https://raw.githubusercontent.com/godotengine/godot/4.5-stable/doc/classes/RenderingServer.xml ; https://raw.githubusercontent.com/godotengine/godot/4.5-stable/doc/classes/Texture2DRD.xml |
+| F16 | Forward+ shader actions at 4.5-stable: https://raw.githubusercontent.com/godotengine/godot/4.5-stable/servers/rendering/renderer_rd/forward_clustered/scene_shader_forward_clustered.cpp ; master code search (`stencil_mode_values`, forward_clustered and forward_mobile) |
+| F17 | GitHub code search, JACoders/OpenJK: `MAX_GORE_RECORDS (500)`, `MAX_GORE_VERTS (3000)`, `MAX_GORE_INDECIES (6000)`, `MAX_LODS (8)` in code/rd-vanilla/G2_misc.cpp, codemp/rd-vanilla/G2_misc.cpp, codemp/rd-rend2/G2_gore_r2.h |
+| F18 | OpenJK G2_misc.cpp (blob view): https://github.com/JACoders/OpenJK/blob/master/codemp/rd-vanilla/G2_misc.cpp |
+| F19 | niflib generated enums (BSDismemberBodyPartType): https://raw.githubusercontent.com/niftools/niflib/develop/include/gen/enums.h |
+| F20 | Using decals, 4.5 manual branch: https://raw.githubusercontent.com/godotengine/godot-docs/4.5/tutorials/3d/using_decals.rst |
+| F21 | GPU spec table citing NVIDIA product pages, file `gpu_onboard.py` in https://github.com/michael-borck/gpu-onboard (GTX 1660 192 GB/s, 5.0 TFLOPS; 1660 Super 336, 5.0; RTX 3060 360, 12.7) |
+| F22 | TechPowerUp GTX 1660 page (HTML snapshot mirrored on GitHub): https://raw.githubusercontent.com/Mosh333/csca5622_final_project/HEAD/data/gpu/geforce-gtx-1660.c3365.html (48 ROPs, 1,785 MHz boost; relative performance RTX 3060 12 GB 157 %, 1660 Super 109 %) |
+| F23 | Decal class reference at 4.5-stable: https://raw.githubusercontent.com/godotengine/godot/4.5-stable/doc/classes/Decal.xml |
+| F24 | Forward+ scene shader at 4.5-stable: https://raw.githubusercontent.com/godotengine/godot/4.5-stable/servers/rendering/renderer_rd/shaders/forward_clustered/scene_forward_clustered.glsl |
+| F25 | GPUParticlesCollisionSDF3D at 4.5-stable: https://raw.githubusercontent.com/godotengine/godot/4.5-stable/doc/classes/GPUParticlesCollisionSDF3D.xml |
+| F26 | GPUParticlesCollisionHeightField3D at 4.5-stable: https://raw.githubusercontent.com/godotengine/godot/4.5-stable/doc/classes/GPUParticlesCollisionHeightField3D.xml |
+| F27 | Particle collision, 4.5 manual branch: https://raw.githubusercontent.com/godotengine/godot-docs/4.5/tutorials/3d/particles/collision.rst |
+| F28 | particles_storage.h at 4.5-stable: https://raw.githubusercontent.com/godotengine/godot/4.5-stable/servers/rendering/renderer_rd/storage_rd/particles_storage.h |
+| F29 | ParticleProcessMaterial at 4.5-stable: https://raw.githubusercontent.com/godotengine/godot/4.5-stable/doc/classes/ParticleProcessMaterial.xml |
+| F30 | Sub-emitters, 4.5 manual branch: https://raw.githubusercontent.com/godotengine/godot-docs/4.5/tutorials/3d/particles/subemitters.rst |
+| F31 | GPUParticles3D at 4.5-stable: https://raw.githubusercontent.com/godotengine/godot/4.5-stable/doc/classes/GPUParticles3D.xml |
+| F32 | Compute shaders, 4.5 manual branch: https://raw.githubusercontent.com/godotengine/godot-docs/4.5/tutorials/shaders/compute_shaders.rst |
+| F33 | StandardMaterial3D, 4.5 manual branch: https://raw.githubusercontent.com/godotengine/godot-docs/4.5/tutorials/3d/standard_material_3d.rst |
+| F34 | Subsurface scattering shader at 4.5-stable: https://raw.githubusercontent.com/godotengine/godot/4.5-stable/servers/rendering/renderer_rd/shaders/effects/subsurface_scattering.glsl |
+| F35 | Master code search: servers/rendering/renderer_rd/effects/ss_effects.cpp (variant order 11/17/25) and servers/rendering/rendering_server.cpp (`subsurface_scattering_quality` default 1 = Low; scale 0.05; depth scale 0.01). Master, not the 4.5 tag [K-M that it is unchanged in 4.5] |
+| F36 | Ragdoll system, 4.5 manual branch (no numeric joint advice): https://raw.githubusercontent.com/godotengine/godot-docs/4.5/tutorials/physics/ragdoll_system.rst ; compared with master (S4) |
+| F37 | PhysicalBone3D class reference at 4.5-stable: https://raw.githubusercontent.com/godotengine/godot/4.5-stable/doc/classes/PhysicalBone3D.xml |
+| F38 | physical_bone_3d.cpp at 4.5-stable: https://raw.githubusercontent.com/godotengine/godot/4.5-stable/scene/3d/physics/physical_bone_3d.cpp |
+| F39 | Jolt 6DOF joint at 4.5-stable: https://raw.githubusercontent.com/godotengine/godot/4.5-stable/modules/jolt_physics/joints/jolt_generic_6dof_joint_3d.cpp |
+| F40 | Jolt 6DOF joint header at 4.5-stable: https://raw.githubusercontent.com/godotengine/godot/4.5-stable/modules/jolt_physics/joints/jolt_generic_6dof_joint_3d.h |
+| F41 | Jolt project settings at 4.5.1-stable: https://raw.githubusercontent.com/godotengine/godot/4.5.1-stable/modules/jolt_physics/jolt_project_settings.cpp |
+| F42 | Master code search: modules/jolt_physics/jolt_project_settings.cpp (velocity_steps 10, position_steps 2) and spaces/jolt_space_3d.cpp |
+| F43 | Using Jolt Physics, 4.5 manual branch: https://raw.githubusercontent.com/godotengine/godot-docs/4.5/tutorials/physics/using_jolt_physics.rst |
+| F44 | PR #90400 "Ubershaders and pipeline pre-compilation" (milestone 4.4): https://github.com/godotengine/godot/pull/90400 |
+| F45 | BMClab, Body Segment Parameters notebook (Winter 2009 / Dempster table; de Leva female table): https://github.com/BMClab/BMC/blob/master/notebooks/BodySegmentParameters.ipynb |
+| F46 | Engine class reference at 4.5-stable (`time_scale`, `physics_ticks_per_second`): https://raw.githubusercontent.com/godotengine/godot/4.5-stable/doc/classes/Engine.xml |
+| — | In-repo cross-checks: doc 01 §1 (projectile masses and velocities), doc 03 §6.2, §10.3, §12 and its fact-check (jet arithmetic, pool thickness, caps, stain spread) |
