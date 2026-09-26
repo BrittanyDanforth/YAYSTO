@@ -285,7 +285,116 @@
     "seconds": 47.7
    }
   },
-  "tileables": {},
+  "tileables": {
+   "muscle_fibre": {
+    "files": {
+     "albedo": "tile_muscle_fibre_albedo.png",
+     "normal": "tile_muscle_fibre_normal.png",
+     "orm": "tile_muscle_fibre_orm.png"
+    },
+    "size": 512,
+    "tile_m": 0.024,
+    "edge_error_255": 0.0,
+    "core": true,
+    "albedo_is_detail": false
+   },
+   "fat_lobule": {
+    "files": {
+     "albedo": "tile_fat_lobule_albedo.png",
+     "normal": "tile_fat_lobule_normal.png",
+     "orm": "tile_fat_lobule_orm.png"
+    },
+    "size": 512,
+    "tile_m": 0.032,
+    "edge_error_255": 0.0,
+    "core": true,
+    "albedo_is_detail": false
+   },
+   "bone_cut": {
+    "files": {
+     "albedo": "tile_bone_cut_albedo.png",
+     "normal": "tile_bone_cut_normal.png",
+     "orm": "tile_bone_cut_orm.png"
+    },
+    "size": 512,
+    "tile_m": 0.016,
+    "edge_error_255": 0.0,
+    "core": true,
+    "albedo_is_detail": false
+   },
+   "diploe": {
+    "files": {
+     "albedo": "tile_diploe_albedo.png",
+     "normal": "tile_diploe_normal.png",
+     "orm": "tile_diploe_orm.png"
+    },
+    "size": 512,
+    "tile_m": 0.016,
+    "edge_error_255": 0.502,
+    "core": true,
+    "albedo_is_detail": false
+   },
+   "blood_crust": {
+    "files": {
+     "albedo": "tile_blood_crust_albedo.png",
+     "normal": "tile_blood_crust_normal.png",
+     "orm": "tile_blood_crust_orm.png"
+    },
+    "size": 512,
+    "tile_m": 0.048,
+    "edge_error_255": 0.0,
+    "core": true,
+    "albedo_is_detail": false
+   },
+   "cloth_weave": {
+    "files": {
+     "albedo": "tile_cloth_weave_albedo.png",
+     "normal": "tile_cloth_weave_normal.png",
+     "orm": "tile_cloth_weave_orm.png"
+    },
+    "size": 512,
+    "tile_m": 0.008,
+    "edge_error_255": 0.0,
+    "core": true,
+    "albedo_is_detail": false
+   },
+   "skin_micro": {
+    "files": {
+     "albedo": "tile_skin_micro_albedo.png",
+     "normal": "tile_skin_micro_normal.png",
+     "orm": "tile_skin_micro_orm.png"
+    },
+    "size": 512,
+    "tile_m": 0.012,
+    "edge_error_255": 0.0,
+    "core": false,
+    "albedo_is_detail": true
+   },
+   "bone_surface": {
+    "files": {
+     "albedo": "tile_bone_surface_albedo.png",
+     "normal": "tile_bone_surface_normal.png",
+     "orm": "tile_bone_surface_orm.png"
+    },
+    "size": 512,
+    "tile_m": 0.032,
+    "edge_error_255": 0.0,
+    "core": false,
+    "albedo_is_detail": false
+   },
+   "muscle_cross": {
+    "files": {
+     "albedo": "tile_muscle_cross_albedo.png",
+     "normal": "tile_muscle_cross_normal.png",
+     "orm": "tile_muscle_cross_orm.png"
+    },
+    "size": 512,
+    "tile_m": 0.024,
+    "edge_error_255": 0.0,
+    "core": false,
+    "albedo_is_detail": false
+   }
+  },
   "eyes": {
    "iris": {
     "files": {
@@ -311,9 +420,911 @@
     "alpha": "1 sclera, 0 cornea/iris window"
    }
   },
-  "decals": {},
+  "decals": {
+   "files": {
+    "albedo": "decal_blood_albedo.png",
+    "normal": "decal_blood_normal.png",
+    "orm": "decal_blood_orm.png"
+   },
+   "grid": 8,
+   "tile_px": 256,
+   "count": 64,
+   "tiles": [
+    {
+     "index": 0,
+     "kind": "drop_round",
+     "rect_px": [
+      0,
+      0,
+      256,
+      256
+     ],
+     "tile_mm": 24.0,
+     "direction": "none"
+    },
+    {
+     "index": 1,
+     "kind": "drop_round",
+     "rect_px": [
+      256,
+      0,
+      256,
+      256
+     ],
+     "tile_mm": 24.0,
+     "direction": "none"
+    },
+    {
+     "index": 2,
+     "kind": "drop_round",
+     "rect_px": [
+      512,
+      0,
+      256,
+      256
+     ],
+     "tile_mm": 24.0,
+     "direction": "none"
+    },
+    {
+     "index": 3,
+     "kind": "drop_round",
+     "rect_px": [
+      768,
+      0,
+      256,
+      256
+     ],
+     "tile_mm": 24.0,
+     "direction": "none"
+    },
+    {
+     "index": 4,
+     "kind": "drop_round",
+     "rect_px": [
+      1024,
+      0,
+      256,
+      256
+     ],
+     "tile_mm": 24.0,
+     "direction": "none"
+    },
+    {
+     "index": 5,
+     "kind": "drop_round",
+     "rect_px": [
+      1280,
+      0,
+      256,
+      256
+     ],
+     "tile_mm": 24.0,
+     "direction": "none"
+    },
+    {
+     "index": 6,
+     "kind": "drop_round",
+     "rect_px": [
+      1536,
+      0,
+      256,
+      256
+     ],
+     "tile_mm": 24.0,
+     "direction": "none"
+    },
+    {
+     "index": 7,
+     "kind": "drop_round",
+     "rect_px": [
+      1792,
+      0,
+      256,
+      256
+     ],
+     "tile_mm": 24.0,
+     "direction": "none"
+    },
+    {
+     "index": 8,
+     "kind": "drop_angled",
+     "rect_px": [
+      0,
+      256,
+      256,
+      256
+     ],
+     "tile_mm": 40.0,
+     "direction": "+v"
+    },
+    {
+     "index": 9,
+     "kind": "drop_angled",
+     "rect_px": [
+      256,
+      256,
+      256,
+      256
+     ],
+     "tile_mm": 40.0,
+     "direction": "+v"
+    },
+    {
+     "index": 10,
+     "kind": "drop_angled",
+     "rect_px": [
+      512,
+      256,
+      256,
+      256
+     ],
+     "tile_mm": 40.0,
+     "direction": "+v"
+    },
+    {
+     "index": 11,
+     "kind": "drop_angled",
+     "rect_px": [
+      768,
+      256,
+      256,
+      256
+     ],
+     "tile_mm": 40.0,
+     "direction": "+v"
+    },
+    {
+     "index": 12,
+     "kind": "drop_angled",
+     "rect_px": [
+      1024,
+      256,
+      256,
+      256
+     ],
+     "tile_mm": 40.0,
+     "direction": "+v"
+    },
+    {
+     "index": 13,
+     "kind": "drop_angled",
+     "rect_px": [
+      1280,
+      256,
+      256,
+      256
+     ],
+     "tile_mm": 40.0,
+     "direction": "+v"
+    },
+    {
+     "index": 14,
+     "kind": "drop_angled",
+     "rect_px": [
+      1536,
+      256,
+      256,
+      256
+     ],
+     "tile_mm": 40.0,
+     "direction": "+v"
+    },
+    {
+     "index": 15,
+     "kind": "drop_angled",
+     "rect_px": [
+      1792,
+      256,
+      256,
+      256
+     ],
+     "tile_mm": 40.0,
+     "direction": "+v"
+    },
+    {
+     "index": 16,
+     "kind": "spatter",
+     "rect_px": [
+      0,
+      512,
+      256,
+      256
+     ],
+     "tile_mm": 120.0,
+     "direction": "+v"
+    },
+    {
+     "index": 17,
+     "kind": "spatter",
+     "rect_px": [
+      256,
+      512,
+      256,
+      256
+     ],
+     "tile_mm": 120.0,
+     "direction": "+v"
+    },
+    {
+     "index": 18,
+     "kind": "spatter",
+     "rect_px": [
+      512,
+      512,
+      256,
+      256
+     ],
+     "tile_mm": 120.0,
+     "direction": "+v"
+    },
+    {
+     "index": 19,
+     "kind": "spatter",
+     "rect_px": [
+      768,
+      512,
+      256,
+      256
+     ],
+     "tile_mm": 120.0,
+     "direction": "+v"
+    },
+    {
+     "index": 20,
+     "kind": "spatter",
+     "rect_px": [
+      1024,
+      512,
+      256,
+      256
+     ],
+     "tile_mm": 120.0,
+     "direction": "+v"
+    },
+    {
+     "index": 21,
+     "kind": "spatter",
+     "rect_px": [
+      1280,
+      512,
+      256,
+      256
+     ],
+     "tile_mm": 120.0,
+     "direction": "+v"
+    },
+    {
+     "index": 22,
+     "kind": "spatter",
+     "rect_px": [
+      1536,
+      512,
+      256,
+      256
+     ],
+     "tile_mm": 120.0,
+     "direction": "+v"
+    },
+    {
+     "index": 23,
+     "kind": "spatter",
+     "rect_px": [
+      1792,
+      512,
+      256,
+      256
+     ],
+     "tile_mm": 120.0,
+     "direction": "+v"
+    },
+    {
+     "index": 24,
+     "kind": "run",
+     "rect_px": [
+      0,
+      768,
+      256,
+      256
+     ],
+     "tile_mm": 160.0,
+     "direction": "-v flow"
+    },
+    {
+     "index": 25,
+     "kind": "run",
+     "rect_px": [
+      256,
+      768,
+      256,
+      256
+     ],
+     "tile_mm": 160.0,
+     "direction": "-v flow"
+    },
+    {
+     "index": 26,
+     "kind": "run",
+     "rect_px": [
+      512,
+      768,
+      256,
+      256
+     ],
+     "tile_mm": 160.0,
+     "direction": "-v flow"
+    },
+    {
+     "index": 27,
+     "kind": "run",
+     "rect_px": [
+      768,
+      768,
+      256,
+      256
+     ],
+     "tile_mm": 160.0,
+     "direction": "-v flow"
+    },
+    {
+     "index": 28,
+     "kind": "run",
+     "rect_px": [
+      1024,
+      768,
+      256,
+      256
+     ],
+     "tile_mm": 160.0,
+     "direction": "-v flow"
+    },
+    {
+     "index": 29,
+     "kind": "run",
+     "rect_px": [
+      1280,
+      768,
+      256,
+      256
+     ],
+     "tile_mm": 160.0,
+     "direction": "-v flow"
+    },
+    {
+     "index": 30,
+     "kind": "run",
+     "rect_px": [
+      1536,
+      768,
+      256,
+      256
+     ],
+     "tile_mm": 160.0,
+     "direction": "-v flow"
+    },
+    {
+     "index": 31,
+     "kind": "run",
+     "rect_px": [
+      1792,
+      768,
+      256,
+      256
+     ],
+     "tile_mm": 160.0,
+     "direction": "-v flow"
+    },
+    {
+     "index": 32,
+     "kind": "smear",
+     "rect_px": [
+      0,
+      1024,
+      256,
+      256
+     ],
+     "tile_mm": 200.0,
+     "direction": "+u wipe"
+    },
+    {
+     "index": 33,
+     "kind": "smear",
+     "rect_px": [
+      256,
+      1024,
+      256,
+      256
+     ],
+     "tile_mm": 200.0,
+     "direction": "+u wipe"
+    },
+    {
+     "index": 34,
+     "kind": "smear",
+     "rect_px": [
+      512,
+      1024,
+      256,
+      256
+     ],
+     "tile_mm": 200.0,
+     "direction": "+u wipe"
+    },
+    {
+     "index": 35,
+     "kind": "smear",
+     "rect_px": [
+      768,
+      1024,
+      256,
+      256
+     ],
+     "tile_mm": 200.0,
+     "direction": "+u wipe"
+    },
+    {
+     "index": 36,
+     "kind": "smear",
+     "rect_px": [
+      1024,
+      1024,
+      256,
+      256
+     ],
+     "tile_mm": 200.0,
+     "direction": "+u wipe"
+    },
+    {
+     "index": 37,
+     "kind": "smear",
+     "rect_px": [
+      1280,
+      1024,
+      256,
+      256
+     ],
+     "tile_mm": 200.0,
+     "direction": "+u wipe"
+    },
+    {
+     "index": 38,
+     "kind": "smear",
+     "rect_px": [
+      1536,
+      1024,
+      256,
+      256
+     ],
+     "tile_mm": 200.0,
+     "direction": "+u wipe"
+    },
+    {
+     "index": 39,
+     "kind": "smear",
+     "rect_px": [
+      1792,
+      1024,
+      256,
+      256
+     ],
+     "tile_mm": 200.0,
+     "direction": "+u wipe"
+    },
+    {
+     "index": 40,
+     "kind": "pool",
+     "rect_px": [
+      0,
+      1280,
+      256,
+      256
+     ],
+     "tile_mm": 400.0,
+     "direction": "none"
+    },
+    {
+     "index": 41,
+     "kind": "pool",
+     "rect_px": [
+      256,
+      1280,
+      256,
+      256
+     ],
+     "tile_mm": 400.0,
+     "direction": "none"
+    },
+    {
+     "index": 42,
+     "kind": "pool",
+     "rect_px": [
+      512,
+      1280,
+      256,
+      256
+     ],
+     "tile_mm": 400.0,
+     "direction": "none"
+    },
+    {
+     "index": 43,
+     "kind": "pool",
+     "rect_px": [
+      768,
+      1280,
+      256,
+      256
+     ],
+     "tile_mm": 400.0,
+     "direction": "none"
+    },
+    {
+     "index": 44,
+     "kind": "pool",
+     "rect_px": [
+      1024,
+      1280,
+      256,
+      256
+     ],
+     "tile_mm": 400.0,
+     "direction": "none"
+    },
+    {
+     "index": 45,
+     "kind": "pool",
+     "rect_px": [
+      1280,
+      1280,
+      256,
+      256
+     ],
+     "tile_mm": 400.0,
+     "direction": "none"
+    },
+    {
+     "index": 46,
+     "kind": "pool",
+     "rect_px": [
+      1536,
+      1280,
+      256,
+      256
+     ],
+     "tile_mm": 400.0,
+     "direction": "none"
+    },
+    {
+     "index": 47,
+     "kind": "pool",
+     "rect_px": [
+      1792,
+      1280,
+      256,
+      256
+     ],
+     "tile_mm": 400.0,
+     "direction": "none"
+    },
+    {
+     "index": 48,
+     "kind": "soak",
+     "rect_px": [
+      0,
+      1536,
+      256,
+      256
+     ],
+     "tile_mm": 150.0,
+     "direction": "none"
+    },
+    {
+     "index": 49,
+     "kind": "soak",
+     "rect_px": [
+      256,
+      1536,
+      256,
+      256
+     ],
+     "tile_mm": 150.0,
+     "direction": "none"
+    },
+    {
+     "index": 50,
+     "kind": "soak",
+     "rect_px": [
+      512,
+      1536,
+      256,
+      256
+     ],
+     "tile_mm": 150.0,
+     "direction": "none"
+    },
+    {
+     "index": 51,
+     "kind": "soak",
+     "rect_px": [
+      768,
+      1536,
+      256,
+      256
+     ],
+     "tile_mm": 150.0,
+     "direction": "none"
+    },
+    {
+     "index": 52,
+     "kind": "soak",
+     "rect_px": [
+      1024,
+      1536,
+      256,
+      256
+     ],
+     "tile_mm": 150.0,
+     "direction": "none"
+    },
+    {
+     "index": 53,
+     "kind": "soak",
+     "rect_px": [
+      1280,
+      1536,
+      256,
+      256
+     ],
+     "tile_mm": 150.0,
+     "direction": "none"
+    },
+    {
+     "index": 54,
+     "kind": "soak",
+     "rect_px": [
+      1536,
+      1536,
+      256,
+      256
+     ],
+     "tile_mm": 150.0,
+     "direction": "none"
+    },
+    {
+     "index": 55,
+     "kind": "soak",
+     "rect_px": [
+      1792,
+      1536,
+      256,
+      256
+     ],
+     "tile_mm": 150.0,
+     "direction": "none"
+    },
+    {
+     "index": 56,
+     "kind": "crust",
+     "rect_px": [
+      0,
+      1792,
+      256,
+      256
+     ],
+     "tile_mm": 60.0,
+     "direction": "none"
+    },
+    {
+     "index": 57,
+     "kind": "crust",
+     "rect_px": [
+      256,
+      1792,
+      256,
+      256
+     ],
+     "tile_mm": 60.0,
+     "direction": "none"
+    },
+    {
+     "index": 58,
+     "kind": "crust",
+     "rect_px": [
+      512,
+      1792,
+      256,
+      256
+     ],
+     "tile_mm": 60.0,
+     "direction": "none"
+    },
+    {
+     "index": 59,
+     "kind": "crust",
+     "rect_px": [
+      768,
+      1792,
+      256,
+      256
+     ],
+     "tile_mm": 60.0,
+     "direction": "none"
+    },
+    {
+     "index": 60,
+     "kind": "crust",
+     "rect_px": [
+      1024,
+      1792,
+      256,
+      256
+     ],
+     "tile_mm": 60.0,
+     "direction": "none"
+    },
+    {
+     "index": 61,
+     "kind": "crust",
+     "rect_px": [
+      1280,
+      1792,
+      256,
+      256
+     ],
+     "tile_mm": 60.0,
+     "direction": "none"
+    },
+    {
+     "index": 62,
+     "kind": "crust",
+     "rect_px": [
+      1536,
+      1792,
+      256,
+      256
+     ],
+     "tile_mm": 60.0,
+     "direction": "none"
+    },
+    {
+     "index": 63,
+     "kind": "crust",
+     "rect_px": [
+      1792,
+      1792,
+      256,
+      256
+     ],
+     "tile_mm": 60.0,
+     "direction": "none"
+    }
+   ],
+   "channels": "albedo RGB fresh blood colour (sRGB), A coverage; ORM A = thickness 0-1"
+  },
   "painter": {},
-  "room": {},
+  "room": {
+   "room_tile": {
+    "files": {
+     "albedo": "room_tile_albedo.png",
+     "normal": "room_tile_normal.png",
+     "orm": "room_tile_orm.png"
+    },
+    "size": 1024,
+    "tile_m": 0.15,
+    "metallic": 0.0,
+    "edge_error_255": 0.0
+   },
+   "room_grout": {
+    "files": {
+     "albedo": "room_grout_albedo.png",
+     "normal": "room_grout_normal.png",
+     "orm": "room_grout_orm.png"
+    },
+    "size": 512,
+    "tile_m": 0.05,
+    "metallic": 0.0,
+    "edge_error_255": 0.0
+   },
+   "room_epoxy": {
+    "files": {
+     "albedo": "room_epoxy_albedo.png",
+     "normal": "room_epoxy_normal.png",
+     "orm": "room_epoxy_orm.png"
+    },
+    "size": 1024,
+    "tile_m": 0.5,
+    "metallic": 0.0,
+    "edge_error_255": 0.0
+   },
+   "room_rubber": {
+    "files": {
+     "albedo": "room_rubber_albedo.png",
+     "normal": "room_rubber_normal.png",
+     "orm": "room_rubber_orm.png"
+    },
+    "size": 1024,
+    "tile_m": 0.25,
+    "metallic": 0.0,
+    "edge_error_255": 0.0
+   },
+   "room_stainless": {
+    "files": {
+     "albedo": "room_stainless_albedo.png",
+     "normal": "room_stainless_normal.png",
+     "orm": "room_stainless_orm.png"
+    },
+    "size": 1024,
+    "tile_m": 0.2,
+    "metallic": 1.0,
+    "edge_error_255": 0.0
+   },
+   "room_galvanised": {
+    "files": {
+     "albedo": "room_galvanised_albedo.png",
+     "normal": "room_galvanised_normal.png",
+     "orm": "room_galvanised_orm.png"
+    },
+    "size": 512,
+    "tile_m": 0.4,
+    "metallic": 1.0,
+    "edge_error_255": 0.0
+   },
+   "prop_polymer_stipple": {
+    "files": {
+     "albedo": "prop_polymer_stipple_albedo.png",
+     "normal": "prop_polymer_stipple_normal.png",
+     "orm": "prop_polymer_stipple_orm.png"
+    },
+    "size": 512,
+    "tile_m": 0.04,
+    "metallic": 0.0,
+    "edge_error_255": 0.0
+   },
+   "prop_walnut": {
+    "files": {
+     "albedo": "prop_walnut_albedo.png",
+     "normal": "prop_walnut_normal.png",
+     "orm": "prop_walnut_orm.png"
+    },
+    "size": 512,
+    "tile_m": 0.25,
+    "metallic": 0.0,
+    "edge_error_255": 0.0
+   },
+   "prop_hickory": {
+    "files": {
+     "albedo": "prop_hickory_albedo.png",
+     "normal": "prop_hickory_normal.png",
+     "orm": "prop_hickory_orm.png"
+    },
+    "size": 512,
+    "tile_m": 0.25,
+    "metallic": 0.0,
+    "edge_error_255": 0.0
+   },
+   "prop_g10": {
+    "files": {
+     "albedo": "prop_g10_albedo.png",
+     "normal": "prop_g10_normal.png",
+     "orm": "prop_g10_orm.png"
+    },
+    "size": 512,
+    "tile_m": 0.05,
+    "metallic": 0.0,
+    "edge_error_255": 0.0
+   },
+   "prop_glove": {
+    "files": {
+     "albedo": "prop_glove_albedo.png",
+     "normal": "prop_glove_normal.png",
+     "orm": "prop_glove_orm.png"
+    },
+    "size": 512,
+    "tile_m": 0.06,
+    "metallic": 0.0,
+    "edge_error_255": 0.0
+   }
+  },
   "uv": {
    "GB_Skeleton": {
     "charts": 2198,
@@ -368,7 +1379,8 @@
   },
   "timings_s": {
    "uvs": 47.8,
-   "sets": 1696.9
+   "sets": 1696.9,
+   "tileables": 83.7
   },
   "files": {
    "body_albedo.png": {
@@ -402,6 +1414,18 @@
    "brain_orm.png": {
     "bytes": 1024063,
     "sha256": "31ba9d68f660eaf6"
+   },
+   "decal_blood_albedo.png": {
+    "bytes": 2437559,
+    "sha256": "dfd0295741e6c18d"
+   },
+   "decal_blood_normal.png": {
+    "bytes": 963369,
+    "sha256": "f9d422948a529c84"
+   },
+   "decal_blood_orm.png": {
+    "bytes": 946756,
+    "sha256": "6a4f839f7d9b3e0a"
    },
    "eye_iris_albedo.png": {
     "bytes": 1665423,
@@ -455,6 +1479,138 @@
     "bytes": 5196674,
     "sha256": "2677f42cb6cd8dce"
    },
+   "prop_g10_albedo.png": {
+    "bytes": 16540,
+    "sha256": "e924d18a47362df3"
+   },
+   "prop_g10_normal.png": {
+    "bytes": 323415,
+    "sha256": "ecf196cb8e322827"
+   },
+   "prop_g10_orm.png": {
+    "bytes": 458823,
+    "sha256": "3ff1a7a0c4fe7c13"
+   },
+   "prop_glove_albedo.png": {
+    "bytes": 84903,
+    "sha256": "da1989b30fd80ffb"
+   },
+   "prop_glove_normal.png": {
+    "bytes": 467503,
+    "sha256": "e0c3d1bac5847883"
+   },
+   "prop_glove_orm.png": {
+    "bytes": 391630,
+    "sha256": "b8cd7cb570e93fce"
+   },
+   "prop_hickory_albedo.png": {
+    "bytes": 138244,
+    "sha256": "7f4cb75bcece13c3"
+   },
+   "prop_hickory_normal.png": {
+    "bytes": 27382,
+    "sha256": "fd8830dccfce0cdb"
+   },
+   "prop_hickory_orm.png": {
+    "bytes": 142892,
+    "sha256": "85e243e1b6c5152a"
+   },
+   "prop_polymer_stipple_albedo.png": {
+    "bytes": 59566,
+    "sha256": "87d2f426dcd1c89e"
+   },
+   "prop_polymer_stipple_normal.png": {
+    "bytes": 573787,
+    "sha256": "3a48a97dbf2645e6"
+   },
+   "prop_polymer_stipple_orm.png": {
+    "bytes": 467064,
+    "sha256": "9781acde34e412b1"
+   },
+   "prop_walnut_albedo.png": {
+    "bytes": 96143,
+    "sha256": "343a772ade8deecf"
+   },
+   "prop_walnut_normal.png": {
+    "bytes": 26824,
+    "sha256": "6b82e1518f255e3e"
+   },
+   "prop_walnut_orm.png": {
+    "bytes": 140245,
+    "sha256": "9f32d59982b45f28"
+   },
+   "room_epoxy_albedo.png": {
+    "bytes": 146825,
+    "sha256": "af34331bb1247850"
+   },
+   "room_epoxy_normal.png": {
+    "bytes": 144734,
+    "sha256": "bffbdcffeecfc4d9"
+   },
+   "room_epoxy_orm.png": {
+    "bytes": 1472996,
+    "sha256": "d4607f802027e9e2"
+   },
+   "room_galvanised_albedo.png": {
+    "bytes": 195702,
+    "sha256": "ba917ae95cf40bfd"
+   },
+   "room_galvanised_normal.png": {
+    "bytes": 72270,
+    "sha256": "21c789e6305d9a51"
+   },
+   "room_galvanised_orm.png": {
+    "bytes": 467858,
+    "sha256": "4a82e59209173819"
+   },
+   "room_grout_albedo.png": {
+    "bytes": 226090,
+    "sha256": "72a8f94d0e9c89ef"
+   },
+   "room_grout_normal.png": {
+    "bytes": 617721,
+    "sha256": "7c0d4dde51ac2753"
+   },
+   "room_grout_orm.png": {
+    "bytes": 572399,
+    "sha256": "f6b3a32e635181af"
+   },
+   "room_rubber_albedo.png": {
+    "bytes": 649071,
+    "sha256": "dccab9e07433981e"
+   },
+   "room_rubber_normal.png": {
+    "bytes": 2754441,
+    "sha256": "d7e3f57f99402356"
+   },
+   "room_rubber_orm.png": {
+    "bytes": 1786053,
+    "sha256": "7afef416620ec942"
+   },
+   "room_stainless_albedo.png": {
+    "bytes": 57290,
+    "sha256": "e805a26d46e7aeed"
+   },
+   "room_stainless_normal.png": {
+    "bytes": 17261,
+    "sha256": "89d008041506d09a"
+   },
+   "room_stainless_orm.png": {
+    "bytes": 527540,
+    "sha256": "d940235121e5dc7b"
+   },
+   "room_tile_albedo.png": {
+    "bytes": 17681,
+    "sha256": "7a0cc2956a375b5d"
+   },
+   "room_tile_normal.png": {
+    "bytes": 39386,
+    "sha256": "8b1c3a21dd432f98"
+   },
+   "room_tile_orm.png": {
+    "bytes": 340810,
+    "sha256": "c3d5302257e633d5"
+   },
    "shorts_albedo.png": {
     "bytes": 584239,
     "sha256": "869b41ea38ec57ce"
@@ -478,6 +1634,114 @@
    "skeleton_orm.png": {
     "bytes": 4520249,
     "sha256": "ad44c646b27db61c"
+   },
+   "tile_blood_crust_albedo.png": {
+    "bytes": 149461,
+    "sha256": "759b35c91949d43d"
+   },
+   "tile_blood_crust_normal.png": {
+    "bytes": 255723,
+    "sha256": "c99098356315e427"
+   },
+   "tile_blood_crust_orm.png": {
+    "bytes": 277168,
+    "sha256": "119250f21709b836"
+   },
+   "tile_bone_cut_albedo.png": {
+    "bytes": 383446,
+    "sha256": "2789e6a18c70a11d"
+   },
+   "tile_bone_cut_normal.png": {
+    "bytes": 323551,
+    "sha256": "9409d4fb6a61f853"
+   },
+   "tile_bone_cut_orm.png": {
+    "bytes": 368895,
+    "sha256": "11faa616962635f6"
+   },
+   "tile_bone_surface_albedo.png": {
+    "bytes": 247634,
+    "sha256": "4a379b79fa1c79d7"
+   },
+   "tile_bone_surface_normal.png": {
+    "bytes": 226112,
+    "sha256": "9ea2e34c57844ec2"
+   },
+   "tile_bone_surface_orm.png": {
+    "bytes": 441270,
+    "sha256": "5433195b83dc7d08"
+   },
+   "tile_cloth_weave_albedo.png": {
+    "bytes": 269044,
+    "sha256": "753d4255a53fa299"
+   },
+   "tile_cloth_weave_normal.png": {
+    "bytes": 613096,
+    "sha256": "4e2a9109467c56d7"
+   },
+   "tile_cloth_weave_orm.png": {
+    "bytes": 384236,
+    "sha256": "ba1a2e1658805363"
+   },
+   "tile_diploe_albedo.png": {
+    "bytes": 519332,
+    "sha256": "115395ee95735a3f"
+   },
+   "tile_diploe_normal.png": {
+    "bytes": 737935,
+    "sha256": "dddc373d71d9e886"
+   },
+   "tile_diploe_orm.png": {
+    "bytes": 444692,
+    "sha256": "3226c9cda23bedee"
+   },
+   "tile_fat_lobule_albedo.png": {
+    "bytes": 458687,
+    "sha256": "5857611b9ee4c20d"
+   },
+   "tile_fat_lobule_normal.png": {
+    "bytes": 632246,
+    "sha256": "cb41230bb600fc56"
+   },
+   "tile_fat_lobule_orm.png": {
+    "bytes": 605855,
+    "sha256": "f9a6217b96dbf47b"
+   },
+   "tile_muscle_cross_albedo.png": {
+    "bytes": 259501,
+    "sha256": "32ae96117ffa1364"
+   },
+   "tile_muscle_cross_normal.png": {
+    "bytes": 440285,
+    "sha256": "ee37d4b4670d8aed"
+   },
+   "tile_muscle_cross_orm.png": {
+    "bytes": 418158,
+    "sha256": "599285f4bfdfefd3"
+   },
+   "tile_muscle_fibre_albedo.png": {
+    "bytes": 234746,
+    "sha256": "a1e40fd39b689e80"
+   },
+   "tile_muscle_fibre_normal.png": {
+    "bytes": 220593,
+    "sha256": "d27f7e726b070394"
+   },
+   "tile_muscle_fibre_orm.png": {
+    "bytes": 374484,
+    "sha256": "efb68c904c73c8d7"
+   },
+   "tile_skin_micro_albedo.png": {
+    "bytes": 94886,
+    "sha256": "f3858d101bcd1d7a"
+   },
+   "tile_skin_micro_normal.png": {
+    "bytes": 534286,
+    "sha256": "80669eb1a4daa4b1"
+   },
+   "tile_skin_micro_orm.png": {
+    "bytes": 420871,
+    "sha256": "54b35d838cbbfd55"
    }
   }
  }
