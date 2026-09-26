@@ -289,6 +289,75 @@ one continuous body from INSIDE the wound cavity (a blood surface filling the ho
 top merges into the pooled blood in the wound. Test: close-up at the rim from straight on and 45°: zero skin visible
 between wound blood and stream.
 
+## 5.18 VISUAL ACCEPTANCE STANDARD (from ALL real refs 1-8, 13-21, GSW sheets) — applies to every wound, blood and body render
+
+The user (after we reviewed every reference together): "look at the 10+ real gore images now and update any standard ...
+u can see the mushyness the everything some caved in heads some heads cut off half way some are shot in face". This
+section is the pass/fail bar. A render that fails any HIGH line below is not done, whatever else is good.
+
+**A. Destroyed tissue is MUSH, not sculpted shapes (HIGH).** Refs 3, 13, 15, 16, 18.
+- Severely damaged areas are a wet pulp: hundreds of small irregular lumps, torn shreds, folded sheets and fibrous
+  strings with NO geometric order — no smooth bowls, no clean extruded rings, no repeating pattern, no symmetry.
+- Scale mix: big torn flaps (20-60 mm) folded over each other, medium lumps (3-10 mm), fine grit and strands (< 2 mm).
+  Test: at 1:1 close-up there must be detail at all three scales; a surface that is smooth at any scale fails.
+- Skin at the margin is TORN into flaps that curl and fold back, showing their pale yellow-white fatty underside.
+  Flap edges are thin (1-3 mm skin, scalp up to 5-7 mm), ragged, never a thick moulded rim.
+- Dark clot-filled pits and pockets everywhere between the lumps (near-black `#2A0306`-`#5E070C`), some glossy, some matte.
+- Tissue bridges and strings span gaps; pieces hang off by threads.
+
+**B. Colour palette (HIGH).** Real destroyed tissue is never one red.
+- Fresh exposed muscle: bright orange-red to scarlet (`#B8231A`-`#D8452E`), the brightest thing in the wound.
+- Blood/clot: maroon to near-black (`#5E070C`, `#3A0508`); thin films translucent red over skin.
+- Fat: yellow to cream lobules (`#D8B26A`-`#EAD7A0`), blood-stained pink at the edges.
+- Bone: pale chalky cream/ivory (`#E6DCC4`), MATTE, in sharp fragments mixed through the pulp, with blood in cracks.
+- Brain: cream-pink grey (`#D9B8A8`-`#C9A99A`), soft and wet, blood in the sulci, black clot in fissures (ref 19).
+- Intact skin around heavy trauma: pale, waxy, yellow-grey (blood loss); bruised/congested zones dark purple-red
+  (refs 5, 15, 16). Regional contrast between pale body and dark swollen face is typical.
+- Test: sample 5 points inside a large wound — at least 4 clearly different colours (bright muscle, dark clot, yellow
+  fat, pale bone/brain). A single-hue wound fails.
+
+**C. Wetness and specular (HIGH).** Refs 3, 13, 17, 18, 21.
+- Everything fresh is wet: many small, BROKEN specular highlights scattered over the lumps (thousands of tiny glints),
+  not one smooth plastic sheen. Pools on flat surfaces are mirror-glossy and flat-topped with a slight meniscus.
+- Bone and dried areas are matte. Exposed tissue is softer/less sharp gloss than liquid blood (see §5.16).
+- Test: a wound surface with one big continuous highlight = plastic = fail.
+
+**D. Caved-in / crushed head and face (refs 15, 16, 3).**
+- The facial skeleton COLLAPSES: the mid-face (nose, cheekbones, orbit rims) is pushed in, the face flattens and
+  widens, the profile loses its nose/brow projection; eyes sink or are hidden in swollen tissue.
+- Skin splits over bone into several ragged lacerations with bridges; the rest is massively swollen, shiny-tight and
+  dark purple; lips swollen and everted.
+- Skull depressions: the surface outline visibly dents inward (silhouette test), bone fragments displaced inward,
+  step-offs at the fracture edges; the scalp over it may be intact but boggy and discoloured.
+- The head shape itself must change. A crushed preset whose silhouette matches the intact head fails.
+
+**E. Partial decapitation / deep neck cut (refs 1/17, 18).**
+- The cut face is a cross-section, not a painted disc: granular dark-red muscle mass, pale rings/spots of cartilage
+  (trachea/larynx) and vessel openings, torn edges, clot filling the gap, strands between the two sides.
+- The head tips/rotates away from the cut under gravity and the wound gapes widely (skin and muscles retract).
+- Everything nearby (face, hair, clothing, surfaces) is covered in FINE mist speckle (0.2-2 mm) plus larger drops.
+- Pools under it are huge, flat, mirror-glossy and dark, with clots.
+
+**F. Shot / blasted face (refs 13, 20, 21, 7, GSW sheet).**
+- Entrance wounds are small, irregular, never perfect circles; contact wounds tear stellate; exits are ragged/
+  stellate/irregular with everted shredded margins and extruding tissue.
+- High energy / in the mouth: the mid-face becomes pulp (section A), jaw broken into segments with teeth still in
+  them, loose teeth, gums/palate/tongue destroyed (§5.15), soot and stipple on remaining skin.
+- Blood from the face/mouth runs DOWN: chin → neck → chest; it falls in thick ropey clotted strands and sheets, soaks
+  the shirt dark-wet (nearly black where saturated) and runs down the arm and drips off the fingers (refs 7, 21).
+
+**G. Blood volume, clothing and pools (HIGH).** Refs 3, 5, 7, 14, 17, 21.
+- There is FAR more blood than feels "enough": whole shoulders/shirt fronts soaked, streams down limbs, floor pools
+  larger than the head (a 1 L pool ≈ 70 cm across).
+- Pools: near-black glossy centre, thinner brighter red edge, big dark jelly clot lumps sitting in it, splash
+  satellites and drip trails around it; blood mixes with floor dirt at the edges.
+- Every stain connects to its source by the path the blood took (§5.9, §5.17) or is a thrown spatter droplet.
+
+**H. Pass/fail procedure for reviewers.** For every wound/preset: render straight, 45°, grazing and a cross-section at
+≥ 640 px, put each next to the matching ref (A → 3/13/18, B/C → 13/18/19, D → 15/16, E → 1/17, F → 13/20/21, G →
+7/14/21) and write one line per section: PASS or FAIL + what differs. Anything that reads cleaner, drier, smoother,
+more uniform, more symmetric or less bloody than the refs is a FAIL.
+
 ## 6. What to change in our assets (actionable)
 
 | Where | Change |

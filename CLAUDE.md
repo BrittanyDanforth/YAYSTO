@@ -269,6 +269,11 @@ damage = 0 returns the intact mesh. Carnage (9 hits) evaluates in ~4.5 s.
 > near-black glossy pools with clots, shredded torn tissue with flaps/strands/clot-filled cavities and strong colour
 > variation). A clean, dry, uniform or blood-sparse wound fails review exactly like a sticker does.
 >
+> VISUAL ACCEPTANCE STANDARD: `gore-game/docs/REFERENCE_NOTES.md §5.18` (built from all real refs) is the pass/fail bar for
+> every wound, blood and body render: destroyed tissue = wet mush (torn folded flaps, lumps at 3 scales, strings, clot
+> pits), 4+ distinct colours, broken wet specular (bone matte), crushed heads change silhouette, partial decapitation =
+> real cross-section, far more blood. Every critic/fixer/final agent must fill in its section-H PASS/FAIL table.
+>
 > BLOOD MUST COME FROM THE WOUND (user, verbatim: "VERY UNREALISTIC BLOOD WOULD POUR OUT THE WOUND OF HEADSHOT AND NOT MAGICALLY APPEAR BLOOD AROUND THE HOLE IT WOULD COME FROM THE INJURY ETC BE 1:1 REALISTIC THATS STANDARD EXTREME REALISM"):
 > - NO blood may appear on the skin that did not physically get there. Remove any pre-painted halo/pool/smear around a wound (e.g. gore_blood teardrops or rings stamped around the hole). Every stain on the skin must be connected to the wound by the path the blood actually travelled, or be an impact spatter droplet thrown at the moment of the hit.
 > - Sequence (animate/time-drive it): t=0 hole opens, impact spatter only (exits throw blood and tissue AWAY from the head; entrances get back-spatter toward the shooter, very little on the victim's own skin); then blood WELLS UP inside the wound cavity (a blood surface filling the hole, dark and glossy, brain/tissue extruding at exits); it OVERFLOWS at the LOWEST point of the wound rim; a continuous stream POURS from that lip and runs down under gravity following the skin's shape (around the jaw line, down the neck), with a rounded bead at the leading front; the front advances at a realistic speed (cm/s on skin), the stream widens with volume, more streams split off the rim as flow increases, it collects in creases and drips off low points (chin, earlobe, nose). Behind the front, a thinner film/stain remains along the path and darkens as it dries at the edges.
