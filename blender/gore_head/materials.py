@@ -448,21 +448,26 @@ class ShaderBuilder:
 
     def layout(self):
         """Arrange nodes in columns by distance from the output (readable in the editor)."""
-        sinks = [n for n in self.nodes if n.bl_idname in ('ShaderNodeOutputMaterial', 'NodeGroupOutput')]
-        depth = {n.name: 0 for n in sinks}
-        links = [(lk.from_node.name, lk.to_node.name) for lk in self.links]
-        for _ in range(len(self.nodes)):
-            changed = False
-            for a, b in links:
-                if b in depth and depth.get(a, -1) < depth[b] + 1:
-                    depth[a] = depth[b] + 1
-                    changed = True
-            if not changed:
-                break
-        top = max(depth.values(), default=0) + 1
-        cols = {}
-        for n in self.nodes:
-            cols.setdefault(depth.get(n.name, top), []).append(n)
+        outs = {}
+        for lk in self.links:
+            outs.setdefault(lk.from_node.name, []).append(lk.to_node.name)
+        depth = {}
+
+        def dist(name):
+            # longest path to a sink, memoised (node trees are acyclic)
+            if name not in depth:
+                depth[name] = 0
+                depth[name] = max((dist(o) + 1 for o in outs.get(name, ())), default=0)
+            return depth[name]
+
+        old = sys.getrecursionlimit()
+        sys.setrecursionlimit(max(old, 10000))
+        try:
+            cols = {}
+            for n in self.nodes:
+                cols.setdefault(dist(n.name), []).append(n)
+        finally:
+            sys.setrecursionlimit(old)
         for d, ns in cols.items():
             for i, n in enumerate(ns):
                 n.location = (-d * 240.0, (len(ns) * 0.5 - i) * 180.0)
@@ -533,7 +538,8 @@ def _group_blood_film():
     n_big = t.noise(p, 70.0, 3.0, 0.6)
     n_mid = t.noise(p, 330.0, 2.0, 0.55)
     # coverage: blotchy edges; the noise only acts where there is blood at all
-    cov = blood * (0.6 + 0.8 * n_big) + (n_mid - 0.5) * 0.4 * blood.smooth(0.0, 0.3)
+    # blotchy fringes; the body of a run or pool (blood near 1) stays even
+    cov = blood * (0.6 + 0.8 * n_big) + (n_mid - 0.5) * 0.4 * blood.smooth(0.0, 0.3) * (1.0 - blood.smooth(0.5, 0.85))
     film = cov.smooth(0.10, 0.19)
     thick = cov.smooth(0.45, 1.0)
     # fine spatter droplets on the fringe of a bloody area
@@ -548,17 +554,18 @@ def _group_blood_film():
     # thin films are semi-transparent stains; opacity grows with the amount
     op = 0.6 + 0.4 * cov.smooth(0.15, 0.5)
     thin = t.mix(op, base, t.mix(n_mid, base * (0.45, 0.05, 0.056), base * (0.30, 0.022, 0.03)))
-    fresh = t.mix(thick, thin, t.mix(n_mid, (0.035, 0.0038, 0.0045), (0.07, 0.0065, 0.0075)))
-    # clots in pooled blood, and the darker rim where a film thins out at its edge
-    clot = t.noise(p, 500.0, 3.0).smooth(0.58, 0.72) * thick
+    fresh = t.mix(thick, thin, t.mix(n_big, (0.04, 0.0042, 0.005), (0.065, 0.006, 0.007)))
+    # clots in broad pools only (not along thin runs), and the darker rim where a film thins out
+    clot = t.noise(p, 220.0, 3.0).smooth(0.62, 0.76) * thick.smooth(0.85, 1.0) * n_big.smooth(0.55, 0.7)
     fresh = t.mix(clot * 0.8, fresh, (0.022, 0.0025, 0.003))
     rim = film * (1.0 - cov.smooth(0.2, 0.34))
     fresh = t.mix(rim * 0.5, fresh, fresh * 0.55)
     old = t.mix(thick, base * (0.36, 0.16, 0.11), (0.026, 0.0085, 0.006))
     col = t.mix(a, fresh, old)
     # dried pools crack into flakes that show the surface underneath
-    cd, _, _ = t.voronoi(p, 650.0, 'DISTANCE_TO_EDGE')
-    crack = (1.0 - cd.smooth(0.0, 0.06)) * a.smooth(0.55, 0.95) * thick.smooth(0.35, 0.9)
+    cd, _, _ = t.voronoi(p, 1300.0, 'DISTANCE_TO_EDGE')
+    crackable = a.smooth(0.55, 0.95) * thick.smooth(0.7, 1.0) * n_big.smooth(0.4, 0.6)
+    crack = (1.0 - cd.smooth(0.0, 0.05)) * crackable
     col = t.mix(crack * 0.75, col, base * 0.3)
 
     t.result("Color", t.mix(mask, base, col))
@@ -573,7 +580,8 @@ def _group_blood_film():
     cov_h = blood * (0.7 + 0.6 * n_big)
     hmask = cov_h.smooth(0.10, 0.19)
     hthick = cov_h.smooth(0.45, 1.0)
-    crack_h = (1.0 - cd.smooth(0.0, 0.06)) * age.smooth(0.55, 0.95) * hthick
+    crack_h = (1.0 - cd.smooth(0.0, 0.05)) * age.smooth(0.55, 0.95) * hthick.smooth(0.7, 1.0) \
+        * n_big.smooth(0.4, 0.6)
     t.result("Height", hmask * (0.25 + 0.75 * hthick) - crack_h * 0.6)
     t.result("Height Mask", hmask * hthick.max(0.3))
     t.result("SSS", 1.0 - mask * (0.4 + 0.6 * thick))
@@ -601,8 +609,10 @@ def _group_muscle():
     bund = t.noise(pf, 450.0, 2.0, 0.45)
     seam = t.ridge(t.noise(pf + (3.3, 1.7, 0.0), 300.0, 2.0, 0.4), 0.035) \
         * t.noise(pf, 120.0).smooth(0.3, 0.55)
-    v = fib * 0.5 + fine * 0.15 + bund * 0.35
-    col = v.ramp([(0.2, (0.055, 0.005, 0.007)), (0.5, (0.13, 0.013, 0.016)), (0.8, (0.22, 0.028, 0.030))])
+    fasc = t.noise(pf + (1.1, 4.2, 0.0), 160.0, 2.0, 0.5)         # whole fascicles, 5-8 mm
+    v = fib * 0.4 + fine * 0.1 + bund * 0.3 + fasc * 0.35 - 0.08
+    col = v.ramp([(0.2, (0.045, 0.004, 0.006)), (0.45, (0.11, 0.011, 0.014)), (0.65, (0.19, 0.024, 0.026)),
+                  (0.85, (0.30, 0.05, 0.045))])
     col = t.mix(seam * 0.75, col, (0.05, 0.004, 0.004))
     # translucent whitish fascia sheets and a little fat along some seams
     fascia = t.noise(p, 45.0, 3.0, 0.6).smooth(0.64, 0.80) * 0.4
@@ -611,8 +621,8 @@ def _group_muscle():
     col = t.mix(marb, col, (0.50, 0.36, 0.16))
     t.result("Color", col)
     t.result("Roughness", t.mix(wet, 0.5, 0.2) + (fib - 0.5) * 0.12 + fascia * 0.1)
-    t.result("Coat", wet * 0.3 * (1.0 - seam * 0.5))
-    t.result("Height", fib * 0.7 + bund * 0.5)
+    t.result("Coat", wet * 0.22 * (1.0 - seam * 0.5))
+    t.result("Height", fib * 0.7 + bund * 0.5 + fasc * 0.5)
     t.layout()
     return ng
 
@@ -731,7 +741,7 @@ def _expression_lines(t, pm):
     return (fore + crow * 0.45 + und * 0.5).clamp()
 
 
-def _skin_material(g, name="GH_Skin", lips=False):
+def _skin_material(g, name="GH_Skin"):
     """GH_Skin: subsurface skin, pores, mottling, and every gore attribute.
 
     Reads gh_lip (vermilion), gore_wound + gore_depth (rings dermis -> fat ->
@@ -747,7 +757,7 @@ def _skin_material(g, name="GH_Skin", lips=False):
     wet = t.control("wetness")
     wound, depth, edge = t.attr("gore_wound"), t.attr("gore_depth"), t.attr("gore_edge")
     blood, bruise, burn = t.attr("gore_blood"), t.attr("gore_bruise"), t.attr("gore_burn")
-    lip = t.value("lip_force", 1.0) if lips else t.attr("gh_lip")
+    lip = t.attr("gh_lip")
 
     # ---- healthy skin albedo ------------------------------------------------
     base = tone.ramp([(0.0, (0.61, 0.43, 0.35)), (0.25, (0.48, 0.30, 0.225)), (0.5, (0.30, 0.16, 0.10)),
@@ -1317,7 +1327,7 @@ def build_materials():
     g = _build_groups()
     mats = {
         "GH_Skin": _skin_material(g),
-        "GH_Lips": _skin_material(g, "GH_Lips", lips=True),
+        "GH_Lips": None,
         "GH_Muscle": _muscle_material(g),
         "GH_Fat": _fat_material(g),
         "GH_Bone": _bone_material(g),
@@ -1332,7 +1342,37 @@ def build_materials():
         "GH_MouthInterior": _wet_mucosa(g, "GH_MouthInterior", (0.20, 0.03, 0.03), (0.33, 0.07, 0.07),
                                         _mouth_extra, 0.6, (0.35, 0.07, 0.07)),
     }
+    mats["GH_Lips"] = _lips_material(mats["GH_Skin"])
     return mats
+
+
+def _lips_material(skin):
+    """GH_Lips (optional, for a separate lip mesh): GH_Skin with the vermilion mask forced to 1."""
+    old = bpy.data.materials.get("GH_Lips")
+    if old is not None:
+        old.name = "GH_Lips_old"
+    mat = skin.copy()
+    mat.name = "GH_Lips"
+    nt = mat.node_tree
+    if old is not None:
+        old.user_remap(mat)
+        bpy.data.materials.remove(old)
+    for n in list(nt.nodes):
+        if n.bl_idname == 'ShaderNodeAttribute' and n.attribute_name == "gh_lip":
+            v = nt.nodes.new('ShaderNodeValue')
+            v.name = v.label = "lip_force"
+            v.outputs[0].default_value = 1.0
+            v.location = n.location
+            for lk in list(n.outputs['Factor'].links):
+                nt.links.new(v.outputs[0], lk.to_socket)
+            nt.nodes.remove(n)
+    # the copied drivers still target GH_Controls; re-create them to be safe
+    if nt.animation_data is not None:
+        nt.animation_data_clear()
+    for prop in ("skin_tone", "pallor", "wetness", "blood_age"):
+        if f"GH_{prop}" in nt.nodes:
+            ghc.drive(nt, f'nodes["GH_{prop}"].outputs[0].default_value', prop)
+    return mat
 
 
 def assign_materials(objs, mats):
@@ -1553,6 +1593,8 @@ def scene_lookdev(out_dir):
             eye.rotation_euler = (math.radians(-8), 0.0, math.radians(-18))
         elif nm == "GH_Teeth":
             _teeth_sample(loc, mats[nm], r)
+        elif nm in ("GH_Tongue", "GH_Gums") and _anatomy_sample(nm, loc, mats[nm]):
+            pass
         elif nm == "GH_Tongue":
             _sphere("S_Tongue", r, loc, 6, mats[nm], offset=(0.0, -0.06, -0.06), squash=(1.0, 1.2, 0.55))
         elif nm == "GH_MouthInterior":
@@ -1568,6 +1610,36 @@ def scene_lookdev(out_dir):
         _label(nm[3:], (x, -0.03, z - r - 0.0105))
     cam = ghc.add_camera("MT_Cam", (0.0, -0.78, 0.02), (0.0, 0.0, 0.0), 85.0)
     return _render(os.path.join(out_dir, "materials_lookdev.png"), cam, SAMPLES, (RES, RES * 7 // 8))
+
+
+def _anatomy_sample(name, loc, mat):
+    """Tongue or gums from anatomy.py (at their real object-space position), framed in a slot."""
+    try:
+        import anatomy
+        from mathutils import Vector
+        col = ghc.get_collection("MatTest")
+        if name == "GH_Tongue":
+            ob = anatomy.mesh_sdf("S_Tongue", anatomy.tongue_sdf, (-0.030, -0.095, -0.080), (0.030, -0.010, -0.045),
+                                  anatomy.RES["tongue"], voxel=anatomy.RES["tongue"], project=2, collection=col)
+            centre, scale, rot = Vector((0.0, -0.055, -0.058)), 1.0, (math.radians(55), 0.0, 0.0)
+        else:
+            fn = lambda x, y, z: anatomy.gum_sdf(x, y, z, True)  # noqa: E731
+            ob = anatomy.mesh_sdf("S_Gums", fn, (-0.036, -0.098, -0.060), (0.036, -0.024, -0.030),
+                                  anatomy.RES["gums"], voxel=anatomy.RES["gums"], project=2, collection=col)
+            centre, scale, rot = Vector((0.0, -0.066, -0.047)), 0.95, (math.radians(-35), 0.0, 0.0)
+        ob.data.shade_smooth()
+        ob.data.materials.append(mat)
+        pivot = bpy.data.objects.new(name + "_Pivot", None)
+        pivot.location = loc
+        col.objects.link(pivot)
+        ob.parent = pivot
+        ob.location = -centre
+        pivot.scale = (scale, scale, scale)
+        pivot.rotation_euler = rot
+        return True
+    except Exception as exc:  # noqa: BLE001
+        print(f"{name} sample fallback:", exc)
+        return False
 
 
 def _teeth_sample(loc, mat, r):
