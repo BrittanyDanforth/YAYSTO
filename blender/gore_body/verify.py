@@ -665,7 +665,7 @@ def skeleton_vertebra_centres():
     if not _b3_built():
         return True, "skipped (B3 skeleton not built)"
     import skeleton as SK
-    P = _skel_pieces()
+    P = _skel_pieces("GB_Skeleton_HR") or _skel_pieces()          # dense endplates
     worst, bad = 0.0, []
     for r in VT.VERTEBRAE:
         lv = r["level"]

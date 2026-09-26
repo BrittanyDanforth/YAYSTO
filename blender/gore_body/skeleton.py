@@ -744,7 +744,6 @@ def sacrum_sdf():
         canal = A.sd_polyline(ax, y, z, [(0.0, 0.050, 1.030), (0.0, 0.048, 1.000), (0.0, 0.052, 0.975),
                                          (0.0, 0.054, 0.952), (0.0, 0.058, 0.935)],
                               [0.0075, 0.0068, 0.0055, 0.0042, 0.0030])[0]
-        canal = gg_superellipse(ax, 0.0, 1.0, 1.0, 2.0) * 0.0 + canal
         d = smax(d, -canal, 0.0008)
         # four pairs of anterior and posterior sacral foramina
         for k, (zf, xf) in enumerate(((0.998, 0.016), (0.975, 0.015), (0.955, 0.013), (0.940, 0.011))):
@@ -2486,16 +2485,13 @@ def _closed_decimate(v, f, target):
     triangles, finally the undecimated fragment)."""
     for mult in (1.0, 1.6, 2.5):
         v2, f2 = decimate_arrays(v, f, int(target * mult))
-        if len(f2) and nonmanifold_edges(f2) == 0 and _min_area(v2, f2) > 1e-11:
+        if len(f2):
+            v2, f2 = drop_crumbs(v2, f2, min_verts=8)       # lone slivers left by the collapse
+        if len(f2) and nonmanifold_edges(f2) == 0:
             return v2, f2
-    if nonmanifold_edges(f) or _min_area(v, f) <= 1e-11:
+    if nonmanifold_edges(f):
         v, f = _remesh(v, f, 0.0010)                     # last resort: manifold voxel shell
     return v, f
-
-
-def _min_area(v, f):
-    """Smallest triangle area (Blender's validate() deletes zero-area faces -> holes)."""
-    return float(np.linalg.norm(np.cross(v[f[:, 1]] - v[f[:, 0]], v[f[:, 2]] - v[f[:, 0]]), axis=1).min()) * 0.5
 
 
 def _mesh_volume(v, f):
