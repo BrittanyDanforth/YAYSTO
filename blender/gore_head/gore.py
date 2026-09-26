@@ -1224,8 +1224,10 @@ def _build_burn():
     dn_ = c.down
     up_ = -(c.u * dn_.x + c.v * dn_.y) / (dn_.x * dn_.x + dn_.y * dn_.y).sqrt().max(1e-4)
     lick = t.smooth(-0.2, 1.0, up_ / R) * (0.5 + 0.5 * t.smooth(-0.3, 0.5, t.noise(t.vec(c.u * 90.0, c.seed * 2.0, 0.0))))
-    rn = rho_e / R * (1.0 + 0.5 * lobes) + 0.12 * n2 + 0.35 * n3 - 0.45 * lick
-    b = t.smooth(1.02, 0.12, rn)          # soft edge: a 5-15 mm band of red skin
+    rn = rho_e / R * (1.0 + 0.45 * lobes) + 0.12 * n2 + 0.3 * n3 - 0.35 * lick
+    # soft edge: a 5-15 mm band of red skin; the flame tongues fade out well
+    # inside the hit's reach (or the evaluation bounds show as a straight edge)
+    b = t.smooth(1.02, 0.12, rn) * t.smooth(R * 1.5, R * 1.12, rho_e)
     dose = (b * (0.55 + 0.6 * D)).clamp()
     partial = t.smooth(0.2, 0.3, dose) * t.smooth(0.56, 0.48, dose)
     full = t.smooth(0.52, 0.62, dose)
@@ -1478,7 +1480,7 @@ DRIP_STEPS = 20
 # Rivulets are 3-8 mm wide and 0.1-0.4 mm thick (REALISM_BIBLE row 19, REFERENCE_NOTES).
 DRIP_KINDS = {
     "bullet": (1.3, 0.8, 0.0034, 0.075, 0.0015),
-    "exit":   (3.5, 1.6, 0.0085, 0.105, 0.0022),
+    "exit":   (3.5, 1.6, 0.0085, 0.105, 0.0017),
     "slash":  (1.0, 0.0, 0.0,    0.085, 0.0019),
     "blunt":  (1.6, 0.9, 0.0085, 0.070, 0.0014),
 }
