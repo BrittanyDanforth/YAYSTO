@@ -116,6 +116,61 @@ wounds are too clean, too smooth, too uniform in colour, and there is far too li
 - **For our game:** beyond v1 scope (hands/feet are simplified; dismemberment is phase C), but the stump look (muscle
   ring, pale bone end with marrow, retracted skin, pale bled-out surfaces) is the reference if it is added.
 
+### 5.5 Large skull and scalp defect exposing the brain (spinning-blade / slicing injury to the side of the head)
+- A big oval section of scalp and skull is gone; the **brain surface is directly visible**: pale cream-pink gyri with
+  darker red-purple sulci, a film of blood over it, glossy wet highlights, and dark clotted blood collecting in the
+  fissures and low areas.
+- The rim is a **ring of cut skull**: pale bone edge with the scalp retracted around it, the scalp margin raw red and
+  ragged, hair matted with blood at the edge.
+- Clotted blood forms dark, almost black ribbons inside the fissures, not a uniform red.
+- **For our game:** a skull breach must show real brain folds (the head's gyri geometry) through a hole with a visible
+  bone-thickness rim, blood filling the sulci darker than on the crowns, and a retracted raw scalp margin.
+
+### 5.6 Bleeding from the mouth after a shot inside the mouth
+- Blood runs **out of the mouth as a steady stream**, down the chin and beard, and falls in a thick column onto the
+  chest; the shirt front below the mouth becomes a long soaked vertical band, glossy and dark in the middle.
+- Blood strings and drips land on the forearms and lap; the rest of the face stays relatively clean.
+- **For our game:** mouth/oral wounds route bleeding out of the mouth opening (lips, chin, onto the chest), not from a
+  skin hole; the shirt/shorts soak in a vertical band along that path.
+
+### 5.7 Stab wounds of the chest and arm, and the face after death
+- **Stab wounds are narrow gaping slits**, not round holes: about 15–25 mm long, elliptical gape of a few millimetres,
+  dark red to near-black inside, sharp clean margins with a thin reddish-dark rim, one end sometimes more pointed than
+  the other (single-edged blade). Several appear clustered on the chest; they bleed surprisingly little externally
+  (bleeding is mostly internal).
+- Small dried streaks of blood run down from each slit; surrounding skin is otherwise clean and pale.
+- **The face after death:** eyes **half-open** with the lids slack, the gaze unfocused and slightly divergent, the
+  cornea dull (no bright catch-light); the mouth hangs slightly open showing the teeth; facial muscles fully slack, no
+  expression. This matches REALISM_BIBLE #42–#46.
+- **For our game:** knife stabs create slit-shaped real openings sized by blade width with little external blood; the
+  dead face uses the half-open slack lids, dull corneas, slightly divergent gaze and dropped jaw.
+
+### 5.5 Large skull and scalp defect exposing the brain (slicing-blade injury to the side of the head)
+- A big oval section of scalp and skull is gone; the brain surface is directly visible: pale cream-pink gyri with
+  darker red-purple sulci, a thin film of blood over it, glossy wet highlights, and dark near-black clotted blood lying
+  as ribbons inside the fissures and low areas (not a uniform red).
+- The rim is a ring of cut skull: pale bone edge showing its thickness, the scalp retracted a few mm back from it, the
+  scalp margin raw red and ragged, hair matted with blood at the edge. Torn vessels and tissue hang at the lower rim.
+- For our game: a skull breach shows the real gyri through a hole with a visible bone-thickness rim, blood filling the
+  sulci darker than on the crowns, and a retracted raw scalp margin.
+
+### 5.6 Bleeding from the mouth after a shot inside the mouth
+- Blood leaves the mouth as a steady stream down the chin and beard and falls in a thick column onto the chest; the
+  shirt below becomes a long, glossy, dark vertical soaked band. Drips and strings land on the forearms and lap; the
+  rest of the face stays relatively clean.
+- For our game: oral wounds route bleeding out of the mouth opening (lips → chin → chest), and clothing soaks in a
+  vertical band along that path.
+
+### 5.7 Stab wounds of the chest and arm; the face after death
+- Stab wounds are narrow gaping slits, not round holes: ~15–25 mm long, elliptical gape of a few mm, dark red to
+  near-black inside, sharp clean margins with a thin dark rim, one end often more pointed (single-edged blade). Several
+  cluster on the chest; they bleed little externally (bleeding is mostly internal); thin dried streaks run down from
+  each. Surrounding skin is pale and otherwise clean.
+- The dead face: eyes half-open with slack lids, gaze unfocused and slightly divergent, dull corneas with no bright
+  catch-light; mouth hanging slightly open showing the teeth; all facial muscles slack, no expression (RB #42–#46).
+- For our game: knife stabs create slit-shaped real openings sized by blade width with little external blood; the dead
+  face uses half-open slack lids, dull corneas, slightly divergent gaze and a dropped jaw.
+
 ## 6. What to change in our assets (actionable)
 
 | Where | Change |
