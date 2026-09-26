@@ -3,7 +3,7 @@
  "frame": "body_zup_m",
  "godot_mapping": "(x, z, -y)",
  "generator": "blender/gore_body/build.py",
- "build_id": "gb-be448aa66c3e",
+ "build_id": "gb-c48d3182b74f",
  "data": {
   "sets": {
    "head": {
@@ -79,7 +79,7 @@
     "rough_offset": 0.06,
     "albedo_linear_luminance": {
      "median": 0.3202,
-     "p5": 0.2913,
+     "p5": 0.2915,
      "p95": 0.3437
     },
     "albedo_linear_median_rgb": [
@@ -88,8 +88,8 @@
      0.214
     ],
     "ao_mean": 0.956,
-    "normal_mean_z": 0.999,
-    "seconds": 473.3
+    "normal_mean_z": 0.9993,
+    "seconds": 277.4
    },
    "shorts": {
     "target": "GB_Shorts",
@@ -1418,26 +1418,26 @@
   },
   "timings_s": {
    "uvs": 0.0,
-   "sets": 2381.6,
+   "sets": 311.0,
    "tileables": 80.8,
    "painter": 32.2
   },
   "files": {
    "body_albedo.png": {
-    "bytes": 1854785,
-    "sha256": "dad93bf3f001cedc"
+    "bytes": 1812088,
+    "sha256": "87cb8fc7e49095db"
    },
    "body_bone.png": {
     "bytes": 121914,
     "sha256": "cae5a9a516fb5b56"
    },
    "body_normal.png": {
-    "bytes": 1779616,
-    "sha256": "e520f1154a86253f"
+    "bytes": 1693871,
+    "sha256": "6d3d2189d36f7414"
    },
    "body_orm.png": {
-    "bytes": 2680241,
-    "sha256": "af25ce5ba864f381"
+    "bytes": 2670445,
+    "sha256": "f7a7894c802d977e"
    },
    "body_position.exr": {
     "bytes": 1400107,

@@ -212,6 +212,9 @@ build: `python3 bake.py [--only head,body] [--tiles] [--painter] [--quick] [--ou
   − segment origin from manifest `segment_origins`, A = segment code, −1 outside), `<set>_rest_normal.png`,
   `<set>_valid.png`, `<set>_bone.png` (512², R dominant bone, G second, B weight, A inside).
   Body tissue depth / tension maps are B1's.
+- **Godot vs Cycles**: `lookdev_godot_ref/` is a tiny Godot project that loads the exported glb at runtime
+  with the baked sets and renders the `lookdev.TURNTABLE["ref"]` cameras (command in its `main.gd`);
+  `renders/lookdev_cycles_vs_godot.png` = Cycles (top) vs Godot 4.5.1 (bottom).
 - `textures/textures.json` (schema `gb.textures/1`) lists every file with channels, sizes, uv_hash,
   bake statistics and timings; B6 should copy its `sets` into manifest `textures`.
 
