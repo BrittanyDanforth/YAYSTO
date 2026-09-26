@@ -1107,9 +1107,11 @@ def weight_model_table():
     for k in ("shoulder", "elbow", "wrist", "hip", "knee", "ankle", "toes", "neck", "head", "spine", "chest",
               "upper_chest"):
         G = g[k]
+        unit = "deg (elevation angle from the joint centre)" if G.mode == "ray" else "m (axial)"
         rows[k] = {"joint": G.J.tolist(), "axis": G.u.tolist(), "phi0": G.e0.tolist(), "phi90": G.e1.tolist(),
-                   "offset_m": list(G.o), "half_width_m": list(G.w), "offset_axis_m": G.o_axis,
-                   "half_width_axis_m": G.w_axis, "axis_fade_r_m": list(G.r_att)}
+                   "mode": G.mode, "unit": unit, "r0_m": G.r0 if G.mode == "ray" else None,
+                   "offset": list(G.o), "half_width": list(G.w), "offset_axis": G.o_axis,
+                   "half_width_axis": G.w_axis, "axis_fade_r_m": list(G.r_att)}
     return {"model": "territories + joint gates (rig.py module doc)", "influences": MAX_INF, "grid": QUANT,
             "limb_radius_m": R_J, "gates": rows,
             "twist_handover_m": {"upper_arm": [0.10, 0.20], "forearm_from_elbow": [0.03, 0.14]},

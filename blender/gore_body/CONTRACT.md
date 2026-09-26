@@ -47,8 +47,8 @@ Options: `--quick` (coarse meshes), `--no-bake`, `--render` (renders/build_*.png
 | `placeholder.py` | B0 | done | `build_placeholder(quick=False) -> {name: Object}`; also `body_sdf`, `skin_sdf`, `muscle_sdf`, `seam_ring`, `set_skin_codes`, `skin_regions`, `finish_uvs`, `tag` |
 | `verify.py` | B0 frame, all add checks | done | `@check(group, owner, severity)`, `verify_all(groups) -> dict`, `failures(res)` |
 | `build.py` | B0 | done | `--stage …`, `run(stages, opts)` |
-| `export.py` | B6 (draft by B0) | working draft | `export_subject(objs, out)`, `export_props(out)`, `write_manifest(out, …)`, `landmarks_table()`, `codes_table()`, `GLTF_OPTIONS` (= plan §5.9) |
-| `rig.py` | B6 (v0 by B0) | working v0 | `build_armature()`, `weights_at(points, layer)`, `skin_all(objs)`, `build_poses(arm)`, `rig_table()` |
+| `export.py` | B6 | done | `export_subject(objs, out)` (B7 atlases re-applied, painter bone maps refreshed when the weights change), `export_props(out)`, `write_manifest(out, …)`, `round_trip(glb)`, `godot_import_check(glb)`, `landmarks_table()`, `codes_table()`, `GLTF_OPTIONS` (= plan §5.9) |
+| `rig.py`, `posetest.py` | B6 | done | `build_armature()`, `bone_rows()`, `weights_at(points, layer)`, `skin_all(objs)`, `build_poses(arm)`, `rig_table()`, `apply_pose`/`pose_matrices`/`lbs`; posetest: `run_tests()`, `render_poses()`, `render_key_poses()`, `render_weights()`, `section_png()` (details: "Rig, weights, export (B6)" below) |
 | `body_skin.py` | B1 | stub (`body_sdf`/`skin_sdf`/`paint_codes` delegate to the placeholder) | `body_sdf`, `skin_sdf`, `build_body_skin()`, `build_shorts(skin)`, `build_muscle_shell(skin)`, `paint_codes(obj)` |
 | `head_integration.py` | B2 | stub (`seam_ring`, `zip_to_ring` work) | `seam_ring(n=160)`, `zip_to_ring(obj, ring)`, `build_head()`, `build_face_shapes(head)`, `build_eye_fx()`, `build_hair_cards()` |
 | `skeleton.py` | B3 | stub | `build_skeleton()`, `build_fracture_variants()`, `bone_capsules()` |
@@ -217,6 +217,52 @@ build: `python3 bake.py [--only head,body] [--tiles] [--painter] [--quick] [--ou
   `renders/lookdev_cycles_vs_godot.png` = Cycles (top) vs Godot 4.5.1 (bottom).
 - `textures/textures.json` (schema `gb.textures/1`) lists every file with channels, sizes, uv_hash,
   bake statistics and timings; B6 should copy its `sets` into manifest `textures`.
+
+## Rig, weights, export (B6) → `rig.json`, `GB_Subject.glb`, `GB_Subject_LOD1.glb`, `manifest.json`
+
+`python3 build.py --stage rig` (placeholder + every geometry cache + weights + export + verify, ~3.5 min) or
+`python3 posetest.py --reskin [--render] [--only a,b] [--detail]` on the saved build.
+
+- **Armature**: 39 bones from `gb_data.rig_table` plus two documented B6 fits (`rig.bone_rows()`): `jaw` head
+  = B2's measured TMJ hinge (0, 0.0085, 1.645); `thumb_*` = B1's thumb (CMC (±0.4608, 0, 0.9166) → tip). Every
+  other joint equals RB §7.2 (0.00 mm). `skin_all` rebuilds a stale armature (`ensure_armature_fit`).
+- **One weight function** `rig.weights_at(points)` for every layer (plan D8): territories (arm, leg, neck+head,
+  shoulder girdle = clavicle + scapula + acromion + top of the shoulder, trunk) split by joint *gates*
+  `smootherstep((x - o(phi)) / w(phi))` with sector-dependent offsets/widths (flexor / lateral / extensor /
+  medial, 8 sectors on the trunk). Elbow and knee gates are **ray gates** (x = elevation angle seen from the
+  joint centre) so skin, muscle shell and vessels on one ray keep identical weights and stay nested in deep
+  flexion; the olecranon / patella skin moves 100 % with the forearm / shin. Jaw = Voronoi of the head project's
+  mandible vs skull (+ skin within 12-26 mm of the mandible); lids = B2 `face_weights` inside the same function;
+  hand fingers / thumb from B1's MCP arc and thumb polyline; toes along the oblique MTP row. 4 influences,
+  1/4096 grid, rows sum exactly to 1. Gate numbers are in `rig.json` `weights`.
+- **Followers** (`GB_BrowLash`, `GB_EyeFX_L/R`): `weights_at` at each vertex's `gb_anchor_*` (their
+  `gb_rigid_bone` tags are B2's fallback and are ignored; verify's rigid check skips them).
+- **Rigid parts** (`gb_rigid_bone >= 0`): 100 % on their bone (skeleton pieces, variants, eyes, teeth, tongue).
+- **Twist bones**: `upper_arm_twist_*` carries the proximal upper arm (driver: -0.5 × the shoulder twist, i.e.
+  world 50 %), `forearm_twist_*` the mid/distal forearm (+0.5 × the hand's pronation). Drivers in
+  `rig.json kinematic.*.driver` (swing-twist decomposition about the rest twist axis); `rig.apply_pose` applies
+  them. Without drivers the twist bones carry 100 % (no candy-wrap relief, no harm).
+- **Key poses** `pose_idle/guard/cower/brace`: joint angles about the resolved world axes (`rig.POSES`), all inside
+  the live limits; bent-knee poses key a hips translation that keeps both ankles within 0.4 mm of rest.
+- **rig.json** adds to B0's table: `kinematic` (fingers/thumb/toes/twist/jaw/eye axes, limits, drivers), directional
+  `torque_cap_nm` (strongest direction at the top of the plan range), `face` = B2's measured lid table
+  (`head_face_rig.json`), `poses` (angles + hips translation), `weights` (gate table).
+- **Export** (`export.export_subject`): re-applies B7's inner atlases (`bake.prepare_uvs`, cached) so UVs match
+  the textures; re-bakes the painter `*_bone.png` maps when the weight fingerprint changes; GB_Subject.glb (21.5 MB)
+  + LOD1 (head + body at 50 %) + sidecars (+ B3 `bones.json`) + manifest (files with sha256, texture sets with
+  import hints, file limits, rig fits, deformation results, round trip, Godot import).
+- **Checks** (verify `b6_*`): joint positions, one weight function (vertex groups == `weights_at`), seam-ring
+  weights identical on head and body, followers, FB-2 deformation (`posetest.TESTS` level `fb2`: elbow 130.5,
+  knee 121.5, shoulder abduction +60/+90 from the bind, hip flexion 108: no inner-layer vertex > 3 mm outside the
+  posed skin by signed ray-crossing winding number; volume loss < 15 %), quality poses (warn), rest-pose nesting
+  (warn, other owners' geometry), key poses, rig.json, manifest + file limits, **round trip** (re-import in a fresh
+  Blender process), **Godot 4.5.1 import** (temporary project under xvfb/OpenGL: 39 bones, every mesh skinned with
+  4 weights + UV2, blend shapes, 4 animations, CUSTOM0 RGBA32F injection, and Godot's own skinning of 6 poses set
+  from rig.json world axes equals Blender's LBS within 0.02 mm on 74.5k vertices).
+- **Godot notes**: the imported Skeleton3D orders bones depth-first (not rig.json's order): always map by name
+  (`Skeleton3D.find_bone`); rig.json indices (and `gb_rigid_bone`, painter bone maps) index `rig.BONE_NAMES`.
+  Skins register with the skeleton only with a real renderer (headless dummy: `bake_mesh_from_current_skeleton_pose`
+  fails).
 
 ## Verification (verify.py)
 

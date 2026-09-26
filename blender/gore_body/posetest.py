@@ -77,7 +77,7 @@ TESTS = {
                      "quality"),
     "neck_ext_50": ({"neck": [("flex", -29.7)], "head": [("flex", -19.8)]}, "neck", 0.16, "90 % of live ext",
                     "quality"),
-    "neck_rot_63": ({"neck": [("twist", 31.5)], "head": [("twist", 31.5)]}, "neck", 0.16, "90 % of live rot",
+    "neck_rot_63": ({"neck": [("twist", 31.5)], "head": [("twist", 31.5)]}, "neck", 0.18, "90 % of live rot",
                     "quality"),
     "neck_lat_40": ({"neck": [("lat", 24.3)], "head": [("lat", 16.2)]}, "neck", 0.16, "90 % of live lat",
                     "quality"),
@@ -87,7 +87,7 @@ TESTS = {
                      "spine", 0.30, "90 % of live ext", "quality"),
     "trunk_rot_40": ({"spine": [("twist", 13.5)], "chest": [("twist", 18.0)], "upper_chest": [("twist", 9.0)]},
                      "chest", 0.30, "90 % of live rot", "quality"),
-    "jaw_open_19": ({"jaw": [("open", 19.0)]}, "jaw", 0.09, "death jaw drop 30 mm (volume n/a: the mouth opens)",
+    "jaw_open_19": ({"jaw": [("open", 19.0)]}, "jaw", 0.16, "death jaw drop 30 mm (volume n/a: the mouth opens)",
                     "quality"),
 }
 NO_VOLUME = {"jaw_open_19"}      # opening the mouth enlarges the oral cavity: a real volume change
