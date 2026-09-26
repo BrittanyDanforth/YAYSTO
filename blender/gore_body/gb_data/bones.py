@@ -104,3 +104,28 @@ BONE_COLOURS = {"cortical_cut": "#E9DFCC", "periosteum": "#E6CFC4", "articular_c
 
 # bone class codes for UV2.y of GB_Skeleton / GB_Frac_* (plan §5.5)
 BONE_CLASS = {0: "long_bone_cortex", 1: "flat", 2: "vertebra", 3: "skull", 4: "cartilage", 5: "tooth"}
+
+# ---------------------------------------------------------------------------
+# Bone pieces: UV2.x code of GB_Skeleton / GB_Frac_* (plan §5.5).  id = index + 1
+# (0 = unassigned).  B3 may split pieces further; keep ids stable by appending.
+# class: BONE_CLASS code (0 long-bone cortex, 1 flat, 2 vertebra, 3 skull, 4 cartilage, 5 tooth)
+# ---------------------------------------------------------------------------
+def _pieces():
+    from .vertebrae import LEVELS
+    rows = [("skull", 3), ("mandible", 3)]
+    rows += [(lvl.lower(), 2) for lvl in LEVELS if lvl != "S1"]
+    rows += [("sacrum", 2), ("coccyx", 2)]
+    rows += [(f"disc_{a.lower()}_{b.lower()}", 4) for a, b in zip(LEVELS[1:-1], LEVELS[2:])]
+    rows += [("sternum", 1)]
+    for s in ("L", "R"):
+        rows += [(f"rib{n}_{s}", 1) for n in range(1, 13)]
+        rows += [(f"costal_cartilage{n}_{s}", 4) for n in range(1, 11)]
+        rows += [(f"clavicle_{s}", 0), (f"scapula_{s}", 1), (f"humerus_{s}", 0), (f"radius_{s}", 0),
+                 (f"ulna_{s}", 0), (f"hand_{s}", 0), (f"hip_bone_{s}", 1), (f"femur_{s}", 0),
+                 (f"patella_{s}", 1), (f"tibia_{s}", 0), (f"fibula_{s}", 0), (f"foot_{s}", 0)]
+    return rows
+
+
+BONE_PIECES = _pieces()
+BONE_PIECE_ID = {name: i + 1 for i, (name, _cls) in enumerate(BONE_PIECES)}
+BONE_PIECE_CLASS = {name: cls for name, cls in BONE_PIECES}

@@ -177,6 +177,17 @@ SHAPE_KEYS = {
 }
 POSE_ACTIONS = ("pose_idle", "pose_guard", "pose_cower", "pose_brace")
 
+# Triangle budgets, LOD0 (plan §4.1).  Pairs share one budget line in the plan.
+TRI_BUDGET = {
+    "GB_Head": 30000, "GB_Body": 44000, "GB_Shorts": 4000, "GB_Eye+EyeFX": 5000, "GB_Mouth": 8500,
+    "GB_BrowLash": 2000, "GB_MuscleShell": 24000, "GB_Skeleton": 36000, "GB_Brain": 14000,
+    "GB_Organs": 22000, "GB_Cord": 3000, "GB_Vessels": 14000, "GB_Variants": 60000,
+}
+TRI_BUDGET_GROUPS = {"GB_Eye+EyeFX": ("GB_Eye_L", "GB_Eye_R", "GB_EyeFX_L", "GB_EyeFX_R"),
+                     "GB_Vessels": ("GB_Vessels_Art", "GB_Vessels_Ven"),
+                     "GB_Variants": VARIANT_OBJECTS}
+FILE_LIMITS_MB = {"GB_Subject.glb": 40.0, "any": 50.0}      # plan §4.3; repo rule < 50 MB per file
+
 # "gb_layer" custom property (exported as glTF extras) per object
 LAYER_OF = {"GB_Head": "skin", "GB_Body": "skin", "GB_Shorts": "cloth", "GB_Eye_L": "eye", "GB_Eye_R": "eye",
             "GB_EyeFX_L": "eye_fx", "GB_EyeFX_R": "eye_fx", "GB_Mouth": "mouth", "GB_BrowLash": "hair",
