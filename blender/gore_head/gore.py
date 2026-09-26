@@ -953,9 +953,9 @@ def _build_blunt():
     pool = c.pool(c.L, s * 0.0045 * (0.5 + bleed), bleed * t.smooth(0.25, 0.45, D), drop=s * 0.003)
     hema = t.smooth(rsw * 1.1, rsw * 0.3, c.rho) * c.lc([0.0, 0.85, 0.35, 0.35, 0.0, 0.7, 0.0, 0.8])
     contusion = t.smooth(rd * 1.3, rd * 0.4, c.rho + nl * 0.002) * is_brain * t.smooth(0.5, 0.8, D)
-    # bloodied teeth must still read as teeth: streaks and smears, not a coat
-    # a few vertical runs of blood down the teeth near the blow (the loosened
-    # ones also bleed from the gum line, see GH_Gore_Teeth)
+    # bloodied teeth must still read as teeth: a few vertical runs of blood
+    # near the blow, not a coat (the loosened ones also bleed from the gum
+    # line, see GH_Gore_Teeth)
     runs = t.noise(t.vec(c.np.x * 520.0, c.np.y * 520.0, c.np.z * 55.0), detail=2.0, signed=False)
     teeth_blood = t.smooth(s * 0.03, s * 0.01, c.rho) * c.is_layer(LAYER_TEETH) * t.smooth(0.2, 0.4, D) \
         * t.smooth(0.56, 0.66, runs)
@@ -2072,7 +2072,7 @@ def build_gore_system(objs=None, mats=None):
     return {"node_group": ng, "modifiers": mods, "collections": cols, "controls": ctrl}
 
 
-_GROUP_VERSION = 3
+_GROUP_VERSION = 4
 
 
 # ---------------------------------------------------------------------------

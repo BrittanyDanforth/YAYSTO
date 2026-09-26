@@ -145,7 +145,7 @@ All values are in metres in the §0.4 frame. "Bone" means the point on the skele
 | 53 | Elbow centre, arms hanging (for reference) | +0.195 | +0.030 | 1.125 | 0.632 H. *Corrected: was 1.115; 0.630 H would be 1.121* | [B3] (H) |
 | 54 | Wrist centre, arms hanging | +0.225 | +0.010 | 0.855 | 0.480 H. Supinated, carrying angle ~10°. *Corrected: was 0.865.* ANSUR II wrist height (radial styloid tip), 14 men of 1.77–1.79 m, mean 0.848; the joint centre is slightly higher | [B1] [B3] (H) |
 | 55 | **Knee joint centre** (epicondylar axis), L | +0.092 | +0.020 | **0.492** | The joint line (tibial plateau) is at z **0.480**. *Corrected: was 0.505 (joint line 0.487).* ANSUR II, same 14 men: lateral femoral epicondyle height mean 0.490, tibiale (medial joint line) height mean 0.480 | [B1] (H) |
-| 56 | Patella centre (bone), L | +0.090 | −0.035 | 0.509 | Skin in front at y −0.047. *Corrected: was 0.522*, moved with the knee | [K] (M) |
+| 56 | Patella centre (bone), L | +0.090 | −0.035 | 0.497 | Skin in front at y −0.047. *Corrected: was 0.522.* ANSUR II knee height (mid-patella), 14 men of 1.77–1.79 m, mean 0.493 | [B1] (H) |
 | 57 | Tibial tuberosity, L | +0.090 | −0.025 | 0.434 | *Corrected: was 0.447* | [K] (M) |
 | 58 | Fibular head, L | +0.130 | +0.035 | 0.452 | *Corrected: was 0.465* | [K] (M) |
 | 59 | **Ankle joint centre** (mid-malleolar), L | +0.095 | +0.050 | 0.075 | Line of gravity 5 cm in front. ✓ verified: ANSUR II lateral malleolus height, same 14 men, mean 0.073 | [B1] [B3] (H) |
@@ -188,7 +188,7 @@ The girths are for a lean-average 75 kg / 1.78 m man. The ANSUR II means `[B1]` 
 
 | Level | z (m) | Circumference (cm) | Breadth x (cm) | Depth y (cm) | Section centre (x, y) | Range for 70–80 kg men | Source |
 |---|---|---|---|---|---|---|---|
-| Head (max, glabella–opisthocranion) | 1.700 | 57.5 | 15.5 | 19.5 | (0, +0.020) | 55–60 | [B1] [B37] (H) |
+| Head (max, glabella–opisthocranion) | 1.692 *(was 1.700; head refit)* | 57.5 | 15.5 | 19.5 | (0, +0.020) | 55–60 | [B1] [B37] (H) ✓ verified (subsample: circumference 57.7, breadth 15.7, length 19.9) |
 | Neck (just below the larynx) | 1.515 | 38.0 | 12.0 | 11.7 | (0, +0.004): front −0.055, back +0.063 | 36–40 | [B1] (H) ✓ verified (subsample mean 38.3) |
 | Shoulders, bideltoid | 1.400 | — | **49.0** | — | — | 47–51 | [B1] (H). *Corrected: was 47.0 (44–50)*; subsample mean 49.4 |
 | Shoulders, biacromial (skin over acromia) | 1.458 | — | **42.0** | — | — | 39.5–44.5 | [B1] (H). *Corrected: was 40.5 (38–42)*; subsample mean 42.1 |
@@ -198,7 +198,7 @@ The girths are for a lean-average 75 kg / 1.78 m man. The ANSUR II means `[B1]` 
 | **Hips / buttocks (max)** | 0.885 | **97** | **33.0** | 23.5 | (0, +0.028): front −0.090, back +0.145 | 93–101 | [B1] (H). Girth ✓ verified (subsample 96.2). *Breadth corrected: was 35.0*; ANSUR II hip breadth subsample 33.1 |
 | **Upper thigh** (below the gluteal fold) | 0.790 | **58** | 17.5 | 18.5 | (±0.090, +0.020) | 55–62 | [B1] (H). *Corrected: was 56 (52–60)*; subsample mean 58.1 |
 | Mid-thigh | 0.700 | 51 | 16.0 | 16.5 | (±0.092, +0.015) | 47–55 | [K] (M) |
-| Knee (mid-patella) | 0.520 | 37.5 | 11.0 | 11.5 | (±0.091, +0.010) | 35–40 | [B1] (M) |
+| Knee (mid-patella) | 0.495 *(was 0.520)* | 37.5 | 11.0 | 11.5 | (±0.091, +0.010) | 35–40 | [B1] (M). The girth is unverified. The level is ANSUR II knee height (mid-patella), subsample mean 0.493 |
 | **Calf (max)** | 0.370 | **37.5** | 11.5 | 12.5 | (±0.094, +0.070): shin front +0.008, calf back +0.133 | 35–40 | [B1] (H) ✓ verified (subsample mean 37.0) |
 | Ankle (min, above the malleoli) | 0.120 | 22.5 | 6.5 | 7.5 | (±0.095, +0.055) | 21–24 | [B1] (M) |
 | **Upper arm (mid, relaxed)** | along the arm | **30** | 9.0 | 10.0 | on the humeral axis | 28–33 (flexed +3) | [B1] (M) ✓ consistent (ANSUR II flexed biceps, subsample 32.8) |
@@ -730,7 +730,7 @@ The sternum is inclined **~20° from vertical**, with its lower end forward. Uni
 | Item | Value | Unit | Notes | Source |
 |---|---|---|---|---|
 | Patella size | 53 tall × 51 wide × 25 thick | mm | Thin cortex over trabecular bone; articular cartilage up to 5–7 mm (the thickest in the body) | [K] (M) |
-| Patella centre (knee straight) | (+0.090, −0.035, 0.509) | m | Lower pole ~1 cm above the joint line. *Corrected: was 0.522* | [K] (M) |
+| Patella centre (knee straight) | (+0.090, −0.035, 0.497) | m | *Corrected: was 0.522* (ANSUR II mid-patella height 0.493). With the patella 53 mm tall, its lower pole now sits at ~0.47, at or just below the ANSUR tibiale level. The old "lower pole ~1 cm above the joint line" is not supported when standing relaxed | [B1] (M) |
 | Patellar tendon | 45–50 long × 25–30 wide × 4–6 thick; to the tibial tuberosity (+0.090, −0.025, 0.434) | mm / m | *Tuberosity corrected: was 0.447* | [K] (M) |
 | Tibia maximum length | **41** (38–43) | cm | Including the medial malleolus. (Trotter's original tibia measure excluded the malleolus, so her regression gives a shorter length.) ✓ Verified: 1952 equation stature = 2.52 × tibia + 78.62 gives 39.4 cm; 1958 equation 2.42 × tibia + 81.93 gives 39.7 cm. Plateau 0.480 to medial malleolus tip 0.068 = 41.2 cm | [B7] [E] (M) |
 | Tibial plateau | width 78 × AP 50; z 0.480 | mm / m | *z corrected: was 0.487* (ANSUR II tibiale height 0.480) | [B1] (M) |
@@ -1417,7 +1417,7 @@ wrist_centre_L_apose,0.460,0.020,0.930,joint
 mcp3_L_apose,0.508,0.020,0.848,joint
 fingertip3_L_apose,0.553,0.020,0.770,skin
 knee_centre_L,0.092,0.020,0.492,joint
-patella_centre_L,0.090,-0.035,0.509,bone
+patella_centre_L,0.090,-0.035,0.497,bone
 tibial_tuberosity_L,0.090,-0.025,0.434,bone
 fibular_head_L,0.130,0.035,0.452,bone
 # fact-check: pelvis, hip, knee, crotch and A-pose arm rows above corrected (see sections 1.2, 1.3, 7)
@@ -1728,7 +1728,10 @@ All cited **from memory**; none re-opened in this session (§0.1).
    - The ASIS height was too high: 1.009 → **0.992**. This moves the HJC from 0.935 to **0.918**, matching ANSUR II trochanterion (0.513 H, 0.920 m in the subsample).
    - The pubic symphysis, ischium, trochanters, bladder, prostate and femoral-artery groin point move with it (−0.017).
    - Crotch height changed from 0.840 to **0.860** (ANSUR II).
-4. **Knee**: centre changed from 0.505 to **0.492** and joint line from 0.487 to **0.480** (ANSUR II lateral femoral epicondyle 0.490, tibiale 0.480). The patella, tibial tuberosity and fibular head move −0.013. Thigh and shank are now 0.428 / 0.418 m.
+4. **Knee**: centre changed from 0.505 to **0.492** and joint line from 0.487 to **0.480** (ANSUR II lateral femoral epicondyle 0.490, tibiale 0.480).
+   - Patella centre 0.522 → **0.497** (ANSUR II mid-patella 0.493).
+   - The tibial tuberosity and fibular head move −0.013.
+   - Thigh and shank are now 0.428 / 0.418 m.
 5. **Arm**: upper arm changed from 0.300 to **0.290 m** and forearm from 0.250 to **0.270 m** (de Leva 1996; ANSUR II radiale–stylion 272 mm).
    - A-pose elbow is now (0.325, 0.020, 1.164), wrist (0.460, 0.020, 0.930), MCP (0.508, 0.020, 0.848), fingertip (0.553, 0.020, 0.770).
    - Hanging elbow and wrist are now 1.125 / 0.855.

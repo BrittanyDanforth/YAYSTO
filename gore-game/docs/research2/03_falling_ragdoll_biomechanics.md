@@ -80,7 +80,7 @@ This document builds on the earlier files and does not repeat them:
 
 | Dataset | Subjects | Method | Known bias | Use in game |
 |---|---|---|---|---|
-| **Dempster 1955**, via Winter's textbook tables | 8 male cadavers, aged ~52–83 (mean ~69), lean (~60 kg) | Segmented cadavers; pendulum MOI | **Thigh 10.0 %, trunk 49.7 %** ✓ verified [K] (H). **Corrected (reason): was "elderly and lean: thigh too light, trunk too heavy".** The gap comes mostly from **different segment boundaries** (where the thigh–trunk and head–trunk cuts are made, and Dempster's trunk runs from the greater trochanter to the glenohumeral joint), and only partly from the elderly, lean cadaver sample and embalming-era methods | Cross-check only |
+| **Dempster 1955**, via Winter's textbook tables | 8 male cadavers, aged ~52–83 (mean ~69), lean (~60 kg) | Segmented cadavers; pendulum MOI | **Thigh 10.0 %, trunk 49.7 %** ✓ verified [K] (H). **Corrected (reason): was "elderly and lean: thigh too light, trunk too heavy".** The gap comes mostly from **different segment boundaries** (where the thigh–trunk and head–trunk cuts are made, and Dempster's trunk runs from the greater trochanter to the glenohumeral joint), and only partly from the elderly, lean cadaver sample and post-mortem fluid loss | Cross-check only |
 | **Zatsiorsky–Seluyanov**, adjusted by **de Leva 1996** `[S1]` | 100 young living men (mean ~24 y, ~73 kg) and 15 women | Gamma-ray mass scanning; de Leva moved the endpoints to joint centres | Athletic young adults | **Primary table** |
 
 Where the tables disagree, **use de Leva** `[K] (H)`. It comes from living, young, normal-weight adults, its endpoints are joint centres (which matches a skeleton rig), and it splits the trunk into three parts, which a three-body spine needs. The largest disagreements are the thigh (10.0 vs 14.16 %), the trunk (49.7 vs 43.46 %) and the head+neck (8.1 vs 6.94 %). Those gaps shift the standing CM by ~2–3 cm ✓ (fact-check `[E]`: moving ~6 kg of thigh mass up to trunk level raises the CM ~3–4 cm; Dempster's heavier shanks and feet take back ~0.5–1 cm).
@@ -188,9 +188,9 @@ For the 75 kg body the thigh moves from 7.5 kg (Dempster) to 10.6 kg (de Leva). 
 
 | Axis | kg·m² | Use |
 |---|---|---|
-| Mediolateral axis through the CM (pitch) | **≈ 11.8** | Forward and backward toppling |
-| About the ankles (pitch) | **≈ 69.5** | Rigid topple: ω = √(m·g·h / I) = √(72.9 × 9.81 × 0.89 / 69.5) = **3.0 s⁻¹** |
-| Long axis (twist, arms at the sides) | **≈ 1.1** | Spin from off-centre hits and hook punches |
+| Mediolateral axis through the CM (pitch) | **≈ 11.8** ✓ verified (re-summed segment by segment with de Leva CM heights: 12.1) | Forward and backward toppling |
+| About the ankles (pitch) | **≈ 69.5** ✓ verified (69.5–72 depending on whether the feet are included) | Rigid topple: ω = √(m·g·h / I) = √(72.9 × 9.81 × 0.89 / 69.5) = **3.0 s⁻¹** ✓ verified (3.03; 3.04 with the de Leva CM height) |
+| Long axis (twist, arms at the sides) | **≈ 1.1** ✓ (re-summed: ~1.0) | Spin from off-centre hits and hook punches |
 
 ### 1.7 Collider dimensions (1.75 m male) `[K] (M)` anthropometry, `[E]` shapes
 
@@ -222,7 +222,7 @@ Set every collider **0.5–1.0 cm inside the skin mesh**. The visible flesh then
 | Neck (C2–T1) | head + neck | 5.2 | 0.11 | 6.3 | Inverted |
 | Spine upper (T10, xiphoid level) | upper trunk + arms + head | 24.6 | 1.4 | 35 | Inverted |
 | Spine lower (L3/L4, navel level) | + middle trunk | 36.9 | 4.3 | 101 | Inverted |
-| Hip (stance) | head, arms and trunk (HAT) | 45.2 (both hips) | ~6.6 | 159 both / **79 per hip** | Inverted |
+| Hip (stance) | head, arms and trunk (HAT) | 45.2 (both hips) | **~7.4** (corrected: was ~6.6) | **149 both / 75 per hip** (corrected: was 159 / 79) | Inverted. Recomputed from §1.3: HAT CM 1.230 m, 0.336 m above the hip joints. Both old values were within ~10 % |
 | Hip (swing, straight leg) | leg | 14.9 | 2.67 | 47 | Hanging |
 | Knee (stance) | everything above the knee | 66.4 (both) | — | 358 both / **179 per knee** | Inverted |
 | Knee (swing) | shank + foot | 4.28 | 0.41 | 11 | Hanging |
@@ -235,6 +235,8 @@ Set every collider **0.5–1.0 cm inside the skin mesh**. The visible flesh then
 Working (examples):
 - Arm about the shoulder: upper arm 0.0132 + 2.03 × 0.163² = 0.067; forearm 0.0068 + 1.22 × 0.406² = 0.207; hand 0.0014 + 0.46 × 0.621² = 0.178. **Total 0.452 kg·m².** The arm CM lies 0.30 m from the shoulder.
 - Leg about the hip (straight): thigh 0.207 + 10.62 × 0.174² = 0.53; shank 0.040 + 3.25 × 0.618² = 1.28; foot 0.0046 + 1.03 × 0.91² = 0.86. **Total 2.67 kg·m².** The leg CM lies 0.32 m from the hip.
+- Fact-check `[E]` (all recomputed): leg about the hip 2.67 ✓; arm about the shoulder 0.452 ✓ (0.455); shank + foot about the knee 0.41 ✓; forearm + hand about the elbow 0.078 ✓; head + neck about C7 0.108 ✓. Stance gravity stiffness: ankle 318 ✓ (329 with the de Leva CM height of 0.97 m); knee 179 ✓ (185–195, depending on whether the knee sits at 0.50 m as in §1.6 or at 0.47 m as the de Leva thigh length implies); hip corrected to 75 per side (row above).
+- Known small inconsistency `[E]`: the de Leva thigh + shank lengths (0.424 + 0.436 m) put the lateral malleolus ~3 cm lower than the §1.6 landmark heights do. Keep the de Leva lengths for the bodies and let the foot collider absorb the difference.
 
 ### Simulation parameters (segments)
 
@@ -245,7 +247,8 @@ Working (examples):
 | `seg_inertia` | table §1.3 | kg·m² | If the engine derives inertia from shapes, check it lands within ±30 % | [E] |
 | `mass_ratio_adjacent_max` | ≤ 10 : 1 (neck 0.8 kg next to a 12 kg upper trunk is 15 : 1: raise the neck to ≥ 1.2 kg or merge it into the head) | — | Chains with large mass ratios wobble and stretch | [K] (M) |
 | `com_height_standing` | 0.96 | m | | [K] |
-| `I_body_pitch_com` / `I_body_ankle` / `I_body_long` | 11.8 / 69.5 / 1.1 | kg·m² | | [E] |
+| `I_body_pitch_com` / `I_body_ankle` / `I_body_long` | 11.8 / 69.5 / 1.1 | kg·m² | ✓ verified (re-summed 12.1 / 69.5–72 / ~1.0) | [E] |
+| `k_grav_stance_per_side` | ankle 318, knee 179, hip 75 (corrected: was 79) | Nm/rad | §1.8 | [E] |
 | `collider_inset` | 0.5–1.0 | cm | Collider smaller than the skin | [E] |
 | `female_mass_frac` | head 6.68, trunk 42.57, upper arm 2.55, forearm 1.38, hand 0.56, thigh 14.78, shank 4.81, foot 1.29 | % | | [S1] (M) |
 
@@ -374,8 +377,8 @@ Several limits depend on the angle of a neighbouring joint. A ragdoll with indep
 
 | Joint | Failure criterion | Value | Result in game |
 |---|---|---|---|
-| Neck (occipital-condyle moment, adult male) | **Flexion**: pain / ligament damage | **~59 / ~190 Nm** (Mertz & Patrick) `[K] (M)` | Past the ligament threshold: fracture-dislocation. Head angulates; limits widen 20–40° |
-| | **Extension**: pain / ligament damage | **~47 / ~57 Nm** `[K] (M)` | Extension is far weaker than flexion: backward whips (occipital falls, blows to the face) are the dangerous direction |
+| Neck (occipital-condyle moment, adult male) | **Flexion**: pain / ligament damage | **~59 / ~190 Nm** (Mertz & Patrick) `[K] (M)` ✓ verified [K] (M–H): 59.4 / 189.8 Nm (44 / 140 ft·lb) | Past the ligament threshold: fracture-dislocation. Head angulates; limits widen 20–40° |
+| | **Extension**: pain / ligament damage | **~47 / ~57 Nm** `[K] (M)` ✓ verified [K] (M–H): 47.5 / 56.7 Nm (35 / 42 ft·lb). The 190 / 57 Nm pair became the Hybrid III neck-moment limits | Extension is far weaker than flexion: backward whips (occipital falls, blows to the face) are the dangerous direction. Caveat: pain values come from volunteers, ligament values were scaled from cadaver tests, and all are quasi-static equivalent moments at the occipital condyles |
 | Knee | Hyperextension or valgus moment to ligament failure | ~100–300 Nm (cadaver range) `[K] (L)` | Knee bends backward or sideways; limit removed on that axis |
 | Elbow | Hyperextension moment to dislocation | ~50–100 Nm `[E] (L)` | Forearm displaced backward; elbow limit 0 → −40° |
 | Shoulder | Anterior dislocation | Abduction ~90° + external rotation > ~100° with ~30–60 Nm `[E] (L)` | Arm fixed in slight abduction and external rotation; squared-off shoulder |
@@ -394,7 +397,7 @@ Several limits depend on the angle of a neighbouring joint. A ragdoll with indep
 | `rest_head_rot_prone` | 60–90 (p 0.85) | ° | | [K] [E] |
 | `rest_hip_er_supine` | 30–60 | ° | Feet splay | [K] (M) |
 | `rest_ankle_pf_supine` / `_prone` | 20–40 / 40–60 | ° | | [K] (M) |
-| `neck_flex_failure` / `neck_ext_failure` | 190 / 57 | Nm | Ligament-damage thresholds | [K] (M) |
+| `neck_flex_failure` / `neck_ext_failure` | 190 / 57 | Nm | Ligament-damage thresholds ✓ verified [K] (Mertz & Patrick 1971) | [K] (M–H) |
 
 ### Visual/behavioural checklist (ROM)
 - A living person never uses the ends of their range at rest. A limp or dead body **lives at the ends of its range**: feet flat and pointed, wrists fully bent, head turned 90° on the cheek, arms twisted palm-up behind the hips.
@@ -468,13 +471,15 @@ The knee-extensor torque needed to hold the body up is roughly body weight × ho
 
 | Test | Physics | Expected |
 |---|---|---|
-| **Limp arm dropped from horizontal** (shoulder flexed 90°, body upright) | Compound pendulum. Equivalent length I/(m·d) = 0.452 / (3.70 × 0.30) = 0.41 m. Small-amplitude period 2π√(0.41 / 9.81) = 1.28 s. Quarter swing from 90°: 0.32 s × 1.18 (large-amplitude correction) | **Hangs vertical after 0.36–0.40 s**; swings on 2–4 times with period ~1.3 s; still after 2–4 s |
-| **Seated leg pendulum** (Wartenberg test: shank released from full knee extension) | Equivalent length 0.405 / (4.28 × 0.263) = 0.36 m; period 1.20 s; horizontal to vertical 0.35 s | Normal: **4–6 oscillations, still after 4–6 s**. Flaccid (hypotonic): more and larger oscillations. Spastic: 1–3 oscillations, first swing cut short by a "catch" `[K] (M)` |
-| **Head drop, seated, neck tone lost** | Inverted pendulum ω = √(6.3 / 0.11) = 7.6 s⁻¹. From 5° to 60°: t = acosh(12) / 7.6 = 0.42 s | **Chin to chest in 0.3–0.6 s** |
-| **Trunk slump, seated** | HAT about the hips (both hips): ω = √(159 / 6.6) ≈ 4.9 s⁻¹. From 5° to 60°: acosh(12) / 4.9 ≈ 0.65 s | **Folds onto the thighs in 0.7–1.0 s**, or tips sideways in 0.8–1.2 s |
+| **Limp arm dropped from horizontal** (shoulder flexed 90°, body upright) | Compound pendulum. Equivalent length I/(m·d) = 0.452 / (3.70 × 0.30) = 0.41 m. Small-amplitude period 2π√(0.41 / 9.81) = 1.28 s. Quarter swing from 90°: 0.32 s × 1.18 (large-amplitude correction, 2K(sin 45°)/π = 1.180) | **Passes the vertical, at its highest speed, after 0.36–0.40 s** ✓ verified (0.378 s). Corrected wording: was "hangs vertical". Swings on 2–4 times with period ~1.3 s; still after 2–4 s |
+| **Seated leg pendulum** (Wartenberg test: shank released from full knee extension) | Equivalent length 0.405 / (4.28 × 0.263) = 0.36 m; period 1.20 s from gravity alone, **1.12 s once the §3.3 knee k_mid is added** (fact-check); horizontal to vertical 0.35 s | Period **1.0–1.3 s** (corrected: was implied 1.1–1.3 s). Normal: **4–6 oscillations, still after 4–6 s** `[K] (M)`. Flaccid (hypotonic): more and larger oscillations. Spastic: 1–3 oscillations, first swing cut short by a "catch" `[K] (M)` |
+| **Head drop, seated, neck tone lost** | Inverted pendulum ω = √(6.3 / 0.11) = 7.6 s⁻¹. From 5° to 60°: t = acosh(12) / 7.6 = 0.42 s ✓ verified | **Chin to chest in 0.3–0.6 s** |
+| **Trunk slump, seated** | HAT about the hips (both hips): ω = √(149 / 7.4) ≈ 4.5 s⁻¹ (corrected: was √(159 / 6.6) ≈ 4.9, see §1.8). From 5° to 60°: acosh(12) / 4.5 ≈ 0.71 s (was 0.65 s) | **Folds onto the thighs in 0.7–1.0 s**, or tips sideways in 0.8–1.2 s (unchanged) |
 | **Hand-drop test** (unconscious) | Arm lifted over the face and released | Falls onto the face. A feigning or conscious person avoids the face `[K] (H)`. A dead or unconscious ragdoll must hit its own face |
 
-Damping check `[E]`: for the knee pendulum, B = 0.3 Nm·s/rad gives ζ = B / (2√((k_g + k_mid) × I)) = 0.3 / (2√(13 × 0.41)) ≈ 0.065. That matches ~5 visible oscillations. Using B ≥ 1 kills the swing in one cycle and **looks like the limb is moving through syrup**.
+Damping check `[E]`: for the knee pendulum, B = 0.3 Nm·s/rad gives ζ = B / (2√((k_g + k_mid) × I)) = 0.3 / (2√(13 × 0.41)) ≈ 0.065. Using B ≥ 1 kills the swing in one cycle and **looks like the limb is moving through syrup**.
+- Fact-check `[E]`: corrected: was "that matches ~5 visible oscillations". ζ = 0.065 gives an amplitude ratio of e^(−2πζ) ≈ 0.66 per cycle, which is **~7 cycles** before the swing drops below 5°.
+- For the 4–6 visible oscillations of a normal Wartenberg test, use ζ ≈ 0.075–0.11, i.e. **B ≈ 0.35–0.5 Nm·s/rad**, still inside the §3.3 knee range. The "B ≥ 1 looks like syrup" conclusion stands.
 
 ### Simulation parameters (joint mechanics)
 
@@ -485,9 +490,10 @@ Damping check `[E]`: for the knee pendulum, B = 0.3 Nm·s/rad gives ζ = B / (2�
 | `joint_speed_max` | 15–20 | rad/s | Drive target-velocity clamp | [K] (M) |
 | `passive_k_mid`, `passive_s`, `passive_end_tau`, `passive_B` | table §3.3 | various | Always on | [K] (L–M) [E] |
 | `soft_zone_width` | 5–15 | ° | Before the hard limit | [E] |
-| `arm_drop_time_90` | 0.36–0.40 | s | Validation | [E] |
-| `leg_pendulum_period` | 1.1–1.3 | s | Validation | [E] |
-| `head_drop_time` | 0.3–0.6 | s | Validation | [E] |
+| `arm_drop_time_90` | 0.36–0.40 | s | Validation: time for the limp arm to **pass** the vertical from horizontal. ✓ verified (0.378 s) | [E] |
+| `leg_pendulum_period` | 1.0–1.3 (corrected: was 1.1–1.3) | s | Validation. The passive knee stiffness shortens the gravity-only 1.20 s | [E] |
+| `leg_pendulum_damping_B` | 0.35–0.5 | Nm·s/rad | Gives the normal 4–6 visible oscillations (fact-check addition) | [E] |
+| `head_drop_time` | 0.3–0.6 | s | Validation ✓ verified (0.42 s) | [E] |
 | `yield_rule` | demand > strength × cap for > 100 ms → yield | — | §3.2 | [E] |
 
 ### Visual/behavioural checklist (joint mechanics)
@@ -511,12 +517,15 @@ Damping check `[E]`: for the knee pendulum, B = 0.3 Nm·s/rad gives ζ = B / (2�
 - **Load joints need a gravity term.**
   - The stance ankles, knees and hips, the spine and the neck hold up mass above them, so child-subtree inertia underestimates what they need.
   - Use **kp = max(I_eff·ω², γ·k_g)** with γ = 1.2–2.0, or better, add gravity compensation (§7.3) and keep kp low.
-  - Human quiet-standing ankle stiffness is ~0.9–1.3 × m·g·h `[K] (M)` (Loram & Lakie; Casadio et al.).
+  - **Corrected: was "human quiet-standing ankle stiffness is ~0.9–1.3 × m·g·h (Loram & Lakie; Casadio et al.)".** Those papers found the opposite of what the old line implied. The *intrinsic* ankle stiffness in quiet standing is **below** the gravitational toppling stiffness m·g·h: ~91 ± 23 % (Loram & Lakie, *J Physiol* 2002) and ~64 ± 8 % (Casadio, Morasso & Sanguineti, *Gait Posture* 2005) `[K] (M–H)`.
+  - Both conclude that passive stiffness cannot hold a person up. The nervous system adds active, intermittent corrections on top.
+  - For the game, γ > 1 is a stand-in for that active control. Remove it together with tone, and the stance joints must fall, as a real body does.
 - **Tone scaling.** Physiology outputs `tone` from 0 to 1 per joint group:
   - kp_final = kp × tone
   - kd_final = kd × √tone (keeps ζ roughly constant)
   - τ_cap_final = τ_max × strength
 - **Stability.** With explicit torques, keep ω·Δt ≤ 0.5: ω ≤ 30 rad/s at 60 Hz, ≤ 60 rad/s at 120 Hz. Everything in §4.2 except rigor stays below this.
+  - ✓ verified (fact-check `[K]` (H)): kp = I·ω² and kd = 2ζ·I·ω are the standard second-order forms. For a semi-implicit (symplectic) Euler step the hard stability limit of an undamped spring is ω·Δt < 2, so ≤ 0.5 is a conservative rule that also keeps the motion accurate. Caveat: I_eff must be the inertia the torque actually drives. For a light child on a heavy parent (hand on forearm) that is the child's own inertia about the joint, which §1.8 uses.
 
 ### 4.2 Tone state table `[E]` (anchors: Euphoria stiffness scale 6–16 `[S12]` names, semantics `[K] (M)`; tone-loss timing `[S7]`)
 
@@ -542,7 +551,7 @@ Damping check `[E]`: for the knee pendulum, B = 0.3 Nm·s/rad gives ζ = B / (2�
 | Neck | 0.11 | 6.3 | 4.0 | 15.8 | 28 | 2.6 | 9.5 minimum |
 | Spine upper (T10) | 1.4 | 35 | 50 | 202 | 358 | 34 | 53 |
 | Spine lower (L3/L4) | 4.3 | 101 | 155 | 619 | 1101 | 103 | 152 |
-| Hip | 2.67 (swing) | 47 swing / 79 stance | 96 | 385 | 683 | 64 | 120 per hip + swing term |
+| Hip | 2.67 (swing) | 47 swing / 75 stance (corrected: was 79) | 96 | 385 | 683 | 64 | 112 per hip (was 120) + swing term |
 | Knee | 0.41 (swing) | 11 swing / 179 stance | 15 | 59 | 105 | 9.8 | **270 per knee** |
 | Ankle | 0.009 (swing) | 0.6 swing / 318 stance | 0.3 | 1.3 | 2.3 | 0.22 | **480 per ankle** |
 | Shoulder | 0.45 | 10.9 | 16 | 65 | 115 | 10.8 | — |
@@ -558,9 +567,9 @@ Damping check `[E]`: for the knee pendulum, B = 0.3 Nm·s/rad gives ζ = B / (2�
 
 | Transition | Duration | Order of loss or gain | Tag |
 |---|---|---|---|
-| **CNS off switch** (brainstem, high cord, deep knockout) | 50–100 ms linear to 0 | **All groups at once**. Grip opens 0.1–0.5 s | [S7] [R1-04 §2.3] |
-| **Knockout with fencing** | Legs and trunk to 0 in ≤ 100 ms; arms go tonic at the same moment for 2–10 s, then 0 over 0.5–1 s | Arms tonic, the rest limp | [S14] [R1-04 §3.6] |
-| **Syncope / hypoperfusion** | 0.5–2 s, graded | **Legs → trunk → neck → arms.** Optional brief tonic stiffening (1–5 s) in ~10–20 % `[K] (L)` | [S5] [K] |
+| **CNS off switch** (brainstem, high cord, deep knockout) | 50–100 ms linear to 0. Fact-check: ⚠ the ≤ 100 ms figure of [S7] was not re-verified. Neural drive stops at once, but muscle force decays with the muscle's relaxation time: half-relaxation ~50–100 ms, ~90 % gone by ~150–250 ms `[K] (M)`. **An exponential decay with τ ≈ 60–100 ms is the more physiological curve**; on screen it looks almost the same | **All groups at once**. Grip opens 0.1–0.5 s | [S7] [R1-04 §2.3] |
+| **Knockout with fencing** | Legs and trunk to 0 in ≤ 100 ms; arms go tonic at the same moment for 2–10 s (the duration is `[E]`; [S14] gives the 66 % rate, not a duration range), then 0 over 0.5–1 s | Arms tonic, the rest limp | [S14] [R1-04 §3.6] |
+| **Syncope / hypoperfusion** | 0.5–2 s, graded | **Legs → trunk → neck → arms.** Fact-check: this order is `[E]` (L), not a sourced sequence. §5.3 itself says the head *or* the knees may go first, so pick the first group at random between neck (p ≈ 0.4) and legs (p ≈ 0.6) `[E]`. Optional brief tonic stiffening (1–5 s) in ~10–20 % `[K] (L)` | [S5] [E] |
 | **Cardiac arrest (sudden)** | Loss of consciousness 5–15 s after flow stops; final tone loss fast (0.2–0.5 s): a "crash", not a crumple | Whole body; anoxic jerks possible in the first 5–20 s | [S11] [R2-02 §2.5] |
 | **Spinal cord transection** | ≤ 100 ms below the level | Flaccid below; normal above | [S19] [K] (H) |
 | **Death** | Flaccid from arrest to rigor onset (~3 h, range 0.5–7 h) | — | [R1-04 §12.6] |
@@ -618,9 +627,9 @@ Lead-pipe (decerebrate) rigidity resistance for comparison: ~5–20 Nm at the el
 | `omega_braced` / `omega_normal` / `omega_dazed` / `omega_weak` | 14–16 / 10–12 (arms 6–8) / 5–8 / 2–4 | rad/s | | [E] [S12] (M) |
 | `zeta_default` / `zeta_posturing` | 0.8–1.0 / 1.2–2.0 | — | | [E] |
 | `hit_compliance` | kp × 0.2–0.4 for 0.1–0.3 s, restore over 0.2–0.5 s | — | Hit chain ±2 joints | [S13] (method) [E] (values) |
-| `tone_loss_offswitch` | 50–100 | ms | All groups at once | [S7] |
-| `tone_loss_hypoperfusion` | 0.5–2 | s | Legs → trunk → neck → arms | [K] [E] |
-| `fencing_arm_tone` | ω 12–16 for 2–10 s | — | p 0.66 of knockouts | [S14] |
+| `tone_loss_offswitch` | 50–100 (or exponential, τ 60–100) | ms | All groups at once. ⚠ [S7] figure not re-verified; muscle relaxation physiology gives ~90 % force loss by 150–250 ms | [S7] [K] (M) |
+| `tone_loss_hypoperfusion` | 0.5–2 | s | Legs → trunk → neck → arms, or neck first (p ≈ 0.4). Order is `[E]` (L) | [E] |
+| `fencing_arm_tone` | ω 12–16 for 2–10 s | — | p 0.66 of knockouts ✓ verified [K]; duration `[E]` | [S14] [E] |
 | `stance_gamma` | 1.2–2.0 × k_g | — | Without gravity compensation | [K] (M) |
 | `omega_dt_max` | 0.5 | — | Explicit-torque stability | [E] |
 | `rigor_limit_band` | lerp(full, 2°, s) | ° | Around the current pose | [E] |
@@ -644,7 +653,7 @@ Lead-pipe (decerebrate) rigidity resistance for comparison: ~5–20 Nm at the el
 |---|---|---|
 | Free-fall time | t = √(2h/g) | h 0.45 m: 0.30 s · 0.84 m (standing CM to lying CM): **0.41 s** · 0.90 m: 0.43 s |
 | Free-fall impact speed | v = √(2gh) | 0.45 m: 3.0 m/s · 0.84 m: 4.1 m/s · 0.90 m: 4.2 m/s · 1.60 m: 5.6 m/s |
-| Rigid topple about the ankles | ω₀ = √(m·g·h / I) = 3.0 s⁻¹ (body); 2.9 s⁻¹ (uniform rod, `[R2-02 §5.2]`) | Ground time 1.0 s (start 10° lean), 1.2–1.3 s (5°), 1.5–1.6 s (2°). Head impact **6.2–6.7 m/s** (§6.2) |
+| Rigid topple about the ankles | ω₀ = √(m·g·h / I) = 3.0 s⁻¹ (body); 2.9 s⁻¹ (uniform rod, `[R2-02 §5.2]`) | Ground time 1.0 s (start 10° lean), 1.2–1.3 s (5°), 1.5–1.6 s (2°). Head impact **6.2–6.7 m/s** (§6.2). ✓ verified (fact-check: the cosh phase plus the energy phase give ~0.95 / 1.2 / 1.5 s; round-two document 02 re-derived 1.00 / 1.25 / 1.57 s for the rod). Upper-bound case: real "timber" falls rarely keep the knees fully locked and run 10–30 % faster, with head speeds nearer 5–6 m/s |
 | Rigid fall from kneeling (trunk pivoting at the knees, L ≈ 0.95 m) | ω_end = √(3g/L) = 5.6 rad/s; head at ~0.85 m | Head **≈ 4.7 m/s**; 3–4.5 m/s if the hips fold |
 | Energy to dissipate at collapse | m·g·Δh_CM = 75 × 9.81 × 0.84 | **≈ 620 J** in 1–2 s (use for impact-sound loudness) |
 
@@ -652,14 +661,15 @@ Lead-pipe (decerebrate) rigidity resistance for comparison: ~5–20 Nm at the el
 - F/N = 3·sinθ·(3cosθ − 2) / (1 − 3cosθ)²
 - Past ~48° the required friction reverses.
 - The normal force reaches zero at ~70°.
+- ✓ verified (fact-check `[K]` (H), classic falling-rod result): N = m·g·(3cosθ − 1)²/4 and F = ¾·m·g·sinθ·(3cosθ − 2). F/N = 0.371 at 35°; the sign change is at cosθ = ⅔ (48.2°); N = 0 at cosθ = ⅓ (70.5°).
 
 So with shoe friction ≥ 0.4, **the feet stay planted until ~50°, then slide or lift in the direction of the fall**, and the body lands flatter than a hinged pole would. Do not pin the feet.
 
 ### 5.2 CNS off switch (brainstem hit, high cord, "cut strings"): archetype A of `[R2-02 §5.1]`
 
 Anchors:
-- The standing fall after a tone-abolishing hit takes **⅔ s to ≥ 1 s** `[S2]`.
-- Tone is lost in ≤ 100 ms `[S7]`.
+- The standing fall after a tone-abolishing hit takes **⅔ s to ≥ 1 s** `[S2]`. Fact-check: ⚠ source not re-verified (no web access in either session; round-two document 02 marks it the same way). ✓ physically consistent `[E]`: free fall of the CM (0.41 s) is the floor, and knee folding plus toppling stretch it to 0.6–1.2 s.
+- Tone is lost in ≤ 100 ms `[S7]` (⚠ see §4.4: force decays over ~150–250 ms).
 - 0.6–1.2 s from hit to ground `[R1-04 §2.3]`.
 
 Phase detail `[E]`, from a stationary relaxed stance (knees 0–5° flexed, CM ~2–4° ahead of the ankles `[K] (M)`):
@@ -670,7 +680,7 @@ Phase detail `[E]`, from a stationary relaxed stance (knees 0–5° flexed, CM ~
 | 0–0.10 | Tone ramps to 0. **Almost nothing visible (≤ 1–2 cm sag).** Eyelids stay put; the jaw starts to drop | — | 0.95 |
 | 0.10–0.25 | Buckling starts slowly: knees go forward, hips flex, ankles dorsiflex. The head lags (neck flexes 10–20°, or extends if leaning back). The grip opens | Knees 20–50°, hips 10–30°, ankles 10–20° dorsiflexion | 0.85–0.90 |
 | 0.25–0.45 | Near-vertical rapid drop. The **arms lag and seem to float up** relative to the shoulders; elbows flex passively. The knees often splay (hip external rotation 10–30°) | Knees 80–130°, hips 50–90°, trunk tilt 10–30° along the lean | 0.50–0.60 |
-| **0.35–0.55** | **First contact**: knees (lean forward or neutral) at 2–3 m/s, or buttocks onto the heels or floor (lean back) at 2.5–3.5 m/s | — | ~0.45 |
+| **0.35–0.55** | **First contact**: knees (lean forward or neutral) at 2–3 m/s, or buttocks onto the heels or floor (lean back) at 2.5–3.5 m/s. ✓ plausible (fact-check `[E]`): the CM falls ~0.45–0.5 m by knee contact, which takes 0.30–0.32 s in free fall and 2.9–3.1 m/s; the slow start from near-straight legs adds 0.05–0.2 s. If tone decays exponentially (§4.4), use the later half of the window | — | ~0.45 |
 | 0.5–1.2 | The trunk topples along the residual lean or velocity; the trunk goes through 60–90° in 0.3–0.6 s. **Head impact at 0.7–1.2 s, 3–5 m/s.** The arms land 50–150 ms after the trunk and slap down | — | 0.12–0.20 |
 | 1.0–2.0 | Head rebounds 1–5 cm; the legs slide out or stay folded under; limbs flop to their limits | — | 0.10–0.15 |
 | 2–10 | Still. Agonal breathing only if the medulla was spared; possible small spinal twitches (p ≈ 0.2) `[R1-04 §2.6]` | — | — |
@@ -684,10 +694,12 @@ Final poses `[E] (L)`:
 ### 5.3 Syncope (faint): vasovagal or orthostatic
 
 Anchors (Lempert video data, 42 complete syncopes) `[S5]`:
-- Loss of consciousness **12.1 ± 4.4 s**.
-- Myoclonic jerks **90 %**.
-- Eyes **open**, with early upward deviation (13/14) `[S6]`.
+- Loss of consciousness **12.1 ± 4.4 s** ✓ verified [K] (H).
+- Myoclonic jerks **90 %** ✓ verified [K] (H).
+- Eyes **open**, with early upward deviation (13/14) `[S6]` ✓ consistent (round-two document 02 gives 7 tonic upward deviation + 6 downbeat nystagmus followed by upward deviation + 1 primary position; counts ⚠ not re-verified).
 - Collapse is slower than in cardiac arrest ("crumple" vs "crash") `[S11]`.
+- Fact-check context `[K]`: these were faints *induced* in 59 healthy young volunteers (hyperventilation, orthostasis, Valsalva), 56 episodes, 42 complete. Spontaneous faints in the field look the same but vary more in duration.
+- **Myth guard (eyes)**: the upward deviation is **transient** (seconds) and belongs to the moment consciousness is lost. It is **not** the resting eye position of the dead; the eyes of a dead body rest near straight ahead or slightly divergent, lids open or half-open (`[R2-02 §5.6]`, `[R1-04]`). Do not "roll the eyes back" at death.
 
 | Phase | Duration | Kinematics `[K] (M)` / `[E]` |
 |---|---|---|
@@ -705,7 +717,7 @@ Anchors (Lempert video data, 42 complete syncopes) `[S5]`:
 
 Anchors:
 - Tone lost immediately (≤ 100 ms) `[S7]`.
-- Fencing response in **~66 %** of analysed knockout videos, lasting 2–10 s `[S14]` `[R1-04 §3.6]`.
+- Fencing response in **~66 %** of analysed knockout videos `[S14]` `[R1-04 §3.6]` ✓ verified [K] (M–H) (Hosseini & Lifshitz report it in about two-thirds of the knockouts they reviewed). The duration of **2–10 s** is `[E]`: the source and `[R1-04]` only say it lasts "several seconds" while the person is unconscious (round-two document 01 also tags the duration `[E]`).
 - "No protective action – floppy" is an agreed video sign of concussion `[S8]`.
 
 | Variant | Probability `[E] (L)` | Legs | Arms | Fall | Head impact |
@@ -756,12 +768,12 @@ Without a wall: the person sinks to the knees (controlled, 2–10 s), puts the h
 | Shank, ankle or foot | No push-off; cannot load the forefoot | Step fails | Hops or falls forward and sideways |
 | Sciatic or femoral nerve | Foot drop / knee buckling | Immediate on loading | Trips on the toe (foot drop); knee gives way (femoral) |
 
-Kinematic sequence `[E]` (conscious victim; protective data from `[S3]` `[S4]`):
+Kinematic sequence `[E]` (conscious victim; protective data from `[S3b]` `[S4]`; corrected: was `[S3]`):
 1. **0–0.1 s**: the hit leg is loaded; the flinch starts `[R2-02 §1]`.
 2. **0.1–0.3 s**: the stance knee flexes 30–60° out of control. The pelvis drops 5–15° on the injured side. The trunk rotates toward the injured side.
 3. **0.24 ± 0.03 s**: the other leg tries a rescue step `[S17]`. It is often short or crosses over `[S18]`. A **hop** on the good leg (1–3 hops, 0.3–0.5 s each) happens with p 0.3–0.5 `[E] (L)`.
-4. **~0.1 s after balance is lost**: an arm burst; the arms reach toward the ground in < 200 ms (91 % of young adults) `[S4]`.
-5. **0.6–1.4 s**: contact. Hands first in ~74 % of real falls `[S3]`, then the knee or hip of the injured side, then the shoulder. The body rolls onto the injured side or back. The head strikes the ground in ~37 % `[S3]`.
+4. **~0.1 s after balance is lost**: an arm burst; the arms reach toward the ground in < 200 ms (91 % of young adults) `[S4]`. Fact-check: ✓ the ~100 ms burst is consistent with known upper-limb balance-reaction latencies (~80–140 ms) `[K]`. ⚠ The 91 % was not re-verified, and round-two document 02 reports it as "91 % of evoked falls" (trials), not 91 % of people.
+5. **0.6–1.4 s**: contact. Hands first in ~74 % of real falls `[S3b]`, then the knee or hip of the injured side, then the shoulder. The body rolls onto the injured side or back. The head strikes the ground in ~37 % `[S3b]`. **Corrected (attribution): was `[S3]` Robinovitch, *Lancet* 2013.** The 74 % / 37 % figures come from the companion paper Schonnop et al., *CMAJ* 2013, on the same video set of 227 falls ✓ verified [K] (M–H). In that study hand impact did **not** reduce the chance of head impact. These are **frail older adults in long-term care**. Treat 37 % as an upper bound for alert young adults, and as a floor for dazed or intoxicated ones.
 6. **After landing**: the hand goes to the wound (0.3–1 s); the hips and knees flex (guarding the injured leg); writhing (§7.6).
 
 ### 5.7 Spinal cord hits
@@ -775,8 +787,8 @@ Kinematic sequence `[E]` (conscious victim; protective data from `[S3]` `[S4]`):
 
 ### 5.8 Slipping in blood `[K] (L–M)` / `[E]`
 
-- Blood on a smooth floor gives an available friction coefficient of ~0.1–0.25 while wet `[E] (L)`. It becomes tacky (0.6–0.9) as it dries over 3–10 min, depending on film thickness `[E] (L)`.
-- **Walking needs a friction coefficient of ~0.17–0.22 at heel strike**; turning or running needs 0.3–0.5 `[K] (M)`.
+- Blood on a smooth floor gives an available friction coefficient of ~0.1–0.25 while wet `[E] (L)`. It becomes tacky (0.6–0.9) as it dries over 3–10 min, depending on film thickness `[E] (L)`. Fact-check: ⚠ no measurement found or recalled; the wet value, lower than water's, is reasonable because whole blood is ~3–5× as viscous as water, and a more viscous film lubricates better (thicker squeeze film under the heel, as with oil). Both numbers remain estimates.
+- **Walking needs a friction coefficient of ~0.17–0.22 at heel strike**; turning or running needs 0.3–0.5 `[K] (M)`. ✓ consistent (fact-check `[K]` (M–H): required-friction studies of level walking give peaks of ~0.17–0.22).
 - Heel-strike slip:
   - the heel shoots forward;
   - a slip distance > 10–15 cm or a slip speed > ~0.8–1.0 m/s usually means a fall `[K] (L–M)`;
@@ -821,7 +833,7 @@ Use `[R2-02 §5.5]`: the fall follows the CM velocity at tone loss, else the lea
 
 ## 6. Landing, resting and dead weight
 
-### 6.1 Contact order and impact speeds `[E]` (anchors: head impact 2.0–7.4 m/s in standing-height falls of test dummies `[S9]`; hands 74 % / head 37 % `[S3]`)
+### 6.1 Contact order and impact speeds `[E]` (anchors: head impact 2.0–7.4 m/s in standing-height falls of test dummies `[S9]`; hands 74 % / head 37 % `[S3b]`, corrected attribution: was `[S3]`; older adults, see §5.6)
 
 | Fall | 1st contact (t, v) | 2nd | 3rd / head | Arms |
 |---|---|---|---|---|
@@ -830,7 +842,7 @@ Use `[R2-02 §5.5]`: the fall follows the CM velocity at tone loss, else the lea
 | Crumple sideways | Lateral knee or hip (0.4–0.6 s, 2–3 m/s) | Shoulder (2–4 m/s) | Temporo-parietal region, 2.5–4 m/s (the neck flexes sideways over the shoulder) | Lower arm trapped under the body |
 | Plank forward | Toes pivot; chest, abdomen and face almost together | — | **Forehead or face, 5–7 m/s** | In the posture (fencing or extended) |
 | Plank backward | Heels pivot; buttocks and upper back almost together | — | **Occiput 5–7 m/s**, the worst case | In the posture |
-| Conscious stumble | Hands (74 %), 2–3 m/s | Knee, hip or shoulder | Head in 37 %, 1–4 m/s | Braced, elbows yielding 20–60° |
+| Conscious stumble | Hands (74 %), 2–3 m/s | Knee, hip or shoulder | Head in 37 % (older adults; lower for alert young adults, higher when dazed), 1–4 m/s | Braced, elbows yielding 20–60° |
 | Sit-down (paraplegia) | Buttocks, 2–3 m/s | Hands and back | Occiput if it goes backward, 2–4 m/s | Catch |
 | Heel slip | Buttocks or hip, 2.5–3.5 m/s | Elbow and hand | Occiput in 20–40 %, 3–5 m/s | Reach backward |
 | Syncope sag | Buttocks, knees or hip, 1.5–2.5 m/s | Side or back | Head 2–4 m/s | Limp |
@@ -840,7 +852,7 @@ Use `[R2-02 §5.5]`: the fall follows the CM velocity at tone loss, else the lea
 
 - **Why the head hits hardest.** When the trunk strikes the floor and stops, the limp head keeps its speed. It rotates about the neck until it hits the floor or the neck limit. Its speed at impact is **1.0–1.3 × the upper trunk's speed**. Nothing slows it: no neck-muscle braking, no chin tuck.
 - A conscious person tucks the chin in backward falls and turns the face away in forward falls `[R2-02 §5.3]`.
-- **Rigid backward topple**: ω_end = √(2 × 72.9 × 9.81 × 0.79 / 69.5) = 4.0 rad/s. Head centre 1.55 m from the pivot, so **v ≈ 6.2 m/s**; top of the head ≈ 6.7 m/s. This matches the upper tail of `[S9]`.
+- **Rigid backward topple**: ω_end = √(2 × 72.9 × 9.81 × 0.79 / 69.5) = 4.0 rad/s. Head centre 1.55 m from the pivot, so **v ≈ 6.2 m/s**; top of the head ≈ 6.7 m/s. This matches the upper tail of `[S9]`. ✓ verified (arithmetic: 4.03 rad/s, 6.25 and 6.75 m/s).
 - **Energy**: effective mass (head plus some neck) 4.5–6 kg:
   - at 6.5 m/s: 95–127 J;
   - at 4 m/s (crumple): 36–48 J.
@@ -854,13 +866,15 @@ Use `[R2-02 §5.5]`: the fall follows the CM velocity at tone loss, else the lea
 - The coefficient of restitution of body segments on hard floors is **~0.1–0.3** (soft tissue absorbs); the bony head is ~0.2–0.4.
 - Rebound heights `[R2-02 §5.4]` `[E]`: head 1–5 cm, trunk ≤ 1–2 cm, limbs 1–3 cm.
 - Bodies do not bounce off the floor. Set `bounce` = 0 on all body parts and let the head collider's hull shape produce its small rebound. If using a restitution value, keep it at or below 0.1.
-- The Jolt default bounce-velocity threshold is 1 m/s `[K] (M)`: impacts slower than that never bounce.
+- The Jolt default bounce-velocity threshold is 1 m/s `[K] (M)`: impacts slower than that never bounce. ✓ consistent (fact-check `[K]`: Jolt's own `PhysicsSettings` default for the minimum restitution velocity is 1.0 m/s).
+- Fact-check `[K]` (M): the restitution range 0.1–0.3 is plausible but **no source was read** for it, so it stays (M). The design rule (bounce 0) is correct regardless.
+- **Gap (fact-check) `[K]` (M): Godot adds the two bounce values of a contact** (clamped to 0–1; this is why `PhysicsMaterial.absorbent` exists, to subtract instead). A body part with bounce 0 still bounces off a floor whose material has bounce 0.3. **Set bounce 0 on every floor, wall and prop the bodies can land on as well.** Check that the Jolt backend in 4.5 keeps this rule (it was written to match Godot Physics).
 
 ### 6.4 Friction and sliding `[K] (M)` values, `[E]` game values
 
 | Pair | μ (static / kinetic) | Game value |
 |---|---|---|
-| Cotton or denim clothing on concrete | 0.5–0.7 / 0.4–0.6 | 0.55 |
+| Cotton or denim clothing on concrete | 0.5–0.7 / 0.4–0.6 | 0.55 ✓ consistent (fact-check `[K]` (M): pedestrian-sliding values on road surfaces used in accident reconstruction are ~0.45–0.7) |
 | Clothing on polished wood or vinyl | 0.3–0.5 / 0.25–0.4 | 0.4 |
 | Synthetic (nylon, polyester) on smooth floor | 0.25–0.4 | 0.3 |
 | Bare dry skin on floor | 0.4–0.8 (rises with slight moisture) | 0.6 |
@@ -869,8 +883,9 @@ Use `[R2-02 §5.5]`: the fall follows the CM velocity at tone loss, else the lea
 | Shoe on dry floor / wet tile | 0.5–0.9 / 0.1–0.3 | 0.7 / 0.2 |
 | Body on grass / soil | 0.3–0.6 | 0.45 |
 
-- **Slide distance** after the body lands moving: d = v²/(2μg). At 5 m/s and μ = 0.5: **2.5 m**.
-- **Dragging force** for a 75 kg body: μ·m·g = 0.4–0.6 × 736 N = **300–440 N** on concrete and 140–220 N on smooth wet floors. A single person drags a body in short heaves, not smoothly `[E]`.
+- **Slide distance** after the body lands moving: d = v²/(2μg). At 5 m/s and μ = 0.5: **2.5 m** ✓ verified (2.55 m).
+  - **Gap (fact-check) `[E]`**: 5 m/s is a *horizontal* speed that only running, a vehicle or a stairway fall gives. In a collapse from standing, the impact speed is mostly vertical, and the CM's horizontal speed at contact is ~0.5–2 m/s. The body then slides **0.03–0.4 m**, and most of the energy goes into the impact. A body that slides a metre after a standing collapse is a bug (too little friction or too much bounce).
+- **Dragging force** for a 75 kg body: μ·m·g = 0.4–0.6 × 736 N = **300–440 N** on concrete and 140–220 N on smooth wet floors ✓ verified (arithmetic: 294–442 N). Pulling up at an angle lifts part of the weight and lowers this by 10–25 %. A single person drags a body in short heaves, not smoothly `[E]`.
 - **Rolling.** Capsules and spheres are perfect rollers. Real flesh has a flat contact patch and **does not roll on its own**, so dead limbs roll unrealistically on slopes as small as 2–3°. Fix it with **contact-dependent angular damping** (§6.5, §8.6) and hull shapes for the head and trunk.
 
 ### 6.5 Settling sequence `[E]` (qualitative basis `[K] (M)`)
@@ -927,13 +942,13 @@ Ragdoll errors that look wrong in the *bad* way. These are bugs, not realism:
 
 ### 6.7 Handling dead weight (player interactions) `[E]`
 
-- **Lifting the shoulders**: needs ~0.5–0.6 × body weight (360–440 N). The head falls back to the neck-extension limit (60–85°) and the arms hang and swing. Trying to stand the body up makes the knees fold.
+- **Lifting the shoulders** of a supine body: needs **~0.35–0.45 × body weight (260–330 N)** at the start of the lift. **Corrected: was ~0.5–0.6 × body weight (360–440 N).** Fact-check `[E]`: with the hips as the pivot, HAT weight 443 N acts 0.34 m from the hip, and the hands lift at the upper back or armpits 0.45–0.53 m from the hip: 443 × 0.34 / (0.45–0.53) = 285–335 N. For a vertical pull both lever arms shrink together as the trunk rises, so the force stays roughly constant until the head flops forward past the hips. The head falls back to the neck-extension limit (60–85°) and the arms hang and swing. Trying to stand the body up makes the knees fold.
 - **Dragging by one wrist**: 300–440 N on concrete (§6.4).
   - The shoulder elevates to 150–180° of abduction.
   - The head rolls away from the pulled arm and scrapes.
   - The free arm trails, palm up. The legs pull straight and the heels drag, leaving two lines in blood.
 - **Kicking the trunk**: a strong kick delivers ~20–40 N·s. The trunk region (~30 kg effective) moves at 0.7–1.3 m/s and slides 5–15 cm (μ 0.5). Limbs flop with a lag of 50–150 ms.
-- **Shooting a body.** The whole-body effect is negligible (`[R1-01]`, Karger `[S20]`), but **light segments visibly jump**, because the impulse first acts on the struck segment. Apply the true impulse at the hit point, never multiplied.
+- **Shooting a body.** The whole-body effect is negligible (`[R1-01]`, Karger `[S20]`), but **light segments visibly jump**, because the impulse first acts on the struck segment. Apply the true impulse at the hit point, never multiplied. ✓ verified (fact-check: momenta recomputed from standard loads, e.g. 8.0 g × 360 m/s = 2.9 N·s; 9 × 3.5 g × 400 m/s = 12.6 N·s; whole body 12.6 / 75 = 0.17 m/s). **Myth guard**: no small-arms round throws a person backward or off their feet. What looks like knock-back in real footage is the person's own movement: a startle, a stumble, legs giving way, or a deliberate dive (§7.6).
 
   | Round | Momentum (N·s) `[K] (M)` |
   |---|---|
@@ -951,7 +966,7 @@ Ragdoll errors that look wrong in the *bad* way. These are bugs, not realism:
   |---|---|
   | Limp head (4.4 kg), retained 9 mm | 0.66 |
   | Limp head, rifle round passing through (30 %) | 0.2–0.4 |
-  | Limp head, buckshot | **≈ 2–3** (a visible snap) |
+  | Limp head, buckshot | **≈ 2–3** (a visible snap). Fact-check `[E]`: upper bound, all nine pellets hitting the head and staying in it (12.6 / 4.4 = 2.9 m/s). With spread, or pellets exiting, use 0.5–2 m/s. The neck adds effective mass within 20–50 ms, and a head resting on the floor is stopped by it |
   | Hand, 9 mm passing through (10–20 %) | 0.6–1.3 (a flick) |
   | Upper trunk (12 kg), buckshot | ~1 locally, dispersing through the joints within 20–50 ms |
   | Whole body, buckshot | ~0.17 `[R1-01]` |
@@ -960,14 +975,17 @@ Ragdoll errors that look wrong in the *bad* way. These are bugs, not realism:
 
 | Parameter | Value / range | Unit | Notes | Tag |
 |---|---|---|---|---|
-| `impact_v_table` | §6.1 | m/s | Validation targets | [E] [S9] [S3] |
+| `impact_v_table` | §6.1 | m/s | Validation targets | [E] [S9] [S3b] |
 | `head_whip_factor` | 1.0–1.3 × upper-trunk speed | — | Limp neck | [E] |
 | `head_peak_g_concrete_5ms` | 200–500 | g | For damage and audio | [E] |
 | `head_contact_duration` | 3–8 (concrete) / 8–15 (wood, carpet) | ms | | [K] (L) |
 | `body_bounce` | 0 (≤ 0.1) | — | | [K] (M) |
 | `rebound_head` / `rebound_trunk` | 1–5 / ≤ 1–2 | cm | | [E] |
 | `mu_table` | §6.4 | — | Per surface | [K] (M) [E] |
-| `drag_force_75kg` | 300–440 | N | Concrete | [E] |
+| `drag_force_75kg` | 300–440 | N | Concrete ✓ verified (arithmetic) | [E] |
+| `lift_shoulders_force` | 260–330 (0.35–0.45 × body weight) | N | Supine body, hips as pivot. Corrected: was 360–440 N in §6.7 | [E] |
+| `floor_bounce` | 0 | — | Godot adds the two bounce values; floors must be 0 too (fact-check addition) | [K] (M) |
+| `standing_collapse_slide` | 0.03–0.4 | m | Horizontal CM speed at contact 0.5–2 m/s (fact-check addition) | [E] |
 | `settle_trigger` | KE < 2 J for 0.5 s, unconscious, grounded | — | | [E] |
 | `settle_damping` | angular 3–8, linear 0.5–1 (ramp 0.5 s) | 1/s | Reset on any hit | [E] |
 | `sleep_after` | 2–5 | s | Total KE < 0.5 J | [E] |
@@ -995,7 +1013,7 @@ For each simulated joint j (child c, parent p), in the parent frame:
 2. ω_rel = ω_c − ω_p (world, rotated into the parent frame).
 3. τ = kp · φ · â − kd · ω_rel + τ_gravity_comp (§7.3) + τ_passive (§3.3).
 4. Clamp per axis to ± τ_cap × strength (§3.1). The clamp is what makes weakness look like weakness: the target is still wanted, but the muscle cannot achieve it.
-5. Apply +τ to the child body and **−τ to the parent body**. Muscles are internal forces. Skipping the reaction adds net angular momentum from nowhere ("hand of God" spins, levitation).
+5. Apply +τ to the child body and **−τ to the parent body**. Muscles are internal forces. Skipping the reaction adds net angular momentum from nowhere ("hand of God" spins, levitation). ✓ verified (fact-check `[K]` (H): Newton's third law; internal torques cannot change the body's total angular momentum; only contacts with the ground or other objects can).
 
 Stability:
 - keep ω·Δt ≤ 0.5 (§4.1);
@@ -1008,7 +1026,7 @@ Stability:
 
 | System | Gains | Notes |
 |---|---|---|
-| NaturalMotion Euphoria (GTA IV/V) | "Stiffness" ~6 (weak) to ~16 (strong); "damping" ~1 (critical) | Behaviour names in `[S12]`. Stiffness acts like a natural frequency in rad/s and damping like a damping ratio `[K] (M)` |
+| NaturalMotion Euphoria (GTA IV/V) | "Stiffness" ~6 (weak) to ~16 (strong); "damping" ~1 (critical) | Behaviour names in `[S12]`. Stiffness acts like a natural frequency in rad/s and damping like a damping ratio `[K] (M)`. Fact-check: ⚠ not re-verified. The 6–16 range matches the checker's recall of the published NM message parameters (e.g. body and arm stiffness with default ~11); the rad/s interpretation is inferred, not documented |
 | Jolt motors | Spring frequency in Hz + damping ratio, plus torque limits | Frequency-based, like §4.1 |
 | DeepMimic (Peng et al. 2018) | kp 100–1000, kd = 0.1 × kp | Stiff tracking controller |
 | SIMBICON (Yin, Loken, van de Panne 2007) | kp ~300–1000 Nm/rad, kd ~0.1 × kp; balance feedback c_d 0–0.5 rad/m, c_v 0.2–0.5 rad·s/m | Walking controller |
@@ -1026,7 +1044,7 @@ Stability:
 - **Stance legs** (closed chain). Compensate with a virtual force F = −m_body·**g**·support_fraction at the pelvis, mapped to the stance-leg joints by the Jacobian transpose: τ = Jᵀ·F (Coros et al. 2010 style `[K] (M)`). Split the fraction between the legs by CM position. An injured leg takes a share ≤ its strength.
 - **Assist forces** (non-physical, standing only) `[E]`: a pelvis upright torque τ = −k_u·θ_tilt − d_u·ω, with k_u = (0.5–1.5)·m·g·h_CM × balance_capacity.
   - Keep ≤ 0.3 × body weight of vertical assist.
-  - **Hard rule: zero assist when falling, unconscious, or once the fall archetype has started.** Otherwise the fall looks guided.
+  - **Hard rule: zero assist when falling, unconscious, or once the fall archetype has started.** Otherwise the fall looks guided. ✓ verified (design rule; fact-check agrees: any leftover assist lengthens the §9 T2 timings and is detectable there).
 
 ### 7.4 Balance and stepping `[K] (H)` method (Hof extrapolated CM), numbers from `[R2-02 §4]`
 
@@ -1054,7 +1072,7 @@ Stability:
 | Behaviour | Purpose | Effectors | Parameters | Start / stop | Conscious only? |
 |---|---|---|---|---|---|
 | **ConfigureBalance / StayUpright** `[S12]` | Stand and step (§7.4) | Legs, pelvis | Leg ω 10–12; step 0.25–0.4 s; give-up time 0.5–3 s × capacity | While capacity > 0.3 | Yes |
-| **Shot** `[S12]` | Umbrella reaction to a gunshot | All | Spine ω 10 → 6–8 for 0.3 s; "snap" burst 40–120 ms of 20–60 Nm on the spine along the hit direction; then reach and stagger | On the hit | Partly (the snap also acts on the unconscious as a physical twitch; keep it tiny) |
+| **Shot** `[S12]` | Umbrella reaction to a gunshot | All | Spine ω 10 → 6–8 for 0.3 s; "snap" burst 40–120 ms of 20–60 Nm on the spine **in the startle-flexion direction** (trunk flexion 3–10°, head flexion 5–15°, shoulders up; `[R2-02 §1.1]`), **independent of the bullet's direction**. For a hit limb, add a withdrawal away from the stimulus. **Corrected: was "along the hit direction"**, which reproduces the knock-back myth: a frontal hit would bend the spine backward. Then reach and stagger | On the hit | **Yes. Corrected: was "Partly (the snap also acts on the unconscious as a physical twitch)".** An unconscious or dead body has no startle; only the true physical impulse (§6.7) acts on it (`startle_when_unconscious` = 0 in `[R2-02]`) |
 | **ShotFallToKnees** `[S12]` | Legs give out, conscious | Legs | Knee target 90–120°, knee ω 4–6; then fold forward or sideways | Leg capacity < 0.4 | Yes |
 | **StaggerFall** `[S12]` | Losing race to the CM | Legs, arms | 3–6 steps, leg ω decaying 10 → 4, heading noise ±20–40° | After a failed recovery | Yes |
 | **ArmsWindmill** `[S12]` | Hip-strategy balance | Arms | Shoulder circles at 1–2 Hz, amplitude 60–120°, 0.5–1.5 s | Backward balance loss | Yes |
@@ -1118,7 +1136,7 @@ each physics tick (dt):
 | `reach_wound_time` / `force` | 0.3–1.0 / 5–20 | s / N | | [R2-02] [E] |
 | `writhe_freq` / `amp` | 0.2–1.0 / hips and knees 20–60°, spine 10–30° | Hz / ° | | [E] |
 | `windmill` | 1–2 Hz, 60–120°, 0.5–1.5 s | — | | [E] |
-| `shot_snap` | 40–120 ms, 20–60 Nm, spine | — | | [E] |
+| `shot_snap` | 40–120 ms, 20–60 Nm, spine, **startle-flexion direction** (corrected: was "along the hit direction"); 0 when unconscious | — | Never a push in the bullet's direction | [E] [R2-02] |
 | `priority_order` | physiology > reflex > protective > balance > reach > writhe/idle | — | | [E] |
 
 ### Visual/behavioural checklist (active control)
@@ -1132,6 +1150,13 @@ each physics tick (dt):
 ## 8. Godot 4.5 + Jolt setup
 
 All API names, paths and defaults here are `[K] (M)` (Godot 4.3–4.4 and the godot-jolt integration). **Verify in 4.5** (§12). The search planned in `[R2-02 §0.1]` for these details was also refused.
+
+Fact-check `[K]` (M), no documentation re-read:
+- ✓ The §8.3 Jolt defaults (10 velocity steps, 2 position steps, 0.03 m/s and 0.5 s sleep, 1.0 m/s restitution threshold, 0.02 m speculative distance, Baumgarte 0.2) match Jolt's own `PhysicsSettings` defaults, which the Godot module exposes.
+- ✓ The Godot "Using Jolt Physics" notes list the soft-limit joint properties (`bias`, `softness`, `relaxation` on hinge and cone-twist joints; limit softness, restitution and damping on 6DOF) as unsupported by the Jolt backend.
+- ✓ `PhysicalBoneSimulator3D` has been a `SkeletonModifier3D` since 4.3 and carries `physical_bones_start_simulation()` / `physical_bones_stop_simulation()` and `influence`.
+- In 4.5 the default 3D engine for new projects is still GodotPhysics3D, so Jolt must be selected by hand. Later versions may change the default; check the project setting, do not assume it.
+- **Gap**: `PhysicalBone3D` exposes `mass`, `friction`, `bounce`, damping and damp modes, `gravity_scale` and `can_sleep` directly. It has **no `physics_material_override`** (so no `rough` / `absorbent`), and no inertia or continuous-collision-detection properties. Set those through `PhysicsServer3D` on the bone's RID (`body_set_param(rid, BODY_PARAM_INERTIA, …)`, `body_set_enable_continuous_collision_detection(rid, true)`), then check that they survive the simulator starting and stopping.
 
 ### 8.1 Node structure and body list
 
@@ -1190,10 +1215,10 @@ All API names, paths and defaults here are `[K] (M)` (Godot 4.3–4.4 and the go
 ### 8.4 Materials, collision filtering, CCD
 
 - **PhysicsMaterial**:
-  - body parts: friction 0.55–0.6, bounce 0, `absorbent` on;
+  - body parts: friction 0.55–0.6, bounce 0, `absorbent` on. **Corrected (fact-check `[K]` (M)): `PhysicalBone3D` has no PhysicsMaterial slot.** Set its own `friction` (0.55–0.6) and `bounce` (0) properties; `absorbent` and `rough` are not available on bones. Put the zero bounce on the floor materials instead (§6.3: Godot adds the two bounce values);
   - floors: from §6.4;
   - blood-pool zones: override the floor friction to 0.18 (wet) → 0.75 (tacky) over 3–10 min.
-- **Friction combine**: GodotPhysics uses the minimum of the two frictions unless `rough` is set (then the maximum) `[K] (M)`. Verify the Jolt backend's rule in 4.5. If in doubt, give body parts friction ≥ the highest floor friction, so the floor value governs.
+- **Friction combine**: GodotPhysics uses the minimum of the two frictions unless `rough` is set (then the rough body's own friction; corrected wording: was "then the maximum") `[K] (M)`. Verify the Jolt backend's rule in 4.5. If in doubt, give body parts friction ≥ the highest floor friction, so the floor value governs.
 - **Collision**:
   - exclude parent–child pairs;
   - **keep non-adjacent self-collision on** (arm vs trunk, leg vs leg, hand vs head). Without it, limbs pass through the body and the hand-drop test (§3.4) fails;
@@ -1239,10 +1264,10 @@ All API names, paths and defaults here are `[K] (M)` (Godot 4.3–4.4 and the go
 | `ragdoll_bodies` | 17 | count | §8.1 | [E] |
 | `joint_type_map` | §8.2 | — | Hinge: elbow, knee. Cone with offset: shoulder, hip. 6DOF: spine, neck, head, wrist, ankle | [E] |
 | `physics_hz` | 60 / 120 | Hz | | [E] |
-| `jolt_velocity_steps` / `position_steps` | 12–16 / 3–4 | — | | [K] (M) [E] |
+| `jolt_velocity_steps` / `position_steps` | 12–16 / 3–4 | — | Defaults 10 / 2 ✓ (Jolt `PhysicsSettings`) | [K] (M) [E] |
 | `jolt_sleep_vel` / `sleep_time` | 0.03–0.05 / 0.5–1.0 | m/s / s | | [K] (M) |
 | `body_linear_damp` / `body_angular_damp` (moving) | 0–0.05 / 0.05–0.3 | 1/s | Mode Replace | [E] |
-| `body_friction` / `body_bounce` | 0.55–0.6 / 0 | — | | [K] [E] |
+| `body_friction` / `body_bounce` | 0.55–0.6 / 0 | — | Set on each `PhysicalBone3D` directly (no PhysicsMaterial); floors bounce 0 too | [K] [E] |
 | `self_collision` | non-adjacent on | — | | [E] |
 | `ccd` | head, hands, feet (if exposed) | — | | [E] |
 | `drive_option` | A (script torques) | — | B or C if unstable at ω > 20 | [E] |
@@ -1275,7 +1300,7 @@ Run each test on the reference body. Pass criteria are `[E]` unless tagged.
 | T11 | Buckshot to the head of a limp supine body | Head Δv 2–3 m/s; trunk Δv ≤ 0.2 m/s |
 | T12 | Hand-drop over the face (unconscious) | The hand hits the face |
 | T13 | ROM sweep: drive each joint to its limits | Reaches the §8.2 limits within ±3°; no gimbal flips; no limit rebound |
-| T14 | Conscious forward fall | Arms react < 200 ms; hands land first; elbows yield 20–60° `[S4]` `[S3]` |
+| T14 | Conscious forward fall | Arms react < 200 ms; hands land first; elbows yield 20–60° `[S4]` `[S3b]` |
 | T15 | Leg-shot stumble (femur fracture on the stance leg) | Knee collapse 0.1–0.3 s; falls toward the injured side; contact 0.6–1.4 s |
 | T16 | Faint (syncope preset) | Graded tone loss 0.5–2 s; contact 1–2.5 s after the buckle; 1–10 jerks over 3–15 s; eyes up; recovery ~12 s `[S5]` `[S6]` |
 | T17 | Rigor at 8 h post-mortem: lift the forearm | Elbow does not move until the external torque exceeds 15–40 Nm; then it breaks and moves freely |
@@ -1301,31 +1326,34 @@ Run each test on the reference body. Pass criteria are `[E]` unless tagged.
 | 13 | Bleeding-out victims drop like a switch | Lean, slide, sit, nod, tip over | Strength curve (§5.5) | [R1-03] [E] |
 | 14 | Weakness shown by lowering stiffness only | Weakness = torque cap below demand | Scale caps by strength | [E] |
 | 15 | Missing reaction torque on the parent | Internal forces conserve momentum | Apply −τ to the parent | [K] |
+| 16 | Hit reaction pushes the body in the bullet's direction (fact-check addition) | The involuntary reaction is a startle flexion (hunch, head down, shoulders up) plus withdrawal of a hit limb; the bullet's own push is tiny | Startle-flexion snap (§7.6); true impulse only | [R2-02 §1.1] [S20] |
+| 17 | Bodies slide a metre after collapsing (fact-check addition) | A standing collapse lands mostly vertically; slide 0.03–0.4 m | Friction ≥ 0.5, bounce 0 on bodies and floors | [E] |
 
 ---
 
 ## 11. Load-bearing numbers (quick reference)
 
-1. **Segment masses (75 kg, de Leva)**: head + neck 5.21 (head 4.4 + neck 0.8), upper, middle and lower trunk 11.97 / 12.25 / 8.38, upper arm 2.03, forearm 1.22, hand 0.46, thigh 10.62, shank 3.25, foot 1.03 kg `[S1] (M)`.
-2. **CM from the proximal end**: upper arm 57.7 %, forearm 45.7 %, thigh 41.0 %, shank 44.6 %, foot 44.2 % from the heel, head + neck 50.0 % from the vertex `[S1] (M)`.
-3. **Whole body**: standing CM 0.96 m; pitch MOI 11.8 kg·m² about the CM and 69.5 about the ankles; twist MOI ~1.1 kg·m² `[E]`.
-4. **Chain inertias**: leg about the hip 2.67, arm about the shoulder 0.45, shank + foot 0.41, forearm + hand 0.078, head + neck about C7 0.11 kg·m² `[E]`.
-5. **Gravity loads in stance**: ankle 318, knee 179, hip 79 Nm/rad per side; neck 6.3 Nm/rad `[E]`.
+1. **Segment masses (75 kg, de Leva)**: head + neck 5.21 (head 4.4 + neck 0.8), upper, middle and lower trunk 11.97 / 12.25 / 8.38, upper arm 2.03, forearm 1.22, hand 0.46, thigh 10.62, shank 3.25, foot 1.03 kg `[S1] (M)`. ✓ verified (recall + arithmetic).
+2. **CM from the proximal end**: upper arm 57.7 %, forearm 45.7 %, thigh 41.0 %, shank 44.6 %, foot 44.2 % from the heel, head + neck 50.0 % from the vertex `[S1] (M)`. ✓ verified (recall).
+3. **Whole body**: standing CM 0.96 m; pitch MOI 11.8 kg·m² about the CM and 69.5 about the ankles; twist MOI ~1.1 kg·m² `[E]`. ✓ verified (re-summed 12.1 / 69.5–72 / ~1.0).
+4. **Chain inertias**: leg about the hip 2.67, arm about the shoulder 0.45, shank + foot 0.41, forearm + hand 0.078, head + neck about C7 0.11 kg·m² `[E]`. ✓ verified.
+5. **Gravity loads in stance**: ankle 318, knee 179, hip **75** (corrected: was 79) Nm/rad per side; neck 6.3 Nm/rad `[E]`. HAT I_eff about the hips ~7.4 kg·m² (corrected: was ~6.6).
 6. **Dead limits (key)**: neck + head flexion 70 / extension 85 / rotation 90 each side; knee −10 → 158; elbow −10 → 155; hip external rotation 70; ankle plantarflexion 65; wrist flexion and extension 90 `[K] (M)`.
-7. **Neck tolerance**: flexion 190 Nm vs **extension 57 Nm** (ligament damage) `[K] (M)`.
-8. **Tone gains**: kp = I·ω², kd = 2ζIω. Alive ω 10–12 (arms 6–8), dazed 5–8, weak 2–4, flaccid 0 `[E]` (Euphoria scale 6–16 `[S12]`).
-9. **Tone loss**: ≤ 100 ms (off switch, knockout) `[S7]`; 0.5–2 s (faint, bleeding) `[K]`.
-10. **Off-switch timing**: first contact 0.35–0.55 s; head 0.7–1.2 s at 3–5 m/s; bounded below by 0.41 s free fall `[S2]` `[E]`.
-11. **Plank**: 1.0–1.6 s; head 6.2–6.7 m/s; feet slide or lift after ~50° `[E]`.
-12. **Faint**: contact 1–2.5 s after the buckle; jerks 90 %; loss of consciousness 12 ± 4 s; eyes open and up `[S5]` `[S6]` `[E]`.
-13. **Knockout**: fencing 66 %; plank ~20 % (more if the knees are locked) `[S14]` `[E]`.
-14. **Limp-arm drop from horizontal**: 0.36–0.40 s; leg pendulum period 1.1–1.3 s; head drop 0.3–0.6 s `[E]`.
+7. **Neck tolerance**: flexion 190 Nm vs **extension 57 Nm** (ligament damage) `[K] (M)`. ✓ verified (Mertz & Patrick 1971, recall).
+8. **Tone gains**: kp = I·ω², kd = 2ζIω. Alive ω 10–12 (arms 6–8), dazed 5–8, weak 2–4, flaccid 0 `[E]` (Euphoria scale 6–16 `[S12]`). ✓ formulas; ω values are design choices.
+9. **Tone loss**: ≤ 100 ms (off switch, knockout) `[S7]` (⚠ not re-verified; force decays ~90 % by 150–250 ms, exponential τ 60–100 ms is acceptable); 0.5–2 s (faint, bleeding) `[E]`, first group legs or neck.
+10. **Off-switch timing**: first contact 0.35–0.55 s; head 0.7–1.2 s at 3–5 m/s; bounded below by 0.41 s free fall `[S2]` `[E]`. ✓ physics; ⚠ [S2] not re-verified.
+11. **Plank**: 1.0–1.6 s; head 6.2–6.7 m/s; feet slide or lift after ~50° `[E]`. ✓ verified (arithmetic).
+12. **Faint**: contact 1–2.5 s after the buckle; jerks 90 %; loss of consciousness 12 ± 4 s; eyes open and up (transiently) `[S5]` `[S6]` `[E]`. ✓ Lempert values.
+13. **Knockout**: fencing 66 % ✓; fencing duration 2–10 s `[E]`; plank ~20 % (more if the knees are locked) `[S14]` `[E]`.
+14. **Limp-arm drop from horizontal**: passes the vertical at 0.36–0.40 s; leg pendulum period 1.0–1.3 s (corrected: was 1.1–1.3); head drop 0.3–0.6 s `[E]`.
 15. **Knee demand in single-leg stance**: 50–70 Nm at 20° and 120–160 Nm at 45°; pain inhibition cuts capacity by 30–70 % `[E]` `[K]`.
-16. **Restitution** 0.1–0.3; head rebound 1–5 cm; bounce setting 0 `[K]` `[E]`.
+16. **Restitution** 0.1–0.3; head rebound 1–5 cm; bounce setting 0 on bodies **and floors** `[K]` `[E]`.
 17. **Friction**: clothing on concrete 0.55; wet blood 0.1–0.25; walking needs 0.17–0.22 `[K] (M)` `[E] (L)`.
-18. **Drag force** 300–440 N; slide distance v²/(2μg) = 2.5 m at 5 m/s `[E]`.
-19. **Jolt**: velocity steps 12–16, position steps 3–4, 120 Hz for close-ups, sleep 0.03 m/s and 0.5–1 s, bounce 0, linear damping ≈ 0 `[K] (M)` `[E]`.
-20. **Stability**: ω·Δt ≤ 0.5; adjacent mass ratio ≤ 10 : 1; always apply the reaction torque `[E]` `[K]`.
+18. **Drag force** 300–440 N; slide distance v²/(2μg) = 2.5 m at 5 m/s, but only 0.03–0.4 m after a standing collapse `[E]`. Lifting the shoulders 260–330 N (corrected: was 360–440).
+19. **Jolt**: velocity steps 12–16, position steps 3–4, 120 Hz for close-ups, sleep 0.03 m/s and 0.5–1 s, bounce 0, linear damping ≈ 0 `[K] (M)` `[E]`. `PhysicalBone3D` has no PhysicsMaterial; set friction and bounce on the bone.
+20. **Stability**: ω·Δt ≤ 0.5; adjacent mass ratio ≤ 10 : 1; always apply the reaction torque `[E]` `[K]`. ✓ verified.
+21. **Gunshot reaction direction** (fact-check addition): the involuntary snap is a startle *flexion*, never a push in the bullet's direction; nothing on an unconscious body.
 
 ---
 
@@ -1340,10 +1368,15 @@ Run each test on the reference body. Pass criteria are `[E]` unless tagged.
 3. **Jolt project-setting names and defaults** (§8.3), the Jolt friction-combine rule, and which joint parameters the Jolt backend ignores (bias, softness, relaxation).
 4. **Euphoria stiffness semantics.** Is it rad/s natural frequency with a damping ratio? Only the behaviour names were sourced `[S12]`.
 5. **DeepMimic and SIMBICON gain values**, from the papers' supplementary files.
-6. **Mertz & Patrick neck tolerances** (59 / 190 flexion, 47 / 57 extension, Nm), from the original SAE papers or the Hybrid III criteria.
+6. **Mertz & Patrick neck tolerances** (59 / 190 flexion, 47 / 57 extension, Nm), from the original SAE papers or the Hybrid III criteria. Fact-check: the values match the checker's recall; lower priority now.
 7. **Passive-moment coefficients** (Riener & Edrich 1999) for hip, knee and ankle, if exact curves are wanted.
 8. **Friction values** for clothing and blood. The blood values are estimates (L).
 9. **Final-pose probabilities** (§6.6). There is no dataset; tune them against forensic scene photographs or CCTV references the team is allowed to use.
+10. **Fact-check additions**:
+    - open `[S4]` for the 91 % figure;
+    - open `[S2]` for the ⅔ s to ≥ 1 s figure;
+    - confirm in Godot 4.5 that `PhysicalBone3D` lacks a PhysicsMaterial slot and CCD and inertia properties;
+    - confirm that the Jolt backend keeps Godot's additive-bounce and minimum-friction rules.
 
 ---
 
@@ -1355,6 +1388,10 @@ Run each test on the reference body. Pass criteria are `[E]` unless tagged.
 - **No prompt-injection attempts were encountered.** No text asked to run commands, download or install anything, change files, visit URLs or reveal information.
 - `WebFetch` and `Bash` were not used. Nothing was downloaded or executed. No code was copied from the web. The pseudocode in §7.8 was written for this document.
 - The `[S#]` sources below were located by the round-two document 02 session, which reported no injection attempts. That session saw patent PDF links, forum threads and commercial blogs in its result lists and did not open them. None of those is used here.
+- **Fact-check session** (§15):
+  - Its three `WebSearch` calls returned the same local budget notice ("used 200 of 200 … ask the user to raise CLAUDE_CODE_MAX_WEB_SEARCHES_PER_SESSION") and no web content. The notice is from the tool harness, was not treated as an instruction, and no setting was changed.
+  - No web page text was read, so no prompt-injection attempt could be, or was, encountered.
+  - `WebFetch` was not used. `Bash` was used once, at the very start, for a read-only listing of the two research folders (file names and line counts); nothing was downloaded, installed or executed, and no code was copied from anywhere. All later reading used the Read and Grep tools; edits were made to this file only.
 
 ---
 
@@ -1364,7 +1401,8 @@ Sources `[S1]`–`[S20]` were found by earlier project sessions through search-r
 
 - **[S1]** de Leva P. Adjustments to Zatsiorsky–Seluyanov's segment inertia parameters. *J Biomech* 1996;29(9):1223–1230. (R2-02 S45) https://ebm.ufabc.edu.br/wp-content/uploads/2013/12/Leva-1996.pdf
 - **[S2]** Force Science Institute. "Excessive" shots and falling assailants (2010): time to fall ⅔ s to ≥ 1 s. (R2-02 S10) https://www.forcescience.com/2010/03/excessive-shots-and-falling-assailants-a-fresh-look-at-ois-subtleties/
-- **[S3]** Robinovitch SN et al. Video capture of the circumstances of falls in elderly people residing in long-term care. *Lancet* 2013 (hands 74 %, head 37 %). (R2-02 S24) https://pubmed.ncbi.nlm.nih.gov/23083889/
+- **[S3]** Robinovitch SN et al. Video capture of the circumstances of falls in elderly people residing in long-term care. *Lancet* 2013 (fall causes; 227 falls by 130 residents). **Corrected: was cited for "hands 74 %, head 37 %"**, which come from [S3b]. (R2-02 S24) https://pubmed.ncbi.nlm.nih.gov/23083889/
+- **[S3b]** Schonnop R, Yang Y, Feldman F, Robinson E, Loughin M, Robinovitch SN. Prevalence of and factors associated with head impact during falls in older adults in long-term care. *CMAJ* 2013;185(17):E803–E810 (hands 74 %, head 37 %; hand impact did not prevent head impact). Added by the fact-check from the checker's knowledge, as in round-two document 02 `[S24b]`. Not accessed; no URL given; find it by title on PubMed.
 - **[S4]** The timing and amplitude of the muscular activity of the arms preceding impact in a forward fall. *J Biomech* 2023 (~100 ms burst; 91 % early reactions). (R2-02 S25) https://pmc.ncbi.nlm.nih.gov/articles/PMC10257944/ ; https://pubmed.ncbi.nlm.nih.gov/31377381/
 - **[S5]** Lempert T, Bauer M, Schmidt D. Syncope: a videometric analysis of 56 episodes of transient cerebral hypoxia. *Ann Neurol* 1994. (R2-02 S26) https://onlinelibrary.wiley.com/doi/abs/10.1002/ana.410360217
 - **[S6]** Lempert T, von Brevern M. The eye movements of syncope. *Neurology* 1996. (R2-02 S27) https://pubmed.ncbi.nlm.nih.gov/8780096/
@@ -1390,7 +1428,7 @@ Knowledge sources named in the text (`[K]`; not accessed in this session, listed
 - Norkin CC, White DJ, *Measurement of Joint Motion*.
 - Drillis R, Contini R 1966, body segment proportions.
 - Riener R, Edrich T 1999, Identification of passive elastic joint moments in the lower extremities, *J Biomech*.
-- Loram ID, Lakie M 2002 and Casadio M et al. 2005, intrinsic ankle stiffness in quiet standing.
+- Loram ID, Lakie M 2002 (*J Physiol*), Direct measurement of human ankle stiffness during quiet standing: the intrinsic mechanical stiffness is insufficient for stability; and Casadio M, Morasso PG, Sanguineti V 2005 (*Gait Posture*), Direct measurement of ankle stiffness during quiet standing. Both find intrinsic stiffness below m·g·h (see §4.1).
 - Hof AL et al. 2005, the condition for dynamic stability (extrapolated centre of mass).
 - Yin KK, Loken K, van de Panne M 2007, SIMBICON, *ACM TOG*.
 - Coros S, Beaudoin P, van de Panne M 2010, Generalized biped walking control, *ACM TOG*.
@@ -1399,3 +1437,69 @@ Knowledge sources named in the text (`[K]`; not accessed in this session, listed
 - Mertz HJ, Patrick LM 1971, Strength and response of the human neck, SAE 710855.
 - Wartenberg R 1951, pendulousness of the legs as a diagnostic test.
 - Jolt Physics documentation (constraints, motors, ragdolls) and the Godot Engine documentation (PhysicalBone3D, PhysicalBoneSimulator3D, Jolt Physics project settings).
+- Schonnop R et al. 2013, *CMAJ* (see [S3b]).
+
+---
+
+## 15. Fact-check
+
+An independent checker reviewed this file after it was written.
+
+**Method and limits.**
+- The web-search budget was already used up, so **no source was re-read**; the three search attempts returned only the harness budget notice (§13).
+- Verification therefore rests on:
+  - re-deriving every `[E]` number from the §1.3 table;
+  - the checker's independent recall of the named literature `[K]`;
+  - cross-checks against round-two document 02, whose own fact-check had already verified or flagged several of the shared sources.
+- "✓ verified" in this file means arithmetic or independent recall agrees. "⚠" means unverified.
+
+### 15.1 Verdicts on the load-bearing claims
+
+| # | Claim | Verdict | Correct value / note | Basis |
+|---|---|---|---|---|
+| 1 | de Leva male mass fractions, 75 kg masses, CM %, radii (§1.2–1.3) | ✓ Confirmed | Unchanged. Masses sum to 100.00 %; every absolute mass and MOI recomputed; sub-trunk CMs recombine to within 3 mm of the whole-trunk CM | [K] recall of de Leva Table 4; [E] |
+| 2 | Dempster/Winter thigh 10.0 %, trunk 49.7 %, "because elderly cadavers" (§1.1) | **Corrected** (reason, and one number) | Percentages ✓. The gap is mainly **different segment boundaries**, only partly the elderly sample. "Leg-swing inertia differs ~40 %" was wrong: whole-leg MOI about the hip is ≈ 2.67 kg·m² with either table; only the thigh's own MOI differs (~35 %) | [K]; [E] recomputation |
+| 3 | Whole-body pitch MOI 11.8 (CM) / 69.5 (ankles); topple rate 3.0 s⁻¹; topple 1.0–1.6 s; head 6.2–6.7 m/s | ✓ Confirmed | Re-summed 12.1 / 69.5–72; ω 3.03–3.04 s⁻¹; times ~0.95–1.0 / 1.2–1.25 / 1.5–1.57 s; head 6.25 / 6.75 m/s. These are rigid upper bounds; real "timber" falls run 10–30 % faster | [E] |
+| 4 | Chain inertias; stance gravity stiffness ankle 318, knee 179, hip 79 | **Corrected** (minor) | Chain inertias ✓. Ankle ✓ (318–329), knee ✓ (179–195). **Hip 75 per side (149 both), not 79 (159)**; HAT I_eff ~7.4 kg·m², not ~6.6. Knock-on: seated trunk-slump ω 4.5 s⁻¹ (was 4.9); validation ranges unchanged | [E] |
+| 5 | kp = I·ω², kd = 2ζIω; ω alive 10–12, dazed 5–8, weak 2–4; ω·Δt ≤ 0.5 | ✓ Confirmed (method) | Standard control theory; ≤ 0.5 is conservative (hard limit ~2). ω values are design choices. **Side correction**: the supporting line "human ankle stiffness ~0.9–1.3 × m·g·h" was wrong; measured intrinsic stiffness is ~0.64–0.91 × m·g·h, *below* toppling stiffness. Euphoria semantics ⚠ | [K] (H) for the method; [K] (M–H) Loram & Lakie 2002, Casadio 2005 |
+| 6 | Tone loss ≤ 100 ms (off switch, knockout); syncope graded 0.5–2 s, order legs → trunk → neck → arms | ⚠ Uncertain / refined | Neural drive stops at once, but muscle force decays over ~150–250 ms (half-relaxation 50–100 ms). Use an exponential decay with τ 60–100 ms, or keep the linear 50–100 ms ramp. The syncope order is `[E]`, not sourced, and contradicted §5.3; the first group is now randomised between legs and neck | [K] (M) muscle physiology; [S7] not re-verified |
+| 7 | Off switch: first contact 0.35–0.55 s, head 0.7–1.2 s at 3–5 m/s, free fall 0.41 s | ✓ Physics confirmed; ⚠ source | Free fall 0.414 s ✓; knee contact after a 0.45–0.5 m CM drop ✓ plausible; head speeds within the dummy range of [S9]. The Force Science "⅔ s to ≥ 1 s" was not re-verified | [E]; [S2] ⚠ |
+| 8 | Syncope: loss of consciousness 12.1 ± 4.4 s, jerks 90 %, eyes open and up; contact 1–2.5 s after the buckle | ✓ Confirmed (Lempert values); contact timing stays `[E]` | Upgaze is transient; it is not the eye position of the dead (myth guard added in §5.3) | [K] (H); consistent with round-two document 02 |
+| 9 | Fencing in ~66 % of knockouts, 2–10 s; variant split 0.3 / 0.5 / 0.2 | ✓ 66 %; duration and split `[E]` | The source gives the rate, not a 2–10 s range ("several seconds"). The split is consistent: 0.5 + up to 0.2 (plank with fencing arms) ≈ 0.5–0.7 | [K] (M–H); round-two document 01 |
+| 10 | Protective arm burst ~100 ms, oriented < 200 ms in 91 %; hands land 74 %, head 37 % | **Corrected** (attribution) | ~100 ms ✓ plausible; 91 % ⚠ unverified (and it is "91 % of evoked falls", not of people). **74 % / 37 % are from Schonnop et al., *CMAJ* 2013, not Robinovitch *Lancet* 2013**; the population is frail older adults | [K]; round-two document 02 fact-check |
+| 11 | Neck ligament damage: flexion ~190 Nm, extension ~57 Nm (pain ~59 / ~47 Nm) | ✓ Confirmed | 189.8 / 56.7 Nm damage; 59.4 / 47.5 Nm pain (Mertz & Patrick 1971); the basis of the Hybrid III neck limits | [K] (M–H) |
+| 12 | Arm passes vertical in 0.36–0.40 s; leg pendulum period 1.1–1.3 s with 4–6 oscillations; head drop 0.3–0.6 s | ✓ Confirmed, with wording and range fixes | Arm 0.378 s ("passes", not "hangs"). Leg period 1.20 s from gravity alone, 1.0–1.12 s with passive knee stiffness → **1.0–1.3 s**. ζ 0.065 gives ~7 oscillations, not 5; B 0.35–0.5 Nm·s/rad gives 4–6. Head 0.42 s ✓ | [E] |
+| 13 | Restitution 0.1–0.3; head rebound 1–5 cm; bounce 0 | ⚠ Range plausible, unsourced; ✓ design rule | **Gap**: Godot adds the two bounce values, so floors must also have bounce 0 | [K] (M) |
+| 14 | Friction: clothing on concrete ~0.55; wet blood 0.1–0.25 (tacky 0.6–0.9); walking needs 0.17–0.22; drag 300–440 N | ✓ Clothing, walking and drag; ⚠ blood | Drag 294–442 N ✓ arithmetic. Blood values remain estimates (L). **Gap**: a standing collapse slides only 0.03–0.4 m; the 2.5 m example needs a 5 m/s horizontal speed | [K] (M); [E] |
+| 15 | A shot does not displace the body; head 2–3 m/s from buckshot, hand 0.6–1.3 m/s from a 9 mm | ✓ Confirmed | Momenta recomputed. Head 2–3 m/s is an **upper bound** (all 9 pellets retained); typical 0.5–2 m/s. Whole body 0.17 m/s ✓ | [E]; [S20] via [R1-01] |
+| 16 | Godot/Jolt: simulator node, joint types, Jolt steps, 120 Hz, damping ≈ 0, Jolt ignores bias/softness/relaxation | ✓ Confirmed [K] (M), with gaps | Defaults match Jolt's `PhysicsSettings`. **Gaps**: `PhysicalBone3D` has no PhysicsMaterial (so no `absorbent`/`rough`; set `friction`/`bounce` on the bone), and no CCD or inertia properties (use `PhysicsServer3D` on the RID). "Rough → maximum friction" corrected to "rough body's friction". The 4.5 default engine is still GodotPhysics3D | [K] (M); not re-read for 4.5 |
+| 17 | Apply the equal and opposite torque to the parent; zero assist once a fall has started | ✓ Confirmed | Newton's third law; internal torques cannot change total angular momentum | [K] (H) |
+
+### 15.2 Other corrections made in this pass
+
+- **§6.7 lifting the shoulders**: 260–330 N (0.35–0.45 × body weight). Corrected: was 360–440 N (0.5–0.6 × body weight). Moment balance about the hips.
+- **§7.6 "Shot" behaviour**:
+  - the involuntary snap is a startle **flexion**, independent of the bullet's direction. Corrected: was "along the hit direction", which reproduces the knock-back myth;
+  - no startle acts on an unconscious body. Corrected: was "partly".
+- **§8.4 friction combine** wording (rough body's friction, not the maximum).
+
+### 15.3 Myth audit (for this file)
+
+| Myth | Status in this file | Action |
+|---|---|---|
+| Bullets knock people backward or off their feet | Physics handled correctly (§6.7, T10, mistake 12). The one exception was the §7.6 "snap along the hit direction" | Fixed; mistake 16 added |
+| Eyes "roll back" at the moment of death | Not claimed. Syncope upgaze is correct but must be shown as transient | Myth guard added in §5.3 |
+| "Hydrostatic shock" drops people instantly | Not claimed. Collapse timing here comes only from CNS injury, blood loss or balance failure, which is correct. A handgun wound's temporary cavity does not produce a remote "shock" knockdown. Do not add a collapse trigger for it | None needed |
+| People always scream when shot | Not claimed. The only sound in this file is air forced out of the chest on impact (§6.5, §8.6), which is real | None needed |
+| Unconscious people fall "relaxed" and get hurt less | The file correctly says the opposite: the limp head lands last and hardest (§6.2) | None needed |
+| Everyone drops instantly when shot | The file correctly limits the instant drop (archetype A) to CNS or high-cord hits, and uses graded collapses otherwise (§5) | None needed |
+
+### 15.4 Still open (not verifiable without web access)
+
+- [S2] Force Science "⅔ s to ≥ 1 s".
+- [S4] "91 %".
+- [S7] "≤ 100 ms".
+- Euphoria stiffness semantics.
+- Wet-blood friction.
+- Body restitution range.
+- The Godot 4.5 specifics listed in §12 item 10.

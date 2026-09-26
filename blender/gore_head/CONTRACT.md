@@ -71,6 +71,7 @@ evaluated verts; others as needed).
 | `GH_Tongue` | tongue in mouth cavity |
 | `GH_MouthCavity` | inner mouth lining (may be part of `GH_Skin` instead, then omit) |
 | `GH_Controls` | empty with global gore sliders (created by `gh_common.ensure_controls()`) |
+| `GH_Hair` | eyebrows and eyelashes (hair curves, material `GH_Hair`), grown by `build.py`; a small GN modifier (`GH_HairOnSkin`) keeps them on the wounded skin and removes strands whose root is burned or torn open |
 
 `build_anatomy()` returns a dict keyed by the object names above.
 
@@ -104,7 +105,8 @@ removes all of them.
 ### Modifiers
 
 A geometry-nodes modifier named **`GH_Gore`** on every damageable layer
-(`GH_Skin`, `GH_Muscle`, `GH_Skull`, `GH_Jaw`, `GH_Brain`, eyes, teeth). All use one
+(`GH_Skin`, `GH_Muscle`, `GH_Skull`, `GH_Jaw`, `GH_Brain`, eyes, teeth, gums, and
+`GH_MouthCavity` / `GH_Tongue` as soft tissue so wounds through the mouth open them too). All use one
 shared node group (plus internal subgroups) with a layer setting, so wounds in
 nested layers line up: the skin hole is widest, muscle smaller, skull smaller
 still and only opened when depth is enough, brain gets a crater. Hole edges are

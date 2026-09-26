@@ -41,6 +41,7 @@ Audience: physiology, animation/ragdoll, eye/shader, VFX (fluids) and audio engi
   - Most values are `[K]`: the author's knowledge of the clinical and forensic literature. Where a specific paper is recalled, it is named with a key `[K; M#]`. The list is in §16.2. **None of the `M#` items was opened in this session.**
   - `[E]` values are engineering estimates. The reasoning is shown.
 - **Before any `[K]` or `[E]` number becomes a hard-coded constant, QA should check it.** The priority list is in §15.
+- **An independent fact-check was made after writing (§18).** Marks in the text: **✓ verified** (matches the checker's knowledge at (H)/(M), or arithmetic re-derived); **⚠ not re-verified** (plausible, no independent confirmation possible); **corrected: was X** (value, attribution or wording changed). The fact-check also had no web access (search budget exhausted; `WebFetch` egress-blocked).
 - Where sources or memory disagree, the range is given with a **game default** and the reason for choosing it.
 
 ### 0.2 Tags
@@ -180,10 +181,10 @@ When consciousness is lost, pharyngeal and tongue tone falls. The base of the to
 
 | Setting | Share with gasping | Tag |
 |---|---|---|
-| Out-of-hospital cardiac arrest, reported at the time of the call | ~40 % | [K; M1] (M) |
-| Out-of-hospital cardiac arrest, observed by paramedics | ~33 % overall; higher (~40–55 %) when witnessed and reached early; falls steeply with minutes since collapse (< ~10–20 % by ~8–10 min) | [K; M2] (M–L) |
-| Witnessed arrests with gasping survive roughly three times as often (a marker of recent collapse and a working medulla) | — | [K; M2] (L) |
-| Medulla destroyed; brain death; C1–C3 cord section | 0 (true airflow gasps impossible) | [K] (H) |
+| Out-of-hospital cardiac arrest, reported at the time of the call | ~40 % ✓ verified [K] (M) | [K; M1] (M) |
+| Out-of-hospital cardiac arrest, observed by paramedics | ~33 % overall; higher (~40–55 %) when witnessed and reached early; falls steeply with minutes since collapse (< ~10–20 % by ~8–10 min) ✓ verified (overall ~33 % and the decline with time) [K] (M); ⚠ the exact early/late percentages not re-verified | [K; M2] (M–L) |
+| Witnessed arrests with gasping survive roughly three times as often (a marker of recent collapse and a working medulla) | — ✓ verified (direction and approximate size) [K] (M) | [K; M2] (L) |
+| Medulla destroyed; brain death; C1–C3 cord section | 0 (true airflow gasps impossible) ✓ verified: the gasp generator is in the medulla (pre-Bötzinger region); gasping survives a pontomedullary transection in animals but not removal of the medulla [K] (H) | [K] (H) |
 
 **Timing and rhythm** (heart stopped; composite `[K] (M)` with game schedule `[E]`):
 
@@ -197,7 +198,9 @@ When consciousness is lost, pharyngeal and tongue tone falls. The base of the to
 | Amplitude decay | Each gasp ~0.8–0.9 of the previous one | ×0.85 | [E] |
 | "False last breath" (one or two more gasps after an apparently final one, following a 30–120 s silence) | Common in bedside descriptions | p = 0.3 | [K] (M), [E] |
 
-With the default schedule (first gasp at 30 s, intervals 10, 13, 17, 22, 29, 37, 48, 62 s), eight gasps span about 4 min after arrest `[E]`.
+With the default schedule (first gasp at 30 s, then intervals 10, 13, 17, 22, 29, 37, 48 s), the eighth gasp falls at ~3.4 min after arrest `[E]` (corrected: was "intervals … 62 s, eight gasps span about 4 min"; see the note below).
+
+Fact-check note on this schedule: **⚠ not re-verified** as a whole. It is an engineering schedule with no single human source. Arithmetic re-derived: 10 × 1.3ⁿ gives intervals 10, 13, 16.9, 22.0, 28.6, 37.1, 48.3 (then 62.7) s. Eight gasps starting at 30 s fall at 30, 40, 53, 70, 92, 120, 158 and **206 s (~3.4 min)**; the 62 s interval only follows the eighth gasp. Corrected: was "eight gasps span about 4 min"; the eight-gasp default ends at ~3.4 min, and the false last breath (if rolled) lands at ~5–6.5 min in the §11.2 pseudocode. Qualitatively consistent with the resuscitation literature `[K]` (M): gasping often starts within the first minute (bystanders frequently see it immediately after the collapse), the rate is low (a few per minute), and it fades over minutes. The false-last-breath p 0.3 is a pure `[E]`.
 
 **What one gasp looks like** `[K] (M)`, magnitudes `[E]`:
 - **Inspiration is short and violent: 0.2–0.6 s** (a normal breath takes 1–1.5 s).
@@ -234,7 +237,7 @@ Slow dying (raised intracranial pressure, slow bleeding with compensation, tampo
 | Peripheral cyanosis, cold mottled extremities | §8 | ~1 h | [K; M13] (L–M) |
 | Loss of the radial pulse | For a "check pulse" interaction | ~1 h | [K; M13] (L–M) |
 | Periods of apnoea, Cheyne–Stokes breathing | Pauses of 10–60 s that lengthen | Hours | [K; M14] (M), `[R1-04 §5.5]` |
-| Highly specific signs of death within ~3 days | **Pupils not reacting to light; reduced response to voice and to visual stimuli; inability to close the eyelids; drooping of the nasolabial folds; hyperextension of the neck; grunting of the vocal cords on expiration; upper-GI bleeding** | Days to hours | [K; M14] (M) |
+| Highly specific signs of death within ~3 days | **Pupils not reacting to light; reduced response to voice and to visual stimuli; inability to close the eyelids; drooping of the nasolabial folds; hyperextension of the neck; grunting of the vocal cords on expiration; upper-GI bleeding** ✓ verified: these are the eight bedside signs of Hui et al. 2015 (*Cancer*), each with specificity > 95 % for death within 3 days; individually they have low sensitivity (most dying patients show only some of them) `[K]` (H) | Days to hours | [K; M14] (M) |
 
 - Typical order: death rattle → mandibular breathing → cyanosis of the extremities → loss of the radial pulse → death `[K; M13] (L–M)`.
 - **The final breaths**: shallow, widely spaced (30–120 s apart), often with the jaw movement above. They may end with one or two gasps. The "false last breath" (§2.2) is common `[K] (M)`.
@@ -243,8 +246,8 @@ Slow dying (raised intracranial pressure, slow bleeding with compensation, tampo
 ### 2.4 Death rattle
 
 - **Mechanism**: saliva and bronchial secretions pool in the hypopharynx and upper airway of a person who can no longer swallow or cough. They oscillate with each breath `[K] (H)`.
-- **Prevalence**: 23–92 % of dying patients across studies, typically ~35–50 % `[K; M15] (M)`.
-- **Time from onset to death**: median ~16–23 h; most die within ~48 h of onset `[K; M13, M15] (L–M)`.
+- **Prevalence**: 23–92 % of dying patients across studies, typically ~35–50 % `[K; M15] (M)`. ✓ verified: the 23–92 % range is the one quoted in the death-rattle reviews (including the Cochrane review of Wee & Hillier) `[K]` (M–H).
+- **Time from onset to death**: median ~16–23 h; most die within ~48 h of onset `[K; M13, M15] (L–M)`. ✓ verified (order of magnitude: many hours, not minutes) `[K]` (M); ⚠ the exact medians (16 h in Wildiers & Menten, 23 h in Morita) were not re-opened.
 - **Conditions**: reduced consciousness **plus** loss of swallowing **plus** enough time for secretions to accumulate. Unstimulated saliva flow is **~0.3–0.5 mL/min** `[K] (H)`, so 30–60 min without swallowing puts **10–30 mL** in the pharynx, enough to be audible `[E]`.
 - **Sound**: a coarse, wet rattle or gurgle on inspiration and expiration, in time with breathing, **audible across a room (3–5 m)** `[K] (M)`; 40–60 dBA at 1 m `[E]`.
 - **In the game**: no death rattle in deaths faster than ~30 min. Blood, froth and vomit produce a similar gurgle immediately (§2.5–2.7), and that is a different sound source.
@@ -260,7 +263,7 @@ Slow dying (raised intracranial pressure, slow bleeding with compensation, tampo
 | Mandible fractured on both sides ("flail" front jaw) | Tongue loses its anterior anchor and falls back | Immediate | — | **Airway obstruction when supine**; the conscious victim holds the jaw forward and leans forward | [K] (H) |
 | Skull-base fracture | Blood (± CSF) into the nasopharynx | Seconds–minutes | Low–moderate | Blood from the nose and down the throat; gurgling in the unconscious | [K] (M) |
 | Larynx / trachea wound | Blood directly into the airway | Immediate | High | **Coughing, spraying blood, bubbling at the wound, hoarse or absent voice**; subcutaneous emphysema | `[R2-02 §3]` [K] (H) |
-| Cut throat (fatal cases) | Open airway + vessels | Immediate | High | Causes of death in a 74-case autopsy series: **exsanguination ~50 %, aspiration of blood 36.5 %**, air embolism in a minority | [S19] (M) |
+| Cut throat (fatal cases) | Open airway + vessels | Immediate | High | Causes of death in a 74-case autopsy series: **exsanguination ~50 %, aspiration of blood 36.5 %**, air embolism in a minority (~13.5 %, the remainder) ⚠ not re-verified (source not reachable). Arithmetic consistent: 27/74 = 36.5 %, 37/74 = 50 %. A fatal-case series over-represents deep cuts through the airway | [S19] (M) |
 | Lung wound | Haemoptysis | 5–60 s | Streaks to tens of mL per cough; hilar injury 100+ mL | **Bright red frothy blood**, wet breathing `[R1-04 §9.3]` | [K] (H) |
 | Tongue, mouth | Direct | Immediate | Low–moderate | Mouthfuls of blood, drooling | [K] (H) |
 
@@ -298,8 +301,9 @@ Slow dying (raised intracranial pressure, slow bleeding with compensation, tampo
 - Severe brain injury can cause a sympathetic storm that floods the lungs with protein-rich fluid (**neurogenic pulmonary oedema**) `[K; M31] (M)`.
 - **Look**: **white-to-pink froth at the nostrils and mouth**, fine bubbles, wet crackling breathing, falling oxygen saturation. After wiping, it **reforms within minutes** `[K] (M)`.
 - **Onset**: minutes to hours after the injury (an early form within ~0.5–4 h; a delayed form at 12–72 h) `[K; M31] (L–M)`.
-- **Frequency**: common in fatal head injuries. It is reported in roughly a third of people dying at the scene and about half of those dying within days in one autopsy series, and in a smaller share of severe head injuries seen clinically `[K; M31] (L)`.
-- **Game value** `[E]`: p = 0.2–0.3 for a massive head injury that survives > 15 min; onset 15 min – 4 h (default 45 min); visible foam 5–50 mL.
+- **Frequency**: common in fatal head injuries. It is reported in roughly a third of people dying at the scene and about half of those dying within days in one autopsy series, and in a smaller share of severe head injuries seen clinically `[K; M31] (L)`. ✓ verified (M): the checker independently recalls the Rogers 1995 autopsy figures as ~32 % (died at the scene) and ~50 % (died within ~96 h). Clinical series of severe TBI report NPE in roughly 20 % or more `[K]` (L–M).
+- **Important distinction (fact-check addition)**: the autopsy figures measure **lung oedema** (heavy, wet lungs), not **visible froth at the lips**. Froth appears only when the oedema is severe enough to fill the airways and the body keeps breathing or is moved. So the game's p is the chance of *visible* froth, and it must stay **below** the autopsy rate `[K]` (M).
+- **Game value** `[E]`: p = 0.2–0.3 for a massive head injury that survives > 15 min; onset 15 min – 4 h (default 45 min); visible foam 5–50 mL. ⚠ not re-verified (no source measures visible froth). Kept as the upper end; a default of **0.2** is recommended so that visible froth stays well under the 32–50 % autopsy oedema rate. Onset ✓ consistent with the "early form" (minutes to a few hours) in the NPE reviews `[K]` (M).
 - Other causes of froth (for the pattern library): seizures (saliva, §4), drowning (a white "foam cone"), lung wounds (§2.5) `[K] (H)`.
 
 ### 2.7 Vomiting, regurgitation and aspiration
@@ -308,7 +312,7 @@ Slow dying (raised intracranial pressure, slow bleeding with compensation, tampo
 
 | Situation | P(vomits) | Window | Tag |
 |---|---|---|---|
-| Adult concussion | ~0.07; ~0.28 with a skull fracture | Minutes to hours | [S15] (L) |
+| Adult head injury seen in hospital (mostly minor) (corrected: was "Adult concussion") | ~0.07; ~0.28 with a skull fracture. ⚠ not re-verified: the paper behind the search summary was never identified. Plausible `[K]` (L–M): vomiting appears in roughly 5–10 % of adults in the large minor-head-injury rule-derivation cohorts, and it is associated with fracture and intracranial lesions | Minutes to hours | [S15] (L) |
 | Acute cerebellar injury | 0.6–0.8 in the first hour, repeated | Minutes | `[R2-01 §12]` (M) |
 | Abdominal, groin or head injury (conscious) | 0.2–0.4 | 1–10 min | `[R2-02 §9.5]` [K] |
 | Raised ICP (EDH, swelling) | Repeated vomiting is a warning sign | Lucid interval | [S15] `[R2-01 §15]` (M) |
@@ -359,10 +363,10 @@ Slow dying (raised intracranial pressure, slow bleeding with compensation, tampo
 |---|---|---|---|---|
 | `stertor_p_supine` / `obstruct_p_supine` | 0.6–0.8 / 0.1–0.2 | p | Unconscious, head neutral. Lateral 0.1–0.2 / < 0.05 | [K] (M), [E] |
 | `obstruct_to_cyanosis` / `obstruct_to_arrest` | 60–120 / 240–480 | s | Complete obstruction, normal Hb | [K] (M) |
-| `gasp_p` | VF / destroyed heart 0.45; exsanguination to PEA 0.4; asphyxia with a beating heart 0.7; medulla destroyed 0 | p | Multiply by `exp(−t_onset / 300 s)` if the roll happens late | [K; M1, M2] (M), [E] |
-| `gasp_first` | 5–120 (default 30) | s after `t_arr` | | [K] (L–M) |
-| `gasp_interval0` / `gasp_interval_growth` | 6–20 (default 10) / ×1.15–1.5 (default 1.3) | s / × | | [K] (M), [E] |
-| `gasp_count` / `gasp_phase_max` | 3–30 (default 8) / 60–300 (tail 600) | — / s | Stop at whichever comes first | [K] (M), [E] |
+| `gasp_p` | VF / destroyed heart 0.45; exsanguination to PEA 0.4; asphyxia with a beating heart 0.7; medulla destroyed 0 | p | Multiply by `exp(−t_onset / 300 s)` if the roll happens late. ✓ verified: base rates sit in the 33–40 % (early-witnessed higher) literature band; medulla = 0 ✓ (H). Asphyxia 0.7 is `[E]`; filmed hangings showed respiratory movements in essentially every case `[K; M10]`, so 0.7–0.9 is defensible | [K; M1, M2] (M), [E] |
+| `gasp_first` | 5–120 (default 30) | s after `t_arr` | ⚠ not re-verified (`[E]` on `[K]`); a default of 15–30 s is equally defensible, since bystanders often see gasping right after the collapse | [K] (L–M) |
+| `gasp_interval0` / `gasp_interval_growth` | 6–20 (default 10) / ×1.15–1.5 (default 1.3) | s / × | ⚠ not re-verified; engineering schedule | [K] (M), [E] |
+| `gasp_count` / `gasp_phase_max` | 3–30 (default 8) / 60–300 (tail 600) | — / s | Stop at whichever comes first. Default 8 gasps end at ~206 s (arithmetic re-derived) | [K] (M), [E] |
 | `gasp_amp_decay` | 0.85 | × per gasp | | [E] |
 | `gasp_insp_time` / `gasp_exp_time` | 0.2–0.6 / 1–3 | s | | [K] (M) |
 | `gasp_neck_ext` / `gasp_jaw_open` / `gasp_shoulder_lift` | 5–30° / 15–35 mm / 5–15 mm | ° / mm | Additive pose on each gasp | [E] |
@@ -376,7 +380,7 @@ Slow dying (raised intracranial pressure, slow bleeding with compensation, tampo
 | `cough_exit_speed` / `cough_spatter_range` | 5–20 (default 10) / 0.5–1.5 | m/s / m | | [K; M35] (L), [E] |
 | `spit_interval` / `spit_volume` | 5–30 / 1–10 | s / mL | Conscious with oral blood | [E] |
 | `aspiration_hypoxia_vol` / `aspiration_asphyxia_vol` | 1–3 / ~10 | mL/kg | Drowning-derived analogy | [E] (L) |
-| `npe_p` / `npe_onset` | 0.2–0.3 / 15–240 (default 45) | p / min | Massive head injury surviving > 15 min | [K; M31] (L), [E] |
+| `npe_p` / `npe_onset` | 0.2–0.3 (default 0.2) / 15–240 (default 45) | p / min | Massive head injury surviving > 15 min. p = *visible* froth, which must stay below the autopsy oedema rate (32–50 %) ⚠ | [K; M31] (L), [E] |
 | `vomit_p` | see §2.7 table | p | | [S15] [K] [E] |
 | `retch_cycles` / `retch_rate` / `expulsion_time` / `vomit_volume` | 2–10 / ~1 per s / 0.5–2 s / 50–500 mL | — | | [K] (M), [E] |
 | `aspiration_p_per_vomit` | supine 0.5–0.8; lateral 0.1–0.2 | p | Unconscious | [E] on [K] |
@@ -402,22 +406,24 @@ The best human video data come from healthy volunteers made to faint (`[S1]`, 56
 
 | Feature | Value | Tag |
 |---|---|---|
-| Duration of unconsciousness (faint that recovers) | **12.1 ± 4.4 s** | [S1] (M–H) |
-| Myoclonic jerks | **~90 %** of induced syncopes. Multifocal, arrhythmic, proximal and distal, sometimes generalised | [S1] (M) |
-| Myoclonus in tilt-table (reflex) syncope | Seen in a smaller share (roughly half) in another video-EEG series | [K; M7] (L) |
-| Other movements: head turning, oral automatisms (lip smacking, chewing), righting movements (trying to sit up) | **79 %** | [S1] (M) |
-| Eyes | **Open** throughout. Early **tonic upward deviation**: 7 of 14; downbeat nystagmus then upward deviation: 6 of 14; primary position: 1 of 14 | [S1] [S2] (M) |
+| Study population (fact-check addition) | 59 healthy young volunteers; faints induced by hyperventilation + orthostasis + Valsalva; 56 episodes, of which **42 were complete syncopes** (the percentages below refer to these). An induced faint in a young healthy person is a model; spontaneous and haemorrhagic faints may differ | [S1] `[K]` (M) |
+| Duration of unconsciousness (faint that recovers) | **12.1 ± 4.4 s** ✓ verified `[K]` (H) | [S1] (M–H) |
+| Myoclonic jerks | **~90 %** of induced syncopes. Multifocal, arrhythmic, proximal and distal, sometimes generalised ✓ verified `[K]` (H) | [S1] (M) |
+| Myoclonus in tilt-table (reflex) syncope | Seen in a smaller share (roughly half) in another video-EEG series. ⚠ not re-verified | [K; M7] (L) |
+| Other movements: head turning, oral automatisms (lip smacking, chewing), righting movements (trying to sit up) | **79 %** ✓ verified `[K]` (M) | [S1] (M) |
+| Eyes | **Open** throughout ✓ verified `[K]` (H). Early **tonic upward deviation**: 7 of 14; downbeat nystagmus then upward deviation: 6 of 14; primary position: 1 of 14. ⚠ counts not re-verified; the qualitative result (upward deviation predominates, sometimes after a few beats of downbeat nystagmus; transient) ✓ `[K]` (M) | [S1] [S2] (M) |
+| Experiences reported afterwards (fact-check addition) | Visual and/or auditory hallucinations (grey haze, lights, dream-like scenes, roaring noise) in roughly 60 % of the induced faints. Useful for survivor dialogue ("I saw…/heard…") | [S1] `[K]` (M) |
 | Snoring breathing | In the deepest part of the faint (flat EEG phase) | [K; M7] (L) |
-| Number of jerks | Usually **1–10** (median ~3–5), rarely up to ~20. No rhythm and **no slowing pattern** | [K; M8, M9] (L–M) |
+| Number of jerks | Usually **1–10** (median ~3–5), rarely up to ~20. No rhythm and **no slowing pattern**. ✓ verified (M): consistent with Shmuely et al. 2018 (video analysis of tilt-induced syncope vs convulsive seizures: syncope has few irregular jerks, seizures have many jerks with progressively lengthening intervals). Attribution corrected: was `[K; M8, M9]`; Sheldon 2002 [M9] is a questionnaire study of historical criteria and contains no jerk counts | [K; M8] (L–M) |
 | Duration of jerking | Usually < 10–15 s; not > 30 s | [K; M8] (L–M) |
 | Brief tonic stiffening (opisthotonus, arms extended) | p ~0.1–0.2, 1–5 s, usually with longer asystole | [K; M5] (L) |
 | Moaning or groaning | p ~0.2–0.4 | [K] (L) |
 | Urinary incontinence | p ~0.1–0.25 (does not distinguish syncope from seizure) | [K] (L–M) |
-| Tongue biting | Rare (p < 0.05); the **tip** rather than the side | [K; M26] (M) |
+| Tongue biting | Rare (p < 0.05); the **tip** rather than the side ✓ verified `[K]` (M) | [K; M26] (M) |
 | Prodrome (vasovagal or orthostatic) | 10–60 s: light-headedness, warmth, nausea, sweating, **pallor**, greying/tunnelling vision, muffled hearing, yawning | `[R2-02 §2.3]` [K] (M) |
 | Prodrome (cardiac: arrhythmia, destroyed heart) | None, or 3–7 s of greying before the collapse | [K] (M) |
 | Recovery when lying flat | Oriented within ~30 s, no prolonged confusion. Pale, sweaty, nauseated, tired. Flushing if the heart restarts after asystole | [K] (M) |
-| G-force loss of consciousness (pilots) | Absolute incapacitation ~12 s, then ~12 s of relative incapacitation (confused). Brief myoclonic convulsions in ~70 %, a few seconds long | [K; M36] (L–M) |
+| G-force loss of consciousness (pilots) | Absolute incapacitation ~12 s, then ~12 s of relative incapacitation (confused). Brief myoclonic convulsions in ~70 %, a few seconds long. ✓ consistent with the checker's recall of Whinnery & Whinnery 1990 (absolute ~12 s, relative ~15 s, convulsions in ~70 % lasting ~4 s) `[K]` (M) | [K; M36] (L–M) |
 
 **The fall**: flaccid crumple (archetype A, `[R2-02 §5.1]`), or a brief stiff topple if a tonic spasm comes first. No protective arms `[S20]`. Cardiac collapse is "crashing", with no self-protection; exertional collapse is a slower crumple `[S21]`.
 
@@ -425,12 +431,18 @@ The best human video data come from healthy volunteers made to faint (`[S1]`, 56
 
 Composite of neck-cuff experiments (`[K; M4]`), induced asystole and VF (`[K; M5, M6]`), G-LOC (`[K; M36]`) and syncope video (`[S1]` `[S2]`). Timing from `t_arr`. For a destroyed heart, add **2–5 s** of residual arterial pressure, which shifts LOC to **8–15 s** `[R1-04 §8]`.
 
+Fact-check notes on this timing:
+- ✓ verified `[K]` (H): Rossen, Kabat & Anderson (1943) stopped cerebral flow with a neck cuff at ~600 mmHg; consciousness was lost after **~5–10 s, mean ~6.8 s**. Some secondary summaries give the upper end as ~11 s.
+- ✓ consistent `[K]` (M): after a sudden cardiac standstill, arterial pressure decays over several seconds rather than instantly, so LOC comes a little later than with the cuff. Tilt-table and device-testing observations put it at roughly 6–12 s for asystole or VF. The 8–15 s window for a destroyed heart is a reasonable game range (and matches the FBI "10–15 s" doctrine, §10.2).
+- **Gap added: posture** `[K]` (M). Upright, the brain sits ~25–35 cm above the heart and loses that hydrostatic head of pressure first, so LOC comes at the **short** end (6–10 s). Supine, the same arrest is tolerated a few seconds longer (**10–15 s**, occasionally up to ~20 s). Game rule `[E]`: `loc_time × 0.85` upright, `× 1.2` supine or already fallen.
+- EEG silence: `[R1-04]` gives 10–40 s (typically ~20 s); the 15–30 s used below lies inside that band ✓ consistent.
+
 | t after `t_arr` | What happens | Eyes | Breathing / sound | P and notes | Tag |
 |---|---|---|---|---|---|
 | 0–4 s | Nothing visible (oxygen reserve) | Normal | Normal | — | [K] (H) |
 | 3–7 s | Vision greys and tunnels (retina first), light-headed. Voluntary action continues | Unfocused | May gasp "I…" | Conscious | [K] (M) |
-| **5–10 s (mean ~7)** | **Loss of consciousness** when flow stops completely. **Destroyed heart: 8–15 s** | Fixed stare, **open** | Breathing continues | Tone gone within ~0.1 s; fall 0.6–1.2 s | [K; M4] (H), [S22] |
-| LOC + 0–3 s | Collapse | **Upward deviation 10–30°** begins (p 0.6–0.9); downbeat nystagmus first in ~40 % of those | Air forced out on impact | | [S2] (M) |
+| **5–10 s (mean ~7)** | **Loss of consciousness** when flow stops completely. **Destroyed heart: 8–15 s** ✓ verified (cuff 5–10 s, mean 6.8 s; heart 8–15 s consistent) | Fixed stare, **open** | Breathing continues | Tone gone within ~0.1 s; fall 0.6–1.2 s. Posture: upright short end, supine long end | [K; M4] (H), [S22] |
+| LOC + 0–3 s | Collapse | **Upward deviation 10–30°** begins (p 0.6–0.9); downbeat nystagmus first in ~40 % of those. **Transient**: this is the "eyes rolled up" of the collapse, not of death | Air forced out on impact | | [S2] (M) |
 | LOC + 1–15 s | **Myoclonic jerks** (p 0.6–0.9): 1–10 irregular jerks of arms, legs, face and head. Head turning, lip smacking, chewing (p ~0.5–0.8) | Up, then drifting back to the midline over 10–60 s | Snoring possible | | [S1] (M) |
 | 15–30 s | **Anoxic tonic spasm** (p 0.15–0.3): arms extended and turned in, legs extended, back and neck arched, jaw clenched, 5–20 s. Then limp. EEG flat by ~15–30 s | Mid-position, lids start to droop | Breathing turns irregular, then stops or becomes gasping | Incontinence p 0.1–0.2 | [K; M5, M6] (L–M) |
 | 20–60 s | **First agonal gasp** (p ~0.45) | No movement relative to the head | Snort / gurgle | §2.2 | [K; M1, M2] (M) |
@@ -446,14 +458,16 @@ When blood flow to the brain stops but the heart keeps beating (neck compression
 
 | Event | Time after onset of cerebral ischaemia | Tag |
 |---|---|---|
-| Loss of consciousness | ~10–15 s | [K; M10] (L–M) |
-| Generalised convulsions (jerking) | ~15 s | [K; M10] (L–M) |
-| Decerebrate rigidity (extension) | ~20 s | [K; M10] (L–M) |
-| Deep rhythmic abdominal respiratory movements | Start ~15–20 s | [K; M10] (L–M) |
-| Decorticate rigidity (flexion) | ~40 s | [K; M10] (L–M) |
-| Loss of muscle tone | ~1–1.5 min | [K; M10] (L–M) |
-| Last respiratory movement | ~1–2 min | [K; M10] (L–M) |
-| Last isolated muscle movements (twitches) | Up to ~4–7 min | [K; M10] (L–M) |
+| Loss of consciousness | ~10–15 s (checker's recall of the 8-case paper: 13 ± 3 s) ✓ | [K; M10] (M) |
+| Generalised convulsions (jerking) | ~15 s (recall: 14 ± 3 s) ✓ | [K; M10] (M) |
+| Decerebrate rigidity (extension) | ~20 s (recall: 19 ± 5 s) ✓ | [K; M10] (M) |
+| Deep rhythmic abdominal respiratory movements | Start ~15–20 s; seen in essentially every case ✓ | [K; M10] (L–M) |
+| Decorticate rigidity (flexion) | ~40 s (recall: 38 ± 15 s) ✓ | [K; M10] (M) |
+| Loss of muscle tone | ~1–1.5 min (recall: 1 min 17 s ± 25 s) ✓ | [K; M10] (M) |
+| Last respiratory movement | ~1–2 min (recall: range 1 min 02 s – 2 min 05 s) ✓ | [K; M10] (M) |
+| Last isolated muscle movements (twitches) | **~2 to ~7.5 min** (default 4 min). Corrected: was "up to ~4–7 min"; the checker recalls a range of ~1 min 52 s to ~7 min 31 s in the 8-case series | [K; M10] (M) |
+
+Fact-check notes `[K]` (M): ✓ verified from the checker's independent recall of the Sauvageau 2010 abstract (not re-opened; web access unavailable). Caveats: (1) times run from the **start of suspension**, not from a measured stop of cerebral flow; (2) hanging combines carotid (and often vertebral) occlusion with venous congestion and sometimes airway closure, so it is not a pure ischaemia model; (3) the 2011 14-case paper reports the same order, with **longer and more variable** times when suspension was incomplete or interrupted ("ischaemic habituation") or the person was intoxicated with alcohol. Confidence raised from (L–M) to (M) for the order and the rounded times.
 
 - **Use this table as the template for any "brain cut off, heart beating" death**: brainstem compression at the end of herniation, bilateral carotid occlusion, and C1–C3 deaths once the victim is unconscious (hypoxic rather than ischaemic, so stretch the times 5–10× before LOC).
 - Order to reproduce: **jerks → extension → flexion → limp**, with breathing movements running from ~15 s to ~1–2 min and sparse twitches for several more minutes `[E]`.
@@ -468,13 +482,13 @@ When blood flow to the brain stops but the heart keeps beating (neck compression
 | Eyes | Open, up, briefly | Open, deviated up or sideways for the whole seizure | Open | Open, fixed or rolled up | [S2] [K] |
 | Colour | **Pale** | **Dusky, blue**, face congested | Pale-grey | Normal | [K] (M) |
 | Afterwards | Awake in < 30 s (if circulation returns) | Stertorous breathing, confused 5–30 min | Limp; follows the underlying process | Wakes within seconds to minutes, dazed | [K] (M) |
-| Tongue | Tip, rarely | Side, p 0.2–0.35 | — | — | [K; M26] (M) |
+| Tongue | Tip, rarely | Side, p 0.2–0.35 ✓ verified | — | — | [K; M26] (M) |
 
 ### Simulation parameters (transient LOC and the anoxic sequence)
 
 | Parameter | Value / range | Unit | Notes | Tag |
 |---|---|---|---|---|
-| `syncope_loc` | 12.1 ± 4.4 | s | Faint that recovers | [S1] |
+| `syncope_loc` | 12.1 ± 4.4 | s | Faint that recovers. ✓ verified | [S1] |
 | `anoxic_myoclonus_p` | 0.6–0.9 (default 0.8 for sudden cardiac/haemorrhagic LOC; 0.5 for slow-onset LOC) | p | | [S1] [K; M7] (M), [E] |
 | `anoxic_jerk_count` | 1–10 (median 4), rarely to 20 | jerks | Poisson, spread over 5–15 s | [K; M8] (L–M), [E] |
 | `anoxic_jerk_window` | LOC + 1 s to LOC + 15 s | s | | [S1] (M) |
@@ -482,9 +496,9 @@ When blood flow to the brain stops but the heart keeps beating (neck compression
 | `syncope_upgaze` | p 0.6–0.9; 10–30°; 2–10 s; downbeat nystagmus first in 0.4 of those | — | | [S2] (M), [E] |
 | `anoxic_tonic_p` / `anoxic_tonic_duration` | 0.15–0.3 / 5–20 | p / s | Starts 15–30 s after `t_arr` | [K; M5] (L–M), [E] |
 | `syncope_moan_p` / `syncope_incontinence_p` | 0.2–0.4 / 0.1–0.25 | p | | [K] (L) |
-| `cerebral_arrest_loc` | 5–10 (mean 6.8); destroyed heart 8–15 | s | | [K; M4] (H), [R1-04 §8] |
-| `eeg_flat` | 15–30 | s after `t_arr` | No new seizure after this | [K] (M) |
-| `ischaemic_beating_heart_seq` | LOC 10–15 s; jerks 15 s; extension 20 s; flexion 40 s; limp 60–90 s; last breathing movement 60–120 s; last twitch ≤ 240–450 s | s | §3.3 | [K; M10] (L–M) |
+| `cerebral_arrest_loc` | 5–10 (mean 6.8); destroyed heart 8–15 | s | ✓ verified. Multiply by ~0.85 upright, ~1.2 supine (fact-check addition, `[E]` on `[K]`) | [K; M4] (H), [R1-04 §8] |
+| `eeg_flat` | 15–30 | s after `t_arr` | No new seizure after this. ✓ inside the `[R1-04]` band of 10–40 s (typ. ~20) | [K] (M) |
+| `ischaemic_beating_heart_seq` | LOC 10–15 s; jerks 15 s; extension 20 s; flexion 40 s; limp 60–90 s; last breathing movement 60–120 s; last twitch 110–450 s (default 240) | s | §3.3. ✓ verified (M). Corrected: last twitch was "≤ 240–450 s" | [K; M10] (M) |
 | `glc_myoclonus_p` | ~0.7, a few seconds long | p | Cross-check for the anoxic jerk model | [K; M36] (L–M) |
 
 ### Visual/behavioural checklist (transient LOC)
@@ -503,6 +517,8 @@ Incidence of post-traumatic seizures is in `[R2-01 §17.1]` and `[S14]`. This se
 
 Mean GTC duration **62 s** in a video analysis of 120 secondarily generalised seizures, with widely varying phase durations; only 27 % showed all phases `[S3]`. Phase detail `[K] (M)`; timings `[E]` within `[S3]` `[S4]` `[S5]` `[R1-04 §4.2]`.
 
+Fact-check note: ✓ verified (M) — 62 s mean and 27 % consistent with the sibling search summary (`[R2-01 §17.2]`) and with other video-EEG series that put the convulsive part of a GTC at ~1–2 min `[K]`. **Gap added**: Theodore's five phases were *onset of generalisation → pre-tonic clonic → tonic → tremulousness (the vibratory phase) → clonic*. The table below omits the **pre-tonic clonic** phase: a few bilateral, irregular jerks (usually 1–5 s) before the body stiffens. Game `[E]`: p 0.2–0.3, 2–6 jerks at 1–3 Hz, amplitude as the clonic jerks. Also: > 5 min of continuous convulsion = status epilepticus (ILAE t1 for convulsive status) `[K]` (H).
+
 | Phase | t (s) | Body | Eyes / face | Jaw / tongue | Breathing / sound | Skin / autonomic |
 |---|---|---|---|---|---|---|
 | Focal onset (wound-related, optional) | −10 to 0 | Contralateral hand/face clonic jerks 1–3 Hz; **head turns away from the wounded hemisphere** 30–90°; activity stops | Eyes forced away from the focus | Mouth pulled to one side | — | — |
@@ -513,7 +529,7 @@ Mean GTC duration **62 s** in a video analysis of 120 secondarily generalised se
 | Clonic | 20–60 (30–60 s; up to ~90) | **Bilateral synchronous flexor jerks** of elbows, hips, knees and trunk, each ~100–250 ms of contraction followed by relaxation. **Frequency falls from ~3–4 Hz to ~1 Hz**; the relaxation gaps lengthen; jerks become slower and larger `[S4]` | Eyelids jerk with each beat; eyes jerky (nystagmoid) | **Jaw snaps shut with each jerk** (peak tongue-bite phase); saliva whipped into **froth** (pink if the tongue bleeds) | A grunt or snort forced out with each jerk; irregular breaths between | Cyanosis peaks, then eases as breathing resumes between jerks |
 | End | ~60 (30–120) | Last jerks 1–3 s apart; sometimes a final brief tonic spasm; then **completely limp** | Eyes drift, lids partly close | Jaw slack | A deep sighing breath | Sweaty |
 
-**Clonic frequency schedule** `[E]` on `[S4]` `[R2-01 §17.2]`:
+**Clonic frequency schedule** `[E]` on `[S4]` `[R2-01 §17.2]` (✓ verified qualitatively (M): the classic description, going back to Gastaut, is a tonic contraction broken up by a ~8 Hz vibratory phase that slows into clonic jerks, whose silent intervals lengthen progressively until the last jerk; the start and end frequencies below are `[E]` within that picture `[K]`):
 `f(t) = f_end + (f_start − f_end) · exp(−(t − t_c0) / τ)`, with `f_start` 3–4 Hz, `f_end` 0.5–1 Hz, τ = 10–20 s. Stop when the next interval would exceed 2–3 s. With `f_start` 3.5 Hz, `f_end` 0.8 Hz and τ = 15 s over 40 s, the clonic phase contains about **60–70 jerks** `[E]`.
 
 ### 4.2 Signs with probabilities (GTC)
@@ -522,7 +538,7 @@ Mean GTC duration **62 s** in a video analysis of 120 secondarily generalised se
 |---|---|---|---|
 | Eyes open during the seizure | 0.9–0.97 | Closed eyes suggest a non-epileptic event | `[R1-04 §4.2]` [K; M29] (M) |
 | Epileptic cry | 0.3–0.5 | At onset | [K] (L) |
-| Lateral tongue bite | 0.2–0.35 | Very specific for GTC (specificity ~0.96–1.0). Bite marks and bleeding at the side of the tongue | [K; M26, M27] (M) |
+| Lateral tongue bite | 0.2–0.35 | Very specific for GTC (specificity ~0.96–1.0). Bite marks and bleeding at the side of the tongue. ✓ verified `[K]` (M–H): Benbadis 1995 recalled as sensitivity ~24 %, specificity ~99 %; Brigo 2012 pooled sensitivity ~33 %, specificity ~96 % (seizure vs syncope), and lateral biting ~100 % specific vs psychogenic events | [K; M26, M27] (M) |
 | Froth at the mouth | 0.2–0.4 | Pink if the tongue is bitten | [K] (L) |
 | Cyanosis | 0.6–0.9 | Tonic and early clonic phases | [K] (M) |
 | Urinary incontinence | 0.2–0.4 | Also occurs in syncope | `[R1-04 §4.3]` [K] (M) |
@@ -561,7 +577,8 @@ Mean GTC duration **62 s** in a video analysis of 120 secondarily generalised se
 
 | Parameter | Value / range | Unit | Notes | Tag |
 |---|---|---|---|---|
-| `gtc_total` | 62 mean (30–120) | s | | [S3] (H) |
+| `gtc_total` | 62 mean (30–120) | s | ✓ verified (M) | [S3] (H) |
+| `gtc_pretonic_clonic_p` | 0.2–0.3; 2–6 jerks at 1–3 Hz over 1–5 s | p | Fact-check addition: Theodore's pre-tonic clonic phase | [S3] [E] |
 | `gtc_tonic_flexion` / `gtc_tonic_extension` | 2–5 / 8–15 (tonic total 10–20, range 2–40) | s | | [K] (M), [E] |
 | `gtc_vibratory` | 2–5 at 8–12 Hz, 0.5–2° joint amplitude | s | Additive animation, not physics | [K] (L), [E] |
 | `gtc_clonic_f_start` / `f_end` / `tau` | 3–4 / 0.5–1 / 10–20 | Hz / Hz / s | Stop when the interval exceeds 2–3 s | [S4] [K] (M), [E] |
@@ -625,6 +642,8 @@ After the brain and brainstem are dead, the spinal cord can still generate refle
 
 **Frequency**: reported in **13–79 %** of brain-dead patients across series `[S11]` `[K; M12]`. About 40 % in the most-cited prospective series `[K; M12] (M)`; 13–22 % in another frequency study `[S11] (M)`. The full arm-raising sequence is **rare** (a few percent) `[K] (M)`.
 
+Fact-check note: ✓ verified (M). Saposnik 2000 is recalled as 15 of 38 patients (39 %) `[K]` (M–H); Ropper 1984 described the arm-raising sequence in a handful of 60 brain-dead patients, during apnoea testing or right after disconnection from the ventilator `[K]` (M). Attribution clarified: the `[S11]` frequency paper supports only the **low end** (13–22 %); the "13–79 %" spread is the range quoted in reviews of brain-death reflexes `[K]` (M), not a value from `[S11]`. The game p 0.2–0.4 sits inside the range and is kept. The movements need a perfused, still-oxygenated cord ✓ (H).
+
 | Movement | Look | Trigger | Duration | Share (of patients with any movement) | Tag |
 |---|---|---|---|---|---|
 | **Undulating toe flexion** | Toes flex one after another (2 → 5) in a wave, repeatedly | Spontaneous or plantar stimulus | 1–3 s per wave, repeating | Common | [S11] [K; M12] (M) |
@@ -657,6 +676,11 @@ After the brain and brainstem are dead, the spinal cord can still generate refle
 
 **A dead body never does**: shiver, tremble, breathe rhythmically, posture, blink, track, or flinch at a sound. Supravital responses happen **only** when a muscle is directly struck or electrically stimulated `[K] (H)`.
 
+**Shooting, stabbing or hitting a body that is already dead or brain-dead (fact-check addition)** `[K]` (M), `[E]`:
+- There is **no convulsion, flinch or "death throe"** in response. What moves is purely mechanical: the segment that is hit takes the projectile's momentum (a 9 mm bullet carries ~2.9 N·s, enough to give the whole 75 kg body only ~0.04 m/s, but a forearm-plus-hand (1.68 kg) at most ~1.7 m/s if the bullet stops in it, and ~0.6–1.2 m/s once its attachment to the rest of the arm is counted; see `[R2-02 §1.3]`), and loose limbs, head and jaw swing and settle under gravity.
+- Within the supravital window (to ~1.5–2.5 h), a hit squarely on a muscle belly can produce a **brief local contraction or bulge** at the impact site (idiomuscular response, §5.5). It is small, local and never a coordinated movement. Game `[E]`: p 0.1–0.3 per direct muscle hit, 5–20 mm local bulge, no joint movement larger than ~5°.
+- Blood leaks from new wounds only by gravity (no pulsing), and air may be pushed out through the mouth as a groan if the chest is compressed `[R1-04 §12]`.
+
 **Cadaveric spasm** (a grip frozen at the moment of death) is rare and disputed. Keep it at ≤ 0.01, only after intense activity at death `[R1-04 §12.6]`.
 
 ### 5.6 Posturing episodes triggered by stimulation (timing added to `[R2-01 §18]`)
@@ -680,7 +704,8 @@ After the brain and brainstem are dead, the spinal cord can still generate refle
 | `fasc_pm_p` / `fasc_pm_rate0` / `fasc_pm_tau` / `fasc_pm_end` | 0.2–0.4 / 0.5–5 per min / 3–5 min / 15–20 min | — | After `t_arr` | [E] on [K] (L) |
 | `release_tonic_p` (midbrain/upper pons) | 0.3–0.6; 5–30 s | p / s | | [E] on [K; M32] |
 | `release_kick_p` | 0.1–0.2 (midbrain), 0.05–0.15 (medulla); 2–8 bursts over 10–60 s, 10–40° | p | | [E] (L) |
-| `spinal_reflex_p` / `lazarus_p` | 0.2–0.4 / 0.03–0.05 | p | Hypoxic window only | [S11] [K; M11, M12] (M), [E] |
+| `spinal_reflex_p` / `lazarus_p` | 0.2–0.4 / 0.03–0.05 | p | Hypoxic window only. ✓ verified (inside the 13–79 % literature range; ~39 % Saposnik) | [S11] [K; M11, M12] (M), [E] |
+| `pm_hit_idiomuscular_p` | 0.1–0.3 per direct muscle hit, ≤ ~2 h after `t_arr`; 5–20 mm local bulge | p | Fact-check addition: a dead body that is shot or struck shows only mechanical motion plus this local twitch | [K] (M), [E] |
 | `spinal_reflex_stim_p` | 0.3–0.5 per stimulus | p | Neck flexion, foot stimulus | [E] |
 | `lazarus_timing` | rise 2–5 s, hold 3–10 s, fall 5–15 s | s | | [K; M11] (L–M), [E] |
 | `lazarus_targets` | shoulder adduction 10–30°, shoulder flexion 20–60°, elbow flexion 90–130°, fingers flexed, trunk flexion 10–40°, drive 30–50 % | ° | Slow, not a jerk | [E] on [K; M11] |
@@ -712,14 +737,14 @@ After the brain and brainstem are dead, the spinal cord can still generate refle
 
 | Quantity | Value | Tag |
 |---|---|---|
-| Core temperature at which shivering starts | ~35.5–36.0 °C (higher threshold when the skin is cold; about a fifth of the drive comes from skin temperature) | [K] (M) |
-| Maximal shivering | Core ~34–35 °C | [K] (M) |
-| Shivering fades / stops | Below ~32–33 °C it weakens; absent below ~30–31 °C | [K] (M) |
+| Core temperature at which shivering starts | ~35.5–36.0 °C (higher threshold when the skin is cold; about a fifth of the drive comes from skin temperature) ✓ verified (Sessler: shivering threshold ~1 °C below the vasoconstriction threshold of ~36.5 °C; core ≈ 80 %, skin ≈ 20 % of the drive) `[K]` (M–H) | [K] (M) |
+| Maximal shivering | Core ~34–35 °C ✓ consistent `[K]` (M) | [K] (M) |
+| Shivering fades / stops | Below ~32–33 °C it weakens; absent below ~30–32 °C (corrected: was ~30–31 °C). ✓ verified with a widened stop: clinical hypothermia staging (Swiss system) puts the loss of shivering in the 32–28 °C stage, many texts at "< 32 °C" and others at ~30–31 °C, so use **30–32 °C** (default 31) | [K] (M) |
 | Heat production | 2–5× resting metabolism; O₂ consumption +100–400 % | [K] (M) |
-| Temporal pattern | Bursts that wax and wane **4–8 times per minute**, each made of a fast tremor (~8–12 Hz in large muscles; visible as a coarse 5–10 Hz shake at the hands) | [K; M16] (L–M) |
+| Temporal pattern | Bursts that wax and wane **4–8 times per minute**, each made of a fast tremor (~8–12 Hz in large muscles; visible as a coarse 5–10 Hz shake at the hands). ✓ verified (M): the 4–8 cycles/min grouping of shivering EMG bursts is the Israel & Pozos finding `[K]` | [K; M16] (L–M) |
 | Where it starts | Jaw (chattering), neck, chest and shoulders, then arms, then trunk and legs | [K; M17] (M) |
-| Bedside grading (BSAS) | 0 none; **1 mild**: neck and chest only; **2 moderate**: gross movement of the arms plus neck and chest; **3 severe**: gross movement of the trunk and all four limbs | [K; M17] (M) |
-| Suppressed by | Severe hypoxia, hypoglycaemia, deep shock, alcohol, opioids, exhaustion, hypothalamic or brainstem injury, deep coma; **absent below a spinal cord lesion** | [K] (M) |
+| Bedside grading (BSAS) | 0 none; **1 mild**: neck and chest only; **2 moderate**: gross movement of the arms plus neck and chest; **3 severe**: gross movement of the trunk and all four limbs. ✓ verified `[K]` (H) | [K; M17] (M) |
+| Suppressed by | Severe hypoxia, hypoglycaemia, deep shock, alcohol, opioids, exhaustion, hypothalamic or brainstem injury, deep coma; **absent below a spinal cord lesion** ✓ verified (hypoxia lowers the shivering threshold and gain) `[K]` (M) | [K] (M) |
 
 **In a bleeding casualty**:
 - Haemorrhage and exposure cool the body. Vasoconstricted, cold skin makes the person **feel cold and shiver even before the core temperature falls much** ("I'm so cold") `[K] (M)`.
@@ -753,7 +778,7 @@ After the brain and brainstem are dead, the spinal cord can still generate refle
 | `fear_tremor_hz` / `fear_tremor_amp` | 8–12 / 0.5–3 mm fingertip (0.2–1.5° at wrist and fingers); severe 5–10 mm | Hz / mm | Additive, post-physics | [K] (M), [E] |
 | `fear_tremor_duration` | 5–30 | min after the threat | Decays | [K] (M) |
 | `leg_shake_hz` | 4–8 | Hz | Standing or kneeling while injured or exhausted | [K] (L–M) |
-| `shiver_core_start` / `max` / `stop` | 35.5–36.0 / 34–35 / 30–31 | °C | Skin-temperature bias: start at core ≤ 36.5 if skin < 30 °C | [K] (M), [E] |
+| `shiver_core_start` / `max` / `stop` | 35.5–36.0 / 34–35 / 30–32 (default 31) | °C | Skin-temperature bias: start at core ≤ 36.5 if skin < 30 °C. ✓ verified; corrected: stop was 30–31 | [K] (M), [E] |
 | `shiver_burst_rate` | 4–8 | per min | Waxing and waning envelope | [K; M16] (L–M) |
 | `shiver_hz` / `shiver_amp` | 5–10 visible / shoulders 0.5–2°, hands 5–20 mm at BSAS 3 | Hz / ° / mm | | [E] |
 | `shiver_bsas_progression` | 1 (jaw, neck, chest) → 2 (+ arms) → 3 (+ trunk, legs) | grade | | [K; M17] (M) |
@@ -787,7 +812,7 @@ Eye choreography by death type and post-mortem eye changes are in `[R1-04 §11]`
 | Post-ictal | Half-closed 2–5 mm (P closed ~0.5) | Roving or still deviated, slightly divergent | Large, sluggish → normal | Rare | Slack, snoring | May protrude, bitten | Limp | Pale-dusky, sweaty, froth | [K] (M) |
 | Coma, brainstem intact (GCS 3–8) | Closed, or **incompletely closed 1–5 mm** (P 0.3–0.7); a lifted lid closes slowly over 1–2 s | Slightly divergent, **roving** 10–30° at 5–20°/s; doll's eyes present | 2–5, reactive | None; corneal reflex present | Open 5–20 mm when supine; snoring | Falls back | Flaccid, or posturing on stimulation | Slack | `[R2-01 §14.2]` [K; M34] (M) |
 | Posturing episode | May open during the episode | Dysconjugate or deviated, per lesion | Per lesion | — | **Clenched** in decerebrate | — | Decorticate fists on chest; decerebrate pronated arms with flexed wrists | Grimace | [S10] `[R2-01 §18]` |
-| Brainstem dead, heart beating | **Where they were at the loss of tone**; open lids drop 2–4 mm over 1–3 s | **Fixed**; midline, slightly divergent or skewed; **doll's eyes absent** | 4–9, fixed (mean 5.0 ± 0.85) | None | Slack; mouth open 10–30 mm when supine | Falls back | Flaccid; spinal reflexes possible (§5.4) | Dusky blue if Hb normal | [S17] [S18] `[R1-04 §11]` |
+| Brainstem dead, heart beating | **Where they were at the loss of tone**; open lids drop 2–4 mm over 1–3 s | **Fixed**; midline, slightly divergent or skewed; **doll's eyes absent** ✓ verified (absent oculocephalic reflex is a brain-death criterion) | 4–9, fixed (mean 5.0 ± 0.85; ⚠ mean not re-verified; the 4–9 mm "mid-size to dilated" range matches the AAN brain-death criteria ✓) | None | Slack; mouth open 10–30 mm when supine | Falls back | Flaccid; spinal reflexes possible (§5.4) | Dusky blue if Hb normal | [S17] [S18] `[R1-04 §11]` |
 | Agonal (after `t_arr`, gasping) | Half-open 2–6 mm | Fixed near the midline | 6–8 by 1–2 min | None | Slack; **gapes 15–35 mm with each gasp** | — | Limp; small jerks with early gasps | Grey or dusky; white if exsanguinated | §2.2 [K] (M) |
 | Newly dead (0–30 min) | Sudden death: open 0.55 / half 0.35 / closed 0.10 (`[R1-04 §11.3]` distribution) | Fixed, slightly divergent | 6–8 | None | Open 10–30 mm (supine) | Tip may show between the teeth | Flaccid, fingers in a loose curl | Pallor mortis | `[R1-04 §11–12]` |
 
@@ -872,7 +897,8 @@ Eye choreography by death type and post-mortem eye changes are in `[R1-04 §11]`
 
 ### 8.2 Cyanosis
 
-- **Visible central cyanosis** needs enough **deoxygenated** haemoglobin. Classic threshold: ~5 g/dL in capillary blood `[K; M21] (H)`. In arterial terms, cyanosis is visible when `Hb × (1 − SaO₂)` ≥ ~1.5–3 g/dL; game default **2.5 g/dL** `[K] (M)`, `[E]`.
+- **Visible central cyanosis** needs enough **deoxygenated** haemoglobin. Classic threshold: ~5 g/dL in capillary blood `[K; M21] (H)`. In arterial terms, cyanosis is visible when `Hb × (1 − SaO₂)` ≥ ~2.5–3 g/dL (corrected: was ~1.5–3); game default **2.5 g/dL** `[K] (M)`, `[E]`.
+- Fact-check ✓ verified (M): capillary deoxyhaemoglobin ≈ arterial deoxyhaemoglobin + half the arteriovenous difference (~1.9 g/dL for an O₂ extraction of 5 mL/dL), so 5 g/dL capillary ≈ **~3 g/dL arterial** (SaO₂ ~79–80 % at Hb 15). Observer studies (Comroe & Botelho 1947) found that some observers see cyanosis at SaO₂ ~85 % while others miss it until ~75 %. The game's 2.5 g/dL (SaO₂ 83 % at Hb 15) is inside that spread; **2.5–3.0** is the defensible band, and 1.5 g/dL is too sensitive (1.5 g/dL is the classic figure for *methaemoglobin*, not deoxyhaemoglobin). Table arithmetic re-derived ✓: 1 − 2.5/15 = 83 %, 1 − 2.5/9 = 72 %, 1 − 2.5/6 = 58 %.
 
   | Hb (g/dL) | SaO₂ at which lips turn visibly blue `[E]` |
   |---|---|
@@ -894,7 +920,7 @@ Eye choreography by death type and post-mortem eye changes are in `[R1-04 §11]`
 ### 8.3 Mottling
 
 - A lacy, violet, net-like pattern from patchy skin perfusion. **It starts around the knees** and spreads up the thighs (and to the feet and hands) `[K; M18] (M)`.
-- **Mottling score** (knee-centred) `[K; M18] (M)`:
+- **Mottling score** (knee-centred) `[K; M18] (M)` — ✓ verified: the six grades below match the checker's recall of Ait-Oufella et al. 2011 `[K]` (H). The score was validated in **septic** shock; its use for haemorrhagic shock is an analogy:
 
   | Score | Extent |
   |---|---|
@@ -905,7 +931,7 @@ Eye choreography by death type and post-mortem eye changes are in `[R1-04 §11]`
   | 4 | Not beyond the groin fold |
   | 5 | Beyond the groin fold |
 
-- **Timing**: needs sustained severe hypoperfusion. It does **not** appear in deaths under ~10 min. Game onset `[E]`: after ≥ 10–20 min at ≥ 30 % loss (or sustained MAP < 60); +1 score per 5–20 min as shock deepens.
+- **Timing**: needs sustained severe hypoperfusion. It does **not** appear in deaths under ~10 min. Game onset `[E]`: after ≥ 10–20 min at ≥ 30 % loss (or sustained MAP < 60); +1 score per 5–20 min as shock deepens. ⚠ not re-verified: no source gives a minimum shock duration for mottling; the ≥ 10–20 min rule is an engineering choice. Keep it separate from **livor mortis** (post-mortem, dependent, starts ~20–30 min after arrest), which players often confuse with mottling.
 - In slow dying: mottled knees and feet hours to days before death `[K; M14] (M)`.
 - **After death**: mottling fades into pallor, then livor forms in dependent areas `[R1-04 §12.3–12.4]`.
 - Colour `[E]`: `#7B4A6A` lace over the pale base, 20–50 % opacity.
@@ -931,7 +957,7 @@ Eye choreography by death type and post-mortem eye changes are in `[R1-04 §11]`
 | `pallor_onset` | vasovagal 10–30 s before LOC; haemorrhage from 15 % loss | — | | [K] (M) |
 | `sweat_onset` / `bead_size` / `spread_time` | class II–III or prodrome / 0.5–3 mm / 1–3 min | — | Forehead → lip → neck → palms | [K] (M), [E] |
 | `sweat_dry_after_arrest` | 30–60 | min | | [E] |
-| `cyanosis_threshold_deoxyHb_arterial` | 2.5 (1.5–3) | g/dL | Visible if `Hb·(1 − SaO₂)` ≥ threshold | [K; M21] (M), [E] |
+| `cyanosis_threshold_deoxyHb_arterial` | 2.5 (2.5–3.0) | g/dL | Visible if `Hb·(1 − SaO₂)` ≥ threshold. ✓ verified; corrected: range was 1.5–3 (1.5 g/dL is the methaemoglobin figure) | [K; M21] (M), [E] |
 | `acrocyanosis` | cold skin < 30 °C or class III–IV | — | Nail beds and lips dusky | [K] (M) |
 | `mottling_onset` / `mottling_rate` | ≥ 10–20 min at ≥ 30 % loss / +1 score per 5–20 min | — | Score 0–5 mask around the knees | [K; M18] (M), [E] |
 | `mottling_colour` | `#7B4A6A`, 20–50 % | sRGB | | [E] |
@@ -1021,7 +1047,7 @@ Variants: **(a) medulla / cervicomedullary junction destroyed** (default); (b) p
 |---|---|---|---|---|---|---|---|
 | 0–0.3 s | Startle, flinch (damped by arousal) | Sharp inhalation | — | Blink | — | Grunt, "huh" | `[R2-02 §1]` |
 | 0–5 s | **Full voluntary action** possible: run, fight, shout | Fast | — | Wide, fixed on the threat | Normal | Speech possible | [S22] `[R2-02 §2.5]` |
-| 5–10 s | Grey-out, tunnel vision, legs weaken; stagger, reach for support; may sit or kneel | Gasping for air | — | Unfocused, blank | Pallor | Speech slurs or stops | [K] (M) |
+| 5–10 s | Grey-out, tunnel vision, legs weaken; stagger, reach for support; may sit or kneel. **Purposeful action (running, shooting, stabbing back) can continue through this phase until LOC** (fact-check note: FBI 1989 gives up to 10–15 s of "full and complete voluntary action" ✓ verified; the grey-out degrades accuracy and balance, it does not switch action off) | Gasping for air | — | Unfocused, blank | Pallor | Speech slurs or stops | [K] (M), [S22] |
 | 8–15 s | **LOC**; crumple (A) or stiff topple | Breathing continues briefly | **Myoclonic jerks p 0.8** (1–10 over 5–15 s), lip smacking, head turning | **Open, up 10–30° for 2–10 s** (p 0.6–0.9) | Pale | Moan p 0.2–0.4 | [S1] [S2] |
 | 15–30 s | Coma | Irregular, then stops or turns to gasps | **Anoxic tonic spasm p 0.15–0.3**: arms straight, back arched, 5–20 s; incontinence p 0.1–0.2 | Drift back to the midline; lids droop to half-open | Pale-grey | Snore | §3.2 |
 | 20–60 s | — | **First gasp** (p 0.45) | Gasp-associated jerks p 0.2–0.4 | Pupils begin to dilate (30–45 s) | Face greying; blood froth at the mouth if the track crossed a lung (p 0.3–0.5) | Snort, gurgle | §2.2 |
@@ -1039,7 +1065,7 @@ Flow 0.5–1.5 L/min (default 1.0 L/min) without compression `[R1-04 §7.5]`. Ow
 |---|---|---|---|---|---|---|---|
 | 0–1 s | Startle | Gasp | — | Blink, then wide | — | **Pulsing bright jet 0.5–1.5 m** | `[R1-04 §7.6]` |
 | 0.3–0.8 s | **Both hands clamp the neck**; blood between the fingers | — | — | Fear: lids 11–12 mm | — | — | `[R2-02 §3]` |
-| 1–30 s | Panic; flees or fights; may call out. If the larynx or trachea is cut: coughing, spraying blood, hoarse or no voice | Fast; if airway cut: **gurgling, bubbling at the wound**, aspiration (36.5 % of cut-throat deaths die of aspiration) | Fear tremor | Scanning | — | Screams, gurgling | [S19] [K] |
+| 1–30 s | Panic; flees or fights; may call out. If the larynx or trachea is cut: coughing, spraying blood, hoarse or no voice | Fast; if airway cut: **gurgling, bubbling at the wound**, aspiration (36.5 % of cut-throat deaths die of aspiration) | Fear tremor | Scanning | — | Airway intact: a shout or scream is possible but not the rule (p 0.3–0.5 `[E]`); silence, gasping and "help" are common. **Airway cut below the vocal cords: no scream at all**, only hissing, wet gurgling and bubbling at the wound (corrected: was "Screams, gurgling") | [S19] [K] `[R2-02 §14]` |
 | 5–30 s | If collaterals are poor (p 0.2–0.3): **weakness of the opposite arm and leg, face droop, aphasia (left carotid), eyes toward the cut side**; falls toward the weak side | — | — | Conjugate deviation toward the lesion | — | Slurred | [K] (L), `[R2-01 §2]` |
 | 30–90 s (10–20 % loss) | Anxious, dizzy | 20–30/min | — | Blinking more | **Pale, sweat on forehead and lip** | Jet shorter and faster | `[R1-04 §7.2]` |
 | 60–120 s (20–30 %, upright) | **Faint if still standing** (convulsive: eyes up, a few jerks), or controlled descent to knees and sitting | — | Myoclonus p 0.8 if fainting | Up, then half-open | Grey | Hands fall from the neck at LOC: flow rises again | §3.1 |
@@ -1112,13 +1138,14 @@ Eye distributions from `[R1-04 §11.3]` (game-design values `[E]`), with the car
 | `scenario_defaults` | table §10.6 | — | Starting values; the physiology model produces the actual times | [E] |
 | `carotid_self_compression` | ×0.4–0.7 flow while conscious and both hands on the neck | × | Released at LOC | [E] |
 | `carotid_hemispheric_deficit_p` | 0.2–0.3; onset 5–30 s | p / s | Poor collaterals | [K] (L), [E] |
+| `carotid_scream_p` | airway intact 0.3–0.5; airway cut below the vocal cords 0 | p | Fact-check addition; silence, gasping and short calls for help are common | [E] on [K] |
 | `slow_bleed_self_stop_p` | 0.1–0.3 | p | Radial, ulnar, partial brachial | `[R1-04 §7.5]` [E] |
 | `head_branch_p` | A 0.35–0.45 / B 0.35–0.45 / C 0.1–0.2 | p | Bihemispheric or severe blunt | [E] on [S33] |
 | `head_herniation_death` | 30 min – 6 h (default 90 min) | — | Branch B | [K] (L–M), [E] |
 
 ### Visual/behavioural checklist (timelines)
 - Brainstem: an instant limp drop, then a silent, motionless body whose lips turn blue over a minute or two, perhaps a slow curl of the toes or a rare slow arm rise, then nothing.
-- Heart: seconds of action, a stagger, a collapse with eyes rolled up and a few jerks, sometimes a brief rigid arch, then snorting gasps for a few minutes.
+- Heart: seconds of action, a stagger, a collapse with eyes turned up **for a few seconds only** and a few jerks, sometimes a brief rigid arch, then snorting gasps for a few minutes. By the time the body is dead the eyes are back near straight ahead, half-open and fixed.
 - Carotid: a tall pulsing jet clamped by both hands, panic, pallor and sweat within a minute, a faint or a slide to the ground, snoring or gurgling unconsciousness, gasps, a white body.
 - Slow limb bleed: the full ladder over tens of minutes, including shivering, confusion, plucking at clothes and mottled knees.
 - Massive head trauma: instant coma with stiffening spasms, snoring and gurgling, blood from the nose, vomiting, sometimes pink froth, then over an hour or more a blown pupil, a slow pounding pulse, changing breathing, and finally silence.
@@ -1244,6 +1271,12 @@ Arithmetic `[E]`: de Leva lengths (upper arm 0.282 m, forearm 0.269 m, hand 0.08
 | 13 | A bled-out body turns blue | Too little haemoglobin: white-grey | §8.2 | [K; M21] |
 | 14 | Mottled skin in a 1-minute death | Mottling needs ≥ 10–20 min of shock | §8.3 | [K; M18] |
 | 15 | Unconscious bodies breathe silently on their backs | Snoring in most; gurgling with fluid; lateral position quiets it | §2.1 | [K] (M) |
+| 16 | The eyes "roll back" at the moment of death (fact-check addition) | Upward deviation belongs to the **moment of collapse** (syncope, anoxic LOC, knockout, seizure) and lasts seconds. At death and after it the eyes rest near straight ahead or slightly divergent, lids open or half-open, pupils wide and fixed | Blend upgaze back to neutral within 10–60 s of LOC; never keep it into `DEAD` | [S1] [S2] `[R1-04 §11]` `[R2-02 §5.6]` |
+| 17 | The bullet throws the body backwards or off its feet (fact-check addition) | A handgun bullet gives a 75 kg body ~0.04 m/s; even buckshot < 0.2 m/s. The shooter feels the same momentum as recoil. Falls come from the victim's own muscles failing or reacting, and their direction follows posture and motion (§3.1 falls; `[R2-02 §5]`) | Small segment impulses only; the fall is driven by the tone model | `[R2-02 §1.3]` [K] (H) |
+| 18 | "Hydrostatic shock" drops anyone hit in the torso (fact-check addition) | No reliable instant incapacitation from a pressure wave at handgun velocities (FBI 1987–1989 wound-ballistics position). Remote neural effects from high-velocity rifle hits are reported in animal work and remain contested; they are never a dependable off-switch. An instant drop needs a brain, brainstem or upper-cord hit, loss of skeletal support (pelvis, femur, spine), or a psychological or vasovagal collapse | Instant collapse only through those routes; otherwise use the physiological clock | [S22] `[R2-02 §14]` [K] (M–H) |
+| 19 | Everyone screams when shot or cut (fact-check addition) | Silence, a grunt, "I'm hit", or gasping are common; screams follow fractures, burns, and seeing the wound. A cut airway below the cords makes any voice impossible | Vocalisation by the pain/voice model; gate by airway state | `[R2-02 §9, §14]` [K] (M) |
+| 20 | A dying body thrashes violently for a long time ("death throes") (fact-check addition) | Circulatory collapse gives **a handful of small, irregular jerks for ~5–15 s** and sometimes a brief stiffening; big rhythmic convulsions lasting about a minute are a seizure (needs a perfused cortex) or a hanging-type ischaemia with a beating heart | §3, §4 | [S1] [S3] [K; M10] |
+| 21 | Shooting a corpse makes it jerk or convulse (fact-check addition) | Only passive momentum and gravity, plus an occasional small local muscle bulge in the first ~2 h | §5.5 | [K] (M) |
 
 ### Simulation parameters (mistake guards)
 
@@ -1254,9 +1287,12 @@ Arithmetic `[E]`: de Leva lengths (upper arm 0.282 m, forearm 0.269 m, hand 0.08
 | `assert_no_mottling_before` | 10 | min of shock | | [K; M18] (M) |
 | `assert_no_cyanosis_if_hb_below` | 5 | g/dL | Tint grey-white instead | [K; M21] (M) |
 | `assert_no_spontaneous_motion_after` | `t_arr` + 20 min | — | Except gravity, fluids, provoked supravital responses | [K] (M), [E] |
+| `assert_no_upgaze_in_dead` | true | bool | Fact-check addition: upward gaze must have blended back to neutral/slight divergence before `DEAD_SUPRAVITAL` | [S2] [K] (H) |
+| `assert_no_instant_drop_without_cns_or_support_loss` | true | bool | Fact-check addition: "hydrostatic shock" guard. Psychological or vasovagal collapse is allowed through its own path and latency `[R2-02]` | [S22] [K] (M–H) |
 
 ### Visual/behavioural checklist (mistake guards)
 - QA pass: watch each of the five §10 deaths at 1× around `t_arr` and tick off every row of the table above.
+- (Fact-check additions) No body is thrown backwards by a bullet; a torso hit never switches a character off instantly unless the brain, brainstem, upper cord or skeletal support is hit (or the character faints); the eyes are turned up only for seconds at the collapse, never in the dead; a character with a cut windpipe makes no scream; shooting a corpse moves it only mechanically.
 
 ---
 
@@ -1272,9 +1308,11 @@ Arithmetic `[E]`: de Leva lengths (upper arm 0.282 m, forearm 0.269 m, hand 0.08
 | Tonic release extension / leg kicking | 0.3–0.6 / 0.1–0.2 | Midbrain/upper pons destroyed |
 | Spinal reflex movement / Lazarus | 0.2–0.4 / 0.03–0.05 | Brainstem dead, heart beating |
 | Post-mortem fine twitches | 0.2–0.4 | First 15–20 min after `t_arr` |
-| Vomiting | 0.07 / 0.28 / 0.2–0.35 / 0.2–0.4 | Concussion / skull fracture / comatose massive head injury / abdominal or groin |
+| Vomiting | 0.07 / 0.28 / 0.2–0.35 / 0.2–0.4 | Head injury seen in hospital, mostly minor (corrected: was "Concussion") / skull fracture / comatose massive head injury / abdominal or groin |
+| Pre-tonic clonic jerks in a GTC | 0.2–0.3 | Fact-check addition (§4.1) |
+| Local muscle bulge when a dead body is hit | 0.1–0.3 per direct muscle hit | ≤ ~2 h after `t_arr` (fact-check addition, §5.5) |
 | Aspiration per vomit (unconscious) | 0.5–0.8 supine / 0.1–0.2 lateral | |
-| Neurogenic pulmonary oedema froth | 0.2–0.3 | Massive head injury surviving > 15 min |
+| Neurogenic pulmonary oedema froth | 0.2–0.3 (default 0.2) | Massive head injury surviving > 15 min; visible froth only (fact-check: must stay below the 32–50 % autopsy oedema rate) |
 | Death rattle | 0.3–0.5 | Unconscious > 60 min |
 | Shivering | 0.3–0.5 | Conscious, class II–III, 10–40 min |
 | Urine at death | 0.2–0.3 | |
@@ -1289,24 +1327,26 @@ All values are defaults collected from §2–§10 (tags there). The table above 
 
 ## 14. Load-bearing claims (quick reference)
 
-1. **Syncope**: unconsciousness **12.1 ± 4.4 s**; myoclonic jerks in **~90 %**; eyes **open** with early **upward deviation** (13 of 14 in an eye-movement study; 6 with downbeat nystagmus first); head turns, oral automatisms and righting movements in **79 %** [S1] [S2].
-2. **Complete cerebral circulatory arrest**: LOC in **5–10 s** (mean ~6.8 s); **8–15 s** with a destroyed heart (residual pressure); EEG flat at ~15–30 s; pupils start to dilate at 30–45 s and are fixed and wide by 1–2 min [K; M4] `[R1-04 §8, §11.5]`.
-3. **Agonal gasping** occurs in roughly **a third to a half** of cardiac arrests (≈40 % at the time of the call), most often early, and declines with minutes since collapse. Gasps need a working **medulla**; they are absent after medullary destruction [K; M1, M2].
-4. **Gasp kinematics**: a 0.2–0.6 s inspiration with neck extension and jaw opening, then 1–3 s passive expiration; intervals grow from ~10 s to about a minute; the phase lasts **1–5 min** [K] [E].
-5. **GTC seizure**: mean duration **62 s**; tonic ~10–20 s; clonic jerks **slow from ~3–4 Hz to ~1 Hz** with lengthening gaps; eyes open in ~90–97 % [S3] [S4] `[R1-04 §4.2]`.
-6. **Lateral tongue biting** is highly specific for a GTC (seen in ~20–35 %); syncope bites are rare and at the tip [K; M26, M27].
-7. **Convulsive syncope vs seizure**: syncope jerks are few (**1–10**), irregular, with no slowing pattern, and last < 15 s; seizure jerks are dozens, rhythmic and slowing [K; M8, M9].
-8. **Spinal reflex movements after brain death**: reported in **13–79 %** of brain-dead patients (≈40 % in the most-cited series); the full **Lazarus** arm-raise is rare; they require a perfused cord [S11] [K; M11, M12].
-9. **Anoxic-ischaemic sequence with a beating heart**: LOC ~10–15 s, convulsions ~15 s, extension ~20 s, flexion ~40 s, loss of tone ~1–1.5 min, last respiratory movement ~1–2 min, last isolated muscle movement up to ~4–7 min [K; M10] (L–M).
-10. **Cut-throat deaths**: aspiration of blood caused **36.5 %** of deaths in a 74-case autopsy series (exsanguination ~50 %) [S19].
-11. **Vomiting after head injury**: ~**7 %** of adult concussions, ~**28 %** with a skull fracture [S15] (L).
-12. **Death rattle**: in 23–92 % of dying patients; median ~16–23 h from onset to death; so **never in fast violent deaths** [K; M13, M15].
-13. **Palliative signs of death within days**: non-reactive pupils, reduced response to voice and to visual stimuli, **inability to close the eyelids**, drooping nasolabial folds, **hyperextension of the neck**, **grunting of the vocal cords**, upper-GI bleeding [K; M14].
-14. **Cyanosis** is visible only when deoxygenated haemoglobin is high enough (classic ~5 g/dL capillary). An exsanguinated body turns white, not blue [K; M21].
-15. **Mottling** starts at the knees (score 0–5 up to beyond the groin) and needs sustained shock (≥ 10–20 min) [K; M18].
-16. **Shivering** starts at core ~35.5–36 °C, peaks at ~34–35 °C and stops below ~30–31 °C; it comes in bursts 4–8 times per minute; it is suppressed by deep shock, hypoxia and coma [K; M16, M17].
-17. **After circulatory arrest**, only faint twitches (first ~15 min), gravity settling and passive fluid movement occur spontaneously; supravital muscle contraction appears only when a muscle is struck (to ~1.5–2.5 h) [K] `[R1-04 §12.7]`.
-18. **Brain death pupils**: fixed, mean **5.0 ± 0.85 mm**; eyes move with the head (doll's eyes absent) [S17] [S18].
+1. **Syncope**: unconsciousness **12.1 ± 4.4 s**; myoclonic jerks in **~90 %**; eyes **open** with early **upward deviation** (13 of 14 in an eye-movement study; 6 with downbeat nystagmus first); head turns, oral automatisms and righting movements in **79 %** [S1] [S2]. **✓ verified** (1994 values, 42 complete induced syncopes); ⚠ 1996 eye counts not re-verified.
+2. **Complete cerebral circulatory arrest**: LOC in **5–10 s** (mean ~6.8 s); **8–15 s** with a destroyed heart (residual pressure); EEG flat at ~15–30 s; pupils start to dilate at 30–45 s and are fixed and wide by 1–2 min [K; M4] `[R1-04 §8, §11.5]`. **✓ verified**; upright → short end, supine → long end (added).
+3. **Agonal gasping** occurs in roughly **a third to a half** of cardiac arrests (≈40 % at the time of the call), most often early, and declines with minutes since collapse. Gasps need a working **medulla**; they are absent after medullary destruction [K; M1, M2]. **✓ verified** (M; medulla H).
+4. **Gasp kinematics**: a 0.2–0.6 s inspiration with neck extension and jaw opening, then 1–3 s passive expiration; intervals grow from ~10 s to about a minute; the phase lasts **1–5 min** [K] [E]. **⚠ not re-verified** (engineering schedule); default 8 gasps end at ~3.4 min (arithmetic corrected).
+5. **GTC seizure**: mean duration **62 s**; tonic ~10–20 s; clonic jerks **slow from ~3–4 Hz to ~1 Hz** with lengthening gaps; eyes open in ~90–97 % [S3] [S4] `[R1-04 §4.2]`. **✓ verified** (M); pre-tonic clonic phase added.
+6. **Lateral tongue biting** is highly specific for a GTC (seen in ~20–35 %); syncope bites are rare and at the tip [K; M26, M27]. **✓ verified** (M–H).
+7. **Convulsive syncope vs seizure**: syncope jerks are few (**1–10**), irregular, with no slowing pattern, and last < 15 s; seizure jerks are dozens, rhythmic and slowing [K; M8] (attribution corrected: was [K; M8, M9]). **✓ verified** (M).
+8. **Spinal reflex movements after brain death**: reported in **13–79 %** of brain-dead patients (≈40 % in the most-cited series); the full **Lazarus** arm-raise is rare; they require a perfused cord [S11] [K; M11, M12]. **✓ verified** (M); [S11] supports the low end only.
+9. **Anoxic-ischaemic sequence with a beating heart**: LOC ~10–15 s, convulsions ~15 s, extension ~20 s, flexion ~40 s, loss of tone ~1–1.5 min, last respiratory movement ~1–2 min, last isolated muscle movement **~2–7.5 min** (corrected: was "up to ~4–7 min") [K; M10] (M). **✓ verified** from recall of the filmed-hanging series; times run from the start of suspension.
+10. **Cut-throat deaths**: aspiration of blood caused **36.5 %** of deaths in a 74-case autopsy series (exsanguination ~50 %) [S19]. **⚠ not re-verified** (arithmetic consistent with n = 74).
+11. **Vomiting after head injury**: ~**7 %** of adults with (mostly minor) head injury seen in hospital (corrected: was "adult concussions"), ~**28 %** with a skull fracture [S15] (L). **⚠ not re-verified**; plausible.
+12. **Death rattle**: in 23–92 % of dying patients; median ~16–23 h from onset to death; so **never in fast violent deaths** [K; M13, M15]. **✓ verified** (M).
+13. **Palliative signs of death within days**: non-reactive pupils, reduced response to voice and to visual stimuli, **inability to close the eyelids**, drooping nasolabial folds, **hyperextension of the neck**, **grunting of the vocal cords**, upper-GI bleeding [K; M14]. **✓ verified** (H; Hui 2015, eight signs, specificity > 95 %).
+14. **Cyanosis** is visible only when deoxygenated haemoglobin is high enough (classic ~5 g/dL capillary). An exsanguinated body turns white, not blue [K; M21]. **✓ verified**; arterial band corrected to 2.5–3.0 g/dL (was 1.5–3).
+15. **Mottling** starts at the knees (score 0–5 up to beyond the groin) and needs sustained shock (≥ 10–20 min) [K; M18]. **✓ verified** (score); ⚠ the duration rule is `[E]`.
+16. **Shivering** starts at core ~35.5–36 °C, peaks at ~34–35 °C and stops below ~30–32 °C (corrected: was 30–31); it comes in bursts 4–8 times per minute; it is suppressed by deep shock, hypoxia and coma [K; M16, M17]. **✓ verified** (M).
+17. **After circulatory arrest**, only faint twitches (first ~15 min), gravity settling and passive fluid movement occur spontaneously; supravital muscle contraction appears only when a muscle is struck (to ~1.5–2.5 h) [K] `[R1-04 §12.7]`. ✓ consistent (M).
+18. **Brain death pupils**: fixed, mean **5.0 ± 0.85 mm**; eyes move with the head (doll's eyes absent) [S17] [S18]. **✓ verified** (doll's eyes, 4–9 mm range); ⚠ the mean not re-verified.
+19. **Neurogenic pulmonary oedema froth**: lung oedema at autopsy in ~32 % (scene deaths) to ~50 % (deaths within days) of fatal head injuries; visible froth is rarer; game p 0.2–0.3 (default 0.2) [K; M31] [E]. **⚠ not re-verified** (visible-froth p is `[E]`).
+20. **Full voluntary action for 10–15 s after the heart is destroyed** (FBI 1989 doctrine) [S22]. **✓ verified** (quote exists; doctrine, not measured data).
 
 ---
 
@@ -1314,7 +1354,8 @@ All values are defaults collected from §2–§10 (tags there). The table above 
 
 1. Gasping incidence and its decline with time; gasp onset, rate and duration [M1] [M2] [M3].
 2. The anoxic-ischaemic sequence timings with a beating heart [M10]. Treat as (L–M) until checked.
-3. Syncope jerk counts and the syncope-vs-seizure discrimination [M7] [M8] [M9], and the myoclonus share in tilt-table syncope (conflicts with [S1]'s 90 %; the game uses 0.5–0.9 by onset speed).
+3. Syncope jerk counts and the syncope-vs-seizure discrimination [M7] [M8] (fact-check: [M9] removed; it has no jerk counts), and the myoclonus share in tilt-table syncope (conflicts with [S1]'s 90 %; the game uses 0.5–0.9 by onset speed).
+15. (Fact-check) Lempert & von Brevern 1996 eye-movement counts (7/6/1 of 14) [S2]; Rogers 1995 NPE autopsy rates [M31]; the [S15] vomiting paper (never identified); the [S18] brain-death pupil mean; the Sauvageau 2010/2011 timings [M10], especially the last-muscle-movement range.
 4. Asystole/VF anoxic tonic spasm frequency and timing [M5] [M6].
 5. Tongue-bite, cry and froth probabilities in GTC [M26] [M27].
 6. Spinal reflex frequencies by type, and Lazarus timing and kinematics [S11] [M11] [M12].
@@ -1376,7 +1417,7 @@ These were found by web search in earlier sessions of this project and are liste
 - **[M6]** Aminoff MJ, Scheinman MM, Griffin JC, Herre JM. Electrocerebral accompaniments of syncope associated with malignant ventricular arrhythmias. *Ann Intern Med* 1988;108(6):791–796.
 - **[M7]** van Dijk JG, Thijs RD, van Zwet E, et al. The semiology of tilt-induced reflex syncope in relation to electroencephalographic changes. *Brain* 2014;137(2):576–585.
 - **[M8]** Shmuely S, Bauer PR, van Zwet EW, van Dijk JG, Thijs RD. Differentiating motor phenomena in tilt-induced syncope and convulsive seizures. *Neurology* 2018;90(15):e1339–e1346.
-- **[M9]** Sheldon R, Rose S, Ritchie D, et al. Historical criteria that distinguish syncope from seizures. *J Am Coll Cardiol* 2002;40(1):142–148.
+- **[M9]** Sheldon R, Rose S, Ritchie D, et al. Historical criteria that distinguish syncope from seizures. *J Am Coll Cardiol* 2002;40(1):142–148. (Fact-check: a questionnaire-based diagnostic score; it supports "waking with a cut tongue", head turning and prolonged confusion as seizure markers, but it has **no jerk counts**. Removed as a source for §3.1 jerk numbers.)
 - **[M10]** Sauvageau A, LaHarpe R, Geberth VJ. Agonal sequences in eight filmed hangings: analysis of respiratory and movement responses to asphyxia by hanging. *J Forensic Sci* 2010;55(5):1278–1281; and Sauvageau A et al. Agonal sequences in 14 filmed hangings with comments on the role of the type of suspension, ischemic habituation, and ethanol intoxication on the timing of agonal responses. *Am J Forensic Med Pathol* 2011;32(2):104–107. (Used only for the timing of motor and respiratory responses to cerebral ischaemia.)
 - **[M11]** Ropper AH. Unusual spontaneous movements in brain-dead patients. *Neurology* 1984;34(8):1089–1092.
 - **[M12]** Saposnik G, Bueri JA, Mauriño J, Saizar R, Garretto NS. Spontaneous and reflex movements in brain death. *Neurology* 2000;54(1):221–223.
@@ -1411,3 +1452,118 @@ These were found by web search in earlier sessions of this project and are liste
 - **None encountered.** No web content was retrieved in this session: every `WebSearch` call was refused (search budget exhausted, 200 of 200 calls), and `WebFetch` was not used. There were therefore no pages, snippets or code that could carry injected instructions.
 - The only material read was the sibling research documents in this repository (`docs/research/01–04`, `docs/research2/01–02`). They were treated as data. They contained no instructions directed at the reader.
 - Nothing was downloaded, installed or executed. No commands were run. No code was copied from any external source; the pseudocode in §11.2 was written for this document. No install commands or links to executables appear in this document.
+- **Fact-check pass (§18)**: again **none encountered**. The checker's `WebSearch` calls were refused (budget 200/200 used) and its one `WebFetch` to a PubMed abstract was refused by the egress proxy (`EGRESS_BLOCKED`), so no web text reached the checker. Only local sibling documents were read, as data. No instructions were found in them.
+
+---
+
+## 18. Fact-check (independent review, 2026-09-26)
+
+### 18.1 Method and limits of this check
+
+- **No fresh web evidence could be obtained.** Both `WebSearch` calls were refused because the session's shared search budget was exhausted (200/200). One `WebFetch` to the PubMed abstract of `[S2]` was refused by the egress proxy (`EGRESS_BLOCKED`).
+- The check therefore rests on:
+  1. the checker's own knowledge of the primary literature `[K]`, with a confidence grade;
+  2. **re-derivation** of every computed number (gasp schedule, cyanosis thresholds, momentum, arithmetic of the cut-throat series);
+  3. consistency with round one (`[R1-02]`, `[R1-03]`, `[R1-04]`) and with the fact-checked round-two files `[R2-01]` and `[R2-02]`. Those files draw on the same search summaries, so they are **not independent confirmation** of the `[S#]` numbers; they only show what the earlier searches returned.
+- Process note: before starting, the checker ran one read-only local directory listing (file names and a line count) in the shell. Nothing else was executed, downloaded or installed, and no other file was changed.
+- Marks used in the text: **✓ verified**, **⚠ not re-verified**, **corrected: was X** (see §0.1).
+
+### 18.2 Per-claim verdicts
+
+| # | Claim | Verdict | Value to use | Basis |
+|---|---|---|---|---|
+| 1 | Syncope: LOC 12.1 ± 4.4 s; jerks ~90 %; automatisms 79 %; eyes open | ✓ verified | Unchanged. Context added: 59 volunteers, 56 episodes, 42 complete induced syncopes | `[K]` (H): standard, widely reproduced abstract values of Lempert 1994 |
+| 2 | Eye movements 7/14 up, 6/14 downbeat then up, 1/14 primary | ⚠ counts not re-verified; qualitative ✓ | Unchanged; upgaze transient | `[K]` (M): upward deviation predominates, sometimes preceded by downbeat nystagmus |
+| 3 | Cerebral flow stop → LOC 5–10 s (mean 6.8); destroyed heart 8–15 s | ✓ verified | Unchanged; **posture factor added** (upright ×0.85, supine ×1.2) | Rossen 1943 `[K]` (H); asystole/VF LOC ~6–12 s `[K]` (M) |
+| 4 | 10–15 s of full voluntary action after the heart is destroyed | ✓ verified | Unchanged; §10.2 now states action can continue through the grey-out until LOC | FBI 1989 (Patrick) wording `[K]` (H); doctrine, not measured data |
+| 5 | Gasping in ~33–40 % of arrests; declines with time; needs the medulla | ✓ verified | Unchanged | Clark 1992 (~40 % at the call), Bobrow 2008 (~33 %, decline with time, ~3× survival) `[K]` (M); medullary generator `[K]` (H) |
+| 6 | Gasp schedule 5–120 s / 6–20 s × 1.15–1.5 / 3–30 gasps / false last breath 0.3 | ⚠ not re-verified (engineering) | Unchanged; **arithmetic corrected**: the default 8 gasps end at ~3.4 min, not ~4 min | Re-derived 10 × 1.3ⁿ series |
+| 7 | GTC mean 62 s; only 27 % show all phases | ✓ verified (M) | Unchanged; **pre-tonic clonic phase added** (p 0.2–0.3) | Theodore 1994 via `[R2-01]` summary; other video-EEG series ~1–2 min `[K]` |
+| 8 | Clonic jerks slow (~3–4 Hz → ~1 Hz) with lengthening gaps | ✓ verified (qualitative, M); frequencies `[E]` | Unchanged | Classic Gastaut description `[K]` |
+| 9 | Lateral tongue bite highly specific; sensitivity ~20–35 %; syncope bites rare, at the tip | ✓ verified (M–H) | Unchanged | Benbadis 1995 (~24 % / ~99 %); Brigo 2012 (~33 % / ~96 %) `[K]` |
+| 10 | Syncope jerks 1–10, irregular, no slowing, < 15 s; seizures dozens, rhythmic, slowing | ✓ verified (M); **attribution corrected** | Unchanged; source is [M8] only (was [M8, M9]) | Shmuely 2018 `[K]` (M); Sheldon 2002 has no jerk counts |
+| 11 | Spinal reflexes in 13–79 % (~40 % most-cited); Lazarus rare; needs perfused cord | ✓ verified (M); attribution clarified | Unchanged (p 0.2–0.4; Lazarus 0.03–0.05) | Saposnik 2000 15/38 = 39 % `[K]` (M–H); [S11] supports only the low end |
+| 12 | Hanging-type ischaemia: LOC 10–15 s … last twitch 4–7 min | ✓ verified (M); **one value corrected** | Last isolated movement **~2–7.5 min** (was "up to ~4–7 min"); other times unchanged; timed from the start of suspension | Recall of Sauvageau 2010: 13, 14, 19, 38 s; 1:17 min; last breath 1:02–2:05; last movement 1:52–7:31 `[K]` (M) |
+| 13 | Cut throat (74 cases): ~50 % exsanguination, 36.5 % aspiration | ⚠ not re-verified | Unchanged | Arithmetic consistent (27/74, 37/74); the paper itself could not be opened |
+| 14 | Vomiting ~7 % of adult concussions, ~28 % with skull fracture | ⚠ not re-verified; **wording corrected** | 0.07 / 0.28, relabelled "adult head injury seen in hospital (mostly minor)" | Source paper never identified; magnitude plausible `[K]` (L–M) |
+| 15 | Death rattle 23–92 %; median ~16–23 h; not in fast deaths | ✓ verified (M) | Unchanged | Range quoted in the Cochrane and other reviews `[K]` (M–H); exact medians not re-opened |
+| 16 | Hui signs of death within days | ✓ verified (H) | Unchanged | Hui 2015: eight bedside signs, specificity > 95 % `[K]` |
+| 17 | Cyanosis ~5 g/dL capillary; arterial game rule ≥ 2.5 g/dL; bled-out body white-grey | ✓ verified; **range corrected** | Default 2.5; band **2.5–3.0** (was 1.5–3) | Capillary ≈ arterial + ~1.9 g/dL; Comroe & Botelho observer data `[K]` (M); 1.5 g/dL is the methaemoglobin figure |
+| 18 | Mottling from the knees, score 0–5; needs ≥ 10–20 min of shock | ✓ score (H); ⚠ timing `[E]` | Unchanged; note that the score comes from septic shock | Ait-Oufella 2011 `[K]` |
+| 19 | Shivering: start 35.5–36 °C, peak 34–35 °C, stop < 30–31 °C; bursts 4–8/min; suppressed by shock, hypoxia, coma | ✓ verified (M); **stop widened** | Stop **30–32 °C** (default 31; was 30–31) | Sessler thresholds; Swiss hypothermia staging; Israel & Pozos 4–8 cycles/min `[K]` |
+| 20 | Brain-death pupils 5.0 ± 0.85 mm; doll's eyes absent | ✓ doll's eyes and 4–9 mm range; ⚠ mean | Unchanged | AAN brain-death criteria `[K]` (H); mean from the `[R2-01]` search summary only |
+| 21 | NPE froth common in fatal head injury; game p 0.2–0.3, onset 15 min – 4 h | ⚠ not re-verified (game p); autopsy rates ✓ (M) | p 0.2–0.3 kept, **default 0.2**; p is *visible* froth, below the 32–50 % autopsy oedema rate | Rogers 1995 recalled as ~32 % (scene) / ~50 % (≤ 96 h) `[K]` (M) |
+
+### 18.3 Other changes made in the text
+
+- §2.2: default gasp-schedule arithmetic corrected (the eighth gasp is at ~206 s); ✓/⚠ marks on incidence rows and gasp parameters.
+- §2.5: cut-throat row marked ⚠, with the arithmetic check and the fatal-series bias noted.
+- §2.6: autopsy oedema separated from visible froth; `npe_p` default 0.2.
+- §2.7 and §13: "adult concussion" relabelled.
+- §3.1: study population, a hallucination row (~60 % of induced faints reported visual or auditory experiences, `[K]` (M)) and ✓/⚠ marks added; [M9] removed as a jerk-count source.
+- §3.2: Rossen, posture and EEG notes; upgaze row marked transient.
+- §3.3 and §3 parameters: hanging-series times refined; last twitch 110–450 s (default 240).
+- §4.1–4.2: pre-tonic clonic phase and `gtc_pretonic_clonic_p` added; tongue-bite statistics added.
+- §5.4: frequency sources clarified. §5.5: **what a dead body does when shot, stabbed or struck** added, with `pm_hit_idiomuscular_p`.
+- §6.2: shivering rows marked; stop threshold widened.
+- §7.1: brain-death pupil and doll's-eye marks.
+- §8.2–8.3: cyanosis derivation and corrected band; mottling vs livor mortis note.
+- §10.2: action can continue until LOC. §10.3: "Screams" corrected (no voice when the airway is cut below the cords). §10 checklist: upgaze only for seconds.
+- §12: myth rows 16–21 and two new assertions; checklist additions. §14: verdict marks and two new items (19–20). §15: new QA item 15. §16.2: note on [M9]. §17: fact-check pass logged.
+
+### 18.4 Myth audit (this document)
+
+| Myth | Status |
+|---|---|
+| Bullets knock people backwards | **Gap filled**: §12 row 17 (the document was silent; `[R2-02 §1.3]` has the arithmetic, which the checker re-derived for §5.5: 9 mm ≈ 2.9 N·s → whole body ~0.04 m/s) |
+| Eyes "roll back" at the moment of death | **Gap filled**: §12 row 16, `assert_no_upgaze_in_dead`, §3.2 and §10 wording. The document already had upgaze correctly transient in §3.2; the §10 checklist said "eyes rolled up" without the time limit |
+| "Hydrostatic shock" drops people from torso hits | **Gap filled**: §12 row 18 and an assertion |
+| Everyone screams when shot | **Corrected**: §10.3 carotid row ("Screams" → conditional; none with a cut airway); §12 row 19 |
+| Heart shot = instant drop | ✓ Correctly rejected (§10.2, [S22]); strengthened |
+| Long violent "death throes" | **Gap filled**: §12 row 20 |
+| A corpse jerks when shot | **Gap filled**: §5.5 and §12 row 21 |
+| Death rattle in every death; foam in every death; blue bled-out body; mottling in a 1-min death | ✓ Correctly rejected in the original (§12 rows 7, 8, 13, 14) |
+
+### 18.5 Gaps added
+
+1. **Posture changes time to LOC** after circulatory arrest (upright faster, supine slower) (§3.2).
+2. **Pre-tonic clonic phase** of a GTC (§4.1).
+3. **Response of a dead body to being shot, stabbed or struck**: mechanical only, plus a small local idiomuscular bulge within ~2 h (§5.5).
+4. **Visible froth vs autopsy lung oedema** distinction (§2.6).
+5. **Mottling vs livor mortis** distinction (§8.3).
+6. **Post-faint experiences** (~60 % in induced faints) for survivor dialogue (§3.1).
+7. **Screaming gated by airway state** (§10.3).
+8. Myth rows 16–21 and two assertions (§12).
+
+### 18.6 Simulation parameters changed or added by the fact-check
+
+| Parameter | Value / range | Unit | Notes | Tag |
+|---|---|---|---|---|
+| `cerebral_arrest_loc` posture factor | ×0.85 upright, ×1.2 supine | × | New | [E] on [K] (M) |
+| `ischaemic_beating_heart_seq` last twitch | 110–450 (default 240) | s | Was "≤ 240–450" | [K; M10] (M) |
+| `gtc_pretonic_clonic_p` | 0.2–0.3; 2–6 jerks at 1–3 Hz over 1–5 s | p | New | [S3] [E] |
+| `npe_p` | 0.2–0.3, default 0.2 | p | Visible froth only | [K; M31] [E] |
+| `cyanosis_threshold_deoxyHb_arterial` | 2.5 (band 2.5–3.0) | g/dL | Band was 1.5–3 | [K; M21] (M) |
+| `shiver_core_stop` | 30–32 (default 31) | °C | Was 30–31 | [K] (M) |
+| `pm_hit_idiomuscular_p` | 0.1–0.3 per direct muscle hit; ≤ ~2 h after `t_arr`; 5–20 mm bulge | p | New | [K] (M), [E] |
+| `assert_no_upgaze_in_dead` / `assert_no_instant_drop_without_cns_or_support_loss` | true / true | bool | New | [S2] [S22] [K] |
+| `carotid_scream_p` | airway intact 0.3–0.5; airway cut below the cords 0 | p | New | [E] on [K] |
+
+### 18.7 Visual/behavioural checklist (fact-check additions)
+
+- A faint or cardiac collapse: eyes up for a few seconds, then back to the front; in the dead, the eyes look straight ahead or slightly outward, never rolled up to the whites.
+- A standing victim goes down a little faster than one already lying down when the heart stops.
+- Some seizures open with a few scattered jerks before the body goes rigid.
+- A corpse that is shot jolts only as much as the bullet's momentum allows, then settles; it never convulses.
+- A victim whose windpipe is cut can make no scream; the sound is hissing, bubbling and gurgling.
+- Pink-white froth appears in only a minority of head-injury deaths, even though wet lungs are common at autopsy.
+
+### 18.8 Checker's bibliography (`[K]`; cited from memory, **not accessed** in this session, so no URLs)
+
+- Comroe JH, Botelho S. The unreliability of cyanosis in the recognition of arterial anoxemia. *Am J Med Sci* 1947;214:1–6.
+- Sessler DI. Temperature monitoring and perioperative thermoregulation. *Anesthesiology* 2008;109:318–338.
+- Brown DJA, Brugger H, Boyd J, Paal P. Accidental hypothermia. *N Engl J Med* 2012;367:1930–1938. (Swiss staging.)
+- Hui D, et al. Bedside clinical signs associated with impending death in patients with advanced cancer. *Cancer* 2015;121:960–967 (= [M14]).
+- Wee B, Hillier R. Interventions for noisy breathing in patients near to death. *Cochrane Database Syst Rev* 2008. (Death-rattle prevalence range.)
+- Wijdicks EFM, Varelas PN, Gronseth GS, Greer DM. Evidence-based guideline update: determining brain death in adults. Report of the Quality Standards Subcommittee of the American Academy of Neurology. *Neurology* 2010;74:1911–1918. (Pupils mid-size to dilated; oculocephalic reflex absent.)
+- Gastaut H, Broughton R. *Epileptic Seizures*. Springfield: Thomas; 1972. (Tonic, vibratory and clonic phases.)
