@@ -604,6 +604,17 @@ def verify(objs):
         check(f"preset '{name}'", not missing and opened,
               f"{secs:.2f} s, skin {sigs['GH_Skin'][0]} verts, peaks "
               + " ".join(f"{k[5:]}={v:.2f}" for k, v in skin.items()))
+    brows = bpy.data.objects.get(BROWS_NAME)
+    if brows is not None:
+        def n_strands():
+            ev = brows.evaluated_get(bpy.context.evaluated_depsgraph_get())
+            return len(ev.data.curves)
+        apply_preset("intact")
+        n0 = n_strands()
+        apply_preset("burn")
+        n1 = n_strands()
+        check("eyebrows follow the skin: burned brow hairs are gone", 0 < n1 < n0 * 0.8,
+              f"{n0} -> {n1} strands")
     for name in ("gunshot", "carnage"):
         apply_preset(name)
         ghc.ensure_controls()["damage"] = 0.0
