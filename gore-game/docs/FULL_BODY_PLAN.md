@@ -1,5 +1,7 @@
 # Gore Head — Full-Body Build Plan (technical direction)
 
+> Audio removed by the user; the game has no sound. Audio sections below were deleted or reworded to visuals.
+
 Project: **Gore Head**, a native Godot 4.5 PC game (Forward+, GDScript + Godot shaders, built-in Jolt physics) with every asset generated procedurally in Blender 5.0 (`bpy`). The subject is a fictional, procedurally generated adult. No real person is modelled.
 Audience: the engineers who build the full-body version, one work package each.
 Status: v1.0, 2026-09-26. **Numbers about the body, wounds, bleeding, physiology, eyes and death come from [`REALISM_BIBLE.md`](REALISM_BIBLE.md) (cited as `[RB §x]`). This document says how to build them.** Where this plan changes a bible decision it says so in §0.3.
@@ -32,7 +34,7 @@ Technical sources read for this plan are listed in §12.3 as `[T1]…[T12]`. Med
 | D13 | Reveal and X-ray | Inner meshes hidden per segment/organ until an open wound lies within 5–10 cm; back faces of every closed inner mesh shade as that tissue's cut interior; X-ray by 4.5 stencil [RB §8.1] | Cheap, and holes never look hollow | Always-on inner meshes |
 | D14 | Eyes | Refracted-iris eye shader with pupil, gloss, clouding and tache noire as instance uniforms; lids and gaze on bones driven by an `EyeModifier` (`SkeletonModifier3D`); tearline + occlusion meshes | Bible §5 behaviour needs per-frame control of 8–14 values | Texture-swap eyes |
 | D15 | Asset hand-off | One subject `.glb` (meshes, skin, blend shapes, placeholder-named materials, no images) + JSON sidecars + baked PNG/EXR textures. All game materials are Godot `ShaderMaterial`s assigned by the import script | Godot cannot run Cycles node trees; keeping images out of the glb lets Godot import each texture with the right settings | Embedded textures |
-| D16 | Audio | Offline synthesis in Python + numpy (already installed for `bpy`) → WAV banks; runtime `AudioDirector` | No downloaded sounds; real-time GDScript synthesis is too slow | AudioStreamGenerator voices |
+| D16 | Audio | **None** (user decision): the game has no sound | Removed by the user | Any audio system |
 | D17 | Performance | **Design by budget** (§4); automated gates on counts and CPU ms under lavapipe; GPU ms measured on real GTX 1660 / RTX 3060 hardware at milestones M2 and M4 | Lavapipe GPU timings are meaningless for the target | fps checks on this machine |
 | D18 | LOD | Single LOD0 for the subject in v1 (the room is ≤ 6 m deep, the subject is always ≥ 15 % of screen height); LOD1 (50 %) built and kept as a fallback | Skinned auto-LOD can glitch [RB §8.2]; distances are short | Auto LOD on skinned meshes |
 | D19 | Neck seam | Head mesh (head atlas, 0.24 mm texels) and body mesh (body atlas, 0.84 mm) meet on a **canonical seam ring** at z ≈ 1.485 m (body frame); both meshes are zipped to identical ring vertices | Keeps the existing high-resolution head unchanged; the seam is invisible in position and normal | Rebuilding the head at body resolution (loses lids, lips, ears) |
@@ -148,7 +150,7 @@ blender/gore_body  build.py --stage all                                  ▼
 gore-game/assets/generated/subject/                               ├ Physiology (20 Hz, deterministic)
   GB_Subject.glb, *.json, textures/*.png|*.exr                    ├ DamagePainter (compute, Texture2DRD atlases)
 gore-game/assets/generated/props/  weapons.glb, room.glb          ├ VfxDirector (60 Hz) + blood FX pools
-gore-game/assets/generated/audio/  *.wav (tools/audio_gen)        ├ MotorController (PD, 60 Hz) + behaviours
+                                                                  ├ MotorController (PD, 60 Hz) + behaviours
                                                                   ├ EyeModifier / FaceController / SkinState
                                                                   └ RevealManager, FractureManager, XRay
 ```
@@ -184,7 +186,7 @@ Subject (Node3D, subject.gd)                      facade: apply_hit(), vitals, s
 5. **Track**: continue to the exit surface (or stop by energy rules [RB §2.1]).
 6. **Anatomy query** (§3.7): one `intersect_shape` with a capsule of the cavity radius along the track in the anatomy space → candidate bones, organs, vessels, cord segments, brain label grid → exact classification in GDScript → `AnatomyEvent[]`.
 7. **Morphology** (`morph_gunshot.gd`): wound record with per-layer radii, collar, range-of-fire marks, fracture set, exit shape [RB §2.1].
-8. **Dispatch**: WoundStore.add → GPU buffers; Painter.queue (soot/stipple/collar/blood); Physiology.inject (bleed sites, organ, cord, brain); Vfx.spatter (back/forward, hero drops); Fractures; Reveal; Audio cue; case-log entry.
+8. **Dispatch**: WoundStore.add → GPU buffers; Painter.queue (soot/stipple/collar/blood); Physiology.inject (bleed sites, organ, cord, brain); Vfx.spatter (back/forward, hero drops); Fractures; Reveal; case-log entry.
 
 ### 2.4 Rates and threads
 
@@ -200,7 +202,6 @@ Subject (Node3D, subject.gd)                      facade: apply_hit(), vitals, s
 | Floor splat spread | 15 Hz | Render thread (compute) | GPU ≤ 0.1 ms | [RB §8.3] |
 | Skin masks, livor atlas | ≤ 1 Hz | Main → render | ≤ 0.1 ms | [RB §1.3] |
 | Eye/face modifiers | per frame | Main | ≤ 0.1 ms | E |
-| Audio director | per frame | Main | ≤ 0.1 ms | E |
 
 ### 2.5 Frames and spaces
 
@@ -226,7 +227,7 @@ Subject (Node3D, subject.gd)                      facade: apply_hit(), vitals, s
 | `b2g` | (x, z, −y) | — | Single conversion | [T10] V |
 
 ### Visual/behavioural checklist (architecture)
-- Hole, first blood, spatter and sound all appear on the impact frame; nothing waits for a physiology tick.
+- Hole, first blood and spatter all appear on the impact frame; nothing waits for a physiology tick.
 - Bleeding, jet height and pallor never step visibly at 20 Hz (VFX interpolates).
 - A shot to the same body point produces the same wound whether the subject stands, lies curled or is mid-fall.
 
@@ -524,7 +525,7 @@ The room is a set of known planes and boxes. At launch each hero drop solves its
 ### 3.5 Reveal and X-ray
 
 - **RevealManager** keeps, per inner mesh piece (muscle-shell surface, bone piece ID, organ ID, vessel class, brain, cord), the rest-space AABB. A piece becomes visible when any **open** wound SDF lies within `layer_reveal_radius` of it; pieces inside one mesh are shown or hidden by an instance-uniform bitmask that collapses hidden vertices in `vertex()` [RB §8.1] (no discard cost). Inner meshes never cast shadows.
-- **X-ray mode** (player toggle or kill-cam): skin/cloth write stencil ref 1 in the opaque pass; X-ray variants of skeleton, organs, vessels, cord and the rest-space bullet track (glowing capsule) draw in the transparent pass with `depth_test_disabled`, stencil `read`, `compare_equal` (4.5 spellings) [RB §8.2]; bones emissive `#C8D4E0`, fractures brighter, severed vessels red; skin swaps to a Fresnel rim (α 0.1–0.25). Time scale 0.05–0.1 for the bullet, 1.5–3 s window, `AudioServer.playback_speed_scale` matched [RB §8.1, R06 §11].
+- **X-ray mode** (player toggle or kill-cam): skin/cloth write stencil ref 1 in the opaque pass; X-ray variants of skeleton, organs, vessels, cord and the rest-space bullet track (glowing capsule) draw in the transparent pass with `depth_test_disabled`, stencil `read`, `compare_equal` (4.5 spellings) [RB §8.2]; bones emissive `#C8D4E0`, fractures brighter, severed vessels red; skin swaps to a Fresnel rim (α 0.1–0.25). Time scale 0.05–0.1 for the bullet, 1.5–3 s window [RB §8.1, R06 §11].
 
 ### Simulation parameters (reveal and X-ray)
 
@@ -582,29 +583,20 @@ The room is a set of known planes and boxes. At launch each hero drop solves its
 | Anatomy candidates | **one** `intersect_shape` with a `CapsuleShape3D` (r = cavity radius) along the track, max 64 results | — | 20–60 µs |
 | Exact classification | per candidate: analytic segment–capsule distance (vessels, cord), `intersect_ray` against that body only for bones/organ meshes, voxel walk in the brain grid | ≤ 64 candidates × ~10 µs | 0.3–0.7 ms |
 | Morphology + records | tables and RNG | ~200 lines | 0.2–0.4 ms |
-| Paint/VFX/audio queueing | — | small | 0.1 ms |
+| Paint/VFX queueing | — | small | 0.1 ms |
 | **Total pistol shot** | | | **≈ 0.7–1.4 ms (budget 2)** |
 
 The private rest space is created with `PhysicsServer3D.space_create()` and made active; static bodies hold: skin/shorts trimeshes (LOD0 render geometry, rest pose), bone meshes (decimated, concave, ≤ 20k tris total), organ meshes, vessel and cord capsules, brainstem capsules; collision layers separate classes. **Spike in G0**: confirm that Jolt queries see bodies in a private space one physics frame after creation, and measure the costs above.
 
-### 3.8 Audio from code
-
-Offline generator `gore-game/tools/audio_gen/` (python3 + numpy + the standard-library `wave` module; nothing installed): gunshots (N-wave crack + muzzle blast + early reflections and a tail from an image-source impulse response of the 6 × 6 × 3 m tiled room), impacts (filtered noise + modal resonators for bone crack/snap/crunch), wet sounds (noise bursts with Minnaert bubble tones), torch (hiss loop, sizzle, fat spit), blood (drip on skin/cloth/tile/pool, patter, pour, spurt), body (falls, limb flops, head knock on tile), breathing and voice by source–filter synthesis (glottal pulse + noise through formant filters): normal/panting/gasp/agonal/stertor/gurgle/stridor/wheeze/hiss/suck/bubble, moan/groan/whimper/scream/cough/wet cough. 4–8 variations each, 44.1 kHz 16-bit mono WAV + `audio_manifest.json` (cue → files, gain dB, pitch range, bus). Levels from [RB §4.9] (screams 90–105 dB at 1 m, speech 62, shout 82).
-
-### Simulation parameters (hit pipeline and audio)
+### Simulation parameters (hit pipeline)
 
 | Parameter | Value / range | Unit | Notes | Source |
 |---|---|---|---|---|
 | `hit_candidates_max` | 64 | — | `intersect_shape` max_results | E |
 | `rest_space_tris` | skin+shorts ~78k, bones ≤ 20k | tris | Face index +~25 % memory | [RB §8.2] |
-| `audio_format` | WAV 44.1 kHz 16-bit mono | — | Godot imports/compresses | G |
-| `audio_variations` | 4–8 | per cue | | G |
-| `scream_level` | 90–105 | dB @ 1 m | | [RB §4.9] C |
 
-### Visual/behavioural checklist (hit pipeline and audio)
+### Visual/behavioural checklist (hit pipeline)
 - A shotgun volley at close range never hitches the frame (pellet tracks merged, work spread over ≤ 2 frames).
-- Every gunshot sounds like the tiled room (short bright reflections, ~0.4–0.6 s tail); the patter of spatter follows 30–300 ms later (R06 §8).
-- Breathing sounds always match the respiratory state on screen; no death rattle in fast deaths [RB §4.9].
 
 ---
 
@@ -655,7 +647,6 @@ Offline generator `gore-game/tools/audio_gen/` (python3 + numpy + the standard-l
 | `GB_Subject.glb` | ≤ 40 MB | No images; morph targets dominate (head 24 × ~16k vertices ≈ 9 MB with normals) |
 | Each 2,048² PNG | ≤ 12 MB | 8-bit; EXR only for position maps |
 | `assets/generated/` total | ≤ 250 MB | Git-ignored except `manifest.json` (§5.7) |
-| Audio banks | ≤ 40 MB WAV | ~300 files |
 | Full Blender build | ≤ 60 min on 4 cores (bakes dominate); incremental stages ≤ 10 min | Content-hash caching per stage |
 | Exported game `.pck` | ≤ 1 GB | |
 
@@ -914,9 +905,9 @@ bpy.ops.export_scene.gltf(
 gore-game/
 ├── project.godot, export_presets.cfg (M4), .gitignore, main.tscn
 ├── docs/                         (existing research + this plan)
-├── tools/  (.gdignore)           jpeg_encode.py (existing), audio_gen/ (G8, python3 + numpy)
-├── assets/generated/             Blender and audio outputs (git-ignored except manifests)
-├── assets/authored/              ShaderMaterial .tres per surface, particle process materials, decal set, bus layout, UI theme
+├── tools/  (.gdignore)           jpeg_encode.py (existing)
+├── assets/generated/             Blender outputs (git-ignored except manifests)
+├── assets/authored/              ShaderMaterial .tres per surface, particle process materials, decal set, UI theme
 ├── core/                         frames.gd, events.gd, sim_clock.gd, settings.gd, registry.gd, perf_governor.gd, rng.gd, json_util.gd
 ├── pipeline/import/              subject_post_import.gd, props_post_import.gd, mesh_prep.gd, material_map.gd
 ├── subject/
@@ -946,7 +937,6 @@ gore-game/
 ├── world/                        forensic_room.tscn, room.gd
 ├── ui/                           hud.tscn, hud.gd, tool_bar.gd, vitals_panel.gd, case_log.gd, time_controls.gd, ruler.gd,
 │                                 examine_readout.gd, dev_scenarios.gd, theme.tres
-├── audio/                        audio_director.gd, cue_map.gd
 ├── xray/                         xray_mode.gd, killcam.gd
 └── tests/                        run_tests.gd, unit/, scenarios/, visual/, perf/heavy_gore.tscn, perf/perf_gate.gd, out/ (ignored)
 ```
@@ -966,18 +956,17 @@ gore-game/
 | Visual layers | 1 world, 2 subject outer, 3 subject inner, 4 debris, 5 viewmodel, 6 X-ray; world decals' `cull_mask` excludes 2–4 | [RB §8.2] |
 | Physics layers (world) | 1 world, 2 ragdoll, 3 debris, 4 player | — |
 | Private rest-space layers | 1 skin, 2 shorts, 3 bone, 4 organ, 5 vessel, 6 cord/brainstem, 7 nerve | §3.7 |
-| Autoloads | `Events`, `SimClock`, `Settings`, `Registry`, `Perf`, `AudioDirector` | §6.3 |
+| Autoloads | `Events`, `SimClock`, `Settings`, `Registry`, `Perf` | §6.3 |
 
 ### 6.3 Autoloads
 
 | Autoload | Responsibility | Key API |
 |---|---|---|
-| `Events` | Signal bus | `wound_created(subject, id)`, `hit_resolved(subject, report)`, `subject_state(subject, state)`, `spatter(event)`, `sound(cue, pos, params)`, `xray(on)` |
+| `Events` | Signal bus | `wound_created(subject, id)`, `hit_resolved(subject, report)`, `subject_state(subject, state)`, `spatter(event)`, `xray(on)` |
 | `SimClock` | Time bands [RB §1.3], sim time, player mode | `tick(dt_real) -> float dt_sim`, `report_prediction(t_pred_s, critical: bool)`, `set_mode(REALTIME\|STANDARD\|FORENSIC)`, `fast_forward(scale)`, `t_minutes` (→ `gb_time_min`) |
 | `Settings` | Quality tier, gore options, time mode | `tier`, `apply()` |
 | `Registry` | Loads `manifest/rig/organs/vessels/spine/codes/brain_labels` once, converts to Godot frame | `rig()`, `organs()`, `vessels()`, `spine()`, `codes()`, `brain_grid()` |
 | `Perf` | Custom monitors, spans, governor [RB §8.4] | `begin(span)`, `end(span)`, `level` |
-| `AudioDirector` | Cue playback, loops, voice state | `play(cue, pos, params)`, `set_voice(subject, VoiceOutput)` |
 
 ### 6.4 Subsystem responsibilities and interfaces
 
@@ -998,7 +987,6 @@ All classes are typed GDScript; data carriers are `RefCounted` with typed fields
 | Blood FX (G4) | `vfx_director.gd` and friends | §3.4 | reads `sites()`/`flow()` each frame; `spatter(e: SpatterEvent)`, `emit_drop(p, v, vol_ul)`, `floor_add(p, vol_ml, t_min)` |
 | Tools (G7) | `tool_base.gd` and weapons | Player actions → events | `primary()`, `secondary()`, `muzzle_distance_to(subject) -> float`, `hud_info() -> Dictionary` |
 | UI (G7) | `ui/*` | HUD, vitals, case log, time controls, ruler, examine readouts, dev scenarios | `CaseLog.add(report)`, `VitalsPanel.bind(subject)` |
-| Audio (G8) | `audio_director.gd`, `cue_map.gd` | Cues from `Events` and `VoiceOutput` | `play(cue, pos, params)` |
 | X-ray (G3 shaders, G7 UX) | `xray_mode.gd`, `killcam.gd` | Stencil X-ray, kill-cam timing | `enter(subject, track)`, `exit()` |
 
 ### 6.5 Import pipeline (G0)
@@ -1088,12 +1076,11 @@ If step 1 cannot run at import (open question Q1), `mesh_prep.gd` performs it on
 | **G5** | Ragdoll and motor | G0, B6 `rig.json` (placeholder) | G1 MotorOutput | `subject/motor/*` | 20 |
 | **G6** | Eyes, face, skin state | G0, G1 EyeOutput stub | B2 face rig | `subject/face/*`, eye shaders | 12 |
 | **G7** | Tools, player, UI, X-ray UX, main scene | G0, G2 API | B8 props | `weapons/*`, `player/*`, `ui/*`, `xray/*` | 15 |
-| **G8** | Audio generator and director | G0 `Events` | — | `tools/audio_gen/*`, `audio/*`, WAV banks | 12 |
 | **Q1** | QA and performance | G0 | everything | Acceptance runner, perf gates, hardware runs | 10 + continuous |
 
-Total ≈ 266 engineer-days (Blender 104, Godot 152, QA 10); with 10 engineers the calendar is ~12 weeks because of the dependency chain and integration (§9).
+Total ≈ 254 engineer-days (Blender 104, Godot 140, QA 10; the 12 days of the removed audio package G8 are subtracted); with 10 engineers the calendar is ~12 weeks because of the dependency chain and integration (§9).
 
-**Interface owners** (writer / reader): WoundRecord G2 / G3; FlowState, Vitals G1 / G4, G7; MotorOutput G1 / G5; EyeOutput, SkinOutput G1 / G6; VoiceOutput G1 / G8; `rig.json` B6 / G5; `vessels.json` B5 / G1, G2; `organs.json`, `spine.json` B4 / G1, G2; `codes.json` B1 / G2, G3; `manifest.json` B6 / G0.
+**Interface owners** (writer / reader): WoundRecord G2 / G3; FlowState, Vitals G1 / G4, G7; MotorOutput G1 / G5; EyeOutput, SkinOutput G1 / G6; VoiceOutput G1 / G5, G6 (VoiceOutput drives only the visible mouth, jaw and breathing animation; there is no sound); `rig.json` B6 / G5; `vessels.json` B5 / G1, G2; `organs.json`, `spine.json` B4 / G1, G2; `codes.json` B1 / G2, G3; `manifest.json` B6 / G0.
 
 **Full-body acceptance tests** (FB, in addition to the bible's §9 numbers):
 
@@ -1166,10 +1153,7 @@ Tasks: §3.1–3.2: builder from `rig.json`, PD with directional caps, tone stat
 Tasks: §3.6. Acceptance: [RB §9] #29 (colours), #33 (eyes), #41–#46; bible §5 checklist.
 
 **G7 — Tools, player, UI, X-ray UX, main scene (15 days).**
-Tasks: player; tools with bible parameters (pistol 9 mm FMJ; shotgun 00 buck / #7.5 selectable; knife stab and slash from the mouse gesture with 3–5 edge rays per frame; fist force from swing speed; hammer energy from swing; torch flux cone); dev range presets (contact, 5 cm, 30 cm, 1 m, 3 m); examine tool (grab/drag/turn the body, press for livor blanching and chest groan, wipe soot, lift lid, turn head, penlight, ruler in mm, thermometer); HUD, vitals, case log, time controls (Realtime / Standard / Forensic, 720× fast-forward, post-mortem scrub), X-ray toggle and kill-cam UX, dev scenario menu ([RB §3.4] A–I, [RB §4.7] canonical injuries), new subject by seed, quality tier. Acceptance: [RB §9] #5 (wipe), ruler ±0.5 mm on a 10 mm test sphere, #44, #47 (turning and pressing); sim time and band always visible in the forensic overlay.
-
-**G8 — Audio (12 days).**
-Tasks: §3.8 generator, manifest, bus layout (Master → World with room reverb / Body / Voice / UI; low-pass for X-ray), director (cues from `Events`, breath and voice state machine from `VoiceOutput`, drip sounds synced to the drip rate, spatter patter 30–300 ms after the shot, loops for torch and jets). Acceptance: airway and breath sounds match [RB §4.9]; 1 mL/min ≈ 20 drips/min; no death rattle in fast deaths; peaks ≤ −1 dBFS; relative levels per the bible (scream vs speech ~30–40 dB).
+Tasks: player; tools with bible parameters (pistol 9 mm FMJ; shotgun 00 buck / #7.5 selectable; knife stab and slash from the mouse gesture with 3–5 edge rays per frame; fist force from swing speed; hammer energy from swing; torch flux cone); dev range presets (contact, 5 cm, 30 cm, 1 m, 3 m); examine tool (grab/drag/turn the body, press for livor blanching, wipe soot, lift lid, turn head, penlight, ruler in mm, thermometer); HUD, vitals, case log, time controls (Realtime / Standard / Forensic, 720× fast-forward, post-mortem scrub), X-ray toggle and kill-cam UX, dev scenario menu ([RB §3.4] A–I, [RB §4.7] canonical injuries), new subject by seed, quality tier. Acceptance: [RB §9] #5 (wipe), ruler ±0.5 mm on a 10 mm test sphere, #44, #47 (turning and pressing); sim time and band always visible in the forensic overlay.
 
 **Q1 — QA and performance (10 days + continuous).**
 Tasks: acceptance runner covering every [RB §9] test and FB-1…15 (automated where numeric, scripted camera shots where visual); heavy-gore scene; CI gates; hardware sessions (GTX 1660, RTX 3060) at M2 and M4; governor tuning; Blender/Godot side-by-side renders with `gore.py`. Acceptance: [RB §9] #50; all gates green at M4.
@@ -1178,8 +1162,8 @@ Tasks: acceptance runner covering every [RB §9] test and FB-1…15 (automated w
 
 | Parameter | Value / range | Unit | Notes | Source |
 |---|---|---|---|---|
-| `work_packages` | 19 (B0–B8, G0–G8, Q1) | — | §8.1 | G |
-| `effort_blender / godot / qa` | 104 / 152 / 10 | engineer-days | | E |
+| `work_packages` | 18 (B0–B8, G0–G7, Q1) | — | §8.1; audio package G8 removed | G |
+| `effort_blender / godot / qa` | 104 / 140 / 10 | engineer-days | Godot total without G8 (−12) | E |
 | `first_isolated_demo` | day 5 | — | Placeholder subject + stubs | G |
 | `interface_freeze` | M0 (end of week 1) | — | §6.4 | G |
 
@@ -1195,14 +1179,13 @@ Tasks: acceptance runner covering every [RB §9] test and FB-1…15 (automated w
 
 ```
 day 1:  B0 ──┬──► B1 ──┐                                 G1 (from the bible, stubs out)
-             ├──► B2 ──┤ seam ring shared                G8 (generator)
+             ├──► B2 ──┤ seam ring shared
              ├──► B3 ──┤                                 B7 (tileables, iris) ; B8
              ├──► B4 ──┼──► B6 final export ──► B7 final bakes
              ├──► B5 ──┘        ▲ (week 4, again week 7)
              └──► B6 placeholder export (day 3) ──► G0 ──┬──► G2 ──► G3 ──┬──► G4
                                                           ├──► G5          ├──► G7 (+ B8)
-                                                          ├──► G6          └──► Q1 (continuous)
-                                                          └──► G8 director
+                                                          └──► G6          └──► Q1 (continuous)
 Critical path: B0 → B1/B2 → B6 final → G3 inner layers + G5 final rig → Q1 hardware pass.
 ```
 
@@ -1212,8 +1195,8 @@ Critical path: B0 → B1/B2 → B6 final → G3 inner layers + G5 final rig → 
 |---|---|---|---|
 | **M0 Walking skeleton** | 1 | Placeholder subject with final names and rig exported; imported with CUSTOM0; ragdoll falls; pistol ray → wound record → SDF dot on the skin; physiology unit tests run; perf CSV produced; interfaces frozen | FB-11, FB-12 (physiology only), scenario H [RB §3.4] |
 | **M1 Real body** | 4 | B1, B2, B3, B6 v1; skin shaders tiers a–c with walls; pistol and knife morphology; circulation, shock, consciousness, time bands; tone and flaccid collapse; blink, gaze, pupils | [RB §9] #1–#3, #15, #16, #21, #28, #32; FB-1–4, FB-7, FB-13 |
-| **M2 Inside** | 7 | B4, B5, B7 bakes; all bleeding regimes, pools, hero drops; paralysis map and behaviours; all six weapons; inner layers, fractures, X-ray; death choreography; audio v1; **first hardware perf run** | [RB §9] #4–#14, #17, #20, #22–#27, #30–#38, #41–#44; FB-5, FB-6, FB-8, FB-9, FB-14 |
-| **M3 Forensic** | 9 | Post-mortem (livor atlas, rigor, algor, eye surface), examine tools, case log, time controls, shotgun head burst, brain-region deficits, audio v2 | [RB §9] #18, #19, #29, #39, #40, #45–#49; FB-10, FB-15 |
+| **M2 Inside** | 7 | B4, B5, B7 bakes; all bleeding regimes, pools, hero drops; paralysis map and behaviours; all six weapons; inner layers, fractures, X-ray; death choreography; **first hardware perf run** | [RB §9] #4–#14, #17, #20, #22–#27, #30–#38, #41–#44; FB-5, FB-6, FB-8, FB-9, FB-14 |
+| **M3 Forensic** | 9 | Post-mortem (livor atlas, rigor, algor, eye surface), examine tools, case log, time controls, shotgun head burst, brain-region deficits | [RB §9] #18, #19, #29, #39, #40, #45–#49; FB-10, FB-15 |
 | **M4 Ship quality** | 12 | Governor tuned; [RB §9] #50 on GTX 1660 and RTX 3060; full acceptance run; Windows/Linux export presets with the 4.5 shader baker (templates: §12.1 Q9) | All [RB §9] and FB tests |
 
 ### Simulation parameters (schedule)
@@ -1221,7 +1204,7 @@ Critical path: B0 → B1/B2 → B6 final → G3 inner layers + G5 final rig → 
 | Parameter | Value / range | Unit | Notes | Source |
 |---|---|---|---|---|
 | `team_size` | 10 | engineers | 9 Blender/Godot + 1 QA | G |
-| `effort_total` | ~266 | engineer-days | §8.1 | E |
+| `effort_total` | ~254 | engineer-days | §8.1 (G8 audio, 12 days, removed) | E |
 | `calendar` | 12 | weeks | M0–M4 | E |
 | `hardware_runs` | M2, M4 | — | 1660 + 3060 | D17 |
 
@@ -1250,7 +1233,7 @@ Critical path: B0 → B1/B2 → B6 final → G3 inner layers + G5 final rig → 
 | R11 | GPU cost unknown until hardware runs | Count gates only | Conservative defaults (Medium SSS, half-res SSAO on the 1660 tier) | Governor + structural cuts (§10.2) |
 | R12 | Blender build time or memory (1.2 mm head, 2.5 mm body) | Stage timings in `manifest.json` | Stage caching, chunked SDF evaluation, 1–4 bake samples | Body at h 3 mm; bakes at 1,024² for inner sets |
 | R13 | Physiology interaction bugs and tuning time | Scenario tests drift | Deterministic replays, per-subsystem unit tests | Disable Tier-2 vessel solve and optional special states |
-| R14 | Synthetic voice sounds artificial | G8 listening review | Formant synthesis with jitter/shimmer, level control | Limit v1 to breaths, gasps, grunts, short moans; screams in v2 |
+| R14 | *Removed (was a synthetic-voice risk; the user removed audio from the game)* | — | — | — |
 | R15 | Eye realism below AAA | Side-by-side with Cycles | Refraction + parallax iris, occlusion and tearline meshes | More B7 iris detail, extra look-dev time |
 | R16 | Windows/Linux export templates are an official download | M4 | Run from the editor binary until then | User decides (§12.1 Q9) |
 | R17 | Shader-compile hitches (first discard variant, first X-ray, first organ) | `PIPELINE_COMPILATIONS_DRAW` > 0 | Warm-up at load; 4.5 shader baker at export | Pre-switch all surfaces to discard variants for one frame at load |
