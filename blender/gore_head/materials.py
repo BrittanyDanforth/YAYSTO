@@ -39,7 +39,7 @@ GH_Muscle          gore_depth (>0.96 bone showing), gore_bruise, gore_burn,
 GH_Bone            gore_wound (broken spongy face), gore_fracture (crack
                    density: lines or zones both work), gore_blood
 GH_Brain           gh_sulcus (anatomy), gore_wound (contusion), gore_blood
-GH_Eye             gore_blood (bloodshot, hemorrhage, film), gore_wound
+GH_Eye             gore_blood (bloodshot, hemorrhage, film), gore_wound, gore_burn
 GH_Teeth           tooth_id (anatomy, per-tooth shade), gore_blood
 Gums/Tongue/Mouth  gore_blood
 GH_Blood           nothing (colour from blood_age / wetness only)
@@ -1024,16 +1024,18 @@ def _bone_material(g):
     h = t.mix(wm, b["Height"], b["Diploe Height"])
     # crack network: main jagged cracks (~4 mm plates) + fine hairlines
     fz = (frac + (t.noise(p, 200.0, 2.0) - 0.5) * 0.3).clamp()
-    cd1, _, _ = t.voronoi(t.warp(p, 700.0, 0.0006), 240.0, 'DISTANCE_TO_EDGE', rand=0.95)
+    # (few, long cracks: plates ~7 mm across; a dense web reads as crazed paint)
+    cd1, _, _ = t.voronoi(t.warp(p, 700.0, 0.0006), 140.0, 'DISTANCE_TO_EDGE', rand=0.95)
     cd2, _, _ = t.voronoi(t.warp(p, 1500.0, 0.0003), 750.0, 'DISTANCE_TO_EDGE', rand=1.0)
-    main = (1.0 - cd1.smooth(0.0, 0.028 + fz * 0.02)) * fz.smooth(0.2, 0.55)
-    hair = (1.0 - cd2.smooth(0.0, 0.05)) * fz.smooth(0.35, 0.8) * t.noise(p, 400.0).smooth(0.35, 0.55)
+    main = (1.0 - cd1.smooth(0.0, 0.018 + fz * 0.014)) * fz.smooth(0.3, 0.7)
+    hair = (1.0 - cd2.smooth(0.0, 0.05)) * fz.smooth(0.45, 0.9) * t.noise(p, 400.0).smooth(0.45, 0.6)
     seep = (1.0 - cd1.smooth(0.0, 0.16)) * fz.smooth(0.2, 0.55)      # blood soaking out of the cracks
     stain = fz.smooth(0.05, 0.6) * t.noise(p, 260.0, 3.0).smooth(0.3, 0.65)
     col = t.mix(stain * 0.45, col, col * (0.62, 0.30, 0.24))
     col = t.mix(seep * 0.7, col, col * (0.45, 0.10, 0.08))
-    col = t.mix(hair * 0.85, col, (0.10, 0.02, 0.014))
-    col = t.mix(main, col, (0.025, 0.006, 0.005))
+    # cracks are filled with blood: deep red-brown, not ink-black lines
+    col = t.mix(hair * 0.6, col, (0.16, 0.03, 0.02))
+    col = t.mix(main * 0.9, col, (0.055, 0.009, 0.007))
     h = h - main * 3.0 - hair * 1.2
     # wounds and fractures are bloody, but the bone must still read: patchy film
     blood = (t.attr("gore_blood") * 0.55).max(main * 0.7)
@@ -1123,7 +1125,8 @@ def _eye_material(g):
     Object coordinates of the eyeball: origin at its centre, -Y = gaze. The
     iris is looked up where the view ray, refracted by the cornea, meets the
     iris plane, so it sits ~3 mm under the glossy cornea with real parallax.
-    Reads gore_blood (bloodshot + hemorrhage) and gore_wound (ruptured globe).
+    Reads gore_blood (bloodshot + hemorrhage), gore_wound (ruptured globe) and
+    gore_burn (clouded cornea, scorched sclera).
     """
     mat, t = _new_material("GH_Eye")
     p = t.coord()
@@ -1203,6 +1206,14 @@ def _eye_material(g):
     # ruptured globe: dark jelly and blood inside
     inside = 1.0 - p.length().smooth(EYE_R * 0.93, EYE_R * 0.975)
     col = t.mix(inside.max(wound * 0.8), col, t.mix(t.noise(p, 600.0), (0.10, 0.012, 0.01), (0.35, 0.26, 0.22)))
+    # burned eye: the cooked cornea turns milky and hides the iris, the exposed
+    # sclera dries to a yellow-brown, charred where the burn is worst
+    burn = t.attr("gore_burn")
+    bnz = t.noise(p, 350.0, 3.0)
+    cloud = (burn + (bnz - 0.5) * 0.3).smooth(0.12, 0.5)
+    col = t.mix(cloud * corn * 0.92, col, t.mix(bnz, (0.50, 0.49, 0.45), (0.70, 0.68, 0.63)))
+    col = t.mix(cloud * (1.0 - corn) * 0.6, col, col * (0.85, 0.62, 0.38))
+    col = t.mix((burn + (bnz - 0.5) * 0.4).smooth(0.75, 0.95) * 0.85, col, (0.035, 0.025, 0.02))
     rough = t.mix(corn, 0.28, 0.45)
     bl = _blood_layer(t, g, col, rough, blood * 0.6, p)
     h = v1 * vmask * 0.3 + t.noise(p, 1500.0) * 0.15 * (1.0 - corn)
@@ -1210,7 +1221,7 @@ def _eye_material(g):
         'Base Color': bl["Color"], 'Roughness': bl["Roughness"], 'IOR': 1.376,
         'Subsurface Weight': 0.25 * (1.0 - corn) * bl["SSS"], 'Subsurface Radius': (1.0, 0.55, 0.45),
         'Subsurface Scale': 0.0015, 'Coat Weight': 1.0, 'Coat IOR': CORNEA_IOR,
-        'Coat Roughness': t.mix(bl["Mask"], 0.015 + (1.0 - wet) * 0.03, bl["Coat Roughness"]),
+        'Coat Roughness': t.mix(bl["Mask"], 0.015 + (1.0 - wet) * 0.03 + cloud * 0.25, bl["Coat Roughness"]),
         'Coat Tint': bl["Coat Tint"], 'Normal': t.bump(h, 0.00005)})
     t.output(bsdf)
     return _finish(mat, t, (0.8, 0.75, 0.7), 0.1)

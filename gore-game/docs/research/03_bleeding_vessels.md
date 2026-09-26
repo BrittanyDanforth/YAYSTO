@@ -1,7 +1,7 @@
 # 03 — Bleeding Physiology and the Vascular System (for a vessel-network bleeding simulation)
 
 Project: Gore Head (Godot 4.5, Forward+, Jolt). Audience: physiology-sim, VFX, decal, shader, audio and animation engineers.
-Status: research reference v1. Clinical/forensic tone. The subject is a fictional, procedurally generated adult only.
+Status: research reference v1.1 (v1 plus an independent fact-check; see Section 16). Clinical/forensic tone. The subject is a fictional, procedurally generated adult only.
 
 ---
 
@@ -24,6 +24,7 @@ No **[S#]** ("read in a source this session") tags appear anywhere in this docum
 - **WebFetch was blocked for every domain tried.** The egress proxy returned `EGRESS_BLOCKED` for www.ncbi.nlm.nih.gov (StatPearls/Bookshelf), pmc.ncbi.nlm.nih.gov, en.wikipedia.org, radiopaedia.org, teachmeanatomy.info, www.kenhub.com, emedicine.medscape.com and www.ebi.ac.uk (Europe PMC).
 - **As a result, every number here is [K], [D] or [G].** Many are textbook-standard. Examples: ATLS shock classes, blood volume per kg, organ blood flows, vessel diameters, tamponade volumes and bloodstain drop volumes. I tagged those **[K-H]**. Time-to-death and per-vessel bleed-rate figures are much less certain. They come from a mix of forensic teaching, trauma teaching and orifice/Poiseuille physics that I calibrated myself (**[K-M]**/**[K-L]**/**[D]**/**[G]**).
 - Before any number appears in a player-visible "forensic readout" (for example a displayed blood-loss figure or a vessel diameter), a human should check the load-bearing numbers in Section 13 against the Section 15 references.
+- **Fact-check pass (v1.1):** an independent checker later re-tested the load-bearing claims. Verified values are marked **✓ verified** and changed values carry "corrected: was X". Sources are tagged **[V#]** and listed in Section 15.1. The method, its limits and a per-claim verdict table are in **Section 16**. Anything without a ✓ is still unverified.
 
 ### 0.3 Reference victim and conventions
 
@@ -41,13 +42,13 @@ No **[S#]** ("read in a source this session") tags appear anywhere in this docum
 
 | Population | mL/kg | Typical total | Source |
 |---|---|---|---|
-| Adult male | 70–75 (range ~66–77) | 5.0–5.5 L at 70–75 kg | [K-H R1, R2] |
-| Adult female | 60–65 | 3.6–4.2 L at 60 kg | [K-H R1, R2] |
+| Adult male | 70–75 (range ~66–77) | 5.0–5.5 L at 70–75 kg | [K-H R1, R2]. ✓ verified: Marino gives 66 mL/kg (lean body weight) for males [V1]. BioGears uses BV = 65.6·W^1.02 mL (≈ 71 mL/kg at 75 kg) [V9] |
+| Adult female | 60–65 | 3.6–4.2 L at 60 kg | [K-H R1, R2]. ✓ verified: Marino gives 60 mL/kg [V1] |
 | Obese adult | 50–60 per kg *actual* weight (fat is poorly vascular) | — | [K-M] |
 | ATLS teaching figure (adult) | 70 | 4.9 L for 70 kg | [K-H R1] |
 | ICRP reference man / woman | — | 5.3 L / 3.9 L | [K-M R3] |
 
-**Nadler formula** (height H in m, weight W in kg, result in L) [K-H R2]:
+**Nadler formula** (height H in m, weight W in kg, result in L) [K-H R2]. **✓ verified:** the coefficients match several independent implementations, one of which cites "Nadler et al. Surgery 51:224, 1962" [V10]. The worked examples below were recomputed and are correct.
 - Men: `BV = 0.3669·H³ + 0.03219·W + 0.6041`
 - Women: `BV = 0.3561·H³ + 0.03308·W + 0.1833`
 - Worked examples [D]: male 1.78 m, 75 kg gives 2.069 + 2.414 + 0.604 = **5.09 L** (68 mL/kg). Female 1.65 m, 60 kg gives 1.600 + 1.985 + 0.183 = **3.77 L** (63 mL/kg).
@@ -64,7 +65,7 @@ No **[S#]** ("read in a source this session") tags appear anywhere in this docum
 | "Stressed" volume (the part that generates pressure) | ~25–30 | 1,250–1,500 | The rest is "unstressed" volume, which fills vessels without raising pressure | [K-M R5] |
 | Liver content | ~10–13 | 450–650 | Part of the splanchnic reservoir | [K-M R4] |
 
-**Mean systemic filling pressure** (the pressure everywhere after the heart stops) is about **7 mmHg** in Guyton's classic measurements. Human estimates run 7–15 mmHg [K-M R5]. After exsanguination it is lower, about 0–5 mmHg [D].
+**Mean systemic filling pressure** (the pressure everywhere after the heart stops) is about **7 mmHg** in Guyton's classic measurements, which were made in animals. **Corrected: was "Human estimates run 7–15 mmHg".** Marino reports human values of **14–20 mmHg**, measured mostly in postoperative ICU patients, some on vasopressors [V1b]. The overall human range is therefore ~7–20 mmHg. After exsanguination it is lower, about 0–5 mmHg [D]. Marino also states that the venous system holds **~75 %** of the blood volume [V1b]. That is consistent with the 64 % systemic plus 9 % pulmonary veins in the table above.
 
 ### 1.3 Physical properties (for fluid, particle and decal systems)
 
@@ -96,7 +97,7 @@ No **[S#]** ("read in a source this session") tags appear anywhere in this docum
 | `mu_blood_film` | 6–10 | mPa·s | Rivulets and pools (low shear, cooling) | [K-M R6] |
 | `gamma_blood` | 0.056 | N/m | | [K-M R7] |
 | `unstressed_fraction` | 0.70–0.75 | — | Can be partly mobilised by venoconstriction | [K-M R5] |
-| `msfp` | 7 (5–15) | mmHg | Pressure left after cardiac arrest, before blood loss | [K-M R5] |
+| `msfp` | 10 (7–20) | mmHg | Pressure left after cardiac arrest, before blood loss. Corrected: was 7 (5–15). 7 is Guyton's animal value; human ICU measurements are 14–20 [V1b]. 10 is a compromise for an unstressed, non-ICU victim | [K-M R5], [V1b], [G] |
 
 ### Visual/behavioural checklist
 - Blood is **not** water. It is about 3–6× more viscous, it is shear-thinning, and its surface tension is ~25 % lower. Rivulets move slower and stay narrower than water. Drops are ~4.5 mm, not raindrop-sized.
@@ -187,6 +188,8 @@ PWV rises with age (roughly 5–6 m/s in the aorta in young adults, over 10 m/s 
 
 The ATLS 10th edition (2018) replaced the fixed numbers with arrows (↔/↑/↓) and added base deficit. Games and most teaching still use the classic numbers, which I reproduce here [K-H R1, R10].
 
+**✓ verified (secondary sources; the ATLS manual itself could not be reached).** The class boundaries match Marino's ICU Book: I < 15 % (< 10 mL/kg), II 15–30 % (10–20 mL/kg), III **31**–40 % (21–30 mL/kg), IV > 40 % (> 30 mL/kg). Marino describes Class IV as "profound hemorrhagic shock, which may be irreversible" [V1]. The HR, RR, urine-output and mental-status rows match independent teaching tables [V11]. The **mL/kg form is handy for procedural bodies** because it needs no BV estimate. Marino's mL/kg values assume 66 mL/kg.
+
 | | Class I | Class II | Class III | Class IV |
 |---|---|---|---|---|
 | Blood loss (% BV) | ≤ 15 % | 15–30 % | 30–40 % | > 40 % |
@@ -203,11 +206,11 @@ The ATLS 10th edition (2018) replaced the fixed numbers with arrows (↔/↑/↓
 
 ### 3.2 Realism caveats (important for "medically real")
 
-1. **Real patients are less tachycardic than the table predicts.** Registry studies (Mutschler et al. 2013; Guly et al. 2011) found that most trauma patients do not fit the ATLS class rows. Heart rate in particular rose less than predicted [K-M R11, R12]. **Shock index** (SI = HR / SBP) tracks blood loss better. Mutschler's SI classes: < 0.6 no shock; 0.6–1.0 mild; 1.0–1.4 moderate; ≥ 1.4 severe [K-M R13].
-2. **The response is biphasic.** At about 20–35 % acute loss, many people show a sudden *sympatho-inhibitory* phase: heart rate falls (relative bradycardia, sometimes 50–70 bpm), BP drops abruptly and they faint. This was described in posthaemorrhagic fainting experiments (Barcroft et al. 1944) and is seen in a sizeable minority of hypotensive trauma patients [K-M R14]. **Game:** give each victim a 25–35 % chance of a "vasovagal collapse" event between 20 % and 35 % loss [G].
+1. **Real patients are less tachycardic than the table predicts.** Registry studies (Mutschler et al. 2013; Guly et al. 2011) found that most trauma patients do not fit the ATLS class rows. Heart rate in particular rose less than predicted [K-M R11, R12]. **Shock index** (SI = HR / SBP) tracks blood loss better. Mutschler's SI classes: < 0.6 no shock; 0.6–1.0 mild; 1.0–1.4 moderate; ≥ 1.4 severe [K-M R13]. (Fact-check: the citations for R11 and R13 were confirmed as *Resuscitation* 2013;84:309–13 and *Crit Care* 2013;17(4):R172 [V12]. The four SI cut-offs could not be read in the paper itself and are unverified. Normal SI is 0.5–0.7 [V12].)
+2. **The response is biphasic.** At about 20–35 % acute loss, many people show a sudden *sympatho-inhibitory* phase: heart rate falls (relative bradycardia, sometimes 50–70 bpm), BP drops abruptly and they faint. This was described in posthaemorrhagic fainting experiments (Barcroft et al. 1944) and is seen in a sizeable minority of hypotensive trauma patients [K-M R14]. **✓ verified, with a corrected rate.** A 1990 *Ann Emerg Med* study reviewed 1,194 trauma patients (256 with isolated penetrating abdominal trauma and 938 with severe extremity trauma). **Pulse < 100 bpm was present in 35.2 % of patients with SBP < 100 mmHg and in 45.8 % of those with SBP < 90.** Relative bradycardia did not raise mortality [V2]. **Game:** give each victim a **35–45 %** chance of a "vasovagal collapse" event between 20 % and 35 % loss. Corrected: was 25–35 % [G from V2]. Separately, blood-injury cues alone (the sight of blood or a wound) can cause "an initial rise in heart rate followed by vasovagal bradycardia and, frequently, syncope" [V3]. That supports the faint at 0 % loss in item 4.
 3. **Blood pressure holds until late.** Systolic BP usually stays near normal until about 30 % loss. A narrowing pulse pressure and rising heart rate are the early signs [K-H R1].
 4. **Standing victims faint early.** An upright victim becomes syncopal at about 20–30 % loss, because brain-level pressure is ~23 mmHg lower [D]. The sight of blood or pain can trigger a vasovagal faint at 0 % loss [K-M].
-5. **Slow loss is tolerated better than fast loss.** Loss over hours allows tissue fluid to move into the vessels (transcapillary refill) and allows full compensation. The same percentage lost in minutes is worse. Chronic slow bleeders can survive haemoglobin of 3–5 g/dL [K-M].
+5. **Slow loss is tolerated better than fast loss.** Loss over hours allows tissue fluid to move into the vessels (transcapillary refill) and allows full compensation. The same percentage lost in minutes is worse. Chronic slow bleeders can survive haemoglobin of 3–5 g/dL [K-M]. *Added in fact-check:* transcapillary refill "can add as much as one liter to the plasma volume". Haemoglobin and haematocrit therefore do **not** fall at once after acute bleeding. Marino says the fall "is not apparent for 8–12 hours" and takes days to become fully established [V1]. **Sim:** keep Hb/Hct at baseline during a game session unless many hours pass. Cap cumulative refill at ~1 L.
 6. **Head injury does not cause haemorrhagic shock** in adults, except through scalp bleeding or as a terminal event. A raised ICP instead produces **Cushing's triad**: *hypertension*, *bradycardia*, irregular breathing. That is the opposite pattern to haemorrhage. If the sim combines brain injury and blood loss, the signs mix [K-H R1].
 
 ### 3.3 Continuous physiology lookup table (use this in the sim)
@@ -253,13 +256,13 @@ Palpable-pulse heuristic (legacy ATLS rule): radial pulse present when SBP ≥ ~
 | EEG slowing, confusion | CBF < ~25–30 mL/100 g/min (~50–60 % of normal) | [K-M R16] |
 | Loss of consciousness, EEG failure | CBF < ~15–20 mL/100 g/min (~30–40 %) | [K-M R16] |
 | Neuronal membrane failure, infarction risk | CBF < ~10 mL/100 g/min (~20 %) | [K-M R16] |
-| Time to LOC after *complete* stop of cerebral flow | **5–10 s** (Rossen et al. 1943, neck-cuff experiments: ~6–7 s) | [K-H R17] |
-| Voluntary activity after the heart is destroyed | **10–15 s** (the brain's oxygen reserve) | [K-H R18] |
+| Time to LOC after *complete* stop of cerebral flow | **5–10 s** (Rossen et al. 1943, neck-cuff experiments: ~6–7 s) | [K-H R17]. Fact-check: unverified. The paper and abstracts could not be reached; the value is consistent with standard teaching |
+| Voluntary activity after the heart is destroyed | **10–15 s** (the brain's oxygen reserve) | [K-H R18]. Fact-check: unverified (DiMaio could not be reached) |
 | EEG isoelectric after cardiac arrest | ~10–30 s | [K-M] |
 | Pupils fully dilated after cerebral circulatory arrest | ~30–60 s to begin, fixed by ~1–2 min | [K-M] |
 | Irreversible brain injury, normothermic no-flow | 4–6 min (longer if cold) | [K-H] |
 | Coronary perfusion pressure (DBP − RAP) too low to sustain the heart | < ~15–20 mmHg | [K-M R19] |
-| Acute loss usually fatal without treatment | ≥ 40–50 % BV | [K-H R1, R18] |
+| Acute loss usually fatal without treatment | ≥ 40–50 % BV. ✓ verified, with a caveat: Marino says loss "of as little as 30 % of the (limited) blood volume can be fatal", and Class IV (> 40 %) "may be irreversible" [V1]. Keep 40–50 % as the usual lethal range, and let fast or upright losses kill from ~30 % | [K-H R1, R18], [V1] |
 
 ### 3.6 Death sequence from exsanguination (what the player should see)
 
@@ -287,7 +290,8 @@ Any one of the following [K-H R22]:
 |---|---|---|---|---|
 | `shock_table` | Section 3.3 | — | Interpolate on `loss_frac = 1 − V/BV0` | [G] fitted to [K-H R1] |
 | `hr_response_scale` | 0.6–1.0 (default 0.8) | × | Realism: real HR rises less than ATLS | [K-M R11, R12] |
-| `vasovagal_chance` | 0.25–0.35 | probability | Triggered once, between 20–35 % loss. HR → 50–70 and MAP −20–30 for 30–120 s | [K-M R14], [G] |
+| `vasovagal_chance` | 0.35–0.45 (default 0.4) | probability | Triggered once, between 20–35 % loss. HR → 50–70 and MAP −20–30 for 30–120 s. Corrected: was 0.25–0.35. Pulse < 100 in 35 % of trauma patients with SBP < 100 and in 46 % with SBP < 90 [V2] | [K-M R14], [V2], [G] |
+| `refill_cap` | ~1,000 | mL | Added in fact-check. Maximum cumulative transcapillary refill. Hb/Hct do not visibly fall for 8–12 h [V1] | [V1] |
 | `upright_brain_offset` | −23 | mmHg | CPP penalty when standing (~30 cm head above heart) | [D] |
 | `cbf_fraction` | f = clamp((CPP − 20)/(50 − 20), 0, 1) | — | Autoregulated (f = 1) above CPP 50 | [G] from [K-M R16] |
 | `brain_o2_reserve` | 8 (5–10) | s | Drains when f < 0.4 at rate (1 − f/0.4) per s. LOC at 0. Recovers at 1 s/s when f ≥ 0.5 | [G] from [K-H R17] |
@@ -314,7 +318,7 @@ Any one of the following [K-H R22]:
 
 A bleeding wound is an **orifice** (the hole in the vessel wall). It is fed by the **vascular network** upstream and discharges into the **tissue path**, which is either open skin or a narrow track through muscle. Three limits apply, and the smallest wins [D]:
 
-1. **Orifice limit:** `Q_orif = Cd · A_hole · √(2·ΔP/ρ)`, where ΔP = local intravascular pressure − external pressure. Use Cd ≈ 0.6 (sharp-edged hole).
+1. **Orifice limit:** `Q_orif = Cd · A_hole · √(2·ΔP/ρ)`, where ΔP = local intravascular pressure − external pressure. Use Cd ≈ 0.6 (sharp-edged hole). **✓ verified (arithmetic):** the fact-check recomputed every value in tables 4.2 and 4.3, the radial worked example (P_hole ≈ 40 mmHg, Q ≈ 0.56 L/min) and the parallel-shunt examples (P ≈ 48 mmHg / 2.4 L/min and P ≈ 71 mmHg / 1.2 L/min). All agree within ~1 %. The model is standard hydraulics. It has **not** been validated against measured human wound flows, and no such data could be found.
 2. **Supply limit:** flow cannot exceed what the upstream conduits deliver at the pressure drop available. `Q ≤ (P_source − P_hole)/R_upstream`. This matters for small arteries (≤ 3 mm) with long feeding segments.
 3. **Cardiac limit:** total flow out of all arterial wounds plus all tissue beds cannot exceed cardiac output. A large arterial wound works as a **low-resistance parallel shunt**: it lowers MAP *immediately*, before much volume has been lost. This one effect produces the near-instant collapse seen in aortic or cardiac wounds, and the rapid collapse in carotid and femoral wounds.
 
@@ -354,8 +358,8 @@ Flows above Reynolds number ~2,000 are turbulent. Multiply R by 1.5–3 there [K
 | Situation | Behaviour | Source |
 |---|---|---|
 | **Complete transection, muscular artery** (brachial, radial, ulnar, femoral branches, popliteal, tibial, coronary, scalp) | Both ends retract 1–3 cm into the sheath or tissue and go into spasm (lumen −30–60 % within 1–5 min). The intima curls inward and platelets plug it. Vessels ≤ ~3–4 mm can stop by themselves. Traumatic *avulsion* amputations (limb torn off, as in a blast) sometimes bleed surprisingly little at first; clean sharp amputations bleed more | [K-H R1, R18] |
-| **Partial (side) laceration** | The wall is held open. Spasm *pulls the hole wider*. It cannot retract. **It keeps bleeding, often more than a complete cut.** | [K-H R1] |
-| **Elastic arteries** (aorta, brachiocephalic, carotid, subclavian, iliac) | Little spasm. Do not stop by themselves | [K-M] |
+| **Partial (side) laceration** | The wall is held open. Spasm *pulls the hole wider*. It cannot retract. **It keeps bleeding, often more than a complete cut.** | [K-H R1]. Fact-check: unverified (no source reachable). This is standard trauma and forensic teaching and was left unchanged |
+| **Elastic arteries** (aorta, brachiocephalic, carotid, subclavian, iliac) | Little spasm. Do not stop by themselves | [K-M]. Fact-check: unverified |
 | **Distal stump** | Bleeds backwards via collaterals at 30–80 % of MAP. High for the radial (palmar arch), ulnar and carotid (circle of Willis, external-carotid collaterals). Low for end-arteries | [K-M], [G] |
 | **Veins** | Collapse when local pressure ≤ 0. They are held open (air entry risk) where fascia tethers them: subclavian, internal jugular at the root of the neck, dural sinuses | [K-H] |
 | **Crushed or torn vessels** (hammer, fist, blast) | Bleed less per mm of opening than clean incised vessels, but cause more tissue haematoma | [K-M R18] |
@@ -422,6 +426,8 @@ Clot: see Section 7.
 
 "Stops alone?" = can it stop spontaneously. "Compress?" = is it compressible from outside.
 
+**Fact-check status of this table: unverified.** The fact-check found no primary source with per-vessel bleed rates or times to incapacitation. The forensic survival-time literature it could reach (for example a 1988 Dade County series of gunshot and stab victims [V4]) gives no per-vessel numbers in its abstract. The rows *are* internally consistent with the Section 4 model and the Section 3.3 table. For example, femoral 0.8–2 L/min reaches the 40–50 % lethal range (2–2.5 L) in ~1.5–4 min, and flow falls as MAP falls, which matches "death 3–10 min". Treat every time here as a **tuning target, not a measured fact**.
+
 | Injury | Vessel Ø | Initial rate (mL/min) | Blood goes to | LOC (supine) | Death if untreated | Stops alone? | Compress? |
 |---|---|---|---|---|---|---|---|
 | Ascending aorta or arch, large hole or transection | 25–32 mm | ≈ entire CO: 3,000–6,000 | Mediastinum, pericardium, pleura | **5–15 s** (as in cardiac arrest) | 1–3 min | No | No |
@@ -434,24 +440,24 @@ Clot: see Section 7.
 | Heart stab, pericardium intact | — | 100–200 mL into sac → tamponade | Pericardium | 2–20 min | 5 min – hours | Sometimes temporarily | No |
 | Common carotid, unilateral, open neck | 6–8 | 1,000–2,500 (+100–300 distal backflow) | External | 20–90 s | 2–5 min | No | Partly (finger pressure) |
 | Throat cut: both carotids + jugulars | — | 2,000–4,000 | External, air aspiration, airway | **5–20 s** | 1–3 min | No | No |
-| Internal carotid (cervical) | 4.5–5.5 | 500–1,000 | External / neck haematoma | 1–3 min | 3–8 min | No | Partly |
+| Internal carotid (cervical) | 4–5.5 (corrected: was 4.5–5.5; see 11.1) | 500–1,000 | External / neck haematoma | 1–3 min | 3–8 min | No | Partly |
 | External carotid trunk | 3.5–5 | 200–600 | External | 3–10 min | 5–20 min | Rarely | Yes (neck) |
 | Vertebral artery | 3–4 | 100–400 | Deep neck (bony canal) | 5–20 min | 10–40 min | Often contained | No |
 | Internal jugular, supine | 10–20 | 200–1,000 | External | 5–20 min | 10–40 min | No | Yes |
-| Internal jugular, upright → **air embolism** | — | Air entry up to ~100 mL/s through a large opening | Right heart | Seconds–1 min if ≥ 200–300 mL of air | 1–5 min | — | — |
+| Internal jugular, upright → **air embolism** | — | Air entry **≥ 100 mL/s**. Corrected: was "up to ~100 mL/s through a large opening". Marino: a gradient of only 5 mmHg across a 14 G catheter (1.8 mm ID) entrains ~100 mL/s, so a torn large vein can admit more [V1c] | Right heart | Seconds–1 min. ✓ verified: fatal "when air entry reaches 200–300 mL (3–5 mL/kg) over a few seconds" [V1c]. In dogs, 5 mL/kg over 30 s was the "lethal dose" [V5] | 1–5 min | — | — |
 | External jugular | 4–7 | 50–200 | External | 20–60 min | 30 min – hours (air risk) | Sometimes | Yes |
 | Subclavian artery | 8–10 | 1,000–2,000 | External or pleura | 1–3 min | 3–10 min | No | Poor (behind clavicle) |
-| Subclavian vein | 10–13 | 200–800 (+ air) | External or pleura | 5–20 min | 10–30 min | No | Poor |
+| Subclavian vein | 7–12. Corrected: was 10–13 [V1c] | 200–800 (+ air) | External or pleura. The vein lies "only 5 mm above the apical pleura" at some points [V1c], so pleural involvement is common | 5–20 min | 10–30 min | No | Poor |
 | Axillary artery | 6–8 | 600–1,500 | External | 2–5 min | 5–15 min | No | Poor (junctional) |
 | Brachial artery | 3.5–5 | 200–600 | External | 5–15 min | 10–30 min | Sometimes (spasm) | Yes |
 | Radial or ulnar artery (one) | 2–3 | 100–300 first minute → 20–60 after spasm | External | Rarely | Rare: hours if kept open (warm water, both wrists) | **Usually**, in 5–20 min, after 200–500 mL total | Yes |
-| Common femoral artery (± vein) | 7–10 | 800–2,000 | External | 2–5 min | **3–10 min** | No | Poor–moderate (groin, junctional) |
+| Common femoral artery (± vein) | 7.5–11 (corrected: was 7–10; see 11.2) | 800–2,000 | External | 2–5 min | **3–10 min** | No | Poor–moderate (groin, junctional) |
 | Superficial femoral or profunda | 5–7 | 400–1,000 | External / thigh | 4–10 min | 8–20 min | Rarely | Yes (proximal pressure) |
 | Common femoral vein alone | 10–14 | 200–600 (more if leg hangs down) | External | 10–30 min | 15–45 min | Sometimes | Yes |
 | Popliteal artery | 5–7 | 300–800 | External / knee | 5–12 min | 10–30 min | Rarely | Yes |
 | Tibial arteries | 2–3.5 | 50–200 | External | 20–60+ min | 1–3 h | Often | Yes |
 | Common or external iliac artery | 7–11 | 1,000–2,500 | Retroperitoneum / pelvis | 2–6 min | 5–15 min | No | No |
-| IVC, infrarenal | 17–25 | 500–2,000 (50–200 if tamponaded) | Retroperitoneum | 3–15 min | 10–60 min | Partly | No |
+| IVC, infrarenal | 13–21 (corrected: was 17–25; see 11.4) | 500–2,000 (50–200 if tamponaded) | Retroperitoneum | 3–15 min | 10–60 min | Partly | No |
 | IVC retrohepatic or hepatic veins | 8–25 | 1,000–3,000 | Peritoneum | 1–5 min | 3–15 min | No | No |
 | SVC | 18–22 | 500–2,000 | Pericardium (lower half is intrapericardial) → tamponade, or mediastinum | 1–5 min | 3–15 min | No | No |
 | Portal vein | 10–13 | 500–1,500 | Peritoneum | 5–15 min | 10–40 min | No | No |
@@ -461,7 +467,7 @@ Clot: see Section 7.
 | Liver, severe (deep, lobar disruption) | — | 200–1,000 | Peritoneum | 10–30 min | 20–90 min | No | No |
 | Spleen, moderate | — | 20–100 | Peritoneum | 30 min – 3 h | Hours. Delayed rupture possible 2 days to weeks later | Sometimes | No |
 | Spleen, shattered or hilar | — | 200–800 | Peritoneum | 10–40 min | 30–120 min | No | No |
-| Lung parenchyma (peripheral) | — | 5–50 (low pulmonary pressure) | Pleura, airway | — | Usually survivable | Usually | No |
+| Lung parenchyma (peripheral) | — | 5–50 (low pulmonary pressure) | Pleura, airway | — | Usually survivable | Usually. ✓ Sugarbaker: most traumatic lung injuries are self-limiting and are managed with a chest tube alone [V6] | No |
 | Lung hilum (pulmonary artery or vein) | 18–29 | 1,000–4,000 | Pleura | 30 s – 2 min | 2–10 min | No | No |
 | Intercostal or internal thoracic artery | 1.5–3 | 50–150 | Pleura | 20–60 min | 1–3 h | **No** (systemic pressure, rigid wall) | No |
 | Scalp laceration 5–10 cm | 1–2.5 (branches) | 5–30 (up to 50–100 if the superficial temporal or occipital artery is cut) | External | 30–90+ min | Hours. Can reach Class II–III over 30–90 min | **Poorly**: vessels held open | Yes |
@@ -469,7 +475,7 @@ Clot: see Section 7.
 | Capillary abrasion (10 cm²) | — | 0.1–1 | External (ooze) | — | — | **Yes**, in 3–10 min | Yes |
 
 Context:
-- Blunt thoracic aortic injury: ~80–85 % die before reaching hospital (Parmley 1958) [K-H R26].
+- Blunt thoracic aortic injury: ~80–85 % die before reaching hospital (Parmley 1958) [K-H R26]. ✓ consistent: a 10-year community series ("Traumatic rupture of the aorta: still a lethal injury", *Am J Surg* 1986) reported **84 % overall mortality** for blunt aortic trauma [V4b]. (That figure is overall mortality, not prehospital deaths only, so the check is indirect.)
 - Combat deaths judged "potentially survivable": ~91 % were haemorrhage. Of these, ~67 % were truncal, ~19 % junctional (groin, axilla, neck) and ~14 % extremity (Eastridge 2012) [K-M R24]. **Non-compressible truncal bleeding is the main killer.**
 - In forensic series, victims with fatal stab wounds of the heart or great vessels often carried out purposeful activity (walking, running, fighting) for tens of seconds to minutes (Karger et al.) [K-M R25].
 
@@ -517,7 +523,7 @@ Venous dome height = 12.8 cm per 10 mmHg × Cv² (Cv² ≈ 0.25–0.5), giving 3
 
 ### 6.2 Spurt physics (arterial jets)
 
-- **Ideal jet height** equals the local pressure head: SBP 120 gives 1.54 m of blood, 80 gives 1.03 m, 60 gives 0.77 m, 40 gives 0.51 m, 20 gives 0.26 m [D].
+- **Ideal jet height** equals the local pressure head: SBP 120 gives 1.54 m of blood, 80 gives 1.03 m, 60 gives 0.77 m, 40 gives 0.51 m, 20 gives 0.26 m [D]. **✓ verified (arithmetic):** 133.32 Pa ÷ (1,060 kg/m³ × 9.81 m/s²) = 12.82 mm per mmHg. Cv² for Cv 0.6–0.8 is 0.36–0.64. The horizontal-throw column (t = 0.534 s from 1.4 m) was also recomputed. No measured human arterial jet heights were found, so Cv remains a tuning value.
 - **Real jet speed** `v = Cv·√(2P/ρ)` with velocity coefficient Cv ≈ 0.6–0.8. Losses come from the hole shape, tissue, and the pressure drop at the orifice. Height scales with Cv², so real vertical jets are **~0.35–0.65 × ideal** [D]:
 
 | BP (sys/dia) | Vertical jet at systole | At diastole | Horizontal throw from 1.4 m (standing neck), jet horizontal | Look |
@@ -585,8 +591,8 @@ Horizontal throw = v·√(2h/g) at systolic v (Cv 0.6–0.8), with h = 1.4 m, wh
 |---|---|---|---|
 | Vascular spasm | Seconds | Lasts ~20–30 min. Strongest in muscular arteries | [K-H R4] |
 | Platelet plug | Seconds to ~1–3 min | Seals capillaries and very small vessels | [K-H R4] |
-| Skin bleeding time (standard small incision) | Ivy method **2–7 min** (upper normal ~8–9). Duke (earlobe) 1–3 min | Standard for a **small wound** | [K-H] |
-| Whole-blood clotting time (Lee-White, glass tube) | **5–15 min** | Pools and blood in a container gel in this time | [K-H] |
+| Skin bleeding time (standard small incision) | Ivy method **2–7 min** (upper normal ~8–9). Duke (earlobe) 1–3 min | Standard for a **small wound** | [K-H]. Fact-check: unverified. The only abstract found notes that template bleeding time does not differ by sex and shortens with age; it gives no numbers [V4c] |
+| Whole-blood clotting time (Lee-White, glass tube) | **5–15 min** | Pools and blood in a container gel in this time | [K-H]. ✓ verified: two independent teaching sources give 5–15 min [V13] (secondary sources only) |
 | Plasma tests (for a medical HUD) | Prothrombin time (PT) 11–13.5 s. Activated partial thromboplastin time (aPTT) 25–35 s | Not visual | [K-H] |
 | Clot retraction, serum expressed | Starts at ~30–60 min, largely complete at 12–24 h | Clear yellow serum rim appears | [K-M] |
 | Crust or scab on skin | Surface dries in 10–30 min. Firm scab in hours | | [K-M] |
@@ -607,7 +613,7 @@ Horizontal throw = v·√(2h/g) at systolic v (Cv 0.6–0.8), with h = 1.4 m, wh
 
 ### 7.3 Scalp and face: why they keep bleeding
 
-- The scalp layers are, from outside in: **S**kin, dense **C**onnective tissue, **A**poneurosis (galea), **L**oose areolar tissue, **P**ericranium. The arteries and veins run in the dense connective-tissue layer, where **fibrous septa hold them open**. They cannot retract or constrict effectively, so small arteries keep spurting and oozing [K-H R30].
+- The scalp layers are, from outside in: **S**kin, dense **C**onnective tissue, **A**poneurosis (galea), **L**oose areolar tissue, **P**ericranium. The arteries and veins run in the dense connective-tissue layer, where **fibrous septa hold them open**. They cannot retract or constrict effectively, so small arteries keep spurting and oozing [K-H R30]. (Fact-check: unverified; no anatomy text was reachable. This is standard anatomy teaching and was left unchanged.)
 - The scalp is richly supplied, with extensive anastomoses from both sides (internal and external carotid systems). Both ends of a cut vessel bleed [K-H R30].
 - A laceration through the galea **gapes** because the frontalis and occipitalis muscles pull on it, which increases bleeding [K-H R30].
 - A neglected scalp laceration can cause hypovolaemic shock over an hour or more [K-M R1].
@@ -666,12 +672,12 @@ Horizontal throw = v·√(2h/g) at systolic v (Cv 0.6–0.8), with h = 1.4 m, wh
 
 | Compartment | Normal content | Critical / typical volumes | Capacity | Source |
 |---|---|---|---|---|
-| Pericardial sac | 15–50 mL fluid | **Acute tamponade at 100–200 mL** (sometimes 50–100 mL). Chronic effusions can reach 1–2 L without tamponade | ~200–250 mL acute before arrest | [K-H R27, R33] |
-| Each pleural cavity (haemothorax) | ~10–20 mL fluid | Blunts the costophrenic angle on an upright chest X-ray at 200–300 mL. "Massive" > 1,500 mL on chest drain insertion or > 200 mL/h for 2–4 h | **2.5–3 L per side** (~40 % of BV) | [K-H R1, R34] |
+| Pericardial sac | 15–50 mL fluid | **Acute tamponade at 100–200 mL** (sometimes 50–100 mL). Chronic effusions can reach 1–2 L without tamponade. **✓ verified:** "rapid accumulation of as little as 100 mL … (eg, after a penetrating cardiac wound) may … produce critical tamponade", while chronic effusions can exceed 1 L [V7]. The Oxford Handbook gives "rapid accumulations of < 150 mL" [V8] | ~200–250 mL acute before arrest (unverified) | [K-H R27, R33], [V7, V8] |
+| Each pleural cavity (haemothorax) | ~10–20 mL fluid | Blunts the costophrenic angle on an upright chest X-ray at 200–300 mL. "Massive" > 1,500 mL on chest drain insertion or > 200 mL/h for 2–4 h. **✓ verified:** Sugarbaker gives "> 1500 mL upon initial chest tube insertion or more than one-third the patient's calculated blood volume" and "output greater than 250 mL an hour for a few hours" [V6]. A surgical residency handbook gives > 1,500 mL or > 200 mL/h × 4 h [V14]. Use 200–250 mL/h | **2.5–3 L per side** (~40 % of BV). Capacity unverified | [K-H R1, R34], [V6, V14] |
 | Peritoneal cavity | < 50 mL | Ultrasound (FAST) detects from ~200–250 mL (mean ~600 mL in one study). Visible distension usually needs > 1.5–2 L | Several litres (more than the whole BV) | [K-M R1, R35] |
-| Retroperitoneum / pelvis | — | Pelvic fracture bleeding 1.5–4 L | Several litres | [K-H R1] |
-| Thigh (closed femur fracture) | — | 1,000–1,500 mL | ~1.5–2 L | [K-H R1] |
-| Tibia or humerus fracture | — | ~500–750 mL | — | [K-H R1] |
+| Retroperitoneum / pelvis | — | Pelvic fracture bleeding 1.5–4 L | Several litres | [K-H R1]. Fact-check: unverified |
+| Thigh (closed femur fracture) | — | 1,000–1,500 mL | ~1.5–2 L | [K-H R1]. Fact-check: unverified |
+| Tibia or humerus fracture | — | ~500–750 mL | — | [K-H R1]. Fact-check: unverified (classic teaching values; no source reachable) |
 | Each rib fracture | — | ~100–125 mL | — | [K-M] |
 | Cranial vault | Brain ~1,200–1,400 mL, CSF ~150 mL, blood ~100–150 mL | Compensation limit ~100–150 mL. Beyond it ICP rises steeply (Monro–Kellie). An epidural haematoma > ~30 mL is surgical. In the posterior fossa much less is lethal | Small: see the head/brain docs | [K-H] |
 | Subgaleal space (scalp) | — | Hammer blows give a boggy swelling. Subgaleal bleeding can spread across the whole scalp | Hundreds of mL | [K-M] |
@@ -690,6 +696,7 @@ Rule of thumb for external loss: **a clot the size of a clenched adult fist is �
 
   [K-H R27, R33]
 - **Course:** minutes to hours, ending in PEA. Removing 20–50 mL of blood from the sac can transiently restore pressure dramatically [K-H R27].
+- **Low-pressure tamponade (added in fact-check):** in a **hypovolaemic** victim, a pericardial collection may cause no haemodynamic effect until volume is lost, and "venous filling pressures may be normal or mildly elevated" [V7]. **Sim:** when tamponade and haemorrhage coexist, scale neck-vein distension by the remaining volume, so a bled-out victim with tamponade can have flat neck veins. Pericardial pressure then equals the (low) right-atrial pressure at a smaller pericardial volume, so lower `pericardium_tamponade_v` by ~30–50 % when loss is > 20 % [G from V7].
 - Stab wounds of the heart (the right ventricle is most often hit because it lies most anteriorly) commonly produce tamponade. Large or gunshot wounds more often tear the pericardium open and bleed into the pleura [K-M R18].
 
 ### 8.3 Haemothorax
@@ -718,10 +725,10 @@ Rule of thumb for external loss: **a clot the size of a clenched adult fist is �
 
 | Parameter | Value / range | Unit | Notes | Source |
 |---|---|---|---|---|
-| `pericardium_tamponade_v` | 100–200 (default 150) | mL | Above this, CO multiplier falls linearly to 0 by ~250 mL | [K-H R27, R33], [G] |
+| `pericardium_tamponade_v` | 100–200 (default 150). ✓ verified | mL | Above this, CO multiplier falls linearly to 0 by ~250 mL. Reduce by 30–50 % in hypovolaemia (low-pressure tamponade) | [K-H R27, R33], [V7, V8], [G] |
 | `pericardium_pv_curve` | P ≈ 0 up to 50 mL, ~15 mmHg at 150 mL, ≥ 25 mmHg at 200+ mL | mmHg | J-shaped | [K-M R33] |
 | `pleura_capacity` | 2,500–3,000 per side | mL | Mediastinal shift > 1,500 | [K-H R1, R34] |
-| `haemothorax_massive` | > 1,500, or > 200 mL/h × 2–4 h | mL | Difficulty and diagnosis tier | [K-H R1] |
+| `haemothorax_massive` | > 1,500 (or > ⅓ BV), or > 200–250 mL/h × 2–4 h. ✓ verified | mL | Difficulty and diagnosis tier | [K-H R1], [V6, V14] |
 | `peritoneum_capacity` | > 5,000 (never the limiting factor) | mL | | [K-M] |
 | `abdomen_visible_distension` | > 1,500–2,000 | mL | Belly swelling blend shape starts here | [K-M], [G] |
 | `femur_fracture_loss` | 1,000–1,500 | mL | Into the thigh (swelling) | [K-H R1] |
@@ -746,6 +753,8 @@ Oxy- and deoxyhaemoglobin absorb almost the same amount in blue and green. They 
 ### 9.2 Absorption coefficients (whole blood, Hb 150 g/L)
 
 The conversion uses Prahl's molar extinction table: μa = 2.303 · ε · 150 / 64,500 [K-H R37, D].
+
+**✓ verified:** the table was checked against a copy of Prahl's 1999 compilation (Gratzer/Kollias data) [V15]. The ε values (HbO₂ / Hb) are: 450 nm 62,816 / 103,292; 540 nm 53,236 / 46,592; 600 nm 3,200 / 14,677; 620 nm 942 / 6,510; 650 nm 368 / 3,750. The conversion formula is also correct. All μa values below were recomputed and agree. The deoxy/oxy ratio is 4.6× at 600 nm, 6.9× at 620, 10.2× at 650 and 6.2× at 700, which confirms "~5–10× more red absorption". Note that the blue band is not a single number: near the 415–430 nm Soret peaks μa exceeds 250 per mm. Any blood film thicker than ~0.05 mm is effectively opaque to blue, so the exact blue μa does not matter for rendering.
 
 | Band | ε HbO₂ (cm⁻¹/M) | ε Hb | μa oxy (per mm) | μa deoxy (per mm) |
 |---|---|---|---|---|
@@ -806,9 +815,9 @@ For shaders:
 | Diameter of a 50 µL drop | **4.6 mm** (d = (6V/π)^⅓) | [D] |
 | Drop from hair tips or a sharp edge | 10–20 µL (Tate's law with contact radius 0.5–1 mm) | [D] |
 | Tate's law | `V ≈ 2π·r·γ·f / (ρ·g)`, f ≈ 0.6. Contact radius r = 3 mm gives ~60 µL | [D] |
-| Terminal velocity (50 µL) | **~7.6 m/s**, reached after ~6–8 m of fall. At 1 m the drop moves at ~4.3 m/s | [K-H R29] |
-| Stain diameter on a smooth surface | Maximum spread ≈ 3–5 × drop Ø. A 4.6 mm drop from 1 m gives a ~15–22 mm stain. Grows with height, levelling off around ~2 m | [D] via Laan et al. [K-M R39] |
-| Impact angle | sin α = width / length (elliptical stain; the tail points in the travel direction) | [K-H R29] |
+| Terminal velocity (50 µL) | **~7.6 m/s**, reached after ~6–8 m of fall. At 1 m the drop moves at ~4.3 m/s | [K-H R29]. **Fact-check: uncertain.** 7.6 m/s (25.1 ft/s) is the classic bloodstain-textbook figure; its origin could not be checked. Scaled water-drop data give ~9 m/s for a 4.6 mm drop (a 4.6 mm water drop falls at ~9.0 m/s; blood is 6 % denser but deforms more because of its lower surface tension). Real blood drops probably fall at **~7.5–9 m/s**. Use 8 m/s in game. With a quadratic-drag model, the drop reaches ~4.1–4.3 m/s after 1 m and 95 % of terminal velocity after ~7–10 m [D] |
+| Stain diameter on a smooth surface | Maximum spread ≈ 3–5.5 × drop Ø. Corrected: was 3–5 ×. A 4.6 mm drop from 1 m gives a ~15–22 mm stain. Grows with height, levelling off around ~2 m | [D] via Laan et al. [K-M R39]. The fact-check recomputed with the Laan correlation (A = 1.24, μ = 4 mPa·s, γ = 56 mN/m): spread factor ≈ 4.7 at 4.3 m/s (1 m fall), 5.2 at 6 m/s and ~5.6 at terminal velocity |
+| Impact angle | sin α = width / length (elliptical stain; the tail points in the travel direction) | [K-H R29]. ✓ verified: "the width-length ratio of the ellipse is the sine of the impact angle" [V16] |
 | Classic size classes (legacy BPA terms) | Drip/"low velocity" > 4 mm stains. Blunt blow/cast-off/"medium" 1–4 mm. Gunshot/"high velocity" < 1 mm mist | [K-H R29] |
 | Expired/coughed blood | Small stains with **bubble rings**, often pinker (diluted by saliva/mucus) | [K-H R29] |
 | Drip-into-blood | Satellite spatter around the drip pool, 1–4 mm drops, up to ~0.5–1 m away | [K-H R29] |
@@ -820,7 +829,7 @@ For shaders:
   - h = 0.4 mm: ~9 cm/s
   - h = 0.1 mm: ~0.6 cm/s
 - The contact line on skin *pins and slips*. Fronts advance in stop–go jerks along creases and hair lines [K-M].
-- **Rivulet geometry:** 2–5 mm wide, 0.1–0.4 mm thick. It leaves a residual film of **~5–15 µL per cm of path**, so a single 50 µL drop runs ~3–10 cm and stops [D]. A steady trickle of 1–10 mL/min keeps a rivulet alive indefinitely.
+- **Rivulet geometry:** 2–5 mm wide, 0.1–0.4 mm thick. It leaves a residual film of **~5–15 µL per cm of path**, so a single 50 µL drop runs ~3–10 cm and stops [D]. A steady trickle of 1–10 mL/min keeps a rivulet alive indefinitely. (Fact-check: ✓ arithmetic verified. The film formula is the standard Nusselt mean velocity ρgh²/3μ, and 2.3 / 9.2 / 0.58 cm/s were recomputed. The rivulet widths and residue values are unvalidated estimates. Contact-line pinning on real skin can make real speeds several times lower.)
 - **Routing:** rivulets follow gravity in the body's *current* orientation, travelling along skin folds and down to local low points:
   - Standing: chin, nose tip, earlobe, elbow, fingertips
   - Supine: occiput, ears, sides of the neck
@@ -833,7 +842,7 @@ For shaders:
 
 ### 10.3 Pooling on flat surfaces
 
-- On a non-absorbent horizontal floor, a puddle's thickness is set by surface tension and gravity: `h ≈ 2·l_c·sin(θ/2)`. With l_c = 2.3 mm and θ = 40–90°, **h ≈ 1.6–3.3 mm; use 2.5 mm** [D].
+- On a non-absorbent horizontal floor, a puddle's thickness is set by surface tension and gravity: `h ≈ 2·l_c·sin(θ/2)`. With l_c = 2.3 mm and θ = 40–90°, **h ≈ 1.6–3.3 mm; use 2.5 mm** [D]. (Fact-check: ✓ arithmetic verified. l_c = √(0.056 / (1,060 × 9.81)) = 2.32 mm, and every area and diameter in the table below was recomputed. No measured blood-pool thicknesses were found. Blood's high contact-angle hysteresis means a spreading pool pins at its edge, so real pools on slightly rough floors may be thinner (~1.5–2 mm) and therefore larger.)
 - **Area = V / h** [D]:
 
 | Volume | Area at h = 2.5 mm | Equivalent circle Ø |
@@ -875,7 +884,7 @@ Drying time is controlled by water evaporation (~80 % of the mass). Indoor still
 | Days | `#4A2618` brown | `#24100C` | Hemichrome |
 | Weeks+ | `#33201A` dark brown-black | black-brown, flaking | Hemichrome, degradation |
 
-(Bremmer et al. used reflectance spectroscopy to track the oxyHb → metHb → hemichrome sequence [K-M R42].)
+(Bremmer et al. used reflectance spectroscopy to track the oxyHb → metHb → hemichrome sequence [K-M R42].) **Fact-check:** the chemistry sequence is ✓ verified. Outside the body, oxyHb auto-oxidises to metHb, which is no longer reduced back, and metHb then denatures to hemichrome. This drives the change from bright red to dark brown [V16, citing Bremmer et al., *PLoS One* 2011;6(7):e21845]. The **timings** in the ramp and in the drying table above are **unverified** estimates.
 
 **Steel-specific effects:**
 - Blood on smooth steel dries as a glossy film. Thick deposits crack into plates ~1–3 mm across that **curl and flake off** at the edges within hours [K-M].
@@ -887,8 +896,8 @@ Drying time is controlled by water evaporation (~80 % of the mass). Indoor still
 | Parameter | Value / range | Unit | Notes | Source |
 |---|---|---|---|---|
 | `drop_volume` | 50 (skin/fingers), 15 (hair tips), up to 100 (large flat edges) | µL | | [K-H R29], [D] |
-| `drop_terminal_v` | 7.6 | m/s | | [K-H R29] |
-| `stain_spread_factor` | 3–5 × drop Ø | — | Grows with impact velocity | [D] via [R39] |
+| `drop_terminal_v` | 8 (7.5–9) | m/s | Corrected: was 7.6. The classic BPA value is 7.6; a physics estimate gives ~9. See 10.1 | [K-H R29], [D] |
+| `stain_spread_factor` | 3–5.5 × drop Ø | — | Grows with impact velocity. Corrected: was 3–5. Laan correlation gives ~4.7 at 1 m and ~5.6 at terminal velocity | [D] via [R39] |
 | `rivulet_width` | 2–5 | mm | | [K-M] |
 | `rivulet_speed_vertical` | 1–5 (clamp 0.5–10) | cm/s | Lubrication-film formula, stop–go | [D] |
 | `rivulet_residue` | 5–15 | µL/cm | Finite drop runs 3–10 cm | [D] |
@@ -917,19 +926,21 @@ Diameters are adult **lumen** diameters [K-H R43, R44] unless marked [K-M]. Spec
 
 Depth values assume a lean-to-average build. **Add subcutaneous fat for heavier procedural bodies** [K-M].
 
+**Fact-check of diameters.** Most rows were checked against the HuBMAP Human Reference Atlas vasculature table (HRA-VCCF). That table compiles published measurements with citations [V17]. Other checks came from Framingham CT data quoted in Cohn [V7b], from Hurst [V18] and from Marino [V1c]. Rows marked ✓ agree with those sources. Rows without a mark (vertebral, subclavian and axillary arteries, the radial and forearm arteries, SFA, popliteal, tibial, and the scalp and face arteries) could **not** be checked. Their values are from memory of the standard references. Aortic diameters in men are on average **2–3 mm larger than in women** [V7b]. The 0.9× female scale factor in the sim parameters is consistent with the data (CCA 6.1 vs 6.5 mm; CFA 8.2 vs 9.8 mm; infrarenal aorta 16.7 vs 19.3 mm).
+
 "Kind" in the tables below: elastic artery (E) or muscular artery (M).
 
 ### 11.1 Arterial tree: trunk, neck, upper limb
 
 | Segment | Parent | Lumen Ø mm (default) | Length cm | Rest flow mL/min | Course and landmarks | Depth from skin | Kind |
 |---|---|---|---|---|---|---|---|
-| Aortic root / ascending aorta | LV | 28–35 (32) | ~5 | 5,000 | From the aortic valve (behind the left sternal half at the 3rd intercostal space) upward to the level of the sternal angle (T4) | 4–6 cm behind the sternum surface | E |
-| Aortic arch | Asc. aorta | 25–30 (27) | ~5 | 5,000 → 3,600 | Arches back and to the left behind the manubrium. Its top is ~2–3 cm below the suprasternal notch. Ends at T4 | 5–7 cm | E |
-| Brachiocephalic trunk | Arch | 10–14 (12) | 4–5 | 650–800 | Up and to the right. Divides behind the right sternoclavicular joint | 3–5 cm | E |
-| R common carotid | Brachiocephalic | 6–8 (6.5; F ~6) | 9–10 | 350–450 | From behind the SC joint, up the neck **beside the trachea, then the larynx**, under the anterior border of the SCM in the carotid sheath (internal jugular lateral, vagus behind). Pulse at the anterior border of the SCM at thyroid-cartilage level. Surface line from the SC joint to midway between the mastoid and the angle of the mandible. **Bifurcates at the upper border of the thyroid cartilage (~C3–C4; range C2–C6)** | Lower neck 3–4 cm (under the SCM). Carotid triangle 1.5–2.5 cm | E |
+| Aortic root / ascending aorta | LV | 28–36 (32). ✓ verified: Hurst gives "~3 cm". A CT series (n = 200) gives lumen 36.1 mm (M) / 31.7 mm (F) [V17, V18]. Use 33–35 for older procedural bodies | ~5 | 5,000 | From the aortic valve (behind the left sternal half at the 3rd intercostal space) upward to the level of the sternal angle (T4) | 4–6 cm behind the sternum surface | E |
+| Aortic arch | Asc. aorta | 25–30 (27). ✓ verified: 26.1 ± 3.6 mm on CT, n = 534 [V17] | ~5 | 5,000 → 3,600 | Arches back and to the left behind the manubrium. Its top is ~2–3 cm below the suprasternal notch. Ends at T4 | 5–7 cm | E |
+| Brachiocephalic trunk | Arch | 10–14 (12). ✓ verified: 11.1–11.6 mm on CT [V17] | 3.5–4.5 (4). Corrected: was 4–5. Cadaveric length 3.7 cm (F) / 3.9 cm (M) [V17] | 650–800 | Up and to the right. Divides behind the right sternoclavicular joint | 3–5 cm | E |
+| R common carotid | Brachiocephalic | 6–8 (6.5; F ~6). ✓ verified: Krejza 2006 ultrasound lumen 6.52 ± 0.98 mm (M, n = 194) and 6.10 ± 0.80 mm (F, n = 306) [V17] | 9–10 | 350–450 | From behind the SC joint, up the neck **beside the trachea, then the larynx**, under the anterior border of the SCM in the carotid sheath (internal jugular lateral, vagus behind). Pulse at the anterior border of the SCM at thyroid-cartilage level. Surface line from the SC joint to midway between the mastoid and the angle of the mandible. **Bifurcates at the upper border of the thyroid cartilage (~C3–C4; range C2–C6)** | Lower neck 3–4 cm (under the SCM). Carotid triangle 1.5–2.5 cm | E |
 | L common carotid | Arch | 6–8 (6.5) | 12–15 | 350–450 | Same course in the neck. Its first part is in the thorax | as right | E |
 | Carotid bulb | CCA | 7–9 | 2 | — | Dilated bifurcation. Carries the baroreceptors | 1.5–2.5 cm | E |
-| Internal carotid (cervical) | CCA | 4.5–5.5 (5) | ~10 (+ ~8 intracranial) | 220–300 | Posterolateral at first, then straight up to the skull base with **no neck branches**. Enters the carotid canal (petrous temporal) just in front of the jugular foramen | 2–4 cm | E→M |
+| Internal carotid (cervical) | CCA | 4–5.5 (4.8). Corrected: was 4.5–5.5 (5). Lumen 4.8 ± 0.65 mm (M) and 4.7 ± 0.66 mm (F) [V17] | ~10 (+ ~8 intracranial) | 220–300 | Posterolateral at first, then straight up to the skull base with **no neck branches**. Enters the carotid canal (petrous temporal) just in front of the jugular foramen | 2–4 cm | E→M |
 | External carotid | CCA | 3.5–5 (4) | 5–7 | 100–150 | Anteromedial. Ends in the parotid behind the neck of the mandible as the superficial temporal and maxillary arteries. Branches: superior thyroid, lingual, facial, occipital, posterior auricular, ascending pharyngeal | 1.5–3 cm | M |
 | Vertebral | Subclavian (1st part) | 3–4 (3.5; left often dominant) | 18–20 | 70–120 each | Enters the C6 transverse foramen (~90 % of people), climbs through C6–C1, loops over the posterior arch of C1 (suboccipital triangle), passes the foramen magnum and joins its partner to form the basilar artery at the pontomedullary junction | 4–7 cm, in bone | M |
 | R subclavian | Brachiocephalic | 7–10 (8.5) | 6–8 | 200–350 | Arches over the lung apex, behind the anterior scalene, over the 1st rib, ~1.5–2 cm above the middle of the clavicle. Becomes the axillary at the lateral border of the 1st rib | 3–5 cm, behind the clavicle | E |
@@ -937,7 +948,7 @@ Depth values assume a lean-to-average build. **Add subcutaneous fat for heavier 
 | Internal thoracic | Subclavian | 2–3 | ~20 | 20–50 | Runs vertically ~1–2 cm lateral to the sternal edge, behind the costal cartilages | 1.5–3 cm | M |
 | Intercostals | Aorta / int. thoracic | 1.5–2.5 | ribs | 5–15 each | In the costal groove along the lower border of each rib (vein, artery, nerve from top to bottom) | 1–4 cm | M |
 | Axillary | Subclavian | 5–8 (6.5) | 10–12 | 100–200 | From the 1st rib to the lower border of teres major, behind pectoralis minor, surrounded by the brachial plexus cords. Surface line (arm abducted) from mid-clavicle to the medial arm at the axillary fold | 3–5 cm | M |
-| Brachial | Axillary | 3.5–5 (4.2) | 20–25 | 50–120 | In the medial bicipital groove with the median nerve. In the cubital fossa, medial to the biceps tendon, under the bicipital aponeurosis. Divides ~1–2 cm below the elbow crease (neck of the radius). High division occurs in ~10–15 % of people | Mid-arm 1–2 cm. Elbow ~1 cm | M |
+| Brachial | Axillary | 3.5–5 (4.2). ✓ verified: 4.36 ± 0.87 mm [V17] | 20–25 | 50–120 | In the medial bicipital groove with the median nerve. In the cubital fossa, medial to the biceps tendon, under the bicipital aponeurosis. Divides ~1–2 cm below the elbow crease (neck of the radius). High division occurs in ~10–15 % of people | Mid-arm 1–2 cm. Elbow ~1 cm | M |
 | Radial | Brachial | 2.2–3.0 (2.5; F 2.2) | 20–25 | 20–40 | Down the lateral forearm under brachioradialis. **At the wrist it is superficial, between the flexor carpi radialis (FCR) tendon (medial) and the radial styloid**. Then into the anatomical snuffbox and the deep palmar arch | Wrist 3–7 mm | M |
 | Ulnar | Brachial | 2.0–3.0 (2.4) | 22–25 | 20–40 | Medial forearm under flexor carpi ulnaris (FCU). At the wrist, lateral to the FCU tendon and pisiform, with the ulnar nerve on its medial side. Forms the superficial palmar arch | Wrist 5–10 mm | M |
 | Palmar arches / digital | Radial, ulnar | Arch 1.5–2. Common digital 1.2–1.6. Proper digital 0.8–1.2 | — | 1–5 per digit | The superficial arch lies at the level of the distal border of the fully extended thumb. Digital arteries run along both sides of each finger | 2–5 mm | M |
@@ -948,16 +959,16 @@ Depth values assume a lean-to-average build. **Add subcutaneous fat for heavier 
 
 | Segment | Parent | Lumen Ø mm (default) | Length cm | Rest flow mL/min | Course and landmarks | Depth | Kind |
 |---|---|---|---|---|---|---|---|
-| Descending thoracic aorta | Arch | 20–26 (24) | ~20 | 3,600 | T4 to T12 (aortic hiatus), left anterolateral to the vertebral bodies. Its isthmus (just beyond the left subclavian) is the classic blunt-rupture site | 8–12 cm from the front | E |
+| Descending thoracic aorta | Arch | 20–26 (24). ✓ verified: Framingham CT 25.8 mm (M) / 23.1 mm (F) [V7b]; 24.4 ± 3.9 mm (CT, n = 534) [V17]; Hurst gives 2–2.3 cm [V18] | ~20 | 3,600 | T4 to T12 (aortic hiatus), left anterolateral to the vertebral bodies. Its isthmus (just beyond the left subclavian) is the classic blunt-rupture site | 8–12 cm from the front | E |
 | Abdominal aorta, suprarenal | Thoracic | 20–23 (21) | ~5 | 3,600 → 2,000 | Enters at T12 slightly left of midline | Lean: 5–8 cm from the front. Heavier: 10–15 cm | E |
 | Celiac trunk | Aorta (T12) | 6–8 | 1–2 | 800–1,100 | Splits into the left gastric, common hepatic (4–5 mm) and splenic (4–6 mm, tortuous along the upper border of the pancreas) arteries | deep | M |
 | Superior mesenteric (SMA) | Aorta (L1) | 6–8 | ~20 | 500–700 fasting | Behind the neck of the pancreas, into the mesentery | deep | M |
 | Renal (each) | Aorta (L1–L2) | 5–6 (4–7) | 3–5 (right longer, passes behind the IVC) | 500–600 | To the renal hilum ~5 cm from midline at L1–L2 | 8–12 cm from the back | M |
-| Abdominal aorta, infrarenal | Aorta | 15–20 (M 18, F 16) | 8–10 | 800–1,000 | Bifurcates at **L4**, ~1–2 cm below and left of the umbilicus. **Aneurysm defined as ≥ 30 mm** | Lean 4–8 cm | E |
-| Common iliac | Aorta | 8–12 (10) | 4–6 | 350–500 | To the sacroiliac joint (L5–S1). Surface: the upper third of a line from the aortic bifurcation to the mid-inguinal point | deep | E |
+| Abdominal aorta, infrarenal | Aorta | 15–20 (M 18, F 16). ✓ verified: Framingham CT 19.3 mm (M) / 16.7 mm (F) [V7b]; ultrasound lumen 18.4 ± 3.3 / 16.6 ± 3.0 mm [V17]; Hurst gives 1.7–1.9 cm [V18] | 8–10 | 800–1,000 | Bifurcates at **L4**, ~1–2 cm below and left of the umbilicus. **Aneurysm defined as ≥ 30 mm** | Lean 4–8 cm | E |
+| Common iliac | Aorta | 8–12 (10). ✓ verified: 9.9 ± 1.6 mm (M) / 8.8 ± 1.2 mm (F) [V17] | 4–6 | 350–500 | To the sacroiliac joint (L5–S1). Surface: the upper third of a line from the aortic bifurcation to the mid-inguinal point | deep | E |
 | Internal iliac | Common iliac | 5–7 | ~4 | 100–150 | Pelvic organs and gluteal region (superior gluteal artery exits above piriformis) | deep | M |
 | External iliac | Common iliac | 7–9 (8) | ~10 | 250–350 | Along the pelvic brim, medial to psoas, to the **mid-inguinal point** under the inguinal ligament | deep | M |
-| Common femoral | External iliac | 7–10 (8.5) | 3–5 | 250–400 | In the femoral triangle at the **mid-inguinal point** (midway between the anterior superior iliac spine and the pubic symphysis). Order from lateral to medial: **N**erve, **A**rtery, **V**ein ("NAV"). Pulse palpable | 2–4 cm (1–6 cm by build) | M |
+| Common femoral | External iliac | 7.5–11 (M 9.0, F 8.2). Corrected: was 7–10 (8.5). Sandgren 1999 ultrasound means are 9.8 mm (M, n = 59) and 8.2 mm (F, n = 63); the cohort spans adulthood and diameter grows with age, so ~9 suits a young adult male [V17] | 3–5 (cadaveric mean 5.1 cm [V17]) | 250–400 | In the femoral triangle at the **mid-inguinal point** (midway between the anterior superior iliac spine and the pubic symphysis). Order from lateral to medial: **N**erve, **A**rtery, **V**ein ("NAV"). Pulse palpable | 2–4 cm (1–6 cm by build) | M |
 | Profunda femoris | CFA (3.5–5 cm below the ligament) | 5–6 | 12+ | 100–150 | Posterolateral, deep. Perforating branches wind around the femur | 4–8 cm | M |
 | Superficial femoral | CFA | 5–7 (6) | 25–30 | 150–250 | Anteromedial thigh under sartorius, through the adductor (Hunter's) canal. Becomes the popliteal at the adductor hiatus, at the junction of the middle and lower thirds of the thigh (~10 cm above the knee joint) | 3–6 cm | M |
 | Popliteal | SFA | 5–7 (5.5) | 15–20 | 80–150 | Deepest structure of the popliteal fossa, directly on the joint capsule. From superficial to deep: nerve, vein, artery. Tethered at both ends, so it is vulnerable in knee dislocation. Divides at the lower border of popliteus | 3–5 cm | M |
@@ -983,18 +994,18 @@ Depth values assume a lean-to-average build. **Add subcutaneous fat for heavier 
 
 | Vein | Ø mm (default) | Course and landmarks | Pressure (supine) | Rest flow mL/min | Notes |
 |---|---|---|---|---|---|
-| Internal jugular (IJV) | 10–20 (14; right usually larger). Very position-dependent | From the jugular foramen down the neck in the carotid sheath, **lateral to the common carotid**, under the SCM. Its lower end lies in the small hollow between the sternal and clavicular heads of the SCM. Joins the subclavian behind the sternal end of the clavicle. Surface line: earlobe → medial clavicle | 3–8 mmHg. **≤ 0 when upright (collapses)** | 300–700 each supine | Air embolism risk [K-H] |
+| Internal jugular (IJV) | 10–20 (14; right usually larger). Very position-dependent. ✓ verified: 15.5 ± 5.2 mm on CT, n = 190 [V17]. A 15° head-down tilt increases the diameter by 20–25 %, and the IJV lies "anterior and lateral to the carotid artery" [V1c] | From the jugular foramen down the neck in the carotid sheath, **lateral to the common carotid**, under the SCM. Its lower end lies in the small hollow between the sternal and clavicular heads of the SCM. Joins the subclavian behind the sternal end of the clavicle. Surface line: earlobe → medial clavicle | 3–8 mmHg. **≤ 0 when upright (collapses)** | 300–700 each supine | Air embolism risk [K-H] |
 | External jugular (EJV) | 4–7 (5) | From just below the angle of the mandible, runs **superficially across the SCM** obliquely downward and backward. Pierces the fascia ~2–3 cm above the midpoint of the clavicle and drains into the subclavian. Visible when distended (straining, tamponade) | 3–8 | 20–60 | Just under the skin [K-H] |
 | Anterior jugular | 2–4 | Near midline, lower neck | — | small | [K-M] |
-| Subclavian vein | 10–13 (12) | Continuation of the axillary vein at the 1st rib. Passes **in front of** anterior scalene (the artery lies behind it), under the medial clavicle. Held open by fascia | 3–8 | 150–300 | Air embolism risk [K-H] |
+| Subclavian vein | 7–12 (10). Corrected: was 10–13 (12). Marino: "3–4 cm in length, and the diameter is 7–12 mm in the supine position" [V1c] | Continuation of the axillary vein at the 1st rib. Passes **in front of** anterior scalene (the artery lies behind it), under the medial clavicle. Held open by fascia | 3–8 | 150–300 | Air embolism risk [K-H] |
 | Brachiocephalic veins | 12–16 (14) | Left: ~6–7 cm, crosses obliquely behind the manubrium. Right: 2–3 cm, vertical | 2–6 | — | [K-M] |
-| Superior vena cava (SVC) | 18–22 (20) | Formed behind the right 1st costal cartilage. Runs down along the right sternal border. Enters the right atrium at the right 3rd costal cartilage. ~7 cm long. **Lower half is inside the pericardium** | 2–6 | 1,300–1,700 | [K-H R43] |
-| Inferior vena cava (IVC) | 17–25 (21). Collapses > 50 % on inspiration when CVP is low | Formed at **L5** from the common iliac veins. Rises to the right of the aorta, through a groove behind the liver (receiving the hepatic veins), through the diaphragm at **T8** and into the right atrium | 5–10 (infrarenal) | 3,000–3,500 | Retrohepatic injuries are catastrophic [K-H] |
+| Superior vena cava (SVC) | 18–22 (20). ✓ verified: 19 ± 3.7 mm and 20.4 mm [V17] | Formed behind the right 1st costal cartilage. Runs down along the right sternal border. Enters the right atrium at the right 3rd costal cartilage. ~7 cm long. **Lower half is inside the pericardium** | 2–6 | 1,300–1,700 | [K-H R43] |
+| Inferior vena cava (IVC) | 13–21 (17). Corrected: was 17–25 (21). Measured means are 16.4–17.4 mm [V17]; 21 mm is the conventional upper limit of normal, not a typical value (knowledge). Collapses > 50 % on inspiration when CVP is low. Flattens further in haemorrhage | Formed at **L5** from the common iliac veins. Rises to the right of the aorta, through a groove behind the liver (receiving the hepatic veins), through the diaphragm at **T8** and into the right atrium | 5–10 (infrarenal) | 3,000–3,500 | Retrohepatic injuries are catastrophic [K-H] |
 | Hepatic veins (3) | 8–12 | Into the IVC just below the diaphragm | ~CVP | ~1,350 total | [K-H] |
 | Renal veins | Left 8–10 (~7 cm, crosses **in front of** the aorta just below the SMA). Right 6–8 (~2–3 cm) | | 5–10 | ~550 each | [K-H] |
-| Portal vein | 10–13 (11; > 13 abnormal) | Formed behind the neck of the pancreas (L1–L2) from the superior mesenteric and splenic veins. ~7–8 cm up to the porta hepatis in the hepatoduodenal ligament | 5–10 | 1,000–1,200 | Note only: not part of the systemic loop [K-H] |
+| Portal vein | 10–13 (11; > 13 abnormal). ✓ consistent: 12.1 mm (M) / 8.6 mm (F), single reference model [V17] | Formed behind the neck of the pancreas (L1–L2) from the superior mesenteric and splenic veins. ~7–8 cm up to the porta hepatis in the hepatoduodenal ligament | 5–10 | 1,000–1,200 | Note only: not part of the systemic loop [K-H] |
 | Common iliac vein | 12–16 (14) | Behind and to the right of the arteries | 6–10 | ~500 each | [K-M] |
-| Common femoral vein | 10–14 (12) | **Medial to the femoral artery** in the femoral triangle. The great saphenous vein joins it ~3–4 cm below and lateral to the pubic tubercle | 8–12 (supine). ~80–90 standing still at foot level | 250–400 | Leg-hanging surge [K-H] |
+| Common femoral vein | 10–14 (12). ✓ consistent: cadaveric outer diameter ~14 mm, n = 12 [V17]. Marino puts it "just medial to the femoral artery … 2 to 4 cm from the skin". A 15° head-up tilt increases its cross-section by ~50 % [V1c] | **Medial to the femoral artery** in the femoral triangle. The great saphenous vein joins it ~3–4 cm below and lateral to the pubic tubercle | 8–12 (supine). ~80–90 standing still at foot level | 250–400 | Leg-hanging surge [K-H] |
 | Femoral vein ("superficial femoral vein") | 8–12 | Alongside the superficial femoral artery (a deep vein despite the name) | — | — | [K-H] |
 | Popliteal vein | 6–10 | Between the nerve and the artery in the fossa | — | — | [K-H] |
 | Great saphenous vein | 3–5 (up to 6–8 at the junction) | **Constant position just in front of the medial malleolus**. Up the medial leg, behind the medial femoral condyle, anteromedial thigh to the saphenofemoral junction | — | — | Just under the skin [K-H] |
@@ -1061,34 +1072,38 @@ The user's constraint is that Godot must hold 60 fps with blood, brain and gore.
 
 ## 13. Load-bearing numbers (quick reference)
 
-| # | Claim | Value | Tag |
-|---|---|---|---|
-| 1 | Blood volume | Adult male 70 (66–77) mL/kg. Female 60–65 mL/kg. Default 5.0 L / 3.8 L. Nadler formula | [K-H R1, R2] |
-| 2 | ATLS classes | I ≤ 15 %, II 15–30 %, III 30–40 %, IV > 40 %. HR < 100 / 100–120 / 120–140 / > 140. RR 14–20 / 20–30 / 30–40 / > 35. SBP normal until Class III | [K-H R1] |
-| 3 | Real HR response is weaker than ATLS; biphasic bradycardic faint at ~20–35 % loss; shock index ≥ 1.4 means severe | — | [K-M R11–R14] |
-| 4 | Acute loss ≥ 40–50 % BV usually fatal untreated | — | [K-H R1, R18] |
-| 5 | LOC 5–10 s after complete stop of cerebral flow. 10–15 s of possible voluntary activity after heart destruction | — | [K-H R17, R18] |
-| 6 | Irreversible brain injury after 4–6 min of no flow (normothermic) | — | [K-H] |
-| 7 | Orifice flow Q = 0.6·A·√(2ΔP/ρ). A 3 mm hole at 90 mmHg gives ~1.2 L/min upper bound. Large arterial wounds act as parallel shunts that collapse MAP | — | [D] |
-| 8 | Pressure head: 1 mmHg = 12.8 mm of blood. SBP 120 gives a 1.54 m ideal jet. Real jets 0.35–0.65 × ideal, i.e. 0.55–1.0 m vertical at normal BP | — | [D] |
-| 9 | Bleed-out times, untreated. Aorta/heart: LOC 5–30 s, death 1–5 min. Carotid: LOC 20–90 s, death 2–5 min. Femoral: LOC 2–5 min, death 3–10 min. Brachial: 10–30 min. Radial: usually self-limiting | — | [K-M] + [D] |
-| 10 | Partial lacerations bleed more than complete transections (retraction and spasm) | — | [K-H R1] |
-| 11 | Hydrostatic 0.78 mmHg per cm. Neck and dural veins go sub-atmospheric when upright (air embolism). 200–300 mL of air (3–5 mL/kg) rapidly is lethal. ~100 mL/s can enter a large opening | — | [D], [K-M R50] |
-| 12 | Tamponade at 100–200 mL of acute pericardial blood. Beck's triad with distended neck veins | — | [K-H R27, R33] |
-| 13 | Haemothorax capacity 2.5–3 L per side. Massive > 1,500 mL or > 200 mL/h × 2–4 h | — | [K-H R1, R34] |
-| 14 | Fracture losses: femur 1–1.5 L, pelvis 1.5–4 L, tibia/humerus 0.5–0.75 L | — | [K-H R1] |
-| 15 | Bleeding time 2–7 min (small wounds). Whole-blood clotting 5–15 min. Serum separation 30–60 min+. Scalp vessels are held open and keep bleeding | — | [K-H], [K-H R30] |
-| 16 | Drops ~50 µL, Ø 4.6 mm, terminal velocity ~7.6 m/s | — | [K-H R29], [D] |
-| 17 | Pool thickness ~2.5 mm (capillary length 2.3 mm): 500 mL ≈ 50 cm circle, 1 L ≈ 71 cm. Pool gels in 5–15 min | — | [D] |
-| 18 | Drying: skin smear 5–10 min. Drip stain on steel 1–2 h. Pool 24–72 h. Colour red → red-brown (hours) → brown (1 day) → black-brown (weeks) | — | [K-M R41, R42], [D] |
-| 19 | Venous blood looks darker because deoxyHb absorbs ~5–10× more red light. μa per mm at 620 nm: ~0.5 (oxy) vs ~3.5 (deoxy) | — | [K-H R37], [D] |
-| 20 | Key diameters. Aorta 25–32 → 15–20 mm infrarenal. CCA 6–8, ICA 5, ECA 4, vertebral 3.5, subclavian 8.5, brachial 4, radial 2.5, CFA 8.5, SFA 6, popliteal 5.5, superficial temporal/facial/occipital ~2. IJV 10–20, SVC 20, IVC 21, CFV 12 | — | [K-H R43–R49] |
+The "Fact-check" column was added in v1.1. Details are in Section 16.
+
+| # | Claim | Value | Tag | Fact-check |
+|---|---|---|---|---|
+| 1 | Blood volume | Adult male 70 (66–77) mL/kg. Female 60–65 mL/kg. Default 5.0 L / 3.8 L. Nadler formula | [K-H R1, R2] | **✓ verified** [V1, V9, V10] |
+| 2 | ATLS classes | I ≤ 15 %, II 15–30 %, III 30–40 %, IV > 40 %. HR < 100 / 100–120 / 120–140 / > 140. RR 14–20 / 20–30 / 30–40 / > 35. SBP normal until Class III | [K-H R1] | **✓ verified** from secondary sources [V1, V11]; ATLS manual not reached |
+| 3 | Real HR response is weaker than ATLS; biphasic bradycardic faint at ~20–35 % loss; shock index ≥ 1.4 means severe | — | [K-M R11–R14] | **Corrected:** bradycardic-faint chance 35–45 % (was 25–35 %) [V2]. SI cut-offs unverified; citations verified [V12] |
+| 4 | Acute loss ≥ 40–50 % BV usually fatal untreated | — | [K-H R1, R18] | **✓ verified**, with the caveat that ~30 % *can* be fatal [V1] |
+| 5 | LOC 5–10 s after complete stop of cerebral flow. 10–15 s of possible voluntary activity after heart destruction | — | [K-H R17, R18] | Unverified (sources unreachable) |
+| 6 | Irreversible brain injury after 4–6 min of no flow (normothermic) | — | [K-H] | Unverified |
+| 7 | Orifice flow Q = 0.6·A·√(2ΔP/ρ). A 3 mm hole at 90 mmHg gives ~1.2 L/min upper bound. Large arterial wounds act as parallel shunts that collapse MAP | — | [D] | **✓ verified** (arithmetic recomputed) |
+| 8 | Pressure head: 1 mmHg = 12.8 mm of blood. SBP 120 gives a 1.54 m ideal jet. Real jets 0.35–0.65 × ideal, i.e. 0.55–1.0 m vertical at normal BP | — | [D] | **✓ verified** (arithmetic). Cv is not validated against measurements |
+| 9 | Bleed-out times, untreated. Aorta/heart: LOC 5–30 s, death 1–5 min. Carotid: LOC 20–90 s, death 2–5 min. Femoral: LOC 2–5 min, death 3–10 min. Brachial: 10–30 min. Radial: usually self-limiting | — | [K-M] + [D] | Unverified; internally consistent. Treat as tuning targets |
+| 10 | Partial lacerations bleed more than complete transections (retraction and spasm) | — | [K-H R1] | Unverified (standard teaching) |
+| 11 | Hydrostatic 0.78 mmHg per cm. Neck and dural veins go sub-atmospheric when upright (air embolism). 200–300 mL of air (3–5 mL/kg) rapidly is lethal. ~100 mL/s can enter a large opening | — | [D], [K-M R50] | **Corrected:** ≥ 100 mL/s. 100 mL/s passes even a 1.8 mm (14 G) opening at a 5 mmHg gradient (was "a large opening"). Lethal 200–300 mL **✓ verified** [V1c]. 0.78 mmHg/cm ✓ (arithmetic) |
+| 12 | Tamponade at 100–200 mL of acute pericardial blood. Beck's triad with distended neck veins | — | [K-H R27, R33] | **✓ verified** [V7, V8]. Added: low-pressure tamponade in hypovolaemia (neck veins may not distend) |
+| 13 | Haemothorax capacity 2.5–3 L per side. Massive > 1,500 mL or > 200 mL/h × 2–4 h | — | [K-H R1, R34] | Massive-haemothorax thresholds **✓ verified** (also > ⅓ BV; 200–250 mL/h) [V6, V14]. Capacity unverified |
+| 14 | Fracture losses: femur 1–1.5 L, pelvis 1.5–4 L, tibia/humerus 0.5–0.75 L | — | [K-H R1] | Unverified |
+| 15 | Bleeding time 2–7 min (small wounds). Whole-blood clotting 5–15 min. Serum separation 30–60 min+. Scalp vessels are held open and keep bleeding | — | [K-H], [K-H R30] | Lee-White 5–15 min **✓ verified** (secondary sources) [V13]. The rest is unverified |
+| 16 | Drops ~50 µL, Ø 4.6 mm, terminal velocity ~7.6 m/s | — | [K-H R29], [D] | Ø ✓ (arithmetic). **Corrected:** terminal velocity 7.5–9 (use 8) m/s; stain spread 3–5.5× (was 3–5×) |
+| 17 | Pool thickness ~2.5 mm (capillary length 2.3 mm): 500 mL ≈ 50 cm circle, 1 L ≈ 71 cm. Pool gels in 5–15 min | — | [D] | **✓ verified** (arithmetic; gel time matches Lee-White) |
+| 18 | Drying: skin smear 5–10 min. Drip stain on steel 1–2 h. Pool 24–72 h. Colour red → red-brown (hours) → brown (1 day) → black-brown (weeks) | — | [K-M R41, R42], [D] | Chemistry sequence ✓ [V16]. Timings unverified |
+| 19 | Venous blood looks darker because deoxyHb absorbs ~5–10× more red light. μa per mm at 620 nm: ~0.5 (oxy) vs ~3.5 (deoxy) | — | [K-H R37], [D] | **✓ verified** against Prahl's table [V15] |
+| 20 | Key diameters. Aorta 25–32 → 15–20 mm infrarenal. CCA 6–8, ICA 5, ECA 4, vertebral 3.5, subclavian 8.5, brachial 4, radial 2.5, CFA 8.5, SFA 6, popliteal 5.5, superficial temporal/facial/occipital ~2. IJV 10–20, SVC 20, IVC 21, CFV 12 | — | [K-H R43–R49] | **Partly corrected:** ICA 4.8 (was 5), CFA M 9.0 / F 8.2 (was 8.5), IVC 17 (13–21; was 21), subclavian vein 7–12 (was 10–13). ✓ verified: aorta segments, CCA, brachial, common iliac, IJV, SVC, CFV [V7b, V17, V18, V1c]. ECA, vertebral, subclavian artery, radial, SFA, popliteal and scalp/face arteries unverified |
 
 ---
 
 ## 14. Suspicious content
 
 None encountered. **No web content was retrieved in this session:** the search budget was exhausted before this agent ran, and the egress proxy blocked every fetch. There were therefore no pages, snippets or code that could carry injected instructions. No commands were run. Nothing was downloaded, installed or executed.
+
+**Fact-check pass (v1.1):** this pass did read web content: GitHub pages, raw GitHub files and GitHub code-search results. All of it was treated as data. **No text in any of it tried to give instructions** (no requests to run commands, install software, visit URLs, change files or ignore instructions). One incidental observation: several GitHub-hosted "medical" files appear to be AI-generated study notes. They were used only as low-weight corroboration and never as a sole source. No commands were run. Nothing was downloaded, installed or executed. No code was copied into the project.
 
 ---
 
@@ -1146,3 +1161,109 @@ The URLs are from memory and were not opened. Verify them before relying on them
 - **R48** Yoo BS, et al. Anatomical consideration of the radial artery for transradial coronary procedures: arterial diameter, branching anomaly and vessel tortuosity. *Int J Cardiol* 2005;101(3):421–427.
 - **R49** Wolak A, et al. Aortic size assessment by noncontrast cardiac computed tomography: normal limits by age, gender, and body surface area. *JACC Cardiovasc Imaging* 2008;1(2):200–209.
 - **R50** Flanagan JP, Gradisar IA, Gross RJ, Kelly TR. Air embolus — a lethal complication of subclavian venipuncture. *N Engl J Med* 1969;281(9):488–489.
+
+### 15.1 Sources actually read during the fact-check (v1.1)
+
+Every source below was opened and read during the fact-check. Several are **third-party copies hosted on GitHub**, the only reachable host (see 16.1). When you cite them, cite the original book or paper, and check the number against the published edition before it goes into a player-visible readout.
+
+- **V1** Marino PL. *The ICU Book*, chapter "Hemorrhagic shock" (chapter 15 in the copy read; edition not stated in the copy). Read via an unofficial text copy: github.com/StarleyBy/Starley-CS-Library, path `books/icu/marino/chapters/chapter-15/chapter-15.md`. Used for: blood volume 66 mL/kg (M, lean weight) and 60 mL/kg (F); classes in % and mL/kg; "as little as 30 % … can be fatal"; refill up to ~1 L; Hb/Hct fall not apparent for 8–12 h. Chapter 13 of the same copy defines massive blood loss as "loss equivalent to the blood volume within 24 hours".
+- **V1b** Same book and copy, chapter 11 (`…/chapter-11/chapter-11.md`). Human mean systemic filling pressure 14–20 mmHg (ICU patients); veins hold 75 % of the blood volume.
+- **V1c** Same book and copy, chapter 2 on central venous access (`…/chapter-02/chapter-02.md`). Air entrainment of 100 mL/s through a 14 G catheter at a 5 mmHg gradient; fatal at 200–300 mL (3–5 mL/kg) over a few seconds; subclavian vein 7–12 mm and 3–4 cm long, ~5 mm above the apical pleura; IJV diameter +20–25 % with a 15° head-down tilt; femoral vein medial to the artery at 2–4 cm depth, cross-section +50 % with a 15° head-up tilt.
+- **V2** "Relative bradycardia in patients with isolated penetrating abdominal trauma and isolated extremity trauma." *Ann Emerg Med* 1990;19(3):268–75 (MEDLINE UI 90178769). Abstract read in the OHSUMED MEDLINE corpus copy at github.com/el-san59/Course_Work, `data/ohsu/ohsu741.json`.
+- **V3** Blood-injury phobia review abstract, MEDLINE UI 88338785 (1988). Same corpus, `data/ohsu/ohsu392.json`. Blood/injury cues cause an initial HR rise, then vasovagal bradycardia and frequently syncope.
+- **V4** "Survival time in gunshot and stab wound victims." *Am J Forensic Med Pathol* 1988;9(3):215–7 (UI 89023037). Same corpus, `ohsu607.json`. The abstract has no per-vessel numbers.
+- **V4b** "Traumatic rupture of the aorta: still a lethal injury." *Am J Surg* 1986;152(6):660–3 (UI 87073973). Same corpus, `ohsu9.json`. Overall mortality 84 %.
+- **V4c** Template bleeding-time abstract (UI 87155842). Same corpus, `ohsu41.json`. No normal range stated.
+- **V5** "Bunegin-Albin catheter improves air retrieval and resuscitation from lethal venous air embolism in dogs." *Anesth Analg* 1987;66(10):991–4 (UI 87324205); and the upright-dog study, *Anesth Analg* 1989;68(3):298–301. Same corpus, `ohsu105.json` and `ohsu541.json`. A "lethal dose" of air of 5 mL/kg over 30 s.
+- **V6** Sugarbaker DJ et al. *Adult Chest Surgery*, 2nd ed., chapter on thoracic trauma (chapter 6 in the copy; StarleyBy repo `books/thoracic-surgery/Sugarbaker2/chapters/chapter-06/chapter-06.md`). Thoracotomy for > 1,500 mL initial drainage or > ⅓ of blood volume, or > 250 mL/h for a few hours; most lung injuries are self-limiting.
+- **V7** Cohn LH (ed.). *Cardiac Surgery in the Adult*, chapter 57 on pericardial disease (StarleyBy repo `books/cardiac-surgery/cohn/chapters/chapter-57/chapter-57.md`). Rapid accumulation of as little as 100 mL can cause critical tamponade; chronic effusions can exceed 1 L; low-pressure tamponade in hypovolaemia; Beck's triad.
+- **V7b** Same book, chapter 49 on aortic aneurysm (`…/chapter-49/chapter-49.md`). Framingham CT mean diameters: descending thoracic 25.8 mm (M) / 23.1 mm (F); infrarenal 19.3 / 16.7 mm; lower abdominal 18.7 / 16.0 mm; men 2–3 mm larger; aneurysm ≥ 1.5 × normal.
+- **V8** *Oxford Handbook of Critical Care*, cardiac tamponade section (StarleyBy repo `books/icu/oxford/chapters/chapter-06/chapter-06.md`). "Rapid accumulations of < 150 mL".
+- **V9** BioGears Engine documentation, `PatientMethodology.md`: https://raw.githubusercontent.com/BioGearsEngine/core/master/share/doc/methodology/PatientMethodology.md. BV = 65.6·W^1.02 mL, citing Morgan et al. 2006.
+- **V10** Nadler-formula implementations with identical coefficients: github.com/filip-jezek/FMIComparison `FMITest.mo` (comment cites "Nadler et al. Surgery 51:224, 1962"); github.com/jackwasey/physiology `R/bmi.R`; github.com/beards-lab/TriSeg-Digital-Twins `targetVals_HF.m`.
+- **V11** Secondary ATLS teaching tables (low weight; probably AI-assisted notes): github.com/Open-Medica/open-medical-skills `skills/trauma-management-protocols/skill.py`; github.com/GOATnote-Inc/openem-corpus `corpus/tier1/conditions/hemorrhagic-shock.md`.
+- **V12** Citation confirmations: openEHR GDL guideline github.com/gdl-lang/common-clinical-models `gdl2/Shock_Index.v1.gdl2.json` (cites Mutschler *Crit Care* 2013;17(4):R172; normal SI 0.5–0.7; > 0.8 is early shock). Published reference lists that give Mutschler *Resuscitation* 2013;84:309–13.
+- **V13** Lee-White whole-blood clotting time 5–15 min, from teaching notes (low weight): github.com/tapendrashahi/magic-doc `normal.txt`; github.com/Sakilanwar9531/Nursingmock `src/blood_data.ts`.
+- **V14** University of Arizona General Surgery residency handbook, `docs/Trauma/ATLS/Primary Survey.md` (github.com/bilalmirza96/University-of-Arizona-General-Suregry-Handbook). Massive haemothorax > 1,500 mL or > 200 mL/h × 4 h.
+- **V15** Prahl S. *Tabulated molar extinction coefficient for hemoglobin in water* (OMLC, 1999; data by Gratzer and Kollias). Copy read at https://raw.githubusercontent.com/TimHarries/torusdata/master/prahl1999.dat. Identical rows appear in github.com/Nirstorm/nirstorm `bst_plugin/forward/nst_get_hb_extinctions.m`.
+- **V16** Wikipedia, "Bloodstain pattern analysis" (text snapshot at github.com/ajb2969/MLInformationRetrieval `documents/6-1285.txt`). The oxyHb → metHb → hemichrome ageing chemistry, citing Bremmer RH et al., *PLoS One* 2011;6(7):e21845; and "the width-length ratio of the ellipse is the sine of the impact angle".
+- **V17** HuBMAP Human Reference Atlas, vasculature table HRA-VCCF, `Geometry.csv`: https://raw.githubusercontent.com/hubmapconsortium/hra-vccf/main/Geometry.csv (curated vessel dimensions, each with its primary citation). Rows used: Krejza 2006 *Stroke* 37:1103 (CCA, ICA); Sandgren 1999 *J Vasc Surg* 29:503 (CFA); Tartière 2009 (IJV, CT); Pedersen 1993 (abdominal aorta, ultrasound); Qiu 2020 (arch and descending aorta, CT); Eliathamby 2021 (ascending aorta, CT); Panagouli 2020 and Kumar 2016 (brachiocephalic); Ba 2019 (CFA length, femoral vein, cadaveric); plus brachial, common iliac, SVC, IVC and portal-vein rows.
+- **V18** *Hurst's The Heart*, chapter on aortic disease (StarleyBy repo `books/cardiology/Hurst/chapters/chapter-14/chapter-14-01.md`). Ascending aorta ~3 cm; descending 2–2.3 cm; abdominal 1.7–1.9 cm; abdominal aneurysm > 3 cm; aortic pressure-wave velocity ~5 m/s.
+
+---
+
+## 16. Fact-check (v1.1)
+
+### 16.1 Method and limits
+
+- **The checker's WebSearch budget was already exhausted** ("200 of 200"), so no web searches were possible.
+- **Almost every medical domain was blocked** by the egress proxy: NCBI/PMC/PubMed, Europe PMC, Wikipedia, Radiopaedia, LITFL, MSD Manuals, OpenStax, Crossref, OpenAlex, Semantic Scholar, doi.org, arXiv, ScienceDirect, Hugging Face, CRAN, the Wayback Machine and OMLC.
+- **github.com, raw.githubusercontent.com and pypi.org were reachable.** The checker therefore used GitHub code search (read-only) and fetched raw files. The usable sources found that way were:
+  - a MEDLINE abstract corpus (OHSUMED, 1987–1991);
+  - text copies of ICU, cardiac-surgery, thoracic-surgery and cardiology textbooks;
+  - the HuBMAP vessel-geometry dataset;
+  - Prahl's haemoglobin table;
+  - open-source physiology engines (BioGears);
+  - independent implementations of Nadler's formula.
+- **Evidence weight:** textbooks, primary abstracts, HuBMAP and Prahl are *strong*. Residency handbooks are *moderate*. Unattributed teaching notes on GitHub are *weak*; they were used only for corroboration.
+- **Items the checker could not reach:** the ATLS manual, the DiMaio/Knight forensic texts, Rossen 1943, Barcroft 1944, Paradis 1990, Lempert 1994, Eastridge 2012, Karger 1999, Gray's/Moore anatomy and the bloodstain-pattern-analysis textbooks. Claims that depend only on these remain **unverified**. They are not wrong, just unchecked.
+- **Every [D] (derived) number in the claim list was recomputed by hand:** Nadler examples, orifice and Poiseuille tables, the radial and shunt worked examples, jet heights and throws, Rayleigh–Plateau drop size, Tate's law, pool areas, film-flow speeds, μa conversions, and the SI and MAP columns of table 3.3. No arithmetic errors were found.
+
+### 16.2 Per-claim verdicts
+
+| # | Claim | Verdict | What changed / evidence |
+|---|---|---|---|
+| 1 | Blood volume 70 mL/kg M (66–77), 60–65 F; BV0 5.0 / 3.8 L; Nadler | **Confirmed** | Marino 66 M / 60 F mL/kg [V1]; BioGears ≈ 71 mL/kg [V9]; Nadler coefficients and citation confirmed [V10]; worked examples recomputed (5.09 L, 3.77 L) |
+| 2 | ATLS classes I–IV (HR, RR, SBP, PP, mental state) | **Confirmed** (secondary) | Marino % and mL/kg bands [V1]; teaching tables [V11]. Class III is written 31–40 % in Marino. The ATLS manual itself was not reached |
+| 3 | HR response weaker than ATLS; SI ≥ 1.4 severe; 25–35 % biphasic faint | **Corrected** | Pulse < 100 in 35.2 % (SBP < 100) and 45.8 % (SBP < 90) of trauma patients [V2] → `vasovagal_chance` 0.35–0.45. Mutschler citations confirmed [V12]; SI cut-offs unverified |
+| 4 | ≥ 40–50 % loss usually fatal; sim arrest rule | **Confirmed**, caveat added | Marino: > 40 % "may be irreversible", and "as little as 30 % … can be fatal" [V1]. Arrest thresholds are game rules [G]; Paradis not reached |
+| 5 | LOC 5–10 s; 10–15 s after heart destroyed; 4–6 min brain | **Uncertain** | No source reachable. Consistent with standard teaching; left unchanged |
+| 6 | Orifice/Poiseuille/cardiac-limit flow model | **Confirmed** (arithmetic) | All table values reproduced within ~1 %. Not validated against human wound-flow data (none found) |
+| 7 | Per-vessel bleed-out times | **Uncertain** | No per-vessel source found [V4]. Internally consistent with Sections 3–4. Relabelled as tuning targets |
+| 8 | Partial > complete laceration; elastic arteries do not stop | **Uncertain** | No source reachable. Standard teaching; unchanged |
+| 9 | 0.78 mmHg/cm; sub-atmospheric neck/dural veins; 200–300 mL air lethal; ~100 mL/s | **Corrected** (nuance) | 200–300 mL (3–5 mL/kg) over seconds confirmed [V1c]; 5 mL/kg lethal in dogs [V5]. "~100 mL/s through a large opening" changed to "≥ 100 mL/s", because 100 mL/s passes even a 1.8 mm opening at 5 mmHg [V1c] |
+| 10 | Jet height 12.8 mm/mmHg; 1.54 m ideal; 0.35–0.65× real | **Confirmed** (arithmetic) | Recomputed. Cv is a tuning value (no measured human jets found) |
+| 11 | Bleeding time 2–7 min; clotting 5–15 min; serum 30–60 min; scalp septa | **Uncertain** (partly confirmed) | Lee-White 5–15 min confirmed by secondary sources [V13]. Ivy range, serum timing and scalp anatomy unverified |
+| 12 | Tamponade 100–200 mL; Beck's triad | **Confirmed** | "As little as 100 mL" [V7]; "< 150 mL" [V8]. **Added:** low-pressure tamponade in hypovolaemia (neck veins may not distend) [V7] |
+| 13 | Haemothorax 2.5–3 L/side; massive > 1,500 mL or > 200 mL/h × 2–4 h; fracture losses | **Uncertain** (thresholds confirmed) | Massive-haemothorax thresholds confirmed and widened (> ⅓ BV; 200–250 mL/h) [V6, V14]. Pleural capacity and fracture losses unverified |
+| 14 | DeoxyHb 5–10× more red absorption; μa RGB | **Confirmed** | Extinction values match Prahl's table exactly [V15]; ratios 4.6× (600 nm) to 10.2× (650 nm) |
+| 15 | Drop 50 µL, 4.6 mm, 7.6 m/s; stain 3–5× | **Corrected** | 4.6 mm correct. Terminal velocity 7.6 is the classic figure but unverified; a water-drop physics estimate gives ~9 → use 7.5–9 (8). Stain spread 3–5.5× (Laan correlation gives ~5.6 at terminal velocity). Impact-angle formula confirmed [V16] |
+| 16 | Pool 2.5 mm; 500 mL = 50 cm, 1 L = 71 cm, 2 L = 1 m; gel 5–15 min | **Confirmed** (arithmetic) | l_c = 2.32 mm and all areas recomputed; gel time matches Lee-White [V13]. Caveat: real pools may be thinner (edge pinning) |
+| 17 | Rivulets 2–5 mm, 1–5 cm/s, 5–15 µL/cm | **Confirmed** (arithmetic) | Nusselt film speed recomputed. Widths and residue are estimates; contact-line pinning may slow real rivulets |
+| 18 | Drying times; red → brown → black colour ramp | **Uncertain** (chemistry confirmed) | OxyHb → metHb → hemichrome sequence confirmed [V16]. Timings unverified |
+| 19 | Vessel diameters | **Corrected** (partly) | ICA 4.8 (was 5); CFA M 9.0 / F 8.2 (was 8.5); IVC 13–21 (17) (was 17–25 (21)); subclavian vein 7–12 (was 10–13); brachiocephalic length 3.5–4.5 cm (was 4–5). Confirmed: aorta segments, CCA, brachial, common iliac, IJV, SVC, CFV, portal vein [V1c, V7b, V17, V18]. Unverified: ECA, vertebral, subclavian and axillary arteries, radial, ulnar, SFA, popliteal, tibial, scalp and face arteries |
+
+### 16.3 All edits made in this pass
+
+- **Values changed:**
+  - `msfp` 7 (5–15) → 10 (7–20) mmHg, with the human 14–20 mmHg data.
+  - `vasovagal_chance` 0.25–0.35 → 0.35–0.45.
+  - Air entry "~100 mL/s through a large opening" → "≥ 100 mL/s".
+  - Subclavian vein 10–13 → 7–12 mm (Sections 5 and 11).
+  - ICA 4.5–5.5 (5) → 4–5.5 (4.8).
+  - CFA 7–10 (8.5) → 7.5–11 (M 9.0, F 8.2).
+  - IVC 17–25 (21) → 13–21 (17) (Sections 5 and 11).
+  - Brachiocephalic length 4–5 → 3.5–4.5 cm.
+  - `drop_terminal_v` 7.6 → 8 (7.5–9) m/s.
+  - `stain_spread_factor` 3–5 → 3–5.5×.
+- **New parameters and notes (gaps filled):**
+  - `refill_cap` ≈ 1 L, and the fact that Hb/Hct do not fall for 8–12 h [V1].
+  - Class boundaries in mL/kg (< 10 / 10–20 / 21–30 / > 30) [V1].
+  - Low-pressure tamponade and its effect on neck veins and `pericardium_tamponade_v` [V7].
+  - Massive haemothorax also defined as > ⅓ BV [V6].
+  - The sight of blood or a wound alone can cause vasovagal syncope [V3].
+  - Posture changes vein size: IJV +20–25 % with a 15° head-down tilt; femoral vein +50 % cross-section with a 15° head-up tilt [V1c].
+  - Subclavian vein ~5 mm above the pleura [V1c].
+  - Sex differences in vessel size (men's aortas 2–3 mm larger) [V7b].
+  - Blue-band caveat for the μa shader values.
+  - Marino's point that ~30 % loss can already be fatal [V1].
+- **Status marks:** "✓ verified" or "Fact-check: unverified" notes were added throughout, and Section 13 gained a Fact-check column.
+
+### 16.4 Still to verify (priority order, for a human with library access)
+
+1. The per-vessel bleed-out times in Section 5 (forensic series on incapacitation times, and Karger's work) — these drive gameplay pacing.
+2. The Mutschler SI cut-offs (R13) and Barcroft's biphasic response (R14).
+3. Time to LOC and to irreversible injury (Rossen, DiMaio). These are load-bearing for the "death animation" timing.
+4. The fracture blood-loss table and pleural capacity (ATLS 10th ed.).
+5. Diameters of the forearm, leg and scalp arteries (radial: Yoo 2005; vertebral; SFA; popliteal).
+6. Bloodstain drying and colour timings (Bremmer; Brutin) and the drop terminal velocity (bloodstain-pattern-analysis primary literature).

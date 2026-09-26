@@ -21,6 +21,7 @@ Cross-references:
   - A specific paper cited from memory is tagged `[Cn]`. The bibliographic details in §16 are complete enough to find each one. **None of them was re-opened in this session.**
   - Where a sibling document (01, 02) located a source by web search in an earlier session, it is cited as `[D01:Sx]` / `[D02:Rx]`. Its URL is repeated in §16.
 - **Before any number becomes a hard-coded constant, QA should check it against the cited source.** The priority list is in §15.
+- **Independent fact-check pass (2026-09-26), see §18.** Web access was again unavailable: WebSearch budget exhausted, and WebFetch `EGRESS_BLOCKED` on 14 domains. So the fact-checker could not open any source. Engineering derivations were recomputed and are marked **✓ verified (arithmetic)**. Values that match the fact-checker's independent recall are marked **≈ recall-consistent (not web-verified)**. Errors are marked **corrected: was X**.
 - Where sources disagree or ranges are wide, each table gives the range, a **default**, and the reason for choosing it.
 
 ### 0.2 Tags and confidence
@@ -37,7 +38,7 @@ Cross-references:
 ### 0.3 Conventions
 
 - **Reference body**: male, 75 kg, 1.75 m, 30 years old. Scale blood volume and cooling by mass (§1, §12).
-- **Pressures** are in mmHg (1 mmHg = 133.3 Pa). A 1 cm column of blood (ρ ≈ 1,060 kg/m³) = **0.78 mmHg** `[E]`.
+- **Pressures** are in mmHg (1 mmHg = 133.3 Pa). A 1 cm column of blood (ρ ≈ 1,060 kg/m³) = **0.78 mmHg** `[E]`. ✓ verified (arithmetic: 1,060 × 9.81 × 0.01 = 104 Pa = 0.780 mmHg).
 - **Colours** are approximate sRGB hex values under D65 for light-to-medium skin, authored `[K]`/`[G]`. On dark skin, pallor, cyanosis and livor are harder to see. Show them in the lips, nail beds, conjunctivae and palms, as clinicians do `[K]`.
 - **Blood palette** (from doc 02): arterial `#C4161C`, venous `#7A0A10`, fresh clot `#5A0A0E`, dried `#3B1512`.
 - **Time**: `t_real` is the medically real time. `t_game` is the suggested on-screen time. The default global policy `[G]`:
@@ -68,22 +69,22 @@ Nothing in this document needs much CPU or GPU `[E]`:
 
 | Quantity | Value / range | Unit | Notes | Source |
 |---|---|---|---|---|
-| Blood volume | 70 (male), 65 (female) | mL/kg | ≈ 7% of body weight. Reference body: **5,250 mL** | [C1] [K] (H) |
+| Blood volume | 70 (male), 65 (female) | mL/kg | ≈ 7% of body weight. Reference body: **5,250 mL**. ≈ recall-consistent (not web-verified). ATLS gives only the "~7% of body weight" figure; 65 mL/kg for women is a general textbook value | [C1] [K] (H) |
 | Cardiac output at rest | 5 (4–6) | L/min | HR 60–80 × SV ~70 mL | [K] (H) |
 | Normal BP / MAP | 120/80 / 93 | mmHg | MAP ≈ DBP + (SBP − DBP)/3 | [K] (H) |
-| Intrinsic (denervated) heart rate | 118.1 − 0.57 × age | bpm | ≈ 101 bpm at 30 y. The rate the heart keeps after the medulla is destroyed, until hypoxia slows it | [C36] (M) |
+| Intrinsic (denervated) heart rate | 118.1 − 0.57 × age | bpm | ≈ 101 bpm at 30 y. The rate the heart keeps after the medulla is destroyed, until hypoxia slows it. ≈ recall-consistent (Jose & Collison formula); ✓ verified (arithmetic): 118.1 − 17.1 = 101 | [C36] (M) |
 | Brain mass | 1,300–1,400 | g | | [K] (H) |
 | Cerebral blood flow (CBF) | 50 | mL/100 g/min | ≈ 700–750 mL/min, ~15% of cardiac output | [K] (H) |
 | Brain O₂ consumption | 3.3–3.5 | mL O₂/100 g/min | ≈ 45–50 mL/min, ~20% of whole-body O₂ | [K] (H) |
 | CBF at which function fails | < 20 | mL/100 g/min | EEG slows, then goes silent. Membrane failure and infarction below ~10 | [K] (H) |
 | Autoregulation lower limit | MAP 50–60 (up to 70) | mmHg | Below this, CBF follows MAP passively | [K] (M) |
-| Time to unconsciousness after complete stop of brain blood flow | 5–10 (mean ~6.8) | s | Neck-cuff occlusion experiments | [C9] (H) |
+| Time to unconsciousness after complete stop of brain blood flow | 5–10 (mean ~6.8) | s | Neck-cuff occlusion experiments. ≈ recall-consistent. The ESC syncope guideline (recall) similarly gives 6–10 s of cerebral flow cessation for complete loss of consciousness | [C9] (H) |
 | "Functional buffer" (G-LOC) | ~5–6 | s | Oxygen reserve after cerebral flow stops | [C10] (M) |
-| Voluntary action possible after the heart is destroyed | 10–15 | s | Classic FBI wound-ballistics figure | [C7] [C8] (M–H) |
-| EEG isoelectric after circulatory arrest | 10–40 (typ. ~20) | s | | [K] (M) |
-| Onset of irreversible neuronal injury, normothermic arrest | 4–6 | min | Cortex first; brainstem more tolerant | [K] (H) |
-| Intracranial pressure (ICP), normal | 5–15 | mmHg | Supine adult. Default 10 | [K] (H) |
-| ICP treatment threshold (TBI guidelines) | > 22 | mmHg | | [C28] (H) |
+| Voluntary action possible after the heart is destroyed | 10–15 | s | Classic FBI wound-ballistics figure. ≈ recall-consistent. It is doctrine (an upper envelope), not a measured series; the physiology in [C9] supports ~5–10 s once cerebral flow is truly zero | [C7] [C8] (M–H) |
+| EEG isoelectric after circulatory arrest | 10–40 (typ. ~20) | s | ≈ recall-consistent | [K] (M) |
+| Onset of irreversible neuronal injury, normothermic arrest | 4–6 | min | Cortex first; brainstem more tolerant. ≈ recall-consistent | [K] (H) |
+| Intracranial pressure (ICP), normal | 5–15 | mmHg | Supine adult. Default 10. ≈ recall-consistent (7–15 is also commonly quoted) | [K] (H) |
+| ICP treatment threshold (TBI guidelines) | > 22 | mmHg | ≈ recall-consistent (BTF 4th ed.) | [C28] (H) |
 | Cerebral perfusion pressure | CPP = MAP − ICP. Normal 60–80. Ischaemia < 50 | mmHg | If ICP ≥ MAP, cerebral circulation stops | [K] (H) |
 | Pressure–volume index (PVI) | 25 (20–30) | mL | Volume that raises ICP ten-fold on the steep part of the curve | [C30] (M) |
 | CSF production | 0.35 | mL/min | ≈ 500 mL/day. CSF volume ~150 mL | [K] (H) |
@@ -93,8 +94,8 @@ Nothing in this document needs much CPU or GPU `[E]`:
 | Apnoea: hypoxic loss of consciousness | 1.5–3 | min | Circulation intact | [K] (M) |
 | Apnoea: cardiac arrest | 4–10 (default 6) | min | Hypoxic bradycardia → PEA/asystole | [K] (M) |
 | Central cyanosis visible | deoxy-Hb ≥ ~5 g/dL | — | **Needs enough haemoglobin.** An exsanguinated body turns grey-white, not blue | [K] (H) |
-| Mean systemic filling pressure after arrest | ~7 (classic) to ~13 (human ICU measurements) | mmHg | Pressure that arteries and veins equalise to within about a minute of arrest | [C51] [C52] (M) |
-| Arterial jet exit speed | v = √(2ΔP/ρ): 120 mmHg → **5.5 m/s** | m/s | Ideal jet height 1.54 m. Real jets **0.3–1.5 m** after friction, wound shape and vessel spasm | [E] |
+| Mean systemic filling pressure after arrest | ~7 (classic) to ~13 (human ICU measurements) | mmHg | Pressure that arteries and veins equalise to within about a minute of arrest. ≈ recall-consistent: Guyton's ~7 mmHg comes from animal work; human post-mortem measurements are ~10–15 mmHg. Not web-verified | [C51] [C52] (M) |
+| Arterial jet exit speed | v = √(2ΔP/ρ): 120 mmHg → **5.5 m/s** | m/s | Ideal jet height 1.54 m. Real jets **0.3–1.5 m** after friction, wound shape and vessel spasm. ✓ verified (arithmetic): 120 mmHg = 15,996 Pa; √(2 × 15,996 / 1,060) = 5.49 m/s; 15,996 / (1,060 × 9.81) = 1.54 m. The 0.3–1.5 m real range is unverified | [E] |
 
 ### Visual/behavioural checklist (shared)
 - Blood loss is the clock for most deaths. Brain oxygen is the clock for the last 10–15 s of consciousness. Brain-cell survival is the clock for the 4–6 min after arrest.
@@ -172,15 +173,15 @@ Sources: Plum & Posner [C19], brain-death physiology [C17] [C18], [K]. Confidenc
 | `collapse_time` | 0.6–1.2 (floor 0.42) | s | Centre-of-mass drop of 0.85 m | [E] |
 | `protective_reflex_on_fall` | false | bool | For brainstem, high-cord and unconscious states | [K] (H) |
 | `grip_release_delay` | 0.1–0.5 | s | Weapon drops | [G] |
-| `medulla_apnoea` | immediate, no gasps | — | Pontine-only hit: apneustic/ataxic breathing for 0–5 min, then apnoea | [K] (M) |
+| `medulla_apnoea` | immediate, no gasps | — | Pontine-only hit: apneustic/ataxic breathing for 0–5 min, then apnoea. ≈ recall-consistent: the respiratory rhythm and gasp generators (pre-Bötzinger complex) are medullary | [K] (M) |
 | `bs_catecholamine_surge` | p = 0.5. HR 120–160, SBP +20–60 for 10–60 s | — | Optional flourish | [C27] [K] (L) |
-| `map_after_vasomotor_loss` | 40–60 (default 50) | mmHg | Medullary destruction | [K] (M) |
+| `map_after_vasomotor_loss` | 40–60 (default 50) | mmHg | Medullary destruction. Plausible (hypotension after brain death is common), but no source was retrieved; not web-verified | [K] (M) |
 | `hr_after_medulla_loss` | 118.1 − 0.57 × age | bpm | Until hypoxic bradycardia | [C36] (M) |
 | `apnoea_to_cyanosis` | 60–120 | s | Only if Hb is adequate (see §1) | [K] (M) |
 | `apnoea_to_bradycardia` | 180–300 | s | HR < 40–50 | [K] (M) |
-| `apnoea_to_arrest` | 240–600 (default 360) | s | PEA, then asystole | [K] (M) |
-| `pupil_midbrain_hit` | 4–6, fixed, often unequal | mm | Immediate | [C19] [C17] (H) |
-| `pupil_pontine_hit` | 1–2 | mm | Pinpoint. Dilate later with hypoxia | [C19] (H) |
+| `apnoea_to_arrest` | 240–600 (default 360) | s | PEA, then asystole. Not web-verified; plausible order of magnitude | [K] (M) |
+| `pupil_midbrain_hit` | 4–6, fixed, often unequal | mm | Immediate. ≈ recall-consistent. Plum & Posner distinguish nuclear midbrain lesions (mid-position, ~4–5 mm, fixed, often irregular) from pretectal lesions (slightly larger, ~5–6 mm, fixed, may show hippus) | [C19] [C17] (H) |
+| `pupil_pontine_hit` | 1–2 | mm | Pinpoint. Dilate later with hypoxia. ≈ recall-consistent | [C19] (H) |
 | `decerebrate_prob_midbrain_hit` | 0.3–0.6 | p | Episodes of 5–60 s | [G] on [K] |
 | `spinal_twitch_prob_first_30s` | 0.2 | p | Small digit or limb jerks | [G] |
 | `locked_in_prob_ventral_pons_lowenergy` | ≤ 0.05 | p | Awake, only vertical eyes and blinks | [G] on [C19] |
@@ -235,7 +236,7 @@ The victim may then **wake within seconds to minutes** with the focal deficits i
 - Apnoea duration scales with impact energy: from seconds after a knockout to minutes after severe TBI `[K] (L)`.
 
 ### 3.6 Knockout and concussion (fist, hammer, falls)
-- **LOC** is immediate. After sports knockouts it usually lasts **seconds to about 1 min**. Loss of consciousness **> 30 min** means at least moderate TBI (GCS 9–12 by definition) `[K] (H)`.
+- **LOC** is immediate. After sports knockouts it usually lasts **seconds to about 1 min**. Loss of consciousness **> 30 min** means at least moderate TBI `[K] (H)`. *corrected: was "(GCS 9–12 by definition)". In the usual severity schemes (e.g. VA/DoD), LOC > 30 min and GCS 9–12 are separate, parallel criteria for "moderate"; one does not define the other (recall, not web-verified).*
 - **Fencing response**: at the moment of impact the forearms go into a **tonic, unnatural posture**. One arm is extended, often stiffly raised, and the other is flexed, like the asymmetric tonic neck reflex. It lasts **several seconds** while the person is unconscious and then releases. It was seen in **about two-thirds of analysed knockout videos**. It is attributed to brainstem (lateral vestibular nucleus) activation and marks moderate-force injury [C20] `(M)`.
   - Default duration 2–10 s, maximum ~20 s `[G]`.
 - **Concussive convulsion**: about **1 in 70** sport concussions [C21] `(M)`.
@@ -256,10 +257,10 @@ The victim may then **wake within seconds to minutes** with the focal deficits i
 | `impact_apnoea_prob` | KO 0.1; moderate TBI 0.3; severe or penetrating 0.6 | p | Duration below | [G] on [C26] |
 | `impact_apnoea_duration` | KO 5–30 s; severe 30 s – 5 min | s | Hypoxic arrest if longer than ~4–6 min | [C26] [K] (L) |
 | `KO_LOC_duration` | 5–60 (tail to 300) | s | | [K] (M) |
-| `fencing_prob_on_KO` | 0.66 | p | | [C20] (M) |
-| `fencing_duration` | 2–10 (max 20) | s | Arm on the face side extended, other arm flexed | [C20] (L–M), [G] |
-| `concussive_convulsion_prob` | 0.014 | p | ~1 in 70 | [C21] (M) |
-| `concussive_convulsion_phases` | tonic ≤ 20 s, then clonic ≤ 150 s | s | Begins within 2 s | [C21] (L–M) |
+| `fencing_prob_on_KO` | 0.66 | p | ≈ recall-consistent ("two-thirds of knockouts") | [C20] (M) |
+| `fencing_duration` | 2–10 (max 20) | s | Arm on the face side extended, other arm flexed. The source says "several seconds". The 20 s maximum is [G] | [C20] (L–M), [G] |
+| `concussive_convulsion_prob` | 0.014 | p | ~1 in 70. ≈ recall-consistent | [C21] (M) |
+| `concussive_convulsion_phases` | tonic ≤ 20 s, then clonic ≤ 150 s | s | Begins within 2 s. ≈ recall-consistent (tonic phase up to ~20 s; jerks up to ~2–3 min) | [C21] (L–M) |
 | `post_KO_confusion` | 5–30 | min | Compress 4× in game | [K] (M) |
 | Game time | Knockout and fencing at 1×. Confusion phase at 4× | — | | [G] |
 
@@ -337,11 +338,12 @@ The victim may then **wake within seconds to minutes** with the focal deficits i
 - **Suggested game model** `[E]`/`[G]`:
   - `ΔV ≤ V_c`: ICP rises linearly from 10 to ~20 mmHg. `V_c` = **30–60 mL** (default 40; smaller in young brains).
   - `ΔV > V_c`: `ICP = 20 × 10^((ΔV − V_c) / PVI)`, with `PVI` = 25 mL [C30].
-  - Worked example (V_c = 40): ΔV = 50 mL gives ICP ≈ 50 mmHg. ΔV = 60 mL gives ICP ≈ 126 mmHg, which exceeds MAP, so **cerebral circulation stops and the brainstem dies**.
+  - Worked example (V_c = 40): ΔV = 50 mL gives ICP ≈ 50 mmHg. ΔV = 60 mL gives ICP ≈ 126 mmHg, which exceeds MAP, so **cerebral circulation stops and the brainstem dies**. ✓ verified (arithmetic): 20 × 10^(10/25) = 50.2; 20 × 10^(20/25) = 126.2.
   - CSF absorption offsets growth by ≤ 0.35 mL/min.
 - **Surgical thresholds** (they show which volumes matter clinically) [C29] `(H)`:
-  - Epidural haematoma (EDH) **> 30 mL** is evacuated whatever the GCS.
-  - Acute subdural **> 10 mm thick, or midline shift > 5 mm**, is evacuated.
+  - Epidural haematoma (EDH) **> 30 mL** is evacuated whatever the GCS. ≈ recall-consistent.
+    - Also from [C29] (recall): an EDH < 30 mL, < 15 mm thick, with < 5 mm midline shift, GCS > 8 and no focal deficit can be observed without surgery.
+  - Acute subdural **> 10 mm thick, or midline shift > 5 mm**, is evacuated. ≈ recall-consistent.
 - **Haematoma growth rates** `[G]` (clinically plausible, no single source):
   - Arterial EDH (middle meningeal artery, from a temporal hammer blow): **0.3–2 mL/min**.
   - Bleeding along a bullet track in the brain: 10–50 mL over the first 5–30 min.
@@ -394,14 +396,14 @@ Typical real total from the blow to death if untreated: **1–6 h** (default 2 h
 |---|---|---|---|---|
 | `icp0` | 10 (5–15) | mmHg | | [K] (H) |
 | `icp_compensated_volume` | 30–60 (default 40) | mL | Linear to ~20 mmHg | [G]/[E] |
-| `pvi` | 25 (20–30) | mL | Exponential phase | [C30] (M) |
+| `pvi` | 25 (20–30) | mL | Exponential phase. ≈ recall-consistent (normal adult PVI ~25–30 mL) | [C30] (M) |
 | `csf_absorption_max` | 0.35 | mL/min | Offsets growth | [K] (H) |
 | `edh_growth` | 0.3–2 (default 0.6) | mL/min | Arterial EDH. Stop growth at 150 mL | [G] |
 | `edh_lucid_interval_prob` | 0.2–0.5 | p | | [K] (M) |
 | `herniation_start_icp` | ≥ 30–40, or CPP < 50 | mmHg | Start the uncal or central sequence | [K]/[G] |
 | `blown_pupil` | 6–9, fixed | mm | Ipsilateral first; the other follows within minutes to an hour | [C19] (H), timing [K] (L) |
-| `cushing_sbp` / `cushing_hr` | 160–220 / 40–60 | mmHg / bpm | Late, ~5–30 min before apnoea | [C31] (H), timing [K] (L) |
-| `cushing_full_triad_prob` | ~0.33 | p | | [K] (L) |
+| `cushing_sbp` / `cushing_hr` | 160–220 / 40–60 | mmHg / bpm | Late, ~5–30 min before apnoea. The triad and "late sign" are ≈ recall-consistent. The numeric SBP/HR bands are illustrative and not from a guideline | [C31] (H), numbers and timing [K]/[G] (L) |
+| `cushing_full_triad_prob` | ~0.33 | p | ≈ recall-consistent ("about one-third"); not web-verified | [K] (L) |
 | `cheyne_stokes_period` | 40–90 | s | Apnoea 10–30 s | [C19] (M) |
 | `cnh_rr` | 25–40 | /min | | [C19] (M) |
 | `apneustic_hold` | 2–3 | s | | [C19] (M) |
@@ -424,11 +426,11 @@ Typical real total from the blow to death if untreated: **1–6 h** (default 2 h
 | Quantity | Value | Notes | Source |
 |---|---|---|---|
 | Cord length | 42–45 cm (male), ~43 cm (female) | From the foramen magnum to the conus | [C50] [K] (M) |
-| Cord end (conus medullaris) | **L1–L2** disc (adult range T12–L3) | Below this only the cauda equina (nerve roots) | [K] (H) |
+| Cord end (conus medullaris) | **L1–L2** disc (adult range T12–L3) | Below this only the cauda equina (nerve roots). ≈ recall-consistent | [K] (H) |
 | Cord cross-section | Cervical enlargement (C4–T1) ~13–14 mm wide × 7–9 mm AP. Thoracic ~8–10 × 6–8 mm | For hit volumes | [C50] [K] (M) |
 | Spinal canal AP diameter | Cervical ~14–20 (mean ~17). Thoracic ~13–16. Lumbar 15–25 | mm | [K] (M) |
 | Vertebra → cord segment | Cervical: segment ≈ vertebra + 1. Upper thoracic: + 2. T7–T9: + 3. T10–T12 vertebrae hold the lumbar and upper sacral segments. L1 vertebra holds the conus | So a bullet through the T12 vertebra injures the L-segments or conus | [K] (M) |
-| Phrenic nerve | **C3, C4, C5** ("C3, 4, 5 keeps the diaphragm alive"). C4 is the main root | Diaphragm | [K] (H) |
+| Phrenic nerve | **C3, C4, C5** ("C3, 4, 5 keeps the diaphragm alive"). C4 is the main root | Diaphragm. ≈ recall-consistent | [K] (H) |
 | Sympathetic outflow | T1–L2. Cardiac accelerator fibres T1–T4 | Above T6: neurogenic shock likely | [K] (H) |
 
 ### 6.2 Complete injury by level
@@ -447,8 +449,8 @@ Typical real total from the blow to death if untreated: **1–6 h** (default 2 h
 | **L1–L2 (conus)** | Normal | Normal | Full | Hip flexors weak or absent. Legs flaccid. Bladder and bowel paralysed | | As T12. Legs limp | Survives | [C32] (H) |
 | **L3–S1 (cauda equina)** | Normal | Normal | Full | **Partial**: quadriceps (L3), ankle dorsiflexion (L4), big-toe extension (L5), plantar flexion (S1) as roots allow. Lower-motor-neuron, permanently flaccid. Foot drop. Saddle anaesthesia | | Limps and stumbles. Foot slaps. One leg may be worse than the other | Survives | [C32] [K] (H) |
 
-- **Key muscles** (ISNCSCI) [C32] `(H)`:
-  - C5 elbow flexors; C6 wrist extensors; C7 elbow extensors; C8 finger flexors; T1 little-finger abductors.
+- **Key muscles** (ISNCSCI) [C32] `(H)`. ≈ recall-consistent (standard ISNCSCI list; not web-verified):
+  - C5 elbow flexors; C6 wrist extensors; C7 elbow extensors; C8 finger flexors (distal phalanx of the middle finger); T1 little-finger abductors.
   - L2 hip flexors; L3 knee extensors; L4 ankle dorsiflexors; L5 long toe extensors; S1 ankle plantar flexors.
 - **Dermatome landmarks** for "no reaction below here" [C32] [K] `(H)`:
   - C4: top of the shoulder / clavicle.
@@ -468,7 +470,7 @@ Typical real total from the blow to death if untreated: **1–6 h** (default 2 h
 | Spinal cord concussion (transient neurapraxia) | Blunt blow to the neck (hammer, fall) | Complete paralysis that **resolves within minutes to 48 h**, usually within 10–15 min | Collapses, limp, then recovers | [K] (L–M) |
 
 ### 6.4 Spinal shock (what the paralysed limbs do over time)
-Four-phase model [C33] `(H)`:
+Four-phase model [C33] `(H)`. ≈ recall-consistent (phase boundaries 0–1 day, 1–3 days, 1–4 weeks, 1–12 months):
 1. **0–24 h**: areflexia or hyporeflexia. **Limbs completely flaccid, no tendon reflexes, no withdrawal.** The delayed plantar response and some cutaneous reflexes may be the first to return.
 2. **1–3 days**: initial return of reflexes (bulbocavernosus and other polysynaptic reflexes).
 3. **1–4 weeks**: early hyperreflexia.
@@ -478,8 +480,9 @@ Four-phase model [C33] `(H)`:
 
 ### 6.5 Neurogenic shock (loss of sympathetic tone)
 - **Signs**: **hypotension** (SBP 70–90 mmHg) with **bradycardia** (HR 40–60, occasionally < 40 or pauses, especially on airway stimulation) and **warm, dry, pink skin** below the lesion (vasodilation, no sweating). Poikilothermia: body temperature drifts toward ambient `[K] (H)`.
-- **Incidence** in isolated spinal cord injury in the emergency department: **~19% cervical, ~7% thoracic, ~3% lumbar** [C34] `(M)`.
-- **Severe (complete) cervical injuries**: bradycardia in essentially **all** patients, hypotension needing pressors in **~⅔**, primary cardiac arrest in **~16%**. Bradycardia peaks around days 3–5 and resolves over 2–6 weeks [C35] `(M)`.
+- **Incidence** in isolated spinal cord injury in the emergency department: **~19% cervical, ~7% thoracic, ~3% lumbar** [C34] `(M)`. ≈ recall-consistent.
+  - Added in the fact-check (recall, not web-verified): that study defined neurogenic shock as **SBP < 100 mmHg with HR < 80 bpm**. Use this as the game's trigger definition.
+- **Severe (complete) cervical injuries**: bradycardia in essentially **all** patients, hypotension needing pressors in **~⅔**, primary cardiac arrest in **~16%**. Bradycardia peaks around days 3–5 and resolves over 2–6 weeks [C35] `(M)`. ≈ recall-consistent.
 - **Contrast with haemorrhagic shock**:
 
 | | Haemorrhagic | Neurogenic |
@@ -503,7 +506,7 @@ Four-phase model [C33] `(H)`:
 | `cord_level` | C1…S5 | enum | Map from the vertebra hit using the offsets in §6.1 | [K] (M) |
 | `cord_complete_prob` (bullet through the canal) | 0.7–0.9. Fragment or cavitation only: 0.3–0.5 | p | | [G] |
 | `resp_capacity_by_level` | C1–C3: 0–0.1; C4: 0.25; C5: 0.3; C6: 0.4; C7–C8: 0.5; T1–T6: 0.6; T7–T12: 0.8; L+: 1.0 | fraction of VC | Scales tidal volume, voice and cough | [K] (L–M) |
-| `apnoea_awake_LOC` (C1–C3) | 90–180 | s | Faster if struggling | [K] (M) |
+| `apnoea_awake_LOC` (C1–C3) | 90–180 | s | Faster if struggling. Not web-verified. Consistent with room-air O₂ stores (§1) | [K] (M) |
 | `apnoea_arrest` (C1–C3) | 240–600 (default 360) | s | | [K] (M) |
 | `neurogenic_shock_prob` | cervical complete 0.7–1.0; cervical any 0.19; thoracic 0.07; lumbar 0.03 | p | | [C34] [C35] (M) |
 | `neurogenic_hr` / `neurogenic_sbp` | 40–60 / 70–90 | bpm / mmHg | Warm pink skin below the level | [C35] [K] (M) |
@@ -540,7 +543,7 @@ Four-phase model [C33] `(H)`:
 | Urine (mL/h) | > 30 | 20–30 | 5–15 | Negligible |
 | Mental state | Slightly anxious | Mildly anxious | **Anxious, confused** | **Confused, lethargic** |
 
-Source: ATLS 9th edition numeric table [C1] `(H as published)`.
+Source: ATLS 9th edition numeric table [C1] `(H as published)`. ≈ recall-consistent: every cell matches the fact-checker's independent recall of the 9th-edition table. Not web-verified. ✓ verified (arithmetic): the 75 kg row is 15 / 30 / 40% of 5,250 mL = 788 / 1,575 / 2,100 mL.
 - The **10th edition** replaced the fixed numbers with arrows and added **base deficit**: Class I 0 to −2; II −2 to −6; III −6 to −10; IV below −10 mmol/L [C1] `(M)`.
 - **Real patients often show less tachycardia and hypotension than the table predicts** [C2] [C3] `(M)`.
 - **Game use**: the numeric table drives visible signs. Randomise HR ±15% and let the paradoxical bradycardia of §7.3 happen.
@@ -560,7 +563,9 @@ Sources: [C1] for class signs `(H)`. Behaviour, eyes and audio are `[K] (M)`. Lo
 ### 7.3 Two important non-linearities
 - **Paradoxical (relative) bradycardia**: in severe, rapid haemorrhage the HR can **fall** instead of rise. This is a vagally mediated, Bezold–Jarisch-type reflex from an empty, vigorously contracting ventricle, and it produces sudden collapse.
   - Documented in trauma series: roughly **a third of hypotensive trauma patients** have HR < 90–100 [C4] [C5] `(L–M)`.
+    - *Fact-check note: uncertain. The fact-checker's recall is that the prevalence of relative bradycardia (HR ≤ 90 with SBP ≤ 90) in trauma registries may be higher, roughly 30–45%, depending on the HR cut-off. Not web-verified. Treat "one third" as a lower-middle estimate. The game's `paradoxical_brady_prob` is a separate [G] roll for sudden fainting and is unaffected.*
   - Volunteer studies (lower-body negative pressure) show that compensation holds until a **sudden decompensation**: BP drops, HR often drops, and the subject goes presyncopal. This occurs at an equivalent central hypovolaemia of **~1,000–2,000 mL**, with wide individual variation [C6] `(M)`.
+    - *Fact-check note: ≈ recall-consistent. Cooke 2004 maps LBNP of −10 to −20 mmHg to ~400–550 mL of blood loss, −20 to −40 mmHg to ~550–1,000 mL, and beyond −40 mmHg to > 1,000 mL. Most subjects decompensate at about −60 to −100 mmHg. Not web-verified.*
   - **Game**: at 25–40% loss, 10–30% of characters suddenly faint (HR drops to 50–70) before the table predicts `[G]`.
 - **Posture**: an **upright** bleeding person faints much earlier (from ~20–30% loss) than a supine one, because venous return falls when standing `[K] (M)`. After the fall, lying flat can bring brief partial recovery. This gives "gets back up, then collapses again".
 
@@ -575,6 +580,11 @@ Sources: [C1] for class signs `(H)`. Behaviour, eyes and audio are `[K] (M)`. Lo
 | Asystole | 2–10 min after PEA | | [K] (M) |
 | Irreversible brain injury | 4–6 min after cerebral perfusion stops | | [K] (H) |
 
+- **Fact-check note on the loss-of-consciousness and PEA thresholds** (uncertain, recall only, not web-verified). Two textbook statements bracket the defaults:
+  - **ATLS 9th ed. text on Class IV**: loss of **more than 50%** of blood volume produces loss of consciousness with a weak pulse and low BP.
+  - **Guyton & Hall (circulatory shock chapter)**: when blood is removed over about 30 min, cardiac output and arterial pressure **both fall to zero at about 40–45%** of blood volume. This is based on animal data.
+  - So pulselessness can arrive at or below 50% loss, and the 0.55 PEA default sits at the late edge. **Recommendation**: keep LOC at 0.45. Make PEA rate-dependent: **0.45–0.50 for rapid bleeds (> 500 mL/min)**, and 0.55 for slow bleeds where compensation has time to act.
+  - The MAP trigger (MAP < 40–45, SBP < 60, for > 5–8 s) agrees with the ESC syncope guideline (recall): loss of consciousness at SBP ~50–60 mmHg at heart level (≈ 30–45 mmHg at brain level when upright).
 - A **slow** bleed allows compensation: fluid shifts from tissues into vessels (transcapillary refill, roughly **50–150 mL/h** early on `[K] (L)`) plus clotting. So slow deaths occur at a higher cumulative loss, or not at all.
 - **Coagulopathy**: after ~30–40% loss, or with core temperature below ~35 °C, clotting weakens and **every wound oozes more** `[K] (M)`.
 
@@ -612,18 +622,31 @@ Q_wound = Q_ref × max(0, P_drive − P_ext) / (P_ref − P_ext)
 
 | Initial bleed rate | Loss of consciousness | PEA | t_game (default scale) |
 |---|---|---|---|
-| 5 L/min (aorta, heart) | 10–30 s (brain perfusion fails before the volume threshold) | 40–90 s | 1× |
-| 1 L/min (carotid, femoral) | 2.5–4 min | 3.5–7 min | 1× then 4×: ~1.5–2.5 min |
-| 300 mL/min (brachial, several wounds) | 8–15 min | 10–25 min | 4×: 3–6 min |
-| 100 mL/min (large scalp wound plus others) | 25–50 min | 35–80 min | 10×: 3–8 min |
-| 30 mL/min (oozing wounds) | 1.5–4 h, or never if clotting wins | 2–6 h | 30×: 3–12 min |
+| 5 L/min (aorta, heart) | 10–30 s (brain perfusion fails before the volume threshold) | **35–50 s** (corrected: was 40–90 s) | 1× |
+| 1 L/min (carotid, femoral) | **2.4–2.8 min** (corrected: was 2.5–4 min) | **2.9–4.0 min** (corrected: was 3.5–7 min) | 1× then 4×, last 60 s at 1×: **~2–2.5 min** (corrected: was ~1.5–2.5 min) |
+| 300 mL/min (brachial, several wounds) | **7.9–9.3 min** (corrected: was 8–15 min) | **9.6–13 min** (corrected: was 10–25 min) | 4×: **~4–5 min** (corrected: was 3–6 min) |
+| 100 mL/min (large scalp wound plus others) | **24–28 min** (corrected: was 25–50 min) | **29–40 min** (corrected: was 35–80 min) | 10×: **~5–6 min** (corrected: was 3–8 min) |
+| 30 mL/min (oozing wounds) | **1.3–1.6 h**, or never if clotting wins (corrected: was 1.5–4 h) | **1.6–2.2 h** (corrected: was 2–6 h) | 30×: **~5–6.5 min** (corrected: was 3–12 min) |
+
+✓ verified (arithmetic) after correction. The fact-checker recomputed every row with the method stated above.
+- **LOC** at 45% loss = 2,362 mL. **PEA** at 55% = 2,888 mL.
+- **Lower bound**: constant flow, t = V / Q.
+- **Upper bound**: flow proportional to MAP, using the document's own `map_by_loss` curve (§7.8) integrated piecewise: t = ∫ dV / (Q₀ × MAP(V) / 93). This gives flow-equivalent volumes of **2,800 mL to LOC** and **3,962 mL to PEA**.
+- The original upper bounds were 1.5–2× longer than this method gives.
+- Transcapillary refill (50–150 mL/h) and clotting extend only the slow rows, by roughly 5–20 min at 30 mL/min.
+- If PEA is moved to 0.50 for rapid bleeds (§7.4 note), use 2,625 mL / 3,302 mL instead. At 1 L/min that puts PEA at 2.6–3.3 min.
 
 ### 7.6 Arterial jets and when they stop
-- **Ideal jet height** `h = P / (ρ g)`: SBP 120 → 1.54 m; SBP 80 → 1.03 m; SBP 60 → 0.77 m `[E]`. Real jets reach **20–90%** of that because of friction, the shape of the wound, overlying tissue and vessel spasm. Use `h_real = η × h_ideal` with η 0.2–0.9 (default 0.5) `[G]`.
+- **Ideal jet height** `h = P / (ρ g)`: SBP 120 → 1.54 m; SBP 80 → 1.03 m; SBP 60 → 0.77 m `[E]`. ✓ verified (arithmetic).
+- **Gap added by the fact-check** `[E]`: `P` must be the **local** arterial pressure at the wound, not the aortic pressure.
+  - Formula: `P_local = P_aortic − 0.78 mmHg/cm × (wound height above the heart)`.
+  - Standing adult: a neck wound ~30 cm above the heart loses ~23 mmHg (SBP 120 → ~97 at the carotid). An ankle wound ~120 cm below the heart gains ~94 mmHg.
+  - Lying flat: the correction is near zero.
+  - So standing neck jets are shorter, and leg jets taller, than the aortic figure suggests. Apply the same term that §7.5 applies to veins. Real jets reach **20–90%** of that because of friction, the shape of the wound, overlying tissue and vessel spasm. Use `h_real = η × h_ideal` with η 0.2–0.9 (default 0.5) `[G]`.
 - **Exit speed** v = √(2P/ρ): 5.5 m/s at 120 mmHg, 3.9 m/s at 60 mmHg `[E]`.
 - The jet **pulses at the heart rate**: tall during systole, a dribble during diastole. As shock deepens, jets **shorten and become rapid and weak** (HR up, pulse pressure down) `[K] (H)`.
 - Below SBP ~50–60 mmHg a jet turns into a **welling pulse** `[E]`.
-- **At cardiac arrest, pulsatile flow stops with the last effective beat.** Within ~30–90 s, arterial pressure falls to the mean systemic filling pressure (~7–13 mmHg). After that the wound only **drains by gravity** (§12.2) `[K] (H)` [C51] [C52].
+- **At cardiac arrest, pulsatile flow stops with the last effective beat.** Within ~30–90 s, arterial pressure falls to the mean systemic filling pressure (~7–13 mmHg). After that the wound only **drains by gravity** (§12.2) `[K] (H)` [C51] [C52]. ≈ recall-consistent. Recalled human data from induced VF during defibrillator testing show that arterial and venous pressures have **not** fully equalised 10–15 s after arrest, which is compatible with the 30–90 s figure. Not web-verified.
 
 ### 7.7 Colour progression (light-to-medium skin)
 
@@ -646,9 +669,9 @@ Q_wound = Q_ref × max(0, P_drive − P_ext) / (P_ref − P_ext)
 | `map_by_loss` | 0: 93; 0.15: 90; 0.30: 80; 0.40: 60; 0.50: 45; 0.55: 30 | mmHg | Piecewise linear | [E] on [C1] |
 | `rr_by_loss` | 16 → 25 → 35 → 40, then gasping | /min | | [C1] (H) |
 | `cap_refill` | < 2 → 2–3 → > 3 → > 5 | s | | [K] (M) |
-| `loc_supine_loss` | 0.40–0.50 (default 0.45) | fraction | Also MAP < 40–45 for > 5–8 s | [C1] [K] (M) |
-| `faint_upright_loss` | 0.20–0.30 | fraction | | [K] (M) |
-| `pea_loss` | 0.50–0.60 (default 0.55) | fraction | | [K] (L–M) |
+| `loc_supine_loss` | 0.40–0.50 (default 0.45) | fraction | Also MAP < 40–45 for > 5–8 s. Uncertain; bracketed by ATLS (> 50%) and Guyton (40–45%) per §7.4 note | [C1] [K] (M) |
+| `faint_upright_loss` | 0.20–0.30 | fraction | Not web-verified | [K] (M) |
+| `pea_loss` | 0.50–0.60 (default 0.55) | fraction | Fact-check recommendation: rapid bleeds (> 500 mL/min) 0.45–0.50; slow bleeds 0.55. See §7.4 | [K] (L–M) |
 | `pea_to_asystole` | 2–10 | min | | [K] (M) |
 | `transcapillary_refill` | 50–150 | mL/h | Early phase | [K] (L) |
 | `coagulopathy_onset` | loss > 0.35, or core < 35 °C | — | Wound ooze ×1.5–2 | [K] (M), [G] |
@@ -669,10 +692,10 @@ Q_wound = Q_ref × max(0, P_drive − P_ext) / (P_ref − P_ext)
 ## 8. Heart wounds and the brain's oxygen reserve
 
 ### 8.1 The 10–15 second rule
-- **"Even if the heart is instantly destroyed, there is sufficient oxygen within the brain to support full and complete voluntary action for 10–15 seconds."** This is FBI wound-ballistics doctrine [C7] (quoted from memory), echoed in the wound-ballistics literature [C8] `(M–H)`.
+- **"Even if the heart is instantly destroyed, there is sufficient oxygen within the brain to support full and complete voluntary action for 10–15 seconds."** This is FBI wound-ballistics doctrine [C7] (quoted from memory), echoed in the wound-ballistics literature [C8] `(M–H)`. ≈ recall-consistent: the fact-checker independently recalls the same sentence in Patrick (1989), worded "...sufficient oxygen **in** the brain...". Not web-verified.
 - **Physiology** agrees:
   - Complete neck-cuff occlusion of cerebral flow causes unconsciousness in **5–10 s (mean ~6.8 s)** [C9] `(H)`.
-  - G-induced loss of consciousness shows a **~5–6 s functional buffer**, then incapacitation lasting about 12 s (absolute) plus a longer relative period. **Brief myoclonic jerks are common** [C10] `(M)`.
+  - G-induced loss of consciousness shows a **~5–6 s functional buffer**, then incapacitation lasting about 12 s (absolute) plus a longer relative period. **Brief myoclonic jerks are common** [C10] `(M)`. ≈ recall-consistent. The fact-checker recalls that the same series gives a mean relative-incapacitation period of ~15 s and myoclonic "flailing" in roughly 70% of episodes (low confidence, not web-verified).
   - A destroyed heart still leaves a few seconds of residual arterial pressure, which is how 5–10 s becomes 10–15 s `[E]`.
 - **Syncope video analysis** (56 episodes, induced in healthy volunteers) [C11] `(M)`:
   - **myoclonic jerks in ~90%**;
@@ -680,7 +703,7 @@ Q_wound = Q_ref × max(0, P_drive − P_ext) / (P_ref − P_ext)
   - head turns, oral automatisms, and attempts to right the body.
   - The unconscious period lasted about **12 s** on average.
 
-  This is the best evidence for what the eyes do during cerebral hypoperfusion.
+  This is the best evidence for what the eyes do during cerebral hypoperfusion. ≈ recall-consistent (56 induced syncopes; myoclonus ~90%; eyes open; upward deviation mainly early in the episode; hallucinations reported in ~60%). Not web-verified.
 
 ### 8.2 Sequence after the heart is destroyed (pistol, rifle, or shotgun to the ventricles)
 
@@ -705,6 +728,7 @@ Q_wound = Q_ref × max(0, P_drive − P_ext) / (P_ref − P_ext)
 - **Commotio cordis** (for the fist and hammer): a blunt blow to the front of the chest during a **~10–30 ms window on the upstroke of the T wave** can trigger **ventricular fibrillation** in a structurally normal heart. The victim collapses within seconds, without a pulse, often with agonal gasps `[K] (M)`.
   - The window is roughly 2–4% of the cardiac cycle `[E]`.
   - Game: p ≈ 0.01–0.03 per hard precordial blow `[G]`.
+  - ✓ verified (arithmetic): a 20 ms window is 2% of a 1,000 ms cycle (60 bpm) and 4% of a 500 ms cycle (120 bpm).
 
 ### 8.4 Simulation parameters: heart
 
@@ -733,8 +757,8 @@ Q_wound = Q_ref × max(0, P_drive − P_ext) / (P_ref − P_ext)
 ## 9. Lung and chest wounds
 
 ### 9.1 Haemothorax
-- Each hemithorax can hold **~40% of the blood volume (2–3 L)**, so a person can bleed to death **into the chest with little visible external blood** [C1] `(M)`.
-- **Massive haemothorax** = **≥ 1,500 mL** immediately, or **> 200 mL/h for 2–4 h** [C1] `(H)`.
+- Each hemithorax can hold **~40% of the blood volume (2–3 L)**, so a person can bleed to death **into the chest with little visible external blood** [C1] `(M)`. ≈ recall-consistent: the "40% of circulating blood volume per hemithorax" phrasing is standard in haemothorax reviews such as StatPearls. Not web-verified. ✓ verified (arithmetic): 40% × 5,250 mL = 2,100 mL.
+- **Massive haemothorax** = **≥ 1,500 mL** immediately (or ≥ one-third of blood volume), or **> 200 mL/h for 2–4 h** [C1] `(H)`. ≈ recall-consistent.
 - **Sources**:
   - Peripheral lung tissue is low-pressure (pulmonary artery ~25/10 mmHg) and often slows or stops by itself.
   - Intercostal and internal mammary arteries (systemic pressure) keep bleeding.
@@ -742,11 +766,11 @@ Q_wound = Q_ref × max(0, P_drive − P_ext) / (P_ref − P_ext)
 - **Signs**: breathlessness, dullness on the injured side, reduced chest movement on that side, and shock signs as in §7 `[K] (H)`.
 
 ### 9.2 Pneumothorax: simple, open, tension
-- **Open ("sucking") chest wound**: if the chest-wall defect is **more than about ⅔ of the tracheal diameter**, air enters preferentially through the wound. That is about **> 10–13 mm** for a 15–20 mm trachea `[E]`, well within shotgun and rifle exit wounds [C1] `(H)`. Air **sucks and bubbles** at the wound with each breath.
+- **Open ("sucking") chest wound**: if the chest-wall defect is **more than about ⅔ of the tracheal diameter**, air enters preferentially through the wound. That is about **> 10–13 mm** for a 15–20 mm trachea `[E]`, well within shotgun and rifle exit wounds [C1] `(H)`. ≈ recall-consistent (the ATLS "two-thirds of the tracheal diameter" rule). ✓ verified (arithmetic): ⅔ × 15–20 mm = 10–13 mm. Adult tracheal diameter varies (roughly 13–25 mm in men), so the threshold spans ~9–17 mm. Air **sucks and bubbles** at the wound with each breath.
 - **Tension pneumothorax**: a one-way air leak inflates the pleural space, collapses the lung, pushes the mediastinum across, and kinks venous return.
   - In **spontaneously breathing** patients it usually develops **over minutes to hours**. It is faster with ventilation, which does not apply in this game [C37] `(M)`.
   - **Respiratory distress and tachycardia** are nearly universal, with falling oxygen saturation.
-  - **Hypotension is a late sign, and tracheal deviation is late and uncommon** [C37] `(M)`.
+  - **Hypotension is a late sign, and tracheal deviation is late and uncommon** [C37] `(M)`. ≈ recall-consistent: the review reports that in awake patients distress and tachycardia are common, while hypotension and tracheal deviation are each seen in a minority. Not web-verified.
   - Distended neck veins appear unless the person is also hypovolaemic.
   - The affected side is hyperexpanded and moves little.
   - It ends in cyanosis, confusion, loss of consciousness and **PEA arrest** `[K] (H)`.
@@ -801,17 +825,24 @@ Q_wound = Q_ref × max(0, P_drive − P_ext) / (P_ref − P_ext)
 ### 10.1 Definitions the state machine should use
 - **Circulatory arrest ("clinical death")**: no effective cardiac output. The victim is pulseless, apnoeic or gasping, and unresponsive. **The post-mortem clock (§12) starts here** `[K] (H)`.
 - **Irreversibility**: brain injury begins after **~4–6 min** without circulation at normal temperature `[K] (H)`.
-  - Observation studies of dying patients show that **transient resumption of cardiac activity** after it has stopped (autoresuscitation) happens in a minority (~14%) and **within ~5 min**. That is why clinical protocols wait about 5 min before declaring circulatory death [C14] `(M)`.
+  - Observation studies of dying patients show that **transient resumption of cardiac activity** after it has stopped (autoresuscitation) happens in a minority (~14%) and **within ~5 min**. That is why clinical protocols wait about 5 min before declaring circulatory death [C14] `(M)`. ≈ recall-consistent: the fact-checker recalls that in [C14] the longest pause before resumption was about 4 min 20 s, and that no patient regained consciousness or a sustained circulation. Not web-verified.
   - **Game**: declare `dead = true` at arrest + 5 min, but run the post-mortem clock from arrest.
 - **Death by neurologic criteria (brain death)** [C17] [C18] `(H)`:
   - coma;
   - absent brainstem reflexes: pupils fixed at 4–9 mm, no corneal, oculocephalic, vestibulo-ocular, gag or cough reflex;
   - apnoea.
 
+  ≈ recall-consistent: the 2010 guideline says pupils are "usually fixed in a midsize or dilated position (4–9 mm)". Not web-verified.
+  - **Gap added by the fact-check** (recall):
+    - A newer US consensus guideline replaces the 2010 one: Greer DM, et al. *Pediatric and adult brain death/death by neurologic criteria determination: consensus guideline*. Neurology 2023.
+    - Its core clinical criteria are unchanged.
+    - The apnoea test is positive when **PaCO₂ ≥ 60 mmHg and ≥ 20 mmHg above baseline** (the 2023 text also cites arterial pH ≤ 7.30) with no respiratory effort.
+    - Game use: a brain-dead character makes **no breathing movement even as CO₂ rises**.
+
   In the game this is the state after brainstem destruction or herniation. The heart then stops within minutes from hypoxia, because no one ventilates.
 
 ### 10.2 Agonal breathing
-- Occurs in **~30–40% or more of witnessed cardiac arrests**. It is **most frequent in the first minutes** and declines with time since collapse [C12] [C13] `(M)`.
+- Occurs in **~30–40% or more of witnessed cardiac arrests**. It is **most frequent in the first minutes** and declines with time since collapse [C12] [C13] `(M)`. ≈ recall-consistent: Clark 1992 reports ~40% of arrests; Bobrow 2008 reports ~⅓ overall, higher when EMS arrive early. The 2–10/min rate and 1–5 min duration below are not from these papers and remain `[K]`. Not web-verified.
 - **Character** `[K] (M)`:
   - sudden, short, deep inspiratory efforts;
   - **the head and neck extend and the jaw drops open**;
@@ -912,9 +943,12 @@ Q_wound = Q_ref × max(0, P_drive − P_ext) / (P_ref − P_ext)
   - Closing it is **also active**, by the orbicularis oculi (CN VII).
   - At death both lose tone. The lid then rests wherever passive forces leave it. For an eye that was open, the lid **drops a few mm** (loss of Müller's tone alone gives ~1–2 mm of ptosis, as in Horner's syndrome), and the eye usually ends up **partly open**.
   - An eye that was **closed** tends to stay closed, or to part slightly.
-- **Clinical evidence**: in prospective studies of dying cancer patients, **"inability to close the eyelids"** was one of a handful of highly specific bedside signs that death was expected within days [C40] [C41] `(M)`. Lid closure fails before death.
+- **Clinical evidence**: in a prospective study of dying cancer patients, **"inability to close the eyelids"** was one of a handful of highly specific bedside signs that death was expected **within 3 days** [C41] `(M)`. Lid closure fails before death.
+  - *corrected: was cited to "[C40] [C41]".* The fact-checker recalls that the eyelid sign comes from the 2015 *Cancer* paper [C41]. Its eight highly specific signs were: nonreactive pupils, decreased response to verbal stimuli, decreased response to visual stimuli, **inability to close the eyelids**, drooping of the nasolabial fold, neck hyperextension, grunting of the vocal cords, and upper GI bleeding.
+  - The 2014 *Oncologist* paper [C40] studied ten other signs: Cheyne–Stokes breathing, death rattle, apnoea periods, respiration with mandibular movement, peripheral cyanosis, radial pulselessness, and others.
+  - Recall, not web-verified.
 - **Funeral practice**: the eyes of the dead commonly **do not stay closed by themselves**. Morticians routinely set eye caps or adhesive under the lids `[K] (H)`.
-- **Forensic observation**: bodies from sudden violent deaths of awake people are frequently found with the eyes **open or partly open** `[K] (M)`. **No prevalence study was located in this session.** The distribution below is therefore a game-design choice.
+- **Forensic observation**: bodies from sudden violent deaths of awake people are frequently found with the eyes **open or partly open** `[K] (M)`. **No prevalence study was located in this session.** The distribution below is therefore a game-design choice. *Fact-check: the fact-checker also knows of no prevalence study. The distribution stays [G]. The mechanics are plausible but unverified (L–M).*
 - **Suggested distribution** `[G]`:
 
 | Death type | Open (aperture 6–10 mm) | Half-open (2–6 mm) | Closed (0–2 mm) | Reason |
@@ -940,7 +974,7 @@ Q_wound = Q_ref × max(0, P_drive − P_ext) / (P_ref − P_ext)
 - **No micro-movements, no saccades, no nystagmus** after death `[K] (H)`.
 
 ### 11.5 Pupils: dilation, fixation, and after death
-- **Global ischaemia** (heart destroyed, exsanguination to arrest, asphyxia): pupils begin to **dilate ~30–45 s** after cerebral circulation stops and are **widely dilated (6–8+ mm) and unreactive by ~1–2 min** `[K] (M)`.
+- **Global ischaemia** (heart destroyed, exsanguination to arrest, asphyxia): pupils begin to **dilate ~30–45 s** after cerebral circulation stops and are **widely dilated (6–8+ mm) and unreactive by ~1–2 min** `[K] (M)`. ≈ recall-consistent: resuscitation texts teach "dilation begins within ~45 s, full dilation by 1–2 min". Not web-verified. No primary measurement series was identified.
 - **At brain death**, guidelines describe pupils **fixed at mid-size to dilated, 4–9 mm**. **Pinpoint pupils are not consistent with brain death alone** (think drugs or a pontine lesion) [C17] `(H)`.
 - **After death** `[K] (M)` [C42] [C43]:
   - Pupil size is **variable and unreliable**, typically **mid-dilated (≈ 4–6 mm, range 3–8)**.
@@ -956,13 +990,13 @@ Q_wound = Q_ref × max(0, P_drive − P_ext) / (P_ref − P_ext)
 | **Blink and corneal reflex lost** | At loss of brainstem function (seconds) | — | No blink | — | [C17] (H) |
 | **Tear film breaks up** | **10–30 s** after the last blink | — | Tiny dry spots. The corneal highlight becomes irregular | `gloss` 1.0 → 0.8 | [K] (M) |
 | **Loss of lustre ("glazed eye")** | **Minutes to ~1 h** | Slower | Cornea dull, highlight blurred | `gloss` → 0.4 by 1 h | [K] (M) |
-| **Corneal clouding (turbidity)** | Begins **~1–2 h**, obvious at **3–6 h**, opaque at **12–24 h** | Begins **~12 h**, obvious at **~24 h** | Grey-white haze. The iris and pupil fade from view | `corneal_opacity` 0 → 0.3 (6 h) → 0.7 (24 h). Tint `#C9CFCF` | [K] [C42] [C43] (M) |
-| **Scleral drying → *tache noire*** | Yellowish parchment triangles at **~1–3 h**, then **brown-black at ~3–6 h** (range 1–12 h; faster when warm, dry or windy) | Absent (only the exposed strip dries) | **Horizontal triangles or bands in the exposed white of the eye**, one each side of the cornea, base toward the cornea. The dark colour is the choroid seen through the thinned, dried sclera | `dry_band` → `#CDB48C`, then `tache_noire` `#5B3F2E` → `#30231B` | [K] [C42] (M) |
+| **Corneal clouding (turbidity)** | Begins **~1–2 h**, obvious at **3–6 h**, opaque at **12–24 h** | Begins **~12 h**, obvious at **~24 h** | Grey-white haze. The iris and pupil fade from view | `corneal_opacity` 0 → 0.3 (6 h) → 0.7 (24 h). Tint `#C9CFCF` | [K] [C42] [C43] (M). ≈ recall-consistent (teaching: ~2 h open vs ~24 h closed). Not web-verified |
+| **Scleral drying → *tache noire*** | Yellowish parchment triangles at **~1–3 h**, then **brown-black at ~3–6 h** (range 1–12 h; faster when warm, dry or windy) | Absent (only the exposed strip dries) | **Horizontal triangles or bands in the exposed white of the eye**, one each side of the cornea, base toward the cornea. The dark colour is the choroid seen through the thinned, dried sclera | `dry_band` → `#CDB48C`, then `tache_noire` `#5B3F2E` → `#30231B` | [K] [C42] (M). ≈ recall-consistent ("within a few hours, from ~3 h, with the eyes open"). Timing depends strongly on the environment. Not web-verified |
 | **Loss of intraocular pressure** | IOP falls steeply in the first 1–2 h. **Globe soft by ~2–4 h** | Same | The eye dents under a fingertip. The cornea may **wrinkle** | `iop` 15 → < 5 mmHg by 2 h | [K] (L–M) |
 | **Ripault's sign** | From ~30 min | Same | Squeezing the eye makes the pupil **oval, and it stays oval** (in life it springs back) | Interaction hook | [K] (L) |
 | **Sunken globes** | Visible at 12–24 h | Later | Eyes recede into the orbits (drying, loss of pressure) | Push the globe back 1–3 mm | [K] (L) |
 | **Retinal vessel segmentation ("boxcarring")** | **Minutes** after arrest; lasts ~1–2 h | Same | Only with an ophthalmoscope: blood in the retinal vessels breaks into segments | Forensic-mode close-up | [C47] (L–M) |
-| **Vitreous potassium rise** | Linear, ~**0.19 mmol/L per hour** | Same | Lab value: **PMI (h) ≈ 5.26 × [K⁺] − 30.9** | Forensic-mode readout | [C46] (M) |
+| **Vitreous potassium rise** | Linear, ~**0.19 mmol/L per hour** | Same | Lab value: **PMI (h) ≈ 5.26 × [K⁺] − 30.9** | Forensic-mode readout. ≈ recall-consistent. ✓ verified (arithmetic): 1 / 0.19 = 5.26, and the intercept implies K⁺ ≈ 5.9 mmol/L at death. **Gap**: the 95% limits of this formula are roughly **± 20 h** (recall), so it cannot resolve the first hours. Older formulas give different slopes (e.g. Sturner ~0.14 mmol/L/h). Show the readout with its error band | [C46] (M) |
 
 ### 11.7 Brainstem eye signs (for injured but living characters)
 
@@ -974,7 +1008,7 @@ Q_wound = Q_ref × max(0, P_drive − P_ext) / (P_ref − P_ext)
 | **Pinpoint pupils** | Pons (loss of sympathetic dilation) | 1–2 mm, reactive only under magnification | | [C19] (H) |
 | Third-nerve palsy | Midbrain or uncal herniation | Eye **down and out**, **ptosis**, **dilated fixed pupil** | Ipsilateral | [C19] (H) |
 | Internuclear ophthalmoplegia | MLF (pons/midbrain) | On sideways gaze, one eye fails to turn in. The other eye jerks (nystagmus) | | [K] (H) |
-| Horner's syndrome | Lateral medulla, cervical cord (≥ T1), carotid injury | **Ptosis 1–2 mm, pupil 1–2 mm smaller** on that side | Anhidrosis of the face | [K] (H) |
+| Horner's syndrome | Lateral medulla, cervical cord (≥ T1), carotid injury | **Ptosis 1–2 mm, pupil ~0.5–1 mm smaller** on that side (more obvious in dim light) (corrected: was "pupil 1–2 mm smaller"; typical Horner anisocoria is ≤ 1 mm, recall) | Anhidrosis of the face | [K] (H) |
 | Doll's eyes (oculocephalic reflex) | Tests the pons and midbrain | **Present**: eyes counter-rotate, staying pointed in space when the head turns (unconscious, brainstem intact). **Absent**: eyes move with the head (brainstem dead) | Counter-rotation gain ≈ 1 when present, 0 when absent | [C17] [C19] (H) |
 | Roving eye movements | Light coma, brainstem intact | Slow, smooth, conjugate side-to-side drift | Seconds per sweep | [C19] (M) |
 | Nystagmus | Cerebellum or vestibular system | Rhythmic jerks | | [K] (H) |
@@ -1051,7 +1085,7 @@ Q_wound = Q_ref × max(0, P_drive − P_ext) / (P_ref − P_ext)
 | `corneal_opacity` (open) | 0 (0–1 h) → 0.3 (6 h) → 0.7 (24 h) | — | Closed eyes: start at ~12 h | [K] (M), [G] |
 | `tache_noire` | onset 3–6 h (1–12), 0 → 1 by 12 h. Open eyes only; exposed strip only | — | ×1.5 speed if warm and dry | [K] [C42] (M) |
 | `iop_postmortem` | 15 → < 5 by 2 h | mmHg | Softness and wrinkling | [K] (L–M) |
-| `vitreous_K_slope` | 0.19 | mmol/L/h | PMI = 5.26 × K − 30.9 | [C46] (M) |
+| `vitreous_K_slope` | 0.19 | mmol/L/h | PMI = 5.26 × K − 30.9. Show a ± 20 h (95%) error band in the forensic readout (fact-check gap) | [C46] (M) |
 | `petechia_size` | 0.1–2 | mm | Compression or asphyxia triggers only | [K] (H) |
 | `proptosis_orbital_haematoma` | 2–10 | mm | Living only | [K] (M) |
 | `skew_deviation` | 2–10 | ° vertical | Brainstem injury, living | [G] on [C19] |
@@ -1108,6 +1142,8 @@ Blood settles by gravity into the dependent capillaries and venules.
 | **Shifts partly** (old and new patterns both visible), until | **~11 h (4–24 h)** | [C44] (M) |
 | Common teaching summary | "Appears in 20–30 min to 2 h, fixed at 8–12 h" | [K] [C42] (M) |
 
+≈ recall-consistent: every Mallach mean and range in this table matches the fact-checker's independent recall of the Henssge & Madea 2004 tabulation. Not web-verified. "Faint livor after exsanguination" is also standard teaching.
+
 - **Pattern**:
   - **Contact pallor**: pale areas where the body presses on the ground. In a supine body these are the shoulder blades, buttocks, calves and back of the head. Clothing folds and straps leave pale lines.
   - Face-down bodies show **facial and conjunctival congestion**, and after hours small dark haemorrhagic dots (Tardieu spots) `[K] (H)` [C42].
@@ -1138,6 +1174,12 @@ Blood settles by gravity into the dependent capillaries and venules.
 |---|---|---|---|---|---|---|---|---|---|---|
 | Rectal temp (°C) | 37.1 | 36.7 | 35.7 | 34.4 | 33.1 | 30.6 | 27.6 | 25.4 | 22.7 | 21.3 |
 
+  ✓ verified (arithmetic).
+  - The fact-checker recomputed B = −1.2815 × 75^−0.625 + 0.0284 = −0.0579 /h, then every column of the table. All values match to 0.1 °C. Examples: t = 6 h gives Q = 0.839, so 34.4 °C; t = 24 h gives Q = 0.311, so 25.4 °C.
+  - The formula constants themselves (1.25 / 0.25 / 5; 1.11 / 0.11 / 10; −1.2815, −0.625, 0.0284; the 23.2 °C switch; 37.2 °C at death) match the fact-checker's recall of Henssge 1988. They are ≈ recall-consistent, not web-verified.
+  - **Gap added by the fact-check** (recall, M): the nomogram's 95% error limits are about **± 2.8 h** under standard conditions, widening to ± 4.5 h and ± 7 h at longer intervals or when corrective factors are applied. A forensic-mode readout should show this band.
+  - The model also assumes 37.2 °C at death. A victim who was hypothermic from blood loss, or hyperthermic after a struggle, shifts the whole curve. Allow `T_death` as a state input.
+
   Note the **initial plateau** (~0.1–0.5 °C in the first 2 h), then ~0.6–0.7 °C/h. That is consistent with the rule of thumb of "~1 °C/h after a plateau" for smaller or lightly clothed bodies `[K] (M)`.
 - **The surface cools faster than the core** `[K] (M)`:
   - hands, feet and face feel cool within **1–2 h**;
@@ -1158,6 +1200,8 @@ Blood settles by gravity into the dependent capillaries and venules.
 | Resolved | **~76 h (24–192 h)** |
 | Teaching shorthand | "**12 h to develop, 12 h fixed, 12 h to resolve**" in temperate conditions [K] [C42] (M) |
 
+≈ recall-consistent: onset 3 h (0.5–7), full 8 h (2–20), persistence 57 h (24–96), resolution 76 h (24–192), and re-establishment up to ~8 h all match the fact-checker's recall of the Mallach data. So does Nysten's order (lids/jaw first, legs last). Not web-verified.
+
 - **Order** (Nysten's rule, the order in which stiffness becomes detectable): **eyelids and jaw → face and neck → arms → trunk → legs**. It resolves in about the same order `[K] (M)`. The **heart** stiffens early, within ~1 h `[K] (L)`.
 - **Breaking rigor**: forcing a stiff joint breaks the rigor there. If this happens early (before ~8 h), it can **partly re-form**. Later it stays broken `[C44] (M)`.
 - **Cadaveric spasm** (instant rigor that freezes the last grip) is rare and disputed. **Do not use it by default**. Allow a hand to stay clenched on an object in ≤ 1% of deaths with intense activity at the moment of death `[K] (M)`, `[G]`.
@@ -1170,7 +1214,7 @@ Blood settles by gravity into the dependent capillaries and venules.
 ### 12.7 Supravital reactions (optional "forensic mode")
 Tissues that are still alive respond for hours after death. These are forensic-mode details only. **Check Madea [C43] before using any of these numbers** `(L)`:
 - **Mechanical excitability of muscle**: striking the biceps produces a visible contraction and local bulge ("idiomuscular swelling") for ~1.5–2.5 h. A persistent local bulge can be raised for up to ~4–5 h or longer `[C43] (L)`.
-- **Electrical excitability of facial muscles** (eyelid): lasts for several hours, up to roughly 5–8 h `[C43] (L)`.
+- **Electrical excitability of facial muscles** (eyelid): strong reactions spreading over the face last for several hours, up to roughly 5–8 h. **Weak, local reactions of the upper eyelid can persist much longer, up to ~13–22 h** `[C43] (L)`. *corrected: was "up to roughly 5–8 h" with no long tail. The fact-checker recalls Madea's graded scale, in which the weakest grade (local upper-eyelid twitch) is reported up to ~22 h. Low confidence, not web-verified.*
 - **Pupil response to eye drops**: lasts for many hours `[C43] (L)`.
 
 ### 12.8 Post-mortem master timeline (real vs game)
@@ -1182,7 +1226,7 @@ Tissues that are still alive respond for hours after death. These are forensic-m
 | 5–30 min | Pallor mortis. Eye gloss fading. Blood pooling around dependent wounds | 5–15 s | 1–3 s |
 | 30–60 min | First livor patches (from ~20–45 min). Hands and face cool to touch. Ripault's sign present | 15–30 s | 3–5 s |
 | 1–3 h | Livor confluent. Rigor starts in the jaw and eyelids. Globe soft. Corneal haze begins (open eyes). Yellow dried bands in the exposed sclera | 0.5–1.5 min | 5–15 s |
-| 3–6 h | **Tache noire** darkening. Rigor in the neck and arms. Livor still shifts if the body is turned. Rectal temp ~35–34 °C | 1.5–3 min | 15–30 s |
+| 3–6 h | **Tache noire** darkening. Rigor in the neck and arms. Livor still shifts if the body is turned. Rectal temp **~36–34 °C** (corrected: was ~35–34 °C; the §12.5 model gives 36.3 °C at 3 h and 34.4 °C at 6 h for the reference body at 20 °C) | 1.5–3 min | 15–30 s |
 | 6–12 h | Rigor complete. Livor maximal and becoming fixed. Corneas clearly cloudy (open eyes). Temp ~34–31 °C | 3–6 min | 30–60 s |
 | 12–24 h | Livor fixed. Cornea opaque by 24 h (open). Closed eyes begin to cloud. Globes sunken. Temp ~31–25 °C | 6–12 min | 1–2 min |
 | 24–48 h | Rigor persists, then begins resolving (from ~24–36 h in warm conditions). Temp approaching ambient. First decomposition signs, such as greenish discolouration of the right lower abdomen from ~24–36 h (out of scope) | 12–24 min | 2–4 min |
@@ -1271,7 +1315,7 @@ Start at 8 s. With a destroyed heart, add ~4 s of residual pressure decay. That 
 | Any | Apnoea | Medulla destroyed; or herniation end-stage; or impact apnoea | Arrest 4–10 min | [K] [C26] |
 | Any | Posturing | Lesion level (§4.1); or herniation stage | Episodic | [C19] |
 | Herniating | Cushing | ICP within 10–20 mmHg of MAP | 5–30 min, then apnoea | [C31] |
-| Circulating | PEA | `loss_frac ≥ 0.55`; or MAP < 20–25; or tension/tamponade end-stage; or hypoxic brady end-stage | | [K] |
+| Circulating | PEA | `loss_frac ≥ 0.55` (fact-check: 0.45–0.50 for rapid bleeds > 500 mL/min, §7.4); or MAP < 20–25; or tension/tamponade end-stage; or hypoxic brady end-stage | | [K] |
 | Circulating | VF | Direct cardiac hit (p 0.3 [G]); commotio cordis (p 0.01–0.03) | | [K] |
 | PEA / VF | Asystole | 2–10 / 10–20 min | | [K] |
 | Arrest | Agonal gasping | Medulla intact, p 0.3–0.5, start 10–60 s | 1–5 min | [C12] [C13] |
@@ -1287,7 +1331,7 @@ Start at 8 s. With a destroyed heart, add ~4 s of residual pressure decay. That 
 | C. Stab to heart (tamponade) | 5–60 min | 5 min – 2 h | Bulging neck veins, grey, breathless | 3–8 min |
 | D. Lung gunshot + tension / haemothorax | 10–60 min | 15–90 min | Frothy haemoptysis, sucking wound, blue lips | 4–8 min |
 | E. Carotid or femoral transection | 2–4 min | 3–7 min | Tall pulsing jet that shrinks, grey pallor | 2–3 min |
-| F. Slow multi-wound bleed (~100 mL/min) | 25–50 min | 35–80 min | Full stage progression, thirst, confusion | 4–8 min |
+| F. Slow multi-wound bleed (~100 mL/min) | 24–28 min (corrected: was 25–50 min) | 29–40 min (corrected: was 35–80 min; see the recomputed §7.5 table) | Full stage progression, thirst, confusion | ~5–6 min (corrected: was 4–8 min) |
 | G. C1–C3 cord | 1.5–3 min (awake until then) | 4–10 min | Awake, silent, eyes pleading, blue lips | ~3 min |
 | H. C5 cord | None | None acutely | Belly breathing, slow pulse, warm pink skin, flexed elbows | Persistent |
 | I. T8 cord | None | None | Drags with arms, legs flaccid, no pain reaction | Persistent |
@@ -1331,28 +1375,30 @@ Start at 8 s. With a destroyed heart, add ~4 s of residual pressure decay. That 
 
 ## 15. Load-bearing numbers to verify first (QA list)
 
-1. Blood volume **70 mL/kg (M) / 65 (F)**. ATLS classes **< 15 / 15–30 / 30–40 / > 40%** with HR **< 100 / 100–120 / 120–140 / > 140** [C1].
-2. Loss of consciousness (supine) at **~40–50%** loss, PEA at **~50–60%**. Upright faint from **20–30%** [C1] [K].
-3. Paradoxical bradycardia in severe haemorrhage (~⅓ of hypotensive trauma patients) [C4] [C5]. Sudden decompensation at **~1–2 L** equivalent (LBNP) [C6].
-4. **10–15 s** of voluntary action after destruction of the heart [C7] [C8].
-5. Unconsciousness **5–10 s (mean 6.8 s)** after complete cerebral circulatory arrest [C9].
-6. Syncope: myoclonus ~90%, eyes open, upward deviation common, mean ~12 s [C11].
-7. Agonal gasping in **~30–40%+** of witnessed arrests, declining with time [C12] [C13].
-8. Brain death: pupils **fixed 4–9 mm**, all brainstem reflexes absent, apnoea [C17] [C18].
-9. Autoresuscitation within **~5 min** in a minority (~14%) [C14].
-10. Neurogenic shock incidence **19% cervical / 7% thoracic / 3% lumbar** [C34]. Bradycardia in essentially all severe cervical injuries, arrest ~16% [C35].
-11. Spinal shock four phases: **0–24 h** areflexia [C33].
-12. ISNCSCI key muscles and dermatomes [C32].
-13. Fencing response in **~66%** of knockouts, lasting seconds [C20]. Concussive convulsions **~1/70** [C21].
-14. GTC seizure: tonic 10–20 s, clonic 30–60 s, total ~1 min. Eyes open in ≥ 90% [C22] [C23] [C24].
-15. Lid behaviour at death (open or half-open common; "inability to close eyelids" before death) [C40] [C41]. **No prevalence study located. The distribution is [G].**
-16. Tache noire **3–6 h**, corneal clouding **hours (open) vs ~24 h (closed)** [K] [C42] [C43].
-17. Vitreous K⁺ **0.19 mmol/L/h**; **PMI = 5.26 × K⁺ − 30.9** [C46].
-18. Livor (Mallach): onset 0.75 h, confluence 2.5 h, maximum 9.5 h, complete blanching until 5.5 h, complete shift until 3.75 h [C44].
-19. Rigor (Mallach): onset 3 h, full 8 h, re-establishes if broken before 8 h, persists 57 h, resolves 76 h [C44].
-20. Henssge cooling formula and constants (1.25 / 0.25 / 5; 1.11 / 0.11 / 10; B = −1.2815 (cm)^−0.625 + 0.0284) [C45].
-21. EDH > 30 mL surgical; PVI ~25 mL; ICP threshold 22 mmHg [C28] [C29] [C30].
-22. Open pneumothorax when the wound is > ⅔ of the tracheal diameter; massive haemothorax ≥ 1,500 mL [C1]. Tension signs: hypotension and tracheal deviation are late [C37].
+Status after the fact-check pass of 2026-09-26 (§18). No source could be opened, so "≈" means the value matches the fact-checker's independent recall. It still needs a source check before it is hard-coded.
+
+1. Blood volume **70 mL/kg (M) / 65 (F)**. ATLS classes **< 15 / 15–30 / 30–40 / > 40%** with HR **< 100 / 100–120 / 120–140 / > 140** [C1]. **≈ recall-consistent**. ✓ verified (arithmetic) for the mL conversions.
+2. Loss of consciousness (supine) at **~40–50%** loss, PEA at **~50–60%**. Upright faint from **20–30%** [C1] [K]. **Uncertain**: ATLS (> 50% → LOC) and Guyton (output → 0 at 40–45%) bracket these values. Rate-dependent PEA recommended (§7.4). The example timelines were **corrected** (§7.5).
+3. Paradoxical bradycardia in severe haemorrhage (~⅓ of hypotensive trauma patients) [C4] [C5]. Sudden decompensation at **~1–2 L** equivalent (LBNP) [C6]. **Uncertain**: the prevalence may be ~30–45% depending on the cut-off. The LBNP part is ≈ recall-consistent.
+4. **10–15 s** of voluntary action after destruction of the heart [C7] [C8]. **≈ recall-consistent** (the quote exists; it is doctrine, not data).
+5. Unconsciousness **5–10 s (mean 6.8 s)** after complete cerebral circulatory arrest [C9]. **≈ recall-consistent**.
+6. Syncope: myoclonus ~90%, eyes open, upward deviation common, mean ~12 s [C11]. **≈ recall-consistent**.
+7. Agonal gasping in **~30–40%+** of witnessed arrests, declining with time [C12] [C13]. **≈ recall-consistent** for prevalence. The rate and duration remain [K].
+8. Brain death: pupils **fixed 4–9 mm**, all brainstem reflexes absent, apnoea [C17] [C18]. **≈ recall-consistent**. The 2023 guideline update was added (§10.1).
+9. Autoresuscitation within **~5 min** in a minority (~14%) [C14]. **≈ recall-consistent**.
+10. Neurogenic shock incidence **19% cervical / 7% thoracic / 3% lumbar** [C34]. Bradycardia in essentially all severe cervical injuries, arrest ~16% [C35]. **≈ recall-consistent**. The trigger definition was added (§6.5).
+11. Spinal shock four phases: **0–24 h** areflexia [C33]. **≈ recall-consistent**.
+12. ISNCSCI key muscles and dermatomes [C32]. **≈ recall-consistent** (high-confidence textbook content).
+13. Fencing response in **~66%** of knockouts, lasting seconds [C20]. Concussive convulsions **~1/70** [C21]. **≈ recall-consistent**.
+14. GTC seizure: tonic 10–20 s, clonic 30–60 s, total ~1 min. Eyes open in ≥ 90% [C22] [C23] [C24]. **Not re-checked** in the fact-check pass (outside its claim list).
+15. Lid behaviour at death (open or half-open common; "inability to close eyelids" before death) [C41]. **No prevalence study located. The distribution is [G].** **Citation corrected**: was [C40] [C41] (§11.3).
+16. Tache noire **3–6 h**, corneal clouding **hours (open) vs ~24 h (closed)** [K] [C42] [C43]. **≈ recall-consistent**.
+17. Vitreous K⁺ **0.19 mmol/L/h**; **PMI = 5.26 × K⁺ − 30.9** [C46]. **≈ recall-consistent**. ✓ verified (arithmetic): internally consistent. The ± 20 h error band was added.
+18. Livor (Mallach): onset 0.75 h, confluence 2.5 h, maximum 9.5 h, complete blanching until 5.5 h, complete shift until 3.75 h [C44]. **≈ recall-consistent**.
+19. Rigor (Mallach): onset 3 h, full 8 h, re-establishes if broken before 8 h, persists 57 h, resolves 76 h [C44]. **≈ recall-consistent**.
+20. Henssge cooling formula and constants (1.25 / 0.25 / 5; 1.11 / 0.11 / 10; B = −1.2815 (cm)^−0.625 + 0.0284) [C45]. Constants **≈ recall-consistent**. Worked values **✓ verified (arithmetic)**. The error limits were added.
+21. EDH > 30 mL surgical; PVI ~25 mL; ICP threshold 22 mmHg [C28] [C29] [C30]. **≈ recall-consistent**.
+22. Open pneumothorax when the wound is > ⅔ of the tracheal diameter; massive haemothorax ≥ 1,500 mL [C1]. Tension signs: hypotension and tracheal deviation are late [C37]. **≈ recall-consistent**. ✓ verified (arithmetic) for the mm and mL conversions.
 
 ---
 
@@ -1386,8 +1432,10 @@ Start at 8 s. With a destroyed heart, add ~4 s of residual pressure decay. That 
 - **[C16]** Saposnik G, Bueri JA, Mauriño J, Saizar R, Garretto NS. Spontaneous and reflex movements in brain death. *Neurology*. 2000;54(1):221–223.
 - **[C17]** Wijdicks EFM, Varelas PN, Gronseth GS, Greer DM. Evidence-based guideline update: determining brain death in adults. *Neurology*. 2010;74(23):1911–1918.
 - **[C18]** Greer DM, Shemie SD, Lewis A, et al. Determination of brain death/death by neurologic criteria: the World Brain Death Project. *JAMA*. 2020;324(11):1078–1097.
+- **[C53]** (added by the fact-check, from recall, not opened) Greer DM, Kirschen MP, Lewis A, et al. Pediatric and adult brain death/death by neurologic criteria determination: an update of the 2010 AAN, AAP, CNS and SCCM guidelines (consensus guideline). *Neurology*. 2023;101(24):1112–1132.
+- **[C54]** (added by the fact-check, from recall, not opened) Brignole M, Moya A, de Lange FJ, et al. 2018 ESC Guidelines for the diagnosis and management of syncope. *Eur Heart J*. 2018;39(21):1883–1948. (Cerebral flow cessation of 6–10 s and SBP 50–60 mmHg at heart level cause loss of consciousness.)
 - **[C36]** Jose AD, Collison D. The normal range and determinants of the intrinsic heart rate in man. *Cardiovasc Res*. 1970;4(2):160–167.
-- **[C40]** Hui D, dos Santos R, Chisholm G, et al. Clinical signs of impending death in cancer patients. *Oncologist*. 2014;19(6):681–687.
+- **[C40]** Hui D, dos Santos R, Chisholm G, et al. Clinical signs of impending death in cancer patients. *Oncologist*. 2014;19(6):681–687. (Fact-check: this paper covers ten other signs. The eyelid sign is in [C41].)
 - **[C41]** Hui D, dos Santos R, Chisholm G, et al. Bedside clinical signs associated with impending death in patients with advanced cancer: preliminary findings of a prospective, longitudinal cohort study. *Cancer*. 2015;121(6):960–967.
 
 **Neurology, TBI, ICP, seizures**
@@ -1449,3 +1497,65 @@ Start at 8 s. With a destroyed heart, add ~4 s of residual pressure decay. That 
 - **None encountered.** No web page, PDF or search result was retrieved in this session: every `WebSearch` call was refused (budget exhausted) and every `WebFetch` call was refused by the egress policy (`EGRESS_BLOCKED`). There was therefore no untrusted content that could carry instructions.
 - The only other material read was the two sibling research documents in this repository (`01_gunshot_wounds.md`, `02_sharp_blunt_burn.md`). They were treated as data. They contained no instructions directed at the reader.
 - Nothing was downloaded, installed or executed, and no code was copied from any external source. The formulas in §5.1, §7.5, §12.5 and §13.2 are standard published models (cited) or the author's own simple derivations.
+- **Fact-check pass (2026-09-26)**: again **none encountered**.
+  - WebSearch refused every query (session budget of 200 already used).
+  - WebFetch returned `EGRESS_BLOCKED` for all 14 domains tried: pubmed.ncbi.nlm.nih.gov, www.ncbi.nlm.nih.gov, www.ebi.ac.uk, en.wikipedia.org, litfl.com, wikem.org, api.crossref.org, api.semanticscholar.org, radiopaedia.org, www.sciencedirect.com, www.merckmanuals.com, n.neurology.org, www.librepathology.org and www.bmj.com.
+  - No external content was received, so none could carry instructions.
+  - The fact-checker did not use Bash and did not try to work around the egress policy.
+
+---
+
+## 18. Fact-check (independent review, 2026-09-26)
+
+### 18.1 What could and could not be done
+- **Goal**: check the 22 load-bearing claims (§15), plus any other number that looked wrong, against sources the fact-checker found independently.
+- **Blocker**: no source could be opened.
+  - WebSearch refused every call (session budget exhausted).
+  - WebFetch was `EGRESS_BLOCKED` on 14 domains (§17).
+  - Per the security rules, no workaround was attempted.
+- **Consequence**: the checks below rely on two methods only:
+  - **Recomputing every engineering derivation**, marked ✓ verified (arithmetic).
+  - **Comparing each sourced claim with the fact-checker's independent recall** of the same literature, marked ≈ recall-consistent (not web-verified), or corrected where recall contradicts the file.
+- **Nothing in this document has been verified against a retrieved source.** The QA requirement in §0.1 still stands.
+
+### 18.2 Changes made
+
+| # | Location | Change | Basis |
+|---|---|---|---|
+| 1 | §7.5 example-timeline table | **Corrected** every LOC and PEA time, and the game times. The original upper bounds were 1.5–2× longer than the table's own stated method gives (flow ∝ MAP, integrated over the §7.8 `map_by_loss` curve). Example: 1 L/min gives LOC 2.4–2.8 min (was 2.5–4) and PEA 2.9–4.0 min (was 3.5–7) | ✓ arithmetic |
+| 2 | §13.4 row F | Corrected to match: LOC 24–28 min (was 25–50), arrest 29–40 min (was 35–80), game ~5–6 min (was 4–8) | ✓ arithmetic |
+| 3 | §12.8, 3–6 h row | Rectal temp ~36–34 °C (was ~35–34), from the document's own Henssge model | ✓ arithmetic |
+| 4 | §11.3, §15 item 15, §16 | "Inability to close eyelids" is re-attributed to [C41] only (was [C40] [C41]). The eight specific signs from [C41] are listed | Recall (M) |
+| 5 | §11.7 Horner row | Pupil 0.5–1 mm smaller (was 1–2 mm) | Recall (M) |
+| 6 | §12.7 | Electrical excitability of the eyelid: weak local reactions up to ~13–22 h (was "up to 5–8 h" only) | Recall (L) |
+| 7 | §3.6 | Removed "(GCS 9–12 by definition)". LOC > 30 min and GCS 9–12 are parallel criteria | Recall (M) |
+| 8 | §7.4, §7.8, §13.3 | Added a note that ATLS (> 50% → LOC) and Guyton (output → 0 at 40–45%) bracket the thresholds. Recommended PEA at 0.45–0.50 for rapid bleeds. Defaults unchanged | Recall (M) |
+| 9 | §7.3 | Flagged that relative-bradycardia prevalence may be ~30–45% rather than "a third". Added the LBNP-to-blood-loss mapping | Recall (L–M) |
+| 10 | §7.6 | **Gap**: the arterial pressure at the wound must be hydrostatically corrected for wound height (−0.78 mmHg/cm above the heart). This changes jet heights by tens of cm when standing | ✓ arithmetic |
+| 11 | §10.1 | **Gap**: the 2023 AAN/AAP/CNS/SCCM brain-death consensus update [C53]; apnoea-test thresholds (PaCO₂ ≥ 60 mmHg and ≥ 20 above baseline) | Recall (M) |
+| 12 | §6.5 | **Gap**: the Guly 2008 definition of neurogenic shock (SBP < 100 with HR < 80) as the game trigger | Recall (M) |
+| 13 | §11.6, §11.10 | **Gap**: vitreous K⁺ formula 95% limits ≈ ± 20 h; show an error band | Recall (M) |
+| 14 | §12.5 | **Gap**: Henssge nomogram 95% limits ≈ ± 2.8 h (wider with corrective factors); make `T_death` a state input | Recall (M) |
+| 15 | §1, §7.4, §16 | **Gap**: ESC syncope thresholds [C54] (6–10 s of cerebral flow cessation; SBP 50–60 mmHg at heart level) | Recall (M) |
+| 16 | §8.1, §10.1, §10.2, §5.1 | Added context from recall: G-LOC relative incapacitation and myoclonus; autoresuscitation maximum ~4 min 20 s; gasping prevalence split by paper; EDH non-operative criteria | Recall (L–M) |
+| 17 | Throughout | Added ✓ verified (arithmetic) or ≈ recall-consistent marks to the claims in §15 and to the rows they come from | — |
+
+### 18.3 Arithmetic re-derived and found correct
+- 0.78 mmHg/cm of blood.
+- Jet exit speed 5.49 m/s and ideal height 1.54 m at 120 mmHg; 1.03 m at 80 mmHg; 0.77 m at 60 mmHg.
+- ATLS mL conversions for 5,250 mL.
+- Intrinsic HR 101 bpm at 30 y.
+- ICP worked example: 50 and 126 mmHg.
+- Every Henssge column in §12.5.
+- Vitreous K⁺ slope and intercept consistency.
+- Open-pneumothorax threshold of 10–13 mm.
+- Hemithorax 40% = 2,100 mL.
+- Commotio window of 2–4% of the cycle.
+- Fall time 0.42 s.
+
+### 18.4 Still open (for a session with web access)
+1. Primary-source check of every "≈ recall-consistent" item, in the §15 order.
+2. A real prevalence figure for eyelid position at death (none known).
+3. The exact Demetriades 1998 relative-bradycardia percentage and HR cut-off.
+4. The time course of pupil dilation after cardiac arrest from a primary measurement series.
+5. Bibliographic details of [C52], [C53] and [C54].

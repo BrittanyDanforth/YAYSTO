@@ -58,7 +58,14 @@ LAYERS = {
     "GH_Teeth_Upper": LAYER_TEETH,
     "GH_Teeth_Lower": LAYER_TEETH,
     "GH_Gums": LAYER_GUMS,
+    # the mouth lining behind the lips and the tongue are soft tissue too: a
+    # blow or shot through the mouth must open them as well, otherwise a hole
+    # in the lips shows the untouched lining from behind
+    "GH_MouthCavity": LAYER_MUSCLE,
+    "GH_Tongue": LAYER_GUMS,
 }
+# layers whose wound walls use the object's own material
+OWN_WALL_MATERIAL = ("GH_Tongue",)
 
 # Global controls that drive the modifiers (materials drive the others).
 DRIVEN_CONTROLS = ("damage", "bleed", "drip_time", "bruising", "swelling")
@@ -456,7 +463,7 @@ OPEN_AT       = [0.02,   0.35,   0.78,   0.78,   9.0,    0.05,   9.0,    0.3]
 ABOVE_OPEN_AT = [9.0,    0.02,   0.35,   0.35,   0.78,   9.0,    9.0,    9.0]
 # hole radius factors relative to the skin hole
 BULLET_RF     = [1.0,    0.85,   0.8,    0.8,    1.0,    1.0,    1.0,    1.0]
-EXIT_RF       = [1.0,    0.8,    0.62,   0.62,   1.0,    0.9,    1.0,    1.0]
+EXIT_RF       = [1.0,    0.86,   0.74,   0.74,   1.0,    0.9,    1.0,    1.0]
 ABOVE_RF      = [1.0,    1.0,    0.85,   0.85,   0.8,    1.0,    1.0,    1.0]
 
 KIND_INPUTS = (
@@ -647,7 +654,7 @@ def _build_sub_tear():
     """One straight-ish tear of a blunt split: a tapered wedge from the centre."""
     f, v = 'NodeSocketFloat', 'NodeSocketVector'
     t = NodeTree("GH_Gore_Tear", (("U", f), ("V", f), ("Seed", f), ("K", f), ("Size", f, 0.01),
-                                  ("Core", f, 0.002), ("Noise Pos", v)),
+                                  ("Core", f, 0.002), ("Noise Pos", v), ("Gape", f, 1.0)),
                  (("Cut", f), ("Line", v)), description="Perpendicular distance field of one tear")
     seed, k3 = t.inp("Seed"), t.inp("K") * 3.0 + 40.0
     size, rc = t.inp("Size"), t.inp("Core")
@@ -658,7 +665,7 @@ def _build_sub_tear():
         return t.math('FRACT', t.math('SINE', seed * (12.9898 + kk * 3.71) + kk * 0.618) * 43758.5453)
     phi = hk(0.0) * TAU
     length = size * 0.0125 * (0.25 + 0.95 * hk(1.0))
-    w0 = size * 0.0012 * (0.7 + 0.7 * hk(2.0))
+    w0 = size * 0.0012 * (0.7 + 0.7 * hk(2.0)) * t.inp("Gape")
     dx, dy = phi.cos(), phi.sin()
     a = u * dx + v_ * dy
     # tears wander and tear raggedly
@@ -795,20 +802,26 @@ def _build_exit():
     track = t.smooth(0.35, 0.1, x)
     crater_z = crat * (((1.0 - x * x) ** 1.5) * s * (0.0065 + pulp * 0.0035 + lumps * 0.0012) - track * s * 0.012)
     brain_w = t.smooth(1.2, 0.75, c.rho / rc + pulp * 0.1) * crat * t.smooth(-0.35, 0.25, pulp).max(track)
+    # the herniated brain must still read as brain: blood lies in streaks and
+    # clots over pulped grey-pink tissue, only the torn track is full of blood
+    brain_blood = brain_w * (0.25 + 0.5 * t.smooth(-0.1, 0.45, t.noise(c.np * 240.0, detail=2.0))) \
+        + track * crat * 0.7
     disp = disp_evert + t.vec(0.0, 0.0, crater_z)
     # tissue exposure, torn edge, fracture
     r_above = s * 0.014 * c.lc(ABOVE_RF) * 0.8
     exposed = t.smooth(r_above * 1.25, r_above * 0.7, c.rho) * c.opened(c.lc(ABOVE_OPEN_AT))
     edge = t.smooth(s * 0.0035, 0.0, d_out) * opened
     # raw torn dermis along the margin of the tear
-    wound = (t.smooth(s * 0.0016, 0.0, d_out + t.noise(c.np * 700.0) * 0.0006) * opened).max(exposed).max(brain_w)
+    # (exposed brain around the pulp stays mostly intact tissue: gyri visible)
+    wound = (t.smooth(s * 0.0016, 0.0, d_out + t.noise(c.np * 700.0) * 0.0006) * opened) \
+        .max(exposed * (1.0 - is_brain * 0.65)).max(brain_w)
     lines, _plate = c.cracks(R, n_around=8.0, width=0.00045)
     frac = lines * t.smooth(R * 3.0, R * 1.1, c.rho) * is_bone * opened
     frac = frac.max(t.smooth(s * 0.004, 0.0, d_out) * is_bone * opened)
     bleed = t.inp("Bleed")
     pool = c.pool(c.L, s * 0.012 * (0.5 + bleed), bleed * opened, drop=R * 0.7)
     flap_blood = flap * flap * (0.3 + 0.45 * bleed) * t.smooth(-0.3, 0.45, t.noise(c.np * 330.0))
-    blood = (pool * is_skin).max(flap_blood).max(exposed).max(brain_w)
+    blood = (pool * is_skin).max(flap_blood).max(exposed * (1.0 - is_brain * 0.6)).max(brain_blood)
     tw = c.lc(LAYER_WALL)
     # a lifted flap is only skin-thick: its wall does not reach back down to the muscle
     # walls: the ragged core narrows a little toward the axis, the narrow tears
@@ -896,19 +909,27 @@ def _build_blunt():
     # a thin wedge along its own direction, so its field is the perpendicular
     # distance to the tear (like a small cut) and its walls close in a V.
     split_on = t.smooth(0.25, 0.45, D) * is_skin + t.smooth(0.55, 0.7, D) * is_muscle * 0.45
-    k_sz = s * t.switch(is_muscle.gt(0.5), 1.0, 0.45)
-    rc = k_sz * 0.0022 * (1.0 + 0.45 * nl)
+    # a crushing blow (depth -> 1) bursts the soft tissue open down to the
+    # depressed bone, so the fracture (or the broken teeth) can be seen: the
+    # tears go through the muscle as well, gape, and the crushed centre bursts
+    # open into an irregular hole
+    crush0 = t.smooth(0.8, 1.0, D)
+    k_sz = s * t.switch(is_muscle.gt(0.5), 1.0, 0.45 + 0.4 * crush0)
+    crush = crush0 * (is_skin + is_muscle * 1.1)
+    rc = k_sz * 0.0022 * (1.0 + 0.45 * nl) + crush * s * 0.0036 * (1.0 + 0.5 * nl)
     cut_arm = to_line = None
     for k in range(5):
-        tn = t.group(_sub("tear"), {"U": c.u, "V": c.v, "Seed": c.seed, "K": float(k), "Size": k_sz,
-                                    "Core": rc, "Noise Pos": c.np})
+        tn = t.group(_sub("tear"), {"U": c.u, "V": c.v, "Seed": c.seed, "K": float(k),
+                                    "Size": k_sz * (1.0 + 0.35 * crush), "Core": rc, "Noise Pos": c.np,
+                                    "Gape": 1.0 + crush * 2.6})
         ck, line_k = t.out(tn, "Cut"), t.out(tn, "Line")
         if cut_arm is None:
             cut_arm, to_line = ck, line_k
         else:
             to_line = t.switch(ck.gt(cut_arm), to_line, line_k, 'VECTOR')
             cut_arm = cut_arm.max(ck)
-    cut_centre = rc - c.rho + s * 0.0003 * t.noise(c.np * 1300.0)
+    cut_centre = rc - c.rho + s * 0.0003 * t.noise(c.np * 1300.0) \
+        + crush * s * 0.0014 * t.noise(c.np * 330.0, detail=2.0)
     cut_split = cut_centre.max(cut_arm)
     in_arm = cut_arm.gt(cut_centre)
     cut_soft = t.switch(split_on.gt(0.05), -1.0, cut_split)
@@ -932,7 +953,9 @@ def _build_blunt():
     pool = c.pool(c.L, s * 0.0045 * (0.5 + bleed), bleed * t.smooth(0.25, 0.45, D), drop=s * 0.003)
     hema = t.smooth(rsw * 1.1, rsw * 0.3, c.rho) * c.lc([0.0, 0.85, 0.35, 0.35, 0.0, 0.7, 0.0, 0.8])
     contusion = t.smooth(rd * 1.3, rd * 0.4, c.rho + nl * 0.002) * is_brain * t.smooth(0.5, 0.8, D)
-    teeth_blood = t.smooth(s * 0.03, s * 0.01, c.rho) * c.is_layer(LAYER_TEETH) * t.smooth(0.2, 0.4, D)
+    # bloodied teeth must still read as teeth: streaks and smears, not a coat
+    teeth_blood = t.smooth(s * 0.03, s * 0.01, c.rho) * c.is_layer(LAYER_TEETH) * t.smooth(0.2, 0.4, D) \
+        * (0.2 + 0.4 * t.smooth(-0.2, 0.5, t.noise(c.np * 380.0, detail=2.0)))
     blood = (pool * is_skin).max(hema * t.smooth(0.2, 0.5, D)).max(contusion).max(teeth_blood)
     blood = blood.max(t.smooth(0.0008, 0.0, -cut_split) * split_on * 0.8)
     # abraded, crushed margins follow the tears
@@ -946,7 +969,8 @@ def _build_blunt():
     # each tear closes in a V toward its own mid line (like a small cut); the
     # crushed centre closes toward the impact point
     center = t.switch(in_arm, c.center, to_line, 'VECTOR')
-    wall = t.vec(0.0, 0.0, -tw * 0.55) + center * t.switch(in_arm, 0.75, 0.95)
+    # (a burst-open centre drops straight down instead of closing into a funnel)
+    wall = t.vec(0.0, 0.0, -tw * t.mix(0.55, 1.0, crush)) + center * t.switch(in_arm, 0.75 - 0.6 * crush, 0.95)
     _finish_kind(t, cut, disp=disp, dispn=swell, wall=wall, center=center, wound=wound, edge=edge,
                  blood=blood, bruise=bruise, fracture=frac)
     return t
@@ -959,30 +983,39 @@ def _build_burn():
     s, D = c.s, c.D
     is_skin = c.is_layer(LAYER_SKIN)
     R = s * 0.022
+    # relief heights follow the tissue, not the burn's extent: a large burn is
+    # not deeper or more blistered than a small one
+    sd = s.min(1.2)
     rho_e = (c.u * c.u + (c.v / c.e) ** 2.0).sqrt()
     nl = t.noise(c.np * 90.0, detail=3.0)
     nh = t.noise(c.np * 650.0, detail=2.0)
-    b = t.smooth(1.0, 0.42, rho_e / R + nl * 0.3 + nh * 0.05)
+    cover = t.smooth(1.0, 0.42, rho_e / R + nl * 0.3 + nh * 0.05)
+    # severity varies in broad patches (charred islands, leathery and raw zones,
+    # blistered margins) instead of concentric rings; small burns (s <= 1)
+    # keep their charred centre
+    sev = t.smooth(-0.55, 0.45, t.noise(c.np * 36.0 + t.vec(c.seed * 7.0, 0.0, 0.0), detail=3.0))
+    patchy = t.smooth(1.0, 1.8, s)
+    b = cover * (1.0 - patchy * (0.55 - 0.6 * sev))
     char = t.smooth(0.55, 0.95, b)
     # charred, shrunken crust with fine crackle
     crust = t.out(t.voronoi(c.np, 700.0, 'DISTANCE_TO_EDGE', 1.0), 'Distance')
     crackle = t.smooth(0.08, 0.0, crust) * char
-    dn = char * s * -0.0011 * (0.5 + D) + nh * char * 0.00025 - crackle * 0.00025
+    dn = char * sd * -0.0011 * (0.5 + D) + nh * char * 0.00025 - crackle * 0.00025
     # blisters in the partial-thickness ring
-    ringb = t.smooth(0.1, 0.32, b) * t.smooth(0.8, 0.5, b)
+    ringb = t.smooth(0.1, 0.26, b) * t.smooth(0.62, 0.42, b)
     vor = t.voronoi(c.np, 230.0, 'F1', 1.0)
     vd = t.out(vor, 'Distance')
     vcol = t.sep(t.vmath('ADD', t.out(vor, 'Color'), (0, 0, 0)))
-    keep = t.smooth(0.3, 0.45, vcol[0])
+    keep = t.smooth(0.42, 0.56, vcol[0])
     brad = 0.26 + vcol[1] * 0.16
     dome = (1.0 - (vd / brad) ** 2.0).max(0.0).sqrt()
-    blister = ringb * keep * dome * s * 0.0013
+    blister = ringb * keep * dome * sd * 0.0013
     # peeling epidermis: sloughed patches with curled, lifted rims
     pm = t.noise(c.np * 150.0 + t.vec(3.1, 1.7, 0.4), detail=2.0)
     ringp = t.smooth(0.22, 0.45, b) * t.smooth(0.97, 0.75, b)
     peel = t.smooth(0.10, 0.16, pm) * ringp
     peel_rim = t.smooth(0.04, 0.10, pm) * t.smooth(0.2, 0.12, pm) * ringp
-    dn = dn + blister + peel_rim * s * 0.0007 - peel * s * 0.0003
+    dn = dn + blister + peel_rim * sd * 0.0007 - peel * sd * 0.0003
     dn = dn * is_skin
     burn = (b - crackle * 0.35).max(0.0) * c.lc([1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 1.0, 1.0])
     burn = burn.max(b * t.smooth(0.55, 0.8, D) * c.lc([0.0, 0.8, 0.6, 0.6, 0.0, 0.0, 0.0, 0.0]))
@@ -1039,9 +1072,13 @@ def _build_hit_points():
     fallback = T - Z * t.inp("Layer Z")
     I = t.switch(t.out(ray, 'Is Hit'), fallback, t.out(ray, 'Hit Position'), 'VECTOR')
     seed = t.rand(0.0, 1.0, t.index(), t.inp("Kind") * 31 + 5)
+    # hit_ok: the ray really reached this layer (not the fallback point); extra
+    # geometry such as bone chips is only made on layers that were hit
+    ok = t.switch(t.out(ray, 'Is Hit'), 0.0, 1.0)
     for name, val, dt in (("hit_I", I, 'FLOAT_VECTOR'), ("hit_X", X, 'FLOAT_VECTOR'),
                           ("hit_Y", Y, 'FLOAT_VECTOR'), ("hit_Z", Z, 'FLOAT_VECTOR'),
-                          ("hit_S", S, 'FLOAT_VECTOR'), ("hit_seed", seed, 'FLOAT')):
+                          ("hit_S", S, 'FLOAT_VECTOR'), ("hit_seed", seed, 'FLOAT'),
+                          ("hit_ok", ok, 'FLOAT')):
         pts = t.store(pts, name, val, dt)
     # matrix attributes crash Catmull-Rom curve evaluation (Blender 5.0), drop it
     pts = t.out(t.node('GeometryNodeRemoveAttribute', {'Geometry': pts, 'Pattern Mode': 'Exact', 'Name': "hit_mat"}))
@@ -1077,11 +1114,18 @@ class _Hit:
         """Hit-frame vector -> object space."""
         return self.X * vl.x + self.Y * vl.y + self.Z * vl.z
 
-    def gate(self, layer):
-        """1 near this layer's impact surface, 0 on far-away surfaces (other side of the head)."""
+    def gate(self, layer, kind=None):
+        """1 near this layer's impact surface, 0 on far-away surfaces (other side of the head).
+
+        Burns are surface wounds that can cover half a face, so they follow the
+        curved surface further in and out of the hit's tangent plane.
+        """
         t = self.t
         tol_in = t.pick(layer, LAYER_TOL_IN) + self.rho * self.rho * 6.25
         tol_out = t.pick(layer, LAYER_TOL_OUT)
+        if kind == "burn":
+            tol_in = tol_in + 0.012
+            tol_out = tol_out + 0.02
         return t.smooth(-tol_in - 0.003, -tol_in, self.w) * t.smooth(tol_out + 0.003, tol_out, self.w)
 
     def within(self, kind, reach=False, layer=None):
@@ -1101,7 +1145,7 @@ class _Hit:
             return t.bool('AND', rr.lt(s * 0.026 + 0.002), t.compare('EQUAL', layer, LAYER_SKIN, 'INT'))
         if kind == "blunt" and not reach:
             # skin/muscle only split near the centre, bone fractures further out
-            rad = s * t.pick(layer, [0.016, 0.012, 0.021, 0.021, 0.0, 0.01, 0.0, 0.012])
+            rad = s * t.pick(layer, [0.02, 0.018, 0.021, 0.021, 0.0, 0.01, 0.0, 0.012])
             return self.rho.lt(rad + 0.002)
         if reach:
             # skin and muscle carry the long blood pools, bone only cracks, brain only craters
@@ -1372,13 +1416,17 @@ def _build_fragments():
                  description="Bone fragments around skull breaches")
     damage = t.inp("Damage")
     parts = []
-    for kid, (kind, count, rb, lift_max, lift_min) in enumerate((("Exit", 11.0, 0.0087, 0.009, 0.0004),
+    # chips stay inside the wound: lifted at most ~5 mm (the scalp over the
+    # outer table is ~6 mm), so none float above the skin around the hole
+    for kid, (kind, count, rb, lift_max, lift_min) in enumerate((("Exit", 11.0, 0.0072, 0.005, 0.0004),
                                                                   ("Blunt", 6.0, 0.0045, -0.001, -0.0025))):
         S = t.attr("hit_S", 'FLOAT_VECTOR')
         s = S.x * (0.3 + 0.7 * damage)
         D = S.z * damage
         thr = 0.8 if kind == "Exit" else 0.95
-        dup = t.node('GeometryNodeDuplicateElements', {'Geometry': t.inp(kind), 'Amount': D.gt(thr) * count},
+        # only on the bone the hit actually reached (not skull AND jaw)
+        amount = D.gt(thr) * count * t.attr("hit_ok")
+        dup = t.node('GeometryNodeDuplicateElements', {'Geometry': t.inp(kind), 'Amount': amount},
                      domain='POINT')
         g = t.out(dup, 'Geometry')
         idx = t.index()
@@ -1449,7 +1497,7 @@ def _build_teeth():
     p = t.pos()
     moved = pivot + t.out(t.node('FunctionNodeRotateVector', {'Vector': p - pivot, 'Rotation': rot})) - h.Z * (0.0016 * r2 * f)
     gg = t.out(t.node('GeometryNodeSetPosition', {'Geometry': gg, 'Selection': f.gt(0.01), 'Position': moved}))
-    gg = t.store(gg, "g_tb", t.attr("g_tb").max(t.smooth(0.0, 0.3, f)))
+    gg = t.store(gg, "g_tb", t.attr("g_tb").max(t.smooth(0.0, 0.3, f) * 0.45))
     g = _end_repeat(t, rout, [("Geometry", gg)])["Geometry"]
     g = t.out(t.node('GeometryNodeDeleteGeometry', {'Geometry': g, 'Selection': t.attr("g_kill").gt(0.5)},
                      domain='POINT'))
@@ -1504,7 +1552,8 @@ def _join(t, *geos):
 # kind -> per-layer depth below which the wound gets a floor instead of an open wall
 FLOOR_BELOW = {
     "bullet": [0.35, 0.78, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
-    "blunt": [0.0, 9.0, 0.0, 0.0, 0.0, 0.0, 0.0, 9.0],
+    # (a crushing blow, depth >= 0.8, leaves the muscle open over the fracture)
+    "blunt": [0.0, 0.8, 0.0, 0.0, 0.0, 0.0, 0.0, 9.0],
 }
 
 _STEP_INPUTS = (
@@ -1525,7 +1574,7 @@ def _build_region_step(kind):
                  description=f"Refinement region of one {kind} hit")
     layer = t.inp("Layer")
     h = _Hit(t, t.inp("Hits"), t.inp("Index"), t.inp("Damage"))
-    reg = t.switch(h.within(kind, layer=layer), 0.0, 1.0) * h.gate(layer)
+    reg = t.switch(h.within(kind, layer=layer), 0.0, 1.0) * h.gate(layer, kind)
     t.result("Geometry", t.store(t.inp("Geometry"), "g_reg", t.attr("g_reg").max(reg)))
     t.layout()
     return t
@@ -1537,7 +1586,7 @@ def _build_wound_step(kind, kind_group):
                  description=f"Accumulate the fields of one {kind} hit")
     layer = t.inp("Layer")
     h = _Hit(t, t.inp("Hits"), t.inp("Index"), t.inp("Damage"))
-    gate = h.gate(layer)
+    gate = h.gate(layer, kind)
     sel = t.bool('AND', h.within(kind, reach=True, layer=layer), gate.gt(0.0))
     noise_pos = t.pos() + t.vec(h.seed * 0.37, h.seed * 0.21, h.seed * 0.13)
     kn = t.group(kind_group, {"Local": t.vec(h.u, h.v, h.w), "Noise Pos": noise_pos, "Size": h.s,
@@ -1999,7 +2048,10 @@ def build_gore_system(objs=None, mats=None):
         mod[ident["Layer"]] = layer
         for k in KINDS:
             mod[ident[f"{k.capitalize()} Hits"]] = cols[k]
-        wall = walls.get(layer) or _object_material(ob) or bone
+        if name in OWN_WALL_MATERIAL:
+            wall = _object_material(ob) or walls.get(layer) or bone
+        else:
+            wall = walls.get(layer) or _object_material(ob) or bone
         mod[ident["Wall Material"]] = wall
         mod[ident["Blood Material"]] = blood
         mod[ident["Bone Material"]] = bone

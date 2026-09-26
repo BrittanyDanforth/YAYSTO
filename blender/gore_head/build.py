@@ -86,35 +86,52 @@ PRESETS = {
     ),
     "blunt": dict(
         hits=[
-            # jaw / mouth: splits the lip, knocks out and tilts front teeth
-            ("blunt", (-0.010, -0.100, -0.056), dict(size=1.0, depth=0.75, name="GH_Hit_Blunt_Jaw")),
-            # cranium: depressed skull fracture
-            ("blunt", (-0.052, -0.035, 0.092), dict(size=1.2, depth=0.9, name="GH_Hit_Blunt_Cranium")),
+            # jaw: crushed lower lip and chin, front teeth knocked out and pushed in
+            ("blunt", (-0.006, -0.099, -0.064), dict(toward=(0.0, -0.07, -0.058), size=1.0, depth=0.84,
+                                                     name="GH_Hit_Blunt_Jaw")),
+            # cranium: burst scalp over a depressed skull fracture
+            ("blunt", (-0.052, -0.035, 0.092), dict(size=1.2, depth=0.95, name="GH_Hit_Blunt_Cranium")),
         ],
-        controls=dict(bleed=0.7, bruising=0.8, swelling=0.6),
+        controls=dict(bleed=0.75, bruising=0.8, swelling=0.4),
     ),
     "burn": dict(
         hits=[
-            # overlapping burns covering the right half of the face
-            ("burn", (-0.042, -0.080, -0.010), dict(size=1.7, elongation=1.3, depth=0.6, name="GH_Hit_Burn_Cheek")),
-            ("burn", (-0.040, -0.075, 0.050), dict(size=1.3, elongation=1.0, depth=0.5, name="GH_Hit_Burn_Brow")),
-            ("burn", (-0.040, -0.060, -0.070), dict(size=1.2, elongation=1.0, depth=0.5, name="GH_Hit_Burn_Jaw")),
+            # a large burn over the right half of the face (local Y ~ vertical),
+            # a second one continuing it down over the jaw
+            ("burn", (-0.045, -0.076, 0.015), dict(size=2.3, elongation=1.35, depth=0.7, name="GH_Hit_Burn_Face")),
+            ("burn", (-0.040, -0.072, -0.060), dict(size=1.9, elongation=1.1, depth=0.6, roll=0.4,
+                                                    name="GH_Hit_Burn_Jaw")),
         ],
         controls=dict(bleed=0.5),
     ),
     "carnage": dict(
         hits=[
-            ("bullet", (0.018, -0.092, 0.075), dict(toward=(-0.02, 0.09, 0.07), depth=1.0, name="GH_Hit_C_Entry")),
-            ("exit", (-0.055, -0.045, 0.080), dict(size=1.5, depth=1.0, name="GH_Hit_C_Exit_Temple")),
-            ("exit", (-0.020, 0.090, 0.070), dict(size=1.2, depth=1.0, name="GH_Hit_C_Exit_Back")),
-            ("slash", (-0.052, -0.072, -0.030), dict(size=1.1, elongation=2.4, depth=0.8, roll=-0.5,
+            # shot from behind: entry low on the left of the back of the head, the
+            # skull blown open over the right temple (brain showing)
+            ("bullet", (0.050, 0.070, 0.050), dict(toward=(-0.052, -0.060, 0.075), depth=1.0,
+                                                   name="GH_Hit_C_Entry_Back")),
+            ("exit", (-0.052, -0.060, 0.075), dict(toward=(0.050, 0.070, 0.050), size=1.5, depth=1.0,
+                                                   name="GH_Hit_C_Exit_Temple")),
+            # second shot: entry in the left forehead, exit behind the right ear
+            ("bullet", (0.026, -0.089, 0.066), dict(toward=(-0.050, 0.070, 0.020), depth=1.0,
+                                                    name="GH_Hit_C_Entry_Forehead")),
+            ("exit", (-0.050, 0.070, 0.020), dict(toward=(0.026, -0.089, 0.066), size=1.2, depth=1.0,
+                                                  name="GH_Hit_C_Exit_Back")),
+            # face: deep gash across the right cheek, a cut over the left brow
+            ("slash", (-0.050, -0.076, -0.030), dict(size=1.15, elongation=2.5, depth=0.85, roll=-0.55,
                                                      name="GH_Hit_C_Slash_Cheek")),
-            ("slash", (0.045, -0.075, 0.000), dict(size=1.0, elongation=2.0, depth=0.6, roll=0.7,
-                                                   name="GH_Hit_C_Slash_L")),
-            ("blunt", (-0.010, -0.100, -0.056), dict(size=1.0, depth=0.8, name="GH_Hit_C_Blunt_Jaw")),
-            ("burn", (0.050, -0.050, 0.030), dict(size=1.1, elongation=1.2, depth=0.6, name="GH_Hit_C_Burn")),
+            ("slash", (0.040, -0.082, 0.045), dict(size=1.0, elongation=1.8, depth=0.55, roll=0.35,
+                                                   name="GH_Hit_C_Slash_Brow")),
+            # smashed mouth
+            ("blunt", (-0.006, -0.099, -0.064), dict(toward=(0.0, -0.07, -0.058), size=1.0, depth=0.86,
+                                                     name="GH_Hit_C_Blunt_Jaw")),
+            # cut throat
+            ("slash", (0.0, -0.050, -0.135), dict(size=1.2, elongation=3.2, depth=0.8, roll=0.08,
+                                                  name="GH_Hit_C_Slash_Throat")),
+            # burned left cheek and jaw
+            ("burn", (0.046, -0.068, -0.035), dict(size=1.5, elongation=1.3, depth=0.6, name="GH_Hit_C_Burn")),
         ],
-        controls=dict(bleed=1.0, bruising=0.8, swelling=0.6),
+        controls=dict(bleed=1.0, bruising=0.8, swelling=0.4),
     ),
 }
 PRESET_NAMES = tuple(PRESETS)
@@ -189,6 +206,36 @@ def closeup_camera(hit, name="GH_Cam_closeup_exit", dist=0.15, lens=85.0, tilt=0
     return ghc.add_camera(name, target + view * dist, target, lens)
 
 
+CLOSEUP_LIGHT = "GH_Closeup_Light"
+
+
+def closeup_light(cam, target, energy=1.6, enable=True):
+    """Soft 'flash' light above the close-up camera, so the inside of a wound on
+    the unlit back of the head is visible. Disabled for the other renders."""
+    data = bpy.data.lights.get(CLOSEUP_LIGHT) or bpy.data.lights.new(CLOSEUP_LIGHT, 'AREA')
+    data.energy = energy
+    data.size = 0.08
+    data.color = (1.0, 0.97, 0.93)
+    ob = bpy.data.objects.get(CLOSEUP_LIGHT) or bpy.data.objects.new(CLOSEUP_LIGHT, data)
+    if ob.name not in bpy.context.scene.collection.all_objects:
+        ghc.get_collection("Stage").objects.link(ob)
+    cam_m = cam.matrix_world
+    up = (cam_m.to_3x3() @ Vector((0.0, 1.0, 0.0))).normalized()
+    ob.location = cam_m.translation + up * 0.03
+    ghc.look_at(ob, target)
+    ob.hide_render = not enable
+    return ob
+
+
+def remove_closeup_light():
+    """Delete the close-up light (it is only used while rendering close-ups)."""
+    ob = bpy.data.objects.get(CLOSEUP_LIGHT)
+    if ob is not None:
+        data = ob.data
+        bpy.data.objects.remove(ob, do_unlink=True)
+        bpy.data.lights.remove(data)
+
+
 def animate_controls(frames=ANIM_FRAMES):
     """Keyframe GH_Controls: damage 0 -> 1 over 1-12, drip_time 0 -> 1 over 12-120."""
     scene = bpy.context.scene
@@ -199,10 +246,6 @@ def animate_controls(frames=ANIM_FRAMES):
         for frame, value in keys:
             ctrl[prop] = value
             ctrl.keyframe_insert(f'["{prop}"]', frame=frame)
-    # ease out: the wound opens fast, the blood slows down as it runs
-    for fc in ctrl.animation_data.action.fcurves if hasattr(ctrl.animation_data.action, "fcurves") else []:
-        for kp in fc.keyframe_points:
-            kp.interpolation = 'BEZIER'
     scene.frame_start, scene.frame_end = frames
     scene.render.fps = 24
     return ctrl
@@ -247,6 +290,80 @@ def evaluate_all(objs):
             ev.to_mesh()
             ev.to_mesh_clear()
     return time.time() - t0
+
+
+def _signature(ob):
+    """(vertex count, face count, coordinate checksum, gore attribute maxima) of the evaluated mesh."""
+    import numpy as np
+    dg = bpy.context.evaluated_depsgraph_get()
+    ev = ob.evaluated_get(dg)
+    me = ev.to_mesh()
+    co = np.empty(len(me.vertices) * 3, np.float64)
+    me.vertices.foreach_get("co", co)
+    peaks = {}
+    for name in gore.ATTRS:
+        att = me.attributes.get(name)
+        if att is not None and att.domain == 'POINT' and len(att.data):
+            vals = np.empty(len(att.data), np.float32)
+            att.data.foreach_get("value", vals)
+            peaks[name] = float(vals.max())
+    sig = (len(me.vertices), len(me.polygons), round(float((co * np.resize([1.7, 3.1, 5.3], co.size)).sum()), 5),
+           peaks)
+    ev.to_mesh_clear()
+    return sig
+
+
+def verify(objs):
+    """Integration checks on the real anatomy. Prints a report, returns True if all pass.
+
+    * every damageable layer ends with the GH_Gore modifier
+    * every preset evaluates, writes all gore_* attributes and opens wounds
+    * damage = 0 (and frame 1 of the animation) is identical to the intact head
+    """
+    lines, ok = [], True
+
+    def check(name, cond, info=""):
+        nonlocal ok
+        ok &= bool(cond)
+        lines.append(f"  [{'PASS' if cond else 'FAIL'}] {name}{': ' + info if info else ''}")
+
+    layers = {n: objs[n] for n in gore.LAYERS if n in objs}
+    last = [n for n, ob in layers.items() if not ob.modifiers or ob.modifiers[-1].name != gore.MOD_NAME]
+    check("GH_Gore is the last modifier on every layer", not last, ", ".join(last))
+    apply_preset("intact")
+    intact = {n: _signature(ob) for n, ob in layers.items()}
+    for name in PRESET_NAMES[1:]:
+        apply_preset(name)
+        secs = evaluate_all(objs)
+        sigs = {n: _signature(ob) for n, ob in layers.items()}
+        missing = [n for n, sg in sigs.items() if len(sg[3]) != len(gore.ATTRS)]
+        skin = sigs["GH_Skin"][3]
+        opened = skin.get("gore_wound", 0.0) > 0.5
+        check(f"preset '{name}'", not missing and opened,
+              f"{secs:.2f} s, skin {sigs['GH_Skin'][0]} verts, peaks "
+              + " ".join(f"{k[5:]}={v:.2f}" for k, v in skin.items()))
+    for name in ("gunshot", "carnage"):
+        apply_preset(name)
+        ghc.ensure_controls()["damage"] = 0.0
+        ghc.ensure_controls().update_tag()
+        evaluate_all(objs)
+        diff = [n for n, ob in layers.items() if _signature(ob)[:3] != intact[n][:3]]
+        check(f"damage = 0 with the '{name}' hits is the intact head", not diff, ", ".join(diff))
+    apply_preset("gunshot")
+    animate_controls()
+    scene = bpy.context.scene
+    scene.frame_set(ANIM_FRAMES[0])
+    diff = [n for n, ob in layers.items() if _signature(ob)[:3] != intact[n][:3]]
+    check("animation frame 1 (damage 0) is intact", not diff, ", ".join(diff))
+    scene.frame_set(60)
+    ctrl = ghc.ensure_controls()
+    check("animation frame 60 is wounded and bleeding",
+          ctrl["damage"] > 0.99 and 0.2 < ctrl["drip_time"] < 0.8
+          and _signature(layers["GH_Skin"])[0] > intact["GH_Skin"][0],
+          f"damage {ctrl['damage']:.2f}, drip_time {ctrl['drip_time']:.2f}")
+    lines.append("RESULT: " + ("all checks passed" if ok else "SOME CHECKS FAILED"))
+    print("[build] verification\n" + "\n".join(lines))
+    return ok
 
 
 # ---------------------------------------------------------------------------
@@ -331,6 +448,12 @@ def _render(path, cam, samples, res):
     return dt
 
 
+# views rendered for every preset, plus extra views where the main damage
+# faces away from the front cameras
+PRESET_VIEWS = ("front", "three_q")
+EXTRA_VIEWS = {"gunshot": ("back",)}
+
+
 def render_all(objs, presets, out_dir, samples=40, res=640, only=None):
     """Render the presets (front + three_q), the cutaway and the exit close-up.
 
@@ -343,14 +466,16 @@ def render_all(objs, presets, out_dir, samples=40, res=640, only=None):
         if not want(name):
             continue
         apply_preset(name)
-        for view in ("front", "three_q"):
+        for view in PRESET_VIEWS + EXTRA_VIEWS.get(name, ()):
             key = f"preset_{name}_{view}"
             times[key] = _render(os.path.join(out_dir, key + ".png"), cams[view], samples, res)
     if want("closeup_exit"):
         apply_preset("gunshot")
         hit = bpy.data.objects["GH_Hit_Exit"]
         cam = closeup_camera(hit)
+        closeup_light(cam, hit.matrix_world.translation)
         times["closeup_exit"] = _render(os.path.join(out_dir, "closeup_exit.png"), cam, samples, res)
+        remove_closeup_light()
     if want("cutaway"):
         apply_preset("intact")
         cleanup = add_cutaway(objs)
@@ -382,11 +507,25 @@ def save_blend(path, preset="gunshot"):
 # ---------------------------------------------------------------------------
 # CLI
 # ---------------------------------------------------------------------------
+def _script_args():
+    """Command line options meant for this script.
+
+    Inside Blender (`blender -b --python build.py -- ...`) they follow '--';
+    without '--' Blender's own arguments must not be parsed.
+    """
+    argv = sys.argv
+    if "--" in argv:
+        return argv[argv.index("--") + 1:]
+    if any(a in ("--python", "-P", "--python-expr", "--background", "-b") for a in argv):
+        return []
+    return argv[1:]
+
+
 def parse_args(argv=None):
     """Parse options (after '--' when run as `blender -b --python build.py -- ...`)."""
     import argparse
     if argv is None:
-        argv = sys.argv[sys.argv.index("--") + 1:] if "--" in sys.argv else sys.argv[1:]
+        argv = _script_args()
     p = argparse.ArgumentParser(prog="build.py", description="Build the procedural gore head.")
     p.add_argument("--preset", choices=PRESET_NAMES, default=None,
                    help="preset active in the saved file (default gunshot); limits the renders to it")
@@ -400,20 +539,33 @@ def parse_args(argv=None):
 
 
 def main():
+    """Build everything, verify, render and save (see the module docstring)."""
+    t_start = time.time()
     args = parse_args()
     objs, mats, timings = build_scene()
     print("[build] anatomy %.1f s, materials %.1f s, gore %.1f s, total build %.1f s"
           % (timings["anatomy"], timings["materials"], timings["gore"], timings["build"]))
+    evals = {}
     for name in PRESET_NAMES:
         apply_preset(name)
-        print(f"[build] evaluate '{name}': {evaluate_all(objs):.2f} s")
+        evals[name] = evaluate_all(objs)
+    print("[build] evaluation (all layers): " + ", ".join(f"{k} {v:.2f} s" for k, v in evals.items()))
+    verify(objs)
+    times = {}
     if not args.no_render:
         presets = (args.preset,) if args.preset else PRESET_NAMES
         only = set(args.only.split(",")) if args.only else None
         times = render_all(objs, presets, args.render_dir, args.samples, args.res, only)
-        print("[build] render times: " + ", ".join(f"{k} {v:.0f} s" for k, v in times.items()))
     path = save_blend(args.out, args.preset or "gunshot")
-    print(f"[build] saved {path} ({os.path.getsize(path) / 1e6:.1f} MB)")
+    size = os.path.getsize(path) / 1e6
+    print("[build] summary")
+    print(f"  build {timings['build']:.1f} s (anatomy {timings['anatomy']:.1f}, materials "
+          f"{timings['materials']:.1f}, gore {timings['gore']:.1f})")
+    print("  evaluation " + ", ".join(f"{k} {v:.2f} s" for k, v in evals.items()))
+    if times:
+        print(f"  renders {sum(times.values()):.0f} s: " + ", ".join(f"{k} {v:.0f}" for k, v in times.items()))
+    print(f"  saved {path} ({size:.1f} MB)")
+    print(f"  total {time.time() - t_start:.0f} s")
 
 
 if __name__ == "__main__":

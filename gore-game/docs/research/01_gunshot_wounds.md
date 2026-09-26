@@ -1,7 +1,7 @@
 # 01 — Gunshot Wound Morphology and Wound Ballistics (with emphasis on the head)
 
 Project: Gore Head (Godot 4.5, Forward+, Jolt). Audience: simulation, VFX, decal, audio and animation engineers.
-Status: research reference v1. Clinical/forensic tone. Fictional procedurally generated adult only.
+Status: research reference v1 plus an independent fact-check pass (see §15). Web access was blocked during the fact-check too, so most sourced rows are marked "⚠ not re-verified". Clinical/forensic tone. Fictional procedurally generated adult only.
 
 ---
 
@@ -17,12 +17,16 @@ Every non-obvious number carries a tag:
 | **[S#, derived]** | Computed by me from a sourced number (the arithmetic is shown). |
 | **[K]** | My own domain knowledge (standard forensic pathology / wound ballistics teaching, e.g. DiMaio *Gunshot Wounds*, Fackler, Kneubuehl, Saukko & Knight). I could not verify it with a source during this session. Treat as a reasonable default, not as a measured value. |
 | **[G]** | Game-design choice: a value picked for gameplay/readability within (or slightly beyond) the real range, with the reason given. |
+| **✓ verified (calc)** | Fact-check pass: independently confirmed by arithmetic or physics (unit conversion, ½mv², p = mv, sphere mass, percentages). This does not mean the underlying source was re-read. |
+| **⚠ not re-verified** | Fact-check pass: the source could not be reached (search budget exhausted, all fetches blocked), so the number rests only on the original author's search-snippet reading. |
+| **corrected: was X** | Fact-check pass: the value was changed. X is the old value. |
 
 ### 0.2 Research method and limitations (important)
 
 - All `WebFetch` calls failed. The network egress proxy blocked every domain tried (pmc.ncbi.nlm.nih.gov, ncbi.nlm.nih.gov, pubmed, librepathology.org, medscape, pathologyoutlines, wikipedia, springer, pennds.org). All sourced numbers below therefore come from **search-engine result summaries of the cited pages** (abstracts, snippets), not from reading the full texts. Numbers that look like abstract-level results (sample sizes, means ± SD) are reliable. Anything more detailed was not available to me, so I tagged it **[K]**.
 - The session's web-search budget (200 calls) ran out during the research. Some details I had planned to verify, such as exact abrasion collar widths in mm from a primary textbook and exact Fackler wound-profile numbers, are therefore **[K]**.
 - Before this data drives anything the player can measure, e.g. a "forensic inspection" mode that shows wound sizes, a human should re-check the load-bearing numbers (Section 12) against the full papers.
+- A later independent fact-check pass (§15) was also cut off from the web: the search budget was exhausted and every fetch was blocked. It corrected arithmetic, internal-consistency and logic errors, and marks each load-bearing claim as "✓ verified (calc)" or "⚠ not re-verified".
 
 ### 0.3 Coordinate and unit conventions used in the tables
 
@@ -45,12 +49,14 @@ Every non-obvious number carries a tag:
 | `5.56_M855` 62 gr | 5.7 | 4.0 | ~940 | ~1,770 | FMJ with steel penetrator. Fragments less than M193 | [K] |
 | `7.62x39` 123 gr | 7.9 | 8.0 | ~715 | ~2,000 | FMJ, steel core. Travels ~26 cm point-forward in tissue before yawing | [S41] for 26 cm, rest [K] |
 | `7.62x51_M80` 147 gr | 7.8 | 9.5 | ~840 | ~3,350 | FMJ | [K] |
-| `12ga_00buck` | 9 × 8.4 mm pellets | 9 × 3.5 = ~31.5 | ~400 | ~2,500 total (~280 per pellet) | Lead balls, often in plastic shot cup | pellet count and Ø [S39], rest [K] |
-| `12ga_bird_7.5` | ~350 × 2.4 mm pellets | ~32 total | ~365 | ~2,100 total (~6 per pellet) | Behaves as one mass at close range | pellet count [S39], rest [K] |
+| `12ga_00buck` | 9 × 8.4 mm pellets | 9 × 3.5 = ~31.5 | ~400 | ~2,500 total (~280 per pellet) | Lead balls, often in plastic shot cup | pellet count and Ø [S39], rest [K]. ✓ verified (calc): an 8.38 mm lead sphere weighs 3.49 g, 9 × 3.49 = 31.4 g, and ½ · 0.0314 kg · (404 m/s)² ≈ 2,560 J |
+| `12ga_bird_7.5` | ~350 × 2.4 mm pellets (1 oz load). ~395 pellets for a 1⅛ oz load | ~28 total for 350 pellets (1 oz). ~32 for 1⅛ oz (corrected: was "~32 total" paired with 350 pellets) | ~365 | ~1,900 total (~5.4 per pellet) for 1 oz. ~2,130 total for 1⅛ oz (corrected: was "~2,100 total (~6 per pellet)" for 350 pellets) | Behaves as one mass at close range | pellet count [S39]. Mass and energy re-derived in the fact-check, ✓ verified (calc): a 2.41 mm lead sphere weighs ≈ 0.083 g, and 28.35 g ÷ 0.083 g ≈ 340–350 pellets |
 
 Definitions: high-velocity projectile (HVP) means muzzle velocity > 600 m/s fired from assault rifles [S10]. Handguns and "low-velocity" rifles in the forensic head-wound literature have muzzle energy E₀ < 550 J [S25].
 
-**Momentum sanity check.** Even large rifles and a 12-gauge shotgun give an 80 kg body only **0.01–0.18 m/s** of backward velocity. That is negligible compared with walking speed (1–2 m/s), and balance reflexes cancel it [S30]. **Bodies must not be thrown backwards by bullets.**
+Fact-check of the table above: each grain-to-gram conversion (1 gr = 0.0648 g) and each muzzle energy (½mv²) was recomputed from the table's own mass and velocity. All are internally consistent, ✓ verified (calc). The muzzle velocities themselves were not re-verified.
+
+**Momentum sanity check.** Even large rifles and a 12-gauge shotgun give an 80 kg body only **0.01–0.18 m/s** of backward velocity. That is negligible compared with walking speed (1–2 m/s), and balance reflexes cancel it [S30]. **Bodies must not be thrown backwards by bullets.** ✓ verified (calc), independent of [S30]. Assuming all of the projectile's momentum (p = m·v) goes into the body: .22 LR 2.6 g × 350 m/s = 0.91 kg·m/s, which gives an 80 kg body 0.011 m/s. 7.62×51 9.5 g × 840 m/s = 8.0 kg·m/s gives 0.10 m/s. 12 ga 00 buck 31.5 g × 400 m/s = 12.6 kg·m/s gives 0.16 m/s. The 0.01–0.18 m/s range is physically correct, and a perforating bullet transfers even less.
 
 ### Simulation parameters (ammunition)
 
@@ -58,7 +64,7 @@ Definitions: high-velocity projectile (HVP) means muzzle velocity > 600 m/s fire
 |---|---|---|---|---|
 | `bullet_diameter` | see table | mm | Base for every wound-size formula | [K] |
 | `impact_velocity` | muzzle v minus ~0–3 % per 10 m (handgun) | m/s | Range drop is negligible at game distances (< 25 m) | [K] |
-| `E_threshold_highvel` | 600 | m/s | Above this, switch to "rifle" wound recipes (large temporary cavity, bursting fractures) | [S10] |
+| `v_threshold_highvel` (corrected: was named `E_threshold_highvel`, but the value is a velocity, not an energy) | 600 | m/s | Above this, switch to "rifle" wound recipes (large temporary cavity, bursting fractures) | [S10] |
 | `E_lowvel_head_max` | 550 | J | Head-wound data from the forensic literature (handgun) applies below this | [S25] |
 | `body_knockback_velocity` | 0.01–0.18 | m/s | Apply as a tiny impulse only. Falls are neuromuscular (collapse), not ballistic | [S30] |
 | `jhp_expansion_factor` | 1.5–1.9 | × Ø | Apply after 1–3 cm tissue depth. The entrance looks like FMJ | [K] |
@@ -76,8 +82,8 @@ Definitions: high-velocity projectile (HVP) means muzzle velocity > 600 m/s fire
 ### 2.1 Size versus calibre
 
 - The size of the skin entrance hole **bears no reliable relation to calibre**. On elastic skin it is usually **smaller than the bullet**. The skin is stretched radially while the bullet passes, then partly recoils [S1, S13, S15].
-- Measured example: 9 mm Luger FMJ fired at 1.6 m into porcine skin. Mean hole diameter was **5.61 ± 0.57 mm on belly skin** and **3.33 ± 1.17 mm on back skin**. The thick dorsal dermis recoils more [S1]. That is **62 % and 37 % of the 9.0 mm bullet diameter** [S1, derived].
-- 5.56 × 45 mm (M16) autopsy series, Bangkok 2010, 32 shots: **23/32 (72 %) entrance wounds were round and smaller than the bullet diameter**. Most had **micro-tears and no abrasion collar**, because of the small streamlined spitzer tip and full metal jacket [S9].
+- Measured example: 9 mm Luger FMJ fired at 1.6 m into porcine skin. Mean hole diameter was **5.61 ± 0.57 mm on belly skin** and **3.33 ± 1.17 mm on back skin**. The thick dorsal dermis recoils more [S1]. That is **62 % and 37 % of the 9.0 mm bullet diameter** [S1, derived]. Fact-check: ⚠ not re-verified, because [S1] was unreachable. The arithmetic (5.61/9.0 = 0.62, 3.33/9.0 = 0.37) is ✓ verified (calc). The 0.37–0.62 band spans only the two **means**. At ±1 SD the holes run from 2.16 to 6.18 mm, i.e. **0.24–0.69 × Ø**. These are porcine-skin values, not human.
+- 5.56 × 45 mm (M16) autopsy series, Bangkok 2010, 32 shots: **23/32 (72 %) entrance wounds were round and smaller than the bullet diameter**. Most had **micro-tears and no abrasion collar**, because of the small streamlined spitzer tip and full metal jacket [S9]. Fact-check: ⚠ not re-verified. 23/32 = 71.9 %, ✓ verified (calc).
 - Bullet shape matters (.38 Special in pig skin). Round-nose bullets made the **largest abrasion rings and the smallest holes**. Wadcutters made the **smallest rings and the largest holes**, because the sharp shoulder punches out a disc [S2].
 - Scalp over bone: the scalp is thick (≈5–7 mm, [K]) and backed by the skull, so scalp entrance holes are round and closer to calibre than trunk holes [K].
 - Skull (bone) entrance defects are **generally slightly larger than calibre, sometimes smaller**. They vary from circular to oval or irregular [S5]. .38 defects are significantly larger than .22 and .25 defects, but .22 and .25 cannot be told apart [S5, S6]. Deforming bullets and denser bone (higher bone mineral density) produce larger bone defects [S7].
@@ -87,9 +93,10 @@ Definitions: high-velocity projectile (HVP) means muzzle velocity > 600 m/s fire
 - A ring of abraded epidermis around the hole. The bullet presses the skin inward and the epithelium is scraped off by friction and stretching as the bullet passes [S13, S15]. Present on almost all entrances. Exceptions: palms and soles, where it may be absent or subtle [S15], and high-velocity pointed FMJ rifle bullets (often absent, [S9]).
 - Ring area compared with hole area: **3 : 1 for .22 LR** and **2.45 : 1 for 9 mm Parabellum**. Rings are smaller for .22 than for 9 mm [S3].
   - Derived geometry: if hole radius = r_h, then ring outer radius r_o = √(1 + ratio) · r_h. For .22 LR, r_o = 2.0 r_h, so collar width = 1.0 r_h. For 9 mm, r_o = 1.86 r_h, so collar width = 0.86 r_h. With a 9 mm hole of 5.6 mm (r_h 2.8 mm) the collar is **≈2.4 mm wide** [S3 + S1, derived].
+  - **Fact-check caveat.** The derivation above assumes "ring area" means the annulus only. If [S3] instead compares the whole area inside the ring's outer edge (hole included) with the hole area, then r_o = √ratio · r_h. That gives collar widths of 0.73 r_h (.22 LR) and 0.57 r_h (9 mm), i.e. **≈1.6 mm** for a 5.6 mm hole. The hole size also comes from a different study ([S1], pig skin). Use **1.6–2.4 mm** for 9 mm (corrected: was "≈2.4 mm", and "≈2–2.5 mm" in §12). The 3 : 1 and 2.45 : 1 ratios themselves are ⚠ not re-verified.
 - Typical width **1–4 mm** at distant range [S15-level summary]. My default: 1–2 mm for handguns [K].
 - **Width versus velocity is non-monotonic.** At a fixed diameter, the collar is widest at intermediate velocities and narrower at very low and very high velocity. It scales with bullet diameter at a fixed velocity [S4]. For game purposes: rifle collars are narrow or absent, handgun collars are clearly visible.
-- **Angled shots:** the hole becomes oval and the collar becomes **eccentric, widest on the side the bullet came from**. At shallow angles the collar is semilunar ("half-moon") or comet-tailed, with the broad part pointing toward the shooter [S13, S15, abrasion-collar literature].
+- **Angled shots:** the hole becomes oval and the collar becomes **eccentric, widest on the side the bullet came from**. At shallow angles the collar is semilunar ("half-moon") or comet-tailed, with the broad part pointing toward the shooter [S13, S15, abrasion-collar literature]. Fact-check: ⚠ not re-verified against a fetched page. The direction (collar widest on the side the bullet came from) matches standard textbook teaching (DiMaio) [K].
 - Appearance: fresh collars are red-brown to pink-red and moist. After death they dry to a dark brown, parchment-like band over hours [K]. The bullet may also leave a grey-black "bullet wipe" of lead, lubricant or soot (usually on clothing, sometimes on skin) [K].
 
 ### 2.3 Tumbling, ricochet and intermediate-target entrances
@@ -100,18 +107,19 @@ Definitions: high-velocity projectile (HVP) means muzzle velocity > 600 m/s fire
 
 | Parameter | Value / range | Unit | Notes | Source |
 |---|---|---|---|---|
-| `k_hole_trunk` | 0.37–0.62 (mean 0.5) | × bullet Ø | Multiply by bullet Ø. Use lower values on the back and higher on the belly and chest | [S1] |
+| `k_hole_trunk` | 0.37–0.62 (mean 0.5) | × bullet Ø | Multiply by bullet Ø. Use lower values on the back and higher on the belly and chest. The ±1 SD envelope is 0.24–0.69. Use it as the random-noise limit | [S1] ⚠ not re-verified |
 | `k_hole_scalp` | 0.7–1.0 | × bullet Ø | Scalp backed by bone | [K] |
 | `k_hole_face` (lips, eyelids, cheek) | 0.6–1.0 | × bullet Ø | Lax tissue. Eyelid holes may be slit-like | [K] |
 | `hole_shape_noise` | 0–15 | % radius | Slight irregularity. Never a perfect circle | [K] |
-| `collar_width_handgun_RN` | 1.5–2.5 | mm | Round-nose handgun | [S3, derived] |
-| `collar_width_22LR` | ~1.0 × hole radius (≈1.5–2) | mm | | [S3, derived] |
+| `collar_width_handgun_RN` | 1.5–2.5 | mm | Round-nose handgun. Fact-check: either reading of the [S3] ratio gives 1.6–2.4 mm for a 5.6 mm hole | [S3, derived] |
+| `collar_width_22LR` | 0.73–1.0 × hole radius (≈0.8–1.8) | mm | Corrected: was "~1.0 × hole radius (≈1.5–2)". With a .22 LR hole of 2.1–3.5 mm (0.37–0.62 × 5.7 mm), the derived width is ≈0.8–1.8 mm | [S3, derived] |
 | `collar_width_rifle_spitzer` | 0–0.5 (often absent, micro-tears instead) | mm | Add 3–8 micro-tears of 0.5–2 mm radiating from the edge | [S9] |
 | `collar_width_wadcutter` | 0.5–1 | mm | Hole is closer to 1.0 × Ø | [S2], [K] |
 | `collar_eccentricity(θ_inc)` | leading-edge width ≈ w / sin θ_inc, trailing edge ≈ w | mm | Clamp at 8 × w. Below ~15° switch to a "comet-tail" or graze decal | [K] (geometric model) |
 | `hole_ellipse(θ_inc)` | major = d / sin θ_inc, minor = d | mm | Clamp major ≤ 4 d. At θ < ~10° use a graze gutter | [K] |
 | `bone_defect_outer` | 1.0–1.2 × bullet Ø (sometimes < 1) | × Ø | Outer-table hole at entrance | [S5] |
 | `bone_defect_outer_deforming` | +10–30 % vs non-deforming | × Ø | JHP, soft lead | [S7] direction, magnitude [K] |
+| `v_skin_perforation_min` (added in the fact-check) | ~50–75 (use 60) | m/s | Below this, a projectile bruises or abrades but does not perforate skin. Applies to spent pellets at long range, ricochets, and teeth or bone fragments thrown as secondary projectiles (§10, 5–30 m/s, which will **not** perforate skin) | [K] (DiMaio-style skin threshold experiments). Not web-verified |
 | Colour: fresh collar | red-brown `#B4533F` | sRGB | Moist sheen | [K] |
 | Colour: dried collar | brown parchment `#6E3A22` | sRGB | Blend in over 1–4 h after death | [K] |
 | Colour: hole lumen | `#3B0A0A` | sRGB | Near-black red | [K] |
@@ -139,16 +147,18 @@ Definitions: high-velocity projectile (HVP) means muzzle velocity > 600 m/s fire
 | **Distant** | beyond stippling range (> ~60–120 cm) | Hole plus abrasion collar only | [S13, S15] |
 
 Supporting numbers:
-- Soot: visible from contact to about **30 cm (1 ft)**, absent at 274 cm [S15]. Most handguns deposit soot from **20–30 cm**. Soot diameter shrinks and fades until it is absent at **~40 cm** [search summary of forensic sources; S15]. A UK teaching source gives soot up to **~15 cm** and tattooing up to **30–45 cm**, and says these distances **can be doubled for rifles** [S15 forensicmed].
+- Soot: visible from contact to about **30 cm (1 ft)** [S15]. (Corrected: was "…, absent at 274 cm". 274 cm is 9 ft, far outside any soot range. It looks like a garbled search-snippet value, probably a test distance with no soot, so do not use it.) Fact-check: ⚠ not re-verified. The 20–30 cm handgun soot range matches standard teaching (DiMaio) [K]. Most handguns deposit soot from **20–30 cm**. Soot diameter shrinks and fades until it is absent at **~40 cm** [search summary of forensic sources; S15]. A UK teaching source gives soot up to **~15 cm** and tattooing up to **30–45 cm**, and says these distances **can be doubled for rifles** [S15 forensicmed].
 - Stippling (.38): flake powder disappears at **45–60 cm** (18–24 in), flattened ball powder reaches **90 cm** (36 in), ball powder reaches **120 cm** (48 in) [S16]. Flake powder ≤ 60 cm, ball powder ≤ 90 cm (Dana & DiMaio 2003, cited in [S16 ScienceDirect topic]).
+  - **Fact-check:** ⚠ not re-verified. The two cited values for ball powder disagree: 120 cm (48 in) in DiMaio 1976 vs 90 cm (36 in) in Dana & DiMaio 2003. **Game default: 90 cm for ball powder. Allow up to 120 cm only as a sparse tail with very few dots.** Unit conversions (18–24 in = 46–61 cm, 36 in = 91 cm, 48 in = 122 cm) are ✓ verified (calc).
 - Stippling has been seen from **~1.3 cm (0.5 in) to ~120 cm (48 in)** [S45].
 - Rifles: tattooing up to **60–100 cm** [S15-level summary].
-- Stipple pattern diameter (handgun test firings): at **30 cm (12 in), 5.7–17.6 cm** (2.25–6.94 in). At **61 cm (24 in), ≥ 16.5 cm** (6.5 in) [S46].
+- Stipple pattern diameter (handgun test firings): at **30 cm (12 in), 5.7–17.6 cm** (2.25–6.94 in). At **61 cm (24 in), ≥ 16.5 cm** (6.5 in) [S46]. Fact-check: ⚠ not re-verified ([S46] was unreachable). The inch-to-cm conversions are ✓ verified (calc).
 - Closer means a smaller and denser pattern. Farther means a larger and sparser pattern [S46].
 
 ### 3.2 Stippling appearance
 - **Red to orange or red-brown punctate abrasions** around the entrance. Each dot is a small abrasion where a powder grain struck the skin. They **cannot be wiped away** [S45].
-- **Ante-mortem vs post-mortem:** if the victim was already dead, stipples are **moist grey or yellow** rather than red-brown, and fewer [S45]. (Useful if the player shoots a corpse.)
+- **Ante-mortem vs post-mortem:** if the victim was already dead, stipples are **moist grey or yellow** rather than red-brown, and fewer [S45]. (Useful if the player shoots a corpse.) Fact-check: ⚠ not re-verified. The colour contrast (red-brown in life, grey-yellow after death) matches standard teaching [K]. I found nothing to support "fewer", so treat it as a game choice [G].
+- Note (fact-check): unburned grains merely lying on the skin *can* be brushed off. Only the punctate abrasions (true tattooing) and grains embedded in the dermis cannot. The "wipe" interaction should remove loose grains together with the soot [K].
 - Dot size ~0.2–1.5 mm, irregular [K]. Some unburned grains may remain embedded: flake powder appears as dark grey-green specks, ball powder as black spheres [K].
 - At 5 cm the stippling is a dense cluster. By 15 cm it thins out [search summary].
 
@@ -169,6 +179,9 @@ Supporting numbers:
   - A .22 short contact to the temple leaves a **small hole with seared, blackened edges and only tiny triangular tears**. True stellate wounds are the exception with .22 LR contact to the head [S54].
   - A **.357 Magnum** contact to the forehead makes a **large gaping stellate defect** [S54].
   - .22 Magnum is more destructive than other .22s, and cruciform tears are more frequent [S54].
+  - Fact-check: ⚠ not re-verified (ACEP Now and the high-speed study were unreachable). The calibre gradient (.22 rarely stellate, magnum or large-calibre gaping) matches standard teaching on rimfire contact wounds (DiMaio) [K].
+- **Contact head entrance larger than the exit (added in the fact-check, [K]).** Because gas tears the scalp at the entrance, a contact head entrance is often **larger** than the exit. The normal "exit is bigger" rule is reversed. Do not size contact-wound decals with the exit formula.
+- **Angled contact: which side the soot goes (added in the fact-check, [K, geometric]).** When the barrel is tilted against the skin, the rim of the muzzle touches the skin on the **shooter's side**. The gap opens on the **down-range** side, where the barrel points. Gas and soot therefore blow out as a fan or pear shape extending **down-range** from the hole, and searing is heaviest where the muzzle touched.
 - **Cherry-red colour** of the track and muscle, from carbon monoxide forming carboxyhaemoglobin and carboxymyoglobin [S15 forensicmed].
 - **Soot on the outer table of the skull** around the bone hole, and **periosteum lifted and folded back with soot on its underside** [S37 / 2025 review].
 - **Rifle contact to the head:** massive destruction of skin, skull and brain, with heterogeneous entrance and exit patterns [S10].
@@ -185,12 +198,12 @@ Supporting numbers:
 | `d_soot_dense_max_handgun` | 10 | cm | Dense black inner halo visible | [K] from [S15, S17] |
 | `d_soot_max_handgun` | 25 (range 15–30) | cm | Faint grey halo, absent beyond | [S15] |
 | `d_soot_max_rifle` | 50 (range 30–60) | cm | "Double for rifles" | [S15 forensicmed] |
-| `d_stipple_max_handgun` | 60 (flake). Ball-powder variant 90–120 | cm | Choose per-ammo `powder_type` | [S16] |
+| `d_stipple_max_handgun` | 60 (flake). Ball powder 90 (default), with a sparse tail to 120 (max) | cm | Choose per-ammo `powder_type`. The two sources disagree on ball powder (see §3.1) | [S16] ⚠ not re-verified |
 | `d_stipple_max_rifle` | 100 (range 60–100+) | cm | | [S15-level] |
 | `d_stipple_max_shotgun` | 90 | cm | | [K] |
 | `soot_inner_diameter(d)` | ≈ 1 cm + 0.25 · d (d ≤ 10 cm) | cm | Opacity 0.95 → 0.4 across 0–10 cm | [K] synthesized |
 | `soot_outer_diameter(d)` | ≈ 3 cm + 0.6 · d (d ≤ 25 cm) | cm | Opacity 0.35 → 0 by `d_soot_max` | [K] synthesized |
-| `stipple_pattern_diameter(d)` | ≈ 0.35–0.55 · d + 1 cm | cm | Matches 5.7–17.6 cm at 30 cm and ≥ 16.5 cm at 61 cm | [S46, derived] |
+| `stipple_pattern_diameter(d)` | D = k · d, with k drawn per weapon and load from 0.19–0.59. Clamp D ≥ 16.5 cm when d ≥ 61 cm | cm | Gives 5.7–17.7 cm at 30 cm. Corrected: was "≈ 0.35–0.55 · d + 1 cm", which gives 11.5–17.5 cm at 30 cm and so misses the lower half of the measured 5.7–17.6 cm range | [S46, derived]. [S46] ⚠ not re-verified |
 | `stipple_count(d)` | ~300–600 at 5 cm, ~150–300 at 15 cm, ~50–150 at 30 cm, 10–40 near max | dots | Poisson-disc scatter, density falls toward the edge | [K] |
 | `stipple_dot_size` | 0.2–1.5 | mm | Irregular, slightly raised | [K] |
 | `sear_margin_width` | 1–3 (contact/near contact only) | mm | Dark brown-black leathery ring | [K] |
@@ -219,21 +232,21 @@ Supporting numbers:
 
 ### 4.1 General features
 - Usually **larger and more irregular** than the entrance. Shapes are variable: stellate, slit, crescent, irregular or round. **Edges are everted**, with tissue tags turned outward. **No abrasion collar, no soot, no stippling, no searing** [S13, S15, S12].
-- Shape frequencies in one autopsy series: **circular 31.6 %, stellate 27.6 %, irregular 24.5 %, slit-like 12.2 %, crescent 4.1 %**. **Head exits are more likely stellate or irregular** than circular [S12].
+- Shape frequencies in one autopsy series: **circular 31.6 %, stellate 27.6 %, irregular 24.5 %, slit-like 12.2 %, crescent 4.1 %**. **Head exits are more likely stellate or irregular** than circular [S12]. Fact-check: ⚠ not re-verified. The five percentages correspond exactly to 31, 27, 24, 12 and 4 of **n = 98 exits** and sum to 100.0 %, ✓ internally consistent (calc).
 - Exit size alone is a poor discriminator of entrance versus exit [S12 summary]. Low-energy FMJ handgun exits can be **small slits of a few mm**, even smaller than the entrance [K].
 - **Shored exits** occur when the skin is pressed against a wall, floor, belt, chair back or armour as the bullet exits. They show an **irregular, often broad abrasion rim** that can mimic an entrance collar [S15, S56].
 
 ### 4.2 Exit size by bullet type
 - **FMJ handgun** (9 mm, .45): exit about the size of the entrance or somewhat larger. Round, slit or stellate. In the head, often stellate or irregular with external bevelling of the bone [K, S12].
 - **Hollow point**: if it exits at all, the exit is larger because the expanded bullet (≈ 13–19 mm) leaves. JHPs exit the head less often than FMJ [K].
-- **Rifle FMJ (5.56, 7.62)**: exit size is decided by **where the temporary cavity is when the bullet leaves**. An exit plane inside the cavity gives a **very large skin lesion**. The hole is small at the moment of exit, then enlarges secondarily as the cavity expands (high-speed imaging) [S11]. Yaw, fragmentation and bone fragments acting as secondary missiles all enlarge the exit [S10, S11]. Rifle exits are significantly larger than handgun exits [S10].
-- **Skull exits**: in bone, the exit is larger than the entrance in 16 of 17 cases, and always more irregular [S8].
+- **Rifle FMJ (5.56, 7.62)**: exit size is decided by **where the temporary cavity is when the bullet leaves**. An exit plane inside the cavity gives a **very large skin lesion**. The hole is small at the moment of exit, then enlarges secondarily as the cavity expands (high-speed imaging) [S11]. Yaw, fragmentation and bone fragments acting as secondary missiles all enlarge the exit [S10, S11]. Rifle exits are significantly larger than handgun exits [S10]. Fact-check: [S11] ⚠ not re-verified. The mechanism matches standard temporary-cavity theory (Fackler, Kneubuehl) [K].
+- **Skull exits**: in bone, the exit is larger than the entrance in 16 of 17 cases, and always more irregular [S8]. Fact-check: ⚠ not re-verified. §5.2 uses the same "16 of 17" count for a different finding (internal bevelling present). One of the two may be a conflation from the search snippet, so check the [S8] abstract before relying on either figure.
 
 ### Simulation parameters (exit)
 
 | Parameter | Value / range | Unit | Notes | Source |
 |---|---|---|---|---|
-| `exit_shape_weights` | circular 0.32, stellate 0.28, irregular 0.24, slit 0.12, crescent 0.04 | probability | Shift +0.15 to stellate and irregular on the head | [S12] |
+| `exit_shape_weights` | circular 0.32, stellate 0.28, irregular 0.24, slit 0.12, crescent 0.04 | probability | On the head, add 0.15 to stellate and to irregular, **then renormalize**. Head weights: circular 0.25, stellate 0.33, irregular 0.30, slit 0.09, crescent 0.03. Corrected: was "Shift +0.15 to stellate and irregular" with no renormalization, which makes the weights sum to 1.30 | [S12] ⚠ not re-verified. Head shift [G] |
 | `exit_size_FMJ_handgun_trunk` | 0.5–2.0 × bullet Ø (5–18 mm) | mm | Slit length for slit type | [K] |
 | `exit_size_FMJ_handgun_head` | 10–30 | mm | Stellate/irregular, bone chips visible | [K] |
 | `exit_size_JHP_head` | 15–40 | mm | If it exits at all | [K] |
@@ -261,7 +274,7 @@ Supporting numbers:
 
 ### 5.2 Bevelling
 - **Entrance: inward (internal) bevelling.** The inner-table defect is larger than the outer one, making a cone opening into the skull [S15]. Seen in all but one of 17 cases [S8].
-- **Exit: outward (external) bevelling.** The outer-table defect is larger. It was seen on most vault bones but **not on the orbit, maxilla, greater wing of sphenoid, temporal or thin occipital areas**. Thin bones don't bevel clearly [S8].
+- **Exit: outward (external) bevelling.** The outer-table defect is larger. It was seen on most vault bones but **not on the orbit, maxilla, greater wing of sphenoid, temporal or thin occipital areas**. Thin bones don't bevel clearly [S8]. Fact-check: [S8] ⚠ not re-verified. The direction of bevelling (inward at the entrance, outward at the exit) and the lack of bevelling on thin bone are standard textbook teaching [K].
 - External bevelling of an entrance is possible with tangential or keyhole shots and some contact shots [S22].
 
 ### 5.3 Keyhole lesion (tangential strike)
@@ -270,10 +283,11 @@ Supporting numbers:
 
 ### 5.4 Fracture lines and their sequence
 - **Radial (linear) fractures** radiate from the entrance (and from the exit). **Concentric fractures** run perpendicular to them, giving a spider-web look [S20].
-- **Speed:** bursting fractures from the entrance run through the skull **faster than the bullet**. They can cross the skull before the bullet exits [S21]. Crack propagation speed in bone is on the order of several hundred to a few thousand m/s. Sound speed in cortical bone is ~3,000–4,000 m/s [K].
+- **Speed:** bursting fractures from the entrance run through the skull **faster than the bullet**. They can cross the skull before the bullet exits [S21]. Fact-check: [S21] ⚠ not re-verified. The claim is physically plausible: crack speeds in bone (hundreds to ~2,000 m/s) exceed handgun bullet speeds (250–380 m/s) [K]. Crack propagation speed in bone is on the order of several hundred to a few thousand m/s. Sound speed in cortical bone is ~3,000–4,000 m/s [K].
 - **Hydraulic mechanism.** The temporary cavity pressurizes the closed skull, and the skull bursts to relieve the pressure. Radial burst fractures result. Even handgun bullets generate enough pressure to crack the thin orbital plates [S20 summary / S23].
 - **Heaving (concentric) fractures.** Bone segments between radial fractures are pushed **outward**, so they sit **above** the skull plane. This distinguishes them from blunt trauma, where segments are pushed inward [S20 summary].
-- **Sequence rule (Puppe).** A fracture stops when it meets an existing fracture. Radials from a second shot, or from the exit, **terminate at** earlier radials. This is used to order multiple shots [S20].
+- **Sequence rule (Puppe).** A fracture stops when it meets an existing fracture. Radials from a second shot, or from the exit, **terminate at** earlier radials. This is used to order multiple shots [S20]. Fact-check: ⚠ not re-verified. Puppe's rule itself is standard teaching [K]. The 2024 paper in [S20] is titled "Exception to Puppe's rule reloaded", so fractures do occasionally cross an existing fracture. The rule should not be absolute (see `puppe_termination`).
+- **Bone fragments in the brain (added in the fact-check, [K]).** Inner-table fragments from the entrance are driven **into** the brain as a cone along the first few cm of the track. At the exit, bone fragments are carried **outward** into the scalp and beyond. Seen on imaging or on dissection, this tells entrance from exit.
 
 ### 5.5 High-velocity bursting and brain evisceration
 - High-velocity rifle bullets can **fragment the vault into many pieces**. In a surrogate study, **7.62 mm rifle shots fractured all skull plates and fragmented most completely** [search summary of a surrogate-skull study].
@@ -281,10 +295,10 @@ Supporting numbers:
 - High-velocity soft-point hunting bullets leave a **"lead snowstorm"**: dozens to hundreds of dust-like to large metal fragments along the track, cone-shaped with its apex at the entrance or fracture. This is **not** seen with handgun bullets and only rarely with FMJ rifle bullets [S36].
 
 ### 5.6 Skull-base fractures, orbital roofs and "raccoon eyes"
-- In **147 lethal head shots from handguns and low-velocity small-calibre rifles**, **82 % had fractures of the anterior skull base**. They also occurred with low-energy guns [S23].
+- In **147 lethal head shots from handguns and low-velocity small-calibre rifles**, **82 % had fractures of the anterior skull base**. They also occurred with low-energy guns [S23]. Fact-check: ⚠ not re-verified. The finding that orbital-roof fractures are common in head gunshot wounds, including those whose track does not pass the orbit, matches standard teaching [K].
 - Mechanism: hydraulic overpressure and contre-coup loading of the thin orbital roofs. An isolated orbital-roof "blow-in" fracture can occur even from an occipital entry [S23-context, orbital case reports].
 - **Periorbital ecchymosis (raccoon eyes):** blood from fractured orbital roofs tracks along tissue planes into the upper and lower eyelids [S24].
-  - Clinically it often becomes obvious **1–3 days** after blunt skull-base fractures. It **can appear within ~1 hour** [S24].
+  - Clinically it often becomes obvious **1–3 days** after blunt skull-base fractures. It **can appear within ~1 hour** [S24]. Fact-check: ⚠ not re-verified. Clinical sources I know of vary between "hours" and "1–3 days (delayed)" [K], so the range is plausible.
   - In gunshot deaths with orbital-roof fractures, periorbital haemorrhage is a frequent autopsy finding even with short survival, because the orbit fills directly from the fracture [K].
   - Retrobulbar haemorrhage volumes of **0.1–2.4 mL** were measured on post-mortem CT and correlated with visible ecchymosis [S24].
 - Related signs [K]:
@@ -308,7 +322,7 @@ Supporting numbers:
 | `radial_fracture_count` | handgun 0–4. Rifle 4–10+ | count | Radiate from entrance and exit | [K] |
 | `radial_fracture_length` | handgun 0–80. Rifle to full vault | mm | | [K] |
 | `fracture_speed` | ≥ bullet speed (use "instantaneous" within the frame) | m/s | Entrance radials exist before the exit forms | [S21] |
-| `puppe_termination` | true | bool | A new crack stops at any existing crack | [S20] |
+| `puppe_termination` | stop at an existing crack with p ≈ 0.95 | prob. | A new crack stops at any existing crack. Corrected: was `true` (absolute). Documented exceptions exist ([S20], title of the 2024 paper) | [S20]. p = 0.95 is [G] |
 | `heaving_segments` | outward displacement 1–5 mm | mm | Only with intracranial overpressure (rifle, contact, large handgun) | [S20], magnitude [K] |
 | `burst_threshold` | v_impact > 600 m/s, or contact shot with gas volume ≥ magnum/shotgun | — | Vault fragments into 5–30 pieces | [S10], [S35], counts [K] |
 | `kronlein_probability` | rifle contact or ≤ 1 m: 0.2–0.5. Shotgun contact: 0.3–0.6 | prob. | Ejects part or all of the brain | [S35] (qualitative), probabilities [G] |
@@ -337,6 +351,7 @@ Supporting numbers:
   - **Temporary cavitation**, a radial stretch-and-shear that lasts about **5–10 ms** [search summary, penetrating head injury sources].
 - The brain is **inelastic and effectively incompressible** and sits in a rigid box, so cavitation damages it far more than muscle [S26].
 - Low-energy handguns (E₀ < 550 J), human autopsy morphometry: a **destruction zone of ≈ 3.6 cm around the permanent track** corresponding to the temporary cavity. **Axonal damage extends to ~18 mm** from the track [S25]. Remote axonal injury may explain the **very early respiratory arrest** after low-velocity head shots [S25].
+  - **Fact-check:** ⚠ not re-verified. "A 3.6 cm zone around the track" is ambiguous. If 3.6 cm is the zone's **diameter**, the radius is ~18 mm, the reading used in the table below. If it is the **distance from the track**, the radius is 36 mm. Until the full text is checked, use **radius 18 mm**. It is the conservative reading and matches the 18 mm axonal-injury distance.
 - Zones outward from the track, in concentric cylinders [S25-context]:
   - Permanent defect.
   - Glial, vessel and fibre necrosis.
@@ -349,6 +364,7 @@ Supporting numbers:
   - In a skull-brain simulant, a 9 mm made a temporary cavity **~1.5 ×** that of a .25 [S50].
   - Pressure spikes of up to ~30 atm have been reported in brain simulants [search summary, lower confidence].
 - Brain mass ~1,300–1,400 g. The cranial cavity is ~14–16 cm wide [K]. A 17 cm rifle cavity therefore cannot fit, which is why rifles burst the skull.
+  - Fact-check [K], not web-verified: ~14–16 cm is closer to **head** width with scalp. Maximum breadth of the dry adult skull is roughly 13.5–15 cm, and the internal (endocranial) breadth is about 12–13.5 cm. Use **12–13.5 cm** as the cap on the intracranial cavity (corrected: was 14–16 cm). The conclusion is unchanged.
 
 ### 6.2 What exits the head
 - Destroyed brain is either **ejected through the entrance or exit** or packed against the track walls [search summary, penetrating head injury].
@@ -370,8 +386,8 @@ Supporting numbers:
 |---|---|---|---|---|
 | `perm_track_diameter_FMJ_handgun` | 1.0–1.5 × bullet Ø | × Ø | Pulped channel | [K] |
 | `perm_track_diameter_JHP` | 1.5–2.0 × Ø after 1–3 cm | × Ø | | [K] |
-| `destruction_radius_handgun` | 18 (i.e. ~3.6 cm zone) | mm | Mark as "non-functional tissue" for the physiology system | [S25] |
-| `temp_cavity_max_diameter_handgun` | 4–10 | cm | Inside the skull, cap at the intracranial width | [S42], [K] |
+| `destruction_radius_handgun` | 18 (i.e. ~3.6 cm zone diameter). Possible upper reading 36 | mm | Mark as "non-functional tissue" for the physiology system. See the ambiguity note in §6.1 | [S25] ⚠ not re-verified |
+| `temp_cavity_max_diameter_handgun` | 4–10 | cm | Inside the skull, cap at the intracranial width (12–13.5 cm, see §6.1 fact-check) | [S42], [K] |
 | `temp_cavity_max_diameter_rifle` | 12–17+ | cm | Exceeds skull width, triggers burst | [S42] |
 | `temp_cavity_lifetime` | 5–10 | ms | Sub-frame at 60 fps (16.7 ms). Resolve instantly | [search summary] |
 | `brain_extrusion_volume_handgun` | 2–30 | mL | Mostly at the exit. Oozes over 10–120 s | [K] |
@@ -396,6 +412,7 @@ Supporting numbers:
   - **31–324 macro-stains (> 0.5 mm) per shot**, independent of range.
   - **Maximum distance 72–119 cm**, with **most droplets within 0–50 cm**.
   - Large droplets left **0.7–4 ms** after impact, at a **minimum initial velocity of 13–61 m/s**.
+  - Fact-check: ⚠ not re-verified ([S27] unreachable). Note that 13–61 m/s are **minimum** estimates of the initial velocity. They are not a mean, so the `backspatter_v0` "mean ~24" below comes from [S28], not from Karger.
 - **Micro-back-spatter** (stains < 0.5 mm) [S27, II]:
   - Maximum distance **69 cm**, most within **0–40 cm**.
   - Contact and 2 cm shots produce a fine spray plus elongated "exclamation-mark" stains.
@@ -405,6 +422,7 @@ Supporting numbers:
 
 ### 7.2 Forward spatter (from the exit)
 - Maximum velocity **47 ± 5 m/s**, about twice the back-spatter velocity. Cone upper angle **27 ± 9°**, much narrower than back-spatter. **More droplets** than back-spatter [S28] (9 mm FMJ experiments).
+  - Fact-check: ⚠ not re-verified. Reviewer recollection [K], unconfirmed: the Attinger-lab experiments shot **blood-soaked foam or sponge targets, not heads**. The speeds and cone angles are good starting values but are not head data. "Upper angle" is read here as the half-angle about the bullet axis. The table rows (42–52 m/s, 18–36°, 50–64°) are the ±1 SD bands, ✓ verified (calc).
 - Forward spatter includes **mist-like droplets < 0.1 mm** [S28-context BPA sources]. Misting and micro-spatter have been recorded over 5–60 cm [search summary].
 - Game default for forward travel: the fine spray settles mostly within 1–2 m. Larger droplets and tissue reach 2–4 m with handguns. Rifles throw bone and brain fragments several metres [K].
 
@@ -429,7 +447,7 @@ Supporting numbers:
 |---|---|---|---|---|
 | `backspatter_macro_count` | 30–320 | droplets | Per head shot. Visible droplets > 0.5 mm | [S27] |
 | `backspatter_micro_count` | 200–2,000 (render as 2–4 mist sprites plus a speckle decal) | droplets | Not individually simulated | [K], [G] (performance) |
-| `backspatter_v0` | 13–61 (mean ~24) | m/s | | [S27], [S28] |
+| `backspatter_v0` | 13–61 (mean ~24) | m/s | 13–61 are Karger's minimum estimates. 24 ± 8 is Comiskey's measured value | [S27], [S28]. ⚠ not re-verified |
 | `backspatter_cone_half_angle` | 50–64 (use 57) | ° | Around the reversed bullet axis | [S28] |
 | `backspatter_emit_delay` | 0.7–4 | ms | Same frame as impact | [S27] |
 | `backspatter_max_range` | macro 0.7–1.2 m. Micro ≤ 0.7 m. Bulk ≤ 0.5 m | m | Tune drag to match | [S27] |
@@ -499,6 +517,7 @@ Supporting numbers:
 
 - Spread rule of thumb: **~1 inch per yard (≈2.8 cm per m)** for a cylinder bore. Modern shot-cup wads and chokes give **tighter** patterns. At 1 yd the charge is still ~1 inch (2.5 cm) wide, ~2 in (5 cm) at 3 yd, ~3 in (7.5 cm) at 5 yd with defensive buckshot [S38].
 - **Wad**: at close range (single hole) the wad is found **inside the body** [S47]. Beyond **~1.5–1.8 m** the wad separates from the shot and strikes the skin separately, leaving its own abrasion [S47]. Plastic-wad **"petal" marks** give a Maltese-cross abrasion: **4 petals for 12/16/20 gauge, 3 for .410** [S47]. Wad marks have been seen out to **~4.5 m (filler wads) and ~6 m (plastic wads)** [S47].
+- **Fact-check (§9.1):** ⚠ not re-verified ([S37], [S47] unreachable). Textbooks differ on the stage boundaries (single hole, scalloped, satellites, separate pellets) depending on choke, load and wad, and the 1 / 2 / 4 m values are a reasonable middle for cylinder or improved-cylinder bores [K]. Refinement [K]: at contact to ~30 cm the single hole is close to **bore size**. The 12 ga bore is 18.5 mm, so the hole is ≈ **2.0–2.5 cm**. It grows toward **3–4 cm by ~1 m**, rather than being 2.5–4 cm throughout. The "4 petals" count fits common 12-gauge shot cups, but petal count varies by wad brand [K].
 - **Soot and stippling** as for rifled arms (§3). Shotgun powder tattooing extends to roughly 0.9 m [K].
 
 ### 9.2 Buckshot versus birdshot
@@ -513,7 +532,7 @@ Supporting numbers:
 
 | Parameter | Value / range | Unit | Notes | Source |
 |---|---|---|---|---|
-| `shot_column_diameter_0_1m` | 2.5–4 | cm | Single hole | [S37] |
+| `shot_column_diameter_0_1m` | 2.0–2.5 at ≤ 0.3 m, rising linearly to 3–4 at 1 m | cm | Single hole. Refined in the fact-check: was a flat 2.5–4. The close-range hole approximates the 18.5 mm bore | [S37] ⚠ not re-verified. Close-range refinement [K] |
 | `pattern_diameter(r)` (r > 1 m) | 2.5 cm + (1.5–2.8) cm × (r − 1 m)/m | cm | 2.8 for cylinder bore. 1.5 for shot cup or choke | [S38], [G] |
 | `scallop_onset_range` | 1.0 | m | | [S37] |
 | `satellite_onset_range` | 2.0 | m | | [S37] |
@@ -522,7 +541,7 @@ Supporting numbers:
 | `wad_petal_mark_range` | 0.3–1.5 | m | 4 petals (12 ga) | [S47], lower bound [K] |
 | `wad_separate_abrasion_range` | 1.5–6 | m | Separate 1–3 cm round or oval abrasion | [S47] |
 | `buck_00_pellets` | 9 × 8.4 mm | — | | [S39] |
-| `bird_7_5_pellets` | ~350 × 2.4 mm | — | Render the distant pattern as an instanced decal atlas | [S39] |
+| `bird_7_5_pellets` | ~350 × 2.4 mm (1 oz, ~28 g). ~395 for 1⅛ oz (~32 g) | — | Render the distant pattern as an instanced decal atlas. The count is tied to the load mass (see §1) | [S39]. Mass ✓ verified (calc) |
 | `buck_penetration_tissue` | 25–53 | cm | | [S40] |
 | `bird_penetration_tissue` | 5–15 | cm | At range. Tunes skull-entry rules | [S40] |
 | `bird_skull_entry_rule` | penetrates only orbit, temporal squama (≤ 4 mm) or open fontanelle-equivalent thin bone beyond ~5 m | — | | [search summary], [K] |
@@ -530,7 +549,7 @@ Supporting numbers:
 | `contact_shotgun_head_outcome` | calvarial burst 1.0. Brain partially ejected 0.5–0.9 | prob. | | [S35], [K] |
 
 ### Visual/behavioural checklist (shotgun)
-- **Point-blank to ~1 m**: one big round hole (golf-ball to ping-pong-ball size), plus soot or stipple if close. The plastic wad may be inside.
+- **Point-blank to ~1 m**: one big round hole. It is about 2 cm (a large coin) at point-blank and grows to golf-ball size (~4 cm) by ~1 m (corrected: was "golf-ball to ping-pong-ball size" throughout). Add soot or stipple if close. The plastic wad may be inside.
 - **1–2 m**: a big hole with a scalloped edge.
 - **2–4 m**: a central hole plus a ring of separate pellet holes.
 - **Far**: a spray of small holes, no big hole. With birdshot, many shallow pits on the face, and eyes and eyelids perforated.
@@ -541,9 +560,10 @@ Supporting numbers:
 
 ## 10. Facial and jaw shots
 
-- In a 7-year series of **578 patients** with head, neck or facial gunshot wounds, **204 survived with facial fractures**. The most fractured bones were the **maxilla 62 %, orbit 55 % and mandible 51 %**. Mandible fractures had the **highest operative rate (76 %)** [S32]. Another series lists the orbit as the second most common fracture site (20.5 %), after the zygoma (13.7 %) and nasal bone (12.2 %) [search summary, facial projectile series].
+- In a 7-year series of **578 patients** with head, neck or facial gunshot wounds, **204 survived with facial fractures**. The most fractured bones were the **maxilla 62 %, orbit 55 % and mandible 51 %**. Mandible fractures had the **highest operative rate (76 %)** [S32]. Fact-check: [S32] ⚠ not re-verified. The percentages exceed 100 % in total because patients had several fractures, which is consistent.
+  - (Corrected: the text used to say "another series lists the orbit as the second most common fracture site (20.5 %), after the zygoma (13.7 %) and nasal bone (12.2 %)". That is self-contradictory, because 20.5 % cannot rank below 13.7 %. The snippet was garbled, so the statement has been withdrawn. Do not use those three numbers.)
 - **High-velocity face wounds** show highly comminuted facial-skeleton fractures and **avulsion of facial and intra-oral soft tissue** along the track, with secondary distant fractures [S34].
-- **Teeth and bone fragments act as secondary projectiles**, causing damage away from the track [S34].
+- **Teeth and bone fragments act as secondary projectiles**, causing damage away from the track [S34]. Fact-check: ⚠ not re-verified. The claim matches standard maxillofacial trauma teaching [K].
 - When a high-velocity bullet strikes the **mandible**, the result is a severely comminuted mandible surrounded by non-viable soft tissue, with embedded foreign bodies [S34].
 - **Intra-oral contact shots**:
   - Entrance in the **hard palate or posterior pharynx**, with the muzzle usually pointed upward [S33].
@@ -589,7 +609,7 @@ Supporting numbers:
 | 7 | Every handgun headshot explodes the head | Handgun: small holes, a few cracks, some ooze. Bursting needs a rifle, a shotgun contact or a large-gas contact | §5.5 | [S10], [S35] |
 | 8 | Huge red blood cloud on every hit | Back-spatter is sparse (30–320 macro drops), fine and short-ranged (< 0.5 m bulk). Forward spatter is denser and narrower | §7 | [S27], [S28] |
 | 9 | Uniform, instant, static blood | Blood varies: bright arterial or dark venous, dripping, pooling, clotting, drying brown. Small entrances may barely bleed. Scalp bleeds freely | §7.4 | [K] |
-| 10 | Shotgun at 10 m = one big hole | One hole only up to ~1 m (2.5–4 cm). Scalloped at 1–2 m. Satellites at 2–4 m. Pellet spray beyond | §9 | [S37] |
+| 10 | Shotgun at 10 m = one big hole | One hole only up to ~1 m (≈2 cm at point-blank, 3–4 cm by 1 m). Scalloped at 1–2 m. Satellites at 2–4 m. Pellet spray beyond | §9 | [S37] |
 | 11 | Wounds don't evolve | Collars dry brown after death. Raccoon eyes and bruising develop only while circulation continues. Clots form | §5.6, §2.2 | [S24], [K] |
 | 12 | Circular decals regardless of angle | Oblique shots give an oval hole, eccentric collar and elliptical soot or stipple | §2.2, §3.3 | [S13], [S17] |
 | 13 | Headshot = instant death for everyone, always | Usually immediate incapacitation, but rare retained function with low-energy frontal tracks | §6.3 | [S26] |
@@ -600,26 +620,28 @@ Supporting numbers:
 
 ## 12. Load-bearing numbers (quick reference)
 
-1. Entrance hole in trunk skin, 9 mm at 1.6 m: **5.61 ± 0.57 mm (belly), 3.33 ± 1.17 mm (back)**, i.e. **~0.4–0.6 × bullet Ø** [S1].
-2. **72 %** of 5.56 entrances were smaller than the bullet, with micro-tears and **no abrasion collar** [S9].
-3. Abrasion-ring area : hole area = **3 : 1 (.22 LR)**, **2.45 : 1 (9 mm)**. That gives a collar width of ~1.0 × and ~0.86 × hole radius (≈ 2–2.5 mm for 9 mm) [S3, derived].
-4. Collar is eccentric, widest on the side the bullet came from, in angled shots [S13].
-5. Soot to **~20–30 cm** (handgun), absent by ~40 cm. "Double for rifles" [S15].
-6. Stippling (.38) to **45–60 cm (flake), 90 cm (flattened ball), 120 cm (ball)** [S16]. Stipple pattern **5.7–17.6 cm at 30 cm** and **≥ 16.5 cm at 61 cm** [S46].
-7. Living-victim stipples are red-orange or red-brown. Post-mortem stipples are grey-yellow [S45].
-8. Contact over bone gives a stellate tear from gas under the scalp, a muzzle imprint, and CO cherry-red tissue. .22 LR rarely makes true stellate tears. .357 Magnum makes large ones [S19], [S54].
-9. Exit shapes: circular 31.6 %, stellate 27.6 %, irregular 24.5 %, slit 12.2 %, crescent 4.1 %. **Head exits skew stellate or irregular** [S12].
-10. Skull: **internal bevel at entrance, external at exit**. Exits larger in 16/17 cases. No bevel on thin bones [S8].
-11. Radial fractures outrun the bullet. Later fractures stop at earlier ones (**Puppe**) [S20], [S21].
-12. **82 %** of lethal handgun or low-velocity head shots had anterior skull-base fractures [S23]. Raccoon eyes can appear within ~1 h, and clinically over 1–3 days [S24].
-13. Low-energy (< 550 J) brain wounds: a **~3.6 cm destruction zone** around the track, axonal injury to **18 mm** [S25].
-14. Back-spatter: **31–324** macro-droplets, max **72–119 cm**, bulk within **50 cm**, **13–61 m/s**, emitted 0.7–4 ms after impact. Micro max **69 cm** [S27].
-15. Forward spatter **47 ± 5 m/s**, cone **27 ± 9°**. Back-spatter **24 ± 8 m/s**, cone **57 ± 7°**. More droplets forward [S28].
-16. Body knock-back from any small arm: **0.01–0.18 m/s** [S30].
-17. Shotgun: single **2.5–4 cm** hole to ~1 m, scalloped 1–2 m, satellites 2–4 m. Wad inside the wound < ~1.5 m. Petal marks (4 petals for 12 ga). Wad marks to ~6 m [S37], [S47].
-18. 00 buck = **9 × 8.4 mm**. #7.5 bird = **~350 × 2.4 mm** [S39].
-19. Facial GSW fractures: **maxilla 62 %, orbit 55 %, mandible 51 %** [S32]. Teeth and bone act as secondary missiles [S34].
-20. Prehospital death **70–90 %**. Overall mortality ~91 %. Bihemispheric ~82 % [S43].
+Fact-check status is given at the end of each item. See §15 for details.
+
+1. Entrance hole in trunk skin, 9 mm at 1.6 m: **5.61 ± 0.57 mm (belly), 3.33 ± 1.17 mm (back)**, i.e. **~0.4–0.6 × bullet Ø** (±1 SD: 0.24–0.69 ×) [S1]. *⚠ not re-verified. Ratios ✓ verified (calc).*
+2. **72 %** of 5.56 entrances were smaller than the bullet, with micro-tears and **no abrasion collar** [S9]. *⚠ not re-verified. 23/32 = 71.9 % ✓ (calc).*
+3. Abrasion-ring area : hole area = **3 : 1 (.22 LR)**, **2.45 : 1 (9 mm)**. That gives a collar width of ~0.73–1.0 × and ~0.57–0.86 × hole radius, i.e. **≈ 1.6–2.4 mm for 9 mm** [S3, derived]. *Corrected: was "~1.0 × and ~0.86 × (≈ 2–2.5 mm)". The ratio's definition is ambiguous (§2.2). Ratios ⚠ not re-verified.*
+4. Collar is eccentric, widest on the side the bullet came from, in angled shots [S13]. *⚠ not re-verified. Consistent with standard teaching [K].*
+5. Soot to **~20–30 cm** (handgun), absent by ~40 cm. "Double for rifles" [S15]. *⚠ not re-verified. Consistent with standard teaching [K]. Corrected: the stray "absent at 274 cm" was removed from §3.1.*
+6. Stippling (.38) to **45–60 cm (flake), 90 cm (flattened ball), 120 cm (ball)** [S16]. Dana & DiMaio 2003 give 90 cm for ball powder, so the game default is **90 cm with a sparse tail to 120 cm**. Stipple pattern **5.7–17.6 cm at 30 cm** and **≥ 16.5 cm at 61 cm** [S46]. *⚠ not re-verified. Pattern formula corrected in §3 (was 0.35–0.55·d + 1 cm).*
+7. Living-victim stipples are red-orange or red-brown. Post-mortem stipples are grey-yellow [S45]. *⚠ not re-verified. Colours consistent with standard teaching [K]. "Fewer" is unsupported and treated as [G].*
+8. Contact over bone gives a stellate tear from gas under the scalp, a muzzle imprint, and CO cherry-red tissue. .22 LR rarely makes true stellate tears. .357 Magnum makes large ones [S19], [S54]. *⚠ not re-verified. Consistent with standard teaching [K].*
+9. Exit shapes: circular 31.6 %, stellate 27.6 %, irregular 24.5 %, slit 12.2 %, crescent 4.1 %. **Head exits skew stellate or irregular** [S12]. *⚠ not re-verified. The numbers match exactly n = 98 (31/27/24/12/4) ✓ (calc). Head weights must be renormalized (§4).*
+10. Skull: **internal bevel at entrance, external at exit**. Exits larger in 16/17 cases. No bevel on thin bones [S8]. *⚠ not re-verified. Bevel directions are standard [K]. The "16/17" may be conflated with the bevelling count.*
+11. Radial fractures outrun the bullet. Later fractures stop at earlier ones (**Puppe**) [S20], [S21]. *⚠ not re-verified. Physically plausible. Exceptions exist, so use p ≈ 0.95 rather than always.*
+12. **82 %** of lethal handgun or low-velocity head shots had anterior skull-base fractures [S23]. Raccoon eyes can appear within ~1 h, and clinically over 1–3 days [S24]. *⚠ not re-verified.*
+13. Low-energy (< 550 J) brain wounds: a **~3.6 cm destruction zone** around the track, axonal injury to **18 mm** [S25]. *⚠ not re-verified. "3.6 cm" could be a diameter (radius 18 mm, used here) or a radius (36 mm).*
+14. Back-spatter: **31–324** macro-droplets, max **72–119 cm**, bulk within **50 cm**, **13–61 m/s** (minimum estimates), emitted 0.7–4 ms after impact. Micro max **69 cm** [S27]. *⚠ not re-verified.*
+15. Forward spatter **47 ± 5 m/s**, cone **27 ± 9°**. Back-spatter **24 ± 8 m/s**, cone **57 ± 7°**. More droplets forward [S28]. *⚠ not re-verified. Probably foam or sponge targets, not heads [K].*
+16. Body knock-back from any small arm: **0.01–0.18 m/s** [S30]. *✓ verified (calc) from p = m·v.*
+17. Shotgun: single hole to ~1 m (**≈2 cm at point-blank, 3–4 cm by 1 m**), scalloped 1–2 m, satellites 2–4 m. Wad inside the wound < ~1.5 m. Petal marks (4 petals for common 12 ga cups). Wad marks to ~6 m [S37], [S47]. *⚠ not re-verified. Close-range size refined [K] (was "2.5–4 cm").*
+18. 00 buck = **9 × 8.4 mm**. #7.5 bird = **~350 × 2.4 mm** [S39]. *✓ verified (calc) for 00 buck mass (31.4 g). #7.5: 350 pellets ≈ 1 oz = 28 g (corrected: the load mass was 32 g, i.e. 1⅛ oz ≈ 395 pellets).*
+19. Facial GSW fractures: **maxilla 62 %, orbit 55 %, mandible 51 %** [S32]. Teeth and bone act as secondary missiles [S34]. *⚠ not re-verified. The self-contradictory "second series" (zygoma/orbit/nasal) was removed from §10.*
+20. Prehospital death **70–90 %**. Overall mortality ~91 %. Bihemispheric ~82 % [S43]. *⚠ not re-verified. Consistent with the StatPearls-level figure I know of (~90 % overall) [K].*
 
 ---
 
@@ -693,3 +715,58 @@ Secondary or lower-quality items cited only for context: ForensicSpot, behindthe
 - **No prompt-injection attempts were found.** None of the search results or snippets contained instructions to run commands, download or install anything, change files, visit other URLs or reveal information.
 - Every `WebFetch` attempt was refused by the network egress proxy (`EGRESS_BLOCKED`). No web page content was fetched. Nothing was downloaded or executed. No code was copied from the web.
 - Some search results pointed to patent PDFs (image-ppubs.uspto.gov), enthusiast forums and ammunition retailers. They were not opened and are not used as sources for load-bearing values, except where §13 marks them as low quality.
+- **Fact-check pass:** no web content was received at all. Every WebSearch call was refused because the session budget was used up (200/200). Every WebFetch call was refused by the egress proxy (see §15). So there was nothing to screen for injected instructions, and none were seen. Nothing was downloaded, installed or executed, and no shell commands were used.
+
+---
+
+## 15. Fact-check
+
+### 15.1 What could and could not be checked
+
+- **Web access was unavailable during the fact-check.** WebSearch refused every query because the session's search budget (200 calls) was already used up. WebFetch was blocked by the egress proxy (`EGRESS_BLOCKED`) for pubmed.ncbi.nlm.nih.gov, www.ncbi.nlm.nih.gov (PMC and Bookshelf/StatPearls), eutils.ncbi.nlm.nih.gov, europepmc.org, www.ebi.ac.uk, api.semanticscholar.org, api.crossref.org, link.springer.com, www.sciencedirect.com, en.wikipedia.org, www.forensicmed.co.uk, www.acepnow.com, dc.etsu.edu, asianmedjam.researchcommons.org and wikem.org. web.archive.org was refused by the fetch tool.
+- As a result, **no sourced number could be confirmed against a source that I found and read myself.** The check was limited to:
+  1. arithmetic and physics (unit conversions, ½mv², p = mv, lead-sphere mass, percentages, ±SD bands);
+  2. internal consistency between sections and tables;
+  3. comparison with standard forensic-pathology teaching from my own knowledge, tagged [K].
+- Rows are marked **✓ verified (calc)** only when arithmetic or physics independently confirms them. Everything else resting on a paper is **⚠ not re-verified**. Treat those rows as unchanged in reliability from v1, which was based on search snippets.
+- **Recommended next step:** before any number is shown to the player as a measurement, re-run this check with web access and read the abstracts of [S1], [S3], [S8], [S16], [S23], [S25], [S27], [S28] and [S46]. These carry the most weight and hold the ambiguities listed below.
+
+### 15.2 Per-claim verdicts (load-bearing list)
+
+| # | Claim | Verdict | Notes |
+|---|---|---|---|
+| 1 | 9 mm entrance 5.61 ± 0.57 / 3.33 ± 1.17 mm, 0.37–0.62 × Ø | Uncertain (source unreachable). Arithmetic ✓ | Added the ±1 SD envelope 0.24–0.69 × Ø. Porcine skin |
+| 2 | 72 % (23/32) 5.56 entrances round and smaller than Ø, micro-tears, no collar | Uncertain. 23/32 ✓ | — |
+| 3 | Ring : hole area 3 : 1 / 2.45 : 1 gives a collar of ~2–2.5 mm (9 mm) | **Corrected** to 1.6–2.4 mm | The ratio definition is ambiguous. Annulus-only gives 2.4 mm, total area gives 1.6 mm. The .22 LR collar was corrected from 1.5–2 to 0.8–1.8 mm |
+| 4 | Eccentric collar, widest toward the shooter | Uncertain. Consistent with [K] | — |
+| 5 | Handgun soot to 20–30 cm, absent ~40 cm, double for rifles | Uncertain. Consistent with [K] | **Corrected:** removed "absent at 274 cm" (a garbled value) |
+| 6 | Tattooing: 45–60 cm flake, 90 cm flattened ball, 120 cm ball | Uncertain | The sources in the file disagree on ball powder (120 vs 90 cm). Game default set to 90 cm, with a 120 cm sparse tail |
+| 7 | Stipple pattern 5.7–17.6 cm at 30 cm, ≥ 16.5 cm at 61 cm | Uncertain. Conversions ✓ | **Corrected** the derived formula, which missed the lower half of the range: now D = k·d, k 0.19–0.59, clamped ≥ 16.5 cm at ≥ 61 cm |
+| 8 | Living stipples red-orange/red-brown, non-wipeable. Post-mortem grey-yellow and fewer | Uncertain. Colours consistent with [K] | "Fewer" is unsupported, so it is now [G]. Added: loose unburned grains *can* be wiped off |
+| 9 | Contact over bone gives stellate tear, imprint, CO. .22 rarely stellate, .357 large | Uncertain. Consistent with [K] | Added: contact head entrances are often larger than the exit |
+| 10 | Exit shapes 31.6 / 27.6 / 24.5 / 12.2 / 4.1 % | Uncertain. Internally ✓ (n = 98) | **Corrected** the head-shift rule, which lacked renormalization (weights summed to 1.30) |
+| 11 | Rifle exit size depends on the temporary cavity at the exit plane | Uncertain. Consistent with [K] | — |
+| 12 | Bevelling inward at entrance, outward at exit. Exits larger 16/17. No bevel on thin bone | Uncertain. Directions consistent with [K] | Possible conflation: "16/17" is also used in §5.2 for the bevelling count |
+| 13 | Radials outrun the bullet. Puppe's rule | Uncertain. Physically plausible | **Corrected** `puppe_termination` from always to p ≈ 0.95 (exceptions are published) |
+| 14 | 82 % of 147 had anterior-base fractures. Raccoon eyes within ~1 h, clinically 1–3 days | Uncertain | — |
+| 15 | ~3.6 cm destruction zone, axonal damage to 18 mm | Uncertain | Diameter vs radius is ambiguous. Kept an 18 mm radius, flagged 36 mm as an alternative reading |
+| 16 | Back-spatter 31–324 drops, 72–119 cm, 13–61 m/s, 0.7–4 ms. Micro 69 cm, on gun/hand ≤ 40 cm | Uncertain | Clarified that 13–61 m/s are *minimum* estimates |
+| 17 | Forward 47 ± 5 m/s, 27 ± 9°. Back 24 ± 8 m/s, 57 ± 7° | Uncertain. ±SD bands ✓ | [K] recollection: foam or sponge targets, not heads |
+| 18 | Knock-back 0.01–0.18 m/s | **Confirmed by calculation** | p = mv for .22 LR, 7.62×51 and 00 buck gives 0.011–0.16 m/s for 80 kg |
+| 19 | Shotgun stages (single hole ≤ 1 m, scalloped 1–2, satellites 2–4). Wad ≤ 1.5–1.8 m. 4 petals. Marks ≤ 6 m. 00 buck 9 × 8.4 mm. #7.5 ~350 × 2.4 mm | Mixed | 00 buck mass/energy ✓ (calc). **Corrected** the #7.5 load: 350 pellets ≈ 28 g (1 oz), not 32 g, and energy ≈ 1,900 J, not 2,100. Close-range hole refined to ≈ bore size (2–2.5 cm) [K]. Stage ranges uncertain |
+| 20 | Facial fractures: maxilla 62 %, orbit 55 %, mandible 51 %. Secondary projectiles | Uncertain | **Corrected:** removed the self-contradictory "second series" sentence (orbit 20.5 % "second" after zygoma 13.7 %) |
+
+### 15.3 Other changes
+
+- `E_threshold_highvel` renamed `v_threshold_highvel`, because the value is in m/s.
+- Ammunition table: every grain-to-gram conversion and every ½mv² energy was recomputed and is consistent, ✓ verified (calc).
+- Intracranial width cap changed from 14–16 cm (closer to head width with scalp) to 12–13.5 cm endocranial breadth [K].
+- Shotgun checklist and mistakes table updated so the close-range hole is ≈2 cm, not golf-ball size throughout.
+
+### 15.4 Facts added to fill gaps (all [K], not web-verified)
+
+- `v_skin_perforation_min` ≈ 50–75 m/s (§2 table). Needed for spent pellets, ricochets and secondary fragments.
+- Contact head entrances are often larger than the exit (§3.5).
+- In angled contact, the soot or gas fan and gap lie down-range, while searing is heaviest on the shooter's side where the muzzle touched (§3.5).
+- Bone fragments are driven into the brain at the entrance and outward at the exit, as a cone along the first few cm (§5.4).
+- Loose unburned powder grains wipe off. Embedded grains and tattoo abrasions do not (§3.2).
