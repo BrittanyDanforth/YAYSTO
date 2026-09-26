@@ -242,6 +242,14 @@ damage = 0 returns the intact mesh. Carnage (9 hits) evaluates in ~4.5 s.
   Catmull-Rom curve-to-mesh (keep removing `hit_mat`, `g_pack` after use); skin damage shader is ~2.5× the cost of plain
   skin (close-ups take minutes on CPU).
 
+**Body review notes (2026-09-26, from fixer-round-1 renders; critics of the next body round must check these):**
+- Hands: fingers read as smooth sausages; nails are flat stuck-on rectangles (a sticker problem) — nails need a real
+  nail plate sunk into a nail fold with a cuticle, curved across and along, free edge. Toes stubby and blob-like.
+- Abs/torso: rectus blocks look carved-on and too blocky; body still reads as a smooth mannequin (needs subtle skin
+  folds, soft fat over muscle, pores/micro-normal).
+- Organs: still smooth clay; lungs read as folded sheets/plastic (need spongy lobed lungs with fissures); the fat apron
+  is a flat slab (needs lumpy lobular fat); heart too glossy/blobby. Skeleton too white/uniform (ivory, varied).
+
 ---
 
 ## 8. The anti-sticker rule (verbatim, give it to anyone who touches wounds)

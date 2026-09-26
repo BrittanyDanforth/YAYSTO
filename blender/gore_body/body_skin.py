@@ -599,8 +599,8 @@ def _shoulder(ax, y, z):
     sup = _fold(ax, y, z, (0.078, 0.094, 1.450), (0.184, 0.046, 1.458), 0.0125, 0.020)
     trap = smin(trap, sup, 0.022)
     # upper trapezius + levator scapulae over the superior angle of the scapula (it lies 1-2 cm deep, never
-    # palpable as a knob); a broad mass blended into the slope
-    sang = sd_oellipsoid(ax, y, z, (0.082, 0.066, 1.466), (0.034, 0.030, 0.034), np.eye(3))
+    # palpable as a knob); a broad mass blended into the slope, kept under the D19 seam plane (top 1.479)
+    sang = sd_oellipsoid(ax, y, z, (0.082, 0.068, 1.452), (0.034, 0.030, 0.027), np.eye(3))
     trap = smin(trap, sang, 0.030)
     # teres major / infraspinatus lower belly: fills the posterior axillary junction (no pit behind the arm)
     teres = _fold(ax, y, z, (0.105, 0.098, 1.360), GH + 0.070 * ARM_D + 0.020 * ARM_LAT + np.array([0.0, 0.030, 0.0]),

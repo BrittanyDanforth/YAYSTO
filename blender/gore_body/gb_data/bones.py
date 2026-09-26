@@ -32,7 +32,9 @@ CLAVICLE_WAYPOINTS = [(0.025, -0.040, 1.450), (0.070, -0.050, 1.452), (0.125, -0
 CLAVICLE_SECTION_MM = {"sternal": (25, 20), "mid": (13, 10), "acromial": (25, 10)}
 
 SCAPULA = {
-    "superior_angle": (0.080, 0.085, 1.475), "spine_root": (0.075, 0.095, 1.440),
+    # superior angle 7 mm below the raw table (T2 level): at 1.475 it sat 10 mm under the D19 seam plane, where
+    # the neck-shoulder slope cannot cover it with 5 mm of trapezius without rising above the seam (fix round 1)
+    "superior_angle": (0.080, 0.085, 1.468), "spine_root": (0.075, 0.095, 1.440),
     "inferior_angle": (0.085, 0.105, 1.325), "glenoid_centre": (0.156, 0.022, 1.415),
     "acromion_tip": (0.200, 0.015, 1.458), "acromion_posterior_angle": (0.180, 0.050, 1.455),
     "coracoid_tip": (0.135, -0.020, 1.425),
