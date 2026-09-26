@@ -71,7 +71,7 @@ OWN_WALL_MATERIAL = ("GH_Tongue",)
 DRIVEN_CONTROLS = ("damage", "bleed", "drip_time", "bruising", "swelling", "wound_age")
 
 ATTRS = ("gore_wound", "gore_depth", "gore_edge", "gore_blood",
-         "gore_bruise", "gore_burn", "gore_fracture")
+         "gore_bruise", "gore_burn", "gore_fracture", "gore_soot")
 
 
 # ---------------------------------------------------------------------------
@@ -482,6 +482,7 @@ KIND_INPUTS = (
     ("Normal", 'NodeSocketVector', None, None, None, "Surface normal at the impact in the hit frame"),
     ("Region", 'NodeSocketVector', None, None, None, "Region weights (scalp, face, neck) at the impact"),
     ("Age", 'NodeSocketFloat', 0.2, 0.0, 1.0, "Wound age (hours = 48 * age^2)"),
+    ("Bone Depth", 'NodeSocketFloat', 0.008, None, None, "Soft tissue thickness over the bone here (m)"),
 )
 KIND_OUTPUTS = (
     ("Cut", 'NodeSocketFloat'),        # signed distance to the hole outline (m), > 0 inside the hole
@@ -714,7 +715,18 @@ def _finish_kind(t, cut, disp=None, dispn=0.0, wall=None, center=None, wound=0.0
 
 
 def _build_bullet():
-    """Entry wound: small round hole, abrasion collar, bevelled bone, brain crater."""
+    """Entry wound (9 mm FMJ): small hole, abrasion collar, bevelled bone, brain track.
+
+    Research 01 / REALISM_BIBLE rows 1-6: the skin hole is SMALLER than the
+    bullet (skin recoils): scalp ~7.5 mm, face ~7 mm, neck ~5 mm; a crisp
+    red-brown abrasion collar 1.6-2.4 mm wide, concentric for a square hit and
+    widest toward the shooter for an oblique one (the hit plane makes oblique
+    holes elliptical by itself). The skull hole is LARGER than the skin hole
+    (outer table 1.0-1.2 x calibre) and bevels inward (inner table 1.3-2 x).
+    The skin wall runs down to the bone (per-vertex bone depth). Range of fire
+    (hit scale.y = muzzle distance in metres, default 1 m = distant): soot
+    within ~30 cm, stippling to ~90 cm, a stellate contact tear over bone.
+    """
     t = _kind_tree("GH_Gore_Bullet", "Bullet entry wound fields")
     c = _KindCtx(t)
     s, D = c.s, c.D
@@ -722,37 +734,74 @@ def _build_bullet():
     is_skin = c.is_layer(LAYER_SKIN)
     is_brain = c.is_layer(LAYER_BRAIN)
     opened = c.opened(c.lc(OPEN_AT))
-    r0 = s * 0.0045 * c.lc(BULLET_RF)
-    rag = t.noise(c.np * 900.0, detail=2.0)
-    # inward bevel: the inner table of the skull breaks out wider (cone)
-    r = r0 * (1.0 + rag * 0.16) + is_bone * (-c.w).max(0.0) * 0.8
+    rng = c.e                                          # muzzle distance (m)
+    reg = t.inp("Region")
+    k_hole = reg.x * 0.83 + reg.y * 0.78 + reg.z * 0.52
+    r0 = s * 0.0045 * k_hole
+    rag = t.noise(c.np * 900.0, detail=2.0)            # mean-preserving ragged edge
+    # contact shot over bone: gas under the skin tears it into a star
+    bd = t.inp("Bone Depth")
+    contact = t.smooth(0.03, 0.004, rng) * is_skin * t.smooth(0.014, 0.008, bd)
+    star = c.tears(4, width=(0.25, 0.5), length=(0.35, 1.0), sharp=1.3, wobble=0.15)
+    r_soft = r0 * (1.0 + rag * 0.14) * c.lc([1.0, 1.2, 0.0, 0.0, 1.0, 1.0, 1.0, 1.0]) \
+        + contact * star * s * 0.011
+    # bone: sized from the calibre, inward bevel (inner table 1.3-2x the outer)
+    r_outer = s * 0.0045 * (1.0 + 0.2 * c.hash(4))
+    ratio = 1.3 + 0.7 * c.hash(5)
+    slope = (ratio - 1.0) * r_outer / 0.0065
+    r_bone = r_outer * (1.0 + t.noise(c.np * 1800.0, detail=1.0) * 0.06) + (-c.w).max(0.0) * slope
+    r = t.mix(r_soft, r_bone, is_bone)
     cut = t.switch(opened.gt(0.5), -1.0, r - c.rho)
-    # abrasion collar (skin) / torn rim (deeper layers)
-    ecc = 1.0 + 0.45 * (c.theta - c.hash(2) * TAU).cos()
-    collar_w = s * 0.0022 * ecc * (1.0 + t.noise(c.np * 400.0) * 0.35)
-    edge = t.smooth(r + collar_w, r, c.rho) * is_skin + t.smooth(r + 0.0012, r, c.rho) * (1.0 - is_skin)
+    # abrasion collar: concentric at 90 degrees, widest toward the shooter
+    # when oblique (leading width = w / sin(incidence))
+    N = t.inp("Normal")
+    nz = N.z.max(0.15)
+    phi_s = t.math('ARCTAN2', -N.y, -N.x)
+    ecc = (1.0 / nz - 1.0).min(7.0)
+    toward = t.math('COSINE', c.theta - phi_s).max(0.0) ** 1.5
+    w_c = s * 0.002 * (1.0 + 0.15 * t.noise(c.np * 400.0)) * (1.0 + ecc * toward)
+    collar = t.smooth(r + w_c, r + w_c * 0.75, c.rho)
+    edge = collar * is_skin * (1.0 - contact) + t.smooth(r + 0.0009, r, c.rho) * (1.0 - is_skin)
+    # range of fire: stippling (burnt powder grains, abrasions that do not
+    # wipe off) and soot (grey-black, wipes off) around close shots
+    st_amt = t.smooth(0.95, 0.35, rng) * t.smooth(0.004, 0.02, rng)
+    r_st = 0.006 + 0.12 * rng
+    vd = t.voronoi(c.np, 2600.0, 'F1', 1.0)
+    dcell = t.sep(t.vmath('ADD', t.out(vd, 'Color'), (0, 0, 0)))[0]
+    dens = st_amt * t.smooth(r_st, r_st * 0.15, c.rho - r) * 0.55
+    dots = t.smooth(0.32, 0.12, t.out(vd, 'Distance')) * dcell.lt(dens).max(0.0)
+    edge = edge.max(dots * is_skin * opened)
+    soot_amt = t.smooth(0.32, 0.03, rng) * (1.0 - contact * 0.4)
+    r_soot = 0.004 + 0.06 * rng
+    soot = soot_amt * t.smooth(r + r_soot * 1.6, r, c.rho + t.noise(c.np * 150.0, detail=2.0) * r_soot * 0.5) \
+        * (0.55 + 0.45 * t.noise(c.np * 700.0, detail=2.0, signed=False)) * is_skin * opened
+    # contact: seared blackened margin and the muzzle imprint around it
+    imprint = contact * t.smooth(0.0006, 0.0, t.math('ABSOLUTE', c.rho - s * 0.0065)) * 0.8
+    edge = edge.max(imprint)
+    sear = contact * t.smooth(r + 0.0025, r, c.rho)
     edge = edge * opened
-    # inverted rim: entry wounds are pushed slightly inward
-    dent = t.smooth(r * 2.6, r, c.rho) * opened * is_skin * s * -0.0007
+    # inverted margin: entry wounds are pushed slightly inward
+    dent = t.smooth(r * 2.2, r, c.rho) * opened * is_skin * s * -0.0005
     # tissue exposed under the hole of the layer above
-    r_above = s * 0.0045 * c.lc(ABOVE_RF) * 1.1
+    r_above = s * 0.0045 * 1.25
     exposed = t.smooth(r_above * 1.2, r_above * 0.8, c.rho) * c.opened(c.lc(ABOVE_OPEN_AT))
     wound = (t.smooth(r + 0.0005, r, c.rho) * opened).max(exposed)
-    # blood: small pool running down on the skin, the whole exposed area below
+    # blood: a small pool running down from the lower rim
     bleed = t.inp("Bleed")
-    pool_r = s * 0.0055 * (0.5 + bleed)
-    pool = c.pool(c.L, pool_r, bleed * opened, drop=r0 * 1.4)
-    blood = (pool * is_skin).max(exposed * 0.9).max(edge * 0.45 * bleed)
-    # brain: deep crater / tunnel along the track
+    pool = c.pool(c.L, s * 0.0045 * (0.5 + bleed), bleed * opened, drop=r0 * 1.3)
+    blood = (pool * is_skin).max(exposed * 0.9).max(collar * is_skin * opened * 0.25 * bleed)
+    # brain: permanent track ~11 mm across, haemorrhagic tissue out to r = 18 mm
     crat = t.smooth(0.88, 0.97, D) * is_brain
-    rc = s * 0.0068
+    rc = s * 0.0055
     x = (c.rho / rc).min(1.0)
-    prof = (1.0 - x * x) ** 2.0
+    prof = (1.0 - x * x) ** 1.5
     lump = 1.0 + t.noise(c.np * 500.0) * 0.35
-    crater_z = crat * prof * lump * (0.008 + 0.014 * s) * -1.0
-    brain_w = t.smooth(1.25, 0.8, c.rho / rc) * crat
-    wound = wound.max(brain_w)
-    blood = blood.max(brain_w)
+    crater_z = crat * prof * lump * (0.012 + 0.012 * s) * -1.0
+    brain_w = t.smooth(rc * 1.3, rc * 0.8, c.rho + t.noise(c.np * 300.0) * 0.0015) * crat
+    haem = t.smooth(0.018, 0.005, c.rho + t.noise(c.np * 200.0, detail=2.0) * 0.004) * crat \
+        * (0.35 + 0.4 * t.smooth(-0.2, 0.4, t.noise(c.np * 260.0, detail=2.0)))
+    wound = wound.max(brain_w).max(haem * 0.6)
+    blood = blood.max(brain_w).max(haem)
     # eye: ruptured globe, partly collapsed and flooded with blood
     is_eye = c.is_layer(LAYER_EYE) * opened
     collapse = is_eye * s * -0.0022 * t.smooth(s * 0.011, 0.0, c.rho)
@@ -760,15 +809,24 @@ def _build_bullet():
     blood = blood.max(eye_blood)
     wound = wound.max(eye_blood * t.smooth(s * 0.007, s * 0.004, c.rho))
     disp = t.vec(0.0, 0.0, dent + crater_z + collapse)
-    # walls: straight down with a little convergence; bone flares outward (bevel)
+    # walls: the skin tube runs down to the bone (so no gap shows between the
+    # layers); bone flares outward (inward bevel)
     tw = c.lc(LAYER_WALL)
-    wall = c.radial * (is_bone * tw * 0.8 - (1.0 - is_bone) * r * 0.12) + t.vec(0.0, 0.0, -tw)
-    _finish_kind(t, cut, disp=disp, wall=wall, center=c.center, wound=wound, edge=edge, blood=blood)
+    wl = t.mix(tw, bd.max(0.002) + 0.0004, is_skin)
+    wall = c.radial * (is_bone * slope * tw - (1.0 - is_bone) * r * 0.1) + t.vec(0.0, 0.0, -wl)
+    _finish_kind(t, cut, disp=disp, wall=wall, center=c.center, wound=wound, edge=edge, blood=blood,
+                 burn=sear * 0.75, fracture=soot)
     return t
 
 
 def _build_exit():
-    """Exit wound: large star-shaped tear with everted flaps, jagged bone."""
+    """Exit wound (9 mm FMJ through the head): 10-30 mm, torn outward, no collar.
+
+    Shape class by weighted chance (research 01 / REALISM_BIBLE row 7):
+    circular 25 %, stellate 33 %, irregular 30 %, slit 9 %, crescent 3 %.
+    The margins are everted by at most ~4 mm, frayed; the bone is bevelled
+    outward with jagged edges; brain tissue herniates through the defect.
+    """
     t = _kind_tree("GH_Gore_Exit", "Exit wound fields")
     c = _KindCtx(t)
     s, D = c.s, c.D
@@ -777,65 +835,75 @@ def _build_exit():
     is_brain = c.is_layer(LAYER_BRAIN)
     evert_amt = c.lc([1.0, 0.55, 0.35, 0.35, 0.0, 0.0, 0.0, 0.3])
     opened = c.opened(c.lc(OPEN_AT))
-    R = s * 0.014 * c.lc(EXIT_RF)
-    # irregular stellate tear: 6 tapered splits at random angles and lengths
-    # around a ragged central defect
-    star, tear_phi = c.tears(6, width=(0.22, 0.55), length=(0.25, 1.0), sharp=1.6, wobble=0.12, with_angle=True)
-    ring = t.vec(c.theta.cos() * 1.1, c.theta.sin() * 1.1, c.seed * 11.0)
-    core = 0.34 + 0.16 * t.noise(ring, detail=2.0, signed=False)
-    rag = t.noise(c.np * 600.0, detail=2.0)
-    jag = t.noise(c.np * 2200.0, detail=1.0)           # bone breaks with sharp small teeth
-    r = R * (core + 0.8 * star) + s * 0.0006 * rag + is_bone * R * 0.16 * jag
+    # half span, capped at 15 mm (30 mm across)
+    R = (s * 0.0105 * (0.8 + 0.45 * c.hash(7))).min(0.015) * c.lc(EXIT_RF)
+    theta = c.theta
+    ring = t.vec(theta.cos() * 1.1, theta.sin() * 1.1, c.seed * 11.0)
+    lf = t.noise(ring, detail=2.0, signed=False)
+    lf2 = t.noise(ring * 1.7 + t.vec(3.3, 1.1, 0.0), detail=3.0, signed=False)
+    star, tear_phi = c.tears(5, width=(0.2, 0.5), length=(0.3, 1.0), sharp=1.6, wobble=0.12, with_angle=True)
+    phi0 = c.hash(8) * TAU
+    dphi = theta - phi0
+    r_circ = R * (0.6 + 0.16 * lf)
+    r_star = R * (0.26 + 0.12 * lf + 0.72 * star)
+    r_irr = R * (0.32 + 0.62 * lf2)
+    a_, b_ = R * 0.95, R * 0.24
+    r_slit = a_ * b_ / ((b_ * dphi.cos()) ** 2.0 + (a_ * dphi.sin()) ** 2.0).sqrt().max(1e-7)
+    r_cres = R * (0.3 + 0.62 * t.smooth(-0.3, 0.7, dphi.cos())) * (0.85 + 0.2 * lf)
+    h = c.hash(6)
+    cls = h.gt(0.25).max(0.0) + h.gt(0.58).max(0.0) + h.gt(0.88).max(0.0) + h.gt(0.97).max(0.0)
+    r = t.pick(t.math('FLOOR', cls + 0.5), [r_circ, r_star, r_irr, r_slit, r_cres])
+    is_star = t.compare('EQUAL', t.math('FLOOR', cls + 0.5), 1.0)
+    # torn tissue: frayed margins (skin), sharp small teeth (bone)
+    rag = t.noise(c.np * 650.0, detail=2.0) * 0.0007 + t.noise(c.np * 2300.0, detail=1.0) * 0.00025
+    jag = t.noise(c.np * 2200.0, detail=1.0)
+    r = r + s * rag * (1.0 - is_bone) + is_bone * R * 0.12 * jag
     # outward bevel on bone: the outer table is blown out wider
     r = r + is_bone * (c.w + c.lc(LAYER_WALL)).max(0.0) * 0.6
     cut = t.switch(opened.gt(0.5), -1.0, r - c.rho)
     d_out = c.rho - r
-    flap = t.smooth(R * 0.95, 0.0, d_out) * opened
-    tip = 1.0 - star.min(1.0)                           # flaps sit between the tears
-    curl = 0.75 + t.noise(c.np * 300.0) * 0.45
-    lift = flap * flap * s * 0.0075 * (0.45 + 0.85 * tip) * curl * evert_amt
-    disp_evert = t.vec(0.0, 0.0, lift) + c.radial * (lift * 0.55)
-    edge_lift = s * 0.0075 * (0.45 + 0.85 * tip) * curl * evert_amt * opened
+    # everted flaps: lifted <= ~4 mm right at the margin, fading within ~R/2
+    flap = t.smooth(R * 0.55, 0.0, d_out) * opened
+    tip = t.switch(is_star, 0.6, 1.0 - star.min(1.0))
+    curl = 0.8 + t.noise(c.np * 110.0, detail=1.0) * 0.35
+    lift = flap * flap * s.min(1.3) * 0.0028 * (0.5 + 0.5 * tip) * curl * evert_amt
+    disp_evert = t.vec(0.0, 0.0, lift) + c.radial * (lift * 0.45)
+    edge_lift = s.min(1.3) * 0.0028 * (0.5 + 0.5 * tip) * curl * evert_amt * opened
     # brain: pulped tissue herniating out toward the skull defect, a torn
     # track in the middle
     crat = t.smooth(0.84, 0.95, D) * is_brain
-    rc = s * 0.012
+    rc = R * 0.8
     x = (c.rho / rc).min(1.0)
     pulp = t.noise(c.np * 380.0, detail=3.0)
     lumps = t.noise(c.np * 900.0, detail=2.0)
     track = t.smooth(0.35, 0.1, x)
     crater_z = crat * (((1.0 - x * x) ** 1.5) * s * (0.0065 + pulp * 0.0035 + lumps * 0.0012) - track * s * 0.012)
     brain_w = t.smooth(1.2, 0.75, c.rho / rc + pulp * 0.1) * crat * t.smooth(-0.35, 0.25, pulp).max(track)
-    # the herniated brain must still read as brain: blood lies in streaks and
-    # clots over pulped grey-pink tissue, only the torn track is full of blood
     brain_blood = brain_w * (0.25 + 0.5 * t.smooth(-0.1, 0.45, t.noise(c.np * 240.0, detail=2.0))) \
         + track * crat * 0.7
     disp = disp_evert + t.vec(0.0, 0.0, crater_z)
-    # tissue exposure, torn edge, fracture
-    r_above = s * 0.014 * c.lc(ABOVE_RF) * 0.8
+    # tissue exposure, torn edge (no abrasion collar at an exit), fracture
+    r_above = R * 0.75
     exposed = t.smooth(r_above * 1.25, r_above * 0.7, c.rho) * c.opened(c.lc(ABOVE_OPEN_AT))
-    edge = t.smooth(s * 0.0035, 0.0, d_out) * opened
-    # raw torn dermis along the margin of the tear
-    # (exposed brain around the pulp stays mostly intact tissue: gyri visible)
-    wound = (t.smooth(s * 0.0016, 0.0, d_out + t.noise(c.np * 700.0) * 0.0006) * opened) \
+    edge = t.smooth(0.0012, 0.0, d_out) * opened * (1.0 - is_skin * 0.6)
+    wound = (t.smooth(s * 0.0014, 0.0, d_out + t.noise(c.np * 700.0) * 0.0006) * opened) \
         .max(exposed * (1.0 - is_brain * 0.65)).max(brain_w)
     lines, _plate = c.cracks(R, n_around=8.0, width=0.00045)
     frac = lines * t.smooth(R * 3.0, R * 1.1, c.rho) * is_bone * opened
     frac = frac.max(t.smooth(s * 0.004, 0.0, d_out) * is_bone * opened)
     bleed = t.inp("Bleed")
-    pool = c.pool(c.L, s * 0.012 * (0.5 + bleed), bleed * opened, drop=R * 0.7)
-    flap_blood = flap * flap * (0.3 + 0.45 * bleed) * t.smooth(-0.3, 0.45, t.noise(c.np * 330.0))
+    pool = c.pool(c.L, R * (0.5 + bleed), bleed * opened, drop=R * 0.6)
+    flap_blood = flap * (0.35 + 0.5 * bleed) * t.smooth(-0.35, 0.35, t.noise(c.np * 330.0))
     blood = (pool * is_skin).max(flap_blood).max(exposed * (1.0 - is_brain * 0.6)).max(brain_blood)
     tw = c.lc(LAYER_WALL)
-    # a lifted flap is only skin-thick: its wall does not reach back down to the muscle
-    # walls: the ragged core narrows a little toward the axis, the narrow tears
-    # close in a V toward their own line (so their two sides never cross)
+    # walls: the core narrows toward the axis, the narrow tears of a stellate
+    # exit close in a V toward their own line (their two sides never cross)
     tdx, tdy = tear_phi.cos(), tear_phi.sin()
     ta = (c.u * tdx + c.v * tdy).max(0.0)
     to_line = t.vec(tdx * ta, tdy * ta, 0.0) - t.vec(c.u, c.v, 0.0)
-    in_tear = t.bool('AND', star.gt(0.12), c.rho.gt(R * (core + 0.08)))
+    in_tear = t.bool('AND', t.bool('AND', star.gt(0.12), c.rho.gt(R * 0.42)), is_star)
     center = t.switch(in_tear, c.center, to_line, 'VECTOR')
-    conv = t.switch(in_tear, 0.22, 0.8) * (1.0 - is_bone)
+    conv = t.switch(in_tear, 0.2, 0.8) * (1.0 - is_bone)
     wall = t.vec(0.0, 0.0, -(tw + edge_lift * 0.25)) + center * conv - c.radial * (is_bone * tw * 0.6)
     _finish_kind(t, cut, disp=disp, wall=wall, center=center, wound=wound, edge=edge,
                  blood=blood, fracture=frac)
@@ -1201,7 +1269,7 @@ class _Hit:
         self.N, self.T, self.R = smp("hit_N"), smp("hit_T"), smp("hit_R")
         # damage grows the wounds; at damage 0 the whole system is bypassed
         self.s = S.x * (0.3 + 0.7 * damage)
-        self.e = S.y.max(0.05)
+        self.e = S.y.max(0.004)
         self.D = S.z * damage
         P = P if P is not None else t.pos()
         d = P - self.I
@@ -1365,9 +1433,9 @@ def _drip_seeds(t, pts, kind, kind_id, damage, bleed, drip):
     ease = drip ** 0.85
     # the first run is the long one; others stop early (a small volume runs
     # 3-10 cm and stops, REALISM_BIBLE row 19)
-    lfac = t.switch(first, 0.1 + 0.9 * r2 * r2, 0.75 + 0.25 * r2)
+    lfac = t.switch(first, 0.05 + 0.6 * r2 * r2 * r2, 0.75 + 0.25 * r2)
     d_len = s.sqrt() * lmax * lfac * (0.35 + 0.65 * bleed) * ease
-    d_w = width * (0.6 + 0.7 * r3) * (0.8 + 0.2 * s) * t.switch(first, 0.8, 1.0)
+    d_w = width * (0.45 + 0.8 * r3 * r3) * (0.8 + 0.2 * s) * t.switch(first, 0.7, 1.0)
     g = t.out(t.node('GeometryNodeSetPosition', {'Geometry': g, 'Position': p0}))
     g = t.store(g, "d_len", d_len)
     g = t.store(g, "d_w", d_w)
@@ -1486,22 +1554,29 @@ def _build_blood():
 # Bone fragments and teeth
 # ---------------------------------------------------------------------------
 def _build_fragments():
-    """Bone chips blown out of skull breaches (exit wounds, crushed blunt hits)."""
+    """Bone chips: carried outward into the scalp at exits and crushed blunt
+    hits, and a cone of inner-table chips driven into the brain behind a
+    bullet entrance (REALISM_BIBLE rows 10, 21). Chips are 2-20 mm plates of
+    both tables with spongy bone between (material shows the broken diploe)."""
     t = NodeTree("GH_Gore_Fragments",
                  inputs=(("Exit", 'NodeSocketGeometry'), ("Blunt", 'NodeSocketGeometry'),
+                         ("Bullet", 'NodeSocketGeometry'),
                          ("Damage", 'NodeSocketFloat', 1.0), ("Material", 'NodeSocketMaterial')),
                  outputs=(("Geometry", 'NodeSocketGeometry'),),
                  description="Bone fragments around skull breaches")
     damage = t.inp("Damage")
     parts = []
-    # chips stay inside the wound: lifted at most ~5 mm (the scalp over the
-    # outer table is ~6 mm), so none float above the skin around the hole
-    for kid, (kind, count, rb, lift_max, lift_min) in enumerate((("Exit", 11.0, 0.0072, 0.005, 0.0004),
-                                                                  ("Blunt", 6.0, 0.0045, -0.001, -0.0025))):
+    # (kind, count, ring radius, lift max, lift min, size min, size max)
+    # exit chips stay inside the wound (lifted at most ~4 mm); entrance chips
+    # lie 2-14 mm below the outer table, spreading in a cone
+    specs = (("Exit", 10.0, 0.0058, 0.003, 0.0, 0.001, 0.005),
+             ("Blunt", 6.0, 0.0045, -0.001, -0.0025, 0.0008, 0.003),
+             ("Bullet", 7.0, 0.0, -0.016, -0.007, 0.0006, 0.0018))
+    for kid, (kind, count, rb, lift_max, lift_min, sz0, sz1) in enumerate(specs):
         S = t.attr("hit_S", 'FLOAT_VECTOR')
         s = S.x * (0.3 + 0.7 * damage)
         D = S.z * damage
-        thr = 0.8 if kind == "Exit" else 0.95
+        thr = {"Exit": 0.8, "Blunt": 0.95, "Bullet": 0.85}[kind]
         # only on the bone the hit actually reached (not skull AND jaw)
         amount = D.gt(thr) * count * t.attr("hit_ok")
         dup = t.node('GeometryNodeDuplicateElements', {'Geometry': t.inp(kind), 'Amount': amount},
@@ -1514,25 +1589,34 @@ def _build_fragments():
         rs = t.rand(0.0, 1.0, idx, 14 + kid)
         I = t.attr("hit_I", 'FLOAT_VECTOR')
         X, Y, Z = (t.attr(n, 'FLOAT_VECTOR') for n in ("hit_X", "hit_Y", "hit_Z"))
-        r = s * rb * (0.8 + 0.6 * rr)
-        lift = lift_min + (lift_max - lift_min) * rl ** 4.0
+        if kind == "Bullet":
+            lift = lift_min + (lift_max - lift_min) * rl
+            r = 0.0015 + (-lift) * 0.35 * rr        # cone opening inward
+        else:
+            lift = lift_min + (lift_max - lift_min) * rl ** 4.0
+            r = s * rb * (0.25 + 0.75 * rr)
         pos = I + (X * a.cos() + Y * a.sin()) * r + Z * lift
         g = t.out(t.node('GeometryNodeSetPosition', {'Geometry': g, 'Position': pos}))
-        sz = s.sqrt() * (0.0007 + 0.0016 * rs * rs)
+        sz = s.sqrt() * (sz0 + (sz1 - sz0) * rs ** 2.5)
         rot = t.out(t.node('FunctionNodeEulerToRotation',
                            {'Euler': t.rand((0, 0, 0), (TAU, TAU, TAU), idx, 15 + kid, 'FLOAT_VECTOR')}))
-        chip = t.out(t.node('GeometryNodeMeshIcoSphere', {'Radius': 1.0, 'Subdivisions': 1}))
+        chip = t.out(t.node('GeometryNodeMeshIcoSphere', {'Radius': 1.0, 'Subdivisions': 2}))
+        # plates of both tables: ~2-4 mm thick however wide the chip is
+        thick = (sz * 0.45).min(0.0018)
         inst = t.node('GeometryNodeInstanceOnPoints', {'Points': g, 'Instance': chip, 'Rotation': rot,
-                                                       'Scale': t.vec(sz * 1.6, sz * 1.1, sz * 0.4)})
+                                                       'Scale': t.vec(sz * 1.5, sz * (0.8 + 0.5 * rr), thick)})
         parts.append(t.out(inst))
     jn = t.node('GeometryNodeJoinGeometry')
     for p in parts:
         t.links.new(p.s, jn.inputs[0])
     g = t.out(t.node('GeometryNodeRealizeInstances', {'Geometry': t.out(jn)}))
+    # break up the ico-sphere facets: irregular broken plates
+    jit = t.noise(t.pos() * 900.0, detail=2.0, color=True) * 0.0003
+    g = t.out(t.node('GeometryNodeSetPosition', {'Geometry': g, 'Offset': jit}))
     g = t.out(t.node('GeometryNodeSetShadeSmooth', {'Mesh': g, 'Shade Smooth': False}))
     g = t.out(t.node('GeometryNodeSetMaterial', {'Geometry': g, 'Material': t.inp("Material")}))
-    g = t.store(g, "g_a", (1.0, 0.25, 0.35), 'FLOAT_VECTOR')
-    g = t.store(g, "g_b", (0.0, 0.0, 0.8), 'FLOAT_VECTOR')
+    g = t.store(g, "g_a", (1.0, 0.25, 0.45), 'FLOAT_VECTOR')
+    g = t.store(g, "g_b", (0.0, 0.0, 0.6), 'FLOAT_VECTOR')
     g = t.store(g, "g_wk", 1.0)
     t.result("Geometry", g)
     t.layout()
@@ -1686,7 +1770,9 @@ def _build_wound_step(kind, kind_group):
                               "Bruising": t.inp("Bruising"), "Bleed": t.inp("Bleed"),
                               "Tension": t.vec(h.T.dot(h.X), h.T.dot(h.Y), h.T.dot(h.Z)),
                               "Normal": t.vec(h.N.dot(h.X), h.N.dot(h.Y), h.N.dot(h.Z)),
-                              "Region": h.R, "Age": t.inp("Age")})
+                              "Region": h.R, "Age": t.inp("Age"),
+                              "Bone Depth": t.switch(t.attr("gh_bone_depth").gt(0.0005), 0.008,
+                                                     t.attr("gh_bone_depth"))})
 
     def o(name):
         return t.out(kn, name)
@@ -1884,7 +1970,7 @@ def _build_attributes():
     p = t.pos()
     wn = t.noise(p * 330.0, detail=3.0, signed=False)
     wn2 = t.noise(p * 90.0, detail=2.0, signed=False)
-    wall_blood = (t.pick(layer, [0.62, 0.6, 0.3, 0.3, 0.5, 0.7, 0.3, 0.6]) * (0.35 + 0.65 * fr)
+    wall_blood = (t.pick(layer, [0.62, 0.6, 0.3, 0.3, 0.5, 0.7, 0.3, 0.6]) * (0.5 + 0.5 * fr)
                   + (wn - 0.5) * 0.9 + (wn2 - 0.5) * 0.4).clamp()
     vals = {
         "gore_wound": a.x.max(wallf).clamp(),
@@ -1893,7 +1979,9 @@ def _build_attributes():
         "gore_blood": t.mix(wallf, a.z.max(t.attr("g_tb")), wall_blood.max(a.z * 0.5)).clamp(),
         "gore_bruise": b.x.clamp(),
         "gore_burn": b.y.clamp(),
-        "gore_fracture": b.z.clamp(),
+        # the last channel is bone fracture on bone, gunpowder soot on the skin
+        "gore_fracture": (b.z * t.pick(layer, [0.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0])).clamp(),
+        "gore_soot": (b.z * t.pick(layer, [1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0])).clamp(),
     }
     g = t.inp("Geometry")
     for name in ATTRS:
@@ -1985,7 +2073,8 @@ def build_gore_node_group():
     a = t.attr("g_a", 'FLOAT_VECTOR')
     g_sk = t.store(g, "g_a", t.vec(a.x, a.y, a.z.max(trail_cov)), 'FLOAT_VECTOR', sel=near_hits)
     g = t.switch(is_skin, g, g_sk, 'GEOMETRY')
-    fn = t.group(frag_g, {"Exit": hits["exit"][0], "Blunt": hits["blunt"][0], "Damage": damage,
+    fn = t.group(frag_g, {"Exit": hits["exit"][0], "Blunt": hits["blunt"][0], "Bullet": hits["bullet"][0],
+                          "Damage": damage,
                           "Material": t.inp("Bone Material")})
     g = _join(t, g, t.switch(is_bone, empty, t.out(fn), 'GEOMETRY'))
     # 5. contract attributes
@@ -2150,6 +2239,55 @@ def _wall_materials(mats):
     return walls, blood, bone
 
 
+BONE_DEPTH_LAYERS = ("GH_Skin", "GH_Muscle", "GH_MouthCavity")
+
+
+def bake_bone_depth(objs):
+    """Store `gh_bone_depth` on the soft-tissue layers: the distance from each
+    vertex straight in (along -normal) to the skull or jaw, in metres.
+
+    Wound walls use it to reach exactly down to the bone (no gap between the
+    layers, no wall poking through the bone). Computed from the base meshes,
+    so it is static anatomy data. Vertices with no bone within 30 mm (the
+    neck) get 12 mm.
+    """
+    import numpy as np
+    from mathutils.bvhtree import BVHTree
+    bones = [objs.get(n) or bpy.data.objects.get(n) for n in ("GH_Skull", "GH_Jaw")]
+    bones = [b for b in bones if b is not None and b.type == 'MESH']
+    if not bones:
+        return
+    verts, polys = [], []
+    for b in bones:
+        me = b.data
+        co = np.empty(len(me.vertices) * 3)
+        me.vertices.foreach_get("co", co)
+        co = co.reshape(-1, 3) @ np.array(b.matrix_world.to_3x3()).T + np.array(b.matrix_world.translation)
+        base = len(verts)
+        verts.extend(map(Vector, co))
+        polys.extend([base + i for i in p.vertices] for p in me.polygons)
+    bvh = BVHTree.FromPolygons(verts, polys)
+    for name in BONE_DEPTH_LAYERS:
+        ob = objs.get(name) or bpy.data.objects.get(name)
+        if ob is None or ob.type != 'MESH':
+            continue
+        me = ob.data
+        n = len(me.vertices)
+        co = np.empty(n * 3)
+        me.vertices.foreach_get("co", co)
+        nr = np.empty(n * 3)
+        me.vertices.foreach_get("normal", nr)
+        co, nr = co.reshape(-1, 3), nr.reshape(-1, 3)
+        depth = np.full(n, 0.012, np.float32)
+        ray = bvh.ray_cast
+        for i in range(n):
+            loc, _nrm, _idx, dist = ray(Vector(co[i]), Vector(-nr[i]), 0.03)
+            if loc is not None:
+                depth[i] = dist
+        att = me.attributes.get("gh_bone_depth") or me.attributes.new("gh_bone_depth", 'FLOAT', 'POINT')
+        att.data.foreach_set("value", depth)
+
+
 def build_gore_system(objs=None, mats=None):
     """Add the live GH_Gore modifier to every damageable layer.
 
@@ -2164,6 +2302,9 @@ def build_gore_system(objs=None, mats=None):
             objs[name] = bpy.data.objects[name]
     cols = ensure_hit_collections()
     ctrl = ghc.ensure_controls()
+    t0 = time.time()
+    bake_bone_depth(objs)
+    print(f"[gore] bone depth baked in {time.time() - t0:.1f} s")
     ng = bpy.data.node_groups.get(GROUP_NAME)
     if ng is None or ng.get("gh_gore_version") != _GROUP_VERSION:
         ng = build_gore_node_group()
@@ -2203,7 +2344,7 @@ def build_gore_system(objs=None, mats=None):
     return {"node_group": ng, "modifiers": mods, "collections": cols, "controls": ctrl}
 
 
-_GROUP_VERSION = 4
+_GROUP_VERSION = 5
 
 
 # ---------------------------------------------------------------------------
@@ -2636,7 +2777,7 @@ def verify_gore(objs=None):
         me.attributes[a].data.foreach_get("value", vals)
         stats[a] = sum(1 for v in vals if v > 0.5)
     skin.evaluated_get(dg).to_mesh_clear()
-    check("skin attributes non-trivial", all(stats[a] > 0 for a in ATTRS if a != "gore_fracture"),
+    check("skin attributes non-trivial", all(stats[a] > 0 for a in ATTRS if a not in ("gore_fracture", "gore_soot")),
           ", ".join(f"{k[5:]}>{0.5}:{v}" for k, v in stats.items()))
     wounded = {n: _mesh_signature(o) for n, o in objs.items()}
     # damage 0 == no hits

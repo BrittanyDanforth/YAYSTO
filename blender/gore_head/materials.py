@@ -835,7 +835,7 @@ def _skin_material(g, name="GH_Skin"):
     bone = t.group(g["bone"], {"Vector": p, "Wetness": wet})
     dn = depth + (t.noise(p, 380.0, 3.0, 0.6) - 0.5) * 0.4
     f_fat, f_mus, f_bone = dn.smooth(0.10, 0.16), dn.smooth(0.50, 0.57), dn.smooth(0.92, 0.98)
-    dermis = t.mix(t.noise(p, 900.0, 2.0), (0.62, 0.40, 0.35), (0.74, 0.54, 0.48))
+    dermis = t.mix(t.noise(p, 900.0, 2.0), (0.52, 0.30, 0.25), (0.64, 0.43, 0.37))
     tis = t.mix(f_fat, dermis, fat["Color"])
     tis = t.mix(f_mus, tis, mus["Color"])
     fresh_bone = t.mix(t.noise(p, 250.0).smooth(0.35, 0.55), bone["Color"] * (0.85, 0.68, 0.62),
@@ -1002,7 +1002,7 @@ def _fat_material(g):
     dj = d + (t.noise(p, 500.0) - 0.5) * 0.06
     # the top of the wall is the dermis: dense, pale pink-white
     dm = (1.0 - dj.smooth(0.10, 0.16)) * d.smooth(0.0, 0.02)
-    dermis = t.mix(t.noise(p, 900.0), (0.62, 0.40, 0.35), (0.74, 0.54, 0.48))
+    dermis = t.mix(t.noise(p, 900.0), (0.52, 0.30, 0.25), (0.64, 0.43, 0.37))
     col = t.mix(dm, f["Color"], dermis)
     # deep in a cut: muscle (dark red, blood-soaked)
     fm = dj.smooth(0.58, 0.68)
