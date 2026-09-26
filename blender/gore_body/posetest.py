@@ -381,25 +381,30 @@ def section_png(md, mats, point, normal, up, half_extent, path, px=640, layers=N
 # ---------------------------------------------------------------------------
 # Renders
 # ---------------------------------------------------------------------------
-# name: (pose, camera location, target, lens)
+# name: (pose, camera location, target, lens); "_clear" limbs are moved out of the camera's way
+_ARM_UP = {"upper_arm_L": [("abd", 55.0)]}
 RENDERS = {
-    "elbow_145": ({"forearm_L": [("flex", 145.0)]}, (0.62, 0.30, 1.22), (0.33, 0.0, 1.17), 55.0),
-    "elbow_145_front": ({"forearm_L": [("flex", 145.0)]}, (0.40, -0.55, 1.20), (0.33, -0.02, 1.17), 55.0),
-    "knee_135": ({"shin_L": [("flex", 135.0)]}, (0.62, -0.25, 0.52), (0.10, 0.05, 0.48), 50.0),
-    "knee_135_front": ({"shin_L": [("flex", 135.0)]}, (0.25, -0.62, 0.62), (0.09, 0.0, 0.47), 50.0),
-    "shoulder_abd_90": ({"upper_arm_L": [("abd", 90.0)]}, (0.30, -0.75, 1.45), (0.22, 0.02, 1.40), 50.0),
-    "shoulder_abd_90_back": ({"upper_arm_L": [("abd", 90.0)]}, (0.35, 0.80, 1.50), (0.20, 0.03, 1.40), 50.0),
-    "hip_flex_110": ({"thigh_L": [("flex", 110.0)]}, (0.85, 0.10, 0.85), (0.08, -0.05, 0.90), 45.0),
-    "hip_flex_110_back": ({"thigh_L": [("flex", 110.0)]}, (0.55, 0.75, 0.75), (0.07, 0.05, 0.88), 45.0),
-    "pronation_80": ({"hand_L": [("twist", -80.0)]}, (0.80, -0.35, 1.05), (0.40, 0.02, 1.02), 55.0),
+    "elbow_145": ({"forearm_L": [("flex", 145.0)]}, (0.70, 0.42, 1.30), (0.33, 0.02, 1.16), 60.0),
+    "elbow_145_front": ({"forearm_L": [("flex", 145.0)]}, (0.62, -0.50, 1.22), (0.33, -0.03, 1.16), 60.0),
+    "knee_135": ({"shin_L": [("flex", 135.0)], **_ARM_UP}, (0.70, -0.30, 0.55), (0.09, 0.06, 0.50), 55.0),
+    "knee_135_front": ({"shin_L": [("flex", 135.0)], **_ARM_UP}, (0.30, -0.75, 0.62), (0.09, 0.0, 0.50), 55.0),
+    "shoulder_abd_60": ({"upper_arm_L": [("abd", 60.0)]}, (0.42, -0.70, 1.40), (0.20, 0.02, 1.36), 50.0),
+    "shoulder_abd_90": ({"upper_arm_L": [("abd", 90.0)]}, (0.45, -0.70, 1.40), (0.20, 0.02, 1.38), 50.0),
+    "shoulder_abd_90_back": ({"upper_arm_L": [("abd", 90.0)]}, (0.50, 0.75, 1.45), (0.20, 0.04, 1.38), 50.0),
+    "shoulder_flex_90": ({"upper_arm_L": [("flex", 90.0)]}, (0.75, -0.25, 1.45), (0.22, -0.10, 1.35), 50.0),
+    "hip_flex_110": ({"thigh_L": [("flex", 110.0)], **_ARM_UP}, (0.85, -0.25, 0.95), (0.08, -0.08, 0.88), 45.0),
+    "hip_flex_110_back": ({"thigh_L": [("flex", 110.0)], **_ARM_UP}, (0.60, 0.80, 0.80), (0.07, 0.05, 0.86), 45.0),
+    "pronation_80": ({"hand_L": [("twist", -80.0)]}, (0.85, -0.35, 1.05), (0.40, 0.02, 1.02), 50.0),
     "shoulder_twist_70": ({"upper_arm_L": [("twist", 70.0)], "forearm_L": [("flex", 90.0)]},
-                          (0.55, -0.70, 1.35), (0.25, -0.05, 1.25), 50.0),
+                          (0.60, -0.75, 1.35), (0.25, -0.05, 1.25), 50.0),
     "neck_rot_flex": ({"neck": [("twist", 35.0), ("flex", 20.0)], "head": [("twist", 30.0), ("flex", 15.0)]},
-                      (0.35, -0.70, 1.60), (0.0, 0.0, 1.57), 55.0),
-    "jaw_open_19": ({"jaw": [("open", 19.0)]}, (0.22, -0.45, 1.62), (0.0, -0.03, 1.60), 70.0),
+                      (0.35, -0.70, 1.62), (0.0, 0.0, 1.55), 55.0),
+    "jaw_open_19": ({"jaw": [("open", 19.0)]}, (0.22, -0.45, 1.64), (0.0, -0.03, 1.60), 70.0),
     "fist": ({"fingers_L": [("flex", 80.0)], "thumb_L": [("flex", 45.0)], "forearm_L": [("flex", 90.0)]},
-             (0.62, -0.45, 1.05), (0.46, -0.10, 1.08), 60.0),
-    "ankle_plantar_50": ({"foot_L": [("flex", -50.0)]}, (0.55, -0.35, 0.18), (0.10, 0.00, 0.08), 50.0),
+             (0.66, -0.50, 1.10), (0.46, -0.12, 1.08), 60.0),
+    "ankle_plantar_50": ({"foot_L": [("flex", -50.0)]}, (0.60, -0.35, 0.20), (0.10, 0.00, 0.08), 50.0),
+    "trunk_flex_76": ({"spine": [("flex", 36.0)], "chest": [("flex", 27.0)], "upper_chest": [("flex", 13.5)]},
+                      (1.10, -0.60, 1.10), (0.0, -0.10, 1.05), 40.0),
 }
 
 
@@ -414,12 +419,67 @@ def _render_setup():
         bsdf.inputs["Base Color"].default_value = (*rgb, 1.0)
         bsdf.inputs["Roughness"].default_value = rough
         return m
-    mats["skin"] = mat("RIG_skin", (0.62, 0.42, 0.33), 0.55)
+    mats["skin"] = mat("RIG_skin", (0.42, 0.25, 0.18), 0.5)
     mats["muscle"] = mat("RIG_muscle", (0.55, 0.02, 0.02), 0.4)
     mats["bone"] = mat("RIG_bone", (0.05, 0.9, 0.1), 0.4)          # vivid green: any bone poking out is obvious
     mats["organ"] = mat("RIG_organ", (0.1, 0.2, 0.95), 0.4)
     mats["shorts"] = mat("RIG_shorts", (0.06, 0.06, 0.07), 0.9)
     return mats
+
+
+def render_weights(bones, views, samples=8, res=(400, 400), out_dir=gbc.RENDER_DIR, pose=None, tag="w"):
+    """Weight maps on the skin: each listed bone paints its weight in its own colour (emission, so the
+    picture shows the weights, not the lighting).  ``views``: {name: (cam loc, target, lens)}."""
+    arm = bpy.data.objects[gbc.ARMATURE]
+    cols = [(1.0, 0.1, 0.05), (0.05, 0.8, 0.1), (0.1, 0.3, 1.0), (1.0, 0.85, 0.0), (0.9, 0.1, 0.9),
+            (0.0, 0.9, 0.9), (1.0, 0.5, 0.0), (0.5, 0.2, 1.0)]
+    mat = bpy.data.materials.get("RIG_weights") or bpy.data.materials.new("RIG_weights")
+    mat.use_nodes = True
+    nt = mat.node_tree
+    nt.nodes.clear()
+    attr = nt.nodes.new("ShaderNodeAttribute")
+    attr.attribute_name = "rig_w"
+    em = nt.nodes.new("ShaderNodeEmission")
+    outn = nt.nodes.new("ShaderNodeOutputMaterial")
+    nt.links.new(attr.outputs["Color"], em.inputs["Color"])
+    nt.links.new(em.outputs["Emission"], outn.inputs["Surface"])
+    saved = {}
+    for o in bpy.data.objects:
+        if o.type == 'MESH':
+            saved[o.name] = (o.hide_render, [s.material for s in o.material_slots])
+            o.hide_render = o.name not in SKIN
+    for n in SKIN:
+        o = bpy.data.objects[n]
+        idx, w = rig.read_weights(o)
+        c = np.full((len(idx), 3), 0.18)
+        for k, b in enumerate(bones):
+            bi = rig.BONE_INDEX[b]
+            wb = (w * (idx == bi)).sum(1)
+            c = c * (1.0 - wb[:, None]) + np.array(cols[k % len(cols)]) * wb[:, None]
+        me = o.data
+        if "rig_w" in me.color_attributes:
+            me.color_attributes.remove(me.color_attributes["rig_w"])
+        ca = me.color_attributes.new("rig_w", 'FLOAT_COLOR', 'POINT')
+        ca.data.foreach_set("color", np.column_stack([c, np.ones(len(c))]).astype(np.float32).ravel())
+        for s in o.material_slots:
+            s.material = mat
+    paths = []
+    try:
+        if pose:
+            rig.apply_pose(arm, pose)
+        for name, (loc, tgt, lens) in views.items():
+            cam = gbc.add_camera("RIG_cam", loc, tgt, lens=lens)
+            path = os.path.join(out_dir, f"rig_{tag}_{name}.png")
+            gbc.render(path, cam, samples=samples, res=res)
+            paths.append(path)
+    finally:
+        rig.reset_pose(arm)
+        for n, (hr, slots) in saved.items():
+            o = bpy.data.objects.get(n)
+            o.hide_render = hr
+            for s, m in zip(o.material_slots, slots):
+                s.material = m
+    return paths
 
 
 def render_poses(names=None, samples=24, res=(480, 480), out_dir=gbc.RENDER_DIR):
