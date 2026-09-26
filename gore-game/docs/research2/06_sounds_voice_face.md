@@ -747,10 +747,10 @@ States as in `[R2-01 §5.2]`. Normal speech runs at **4–6 syllables/s** (≈ 1
 |---|---|---|---|---|---|---|---|
 | `DYSARTHRIC_UMN` (unilateral, mild) | 3–5 syll/s | Normal | Normal | Mildly imprecise consonants | Normal | With contralateral lower-face weakness (§9) | [K] (M) |
 | `DYSARTHRIC_UMN` (bilateral, spastic) | 2–3 | Short phrases | **Monopitch, low pitch** (F0 range ×0.4) | Imprecise | **Strained-strangled** (pressed, low HNR); hypernasal | — | [K; M9] (H) |
-| `DYSARTHRIC_CEREBELLAR` (ataxic) | 3–4 | Irregular | **Scanning: excess and equal stress** on every syllable | **Irregular articulatory breakdowns** | **Explosive loudness** (±6–10 dB syllable to syllable) | Vowels prolonged | [S10] [K; M9] (H) |
+| `DYSARTHRIC_CEREBELLAR` (ataxic) | 3–4 | Irregular | **Scanning: excess and equal stress** on every syllable | **Irregular articulatory breakdowns** | **Explosive loudness** (±6–10 dB syllable to syllable) | Vowels prolonged | [S10] [K; M9] (H). ✓ verified [K] (H): the Mayo (Darley, Aronson & Brown) ataxic cluster is articulatory inaccuracy, prosodic excess (excess and equal stress) and phonatory-prosodic insufficiency; "scanning" and "explosive" speech are the classic bedside terms. The ±6–10 dB figure is `[E]` |
 | `DYSARTHRIC_BULBAR` (flaccid) | 3–4 | Frequent breaths | Reduced | Weak consonants; **audible nasal air escape** on /p b s/ | **Breathy** (HNR < 10 dB), hypernasal, wet | Weak cough; 3–5 syllables per breath | [K; M9] (H) |
 | `NONFLUENT` (Broca) | **≈ 10–50 words/min overall (≈ 0.25–1.2 syll/s including pauses)**; within short runs ~1–3 syll/s | **Long, 1–5 s**, with groping ("uh… m-m…") | Flattened | Phonetic distortions, effortful | Normal | **Telegraphic**; automatic phrases (swearing, "yes", "no") at normal speed | [S12] [K] (H). ✓ verified [K] (H) for the words/min figure (the classic fluent/non-fluent boundary is < 50 words/min for non-fluent speech). **Corrected: was "0.5–2 syll/s (≈ 10–50 words/min)"**, which did not convert: 10–50 words/min × ~1.4 syll/word = 0.23–1.2 syll/s |
-| `JARGON` (Wernicke) | 4–6+ (can be pressured) | Normal | **Normal intonation** | Fluent; neologisms and paraphasias | Normal | Does not stop or self-correct; does not follow commands | [S11] (H) |
+| `JARGON` (Wernicke) | 4–6+ (can be pressured) | Normal | **Normal intonation** | Fluent; neologisms and paraphasias | Normal | Does not stop or self-correct; does not follow commands | [S11] (H) ✓ verified [K] (H): fluent, normal prosody, paraphasias and neologisms, poor comprehension, often unaware of the errors |
 | `GLOBAL` | — | — | Expressive intonation on a stereotypy | — | — | Mute, or one **recurring utterance** of 1–3 syllables | [K] (H) |
 | `MUTE_AKINETIC` | — | — | — | — | — | Silent; rarely a whispered monosyllable after 5–30 s | [S16] [E] |
 | `CONFUSED` (GCS V4: concussion, hypoxia, class III, frontal) | 3–5 | Slow responses, latency 1–5 s | Flat | Normal to mildly slurred | Normal to quiet | **Repetitive questions** every 30–120 s ("What happened?"); perseveration; wrong answers about place and time | [K] (H) |
@@ -777,7 +777,7 @@ States as in `[R2-01 §5.2]`. Normal speech runs at **4–6 syllables/s** (≈ 1
 | **Larynx fracture or haematoma** | Cords swollen, displaced | — | **Hoarse → breathy → aphonic** (whisper only) as swelling grows over 10–60 min | **Stridor**; painful speech; haemoptysis; crackling emphysema in the neck | [K] (H), [E] timing |
 | Unilateral recurrent laryngeal nerve cut (neck wound) | One cord paralysed | — | Breathy, hoarse, weak; **diplophonia** (two pitches) sometimes | Weak cough; aspiration | [K] (H) |
 | Bilateral recurrent laryngeal nerve cut | Cords near midline | — | Near-normal but weak | **Inspiratory stridor**, air hunger | [K] (H) |
-| **Tracheal or laryngotracheal wound below the cords** | Air escapes before the cords | Everything | **Aphonic**: mouths words | Hiss and bubbling at the wound with each attempt; covering the hole restores a weak voice | [K] (H) |
+| **Tracheal or laryngotracheal wound below the cords** | Air escapes before the cords | Everything | **Aphonic**: mouths words (open wound); weak, breathy voice if the hole is small or partly closed | Hiss and bubbling at the wound with each attempt; covering the hole restores a weak voice | [K] (H) ✓ verified [K] (H), nuance added |
 | Cut throat above the cords (thyrohyoid, pharynx) | Voice partly exits through the wound | Articulation bypassed | Weak, wet, bubbly | Gurgling, aspiration `[S8]` | [K] (M) |
 | Open chest wound, haemothorax, flail chest | Breath limited | — | Short phrases of 1–4 words, −6 to −12 dB | Grunting | `[R2-02 §9.2]` [K] (H) |
 | Blood in mouth or throat | — | — | Gargled, wet | Spits every 5–30 s | `[R2-04 §2.5]` |
@@ -805,8 +805,8 @@ States as in `[R2-01 §5.2]`. Normal speech runs at **4–6 syllables/s** (≈ 1
 
 | Parameter | Value / range | Unit | Notes | Tag |
 |---|---|---|---|---|
-| `speech_rate_normal` | 4–6 | syll/s | | [K] (H) |
-| `speech_rate_broca` | 0.5–2 | syll/s | Pauses 1–5 s | [K] (H), [S12] |
+| `speech_rate_normal` | 4–6 articulation; ~3.5–4.5 overall | syll/s | | [K] (H) ✓ (clarified) |
+| `speech_rate_broca` | **0.25–1.2 overall** (runs 1–3) | syll/s | Pauses 1–5 s; 10–50 words/min. Corrected: was 0.5–2 | [K] (H), [S12] |
 | `speech_rate_spastic` / `ataxic` / `shock` | 2–3 / 3–4 / 2–3.5 | syll/s | | [K; M9] (M), [E] |
 | `ataxic_loudness_jitter` | ±6–10 | dB per syllable | | [S10] [E] |
 | `confused_repeat_interval` | 30–120 | s | | [E] on [K] |
@@ -875,7 +875,7 @@ AU intensities as FACS letters (A trace … E maximum; weights in §0.3). Lid ap
 | **Pain, severe** (8–10) | 4D–E, 6D, 7D, 9D, 10D, **43 closed**, 20C, 25, 31 between cries, 21C | **Shut** | Teeth bared; jaw clenched between cries | Arched or curled | Bursts every 3–15 s | [S1] [E] |
 | **Pain scream** | Severe pain set + **27D + 20D** (square mouth) | **Shut** (the key difference from a fear scream) | Wide square mouth; neck cords | Back or forward | With each scream | [S1] [E] |
 | Suppressed pain (stoic, fighter) | 4B, 7B, **24C**, 17B, **31C** | Narrowed | Lips pressed, jaw set | Still | Leaks of full pain face 0.3–1 s | [K; M10] (M), [E] |
-| **Fear** | 1C, 2C, 4B, **5D**, 7B, **20C**, 26B, 38B | **Wide 11–12 mm; white above the iris** | Lips stretched horizontally; jaw slightly dropped | Pulled back, chin down | 200–500 ms / sustained while the threat lasts | [K; M11] (H) |
+| **Fear** | 1C, 2C, 4B, **5D**, 7B, **20C**, 26B, 38B | **Wide 11–12 mm; white above the iris** | Lips stretched horizontally; jaw slightly dropped | Pulled back, chin down | 200–500 ms / sustained while the threat lasts | [K; M11] (H) ✓ verified [K] (H): the FACS Investigator's Guide prototype is 1+2+4+5+7+20+26 (variants 1+2+4+5+20+25/26/27 and 1+2+4+5+25/26/27); AU38 is an addition |
 | **Terror scream** | 1D, 2D, 4C, **5E**, 20D, 27D, 21D, 38C | **Wide open**, fixed on the threat | Wide, stretched | Back | With each scream | [K; M11] [E] |
 | Startle (first 0.3 s) | 45 (blink at ~30 ms), 4B, 7C, 20C, 21C | Blink then wide | Stretched | Head down, shoulders up | 30–300 ms | `[R2-02 §1]` [K] |
 | Surprise (unhurt, e.g. a miss) | 1C, 2C, 5B, 26B | Wide | Dropped jaw | Back slightly | < 1 s | [K; M11] (H) |
@@ -894,7 +894,7 @@ AU intensities as FACS letters (A trace … E maximum; weights in §0.3). Lid ap
 
 ### 8.3 Pain face: extra detail
 
-- **PSPI** = AU4 + max(AU6, AU7) + max(AU9, AU10) + AU43 (0–16) `[S1]`; game mapping PSPI ≈ 1.6 × pain `[R2-02 §9.1]`.
+- **PSPI** = AU4 + max(AU6, AU7) + max(AU9, AU10) + AU43 (0–16) `[S1]`; game mapping PSPI ≈ 1.6 × pain `[R2-02 §9.1]`. ✓ verified [K] (H) (Prkachin & Solomon 2008): AU4, 6, 7, 9 and 10 are scored 0–5 and AU43 is **binary** (0/1), so the maximum is 5 + 5 + 5 + 1 = 16. AU5 (upper-lid raiser) is part of the FACS fear prototype and not of the pain core, so "pain closes, fear opens the eyes" ✓ holds `[K]` (M–H).
 - **Other AUs often seen in pain**: jaw drop / mouth stretch (AU25–27), lip stretch (AU20) and a **lip-corner pull (AU12)** that makes a "pain smile" grimace; the AU12 in pain is not happiness `[K; M10] (M)`.
 - **People have different pain faces.** A cluster analysis found a small number of recurring individual patterns, e.g. narrowed eyes with furrowed brows and wrinkled nose, or an opened mouth with narrowed eyes `[K; M10] (M–L)`. **Roll one pain-face type per character** (weights on the AU groups ±30 %) so that crowds do not grimace identically `[E]`.
 - **Expressivity varies**: many people show little facial expression at moderate pain `[K; M10] (L–M)`. Game: `pain_face_gain` 0.3–1.3 per character, default distribution median 1.
