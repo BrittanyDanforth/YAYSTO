@@ -81,6 +81,9 @@ const b7 = await agent(pkg('B7', `Look-dev and bakes. Reuse ${HEAD}/materials.py
 const b6 = await agent(pkg('B6', `Rig, weights, poses, export, manifest, LOD1: armature (plan §3.1.1) with correct joint positions (RB §7.2), analytic weights for every layer (same function so inner layers move with the skin), key poses, rig.json (joint axes, limits, masses, shapes, caps, myotomes), final export of GB_Subject.glb + LOD1 + all JSON + textures + manifest (plan §5.7-5.9), round-trip check (re-import in Blender) and a Godot headless import check. Pose-test renders at extreme poses (FB-2 ranges) must show no candy-wrapping or layer poke-through. Reports from the other packages:\n${buildReports}\nB7: ${JSON.stringify(b7 && { status: b7.status, summary: b7.summary })}`),
   { label: 'B6:rig-export', phase: 'Assemble', schema: REPORT })
 
+
+const REFS_RULE = `MANDATORY VISUAL REFERENCES: real forensic reference photos are in /home/user/YAYSTO/refs/ (list the folder; 21+ files; notes in /home/user/YAYSTO/gore-game/docs/REFERENCE_NOTES.md §5). Before judging or changing anything wound-, blood-, tissue-, bone-, skull-, brain-, organ-, pooling- or dead-body-related, open EVERY image with the Read tool one by one and compare your renders side by side. In your report, list every refs/ filename you opened with one line of what you took from it — a report without that list is invalid. refs/12_our_render_wall_stripes.png shows OUR stripe artefact on cut walls: never reproduce regular banding. Also follow the blood-source rule in /home/user/YAYSTO/CLAUDE.md §8. Use refs for injury/tissue/blood/posture properties only, never faces or identities.`
+
 const CRITICS = [
   { key: 'anatomy', role: 'medical illustrator and anatomist', focus: 'Proportions, landmarks and girths vs RB §7 (FB-3), nesting and depths (FB-4, FB-5), skeleton correctness (every bone, curvature, rib cage), organ shapes/positions/colours, vessel paths, spinal cord/brainstem, the neck seam (FB-1). Render x-ray/cutaway views and front/side/back/three-quarter of the body.' },
   { key: 'visual', role: 'AAA character artist', focus: 'Does the body look like a real human (not a mannequin) in the renders: silhouette, musculature, hands/feet adequate for scope, skin shading, shorts cloth, head-to-neck continuity, eyes, textures/bakes quality, props and room quality. Also deformation at extreme poses (FB-2).' },
@@ -91,14 +94,16 @@ const history = []
 for (let round = 1; round <= 2; round++) {
   const prior = history.length ? `Previous round (verify fixes, re-report anything still open):\n${JSON.stringify(history, null, 1)}` : ''
   const res = await parallel(CRITICS.map(c => () =>
-    agent(`${PRE}\n\nYOU ARE A CRITIC (round ${round}), role: ${c.role}. Do not edit project files; scratch scripts and renders only under ${SCRATCH}/critic_${c.key}_r${round}/. Focus: ${c.focus}\n${prior}\nSeverity: high = wrong/broken/fake-looking or a contract/acceptance failure; medium = clear quality gap; low = polish. Give concrete fixes (file/function/what). Verdict 'ship' only if it is genuinely AAA-grade for this scope.`,
+    agent(`${PRE}\n\nYOU ARE A CRITIC (round ${round}), role: ${c.role}.
+${REFS_RULE} Do not edit project files; scratch scripts and renders only under ${SCRATCH}/critic_${c.key}_r${round}/. Focus: ${c.focus}\n${prior}\nSeverity: high = wrong/broken/fake-looking or a contract/acceptance failure; medium = clear quality gap; low = polish. Give concrete fixes (file/function/what). Verdict 'ship' only if it is genuinely AAA-grade for this scope.`,
       { label: `critic:${c.key}:r${round}`, phase: 'Review', schema: CRITIC }).then(r => (r ? { critic: c.key, ...r } : null))))
   const crits = res.filter(Boolean)
   const issues = crits.flatMap(c => c.issues.map(i => ({ critic: c.critic, ...i })))
   const highs = issues.filter(i => i.severity === 'high').length
   log(`Blender review r${round}: ${highs} high, ${issues.length} total; ${crits.map(c => c.critic + '=' + c.verdict).join(', ')}`)
   if (crits.length === CRITICS.length && crits.every(c => c.verdict === 'ship') && highs === 0) { history.push({ round, fixed: 'none needed' }); break }
-  const fix = await agent(`${PRE}\n\nYOUR TASK: Blender fix round ${round}. You may edit any file in ${BODY}/ (still never ${HEAD}/). Fix ALL high issues and as many medium ones as possible:\n${JSON.stringify(issues, null, 1)}\nThen run the full build + verify + export again, LOOK at the renders, confirm a clean Godot headless import, and report each issue's resolution.`,
+  const fix = await agent(`${PRE}\n\n${REFS_RULE}
+YOUR TASK: Blender fix round ${round}. You may edit any file in ${BODY}/ (still never ${HEAD}/). Fix ALL high issues and as many medium ones as possible:\n${JSON.stringify(issues, null, 1)}\nThen run the full build + verify + export again, LOOK at the renders, confirm a clean Godot headless import, and report each issue's resolution.`,
     { label: `fix:r${round}`, phase: 'Fix', schema: REPORT })
   history.push({ round, issues: issues.map(i => `[${i.severity}] ${i.critic}/${i.area}: ${i.problem}`), fixed: fix ? fix.summary : 'fix failed', open: fix ? fix.known_issues : [] })
 }

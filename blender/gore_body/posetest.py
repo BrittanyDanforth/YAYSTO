@@ -89,8 +89,10 @@ TESTS = {
                      "chest", 0.30, "90 % of live rot", "quality"),
     "jaw_open_19": ({"jaw": [("open", 19.0)]}, "jaw", 0.16, "death jaw drop 30 mm (volume n/a: the mouth opens)",
                     "quality"),
+    "jaw_open_26": ({"jaw": [("open", 26.0)]}, "jaw", 0.16, "kinematic limit: about 45 mm incisal opening",
+                    "quality"),
 }
-NO_VOLUME = {"jaw_open_19"}      # opening the mouth enlarges the oral cavity: a real volume change
+NO_VOLUME = {"jaw_open_19", "jaw_open_26"}      # opening the mouth enlarges the oral cavity: a real volume change
 
 
 # ---------------------------------------------------------------------------
@@ -151,6 +153,28 @@ def winding(bvh, tri_n, pts, rays=RAYS, max_hits=64):
                 o = loc + dv * 1e-6
             out[i, k] = s
     return np.median(out, axis=1)
+
+
+_DIRS26 = np.array([d for d in ((x, y, z) for x in (-1, 0, 1) for y in (-1, 0, 1) for z in (-1, 0, 1))
+                    if d != (0, 0, 0)], float)
+_DIRS26 /= np.linalg.norm(_DIRS26, axis=1, keepdims=True)
+
+
+def exposed(bvh, pts, dirs=_DIRS26):
+    """True where a point can see out of the skin: at least one of 26 rays leaves without hitting it.
+
+    A torn or folded-open skin can leave inner layers visible while the winding number still counts
+    them as inside (the fold adds a layer); this is the camera's view of the same question."""
+    from mathutils import Vector
+    out = np.zeros(len(pts), bool)
+    dv = [Vector(d) for d in dirs]
+    for i, p in enumerate(pts):
+        o = Vector(p)
+        for d in dv:
+            if bvh.ray_cast(o, d)[0] is None:
+                out[i] = True
+                break
+    return out
 
 
 def _cone_volume(V, T, c):
@@ -235,7 +259,7 @@ def run_test(md, arm, name, spec, rest=None):
     bvh = _bvh(V1, T)
     res = {"pose": note, "level": level, "vol_loss": round(1.0 - vol1 / vol0, 4) if vol0 > 0 else None,
            "radius_p5": round(radius_p5, 3)}
-    worst, total, over, per = 0.0, 0, 0, {}
+    worst, total, over, per, n_exposed = 0.0, 0, 0, {}, 0
     base = rest_outside(md, rest)
     for n in INNER:
         m = md.get(n)
@@ -251,13 +275,24 @@ def run_test(md, arm, name, spec, rest=None):
         dist = np.array([bvh.find_nearest(p.tolist())[3] for p in P])
         cand = dist < 0.012
         wn = np.ones(len(P))
+        exp = np.zeros(len(P), bool)
         if cand.any():
             wn[cand] = winding(bvh, N1, P[cand])
-        outside = wn < 0.5
+            # newly visible from outside (rest-visible points are the owner's geometry issue)
+            ci = np.nonzero(cand)[0]
+            e1 = exposed(bvh, P[ci])
+            if e1.any():
+                e0 = exposed(rest_bvh(rest), m.v[sel][ci[e1]])
+                exp[ci[e1][~e0]] = True
+        # outside = winding says outside OR visible from outside through a tear / fold; both count by
+        # their distance to the posed skin (the same 3 mm tessellation tolerance)
+        outside = (wn < 0.5) | exp
         d_out = np.where(outside, dist, 0.0)
+        exp &= dist > POKE_LIMIT_MM / 1000.0
         mx = float(d_out.max() * 1000.0) if len(d_out) else 0.0
         n_over = int((d_out > POKE_LIMIT_MM / 1000.0).sum())
-        per[n] = {"n": int(len(P)), "max_mm": round(mx, 2), "over": n_over}
+        per[n] = {"n": int(len(P)), "max_mm": round(mx, 2), "over": n_over, "exposed": int(exp.sum())}
+        n_exposed += int(exp.sum())
         if n_over and m.piece is not None:
             pieces = np.unique(m.piece[np.nonzero(sel)[0][d_out > POKE_LIMIT_MM / 1000.0]])
             per[n]["pieces"] = [int(x) for x in pieces[:8]]
@@ -271,7 +306,7 @@ def run_test(md, arm, name, spec, rest=None):
         total += len(P)
         over += n_over
     res.update({"poke_mm": round(worst, 2), "poke_over": over, "poke_frac": round(over / max(total, 1), 5),
-                "layers": per})
+                "exposed": n_exposed, "layers": per})
     sh = md.get("GB_Shorts")
     if sh is not None:
         sel = np.linalg.norm(sh.v - J, axis=1) < radius
@@ -287,12 +322,22 @@ def run_test(md, arm, name, spec, rest=None):
             res["shorts_inside"] = int((signed < 0).sum())
     if name in NO_VOLUME:
         res["vol_loss"] = None
-    res["ok"] = bool(res["poke_frac"] == 0.0 and (res["vol_loss"] or 0.0) < VOL_LIMIT)
+    res["ok"] = bool(res["poke_frac"] == 0.0 and res["exposed"] == 0 and (res["vol_loss"] or 0.0) < VOL_LIMIT)
     res["seconds"] = round(time.perf_counter() - t0, 2)
     return res
 
 
 _REST_OUT = {}
+_REST_BVH = {}
+
+
+def rest_bvh(rest):
+    """BVH of the rest skin (cached per skin array)."""
+    key = id(rest[0])
+    if key not in _REST_BVH:
+        _REST_BVH.clear()
+        _REST_BVH[key] = _bvh(rest[0], rest[1])
+    return _REST_BVH[key]
 
 
 def rest_outside(md, rest=None, tol=POKE_LIMIT_MM / 1000.0):
@@ -331,7 +376,7 @@ def run_tests(names=None, arm=None, md=None, quiet=False):
         if not quiet:
             r = out[name]
             gbc.log(f"pose {name:20s} vol {r['vol_loss'] if r['vol_loss'] is not None else float('nan'):+.3f}  "
-                    f"poke {r['poke_mm']:6.2f} mm "
+                    f"poke {r['poke_mm']:6.2f} mm exposed {r['exposed']} "
                     f"({r['poke_over']} > 3 mm)  r_p5 {r['radius_p5']:.3f}  shorts {r.get('shorts_mm', '-')} "
                     f"{'OK' if r['ok'] else 'FAIL'}  {r['seconds']} s")
     rig.reset_pose(arm)
@@ -467,6 +512,8 @@ def _render_setup():
     mats["bone"] = mat("RIG_bone", (0.05, 0.9, 0.1), 0.4)          # vivid green: any bone poking out is obvious
     mats["organ"] = mat("RIG_organ", (0.1, 0.2, 0.95), 0.4)
     mats["shorts"] = mat("RIG_shorts", (0.06, 0.06, 0.07), 0.9)
+    mats["eye"] = mat("RIG_eye", (0.80, 0.80, 0.78), 0.1)           # eyes and mouth are meant to be seen:
+    mats["mouth"] = mat("RIG_mouth", (0.62, 0.36, 0.34), 0.4)       # neutral colours, not "poke" colours
     return mats
 
 
@@ -532,7 +579,7 @@ def render_poses(names=None, samples=24, res=(480, 480), out_dir=gbc.RENDER_DIR)
     mats = _render_setup()
     assign = {"GB_Body": "skin", "GB_Head": "skin", "GB_Shorts": "shorts", "GB_MuscleShell": "muscle",
               "GB_Skeleton": "bone", "GB_Organs": "organ", "GB_Vessels_Art": "organ", "GB_Vessels_Ven": "organ",
-              "GB_Cord": "organ", "GB_Brain": "organ", "GB_Mouth": "bone", "GB_Eye_L": "bone", "GB_Eye_R": "bone"}
+              "GB_Cord": "organ", "GB_Brain": "organ", "GB_Mouth": "mouth", "GB_Eye_L": "eye", "GB_Eye_R": "eye"}
     saved = {}
     for o in bpy.data.objects:
         if o.type == 'MESH' and o.name.startswith("GB_"):

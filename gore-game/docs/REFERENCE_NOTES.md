@@ -238,6 +238,24 @@ then irregular), and cover the wall and lip in wet dark clot and pooled blood.
 - For our game: repeated hammer/blunt hits on one area accumulate into this (contour collapse, sunken eyes, flaps, bone
   and teeth exposed), not into neat stacked dents.
 
+## 5.14 More reference images (refs 17-21)
+- **17 neck transection:** cut surface a dense mix of dark red muscle, clot and vessel openings; face covered in fine
+  dark speckle; very large glossy dark-red pool spreading over the surface under the body, with smears and spray on
+  nearby objects.
+- **18 heavy chopping blows to the head:** the head is a mass of torn, folded sheets of dark red muscle and skin, deep
+  clot-filled cavities, glossy wet surfaces everywhere, strands and flaps; the surrounding skin is completely smeared
+  in blood; thick pooled blood with dark clots underneath. No regular structure at all.
+- **19 skull cap cut off, brain exposed:** a ring of cut skull with the scalp retracted; brain gyri pale cream with red
+  blood in the sulci and a dark near-black clot stripe lying in a fissure; the scalp edge raw red and ragged; the
+  cranial cavity rim lined with red tissue.
+- **20 gunshot wound grid (pathology teaching):** contact head entrances = black stellate splits radiating from a sooty
+  centre; small entrances = pink puckered holes with an abrasion rim; exits = star/slit tears with everted edges and
+  dark clot; a big shredded exit crater in a limb; tiny slit-like wounds. All irregular, none a perfect circle.
+- **21 multiple face gunshots, seated:** the face looks mostly intact from a distance, but blood streams from several
+  small facial wounds down over the cheek, jaw and hand, soaks the shirt shoulder in a dark band, runs down the arm and
+  pours onto the floor forming a very large pool with splash marks beside the chair. Small entrances + heavy, gravity-
+  driven bleeding and pooling — exactly the blood-source rule.
+
 ## 6. What to change in our assets (actionable)
 
 | Where | Change |

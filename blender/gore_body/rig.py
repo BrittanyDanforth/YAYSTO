@@ -455,7 +455,7 @@ MANDIBLE_NEAR = (0.012, 0.022)      # skin within 12 mm of the mandible is head/
 # the chin.  Columns are rays from the neck axis (x = 0, y = NECK_AXIS_Y): skin, fat and muscle shell
 # on one ray share the weight; the fade toward the axis keeps the spine, cord and deep vessels on the
 # neck bone.
-JAW_THROAT = {"z_m": (1.470, 1.548), "sector_deg": (45.0, 80.0), "axis_r_m": (0.030, 0.048),
+JAW_THROAT = {"z_m": (1.460, 1.548), "sector_deg": (55.0, 95.0), "axis_r_m": (0.030, 0.048),
               "neck_axis_y": 0.015}
 
 
@@ -1123,7 +1123,7 @@ def _kinematic_table():
         "forearm rotation into its twist axis)")
     out["toes_L"]["note"] = out["toes_R"]["note"] = "kinematic toe curl/extension (EHL L5, FHL S1-S2)"
     out["jaw"] = {"axes": {"open": {"world": [1.0, 0.0, 0.0], "sign": 1, "pos": "open", "neg": "close"}},
-                  "limits_deg": {"open": [-2.0, 30.0]},
+                  "limits_deg": {"open": [-2.0, 26.0]},
                   "glide_m_per_deg": list(JAW_GLIDE_M_PER_DEG),
                   "rule": "open = rotation about axes.open.world through the bone head (TMJ hinge) PLUS a "
                           "bone translation of glide_m_per_deg x max(open, 0) in body-frame metres (condyle "

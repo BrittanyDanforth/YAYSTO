@@ -2395,14 +2395,15 @@ def b6_followers():
 @check("scene", owner="B6")
 def b6_deformation_fb2():
     """FB-2 / plan §8.2 B6: elbow, knee, shoulder abduction, hip flexion up to 90 % of the live ROM - no
-    inner-layer vertex > 3 mm outside the posed skin, joint-region volume loss < 15 %."""
+    inner-layer vertex > 3 mm outside the posed skin or newly visible from outside (a torn / folded-open
+    skin), joint-region volume loss < 15 %."""
     if not _b6_ready():
         return True, "n/a (no scene)"
     res = _b6_deform()
     acc = {k: v for k, v in res.items() if v["level"] == "fb2"}
     bad = [k for k, v in acc.items() if not v["ok"]]
-    s = "; ".join(f"{k}: poke {v['poke_mm']} mm / {v['poke_over']} > 3 mm, vol loss {v['vol_loss']}"
-                  for k, v in acc.items())
+    s = "; ".join(f"{k}: poke {v['poke_mm']} mm / {v['poke_over']} > 3 mm, exposed {v.get('exposed', 0)}, "
+                  f"vol loss {v['vol_loss']}" for k, v in acc.items())
     return not bad and len(acc) >= 5, f"failing {bad}; {s}"
 
 
@@ -2414,8 +2415,9 @@ def b6_deformation_quality():
     res = _b6_deform()
     other = {k: v for k, v in res.items() if v["level"] != "fb2"}
     bad = [k for k, v in other.items() if not v["ok"]]
-    s = "; ".join(f"{k} {v['poke_mm']}mm/{v['poke_over']}/{v['vol_loss']}" for k, v in other.items())
-    return not bad, f"over 3 mm or >= 15 % loss: {bad}; {s}"
+    s = "; ".join(f"{k} {v['poke_mm']}mm/{v['poke_over']}/exp {v.get('exposed', 0)}/{v['vol_loss']}"
+                  for k, v in other.items())
+    return not bad, f"over 3 mm, newly exposed or >= 15 % loss: {bad}; {s}"
 
 
 @check("scene", owner="B6", severity="warn")
