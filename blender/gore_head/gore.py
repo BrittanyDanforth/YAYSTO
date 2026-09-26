@@ -1683,13 +1683,21 @@ def _end_repeat(t, rout, values):
 # ---------------------------------------------------------------------------
 DRIP_STEPS = 20
 # kind: (runs per hit, angular spread around "down" (rad), rim radius, max length, half width)
-# Rivulets are 3-8 mm wide and 0.1-0.4 mm thick (REALISM_BIBLE row 19, REFERENCE_NOTES).
+# Rivulets are 3-8 mm wide and 0.1-0.3 mm thick (REALISM_BIBLE row 19,
+# REFERENCE_NOTES: far more blood than a few thin lines; scalp and exit
+# wounds keep pouring). The lengths are reached at drip_time 1 (= 60 s).
 DRIP_KINDS = {
-    "bullet": (1.3, 0.8, 0.0034, 0.075, 0.0015),
-    "exit":   (3.5, 1.6, 0.0085, 0.105, 0.0017),
-    "slash":  (1.0, 0.0, 0.0,    0.085, 0.0019),
-    "blunt":  (1.6, 0.9, 0.0085, 0.070, 0.0014),
+    "bullet": (1.6, 0.9, 0.0034, 0.100, 0.0022),
+    "exit":   (4.0, 1.7, 0.0085, 0.130, 0.0024),
+    "slash":  (1.0, 0.0, 0.0,    0.100, 0.0024),
+    "blunt":  (2.0, 1.0, 0.0085, 0.100, 0.0021),
+    "blast":  (6.0, 2.6, BLAST_R * 0.75, 0.140, 0.0030),
 }
+# drip_time (0..1 = 0..60 s): the cavity fills first, the main run leaves the
+# lowest point of the rim at DRIP_START, further runs split off later as the
+# flow continues (DRIP_START + up to DRIP_SPLIT)
+DRIP_START = 0.03
+DRIP_SPLIT = 0.4
 
 
 def _nearest_normal(t, surface, pos):
@@ -1719,8 +1727,11 @@ def _drip_seeds(t, pts, kind, kind_id, damage, bleed, drip):
         n_base = 0.8 + e * 0.45
     amount = t.math('FLOOR', n_base * (0.3 + bleed) + 0.5) * bleed.gt(0.02)
     if kind == "blunt":
-        # scalp lacerations bleed heavily (REALISM_BIBLE): more and longer runs
-        amount = t.math('FLOOR', amount * (1.0 + 0.8 * t.attr("hit_R", 'FLOAT_VECTOR').x) + 0.5) * D.gt(0.3)
+        # scalp lacerations bleed heavily (REALISM_BIBLE): more and longer runs;
+        # a crushed face pours from everywhere
+        crush = t.smooth(1.15, 2.3, t.attr("hit_E") * damage)
+        amount = t.math('FLOOR', amount * (1.0 + 0.8 * t.attr("hit_R", 'FLOAT_VECTOR').x + 2.0 * crush) + 0.5) \
+            * D.gt(0.3)
     dup = t.node('GeometryNodeDuplicateElements', {'Geometry': pts, 'Amount': amount}, domain='POINT')
     g = t.out(dup, 'Geometry')
     first = t.compare('EQUAL', t.out(dup, 'Duplicate Index'), 0, 'INT')
@@ -1761,15 +1772,26 @@ def _drip_seeds(t, pts, kind, kind_id, damage, bleed, drip):
         th = phi + t.switch(first, (r1 - 0.5) * spread, 0.0)
         r = s * rim * (0.85 + 0.2 * r3)
         p0 = I + X * (th.cos() * r) + Y * (th.sin() * r)
-    ease = drip ** 0.85
+    # timing: nothing leaves the wound before it has filled; the main run
+    # starts first at the lowest rim point, the others split off later as the
+    # flow goes on. The front runs fast at first (~0.5-1 cm/s) and slows as
+    # the stream thins out.
+    t0 = t.switch(first, DRIP_START + DRIP_SPLIT * r1, DRIP_START)
+    x = ((drip - t0) / (1.0 - t0)).clamp()
+    ease = 1.0 - (1.0 - x) ** 3.5
     # the first run is the long one; others stop early (a small volume runs
     # 3-10 cm and stops, REALISM_BIBLE row 19)
-    lfac = t.switch(first, 0.05 + 0.6 * r2 * r2 * r2, 0.75 + 0.25 * r2)
+    lfac = t.switch(first, 0.08 + 0.6 * r2 * r2, 0.75 + 0.25 * r2)
     d_len = s.sqrt() * lmax * lfac * (0.35 + 0.65 * bleed) * ease
-    d_w = width * (0.45 + 0.8 * r3 * r3) * (0.8 + 0.2 * s) * t.switch(first, 0.7, 1.0)
+    # the stream widens with the volume that has come down it
+    d_w = width * (0.5 + 0.8 * r3 * r3) * (0.8 + 0.2 * s) * t.switch(first, 0.75, 1.0) \
+        * (0.5 + 0.7 * t.smooth(0.0, 0.45, x))
     g = t.out(t.node('GeometryNodeSetPosition', {'Geometry': g, 'Position': p0}))
     g = t.store(g, "d_len", d_len)
     g = t.store(g, "d_w", d_w)
+    # (still moving: the front carries a rounded bead; a stopped run ends in a
+    # flat tapered film)
+    g = t.store(g, "d_mov", t.switch(t.bool('AND', x.lt(0.9), x.gt(0.0)), 0.0, 1.0))
     return g
 
 
@@ -1791,6 +1813,7 @@ def _build_blood():
                  inputs=(("Surface", 'NodeSocketGeometry'),
                          ("Bullet", 'NodeSocketGeometry'), ("Exit", 'NodeSocketGeometry'),
                          ("Slash", 'NodeSocketGeometry'), ("Blunt", 'NodeSocketGeometry'),
+                         ("Blast", 'NodeSocketGeometry'),
                          ("Damage", 'NodeSocketFloat', 1.0), ("Bleed", 'NodeSocketFloat', 0.7),
                          ("Drip Time", 'NodeSocketFloat', 1.0), ("Material", 'NodeSocketMaterial')),
                  outputs=(("Blood", 'NodeSocketGeometry'), ("Trail", 'NodeSocketGeometry')),
@@ -1799,7 +1822,7 @@ def _build_blood():
     damage, bleed, drip = t.inp("Damage"), t.inp("Bleed"), t.inp("Drip Time")
     seeds = [t.out(t.group(_build_seed_group(k, i), {"Hits": t.inp(k.capitalize()), "Damage": damage,
                                                        "Bleed": bleed, "Drip Time": drip}))
-             for i, k in enumerate(("bullet", "exit", "slash", "blunt"))]
+             for i, k in enumerate(("bullet", "exit", "slash", "blunt", "blast"))]
     join = t.node('GeometryNodeJoinGeometry')
     for sgeo in reversed(seeds):
         t.links.new(sgeo.s, join.inputs[0])
@@ -1858,13 +1881,14 @@ def _build_blood():
     radius = t.out(t.node('GeometryNodeInputRadius'))
     tubes = t.out(t.node('GeometryNodeCurveToMesh', {'Curve': curves, 'Profile Curve': profile,
                                                      'Scale': radius, 'Fill Caps': True}))
-    tubes = t.store(tubes, "d_flat", 0.28)
-    tubes = t.store(tubes, "d_cap", 0.00026)
+    tubes = t.store(tubes, "d_flat", 0.24)
+    tubes = t.store(tubes, "d_cap", 0.00018)
     path = t.out(t.node('GeometryNodeCurveToMesh', {'Curve': curves}))
     # the heavy head of a long run: a flat teardrop ~1.3x the run's width,
     # stretched downward (a lobe of blood, not a glass bead)
     step = t.attr("d_step")
-    is_tip = t.bool('AND', step.gt(DRIP_STEPS - 0.5), t.attr("d_len").gt(0.03))
+    is_tip = t.bool('AND', t.bool('AND', step.gt(DRIP_STEPS - 0.5), t.attr("d_len").gt(0.012)),
+                    t.attr("d_mov").gt(0.5))
     ico = t.out(t.node('GeometryNodeMeshIcoSphere', {'Radius': 1.0, 'Subdivisions': 2}))
     bead_s = dw * 1.3
     beads = t.node('GeometryNodeInstanceOnPoints', {'Points': trail, 'Selection': is_tip,
@@ -1872,7 +1896,7 @@ def _build_blood():
     beads = t.out(t.node('GeometryNodeRealizeInstances', {'Geometry': t.out(beads)}))
     beads = t.out(t.node('GeometryNodeSetPosition', {'Geometry': beads, 'Offset': t.vec(0.0, 0.0, -1.0) * (dw * 0.8)}))
     beads = t.store(beads, "d_flat", 0.3)
-    beads = t.store(beads, "d_cap", 0.00045)
+    beads = t.store(beads, "d_cap", 0.00032)
     blood = _join(t, tubes, beads)
     # flatten onto the skin: blood runs as a flat ribbon 0.1-0.4 mm thick with
     # rounded sides and a flat top (a round tube catches one highlight along
@@ -1882,7 +1906,11 @@ def _build_blood():
     n = _nearest_normal(t, surface, p)
     d = p - q
     hn = d.dot(n)
-    flat = q + (d - n * hn) + n * ((hn.max(0.0) * t.attr("d_flat")).min(t.attr("d_cap")) + 0.00004)
+    h_new = (hn.max(0.0) * t.attr("d_flat")).min(t.attr("d_cap"))
+    # film thickness for the shader (Beer-Lambert colour): the edges of a run
+    # are a thin translucent film, its middle and its head thick and dark
+    blood = t.store(blood, "gore_bthin", 1.0 - (h_new / 0.00022).clamp())
+    flat = q + (d - n * hn) + n * (h_new + 0.00004)
     blood = t.out(t.node('GeometryNodeSetPosition', {'Geometry': blood, 'Position': flat}))
     blood = t.out(t.node('GeometryNodeSetMaterial', {'Geometry': blood, 'Material': t.inp("Material")}))
     blood = t.out(t.node('GeometryNodeSetShadeSmooth', {'Mesh': blood, 'Shade Smooth': True}))
@@ -1902,8 +1930,9 @@ def _build_fragments():
     both tables with spongy bone between (material shows the broken diploe)."""
     t = NodeTree("GH_Gore_Fragments",
                  inputs=(("Exit", 'NodeSocketGeometry'), ("Blunt", 'NodeSocketGeometry'),
-                         ("Bullet", 'NodeSocketGeometry'),
-                         ("Damage", 'NodeSocketFloat', 1.0), ("Material", 'NodeSocketMaterial')),
+                         ("Bullet", 'NodeSocketGeometry'), ("Blast", 'NodeSocketGeometry'),
+                         ("Damage", 'NodeSocketFloat', 1.0), ("Material", 'NodeSocketMaterial'),
+                         ("Is Jaw", 'NodeSocketFloat', 0.0)),
                  outputs=(("Geometry", 'NodeSocketGeometry'),),
                  description="Bone fragments around skull breaches")
     damage = t.inp("Damage")
@@ -1911,16 +1940,29 @@ def _build_fragments():
     # (kind, count, ring radius, lift max, lift min, size min, size max)
     # exit chips stay inside the wound (lifted at most ~4 mm); entrance chips
     # lie 2-14 mm below the outer table, spreading in a cone
+    # blast chips (maxilla / mandible) are thrown into the torn tissue of the
+    # crater, 1-6 mm; a crushed face has many loose plates
     specs = (("Exit", 6.0, 0.0075, 0.003, 0.0, 0.001, 0.0045),
              ("Blunt", 6.0, 0.0045, -0.001, -0.0025, 0.0008, 0.003),
-             ("Bullet", 7.0, 0.0, -0.016, -0.007, 0.0006, 0.0018))
+             ("Bullet", 7.0, 0.0, -0.016, -0.007, 0.0006, 0.0018),
+             ("Blast", 18.0, BLAST_R * 0.8, 0.004, -0.012, 0.001, 0.005))
     for kid, (kind, count, rb, lift_max, lift_min, sz0, sz1) in enumerate(specs):
         S = t.attr("hit_S", 'FLOAT_VECTOR')
         s = S.x * (0.3 + 0.7 * damage)
         D = S.z * damage
-        thr = {"Exit": 0.8, "Blunt": 0.95, "Bullet": 0.85}[kind]
+        thr = {"Exit": 0.8, "Blunt": 0.95, "Bullet": 0.85, "Blast": 0.5}[kind]
         # only on the bone the hit actually reached (not skull AND jaw)
         amount = D.gt(thr) * count * t.attr("hit_ok")
+        if kind == "Blast":
+            # (made once, on the jaw layer: a shot into the mouth may miss
+            # both bones along its axis, so hit_ok says nothing here)
+            amount = D.gt(thr) * count * t.inp("Is Jaw")
+        if kind == "Blunt":
+            crush = t.smooth(1.15, 2.3, t.attr("hit_E") * damage)
+            amount = (D.gt(thr).max(crush.gt(0.2)) * (count + 16.0 * crush)) * t.attr("hit_ok")
+            rb_k = rb * (1.0 + 3.0 * crush)
+        else:
+            rb_k = rb
         dup = t.node('GeometryNodeDuplicateElements', {'Geometry': t.inp(kind), 'Amount': amount},
                      domain='POINT')
         g = t.out(dup, 'Geometry')
@@ -1929,14 +1971,14 @@ def _build_fragments():
         rr = t.rand(0.0, 1.0, idx, 12 + kid)
         rl = t.rand(0.0, 1.0, idx, 13 + kid)
         rs = t.rand(0.0, 1.0, idx, 14 + kid)
-        I = t.attr("hit_I", 'FLOAT_VECTOR')
+        I = t.attr("hit_P" if kind == "Blast" else "hit_I", 'FLOAT_VECTOR')
         X, Y, Z = (t.attr(n, 'FLOAT_VECTOR') for n in ("hit_X", "hit_Y", "hit_Z"))
         if kind == "Bullet":
             lift = lift_min + (lift_max - lift_min) * rl
             r = 0.0015 + (-lift) * 0.35 * rr        # cone opening inward
         else:
             lift = lift_min + (lift_max - lift_min) * rl ** 4.0
-            r = s * rb * (0.25 + 0.75 * rr)
+            r = s * rb_k * (0.25 + 0.75 * rr)
         pos = I + (X * a.cos() + Y * a.sin()) * r + Z * lift
         g = t.out(t.node('GeometryNodeSetPosition', {'Geometry': g, 'Position': pos}))
         sz = s.sqrt() * (sz0 + (sz1 - sz0) * rs ** 2.5)
@@ -1976,7 +2018,8 @@ def _build_teeth():
                  inputs=(("Geometry", 'NodeSocketGeometry'), ("Blunt", 'NodeSocketGeometry'),
                          ("Count", 'NodeSocketInt', 0), ("Damage", 'NodeSocketFloat', 1.0),
                          ("Tooth Root", 'NodeSocketFloat', 1.0), ("Bullet", 'NodeSocketGeometry'),
-                         ("Bullet Count", 'NodeSocketInt', 0)),
+                         ("Bullet Count", 'NodeSocketInt', 0), ("Blast", 'NodeSocketGeometry'),
+                         ("Blast Count", 'NodeSocketInt', 0)),
                  outputs=(("Geometry", 'NodeSocketGeometry'),),
                  description="Teeth near blunt hits are knocked out or pushed in and tilted")
     isl = t.out(t.node('GeometryNodeInputMeshIsland'), 'Island Index')
@@ -2024,6 +2067,40 @@ def _build_teeth():
     # the neighbours of a shattered tooth are loosened and bloodied
     near = t.smooth(hb.s * 0.012, hb.s * 0.005, hb.rho) * hb.w.gt(-0.03) * hb.D.gt(0.3)
     gg = t.store(gg, "g_tb", t.attr("g_tb").max(near * t.smooth(-0.0035, 0.0008, (p - c).dot(root))))
+    g = _end_repeat(t, rout, [("Geometry", gg)])["Geometry"]
+    # a blast in the mouth: the lower teeth in the broken-off mandible segment
+    # hang out with it (same rigid transform as the jaw layer), the others
+    # near the crater are blown out or left loose, tilted and displaced
+    rin, rout, cur = _repeat(t, t.inp("Blast Count"), [("Geometry", 'GEOMETRY', g)])
+    i = F(t, rin.outputs['Iteration'])
+    hx = _Hit(t, t.inp("Blast"), i, t.inp("Damage"), P=c)
+
+    def hk(k):
+        return _hash(t, hx.seed, k)
+    on = hx.D.gt(0.5)
+    in_frag_c = _blast_fragment(t, hx.s, hk, hx.u, hx.v, hx.w + hx.W)[0]
+    lower = t.inp("Tooth Root").lt(0.0)
+    frag = in_frag_c * lower * on
+    dq = p - hx.I
+    pu, pv, pw = dq.dot(hx.X), dq.dot(hx.Y), dq.dot(hx.Z)
+    m = _blast_fragment(t, hx.s, hk, pu, pv, pw + hx.W)[1]
+    moved_b = hx.I + hx.X * m[0] + hx.Y * m[1] + hx.Z * (m[2] - hx.W)
+    Rb = hx.s * BLAST_R
+    near_b = t.smooth(Rb * 0.8, Rb * 0.3, hx.rho) * hx.w.gt(-0.05) * on * (1.0 - frag)
+    isl_b = t.attr("g_isl", 'INT')
+    sdb = t.math('MULTIPLY', hx.seed, 577.0)
+    q1 = t.rand(0.0, 1.0, isl_b, sdb)
+    q2 = t.rand(0.0, 1.0, isl_b, t.math('ADD', sdb, 5.0))
+    qax = t.rand((-1.0, -1.0, -1.0), (1.0, 1.0, 1.0), isl_b, t.math('ADD', sdb, 9.0), 'FLOAT_VECTOR').normalize()
+    blown = t.bool('AND', q1.lt(0.55), near_b.gt(0.35))
+    gg = t.store(cur["Geometry"], "g_kill", t.attr("g_kill").max(t.switch(blown, 0.0, 1.0)))
+    rot_b = t.out(t.node('FunctionNodeAxisAngleToRotation', {'Axis': qax, 'Angle': (0.3 + 0.9 * q2) * near_b}))
+    pivot_b = c + root * 0.0055
+    loose = pivot_b + t.out(t.node('FunctionNodeRotateVector', {'Vector': p - pivot_b, 'Rotation': rot_b})) \
+        + hx.Z * (0.005 * q2 * near_b) - root * (0.003 * q1 * near_b)
+    gg = t.out(t.node('GeometryNodeSetPosition', {'Geometry': gg, 'Selection': frag.gt(0.5), 'Position': moved_b}))
+    gg = t.out(t.node('GeometryNodeSetPosition', {'Geometry': gg, 'Selection': near_b.gt(0.01), 'Position': loose}))
+    gg = t.store(gg, "g_tb", t.attr("g_tb").max(frag.max(near_b) * t.smooth(-0.004, 0.001, (p - c).dot(root))))
     g = _end_repeat(t, rout, [("Geometry", gg)])["Geometry"]
     g = t.out(t.node('GeometryNodeDeleteGeometry', {'Geometry': g, 'Selection': t.attr("g_kill").gt(0.5)},
                      domain='POINT'))
@@ -2594,7 +2671,7 @@ def build_gore_node_group():
     # drips only need the skin near the wounds: crop it so the
     # surface lookups build small search trees
     all_hits = _join(t, *(hits[k][0] for k in KINDS))
-    near_hits = t.out(t.node('GeometryNodeProximity', {'Target': all_hits}, target_element='POINTS'), 'Distance').lt(0.12)
+    near_hits = t.out(t.node('GeometryNodeProximity', {'Target': all_hits}, target_element='POINTS'), 'Distance').lt(0.18)
     crop = t.out(t.node('GeometryNodeSeparateGeometry', {'Geometry': g, 'Selection': near_hits}, domain='FACE'))
     bn = t.group(blood_g, {"Surface": crop, "Bullet": hits["bullet"][0], "Exit": hits["exit"][0],
                            "Slash": hits["slash"][0], "Blunt": hits["blunt"][0], "Blast": hits["blast"][0],
@@ -2615,6 +2692,7 @@ def build_gore_node_group():
     g = t.switch(is_skin, g, g_sk, 'GEOMETRY')
     fn = t.group(frag_g, {"Exit": hits["exit"][0], "Blunt": hits["blunt"][0], "Bullet": hits["bullet"][0],
                           "Blast": hits["blast"][0], "Damage": damage,
+                          "Is Jaw": t.switch(t.compare('EQUAL', layer, LAYER_JAW, 'INT'), 0.0, 1.0),
                           "Material": t.inp("Bone Material")})
     g = _join(t, g, t.switch(is_bone, empty, t.out(fn), 'GEOMETRY'))
     # 5. contract attributes
