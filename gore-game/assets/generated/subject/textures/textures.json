@@ -1201,7 +1201,58 @@
    ],
    "channels": "albedo RGB fresh blood colour (sRGB), A coverage; ORM A = thickness 0-1"
   },
-  "painter": {},
+  "painter": {
+   "head": {
+    "mesh": "GB_Head",
+    "uv_hash": "0c97241b8e2b5900",
+    "size": 1024,
+    "bone_size": 512,
+    "files": {
+     "position": "head_position.exr",
+     "rest_normal": "head_rest_normal.png",
+     "valid": "head_valid.png",
+     "bone": "head_bone.png"
+    },
+    "valid_fraction": 0.6025,
+    "position": "RGB = rest position - segment origin (m, body frame); A = segment code, -1 outside islands + dilation; origins in manifest.json segment_origins",
+    "bone": "R = dominant bone index (rig.json order), G = second bone, B = dominant weight x 255, A = 255 inside islands (dilated 8 px, nearest)",
+    "rest_normal": "object/body-frame rest normal, 0.5 + 0.5 n"
+   },
+   "body": {
+    "mesh": "GB_Body",
+    "uv_hash": "b75fa2a4f5034b3a",
+    "size": 1024,
+    "bone_size": 512,
+    "files": {
+     "position": "body_position.exr",
+     "rest_normal": "body_rest_normal.png",
+     "valid": "body_valid.png",
+     "bone": "body_bone.png"
+    },
+    "valid_fraction": 0.5254,
+    "position": "RGB = rest position - segment origin (m, body frame); A = segment code, -1 outside islands + dilation; origins in manifest.json segment_origins",
+    "bone": "R = dominant bone index (rig.json order), G = second bone, B = dominant weight x 255, A = 255 inside islands (dilated 8 px, nearest)",
+    "rest_normal": "object/body-frame rest normal, 0.5 + 0.5 n",
+    "tissue_depth": "body_tissue_depth.png (B1)",
+    "tension": "body_tension.png (B1)"
+   },
+   "shorts": {
+    "mesh": "GB_Shorts",
+    "uv_hash": "534b000f07efceec",
+    "size": 1024,
+    "bone_size": 512,
+    "files": {
+     "position": "shorts_position.exr",
+     "rest_normal": "shorts_rest_normal.png",
+     "valid": "shorts_valid.png",
+     "bone": "shorts_bone.png"
+    },
+    "valid_fraction": 0.4268,
+    "position": "RGB = rest position - segment origin (m, body frame); A = segment code, -1 outside islands + dilation; origins in manifest.json segment_origins",
+    "bone": "R = dominant bone index (rig.json order), G = second bone, B = dominant weight x 255, A = 255 inside islands (dilated 8 px, nearest)",
+    "rest_normal": "object/body-frame rest normal, 0.5 + 0.5 n"
+   }
+  },
   "room": {
    "room_tile": {
     "files": {
@@ -1380,12 +1431,17 @@
   "timings_s": {
    "uvs": 47.8,
    "sets": 1696.9,
-   "tileables": 83.7
+   "tileables": 83.7,
+   "painter": 33.0
   },
   "files": {
    "body_albedo.png": {
     "bytes": 2283272,
     "sha256": "29967b6d56a64e3a"
+   },
+   "body_bone.png": {
+    "bytes": 121914,
+    "sha256": "cae5a9a516fb5b56"
    },
    "body_normal.png": {
     "bytes": 5035509,
@@ -1395,6 +1451,14 @@
     "bytes": 3504503,
     "sha256": "abab2fe9c6662701"
    },
+   "body_position.exr": {
+    "bytes": 1400107,
+    "sha256": "4e4987cc8e105d55"
+   },
+   "body_rest_normal.png": {
+    "bytes": 1369278,
+    "sha256": "90af87e5399ecfbe"
+   },
    "body_tension.png": {
     "bytes": 158759,
     "sha256": "42884affbab2f7fd"
@@ -1402,6 +1466,10 @@
    "body_tissue_depth.png": {
     "bytes": 142853,
     "sha256": "d4d99a349ce769dc"
+   },
+   "body_valid.png": {
+    "bytes": 13146,
+    "sha256": "bbdffe04a973f87d"
    },
    "brain_albedo.png": {
     "bytes": 1767595,
@@ -1447,6 +1515,10 @@
     "bytes": 1876278,
     "sha256": "07b8f5398cc35b23"
    },
+   "head_bone.png": {
+    "bytes": 56874,
+    "sha256": "8af5edf2467860b0"
+   },
    "head_normal.png": {
     "bytes": 5617333,
     "sha256": "2cd21510e758ae41"
@@ -1454,6 +1526,18 @@
    "head_orm.png": {
     "bytes": 3541759,
     "sha256": "3d25637ed368a441"
+   },
+   "head_position.exr": {
+    "bytes": 765001,
+    "sha256": "44a7643b8ea4be84"
+   },
+   "head_rest_normal.png": {
+    "bytes": 1082649,
+    "sha256": "5be8013e7ef9e7fe"
+   },
+   "head_valid.png": {
+    "bytes": 6056,
+    "sha256": "5d3463f000abbe14"
    },
    "mouth_albedo.png": {
     "bytes": 766851,
@@ -1615,6 +1699,10 @@
     "bytes": 584239,
     "sha256": "869b41ea38ec57ce"
    },
+   "shorts_bone.png": {
+    "bytes": 109895,
+    "sha256": "793cf55aa58fbf1e"
+   },
    "shorts_normal.png": {
     "bytes": 1397600,
     "sha256": "d21ecca3348226d5"
@@ -1622,6 +1710,18 @@
    "shorts_orm.png": {
     "bytes": 383153,
     "sha256": "0afce82b44fc3c63"
+   },
+   "shorts_position.exr": {
+    "bytes": 1332174,
+    "sha256": "122fe695b5018c2e"
+   },
+   "shorts_rest_normal.png": {
+    "bytes": 1135495,
+    "sha256": "b79ab7f4286920b5"
+   },
+   "shorts_valid.png": {
+    "bytes": 22082,
+    "sha256": "b651bd7f64786ea6"
    },
    "skeleton_albedo.png": {
     "bytes": 3334020,

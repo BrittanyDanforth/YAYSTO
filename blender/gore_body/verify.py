@@ -2159,6 +2159,43 @@ def b7_eyes_decals_painter():
                        + (f"; problems {probs}" if probs else ""))
 
 
+@check("scene", owner="B7")
+def b7_position_map_precision():
+    """Painter position maps (half EXR, segment-relative) reproduce the rest position of every texel
+    to <= 0.5 mm (plan §3.3.7 quantisation rule)."""
+    d = _b7()
+    if d is None:
+        return False, "no textures.json"
+    bpy = _bpy()
+    import bake
+    import export
+    org = {v["code"]: np.array(v["origin"]) for v in export.segment_origins().values()}
+    out, ok = [], True
+    for name, rec in d["painter"].items():
+        o = bpy.data.objects.get(rec["mesh"])
+        if o is None or bake.uv_hash(o) != rec["uv_hash"]:
+            out.append(f"{name} skipped (UVs changed)")
+            continue
+        im = bpy.data.images.load(os.path.join(B7_TEX, rec["files"]["position"]), check_existing=False)
+        im.colorspace_settings.name = 'Non-Color'
+        n = im.size[0]
+        a = np.empty(n * n * 4, np.float32)
+        im.pixels.foreach_get(a)
+        bpy.data.images.remove(im)
+        a = a.reshape(n, n, 4)[::-1]
+        tri, bary = bake.rasterize(o, n)
+        valid = tri >= 0
+        pos = bake.interp(o, tri, bary, per_vertex=gbc.get_verts(o.data))
+        codes = np.rint(a[..., 3][valid]).astype(int)
+        known = np.isin(codes, list(org))
+        o3 = np.array([org[c] for c in codes[known]])
+        err = np.linalg.norm(a[..., :3][valid][known] + o3 - pos[valid][known], axis=1) * 1000.0
+        good = known.all() and err.max() <= 0.5
+        ok &= good
+        out.append(f"{name} max {err.max():.3f} mm p99 {np.percentile(err, 99):.3f} mm")
+    return ok, "; ".join(out)
+
+
 @check("scene", owner="B7", severity="warn")
 def b7_textures_match_uvs():
     """The UV0 atlas of every textured mesh equals the one its textures were baked for (uv_hash).  A
