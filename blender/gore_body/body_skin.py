@@ -328,8 +328,10 @@ def _pec_relief(x, z):
     medial = sstep(0.006, 0.030, ax)                                # sternal furrow between the heads
     lateral = sstep(0.180, 0.130, ax)
     bulk = 0.0085 * lower * dome * medial * lateral
-    areola = 0.0009 * gauss(np.hypot(ax - 0.100, (z - 1.300)), 0.012)
-    nipple = 0.0026 * np.exp(-(np.hypot(ax - 0.100, z - 1.300) / 0.0042) ** 4)
+    # areola / nipple [RB §7.1 nipple (0.100, -0.112, 1.300)]; x is the base-section x, which the pectoral
+    # relief pushes ~4.5 mm outward on this slope, hence the 0.0955 centre
+    areola = 0.0009 * gauss(np.hypot(ax - 0.0955, (z - 1.300)), 0.012)
+    nipple = 0.0030 * np.exp(-(np.hypot(ax - 0.0955, z - 1.300) / 0.0045) ** 4)
     return bulk + areola + nipple
 
 

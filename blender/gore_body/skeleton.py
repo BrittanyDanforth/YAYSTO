@@ -495,7 +495,7 @@ def vertebra_sdf(lvl):
         d0 = smin(body, arch, 0.0025)
         # --- spinous process: from the lamina junction back (and down) to the tip
         root = np.array([0.0, yc + 0.5 * cap + 0.4 * lt, 0.0])
-        tip = np.array([0.0, spy - 0.004, -P["drop"] / 1e3])
+        tip = np.array([0.0, spy - (0.007 if lvl in ("T1", "T2", "T3") else 0.004), -P["drop"] / 1e3])
         spx = P["sp_rx"]
         spz = P["sp_rz"]
         sp = ecap(ax, ly, lz, root, tip, (spz[0] / 1e3, spz[1] / 1e3), (spx[0] / 1e3, spx[1] / 1e3), EZ)
@@ -953,6 +953,9 @@ def rib_sdf(n):
     elif n == 1:
         hv = [0.0070, 0.0060, 0.7 * H, H, H, 0.85 * H]
         tv = [0.0065, 0.0050, 0.0045, Tk, Tk, 0.0060]
+    elif n in (2, 3):
+        hv = [0.0080, 0.0068, 0.75 * H, H, 1.08 * H, 1.02 * H]
+        tv = [0.0075, 0.0055, 0.0060, Tk, Tk, 0.0080]
     else:
         hv = [0.0080, 0.0068, 0.75 * H, H, 0.95 * H, 0.90 * H]
         tv = [0.0075, 0.0055, 0.0060, Tk, Tk, 0.0080]
@@ -1104,7 +1107,7 @@ def scapula_sdf():
                   thick=lambda u, v, e: 0.0024 + 0.0020 * np.exp(-(e / 0.004) ** 2))
     lat = [Ia, (0.100, 0.093, 1.340), (0.118, 0.073, 1.362), (0.137, 0.046, 1.392)]
     med = [Sa, root, (0.079, 0.103, 1.390), Ia]
-    crest = [(0.077, 0.101, 1.438), (0.105, 0.100, 1.448), (0.140, 0.086, 1.455), (0.168, 0.066, 1.458),
+    crest = [(0.077, 0.100, 1.438), (0.105, 0.096, 1.447), (0.138, 0.080, 1.452), (0.166, 0.062, 1.456),
              tuple(S["acromion_posterior_angle"])]
     base = [(0.076, 0.094, 1.440), (0.105, 0.082, 1.446), (0.132, 0.062, 1.442), (0.140, 0.043, 1.432)]
     spine_outline = base + [crest[3], crest[2], crest[1], crest[0]]
@@ -1171,7 +1174,7 @@ def hip_bone_sdf():
     piis = np.array((0.052, 0.086, 0.986))
     notch = np.array((0.068, 0.056, 0.950))
     acet_top = ACET_C + np.array((0.002, 0.006, 0.036))
-    ctrl = [asis, tub, top, (0.124, 0.054, 1.068), crest_back, (0.064, 0.086, 1.042), psis, piis,
+    ctrl = [asis, tub, top, (0.121, 0.052, 1.064), crest_back, (0.064, 0.086, 1.042), psis, piis,
             (0.062, 0.070, 0.966), notch, (0.078, 0.030, 0.950), acet_top, (0.100, -0.038, 0.952), aiis,
             (0.114, -0.060, 0.974)]
     outline = _smooth_loop(ctrl, 5)
@@ -1181,7 +1184,7 @@ def hip_bone_sdf():
                                                     ((0.118, -0.028, 1.012), 0.0070), ((0.100, 0.020, 0.985), 0.0055),
                                                     ((0.120, 0.012, 1.045), 0.0060))]
     wing = Sheet(fr, outline, fossa, thick=lambda u, v, e: 0.0028 + 0.0045 * np.exp(-(e / 0.007) ** 2))
-    crest = [asis, tub, top, (0.124, 0.054, 1.068), crest_back, (0.064, 0.086, 1.042), psis]
+    crest = [asis, tub, top, (0.121, 0.052, 1.064), crest_back, (0.064, 0.086, 1.042), psis]
     crest_r = [0.0055, 0.0072, 0.0062, 0.0058, 0.0058, 0.0060, 0.0068]
     post_border = [psis, piis, (0.060, 0.072, 0.968), notch, (0.058, 0.043, 0.925),
                    np.array(P["ischial_spine"])]
@@ -1553,7 +1556,7 @@ def fibula_sdf():
     K = BN.KNEE_LEG
     hc = np.array(K["fibular_head"]) + np.array((0.0, 0.0, -0.004))
     lm = np.array(K["lateral_malleolus_tip"])
-    p = [hc + np.array((0.0, 0.002, -0.012)), (0.128, 0.045, 0.330), (0.128, 0.054, 0.200), (0.131, 0.058, 0.090)]
+    p = [hc + np.array((0.0, 0.002, -0.012)), (0.128, 0.045, 0.330), (0.127, 0.054, 0.200), (0.126, 0.058, 0.090)]
 
     def sec(n, b, t):
         r = interp(t, [0.0, 0.2, 0.8, 1.0], [0.0068, 0.0072, 0.0068, 0.0085])
@@ -1565,7 +1568,7 @@ def fibula_sdf():
         apex = A.sd_capsule(x, y, z, hc, hc + np.array((0.003, 0.005, 0.0075)), 0.0050, 0.0028)
         d = smin(head, apex, 0.003)
         d = smin(d, shaft(x, y, z), 0.008)
-        mal = A.sd_ellipsoid(x, y, z, lm + np.array((0.0, -0.002, 0.021)), (0.0088, 0.0120, 0.0210))
+        mal = A.sd_ellipsoid(x, y, z, lm + np.array((-0.0055, -0.002, 0.021)), (0.0085, 0.0115, 0.0210))
         d = smin(d, mal, 0.008)
         return d
     core = _core(fn, 0.0030, hc - np.array((0.0, 0.0, 0.045)), (0.131, 0.058, 0.130), k=0.006)
@@ -1768,7 +1771,7 @@ def foot_parts():
         return lambda x, y, z: A.extrude(gg_superellipse(x - c[0], y - c[1], r[0], r[1], n), z - c[2], r[2], rnd)
 
     def mt5_base(x, y, z):
-        return A.sd_sphere(x, y, z, (0.146, -0.006, 0.025), 0.0065)
+        return A.sd_sphere(x, y, z, (0.141, -0.004, 0.025), 0.0058)
     cuboid = block((0.121, 0.006, 0.032), (0.0105, 0.0125, 0.0105), 2.8)
     cun = block
     order = [("talus", talus, "foot_L"), ("calcaneus", calcaneus, "foot_L"), ("navicular", navicular, "foot_L"),
@@ -1793,7 +1796,7 @@ def foot_parts():
     heads = [mtp1, np.array((0.104, -0.084, 0.019)), np.array((0.122, -0.076, 0.018)),
              np.array((0.141, -0.064, 0.018)), mtp5]
     bases = [np.array((0.083, -0.031, 0.040)), np.array((0.096, -0.027, 0.044)), np.array((0.108, -0.024, 0.041)),
-             np.array((0.122, -0.010, 0.033)), np.array((0.136, -0.006, 0.029))]
+             np.array((0.119, -0.010, 0.033)), np.array((0.132, -0.005, 0.029))]
     rads = [(0.0080, 0.0058, 0.0090), (0.0060, 0.0040, 0.0062), (0.0058, 0.0040, 0.0060), (0.0058, 0.0040, 0.0058),
             (0.0065, 0.0042, 0.0058)]
     for k in range(5):
@@ -1905,8 +1908,7 @@ def _radius_clipped():
     fn, box, core = radius_sdf()
     hum, uln = humerus_sdf()[0], ulna_sdf()[0]
     fn = _clip_near(fn, hum, 0.0015, *_elbow_box())
-    fn = _clip_near(fn, uln, 0.0010, *_elbow_box())
-    fn = _clip_near(fn, uln, 0.0010, *_wrist_box())
+    fn = _clip_near(fn, uln, 0.0012, np.minimum(ELB_L, WRI_L) - 0.03, np.maximum(ELB_L, WRI_L) + 0.03)
     return fn, box, core
 
 
@@ -2324,7 +2326,7 @@ def _fragment_meshes(solid, cells, surf_pts, box, h, extra=None):
     return out
 
 
-def _skull_seeds(direction, rng, n_cap=70, n_plates=6, cap_deg=62.0):
+def _skull_seeds(direction, rng, n_cap=70, n_plates=6, cap_deg=54.0):
     """Seeds on the vault (head frame): ``n_cap`` in a cap around the exit ``direction`` (small
     fragments, median ~20 mm) and ``n_plates`` over the rest of the vault (big plates 40-100 mm)."""
     d = _n(direction)
@@ -2409,7 +2411,7 @@ def long_variants(meshed):
                     cells = Cells(seeds, warp=0.0022, freq=70.0, seed=int(rng.integers(1, 1 << 20)))
                 else:
                     zone = 0.035 if piece.startswith(("radius", "ulna")) else 0.045
-                    n_small = int(rng.integers(8, 14)) if not piece.startswith(("radius", "ulna")) else int(rng.integers(7, 10))
+                    n_small = int(rng.integers(8, 14)) if not piece.startswith(("radius", "ulna")) else int(rng.integers(10, 13))
                     r = np.linalg.norm((V - c0) - np.outer(t, ax), axis=1)
                     rad = float(np.median(r[np.abs(t - (mid - c0) @ ax) < 0.02])) if np.any(
                         np.abs(t - (mid - c0) @ ax) < 0.02) else 0.012
@@ -2476,6 +2478,8 @@ def _closed_decimate(v, f, target):
         v2, f2 = decimate_arrays(v, f, int(target * mult))
         if len(f2) and nonmanifold_edges(f2) == 0:
             return v2, f2
+    if nonmanifold_edges(f):
+        v, f = _remesh(v, f, 0.0010)                     # last resort: manifold voxel shell
     return v, f
 
 
