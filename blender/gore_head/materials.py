@@ -688,8 +688,8 @@ def _skin_material(g, name="GH_Skin", lips=False):
     lip = t.value("lip_force", 1.0) if lips else t.attr("gh_lip")
 
     # ---- healthy skin albedo ------------------------------------------------
-    base = tone.ramp([(0.0, (0.60, 0.40, 0.31)), (0.25, (0.47, 0.28, 0.19)), (0.5, (0.30, 0.155, 0.09)),
-                      (0.75, (0.13, 0.06, 0.034)), (1.0, (0.05, 0.025, 0.016))])
+    base = tone.ramp([(0.0, (0.61, 0.43, 0.35)), (0.25, (0.48, 0.30, 0.225)), (0.5, (0.30, 0.16, 0.10)),
+                      (0.75, (0.13, 0.062, 0.038)), (1.0, (0.05, 0.026, 0.018))])
     pm = t.vec(p.x.abs(), p.y, p.z)                  # mirrored for symmetric face regions
     red_reg, dark_reg = 0.0, 0.0
     for c, r, (red, dark) in FACE_REGIONS.values():
@@ -701,12 +701,11 @@ def _skin_material(g, name="GH_Skin", lips=False):
     oily = t.gauss(pm, (0.0, -0.085, 0.07), 0.04).max(t.gauss(pm, (0.0, -0.104, -0.008), 0.018))
 
     m_low = t.noise(p, 22.0, 3.0, 0.55)
-    m_red = t.noise(p + (7.3, 1.1, 3.7), 55.0, 3.0, 0.6)
+    m_red = t.noise(p + (7.3, 1.1, 3.7), 30.0, 3.0, 0.55)
     m_fine = t.noise(p, 190.0, 3.0, 0.6)
-    capil = t.ridge(t.noise(t.warp(p, 90.0, 0.002), 150.0, 3.0), 0.012) * m_red.smooth(0.5, 0.7)
-    redness = (m_red.smooth(0.45, 0.75) * 0.6 + red_reg + (m_fine - 0.5) * 0.5 + capil * 0.5).clamp()
+    redness = (m_red.smooth(0.5, 0.8) * 0.28 + red_reg + (m_fine - 0.5) * 0.22).clamp()
     redness = redness * (1.0 - pallor)
-    col = t.mix(redness, base, base * (1.06, 0.58, 0.55))
+    col = t.mix(redness, base, base * (1.04, 0.64, 0.66))
     col = col * (0.82 + 0.34 * m_low)
     col = t.mix((m_fine - 0.5).abs() * 0.5, col, col * (1.0, 0.92, 0.80))     # sallow / olive patches
     # melanin freckles / spots in a fraction of cells
@@ -1077,11 +1076,11 @@ def _eye_material(g):
     inner = 1.0 - rn.smooth(coll - 0.05, coll + 0.04)
     outer_col = (fib * 0.65 + fib2 * 0.35).ramp([(0.25, (0.035, 0.065, 0.080)), (0.5, (0.10, 0.17, 0.20)),
                                                  (0.72, (0.27, 0.37, 0.40)), (0.9, (0.45, 0.52, 0.52))])
-    inner_col = (fib * 0.6 + fib2 * 0.4).ramp([(0.3, (0.12, 0.06, 0.02)), (0.6, (0.34, 0.19, 0.07)),
-                                               (0.85, (0.55, 0.36, 0.14))])
-    iris = t.mix(inner, outer_col, inner_col)
+    inner_col = (fib * 0.6 + fib2 * 0.4).ramp([(0.3, (0.09, 0.065, 0.035)), (0.6, (0.24, 0.16, 0.075)),
+                                               (0.85, (0.42, 0.31, 0.16))])
+    iris = t.mix(inner * (0.45 + 0.55 * fib2), outer_col, inner_col)
     ring = t.math('EXPONENT', -((rn - coll) * 22.0).abs().pow(2.0))
-    iris = t.mix(ring * 0.45 * fib, iris, (0.62, 0.50, 0.34))
+    iris = t.mix(ring * 0.4 * fib, iris, (0.52, 0.47, 0.38))
     cd, ccol, _ = t.voronoi(t.vec(ux * 1.0, uy * 1.0, rn * 0.9), 7.0)
     crypt = (1.0 - cd.smooth(0.05, 0.3)) * t.sep(ccol)[0].smooth(0.5, 0.6) * rn.smooth(0.42, 0.55) \
         * (1.0 - rn.smooth(0.8, 0.9))
@@ -1103,10 +1102,16 @@ def _eye_material(g):
     scl = t.mix(back, scl, (0.52, 0.34, 0.30))
     scl = t.mix((1.0 - rs.smooth(LIMBUS_R, LIMBUS_R + 0.0012)) * front * 0.55, scl, (0.52, 0.53, 0.56))
     shot = (blood * 1.5).clamp()
-    vp = t.warp(p, 250.0, 0.0012)
-    v1 = t.ridge(t.noise(vp, 380.0, 3.0), 0.022)
-    v2 = t.ridge(t.noise(vp + (5.0, 1.0, 2.0), 1100.0, 2.0), 0.03)
     away = rs.smooth(LIMBUS_R + 0.0006, 0.0105).max(1.0 - front)
+    # meridian coordinates: direction around the gaze axis + angle from the front
+    wp = t.warp(p, 300.0, 0.0008)
+    wx, wy, wz = t.sep(wp)
+    around = t.vec(wx, wz, 0.0).normalize()
+    ax_, az_, _ = t.sep(around)
+    polar = t.math('ARCCOSINE', (-wy / wp.length().max(1e-6)).clamp())
+    v1 = t.ridge(t.noise(t.vec(ax_ * 4.0, az_ * 4.0, polar * 0.9), 3.0, 3.0, 0.6), 0.012 + 0.03 * away)
+    v2 = t.ridge(t.noise(t.vec(ax_ * 11.0, az_ * 11.0, polar * 3.0) + (5.0, 1.0, 2.0), 3.0, 2.0, 0.6),
+                 0.01 + 0.02 * away)
     vmask = away * (0.45 + 0.55 * t.noise(p, 90.0).smooth(0.4, 0.6))
     scl = t.mix(v1 * vmask * (0.5 + 0.5 * shot), scl, (0.52, 0.06, 0.05))
     scl = t.mix(v2 * vmask * (0.3 + 0.6 * shot), scl, (0.62, 0.16, 0.13))
