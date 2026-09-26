@@ -77,7 +77,7 @@ BRAIN_CLEAR_MM = 0.3           # gap between an intracranial tube wall and the b
 FIT_ITERS = 24
 MAX_STEP = 0.004              # m, largest fit move per iteration
 FAIR_SIGMA = 0.005            # m, final fairing of the fitted centreline
-RING_MAX_STEP = 0.055          # m, longest straight run between two tube rings (skinning needs rings)
+RING_MAX_STEP = 0.075          # m, longest straight run between two tube rings (joints get their own rings)
 VEIN_FLATTEN = 0.8             # vein section: minor / major axis (short axis along the skin normal)
 HEAD_CENTRE = np.array([0.0, 0.020, 1.680])   # cranial-cavity centre used for the under-skull snap
 
@@ -127,6 +127,18 @@ BONE_CONTACT_OK = {"A16", "A12", "A11", "radial"}
 # ===========================================================================
 # Bible waypoints (for the 2 mm acceptance check) - parsed from RB §3.3 itself
 # ===========================================================================
+_STRICT_WP = None
+
+
+def _strict_waypoints(vid):
+    """Strict (not (E)) RB §3.3 waypoints of vessel ``vid`` (body frame), cached; [] without the bible."""
+    global _STRICT_WP
+    if _STRICT_WP is None:
+        bw = bible_waypoints() or {}
+        _STRICT_WP = {k: [np.asarray(p, float) for p in v["points"]] for k, v in bw.items() if not v["E"]}
+    return _STRICT_WP.get(vid, [])
+
+
 def bible_waypoints():
     """{vessel id: {"points": [(x, y, z), ...], "E": bool}} from the RB §3.3 tables (None if docs missing).
 
@@ -561,6 +573,10 @@ def fit_centreline(key, vid, P0, r, probe, anchor_disp=None, seg=None, cranial=F
     # stay put, then the hard rules get the last word again
     sa = _arc(P)
     ends = np.clip(np.minimum(sa, sa[-1] - sa) / 0.006, 0.0, 1.0) * anchor
+    # strict (V/C) bible waypoints are held: the fairing fades out within ~10 mm of them
+    for wp in _strict_waypoints(vid):
+        dw = np.linalg.norm(P - wp, axis=1)
+        ends = ends * (1.0 - np.exp(-(dw / 0.010) ** 2))
     sig = float(np.clip(1.2 * np.mean(r), FINAL_SIGMA_MIN, 0.008))
     P = P + (_gauss_smooth(P, sa, sig) - P) * ends[:, None]
     P = relax(P, max(4, iters // 3))
@@ -703,10 +719,45 @@ def fit_network(probe=None, log=True):
 # ===========================================================================
 # Tubes
 # ===========================================================================
-def _stations(P, r, tol_frac=0.35, tol_min=0.0010, max_step=RING_MAX_STEP, max_turn_deg=14.0):
-    """Indices of the ring stations: Douglas-Peucker on the dense centreline (tolerance 0.35 r, >= 1 mm),
-    a maximum spacing, and no turn sharper than ``max_turn_deg`` between consecutive rings (so small
-    vessels bend smoothly instead of kinking)."""
+_JOINTS = None
+
+
+def _joint_rings(P, idx, reach=0.06, pad=0.025):
+    """Add ring stations where a vessel crosses a limb joint (the point nearest the joint centre, plus one
+    ``pad`` either side) so the long ring spacing never bridges a flexing joint with one straight span."""
+    global _JOINTS
+    if _JOINTS is None:
+        import rig
+        bm = rig.bone_map()
+        _JOINTS = np.array([bm[b]["head"] for b in ("upper_arm_L", "upper_arm_R", "forearm_L", "forearm_R",
+                                                    "hand_L", "hand_R", "thigh_L", "thigh_R", "shin_L", "shin_R",
+                                                    "foot_L", "foot_R", "neck")], float)
+    s = _arc(P)
+    extra = set(idx)
+    for J in _JOINTS:
+        d = np.linalg.norm(P - J, axis=1)
+        k = int(np.argmin(d))
+        if d[k] > reach:
+            continue
+        extra.add(k)
+        # plus one ring on each side within ``pad`` .. 2 pad unless a station is already that close
+        for sgn in (-1.0, 1.0):
+            sk = s[k] + sgn * pad
+            if 0.0 < sk < s[-1] and not np.any(np.abs(s[sorted(extra)] - sk) < pad):
+                extra.add(int(np.argmin(np.abs(s - sk))))
+    return sorted(extra)
+
+
+# largest centreline turn between two rings by tube sides: a kink shows in proportion to the tube's size on
+# screen, so the big 8-12-sided trunks bend in 18-24 deg steps and the 4-sided 1.5-3 mm branches in 60 deg steps
+# (the plan §4.1 budget of 14,000 triangles for both tube meshes)
+MAX_TURN_DEG = {12: 18.0, 8: 24.0, 6: 40.0, 4: 60.0}
+
+
+def _stations(P, r, tol_frac=0.7, tol_min=0.0030, max_step=RING_MAX_STEP, max_turn_deg=14.0):
+    """Indices of the ring stations: Douglas-Peucker on the dense centreline (tolerance 0.7 r, >= 3 mm),
+    a maximum spacing, and no turn sharper than ``max_turn_deg`` between consecutive rings (so vessels bend
+    smoothly instead of kinking)."""
     keep = {0, len(P) - 1}
 
     def dp(i, j):
@@ -819,7 +870,10 @@ def _tube_parts(fit, probe=None):
         P, r, _rep = fit[s["id"]]
         sa = _arc(P)
         t = sa / max(sa[-1], 1e-9)
-        idx = _stations(P, r, tol_min=0.0008) if s["vessel"] in TORTUOUS else _stations(P, r)
+        turn = MAX_TURN_DEG.get(sides_for(s), 30.0)
+        idx = (_stations(P, r, tol_min=0.0008, max_turn_deg=turn) if s["vessel"] in TORTUOUS
+               else _stations(P, r, max_turn_deg=turn))
+        idx = _joint_rings(P, idx)
         Ps, rs, ts = P[idx], r[idx], t[idx]
         if s["root"] and s["vessel"] not in ON_HEART and len(Ps) > 1:
             # great vessels join their chamber: the tube starts 1.5 r inside the heart wall with a 15 %

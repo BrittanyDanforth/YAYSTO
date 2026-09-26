@@ -53,7 +53,7 @@ RES = {
     "full": dict(hr=0.0012, src=0.0008, teeth=0.00042, soft=0.0008),
     "quick": dict(hr=0.0022, src=None, teeth=0.00070, soft=0.0012),
 }
-HEAD_TRIS = 29300                 # plan §4.1: 30,000 incl. the zip strip
+HEAD_TRIS = 28900                 # plan §4.1: 30,000 incl. the zip strip (lands ~1.2k over the target)
 HEAD_LOD1_TRIS = 15000
 SEAM_GAP = 0.0012                 # the SDF mesh is cut this far above the ring plane, then zipped
 HEAD_BOX = ((-0.118, -0.135), (0.118, 0.150), 1.797)      # x, y ranges and top z (body frame)
@@ -2063,8 +2063,19 @@ def check_landmarks():
             if got[1] > 7.0:
                 bad.append(k)
             continue
+        if k.startswith("eye"):
+            # the eyes are the head project's (moved 2.5 mm back in its fix rounds): exact to the head's
+            # EYE_C, and within 3 mm of the RB table
+            sx = 1.0 if k.endswith("L") else -1.0
+            hw = gbc.head_to_body(np.asarray(_A().EYE_C, float) * np.array([sx, 1.0, 1.0]))
+            rb = float(np.max(np.abs(np.array(got) - np.array(want)))) * 1000.0
+            err = float(np.max(np.abs(np.array(got) - hw))) * 1000.0
+            det[k] = f"{err:.2f} (RB {rb:.2f})"
+            if err > 0.3 or rb > 3.0:
+                bad.append(k)
+            continue
         err = float(np.max(np.abs(np.array(got) - np.array(want)))) * 1000.0
-        tol = 0.3 if k.startswith("eye") else 4.0
+        tol = 4.0
         if k == "vertex":
             err = abs(got[2] - want[2]) * 1000.0
         elif k == "glabella":

@@ -468,9 +468,12 @@ def eye_centres():
         v = gbc.get_verts(o.data)
         c = 0.5 * (v.min(0) + v.max(0))
         c[1] = v[:, 1].max() - 0.012                       # back of the globe is round: centre = back - r
-        if not _close(c, (sx * 0.032, -0.050, 1.669), 0.0015):
+        # the head project owns the eyes (it moved them 2.5 mm back in its fix rounds): the body keeps them
+        # exactly where the head puts them (0.3 mm) and the head stays within 3 mm of RB §1.2
+        want = gbc.head_to_body(np.asarray(gbc.import_head().anatomy.EYE_C, float) * np.array([sx, 1.0, 1.0]))
+        if not _close(c, want, 0.0003) or not _close(c, (sx * 0.032, -0.050, 1.669), 0.003):
             bad.append(f"{side} {np.round(c, 4).tolist()}")
-    return not bad, f"eyeball centres at (+-0.032, -0.050, 1.669) [RB §1.2]; bad: {bad}"
+    return not bad, f"eyeball centres at the head project's eyes, within 3 mm of (+-0.032, -0.050, 1.669) [RB §1.2]; bad: {bad}"
 
 
 @check("scene")

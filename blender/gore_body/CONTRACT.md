@@ -2,8 +2,8 @@
 
 Procedural full body for the Godot game, built with Blender 5.x from code only (no downloads).
 The authoritative design is `gore-game/docs/FULL_BODY_PLAN.md` §5; this file records what the code
-actually does today and the rules every work package follows. Status: **B0 done (placeholder,
-data, infra, export draft)**. Every other package is a stub with its final signatures.
+actually does today and the rules every work package follows. Status: **B0-B8 built; fix round 1
+applied** (see "Fix round 1: changes and deviations" at the end). Remaining failures are listed there.
 
 ## Run
 
@@ -18,8 +18,16 @@ python3 placeholder.py --quick | neuro.py | rig.py # each module also runs alone
 blender -b --python build.py -- --stage placeholder --quick     # Blender binary (5.1): args after "--"
 ```
 
-Options: `--quick` (coarse meshes), `--no-bake`, `--render` (renders/build_*.png), `--no-save`
-(skip `gore_body.blend`), `--no-verify`. Exit code 1 when a `fail` check fails.
+Options: `--quick` (coarse meshes; also skips the full bake and writes to `.cache/quick_out/` unless
+`--force-export`), `--no-bake`, `--render` (renders/build_*.png), `--no-save` (skip `gore_body.blend`),
+`--no-verify`, `--reproduce` (verify: rebuild into a scratch root and compare mesh hashes). Exit code 1
+when a `fail` check fails. Environment: `GB_OUTPUT_ROOT` (write the exports + `.blend` to another root),
+`GB_CACHE_DIR` (stage caches), `GODOT_BIN` (headless import check; skipped with a warning if unset/missing).
+
+**Blender 5.1 (the user's local install)**: the code was developed on the bpy 5.0.1 module. Run
+`blender -b --python build.py -- --stage placeholder --quick` once first (~1 min): it exercises every
+bpy API the full build uses (mesh/attribute foreach, geometry ops, glTF export, Cycles setup) and fails
+fast on a 5.0 -> 5.1 difference.
 
 ## Rules (plan §5.1)
 
@@ -283,7 +291,9 @@ JSON determinism; scene: contract objects/collections, identity transforms + one
 slot names, UV order, weights ≤ 4 and normalised, rigid parts 100 % on their bone, bone-piece sides,
 shape keys, armature/poses, **seam ring shared by GB_Head and GB_Body (160 identical vertices)**, eye
 centres (RB §1.2), codes inside their tables, nesting inside the skin (FB-4 style), vessels inside skin
-(warn, B5), triangle budgets (warn).
+(fail, B5), triangle budgets (fail, strict plan §4.1 numbers), stage caches current, UV overlap (exact),
+B6 rest-pose nesting and every deformation test (fail). A check returning `(None, detail)` is a SKIP
+(bake-dependent checks when the bake stage was skipped on purpose).
 
 ## Known facts and findings for the other packages
 
@@ -331,7 +341,39 @@ centres (RB §1.2), codes inside their tables, nesting inside the skin (FB-4 sty
   (table sizes, verified +-0.5 mm) is clear of bone; the dural sac is sized to the table canal minus 3 mm.
 - **B0/B6 codes**: `codes.json` `cord_segment` should add 31 = dura and 40 + n = root stub of segment n
   (documented in `spine.json` `cord_codes`).
-- **build.py**: the neuro stage's cache key lists only `neuro.py`; it also depends on `viscera.py` (shared
-  mesher) and the head project's `anatomy.py` (brain). The viscera stage also reads `body_skin.py` (abdominal
-  wall stations). Please add them to `SOURCES` so edits invalidate the caches.
+- **build.py** (fixed in fix round 1): every stage's cache key is its whole import closure (`SOURCES`) plus
+  `gb_geom.py`, the head project's sources and the upstream stages' keys, so any edit invalidates exactly the
+  stages it can change; side files (maps, hair cards, bones.json) are cached and restored with the stage.
 
+
+## Fix round 1: changes and deviations (kept current)
+
+Deviations from the bible / plan that the code now makes on purpose (each also noted where it is coded):
+
+| Item | Bible / plan | Now | Why |
+|---|---|---|---|
+| Laryngeal prominence | RB §7.1 (0, −0.058, 1.537) | (0, −0.061, 1.527) skin; B4 thyroid cartilage recedes 6 mm toward its lower border | 2.3 cm under the menton with a real cervicomental angle; the cricoid skin point (−0.055 at 1.515) stays consistent |
+| Iliac crest top / tubercle | RB table | x 0.132 / 0.128 | inside the flank skin with 7-12 mm of cover |
+| Patella centre / skin | RB table | (0.090, −0.0215, 0.500) / (0.090, −0.039, 0.499) | knee girth 37.4 cm with 5-6 mm pre-patellar cover |
+| Scapula superior angle | (0.080, 0.085, 1.475) | z 1.468 (T2 level) | at 1.475 it sat 10 mm under the D19 seam plane and could not be covered by 5 mm of trapezius without the skin rising above the seam |
+| Spleen centre | RB OBB centre | `viscera.SPLEEN_CENTROID` (0.0987, 0.0225, 1.2233) | the RB OBB centre lies on the rib cage wall; the lens sits 16 mm inward |
+| Liver AABB | RB AABB | x tolerance 15 mm | the RB box is 2 cm wider than the right cage allows |
+| Lung AABB | RB AABB | x 8 / y 6 mm tolerance; volumes below FRC (warn) | the lungs fit the rib cage model (ribs win) |
+| Left adrenal | RB centre | ellipsoid 6 mm lower before the kidney carve | the kidney pole carves the lower crescent; the carved gland is centred |
+| GB_Brain budget | plan 14k | 28k (`TRI_BUDGET`) | hero asset of every headshot / cutaway |
+| Body atlas | 2k | 4096 px (brain 2048) | body texel density |
+| Rib arcs | 4 table points | + 2 round arc mid-points per rib (`ribs.rib_points`) | ribs were polygonal between the table points |
+| Neck girth | 38 cm at z 1.515 (horizontal) | measured as the anthropometric tape (`verify.neck_tape`: anchored at the cricoid point, perpendicular to the neck, smallest of 0-16 deg tilts): 39.1 cm | a horizontal cut at 1.515 runs below the C7 skin landmark (0.075, 1.532) through the trapezius (the neck *base*, 42.6 cm) |
+| Vessel tube rings | 0.35-0.5 r Douglas-Peucker | 0.7 r / 3 mm, turn limit by tube size (18-60 deg), 75 mm max span + forced rings at every limb joint | the 14,000-triangle plan budget with no kinks at joints |
+| Eye centres | RB §1.2 (±0.032, −0.050, 1.669) | follow the head project (±0.0315, −0.0475, 1.669) | the head team moved the eyes 2.5 mm back (head is authoritative) |
+
+Rig / tests:
+- Deep layers (bone, organs, vessels, nerves, cord, brain) take the head share of the 12-22 mm band around the
+  mandible (they turn with the head) but the jaw share only within 2-6 mm of the bone; the throat sheet (jaw
+  share of the submental skin) starts at z 1.528 (above the thyroid cartilage), so opening the mouth no longer
+  drags the neck skin over the larynx.
+- The neck gate's radial containment was widened (68-112 mm) so neck rotation spreads over the trapezius base.
+- The shorts take the skin weights at their nearest skin point (smoothed over the cloth).
+- `posetest`: a point counts as outside only if the global winding number AND the nearest posed face agree
+  (a remote inside-out fold along a winding ray no longer flags rigidly-inside points); "exposed" needs two
+  escaping rays; shorts in a closed skin crease (two facing skin sheets within 25 mm) are reported as pinched.

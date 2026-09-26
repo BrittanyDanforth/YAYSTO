@@ -170,10 +170,14 @@ def exposed(bvh, pts, dirs=_DIRS26):
     dv = [Vector(d) for d in dirs]
     for i, p in enumerate(pts):
         o = Vector(p)
+        # two escaping rays: a single ray can slip out between two triangles through a shared edge
+        n = 0
         for d in dv:
             if bvh.ray_cast(o, d)[0] is None:
-                out[i] = True
-                break
+                n += 1
+                if n >= 2:
+                    out[i] = True
+                    break
     return out
 
 
@@ -272,7 +276,13 @@ def run_test(md, arm, name, spec, rest=None):
             continue
         P = rig.lbs(m.v[sel], m.idx[sel], m.w[sel], mats)
         # cheap pre-filter: only points close to the posed skin can be outside
-        dist = np.array([bvh.find_nearest(p.tolist())[3] for p in P])
+        hits = [bvh.find_nearest(p.tolist()) for p in P]
+        dist = np.array([h[3] for h in hits])
+        # side of the nearest posed skin face (+ = outside): a point must be outside by the global winding
+        # number AND locally; a point that stays rigidly inside its own skin is not flagged because a remote
+        # part of the posed skin folds inside-out along one of the winding rays (trunk twist, neck flexion)
+        local = np.array([float((P[k] - np.asarray(h[0])) @ np.asarray(h[1])) if h[0] is not None else 1.0
+                          for k, h in enumerate(hits)])
         cand = dist < 0.012
         wn = np.ones(len(P))
         exp = np.zeros(len(P), bool)
@@ -286,7 +296,7 @@ def run_test(md, arm, name, spec, rest=None):
                 exp[ci[e1][~e0]] = True
         # outside = winding says outside OR visible from outside through a tear / fold; both count by
         # their distance to the posed skin (the same 3 mm tessellation tolerance)
-        outside = (wn < 0.5) | exp
+        outside = ((wn < 0.5) & (local > 0.0)) | exp
         d_out = np.where(outside, dist, 0.0)
         exp &= dist > POKE_LIMIT_MM / 1000.0
         mx = float(d_out.max() * 1000.0) if len(d_out) else 0.0
@@ -346,6 +356,8 @@ def run_test(md, arm, name, spec, rest=None):
 
 SHORTS_MIN_MM = 1.0             # B1: the shorts stay >= 1 mm off the skin at 90 deg hip flexion
 CREASE_GAP_MM = 25.0            # a cloth point with skin on both sides within this gap sits in a skin fold
+DEEP_LAYERS = ("GB_Vessels_Art", "GB_Vessels_Ven", "GB_Organs", "GB_Cord", "GB_Brain")
+DEEP_DRAG_MM = 2.0
 
 
 def _barycentric(p, a, b, c):

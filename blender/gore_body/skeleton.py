@@ -2135,9 +2135,10 @@ def _skull_head(x, y, z):
     add = smin(add, occ, 0.006)
     # maxillary alveolar process around the upper roots
     add = smin(add, _alveolar(A, ax, y, z, True, depth=0.022), 0.003)
-    # the additions stay 4 mm inside the (combined head + neck) skin, 1 mm off the brain case and the eyes
+    # the additions stay 5 mm inside the (combined head + neck) skin (room for the superficial temporal artery
+    # over the zygomatic root: skin 1.6 + tube 1.3 + 0.8 clearance), 1 mm off the brain case and the eyes
     bx, by, bz = x + HEAD_OFFSET[0], y + HEAD_OFFSET[1], z + HEAD_OFFSET[2]
-    add = np.maximum(add, BS.skin_sdf(bx, by, bz) + 0.004)
+    add = np.maximum(add, BS.skin_sdf(bx, by, bz) + 0.005)
     add = np.maximum(add, -(A.cranial_cavity(ax, y, z) - 0.0010))
     add = np.maximum(add, -(A.sd_sphere(ax, y, z, A.EYE_C, A.EYE_R) - 0.0015))
     # ... and 1.5 mm off the atlas and the axis (the occipital base / mastoid additions reached C1: 0.08 mm)

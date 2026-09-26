@@ -909,6 +909,11 @@ def lung_fields(x, y, z, side):
     d = carve(d, _RIBT(x, y, z), 0.0018, 0.004)                   # shallow rib impressions
     d = carve(d, _STERN(x, y, z), 0.0025, 0.004)
     d = carve(d, _PARAV(x, y, z), -0.0040, 0.004)                 # tips of transverse processes, rib necks
+    if side == "L":
+        # cardiac notch: below the 4th cartilage the left lung's anterior border swings out laterally over the
+        # heart (the lingula tip stays lateral of x ~5 cm), it never reaches the lower sternum
+        notch = np.maximum(np.maximum(x - 0.048, y + 0.050), z - 1.345)
+        d = smax(d, -notch, 0.010)
     # fissures: 2.8 mm clefts opening slightly at the surface, reaching to ~3 cm from the hilum
     (n, dd), hor = _fissures(side)
     P = np.stack([x, y, z], 1)
@@ -1784,6 +1789,12 @@ def organ_specs():
     S.append(("bowel_filler", "bowel_filler", bowel_filler_sdf, (np.array([-0.135, -0.120, 0.915]),
                                                                  np.array([0.135, 0.060, 1.215])), 0.0030, 400,
               _const(1)))
+    # the shares are targets; decimation lands up to ~1 % over them, so they are scaled to 98.5 % of the
+    # plan §4.1 budget (22,000 for GB_Organs, strict)
+    total = sum(sp[5] for sp in S)
+    cap = 0.985 * gbc.TRI_BUDGET["GB_Organs"]
+    if total > cap:
+        S = [sp[:5] + (int(sp[5] * cap / total),) + sp[6:] for sp in S]
     return S
 
 

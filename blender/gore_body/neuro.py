@@ -45,7 +45,7 @@ BRAIN_H = 0.0008                   # brain polygonisation: fine enough for the 3
 BRAIN_TRIS = 27800                 # LOD0 (plan §4.1 raised 14k -> 28k: hero asset of every headshot/cutaway;
                                    # the gyri stay rounded instead of faceting; worst visible subject ~149k)
 BRAIN_HR_TRIS = 420000             # GB_Brain_HR (bake source, carries the folia for brain_normal)
-CORD_TRIS = 3000
+CORD_TRIS = 3000                   # plan §4.1 (sweep steps / dural stations are sized to stay under it)
 
 
 def _A():
@@ -221,12 +221,12 @@ def cord_parts(q=False):
     P = np.column_stack([np.zeros(len(prof)), prof[:, 1], prof[:, 0]])
     parts = []
     # --- cord proper (ellipse sections), segment code by z, t within the segment
-    v, f, tt = gg.sweep(P, prof[:, 2:4], sides=8, step=0.011, smooth=True,
+    v, f, tt = gg.sweep(P, prof[:, 2:4], sides=8, step=0.013, smooth=True,
                         normal_fn=lambda Q: np.tile([1.0, 0.0, 0.0], (len(Q), 1)))
     seg, tseg = _seg_of_z(v[:, 2])
     parts.append(gg.part(v, f, 0, gb_piece=seg.astype(np.int32), gb_tt=tseg))
     # --- dural tube: cord + CSF (2-4 mm), limited by the canal (epidural fat 1 mm), cauda sac to S2
-    zs = np.concatenate([np.linspace(CORD_TOP + 0.004, VT.CONUS_TIP[2], 34)])
+    zs = np.concatenate([np.linspace(CORD_TOP + 0.004, VT.CONUS_TIP[2], 30)])
     dy, dw, da = [], [], []
     for z in zs:
         y, hw, ha = cord_centre(z)

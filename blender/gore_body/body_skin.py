@@ -2064,6 +2064,48 @@ def _write_tissue_attrs(obj):
     return t, tan
 
 
+# decimation weight at a limb joint (1 = elsewhere).  Blender's collapse decimation reacts to vertex-group
+# weights almost like a switch (0.995 = no effect, 0.98 = 2.5-4x the vertex density), so the zone is kept small
+JOINT_DENSITY = 0.98
+JOINT_DENSITY_R = 0.040       # m, radius of the denser zone around each joint centre
+
+
+def joint_weighted_decimate(obj, target_tris):
+    """Collapse-decimate to ``target_tris`` with a lower collapse weight around the limb joints (elbow, wrist,
+    knee, ankle, shoulder, hip, knuckles): the skin keeps short edges where it bends, so a flexed wrist or knee
+    does not fold one long triangle over the tissue under it (codes restored like ``gb_geom.decimate_to``)."""
+    import gb_geom as gg
+    import rig
+    me = obj.data
+    n = gbc.tri_count(me)
+    if n <= target_tris:
+        return n
+    snap = gg._snapshot_codes(obj)
+    bm = rig.bone_map()
+    J = np.array([bm[b]["head"] for b in ("upper_arm_L", "upper_arm_R", "forearm_L", "forearm_R", "hand_L",
+                                          "hand_R", "thigh_L", "thigh_R", "shin_L", "shin_R", "foot_L",
+                                          "foot_R")], float)
+    v = gbc.get_verts(me)
+    d = np.min(np.linalg.norm(v[:, None, :] - J[None, :, :], axis=2), axis=1)
+    w = np.where(d < JOINT_DENSITY_R, JOINT_DENSITY, 1.0)
+    vg = obj.vertex_groups.new(name="gb_decimate")
+    for val in np.unique(w):
+        vg.add(np.nonzero(w == val)[0].tolist(), float(val), 'REPLACE')
+    mod = obj.modifiers.new("gb_decimate", 'DECIMATE')
+    mod.decimate_type = 'COLLAPSE'
+    mod.ratio = max(0.01, target_tris / max(n, 1))
+    mod.use_collapse_triangulate = True
+    mod.vertex_group = "gb_decimate"
+    mod.vertex_group_factor = 1.0
+    gg.apply_modifier(obj, mod)
+    obj.vertex_groups.remove(obj.vertex_groups["gb_decimate"])
+    gg.remove_loose(obj.data)
+    obj.data.validate(clean_customdata=False)
+    obj.data.shade_smooth()
+    gg._restore_codes(obj, snap)
+    return gbc.tri_count(obj.data)
+
+
 def _protect_ring_decimate(obj, target_tris):
     """Collapse-decimate keeping the boundary (seam ring) vertices exactly (vertex group weight 0)."""
     import bpy
@@ -2107,7 +2149,7 @@ def build_body_skin(quick=None):
         hr = _sdf_object("GB_Body_HR", skin_sdf, (-0.60, -0.20, -0.004), (0.60, 0.20, SEAM_Z + 4 * h), h)
     with T("B1: LOD0 decimate + seam zip"):
         body = _new_mesh_object("GB_Body", hr.data.copy())
-        gg.decimate_to(body, BODY_TRIS - 2 * len(ring))
+        joint_weighted_decimate(body, BODY_TRIS - 2 * len(ring))
         _cut_and_zip(body, ring, 0.0030)
         _cut_and_zip(hr, ring, 0.5 * h)
     with T("B1: UV islands, seams, unwrap, pack"):
@@ -2280,6 +2322,27 @@ def taubin(me, iters=10, lam=0.50, mu=-0.53):
     return me
 
 
+def clamp_inside(obj, fn, depth, iters=3, e=0.0002):
+    """Move vertices with ``fn`` > -depth inward along the numeric gradient of ``fn`` until they are at least
+    ``depth`` inside (a few Newton steps).  Returns the number of vertices moved."""
+    v = gbc.get_verts(obj.data)
+    moved = 0
+    for _ in range(iters):
+        d = fn(v[:, 0], v[:, 1], v[:, 2])
+        bad = d > -depth
+        if not bad.any():
+            break
+        moved = max(moved, int(bad.sum()))
+        q = v[bad]
+        g = np.stack([(fn(q[:, 0] + e, q[:, 1], q[:, 2]) - fn(q[:, 0] - e, q[:, 1], q[:, 2])),
+                      (fn(q[:, 0], q[:, 1] + e, q[:, 2]) - fn(q[:, 0], q[:, 1] - e, q[:, 2])),
+                      (fn(q[:, 0], q[:, 1], q[:, 2] + e) - fn(q[:, 0], q[:, 1], q[:, 2] - e))], 1) / (2 * e)
+        g /= np.maximum(np.linalg.norm(g, axis=1, keepdims=True), 1e-9)
+        v[bad] = q - g * (d[bad] + depth)[:, None]
+    gbc.set_verts(obj.data, v)
+    return moved
+
+
 def build_muscle_shell(skin=None, quick=None):
     """GB_MuscleShell: closed shell at skin + fat depth [RB §7.6], 24k tris, 6 surfaces."""
     import gb_geom as gg
@@ -2291,6 +2354,9 @@ def build_muscle_shell(skin=None, quick=None):
         # navel, shoulder notch); Taubin smoothing rounds them without shrinking the shell
         taubin(obj.data, iters=20)
         gg.decimate_to(obj, MUSCLE_TRIS)
+        # collapse decimation can park a vertex of a tight crease (crotch, axilla) on the far side of the
+        # skin; pull any vertex closer than 1.5 mm to the skin surface back inside along the skin gradient
+        clamp_inside(obj, skin_sdf, 0.0015)
     with T("B1: muscle shell codes + surfaces + UV"):
         paint_codes(obj)
         gbc.set_material_slots(obj)
