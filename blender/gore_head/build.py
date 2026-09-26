@@ -364,8 +364,8 @@ def _brow_strands(bvh, rng, sign, count=330):
 def _lash_strands(bvh, rng, sign, upper=True):
     """Eyelashes of one lid: rooted on the lid margin, curling away from the eye."""
     ec = Vector((sign * anatomy.EYE_C[0], anatomy.EYE_C[1], anatomy.EYE_C[2]))
-    # ~150 upper / 60 lower lashes in two or three staggered rows, as on a real lid
-    count = 150 if upper else 60
+    # ~90 upper / 50 lower lashes in two or three staggered rows, as on a real lid
+    count = 90 if upper else 50
     strands = []
     for k in range(count):
         t = (k + rng.uniform(0.0, 0.9)) / count
@@ -392,10 +392,12 @@ def _lash_strands(bvh, rng, sign, upper=True):
         if upper:
             length = (0.0030 + 0.0040 * stf ** 0.7) * (1.0 + 0.2 * (t - 0.5))
         else:
-            length = 0.0015 + 0.0017 * stf
-        length *= rng.uniform(0.8, 1.15)
-        # they grow forward out of the lid margin ...
-        d = (radial + ev * 0.12).normalized()
+            length = 0.0011 + 0.0013 * stf
+        length *= rng.uniform(0.75, 1.15)
+        # they grow forward out of the lid margin (lower ones down and out) ...
+        d = (radial + ev * (0.12 if upper else 0.45)).normalized()
+        if not upper:
+            d = (d + Vector((sign * 0.25, 0.0, 0.0))).normalized()
         wob = Vector((rng.normal(0, 0.06), rng.normal(0, 0.06), rng.normal(0, 0.06)))
         d = (d + wob).normalized()
         pts = []
@@ -404,6 +406,17 @@ def _lash_strands(bvh, rng, sign, upper=True):
             # ... and curl up (upper lid) or down (lower lid) toward their tips
             pts.append(q + d * (s * length) + ev * (length * 0.6 * s * s))
         strands.append(pts)
+    # real lashes clump: groups of 3-5 neighbours whose tips pull together
+    i = 0
+    while i < len(strands):
+        n = int(rng.integers(3, 6))
+        grp = strands[i:i + n]
+        tip = sum((st_[-1] for st_ in grp), Vector()) / len(grp)
+        for st_ in grp:
+            for k in range(1, len(st_)):
+                w = (k / (len(st_) - 1)) ** 2 * 0.55
+                st_[k] = st_[k] + (tip - st_[-1]) * w
+        i += n
     return strands
 
 

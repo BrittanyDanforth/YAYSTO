@@ -664,10 +664,10 @@ def disc_sdf(upper, lower):
     fu, fl = spine_frame(upper), spine_frame(lower)
     ru, rl = ROW[upper], ROW[lower]
     A = _A()
-    pu = fu.c - fu.R[2] * (ru["body_h_mm"] / 2000.0 - 0.0006)
-    pl = fl.c + fl.R[2] * (rl["body_h_mm"] / 2000.0 - 0.0006)
+    pu = fu.c - fu.R[2] * (ru["body_h_mm"] / 2000.0 + 0.0002)
+    pl = fl.c + fl.R[2] * (rl["body_h_mm"] / 2000.0 + 0.0002)
     if upper == "C2":
-        pu = fu.c - fu.R[2] * (0.0025 + 0.0085 - 0.0006)
+        pu = fu.c - fu.R[2] * (0.0025 + 0.0085 + 0.0002)
     mid = Frame(0.5 * (pu + pl), EX, _n(fu.R[1] + fl.R[1]))
     w = 0.5 * (ru["body_w_mm"] + rl["body_w_mm"]) / 1e3
     d = 0.5 * (ru["body_d_mm"] + rl["body_d_mm"]) / 1e3
@@ -680,8 +680,8 @@ def disc_sdf(upper, lower):
         ax = np.abs(lx)
         bulge = 0.0008 * (1.0 - np.minimum((lz / max(half_t, 1e-4)) ** 2, 1.0))
         sec = gg_superellipse(ax, ly, 0.5 * w * 0.97, 0.5 * d * 0.97, n) - bulge
-        top = plane(x, y, z, pu, -fu.R[2])          # below the upper endplate
-        bot = plane(x, y, z, pl, fl.R[2])           # above the lower endplate
+        top = plane(x, y, z, pu, fu.R[2])           # outside above the upper body's endplate
+        bot = plane(x, y, z, pl, -fl.R[2])          # outside below the lower body's endplate
         return smax(sec, np.maximum(top, bot), 0.0007)
     lo = np.minimum(pu, pl) - np.array([0.5 * w + 0.004, 0.5 * d + 0.006, 0.006])
     hi = np.maximum(pu, pl) + np.array([0.5 * w + 0.004, 0.5 * d + 0.006, 0.006])
@@ -828,18 +828,52 @@ def drop_crumbs(v, f, min_verts=24):
     return compact(v, f[keepf])
 
 
+def nonmanifold_edges(f):
+    """Number of edges not shared by exactly two triangles."""
+    e = np.sort(np.concatenate([f[:, [0, 1]], f[:, [1, 2]], f[:, [2, 0]]]), axis=1)
+    _u, cnt = np.unique(e, axis=0, return_counts=True)
+    return int((cnt != 2).sum())
+
+
+def _remesh(v, f, voxel):
+    """Blender voxel remesh (manifold quads) -> triangles."""
+    import bpy
+    me = gbc.mesh_from_arrays("_b3_rm", v, f, smooth=False)
+    ob = bpy.data.objects.new("_b3_rm", me)
+    bpy.context.scene.collection.objects.link(ob)
+    mod = ob.modifiers.new("rm", 'REMESH')
+    mod.mode = 'VOXEL'
+    mod.voxel_size = voxel
+    mod.adaptivity = 0.0
+    dg = bpy.context.evaluated_depsgraph_get()
+    me2 = bpy.data.meshes.new_from_object(ob.evaluated_get(dg))
+    v2, f2 = gbc.mesh_arrays(me2)
+    bpy.data.objects.remove(ob, do_unlink=True)
+    bpy.data.meshes.remove(me)
+    bpy.data.meshes.remove(me2)
+    return v2, f2
+
+
 def mesh_sdf(fn, box, h, project=3):
-    """Polygonise ``fn`` inside ``box`` at spacing ``h``: (verts, tris)."""
+    """Polygonise ``fn`` inside ``box`` at spacing ``h``: (verts, tris), closed and manifold.
+
+    Surface nets + Newton projection; where the nets produce non-manifold edges (thin features)
+    the mesh is voxel-remeshed at the same spacing and re-projected onto the exact surface."""
     import gb_geom as gg
     lo, hi = box
     v, q = gg.sdf_arrays(fn, np.asarray(lo) - 2 * h, np.asarray(hi) + 2 * h, h, project=project)
     if len(q) == 0:
         return np.zeros((0, 3)), np.zeros((0, 3), np.int64)
     f = quads_to_tris(v, q)
-    return drop_crumbs(v, f)
+    v, f = drop_crumbs(v, f)
+    if len(f) and nonmanifold_edges(f):
+        v, f = _remesh(v, f, h)
+        v = _A().project_to_surface(fn, v, h, 3)
+        v, f = drop_crumbs(v, f)
+    return v, f
 
 
-def decimate_arrays(v, f, target):
+def decimate_arrays(v, f, target, _depth=0):
     """Collapse-decimate a triangle soup to ~``target`` triangles (Blender's quadric collapse)."""
     import bpy
     if len(f) <= target or target <= 0:
@@ -858,7 +892,22 @@ def decimate_arrays(v, f, target):
     bpy.data.objects.remove(ob, do_unlink=True)
     bpy.data.meshes.remove(me)
     bpy.data.meshes.remove(me2)
-    return compact(v2, f2) if len(f2) else (v2, f2)
+    v2, f2 = compact(v2, f2) if len(f2) else (v2, f2)
+    if len(f2) > 1.25 * target and _depth < 3:
+        # collapse stalls at non-manifold spots: weld, then decimate the result again
+        v2, f2 = _weld(v2, f2)
+        return decimate_arrays(v2, f2, target, _depth + 1)
+    return v2, f2
+
+
+def _weld(v, f, eps=1e-6):
+    """Merge coincident vertices and drop degenerate triangles."""
+    key = np.round(v / eps).astype(np.int64)
+    _u, idx, inv = np.unique(key, axis=0, return_index=True, return_inverse=True)
+    inv = inv.ravel()
+    f2 = inv[f]
+    ok = (f2[:, 0] != f2[:, 1]) & (f2[:, 1] != f2[:, 2]) & (f2[:, 0] != f2[:, 2])
+    return compact(v[idx], f2[ok])
 
 
 def mirror_arrays(v, f):
@@ -1955,7 +2004,7 @@ def build_skeleton():
     with gbc.Timer("B3 skeleton: objects"):
         skel = gg.object_from_parts("GB_Skeleton", _parts(meshed, "lod"))
         _finish(skel)
-        hr = gg.object_from_parts("GB_Skeleton_HR", _parts(meshed, "hr"))
+        hr = gg.object_from_parts("GB_Skeleton_HR", _parts(meshed, "hr"), slots=gbc.MATERIAL_SLOTS["GB_Skeleton"])
         _finish(hr, atlas=False)
     with gbc.Timer("B3 skeleton: bones.json"):
         write_bones_json(meshed)
@@ -2130,3 +2179,257 @@ def write_bones_json(meshed=None, variants=None):
         except Exception:
             variants = {}
     return gbc.write_json(BONES_JSON, bone_table(meshed, variants), "gb.bones/1")
+
+
+# ===========================================================================
+# Fracture variants [plan §3.3.5, RB §2.2.3]: closed fragments with real fracture faces.
+# Fragment i = bone ∩ (warped Voronoi cell i shrunk by half the crack gap).  The cells are
+# evaluated on domain-warped coordinates (fbm, 2-3 mm) so the fracture lines are jagged;
+# long-bone fragments are the hollow cortex (outer minus the marrow core) plus the matching
+# piece of the marrow core, so every broken end shows the cortex ring around the marrow.
+# ===========================================================================
+CRACK_GAP = 0.0004                 # visible hairline between assembled fragments
+VARIANT_BUDGET = {"skull": 8000, "Humerus": 2000, "RadUlna": 2200, "Femur": 2400, "Tibia": 2200}
+
+
+class Cells:
+    """Warped Voronoi cells with optional additive weights (a power-diagram-like butterfly)."""
+
+    def __init__(self, seeds, warp=0.0025, freq=55.0, seed=0, weights=None):
+        self.S = np.asarray(seeds, float)
+        self.w = np.zeros(len(self.S)) if weights is None else np.asarray(weights, float)
+        self.warp, self.freq, self.seed = warp, freq, seed
+        D = np.linalg.norm(self.S[:, None] - self.S[None], axis=2)
+        self.nbrs = [list(np.argsort(D[i])[1:min(len(self.S), 17)]) for i in range(len(self.S))]
+
+    def _warp(self, x, y, z):
+        if self.warp <= 0:
+            return x, y, z
+        f, s = self.freq, self.seed
+        return (x + self.warp * fbm(x, y, z, f, 2, s), y + self.warp * fbm(x, y, z, f, 2, s + 7),
+                z + self.warp * fbm(x, y, z, f, 2, s + 13))
+
+    def cell(self, i, x, y, z):
+        """Signed distance-like value of cell i (negative inside), exact bisector distance."""
+        x, y, z = self._warp(x, y, z)
+        S = self.S
+        si = S[i]
+        di = (x - si[0]) ** 2 + (y - si[1]) ** 2 + (z - si[2]) ** 2 - self.w[i]
+        out = np.full(x.shape, -1.0)
+        for j in self.nbrs[i]:
+            sj = S[j]
+            L = np.linalg.norm(sj - si)
+            dj = (x - sj[0]) ** 2 + (y - sj[1]) ** 2 + (z - sj[2]) ** 2 - self.w[j]
+            out = np.maximum(out, (di - dj) / (2.0 * L))
+        return out
+
+    def owner(self, P):
+        x, y, z = self._warp(P[:, 0], P[:, 1], P[:, 2])
+        d = np.stack([(x - s[0]) ** 2 + (y - s[1]) ** 2 + (z - s[2]) ** 2 - w for s, w in zip(self.S, self.w)], 1)
+        return np.argmin(d, axis=1)
+
+
+def _fragment_meshes(solid, cells, surf_pts, box, h, extra=None):
+    """Mesh every non-empty cell of ``solid`` (and of ``extra`` = marrow core, if given):
+    [(frag index, (v, f), (vc, fc) | None)].  ``surf_pts`` (points on the solid) find the cells
+    that own material and their bounding boxes."""
+    own = cells.owner(surf_pts)
+    out = []
+    lo_all, hi_all = np.asarray(box[0]), np.asarray(box[1])
+    for i in np.unique(own):
+        P = surf_pts[own == i]
+        lo = np.maximum(P.min(0) - 0.012, lo_all)
+        hi = np.minimum(P.max(0) + 0.012, hi_all)
+
+        def fn(x, y, z, i=i):
+            return np.maximum(solid(x, y, z), cells.cell(i, x, y, z) + 0.5 * CRACK_GAP)
+        v, f = mesh_sdf(fn, (lo, hi), h)
+        if len(f) == 0:
+            continue
+        core = None
+        if extra is not None:
+            def cfn(x, y, z, i=i):
+                return np.maximum(extra(x, y, z), cells.cell(i, x, y, z) + 0.5 * CRACK_GAP)
+            vc, fc = mesh_sdf(cfn, (lo, hi), h)
+            core = (vc, fc) if len(fc) else None
+        out.append((int(i), (v, f), core))
+    return out
+
+
+def _skull_seeds(direction, rng, n=64):
+    """Seeds on the vault, dense (small fragments) toward the exit ``direction`` (head frame)."""
+    A = _A()
+    d = _n(direction)
+    c = np.array((0.0, 0.0, 0.035))
+    pts = []
+    while len(pts) < n:
+        u = rng.normal(size=3)
+        u /= np.linalg.norm(u)
+        if u[2] < -0.25:
+            continue
+        w = math.exp(2.2 * (u @ d - 1.0))                # 1 at the exit pole, ~0.01 opposite
+        if rng.uniform() > 0.08 + 0.92 * w:
+            continue
+        r = np.array((0.074, 0.098, 0.099))
+        pts.append(c + u * r * 0.95)
+    return np.array(pts)
+
+
+def skull_variants(meshed):
+    """GB_Frac_Skull_L/R/T: vault bursts toward the left, right and top exit (20-80 fragments,
+    smaller near the exit); the face and skull base stay one large fragment."""
+    A = _A()
+    rng = gbc.rng("fracture_skull")
+    fn, box = skull_sdf()
+    hq = 0.0022 if _quick() else 0.0015
+    surf = meshed["skull"]["subs"][0]["hr"][0] - HEAD_OFFSET
+    out = {}
+    for name, dvec in (("GB_Frac_Skull_L", (1.0, 0.0, 0.25)), ("GB_Frac_Skull_R", (-1.0, 0.0, 0.25)),
+                       ("GB_Frac_Skull_T", (0.0, 0.05, 1.0))):
+        seeds = _skull_seeds(dvec, rng)
+        # base/face seed: a heavily weighted cell under the vault
+        seeds = np.vstack([seeds, [(0.0, -0.030, -0.060)]])
+        wts = np.zeros(len(seeds))
+        wts[-1] = 0.0105 ** 2 * 60
+        cells = Cells(seeds + 0.0, warp=0.0030, freq=45.0, seed=int(rng.integers(1, 1 << 20)), weights=wts)
+
+        def solid(x, y, z):
+            return A.skull_sdf(x, y, z)
+        frags = _fragment_meshes(solid, cells, surf, (np.array(A.SKULL_BOX[0]), np.array(A.SKULL_BOX[1])), hq)
+        out[name] = [(i, (v + HEAD_OFFSET, f), None) for i, (v, f), _c in frags]
+    return out
+
+
+def _break_plane_fn(p0, n, amp, freq, seed):
+    """Jagged break surface: signed distance to a plane perturbed by fbm (serrated edges)."""
+    n = _n(n)
+
+    def fn(x, y, z):
+        return plane(x, y, z, p0, n) + amp * fbm(x, y, z, freq, 3, seed)
+    return fn
+
+
+def long_variants(meshed):
+    """GB_Frac_{Humerus,RadUlna,Femur,Tibia}_{L,R}_{simple,comminuted}: ``simple`` = one oblique,
+    serrated break through the mid-shaft (2 fragments); ``comminuted`` = butterfly wedge plus
+    small fragments in a 6-8 cm zone between the two main ends (8-20 fragments)."""
+    rng = gbc.rng("fracture_long")
+    src = {"Humerus": [("humerus_L", humerus_sdf)], "RadUlna": [("radius_L", radius_sdf), ("ulna_L", ulna_sdf)],
+           "Femur": [("femur_L", femur_sdf)], "Tibia": [("tibia_L", tibia_sdf)]}
+    hq = 0.0020 if _quick() else 0.0013
+    out = {}
+    for key, bones in src.items():
+        for kind in ("simple", "comminuted"):
+            frags = []
+            for piece, sdf in bones:
+                outer, box, core = sdf()
+                shell = (lambda o, c: (lambda x, y, z: smax(o(x, y, z), -(c(x, y, z) - 0.0003), 0.0006)))(outer, core)
+                V = meshed[piece]["subs"][0]["hr"][0]
+                c0 = V.mean(0)
+                _u, _s, vt = np.linalg.svd(V[::5] - c0, full_matrices=False)
+                ax = vt[0]
+                t = (V - c0) @ ax
+                mid = c0 + ax * (0.5 * (t.min() + t.max()) + rng.uniform(-0.03, 0.03) * (t.max() - t.min()))
+                side = _n(np.cross(ax, rng.normal(size=3)))
+                if kind == "simple":
+                    ang = math.radians(rng.uniform(20, 40))
+                    nrm = _n(math.cos(ang) * ax + math.sin(ang) * side)
+                    seeds = np.array([mid + nrm * 0.05, mid - nrm * 0.05])
+                    cells = Cells(seeds, warp=0.0022, freq=70.0, seed=int(rng.integers(1, 1 << 20)))
+                else:
+                    zone = 0.035 if piece.startswith(("radius", "ulna")) else 0.045
+                    n_small = int(rng.integers(8, 14)) if not piece.startswith(("radius", "ulna")) else int(rng.integers(5, 8))
+                    r = np.linalg.norm((V - c0) - np.outer(t, ax), axis=1)
+                    rad = float(np.median(r[np.abs(t - (mid - c0) @ ax) < 0.02])) if np.any(
+                        np.abs(t - (mid - c0) @ ax) < 0.02) else 0.012
+                    pts = [mid + ax * 0.25, mid - ax * 0.25]                      # the two main ends
+                    wts = [0.0, 0.0]
+                    pts.append(mid + side * rad * 0.9)                               # butterfly wedge
+                    wts.append((0.6 * zone) ** 2)
+                    for _k in range(n_small):
+                        a = rng.uniform(0, 2 * math.pi)
+                        s2 = np.cross(ax, side)
+                        pts.append(mid + ax * rng.uniform(-0.8, 0.8) * zone + rad * (math.cos(a) * side +
+                                                                                   math.sin(a) * s2) * rng.uniform(0.7, 1.1))
+                        wts.append(0.0)
+                    # push the main-end seeds so the comminuted zone is ~2*zone long
+                    pts[0] = mid + ax * (zone + 0.20)
+                    pts[1] = mid - ax * (zone + 0.20)
+                    wts[0] = wts[1] = (0.20 ** 2)
+                    cells = Cells(np.array(pts), warp=0.0020, freq=80.0, seed=int(rng.integers(1, 1 << 20)),
+                                  weights=np.array(wts) * 0.98)
+                fr = _fragment_meshes(shell, cells, V, box, hq, extra=lambda x, y, z, c=core: c(x, y, z) + 0.0003)
+                frags.append((piece, fr))
+            for side_ in ("L", "R"):
+                name = f"GB_Frac_{key}_{side_}_{kind}"
+                rows = []
+                for piece, fr in frags:
+                    for i, vf, core in fr:
+                        if side_ == "R":
+                            vf = mirror_arrays(*vf)
+                            core = mirror_arrays(*core) if core is not None else None
+                        rows.append((piece if side_ == "L" else _right(piece), i, vf, core))
+                out[name] = rows
+    return out
+
+
+def _variant_object(name, rows, cls_of, rigid_of, budget):
+    """Decimate fragments (budget share by size, >= 16 tris) and join them into ``name``."""
+    import gb_geom as gg
+    tot = sum(len(vf[1]) for _p, _i, vf, _c in rows)
+    parts = []
+    info = []
+    for k, (piece, i, (v, f), core) in enumerate(rows):
+        share = len(f) / max(tot, 1)
+        v2, f2 = decimate_arrays(v, f, max(16, int(budget * 0.93 * share)))
+        pid = BN.BONE_PIECE_ID[piece]
+        rb = RT.BONE_INDEX[rigid_of[piece]]
+        parts.append(gg.part(v2, f2, 0, gb_piece=pid, gb_class=cls_of[piece], gb_rigid_bone=rb, gb_frag=k))
+        if core is not None:
+            vc, fc = decimate_arrays(*core, max(12, int(budget * 0.07 * share)))
+            parts.append(gg.part(vc, fc, 0, gb_piece=pid, gb_class=MARROW_CLASS, gb_rigid_bone=rb, gb_frag=k))
+        ext = v.max(0) - v.min(0)
+        vol = _mesh_volume(v, f)
+        info.append({"frag": k, "piece": piece, "centroid": v.mean(0), "extent_mm": 1000 * ext,
+                     "max_dim_mm": float(1000 * ext.max()), "volume_cm3": vol * 1e6,
+                     "debris": bool(1000 * ext.max() >= 20.0)})
+    obj = gg.object_from_parts(name, parts)
+    _finish(obj)
+    return obj, info
+
+
+def _mesh_volume(v, f):
+    a, b, c = v[f[:, 0]], v[f[:, 1]], v[f[:, 2]]
+    return float(abs(np.einsum("ij,ij->i", a, np.cross(b, c)).sum()) / 6.0)
+
+
+def build_fracture_variants():
+    """GB_Frac_*: skull bursts L/R/T and long-bone simple/comminuted variants per side (closed
+    fragments, loose islands, piece id + class in UV2, ``gb_frag`` fragment index).  The fragment
+    table (centroid, size, volume, debris flag >= 20 mm) is added to ``bones.json``."""
+    meshed = _MESHED or mesh_pieces(_quick(), only={"skull", "humerus_L", "radius_L", "ulna_L", "femur_L",
+                                                     "tibia_L"}, log=False)
+    rigid = _piece_rigid_bones()
+    cls = {p: c for p, c in BN.BONE_PIECES}
+    out, table = {}, {}
+    with gbc.Timer("B3 variants: skull bursts"):
+        sk = skull_variants(meshed)
+    with gbc.Timer("B3 variants: long bones"):
+        lb = long_variants(meshed)
+    with gbc.Timer("B3 variants: objects"):
+        for name, rows in sk.items():
+            obj, info = _variant_object(name, [("skull", i, vf, c) for i, vf, c in rows], cls, rigid,
+                                        VARIANT_BUDGET["skull"])
+            out[name], table[name] = obj, info
+        for name, rows in lb.items():
+            key = name.split("_")[2]
+            obj, info = _variant_object(name, rows, cls, rigid, VARIANT_BUDGET[key])
+            out[name], table[name] = obj, info
+    summary = {}
+    for name, info in table.items():
+        dims = sorted(r["max_dim_mm"] for r in info)
+        summary[name] = {"fragments": len(info), "median_max_dim_mm": float(np.median(dims)),
+                         "debris_fragments": int(sum(r["debris"] for r in info)),
+                         "triangles": gbc.tri_count(out[name].data), "table": info}
+    write_bones_json(variants=summary)
+    return out

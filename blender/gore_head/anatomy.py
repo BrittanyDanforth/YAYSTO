@@ -680,10 +680,13 @@ def face_sdf(ax, y, z):
 def _neck(ax, y, z):
     """Neck column leaning forward, widening toward the shoulders; open at both ends."""
     tz = np.clip((-0.060 - z) / 0.14, 0.0, 1.5)
-    yc = 0.012 + 0.010 * tz
+    # the throat sits well forward (larynx ~5 cm behind the chin), the nape
+    # curves in under the occiput
+    yc = 0.0060 + 0.0045 * tz
     top = smoothstep(-0.105, -0.045, z)          # wider under the skull (mastoids, SCM origin)
-    a = 0.0545 + 0.0060 * tz * tz + 0.0050 * top
-    b = 0.0490 + 0.0060 * tz * tz + 0.0020 * top
+    base = smoothstep(-0.165, -0.205, z)         # trapezius / shoulders begin
+    a = 0.0515 + 0.0040 * tz * tz + 0.0060 * top + 0.0100 * base
+    b = 0.0560 + 0.0040 * tz * tz + 0.0015 * top
     return ellipse2(ax, y - yc, a, b)
 
 
@@ -693,7 +696,7 @@ def head_volume(ax, y, z):
     # face block: rounded box in plan, width varying with height, jaw floor below
     blk = box2(ax, y + 0.055, FACE_W(z), 0.064, 0.030)
     blk = smax(blk, z - 0.115, 0.03)
-    blk = smax(blk, JAW_Z(y) - z, 0.019)
+    blk = smax(blk, JAW_Z(y) - z, 0.012)
     d = smin(d, blk, 0.020)
     # cheekbone (zygomatic body) and arch running back to the ear
     zyg = sd_ellipsoid(ax, y, z, (0.0525, -0.0555, 0.0025), (0.0130, 0.0200, 0.0120),
@@ -705,20 +708,25 @@ def head_volume(ax, y, z):
     d = smax(d, -sd_ellipsoid(ax, y, z, (0.0660, -0.0440, -0.0380), (0.0080, 0.0180, 0.0150)), 0.020)
     # neck (capped just under the skull so it only shows below the jaw)
     neck = smax(_neck(ax, y, z), z + 0.030, 0.02)
-    d = smin(d, neck, 0.036)
+    # (a tighter blend under the jaw: the jaw's lower border casts a shadow)
+    d = smin(d, neck, 0.024)
     d = smin(d, sd_ellipsoid(ax, y, z, (0.0500, 0.0180, -0.0400), (0.0120, 0.0220, 0.0260)), 0.020)
-    scm = sd_capsule(ax, y, z, (0.050, 0.024, -0.040), (0.013, -0.026, -0.195), 0.0068, 0.0064)
-    d = smin(d, scm, 0.014)
-    d = smin(d, sd_ellipsoid(ax, y, z, (0.0, -0.0300, -0.130), (0.0090, 0.0060, 0.0120)), 0.010)
+    # sternocleidomastoid: mastoid -> sternum, standing out in front of the neck
+    scm = sd_capsule(ax, y, z, (0.052, 0.012, -0.034), (0.014, -0.044, -0.198), 0.0086, 0.0072)
+    d = smin(d, scm, 0.010)
+    # laryngeal prominence (Adam's apple)
+    d = smin(d, sd_ellipsoid(ax, y, z, (0.0, -0.0520, -0.1330), (0.0085, 0.0065, 0.0110)), 0.008)
     return d
 
 
 # Eye opening, in angles around the eyeball centre: u = horizontal angle
 # (positive = lateral), v = elevation.  M = medial canthus, L = lateral canthus.
+# The upper lid covers the top 1.5-2 mm of the iris, the lower lid touches
+# its bottom edge; the outer corner sits ~2-3 mm higher than the inner one.
 LID_UM, LID_VM = -1.22, -0.05
-LID_UL, LID_VL = 1.18, 0.08
-LID_UP, LID_LO = 0.40, 0.54          # lid arc heights (rad) above/below the canthal line
-LID_R = 0.0151                        # outer radius of the eyelid shell
+LID_UL, LID_VL = 1.18, 0.14
+LID_UP, LID_LO = 0.335, 0.465        # lid arc heights (rad) above/below the canthal line
+LID_R = 0.0145                        # outer radius of the eyelid shell (~2 mm thick lids)
 CORNEA_R = 0.0075                     # cornea sphere radius
 CORNEA_OFF = 0.00582                  # cornea sphere centre, in front of eye centre
 EYE_GAP = 0.0005                      # clearance between eyeball and lids
@@ -759,15 +767,21 @@ def _eye_region(d, ax, y, z):
     v = np.arctan2(qz, np.sqrt(qx * qx + qy * qy))
     t, st, up, lo = _lid_curves(u)
     rr = np.maximum(r, EYE_R)
-    crease_v = up + 0.32 * st ** 0.6
-    g = np.exp(-(((v - crease_v) * rr) / 0.0011) ** 2) * smoothstep(0.1, 0.45, st)
+    # upper lid crease ~6-8 mm above the margin, a soft hollow (sulcus)
+    # between it and the brow, and the lower lid's fold
+    crease_v = up + 0.50 * st ** 0.6
+    g = np.exp(-(((v - crease_v) * rr) / 0.0012) ** 2) * smoothstep(0.1, 0.45, st)
+    hol = np.exp(-(((v - (crease_v + 0.28)) * rr) / 0.0030) ** 2) * smoothstep(0.15, 0.5, st)
     g2 = np.exp(-(((v - (lo - 0.30 * st ** 0.7)) * rr) / 0.0013) ** 2) * smoothstep(0.2, 0.6, st)
-    band = smoothstep(0.024, 0.016, r)
-    d = d + (0.00085 * g + 0.00030 * g2) * band
+    band = smoothstep(0.026, 0.017, r)
+    d = d + (0.0012 * g + 0.0009 * hol + 0.00030 * g2) * band
     dopen = np.maximum(np.maximum(v - up, lo - v),
                        (np.abs(t - 0.5) - 0.5) * (LID_UL - LID_UM)) * rr
     cut = np.maximum(dopen, r - 0.0195)
-    d = smax(d, -cut, 0.0014)
+    d = smax(d, -cut, 0.0011)
+    # caruncle: the small pink mound in the inner corner of the eye
+    car_c = EYE_C + np.array([-0.0118, -0.0046, -0.0002])
+    d = smin(d, sd_ellipsoid(qx + EYE_C[0], qy + EYE_C[1], qz + EYE_C[2], car_c, (0.0019, 0.0015, 0.0017)), 0.0008)
     cav = np.minimum(r - (EYE_R + EYE_GAP),
                      np.sqrt(qx * qx + (qy + CORNEA_OFF) ** 2 + qz * qz) - (CORNEA_R + EYE_GAP))
     return np.maximum(d, -cav)
@@ -1233,7 +1247,8 @@ def gum_sdf(x, y, z, upper):
     qc = -0.0004 * smoothstep(0.0, 0.006, hr)
     d = np.abs(q - qc) - thick
     d = smax(d, -hr, 0.0012)
-    d = smax(d, hr - 0.0110, 0.002)
+    # a 5-6 mm band: below it the alveolar bone is covered by thin mucosa only
+    d = smax(d, hr - 0.0058, 0.002)
     # close the band behind the last molar (tuberosity / retromolar pad)
     d = smax(d, s - (ca.s_end + 0.0035), 0.004)
     return d
@@ -1338,14 +1353,17 @@ def cranial_cavity(ax, y, z):
 
 def _orbit(ax, y, z):
     """Eye socket: a cone-like cavity whose apex converges back toward the midline."""
-    return sd_ellipsoid(ax, y, z, (0.0295, -0.0620, 0.0205), (0.0185, 0.0300, 0.0170),
+    # (opening ~40 x 35 mm at the rim)
+    return sd_ellipsoid(ax, y, z, (0.0300, -0.0615, 0.0215), (0.0205, 0.0300, 0.0188),
                         rot=rot_xyz(0, 0, 22))
 
 
 def _nasal(ax, y, z):
     """Piriform aperture and nasal cavity."""
-    ap = extrude(ellipse2(ax, (z + 0.0080) * (1.0 + 0.35 * smoothstep(-0.01, 0.012, z)),
-                          0.0105, 0.0165), y + 0.100, 0.030, 0.002)
+    # pear-shaped piriform aperture: narrow under the nasal bones, widest low
+    w = 0.0050 + 0.0072 * smoothstep(0.013, -0.017, z) - 0.0030 * smoothstep(-0.020, -0.028, z)
+    ap2 = smax(ax - w, np.abs(z + 0.0060) - 0.0205, 0.0045)
+    ap = extrude(ap2, y + 0.100, 0.030, 0.002)
     cav = sd_box(ax, y, z, (0.0, -0.0520, -0.0035), (0.0125, 0.0240, 0.0230), round_=0.006)
     return smin(ap, cav, 0.006)
 
@@ -1365,11 +1383,14 @@ def skull_envelope(ax, y, z):
     zb = -0.040 + 0.012 * smoothstep(-0.030, -0.010, y) * smoothstep(0.012, -0.004, y)
     env = smax(env, zb - z, 0.006)
     # temporal fossa between the cranial wall and the zygomatic arch
-    env = smax(env, -sd_ellipsoid(ax, y, z, (0.0660, -0.0330, 0.0080), (0.0100, 0.0300, 0.0300)), 0.008)
+    # (deep enough for a 8-12 mm temporalis between bone and skin)
+    env = smax(env, -sd_ellipsoid(ax, y, z, (0.0680, -0.0300, 0.0120), (0.0150, 0.0290, 0.0330)), 0.008)
     # infratemporal space under the cheekbones, behind the maxilla
     env = smax(env, -sd_box(ax, y, z, (0.050, -0.012, -0.030), (0.016, 0.024, 0.024), round_=0.008), 0.008)
     # zygomatic arches and bodies, mastoid processes, nasal bones
-    arch = sd_capsule(ax, y, z, (0.0500, -0.0520, 0.0010), (0.0575, -0.0120, 0.0020), 0.0042, 0.0038)
+    # the arch stands free of the temporal fossa, from the cheekbone to above
+    # the jaw joint in front of the ear
+    arch = sd_capsule(ax, y, z, (0.0520, -0.0520, 0.0010), (0.0615, -0.0120, 0.0030), 0.0040, 0.0034)
     zyg = sd_ellipsoid(ax, y, z, (0.0450, -0.0600, 0.0020), (0.0100, 0.0120, 0.0110),
                        rot=rot_xyz(0, 0, -35))
     env = smin(env, smin(arch, zyg, 0.006), 0.004)
@@ -1426,8 +1447,11 @@ def jaw_sdf(x, y, z):
     """Mandible: U-shaped body with symphysis and chin, rami with condyles and coronoids."""
     ax = np.abs(x)
     d = jaw_raw(ax, y, z)
-    # clamps: inside the skin (and away from the mouth), clear of skull and gums
-    d = np.maximum(d, skin_sdf(x, y, z) + 0.005)
+    # clamps: 5 mm inside the outer skin, but only ~1.5 mm of mucosa between
+    # the bone and the mouth lining (the vestibule behind the lower lip), so
+    # the front of the mandible keeps its full height; clear of skull and gums
+    d = np.maximum(d, skin_sdf(x, y, z, mouth_cavity=False) + 0.005)
+    d = np.maximum(d, skin_sdf(x, y, z) + 0.0015)
     d = np.maximum(d, -(skull_envelope(ax, y, z) - 0.0012))
     return apply_local(d, ax, y, z, Region((0.0, -0.10, -0.090), (0.040, -0.020, -0.050)),
                        lambda dd, a, b, c: np.maximum(dd, -(gum_sdf(a, b, c, False) - 0.0010)))
@@ -1442,16 +1466,20 @@ def jaw_raw(ax, y, z):
     s = s - _JAW_ARCH.project(np.array([0.0]), np.array([-0.0835]))[0][0]
     sn = np.clip(s / 0.090, 0.0, 1.0)
     zbot = -0.0985 + 0.0110 * sn ** 1.4 + 0.0150 * smoothstep(0.70, 1.0, sn)
-    ztop = -0.0735 - 0.0030 * smoothstep(0.75, 1.0, sn)
+    # the alveolar ridge rises to just under the gum margin and holds the roots
+    ztop = -0.0668 + 0.0026 * smoothstep(0.25, 0.6, sn) - 0.0060 * smoothstep(0.75, 1.0, sn)
     zm, hh = 0.5 * (zbot + ztop), 0.5 * (ztop - zbot)
-    th = 0.0060 + 0.0012 * smoothstep(0.3, 0.7, sn) - 0.0020 * smoothstep(0.85, 1.0, sn)
-    body = extrude(np.abs(q + 0.0008) - th, z - zm, hh, 0.0025)
+    # thicker at the base than at the ridge (rounded, teardrop section)
+    th = (0.0058 + 0.0014 * smoothstep(0.3, 0.7, sn) - 0.0020 * smoothstep(0.85, 1.0, sn)) \
+        * (1.0 + 0.18 * smoothstep(zm + hh * 0.2, zbot, z))
+    body = extrude(np.abs(q + 0.0008) - th, z - zm, hh, 0.0040)
     # ramus plate with condyle and coronoid process
     rz = np.clip((z + 0.078) / 0.070, 0.0, 1.0)
     yb = -0.0020 - 0.0050 * rz          # posterior border leans back going up
     yf = -0.0300 + 0.0020 * rz
-    plate = box2(y - 0.5 * (yb + yf), z + 0.043, 0.5 * (yb - yf) + 0.0 * rz, 0.036, 0.008)
-    plate = smax(plate, np.abs(ax - (0.0465 + 0.004 * rz)) - 0.0026, 0.002)
+    plate = box2(y - 0.5 * (yb + yf), z + 0.043, 0.5 * (yb - yf) + 0.0 * rz, 0.036, 0.012)
+    # the angle flares slightly outward (masseter insertion)
+    plate = smax(plate, np.abs(ax - (0.0465 + 0.004 * rz + 0.002 * (1.0 - rz) ** 3)) - 0.0028, 0.002)
     notch = sd_ellipsoid(ax, y, z, (0.048, -0.021, 0.000), (0.02, 0.0075, 0.0085))
     plate = smax(plate, -notch, 0.003)
     cond = sd_ellipsoid(ax, y, z, (0.0500, -0.0115, -0.0020), (0.0085, 0.0048, 0.0050), rot=rot_xyz(0, 0, 12))
@@ -1688,8 +1716,8 @@ def _collect_landmarks(objs):
     L["ear_canal_R"] = (-0.072, 0.0, 0.0)
     side = v[(np.abs(v[:, 1]) < 0.06) & (v[:, 2] > 0.045) & (v[:, 2] < 0.10)]   # above the ears
     L["head_half_width"] = round(float(np.abs(side[:, 0]).max()), 4)
-    L["neck_radius"] = 0.055
-    L["neck_center_y"] = 0.015
+    L["neck_radius"] = 0.054
+    L["neck_center_y"] = 0.008
     L["neck_cut_z"] = -0.20
     L["gonion_L"] = (0.050, -0.004, -0.075)
     L["upper_incisal_edge_z"] = UPPER_EDGE_Z

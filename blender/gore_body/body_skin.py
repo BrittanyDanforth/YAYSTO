@@ -294,7 +294,7 @@ TORSO = np.array([
     (1.400, 0.145, -0.081, 0.117, 3.0, 2.9),     # sternal angle -0.075 (bone) + skin
     (1.430, 0.150, -0.068, 0.108, 2.6, 2.6),     # shoulder girdle: clavicles in front, scapular spines behind
     (1.455, 0.148, -0.050, 0.097, 2.3, 2.4),     # jugular notch -0.048
-    (1.470, 0.110, -0.050, 0.090, 2.2, 2.3),
+    (1.470, 0.104, -0.050, 0.090, 2.2, 2.3),
     (1.485, 0.063, -0.054, 0.082, 2.1, 2.2),     # seam plane (plan D19)
     (1.515, 0.0595, -0.057, 0.069, 2.1, 2.2),    # neck 38 cm: 12 x 11.7 (front -0.055 / back +0.063)
     (1.540, 0.058, -0.054, 0.072, 2.1, 2.2),     # C7 spinous skin 0.075 at 1.532 (bump added)
@@ -522,7 +522,7 @@ def _shoulder(ax, y, z):
     # upper trapezius: broad slope from the nape to the acromion
     # the lateral neck point sits at z ~1.49 (between the jugular notch 1.455 and C7 1.532) and the
     # shoulder line falls ~11 deg to the acromion; below the seam plane beyond |x| 0.075 (plan D19 ring)
-    trap = sd_polyline(ax, y, z, [(0.035, 0.050, 1.461), (0.100, 0.038, 1.456), (0.186, 0.020, 1.447)],
+    trap = sd_polyline(ax, y, z, [(0.035, 0.050, 1.459), (0.100, 0.038, 1.4525), (0.186, 0.020, 1.446)],
                        [0.022, 0.0235, 0.016], k=0.02)
     clav = sd_polyline(ax, y, z, [np.array(p) + np.array([0.0, -0.001, 0.001]) for p in
                                   ((0.022, -0.040, 1.451), (0.070, -0.050, 1.453), (0.125, -0.021, 1.463),
@@ -1631,13 +1631,58 @@ def _tag(obj, status="built (B1)"):
     obj["gb_status"] = status
 
 
-def _sdf_object(name, fn, lo, hi, h):
-    import gb_geom as gg
-    me = gg.sdf_mesh(name, fn, lo, hi, h, project=3, remesh=True)
+def _largest_piece(me):
+    """Keep only the largest connected piece (label propagation run to convergence).
+
+    The head toolkit's ``remove_small_islands`` caps propagation at 200 passes; on
+    a long thin chain (shoulder -> fingertip) that leaves the fingertip with its
+    own label and deletes it, opening a hole.  This version never stops early."""
+    import bmesh
+    bm = bmesh.new()
+    bm.from_mesh(me)
+    bm.verts.ensure_lookup_table()
+    seen = np.zeros(len(bm.verts), bool)
+    pieces = []
+    for v0 in bm.verts:
+        if seen[v0.index]:
+            continue
+        stack, comp = [v0], []
+        seen[v0.index] = True
+        while stack:
+            v = stack.pop()
+            comp.append(v)
+            for e in v.link_edges:
+                o = e.other_vert(v)
+                if not seen[o.index]:
+                    seen[o.index] = True
+                    stack.append(o)
+        pieces.append(comp)
+    pieces.sort(key=len, reverse=True)
+    removed = sum(len(p) for p in pieces[1:])
+    if removed:
+        bmesh.ops.delete(bm, geom=[v for p in pieces[1:] for v in p], context='VERTS')
+        bm.to_mesh(me)
+        me.update()
+    bm.free()
+    return removed
+
+
+def _sdf_object(name, fn, lo, hi, h, project=3):
+    """SDF -> surface nets -> voxel remesh -> keep the largest piece -> Newton projection."""
+    A = _A()
+    import bpy
+    tmp = A.mesh_sdf("_b1_tmp", fn, lo, hi, h, voxel=h, project=0, clean=False,
+                     collection=bpy.context.scene.collection)
+    me = tmp.data
+    bpy.data.objects.remove(tmp, do_unlink=True)
+    _largest_piece(me)
+    v = A.project_to_surface(fn, gbc.get_verts(me), h, project)
+    gbc.set_verts(me, v)
+    me.name = name
     return _new_mesh_object(name, me)
 
 
-def cut_neck(me, z, radius=0.11, centre_xy=(0.0, 0.012)):
+def cut_neck(me, z, radius=0.095, centre_xy=(0.0, 0.012)):
     """Bisect the mesh at the plane ``z`` inside the neck cylinder only and delete what lies above it there
     (the shoulders never lose geometry even if something rises above the seam plane)."""
     import bmesh
@@ -1732,7 +1777,7 @@ def build_body_skin(quick=None):
     with T("B1: LOD0 decimate + seam zip"):
         body = _new_mesh_object("GB_Body", hr.data.copy())
         gg.decimate_to(body, BODY_TRIS - 2 * len(ring))
-        _cut_and_zip(body, ring, 0.0045)
+        _cut_and_zip(body, ring, 0.0030)
         _cut_and_zip(hr, ring, 0.5 * h)
     with T("B1: UV islands, seams, unwrap, pack"):
         labels = uv_islands(body.data)
@@ -1759,6 +1804,8 @@ def build_body_skin(quick=None):
         _tag(o)
     hr.data.materials.clear()
     hr.data.materials.append(gbc.placeholder_material("GBM_skin_torso"))
+    with T("B1: tissue-depth + tension maps (512^2)"):
+        bake_body_maps(body, os.path.join(gbc.SUBJECT_OUT, "textures"))
     return {"GB_Body": body, "GB_Body_HR": hr, "GB_Body_LOD1": lod}
 
 
@@ -1833,6 +1880,163 @@ def build_muscle_shell(skin=None, quick=None):
         placeholder.finish_uvs(obj)
         _tag(obj)
     return {"GB_MuscleShell": obj}
+
+
+# ===========================================================================
+# Painter input maps baked by B1 (plan §3.3.4, §8.2 B1): tissue depth + tension, 512^2, atlas UV
+# ===========================================================================
+MAP_SIZE = 512
+TISSUE_MAP = "body_tissue_depth.png"
+TENSION_MAP = "body_tension.png"
+MAPS_JSON = "body_maps.json"
+TISSUE_SCALE_MM = (8.0, 40.0, 80.0)        # R skin, G fat, B muscle: value/255 * scale = mm
+
+
+def _raster(obj, per_loop, size, channels):
+    """Rasterise per-loop values (fan-triangulated polygons) into a (size, size, C) float image
+    in the ``atlas`` UV space; returns (image, coverage mask).  Pure numpy, deterministic."""
+    me = obj.data
+    uv = np.empty(len(me.loops) * 2, np.float32)
+    me.uv_layers["atlas"].data.foreach_get("uv", uv)
+    uv = uv.reshape(-1, 2).astype(float) * size - 0.5
+    ls = np.empty(len(me.polygons), np.int64)
+    me.polygons.foreach_get("loop_start", ls)
+    lt = np.empty(len(me.polygons), np.int64)
+    me.polygons.foreach_get("loop_total", lt)
+    img = np.zeros((size, size, channels))
+    cov = np.zeros((size, size), bool)
+    tris = [(ls[m], ls[m] + k - 1, ls[m] + k) for k in range(2, int(lt.max()))
+            for m in [np.nonzero(lt > k)[0]]]
+    ia = np.concatenate([t[0] for t in tris])
+    ib = np.concatenate([t[1] for t in tris])
+    ic = np.concatenate([t[2] for t in tris])
+    for a, b, c in zip(ia, ib, ic):
+        pa, pb, pc = uv[a], uv[b], uv[c]
+        x0 = max(int(np.floor(min(pa[0], pb[0], pc[0]))), 0)
+        x1 = min(int(np.ceil(max(pa[0], pb[0], pc[0]))), size - 1)
+        y0 = max(int(np.floor(min(pa[1], pb[1], pc[1]))), 0)
+        y1 = min(int(np.ceil(max(pa[1], pb[1], pc[1]))), size - 1)
+        if x1 < x0 or y1 < y0:
+            continue
+        X, Y = np.meshgrid(np.arange(x0, x1 + 1), np.arange(y0, y1 + 1))
+        den = (pb[1] - pc[1]) * (pa[0] - pc[0]) + (pc[0] - pb[0]) * (pa[1] - pc[1])
+        if abs(den) < 1e-12:
+            continue
+        l1 = ((pb[1] - pc[1]) * (X - pc[0]) + (pc[0] - pb[0]) * (Y - pc[1])) / den
+        l2 = ((pc[1] - pa[1]) * (X - pc[0]) + (pa[0] - pc[0]) * (Y - pc[1])) / den
+        l3 = 1.0 - l1 - l2
+        m = (l1 >= -1e-6) & (l2 >= -1e-6) & (l3 >= -1e-6)
+        if not m.any():
+            continue
+        val = l1[m, None] * per_loop[a] + l2[m, None] * per_loop[b] + l3[m, None] * per_loop[c]
+        img[Y[m], X[m]] = val
+        cov[Y[m], X[m]] = True
+    return img, cov
+
+
+def _dilate(img, cov, px):
+    """Grow the covered texels ``px`` times into empty neighbours (no black bleeding at island borders)."""
+    img, cov = img.copy(), cov.copy()
+    for _ in range(px):
+        acc = np.zeros_like(img)
+        cnt = np.zeros(cov.shape)
+        for dy, dx in ((1, 0), (-1, 0), (0, 1), (0, -1)):
+            sc = np.roll(cov, (dy, dx), (0, 1))
+            acc += np.roll(img, (dy, dx), (0, 1)) * sc[..., None]
+            cnt += sc
+        new = ~cov & (cnt > 0)
+        img[new] = acc[new] / cnt[new][:, None]
+        cov |= new
+    return img, cov
+
+
+def _loop_values(obj, per_vertex):
+    me = obj.data
+    lv = np.empty(len(me.loops), np.int64)
+    me.loops.foreach_get("vertex_index", lv)
+    return np.asarray(per_vertex, float)[lv]
+
+
+def _uv_tangent_dirs(obj, t3):
+    """Per-loop 2-D UV-space unit direction of the 3-D tangent vectors ``t3`` (per vertex)."""
+    me = obj.data
+    v = gbc.get_verts(me)
+    lv = np.empty(len(me.loops), np.int64)
+    me.loops.foreach_get("vertex_index", lv)
+    uv = np.empty(len(me.loops) * 2, np.float32)
+    me.uv_layers["atlas"].data.foreach_get("uv", uv)
+    uv = uv.reshape(-1, 2).astype(float)
+    ls = np.empty(len(me.polygons), np.int64)
+    me.polygons.foreach_get("loop_start", ls)
+    lt = np.empty(len(me.polygons), np.int64)
+    me.polygons.foreach_get("loop_total", lt)
+    out = np.zeros((len(me.loops), 2))
+    # per polygon Jacobian from its first triangle: P = P0 + Pu du + Pv dv
+    a, b, c = ls, ls + 1, ls + 2
+    e1, e2 = v[lv[b]] - v[lv[a]], v[lv[c]] - v[lv[a]]
+    d1, d2 = uv[b] - uv[a], uv[c] - uv[a]
+    det = d1[:, 0] * d2[:, 1] - d2[:, 0] * d1[:, 1]
+    det = np.where(np.abs(det) < 1e-14, 1e-14, det)
+    Pu = (e1 * d2[:, 1:2] - e2 * d1[:, 1:2]) / det[:, None]
+    Pv = (e2 * d1[:, 0:1] - e1 * d2[:, 0:1]) / det[:, None]
+    lf = np.repeat(np.arange(len(ls)), lt)
+    t = t3[lv]
+    # solve t ~ a Pu + b Pv (least squares, 2x2 normal equations)
+    A11 = (Pu[lf] * Pu[lf]).sum(1)
+    A12 = (Pu[lf] * Pv[lf]).sum(1)
+    A22 = (Pv[lf] * Pv[lf]).sum(1)
+    r1 = (t * Pu[lf]).sum(1)
+    r2 = (t * Pv[lf]).sum(1)
+    dd = A11 * A22 - A12 * A12
+    dd = np.where(np.abs(dd) < 1e-20, 1e-20, dd)
+    out[:, 0] = (r1 * A22 - r2 * A12) / dd
+    out[:, 1] = (r2 * A11 - r1 * A12) / dd
+    n = np.maximum(np.linalg.norm(out, axis=1, keepdims=True), 1e-12)
+    return out / n
+
+
+def bake_body_maps(obj, out_dir, size=MAP_SIZE):
+    """Bake the tissue-depth and tension maps of GB_Body into ``out_dir`` (lossless 8-bit PNG + JSON).
+
+    * ``body_tissue_depth.png``: R skin, G fat, B muscle thickness (mm = value / 255 x (8, 40, 80)),
+      A = coverage (255 inside an island, dilated 4 px).
+    * ``body_tension.png``: RG = unit direction of the Langer line in atlas UV space
+      (u = R / 127.5 - 1, v = G / 127.5 - 1; the sign is irrelevant, lines are axial),
+      B = anisotropy weight (255 = fully directional), A = coverage.
+    Rows are written top to bottom (v = 1 at the top), like Godot's image origin."""
+    import json
+    t = np.stack([gbc.read_point_attr(obj, f"gb_{k}_mm", 'FLOAT') for k in ("skin", "fat", "muscle")], 1)
+    t3 = np.stack([gbc.read_point_attr(obj, f"gb_tension_{a}", 'FLOAT') for a in "xyz"], 1)
+    img_t, cov = _raster(obj, _loop_values(obj, t), size, 3)
+    img_t, cov_d = _dilate(img_t, cov, 4)
+    q = np.clip(np.rint(img_t / np.array(TISSUE_SCALE_MM) * 255.0), 0, 255)
+    rgba = np.concatenate([q, (cov_d * 255)[..., None]], 2).astype(np.uint8)[::-1]
+    d2 = _uv_tangent_dirs(obj, t3)
+    d2 = d2 * np.where(d2[:, :1] < 0, -1.0, 1.0)            # axial: keep u >= 0 for smooth interpolation
+    img_d, cov2 = _raster(obj, np.concatenate([d2, np.ones((len(d2), 1))], 1), size, 3)
+    img_d, cov2d = _dilate(img_d, cov2, 4)
+    n = np.maximum(np.linalg.norm(img_d[..., :2], axis=2, keepdims=True), 1e-9)
+    img_d[..., :2] = img_d[..., :2] / n
+    q2 = np.clip(np.rint((img_d[..., :2] + 1.0) * 127.5), 0, 255)
+    rgba2 = np.concatenate([q2, np.full(q2.shape[:2] + (1,), 255.0), (cov2d * 255)[..., None]], 2)
+    rgba2 = rgba2.astype(np.uint8)[::-1]
+    os.makedirs(out_dir, exist_ok=True)
+    p1 = gbc.write_png_u8(os.path.join(out_dir, TISSUE_MAP), rgba)
+    p2 = gbc.write_png_u8(os.path.join(out_dir, TENSION_MAP), rgba2)
+    meta = gbc.envelope({
+        "mesh": obj.name, "uv": "atlas (UV0)", "size": size, "origin": "top-left row = v 1",
+        "tissue_depth": {"file": TISSUE_MAP, "channels": {"r": "skin_mm", "g": "fat_mm", "b": "muscle_mm",
+                                                          "a": "coverage"},
+                         "scale_mm_per_255": list(TISSUE_SCALE_MM), "fat_reference_pct": 15.0,
+                         "body_fat_pct": LM.BODY_FAT_PCT, "source": "RB §7.6"},
+        "tension": {"file": TENSION_MAP, "channels": {"rg": "Langer line direction in UV space, (c/127.5 - 1)",
+                                                      "b": "anisotropy weight", "a": "coverage"},
+                    "source": "RB §2.3.1 (Langer / RSTL, K)"},
+        "coverage_fraction": round(float(cov.mean()), 4),
+    }, "gb.body_maps/1")
+    with open(os.path.join(out_dir, MAPS_JSON), "w", encoding="utf-8", newline="\n") as fh:
+        fh.write(json.dumps(gbc._clean(meta), indent=1) + "\n")
+    return [p1, p2]
 
 
 # ===========================================================================
