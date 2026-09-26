@@ -1179,10 +1179,10 @@ HEAD_MUSCLE_DEPTH = 0.0055      # scalp 3.5-5.5 mm skin, 5-8 mm to bone; face sk
 
 
 def _head_muscle(x, y, z):
-    """Head part of the shell: the (closed-mouth) head skin inset by ~5.5 mm.  The head project's own
-    GH_Muscle is a thin, gappy layer that meshes into rags at the shell's 5 mm resolution."""
+    """Head part of the shell: the head skin (mouth cavity kept open, it is not tissue) inset by ~5.5 mm.
+    The head project's own GH_Muscle is a thin, gappy layer that meshes into rags at 5 mm resolution."""
     A = _A()
-    h = A.skin_sdf(x, y - HEAD_OFFSET[1], z - HEAD_OFFSET[2], mouth_cavity=False) + HEAD_MUSCLE_DEPTH
+    h = A.skin_sdf(x, y - HEAD_OFFSET[1], z - HEAD_OFFSET[2], mouth_cavity=True) + HEAD_MUSCLE_DEPTH
     return smax(h, head_clip_z(x, y) + 0.004 - z, 0.006)
 
 

@@ -173,6 +173,28 @@ wounds are too clean, too smooth, too uniform in colour, and there is far too li
 - For our game: knife stabs create slit-shaped real openings sized by blade width with little external blood; the dead
   face uses half-open slack lids, dull corneas, slightly divergent gaze and a dropped jaw.
 
+### 5.8 Gunshot wound morphology sheet (forensic pathology teaching images, `refs/gsw_pathology_sheet.webp`)
+These are cleaned autopsy-table wounds (not actively bleeding): use them for SHAPE, EDGE and COLOUR; add active
+bleeding on top per RB §3 for living victims.
+- **Contact/near-contact head entrance over bone:** a dark, soot-blackened central hole with **stellate radial splits
+  (4-8 rays)** running out 1-3 cm, the split margins dark red-brown and seared; soot fans into the hair/skin around it.
+- **Distant entrances:** small round-to-oval holes, a few mm, with a **pink-red to red-brown abrasion ring** of even width
+  (eccentric/teardrop when angled); the centre dark red-black; several entrances can cluster (shotgun pellets / multiple
+  shots) as **pink, puckered, slightly raised craters** with dried margins.
+- **Exit wounds:** irregular — **stellate/star tears with 3-6 long rays** (up to several cm on the scalp and face),
+  **slit-like elongated tears** (15-30 mm, sometimes with a dark clotted track), or **ragged everted holes**; margins are
+  **turned outward**, torn, with tissue tags and no abrasion collar; the rays taper to fine points; dark clotted blood
+  and red tissue fill the central defect.
+- **Shored or skin-backed wounds:** broader irregular abrasion margins.
+- **Keyhole / graze on the scalp:** elongated gutter with a split skin trough, dark red base.
+- **Heavily destructive wound (close-range/high-energy):** a large gaping crater of shredded dark red muscle, clot and
+  tissue tags with a torn rolled skin edge — see §2.
+- **Skin tone around wounds:** normal skin colour, with livid red-purple bruised tissue only right at the margins;
+  wounds on darker skin show a pale pink raw interior inside a darker rim.
+- **For our game:** entrance = small clean hole + even abrasion ring (eccentric if angled), contact = stellate seared
+  tear with soot; exits = weighted mix of stellate (long tapering rays), slit, and ragged everted holes, never a
+  uniform crater; interiors dark red-black with clot; then active bleeding per the physiology.
+
 ## 6. What to change in our assets (actionable)
 
 | Where | Change |
