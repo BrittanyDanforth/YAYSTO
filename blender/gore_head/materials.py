@@ -274,11 +274,6 @@ class ShaderBuilder:
                       interpolation_type='SMOOTHSTEP', clamp=True)
         return self.o(n, 'Result')
 
-    def remap(self, x, a, b, c, d):
-        n = self.node('ShaderNodeMapRange', {'Value': x, 'From Min': a, 'From Max': b,
-                                             'To Min': c, 'To Max': d}, clamp=True)
-        return self.o(n, 'Result')
-
     def mix(self, f, a, b):
         """Linear blend a -> b by factor f (colour mix if a or b is a vector/colour)."""
         if _isvec(a) or _isvec(b):
@@ -286,11 +281,6 @@ class ShaderBuilder:
             return self.o(n, 'Result_Color')
         n = self.node('ShaderNodeMix', {'Factor_Float': f, 'A_Float': a, 'B_Float': b}, data_type='FLOAT')
         return self.o(n, 'Result_Float')
-
-    def blend(self, f, a, b, mode):
-        n = self.node('ShaderNodeMix', {'Factor_Float': f, 'A_Color': a, 'B_Color': b},
-                      data_type='RGBA', blend_type=mode)
-        return self.o(n, 'Result_Color')
 
     def ramp(self, x, stops, interp='LINEAR'):
         """Colour ramp; ``stops`` = [(position, colour or grey value), ...]."""
@@ -518,8 +508,15 @@ def _group_blood_film():
     # thin films dry first, and drying is patchy
     a = (age + (1.0 - thick) * 0.35 * age + (n_mid - 0.5) * 0.5 * age * (1.0 - age)).clamp()
 
-    thin = t.mix(n_mid, base * (0.42, 0.030, 0.038), base * (0.26, 0.012, 0.018))
-    fresh = t.mix(thick, thin, t.mix(n_mid, (0.035, 0.0012, 0.0018), (0.07, 0.0022, 0.003)))
+    # thin films are semi-transparent stains; opacity grows with the amount
+    op = 0.6 + 0.4 * cov.smooth(0.15, 0.5)
+    thin = t.mix(op, base, t.mix(n_mid, base * (0.45, 0.05, 0.056), base * (0.30, 0.022, 0.03)))
+    fresh = t.mix(thick, thin, t.mix(n_mid, (0.035, 0.0038, 0.0045), (0.07, 0.0065, 0.0075)))
+    # clots in pooled blood, and the darker rim where a film thins out at its edge
+    clot = t.noise(p, 500.0, 3.0).smooth(0.58, 0.72) * thick
+    fresh = t.mix(clot * 0.8, fresh, (0.022, 0.0025, 0.003))
+    rim = film * (1.0 - cov.smooth(0.2, 0.34))
+    fresh = t.mix(rim * 0.5, fresh, fresh * 0.55)
     old = t.mix(thick, base * (0.36, 0.16, 0.11), (0.026, 0.0085, 0.006))
     col = t.mix(a, fresh, old)
     # dried pools crack into flakes that show the surface underneath
@@ -528,7 +525,7 @@ def _group_blood_film():
     col = t.mix(crack * 0.75, col, base * 0.3)
 
     t.result("Color", t.mix(mask, base, col))
-    r_blood = t.mix(a, t.mix(wet, 0.34, 0.05), t.mix(thick, 0.64, 0.42))
+    r_blood = t.mix(a, t.mix(wet, 0.34, 0.05) + clot * 0.2, t.mix(thick, 0.64, 0.42))
     t.result("Roughness", t.mix(mask, rough, r_blood))
     t.result("Coat", mask * (0.35 + 0.65 * thick) * (1.0 - a * 0.9) * (0.25 + 0.75 * wet))
     t.result("Coat Roughness", 0.02 + (1.0 - wet) * 0.25 + a * 0.3)
@@ -541,7 +538,7 @@ def _group_blood_film():
     hthick = cov_h.smooth(0.45, 1.0)
     crack_h = (1.0 - cd.smooth(0.0, 0.06)) * age.smooth(0.55, 0.95) * hthick
     t.result("Height", hmask * (0.25 + 0.75 * hthick) - crack_h * 0.6)
-    t.result("Height Mask", hmask)
+    t.result("Height Mask", hmask * hthick.max(0.3))
     t.result("SSS", 1.0 - mask * (0.4 + 0.6 * thick))
     t.layout()
     return ng
@@ -722,7 +719,9 @@ def _skin_material(g, name="GH_Skin", lips=False):
     vein = t.ridge(t.noise(t.warp(p, 20.0, 0.01), 38.0, 3.0), 0.022) * t.noise(p, 12.0).smooth(0.45, 0.62)
     col = t.mix(vein * (0.12 + 0.4 * pallor), col, col * (0.62, 0.74, 0.95))
     # lips: redder, darker vermilion (bluish-grey when pale)
-    lip_col = t.mix(pallor, col * (0.92, 0.50, 0.50), col * (0.72, 0.66, 0.80))
+    lip_tone = tone.ramp([(0.0, (0.50, 0.19, 0.19)), (0.25, (0.40, 0.13, 0.135)), (0.5, (0.25, 0.085, 0.08)),
+                          (0.75, (0.11, 0.042, 0.042)), (1.0, (0.045, 0.019, 0.019))])
+    lip_col = t.mix(pallor, lip_tone * (0.85 + 0.3 * m_fine), col * (0.72, 0.66, 0.82))
     col = t.mix(lip, col, lip_col)
 
     # ---- micro relief -------------------------------------------------------
@@ -731,13 +730,13 @@ def _skin_material(g, name="GH_Skin", lips=False):
     gd, _, _ = t.voronoi(p * (1.0, 1.0, 1.5), 1000.0, 'DISTANCE_TO_EDGE', rand=0.9)
     groove = (1.0 - gd.smooth(0.0, 0.12)) * m_fine.smooth(0.3, 0.7) * 0.45
     fine = t.noise(p, 6000.0, 2.0)
-    lip_lines = t.noise(p * (1.0, 1.0, 0.12), 1500.0, 2.0) * lip
-    col = col * (1.0 - pore * 0.10 - groove * 0.03)
+    lip_lines = t.ridge(t.noise(p * (1.0, 1.0, 0.1), 900.0, 2.0), 0.08) * lip
+    col = col * (1.0 - pore * 0.10 * (1.0 - lip) - groove * 0.03 - lip_lines * 0.12)
     # pallor: desaturate toward a cool grey
     lum = t.luminance(col)
     skin_col = t.mix(pallor * 0.72, col, t.vec(lum, lum, lum) * (0.97, 1.0, 1.06) * 1.08)
     mid = t.noise(p, 160.0, 2.0)
-    h_skin = (-pore * 0.9 - groove * 0.4 + fine * 0.25 - lip_lines * 0.6) * (1.0 - lip * 0.5) + mid * 0.5
+    h_skin = (-pore * 0.9 - groove * 0.4) * (1.0 - lip) + fine * 0.25 - lip_lines * 2.5 + mid * 0.5
     h_lite = mid * 0.5 - pore * 0.6              # cheaper relief for the damage branch
     rough = 0.44 + (m_fine - 0.5) * 0.14 - oily * 0.1 - lip * 0.12 - wet * 0.04 + pore * 0.06
 
@@ -929,7 +928,13 @@ def _fat_material(g):
 
 
 def _bone_material(g):
-    """GH_Bone: skull and jaw. Reads gore_fracture (cracks), gore_wound (broken spongy bone), gore_blood."""
+    """GH_Bone: skull and jaw. Reads gore_fracture, gore_wound (broken spongy bone), gore_blood.
+
+    gore_fracture may be thin lines or broad zones (it is interpolated on a
+    ~1.4 mm skull mesh either way), so it is used as a *crack density*: thin,
+    jagged procedural crack lines (two scales) appear wherever it is high, with
+    blood seeping out along them and a soft stain around.
+    """
     mat, t = _new_material("GH_Bone")
     p, wet = t.coord(), t.control("wetness")
     b = t.group(g["bone"], {"Vector": p, "Wetness": wet})
@@ -938,19 +943,23 @@ def _bone_material(g):
     wm = (wound + (t.noise(p, 500.0) - 0.5) * 0.3).smooth(0.45, 0.8)
     col = t.mix(wm, b["Color"], b["Diploe Color"])
     h = t.mix(wm, b["Height"], b["Diploe Height"])
-    # fracture lines: jagged dark core, hairline branches, blood seeping out
-    jag = (t.noise(p, 1600.0, 3.0) - 0.5) * 0.35
-    core = (frac + jag).smooth(0.45, 0.8) * (1.0 - wound.smooth(0.6, 0.95) * 0.85)
-    hd, _, _ = t.voronoi(t.warp(p, 500.0, 0.0012), 420.0, 'DISTANCE_TO_EDGE')
-    hair = (1.0 - hd.smooth(0.0, 0.035)) * frac.smooth(0.12, 0.5) * t.noise(p, 180.0).smooth(0.4, 0.55)
-    halo = frac.smooth(0.03, 0.45) * t.noise(p, 260.0, 3.0).smooth(0.3, 0.6)
-    col = t.mix(halo * 0.6, col, col * (0.55, 0.22, 0.17))
-    col = t.mix(hair * 0.8, col, (0.16, 0.03, 0.02))
-    col = t.mix(core, col, (0.035, 0.008, 0.006))
-    h = h - core * 3.0 - hair * 1.2
-    blood = (t.attr("gore_blood") * 0.8).max(core * 0.75)
+    # crack network: main jagged cracks (~4 mm plates) + fine hairlines
+    fz = (frac + (t.noise(p, 200.0, 2.0) - 0.5) * 0.3).clamp()
+    cd1, _, _ = t.voronoi(t.warp(p, 700.0, 0.0006), 240.0, 'DISTANCE_TO_EDGE', rand=0.95)
+    cd2, _, _ = t.voronoi(t.warp(p, 1500.0, 0.0003), 750.0, 'DISTANCE_TO_EDGE', rand=1.0)
+    main = (1.0 - cd1.smooth(0.0, 0.028 + fz * 0.02)) * fz.smooth(0.2, 0.55)
+    hair = (1.0 - cd2.smooth(0.0, 0.05)) * fz.smooth(0.35, 0.8) * t.noise(p, 400.0).smooth(0.35, 0.55)
+    seep = (1.0 - cd1.smooth(0.0, 0.16)) * fz.smooth(0.2, 0.55)      # blood soaking out of the cracks
+    stain = fz.smooth(0.05, 0.6) * t.noise(p, 260.0, 3.0).smooth(0.3, 0.65)
+    col = t.mix(stain * 0.45, col, col * (0.62, 0.30, 0.24))
+    col = t.mix(seep * 0.7, col, col * (0.45, 0.10, 0.08))
+    col = t.mix(hair * 0.85, col, (0.10, 0.02, 0.014))
+    col = t.mix(main, col, (0.025, 0.006, 0.005))
+    h = h - main * 3.0 - hair * 1.2
+    # wounds and fractures are bloody, but the bone must still read: patchy film
+    blood = (t.attr("gore_blood") * 0.55).max(main * 0.7)
     bl = _blood_layer(t, g, col, b["Roughness"], blood, p)
-    h = t.mix(bl["Height Mask"], h, bl["Height"] * 2.0 - core * 2.0)
+    h = t.mix(bl["Height Mask"], h, bl["Height"] * 2.0 - main * 2.0)
     bsdf = t.principled({
         'Base Color': bl["Color"], 'Roughness': bl["Roughness"], 'IOR': 1.55,
         'Subsurface Weight': 0.2 * bl["SSS"], 'Subsurface Radius': (1.0, 0.75, 0.5),
@@ -989,7 +998,7 @@ def _brain_material(g):
     col = t.mix(wm, col, pulp)
     h = veins * 1.2 + arts * 0.5 + t.noise(p, 900.0) * 0.3 + wm * t.noise(p, 500.0, 4.0) * 2.0
     rough = t.mix(wet, 0.45, 0.2) + wm * 0.1
-    bl = _blood_layer(t, g, col, rough, t.attr("gore_blood"), p)
+    bl = _blood_layer(t, g, col, rough, t.attr("gore_blood") * 0.55, p)
     bsdf = t.principled({
         'Base Color': bl["Color"], 'Roughness': bl["Roughness"], 'IOR': 1.4,
         'Subsurface Weight': 0.7 * bl["SSS"], 'Subsurface Radius': (1.0, 0.45, 0.35),
@@ -1012,7 +1021,7 @@ def _blood_material(g):
     n = t.noise(p, 300.0, 3.0)
     a = (age + (n - 0.5) * 0.4 * age * (1.0 - age)).clamp()
     clot = t.noise(p, 900.0, 4.0).smooth(0.5, 0.7) * (a * (1.0 - a) * 4.0).clamp()
-    fresh = t.mix(n, (0.065, 0.0018, 0.0024), (0.11, 0.0035, 0.0042))
+    fresh = t.mix(n, (0.06, 0.005, 0.006), (0.10, 0.008, 0.009))
     old = t.mix(n, (0.022, 0.008, 0.006), (0.045, 0.014, 0.009))
     col = t.mix(a, fresh, old)
     col = t.mix(clot * 0.7, col, (0.07, 0.008, 0.006))
@@ -1090,7 +1099,7 @@ def _eye_material(g):
     # ---- sclera -------------------------------------------------------------
     pn = p.normalize()
     back = t.sep(pn)[1].smooth(-0.55, 0.3)
-    scl = t.mix(t.noise(p, 400.0, 3.0), (0.58, 0.51, 0.45), (0.68, 0.62, 0.56))
+    scl = t.mix(t.noise(p, 400.0, 3.0), (0.62, 0.57, 0.52), (0.71, 0.67, 0.62))
     scl = t.mix(back, scl, (0.52, 0.34, 0.30))
     scl = t.mix((1.0 - rs.smooth(LIMBUS_R, LIMBUS_R + 0.0012)) * front * 0.55, scl, (0.52, 0.53, 0.56))
     shot = (blood * 1.5).clamp()
@@ -1126,7 +1135,7 @@ def _teeth_material(g):
     """GH_Teeth: translucent enamel, yellower toward the gum line. Reads tooth_id, gore_blood."""
     mat, t = _new_material("GH_Teeth")
     p, wet = t.coord(), t.control("wetness")
-    px, py, pz = t.sep(p)
+    _, py, pz = t.sep(p)
     z_occ = t.value("occlusal_z", OCCLUSAL_Z) + (py - OCCLUSAL_Y) * OCCLUSAL_SLOPE
     h = ((pz - z_occ).abs() - 0.0007) / 0.0085            # 0 biting edge .. 1 gum line
     rnd = t.white(t.vec(t.attr("tooth_id"), 0.37, 0.0))
@@ -1156,63 +1165,73 @@ def _teeth_material(g):
 def _wet_mucosa(g, name, base_lo, base_hi, extra=None, sss=0.8, view=(0.6, 0.2, 0.2)):
     """Shared wet pink-red mucosa (gums, tongue, mouth lining).
 
-    ``extra(t, p, col, h)`` may return an adjusted (col, h, rough_add).
+    ``extra(t, p, col, h)`` may return an adjusted (col, h, rough_add, coat_scale).
+    The saliva coat uses the bumped normal so highlights break up on the
+    surface texture instead of sitting on it like varnish.
     """
     mat, t = _new_material(name)
     p, wet = t.coord(), t.control("wetness")
-    n1 = t.noise(p, 120.0, 4.0, 0.55)
+    n1 = t.noise(p, 120.0, 3.0, 0.55)
     col = t.mix(n1, base_lo, base_hi)
+    blot = t.noise(p + (2.0, 5.0, 1.0), 45.0, 3.0).smooth(0.45, 0.7)
+    col = t.mix(blot * 0.5, col, col * (0.82, 0.62, 0.66))
     vess = t.ridge(t.noise(t.warp(p, 80.0, 0.003), 260.0, 3.0), 0.02) * t.noise(p, 50.0).smooth(0.45, 0.65)
-    col = t.mix(vess * 0.5, col, (0.36, 0.03, 0.035))
-    h = t.noise(p, 1500.0, 2.0) * 0.4 + n1 * 0.3
-    rough_add = 0.0
+    col = t.mix(vess * 0.55, col, (0.30, 0.025, 0.035))
+    h = t.noise(p, 1500.0, 2.0) * 0.8 + n1 * 0.6 + vess * 0.5
+    rough_add, coat_k = 0.0, 1.0
     if extra is not None:
-        col, h, rough_add = extra(t, p, col, h)
-    bl = _blood_layer(t, g, col, t.mix(wet, 0.45, 0.14) + rough_add, t.attr("gore_blood"), p)
+        col, h, rough_add, coat_k = extra(t, p, col, h)
+    bl = _blood_layer(t, g, col, t.mix(wet, 0.5, 0.2) + rough_add, t.attr("gore_blood"), p)
+    nrm = t.bump(t.mix(bl["Height Mask"], h, bl["Height"]), 0.0001)
     bsdf = t.principled({
         'Base Color': bl["Color"], 'Roughness': bl["Roughness"], 'IOR': 1.4,
         'Subsurface Weight': sss * bl["SSS"], 'Subsurface Radius': (1.0, 0.33, 0.22),
-        'Subsurface Scale': 0.0025, 'Coat Weight': (wet * 0.6 + bl["Coat"]).clamp(),
-        'Coat Roughness': t.mix(bl["Mask"], 0.04 + (1.0 - wet) * 0.2, bl["Coat Roughness"]),
-        'Coat Tint': bl["Coat Tint"], 'Normal': t.bump(t.mix(bl["Height Mask"], h, bl["Height"]), 0.0001)},
-        sss_method='RANDOM_WALK')
+        'Subsurface Scale': 0.0025, 'Coat Weight': (wet * 0.45 * coat_k + bl["Coat"]).clamp(),
+        'Coat Roughness': t.mix(bl["Mask"], 0.06 + (1.0 - wet) * 0.2, bl["Coat Roughness"]),
+        'Coat Tint': bl["Coat Tint"], 'Coat Normal': nrm, 'Normal': nrm}, sss_method='RANDOM_WALK')
     t.output(bsdf)
     return _finish(mat, t, view, 0.2)
 
 
 def _gums_extra(t, p, col, h):
-    sd, _, _ = t.voronoi(p, 3200.0)
-    stip = 1.0 - sd.smooth(0.0, 0.3)                      # orange-peel stippling
-    col = t.mix(t.noise(p, 60.0).smooth(0.5, 0.7) * 0.5, col, col * (0.75, 0.55, 0.55))
-    return col, h - stip * 0.5, 0.05
+    """Attached gingiva: coral pink, orange-peel stippling, redder vascular patches."""
+    sd, _, _ = t.voronoi(p, 2600.0)
+    stip = 1.0 - sd.smooth(0.0, 0.35)                      # orange-peel stippling
+    col = t.mix(t.noise(p, 60.0).smooth(0.5, 0.7) * 0.55, col, col * (0.78, 0.50, 0.52))
+    col = col * (1.0 - stip * 0.08)
+    return col, h - stip * 2.0, 0.05, 0.8
 
 
 def _tongue_extra(t, p, col, h):
-    px, py, pz = t.sep(p)
-    fd, _, _ = t.voronoi(p, 2800.0)
-    filiform = 1.0 - fd.smooth(0.0, 0.5)
-    gd, gcol, _ = t.voronoi(p, 650.0)
-    fung = (1.0 - gd.smooth(0.0, 0.2)) * t.sep(gcol)[0].smooth(0.78, 0.8)
-    sulcus = t.math('EXPONENT', -(px / 0.0013).pow(2.0))
+    """Dorsum: velvety filiform papillae with whitish tips, red fungiform dots,
+    median groove, a light coating toward the back; smoother purplish underside."""
+    px, py, _ = t.sep(p)
+    fd, _, _ = t.voronoi(p, 2400.0)
+    filiform = 1.0 - fd.smooth(0.0, 0.55)
+    gd, gcol, _ = t.voronoi(p, 520.0)
+    fung = (1.0 - gd.smooth(0.0, 0.2)) * t.sep(gcol)[0].smooth(0.72, 0.76)
+    sulcus = t.math('EXPONENT', -(px / 0.0016).pow(2.0))
     nz = t.sep(t.coord('Normal'))[2]
     top = nz.smooth(0.0, 0.5)
+    col = t.mix(filiform * top * 0.35, col, (0.60, 0.44, 0.42))
     coat = t.noise(p, 140.0, 3.0).smooth(0.45, 0.75) * py.smooth(-0.07, -0.04) * top * 0.45
-    col = t.mix(coat, col, (0.58, 0.46, 0.42))
-    col = t.mix(fung * top * 0.8, col, (0.46, 0.06, 0.07))
-    col = t.mix(sulcus * top * 0.3, col, col * 0.7)
-    col = t.mix(1.0 - top, col, col * (0.8, 0.62, 0.78))      # purplish, veiny underside
-    h = h + (filiform * 0.8 + fung * 1.2) * top - sulcus * 3.0 * top
-    return col, h, 0.15 * top
+    col = t.mix(coat, col, (0.60, 0.50, 0.46))
+    col = t.mix(fung * top * 0.85, col, (0.44, 0.05, 0.065))
+    col = t.mix(sulcus * top * 0.35, col, col * 0.65)
+    col = t.mix(1.0 - top, col, col * (0.78, 0.60, 0.80))      # purplish, veiny underside
+    h = h + (filiform * 3.0 + fung * 2.5) * top - sulcus * 6.0 * top
+    return col, h, 0.25 * top, 1.0 - top * 0.6
 
 
 def _mouth_extra(t, p, col, h):
+    """Oral lining: darker toward the throat, transverse rugae on the palate."""
     px, py, pz = t.sep(p)
     deep = py.smooth(-0.085, -0.03)
     col = t.mix(deep * 0.85, col, (0.10, 0.012, 0.014))
     nz = t.sep(t.coord('Normal'))[2]
     roof = (-nz).smooth(0.2, 0.6)
     rugae = t.noise(t.vec(px * 0.3, py, pz * 0.3), 700.0, 2.0) * roof * (1.0 - deep)
-    return col, h + rugae * 1.2, 0.0
+    return col, h + rugae * 3.0, 0.0, 1.0
 
 
 def build_materials():
@@ -1581,7 +1600,7 @@ def _gore_head(mat, R=0.07, subdiv=8):
 
 def _drip_tubes(info, mat, which=(1, 3)):
     """Blood drips as real geometry along two of the streaks (GH_Blood)."""
-    cw, el_w, az_w, streaks, R = info
+    _, _, az_w, streaks, R = info
     for i in which:
         x, el0, length, k = streaks[i]
         cu = bpy.data.curves.new(f"GT_Drip{i}", 'CURVE')
@@ -1625,9 +1644,10 @@ def _gore_bone(mat, loc, R=0.03, subdiv=7):
         jag = 0.02 * np.sin(rho * 1400.0 + k * 1.3) + 0.012 * np.sin(rho * 3100.0 + k * 2.1)
         dth = np.angle(np.exp(1j * (th - th_k - jag)))
         dist = rho * np.abs(dth)
-        frac = np.maximum(frac, np.exp(-(dist / 0.00035) ** 2) * _smoothstep(L, L * 0.7, rho) * (rho > 0.002))
+        frac = np.maximum(frac, np.exp(-(dist / 0.0012) ** 2) * _smoothstep(L, L * 0.7, rho) * (rho > 0.002))
     r_ring = 0.0065 + 0.0005 * np.sin(th * 5.0)
-    frac = np.maximum(frac, np.exp(-((rho - r_ring) / 0.0003) ** 2) * (np.sin(th * 3.0 + 1.0) > -0.6))
+    frac = np.maximum(frac, np.exp(-((rho - r_ring) / 0.001) ** 2) * (np.sin(th * 3.0 + 1.0) > -0.6))
+    frac = np.maximum(frac, _smoothstep(r_ring * 1.1, r_ring * 0.7, rho))       # comminuted centre
     breach = _smoothstep(0.0032, 0.0026, rho * (1.0 + 0.15 * np.sin(th * 7.0)))
     depress = 0.0016 * _smoothstep(r_ring, r_ring * 0.8, rho) + 0.004 * breach
     blood = np.clip(0.3 * np.exp(-(rho / 0.008) ** 2) * (0.6 + 0.4 * _wave_noise(v, 300.0, 22))
