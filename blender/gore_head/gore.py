@@ -1150,6 +1150,18 @@ def _build_blunt():
         * t.smooth(0.45, 0.6, t.noise(c.np * 160.0, detail=1.0, signed=False)) * (1.0 - crush)
     cut_split = cut_split - bridge * is_skin * 0.004
     cut_soft = t.switch(split_on.gt(0.05), -1.0, cut_split)
+    # crushed face: the skin is torn away over a large ragged area (flaps
+    # around it), the muscle under it is pulped open as well
+    soft_cr = c.lc([1.0, 0.92, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0])
+    ring_c = t.vec(c.theta.cos() * 1.2, c.theta.sin() * 1.2, c.seed * 3.7)
+    lf_c = t.noise(ring_c, detail=3.0, signed=False)
+    tears_c = c.tears(6, first=10, width=(0.12, 0.35), length=(0.3, 1.0), sharp=1.4, wobble=0.25)
+    R_cr = s * (0.004 + 0.02 * cr) * soft_cr
+    r_cr = R_cr * (0.55 + 0.6 * lf_c + 0.55 * tears_c) \
+        + t.noise(c.np * 420.0, detail=2.0) * 0.0012 + t.noise(c.np * 1500.0, detail=1.0) * 0.0004
+    cut_cr = t.switch(t.bool('AND', cr.gt(0.08), soft_cr.gt(0.5)), -1.0, r_cr - c.rho)
+    cut_soft = cut_soft.max(cut_cr)
+    d_cr = c.rho - r_cr                                   # distance outside the crushed opening
     # depressed skull fracture with radiating cracks
     dep_on = t.smooth(0.62, 0.85, D) * is_bone
     rd = s * 0.015
@@ -1161,17 +1173,32 @@ def _build_blunt():
     depress = dep_on * s * 0.0048 * inside * (0.4 + 0.6 * plate) * t.smooth(rd * 1.1, rd * 0.2, c.rho).max(0.35)
     ring_crack = t.smooth(0.0007, 0.0002, t.math('ABSOLUTE', c.rho - rd_th))
     frac = (lines * t.smooth(rd * 2.8, rd * 0.9, c.rho)).max(ring_crack) * dep_on
-    breach = t.smooth(0.94, 0.99, D) * is_bone
-    cut_bone = t.switch(breach.gt(0.5), -1.0, s * 0.0045 * (1.0 + nl * 0.3) - c.rho)
+    breach = (t.smooth(0.94, 0.99, D).max(t.smooth(0.25, 0.45, cr))) * is_bone
+    # (crushed: the bone breaks into a large hole of loose plates; its edge
+    # follows the crack network, so it is jagged, not round)
+    r_bb = s * (0.0045 + 0.017 * cr) * (1.0 + nl * 0.3 + 0.25 * cr * (plate - 0.5)) \
+        + cr * s * 0.004 * lines
+    cut_bone = t.switch(breach.gt(0.5), -1.0, r_bb - c.rho)
     cut = cut_soft.max(cut_bone)
-    disp = t.vec(0.0, 0.0, -depress - frac * dep_on * 0.0005)
+    # contour collapse: skin, muscle and bone cave in 5-15 mm under crushing
+    # blows; the loose plates at the edge of the bone hole are pushed in
+    cave = cr * s * 0.011 * t.math('EXPONENT', -(c.rho / (s * 0.03)) ** 2.0) \
+        * c.lc([1.0, 1.0, 0.8, 0.8, 0.5, 0.0, 0.0, 1.0]) * (1.0 + 0.3 * nl)
+    depress = depress * (1.0 + 1.5 * cr)
+    # everted flaps around the torn-away skin: lifted and curled outward so
+    # their pale fatty undersides show
+    flap_cr = t.smooth(R_cr * 0.6 + 0.004, 0.0, d_cr) * cr * soft_cr
+    curl_c = 0.6 + 0.6 * t.noise(c.np * 90.0, detail=1.0, signed=False)
+    lift_cr = flap_cr * flap_cr * s * 0.0045 * curl_c
+    # the eye sinks into the broken orbit (the globe moves back along the hit)
+    sink_eye = c.is_layer(LAYER_EYE) * cr * s * 0.0075 * t.smooth(0.05, 0.025, c.rho)
+    disp = t.vec(0.0, 0.0, -depress - frac * dep_on * 0.0005 - sink_eye + lift_cr) + c.radial * (lift_cr * 0.6)
     # the margins are pushed apart a little and bulge (crushed, swollen lips)
     mg = t.smooth(0.003, 0.0, -cut_split) * split_on * is_skin
-    swell = swell + mg * 0.0006
-    # blood: from the split, hematoma under the skin, contusion on the brain
+    swell = swell + mg * 0.0006 - cave
+    # blood: from the split (via the fill and the runs, nothing painted on the
+    # skin), hematoma under the skin, contusion on the brain
     bleed = t.inp("Bleed")
-    pool = c.pool(c.L, s * 0.0065 * (0.5 + bleed) * (1.0 + 0.5 * t.inp("Region").x), bleed * t.smooth(0.25, 0.45, D),
-                  stretch=3.8, drop=s * 0.004)
     hema = t.smooth(rsw * 1.1, rsw * 0.3, c.rho) * c.lc([0.0, 0.85, 0.35, 0.35, 0.0, 0.7, 0.0, 0.8])
     contusion = t.smooth(rd * 1.3, rd * 0.4, c.rho + nl * 0.002) * is_brain * t.smooth(0.5, 0.8, D)
     # blood from the split lip and torn gum coats the teeth behind it
