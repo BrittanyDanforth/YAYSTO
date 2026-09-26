@@ -765,14 +765,13 @@ def nail_mask(points, hands=True, feet=True):
         for A, B, ra, rb in _toe_nail_segments():
             outl.append((_nail(x, y, z, A, B, ra, rb, (0.0, 0.0, 1.0), width=0.60, start=0.35)[2], A, B, ra))
     for o, A, B, ra in outl:
-        near = np.linalg.norm(p - np.where(p[:, :1] < 0, -1.0, 1.0) * 0.0 - 0.0, axis=1) >= 0.0
         m = 1.0 - np.clip(o / 0.0006, 0.0, 1.0)
         # lunula: the pale crescent over the proximal fifth of the nail
         dd = unit(np.asarray(B) - np.asarray(A))
         s = (np.stack([x, y, z], 1) - np.asarray(A)) @ dd
         L = float(np.linalg.norm(np.asarray(B) - np.asarray(A)))
         lu = m * (1.0 - np.clip((s - 0.45 * L) / (0.08 * L), 0.0, 1.0))
-        nail = np.maximum(nail, m * near)
+        nail = np.maximum(nail, m)
         lun = np.maximum(lun, lu)
     return nail, lun
 
@@ -956,12 +955,29 @@ def _foot_tube():
 
 
 TOES = [  # base s, w, tip s, tip w, radius base, radius tip, tip centre height
-    (0.200, -0.031, 0.265, -0.032, 0.0140, 0.0118, 0.0125),     # hallux (medial)
-    (0.212, -0.008, FOOT_LEN - 0.0005, -0.004, 0.0092, 0.0070, 0.0085),     # 2nd toe: longest [RB §7.1]
-    (0.206, 0.010, 0.256, 0.013, 0.0088, 0.0068, 0.0080),
-    (0.198, 0.025, 0.246, 0.028, 0.0084, 0.0066, 0.0077),
-    (0.188, 0.039, 0.231, 0.043, 0.0080, 0.0062, 0.0072),       # little toe (lateral)
+    (0.200, -0.033, 0.265, -0.034, 0.0160, 0.0138, 0.0135),     # hallux (medial): about twice the others
+    (0.212, -0.008, FOOT_LEN - 0.0005, -0.004, 0.0086, 0.0066, 0.0080),     # 2nd toe: longest [RB §7.1]
+    (0.206, 0.010, 0.254, 0.013, 0.0081, 0.0062, 0.0075),
+    (0.198, 0.025, 0.243, 0.028, 0.0077, 0.0059, 0.0071),
+    (0.188, 0.039, 0.227, 0.043, 0.0072, 0.0055, 0.0066),       # little toe (lateral)
 ]
+
+
+def _toe_polyline(row):
+    """Base, middle and tip-centre points of a left toe (toes arch slightly up)."""
+    s0, w0, s1, w1, r0, r1, h1 = row
+    mid = foot_point(0.5 * (s0 + s1 - r1) + 0.004, 0.5 * (w0 + w1), h1 + 0.4 * r0)
+    return [foot_point(s0, w0, r0 + 0.004), mid, foot_point(s1 - r1, w1, h1)]
+
+
+def _toe_nail_segments():
+    """(A, B, radius A, radius B) of the distal part of each left toe (the nail sits on it)."""
+    out = []
+    for row in TOES:
+        P = _toe_polyline(row)
+        r0, r1 = row[4], row[5]
+        out.append((P[1], P[2], 0.5 * (r0 + r1) * 1.02, r1))
+    return out
 
 
 def _foot(ax, y, z):
@@ -969,16 +985,23 @@ def _foot(ax, y, z):
     # heel: rounded calcaneal pad
     heel = sd_oellipsoid(ax, y, z, foot_point(0.036, 0.001, 0.034), (0.030, 0.032, 0.036), np.eye(3))
     d = smin(d, heel, 0.02)
-    # toes merged (plan D4) but individually shaped at the tips
+    # toes (plan D4 simplified, but individually shaped): a dominant hallux, descending lengths, real
+    # clefts between them (tight blends) and nails
     toes = None
-    for s0, w0, s1, w1, r0, r1, h1 in TOES:
-        mid = foot_point(0.5 * (s0 + s1 - r1) + 0.004, 0.5 * (w0 + w1), h1 + 0.4 * r0)   # toes arch slightly up
-        t = sd_polyline(ax, y, z, [foot_point(s0, w0, r0 + 0.004), mid, foot_point(s1 - r1, w1, h1)],
-                        [r0, 0.5 * (r0 + r1) * 1.02, r1], k=0.004)
-        toes = t if toes is None else smin(toes, t, 0.0028)
-    d = smin(d, toes, 0.012)
+    plates, grooves = [], []
+    for row in TOES:
+        s0, w0, s1, w1, r0, r1, h1 = row
+        P = _toe_polyline(row)
+        t = sd_polyline(ax, y, z, P, [r0, 0.5 * (r0 + r1) * 1.02, r1], k=0.004)
+        toes = t if toes is None else smin(toes, t, 0.0012)
+        pl, gr, _o = _nail(ax, y, z, P[1], P[2], 0.5 * (r0 + r1) * 1.02, r1, (0.0, 0.0, 1.0), width=0.60, start=0.35)
+        plates.append(pl)
+        grooves.append(gr)
+    d = smin(d, toes, 0.010)
+    d = smax(d, -np.min(np.stack(grooves), axis=0), 0.0006)
+    d = smin(d, np.min(np.stack(plates), axis=0), 0.0005)
     # medial longitudinal arch: carve under the medial mid-foot
-    arch = sd_oellipsoid(ax, y, z, foot_point(0.125, -0.040, -0.004), (0.060, 0.026, 0.020),
+    arch = sd_oellipsoid(ax, y, z, foot_point(0.125, -0.040, -0.004), (0.060, 0.026, 0.022),
                          frame(FOOT_F, FOOT_L))
     d = smax(d, -arch, 0.012)
     # malleoli [RB §7.1]: lateral lower and posterior, medial higher
@@ -1107,7 +1130,7 @@ def union_components(c, off=None, kplus=0.0):
     body = smin(trunk, arm, 0.010 + 0.020 * sstep(1.39, 1.45, g["_z"]) + 0.016 * sstep(0.030, 0.060, ay) + K)
     body = smin(body, g["ant_fold"], 0.028 + K)
     body = smin(body, g["post_fold"], 0.030 + K)
-    leg = smin(g["leg"], g["foot"], 0.012 + K)
+    leg = smin(g["leg"], g["foot"], 0.024 + K)      # wide ankle blend: no ring crease (sock line)
     leg = smin(leg, g["pad_leg"], g["pad_leg_k"] + K)
     body = smin(body, leg, 0.022 + 0.015 * sstep(0.02, -0.06, g["_y"]) + K)
     # gluteal fold stays crisp below, the upper and outer buttock melt into the back and hip
