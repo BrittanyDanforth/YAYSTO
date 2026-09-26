@@ -15,8 +15,8 @@ Per layer the group:
      wall direction, wound / edge / blood / bruise / burn / fracture),
   4. displaces, cuts the holes, snaps the rims onto the ragged outline and
      extrudes thick wound walls toward the next layer,
-  5. adds extra geometry: blood drips and spatter on the skin, bone chips on
-     the skull, knocked-out teeth,
+  5. adds extra geometry: blood rivulets on the skin and blood filling the
+     bed of bleeding cuts, bone chips on the skull, knocked-out teeth,
   6. writes the `gore_*` point attributes from the contract.
 
 Typical use (after anatomy and materials):
@@ -626,9 +626,10 @@ def _build_sub_pool():
     along = dz.max(0.0) / t.inp("Stretch") + (-dz).max(0.0) * 1.4
     td = (lat * lat + along * along).sqrt() / t.inp("Radius")
     n1 = t.noise(npos * 170.0, detail=3.0)
+    n0 = t.noise(npos * 55.0, detail=2.0)              # broad lobes: no smooth blob outline
     # noise stretched along world Z -> vertical runs of thicker blood
     streak = t.noise(t.vec(npos.x * 520.0, npos.y * 520.0, npos.z * 70.0), detail=2.0)
-    cov = t.smooth(1.05, 0.3, td + n1 * 0.32)
+    cov = t.smooth(1.05, 0.3, td + n1 * 0.3 + n0 * 0.4)
     t.result("Coverage", cov * (0.5 + 0.5 * t.smooth(-0.25, 0.45, streak)) * t.inp("Amount"))
     t.layout()
     return t
@@ -1186,9 +1187,10 @@ def _build_burn():
     dome = (1.0 - (vd / brad) ** 2.0).max(0.0).sqrt()
     blister = partial * keep * dome * grow * (brad / BLISTER_SCALE) * 0.55 * sd
     # sloughed epidermis: raw patches with lifted, curled rims
-    pm = t.noise(c.np * 110.0 + t.vec(3.1, 1.7, 0.4), detail=2.0)
-    peel = t.smooth(0.10, 0.16, pm) * partial
-    peel_rim = t.smooth(0.04, 0.10, pm) * t.smooth(0.2, 0.12, pm) * partial
+    # (a few patches, not a web of squiggles)
+    pm = t.noise(c.np * 55.0 + t.vec(3.1, 1.7, 0.4), detail=2.0)
+    peel = t.smooth(0.24, 0.3, pm) * partial
+    peel_rim = t.smooth(0.17, 0.23, pm) * t.smooth(0.33, 0.25, pm) * partial
     dn = sink + blister + peel_rim * sd * 0.0006 - peel * sd * 0.00025
     dn = dn * is_skin
     # charred skin splits: real fissures 1-2 mm wide
@@ -1409,7 +1411,7 @@ def _end_repeat(t, rout, values):
 
 
 # ---------------------------------------------------------------------------
-# Blood: drips that run down the skin, spatter droplets
+# Blood: rivulets that run down the skin
 # ---------------------------------------------------------------------------
 DRIP_STEPS = 20
 # kind: (runs per hit, angular spread around "down" (rad), rim radius, max length, half width)
@@ -1513,7 +1515,7 @@ def _build_seed_group(kind, kind_id):
 
 
 def _build_blood():
-    """Skin-only blood geometry: gravity-driven drips + spatter; also the drip paths."""
+    """Skin-only blood geometry: gravity-driven rivulets; also the drip paths."""
     t = NodeTree("GH_Gore_Blood",
                  inputs=(("Surface", 'NodeSocketGeometry'),
                          ("Bullet", 'NodeSocketGeometry'), ("Exit", 'NodeSocketGeometry'),
@@ -1521,7 +1523,7 @@ def _build_blood():
                          ("Damage", 'NodeSocketFloat', 1.0), ("Bleed", 'NodeSocketFloat', 0.7),
                          ("Drip Time", 'NodeSocketFloat', 1.0), ("Material", 'NodeSocketMaterial')),
                  outputs=(("Blood", 'NodeSocketGeometry'), ("Trail", 'NodeSocketGeometry')),
-                 description="Blood drips running down the skin and spatter droplets")
+                 description="Blood rivulets running down the skin")
     surface = t.inp("Surface")
     damage, bleed, drip = t.inp("Damage"), t.inp("Bleed"), t.inp("Drip Time")
     seeds = [t.out(t.group(_build_seed_group(k, i), {"Hits": t.inp(k.capitalize()), "Damage": damage,
@@ -1770,7 +1772,9 @@ MAIN_INPUTS = (
     ("Wall Material", 'NodeSocketMaterial'),
     ("Blood Material", 'NodeSocketMaterial'),
     ("Bone Material", 'NodeSocketMaterial'),
-    ("Detail", 'NodeSocketInt', 2, 0, 4, "Subdivision level of the refined patch around wounds"),
+    ("Detail", 'NodeSocketInt', 2, 0, 4, "Subdivision level of the refined patch around wounds (render)"),
+    ("Viewport Detail", 'NodeSocketInt', 1, 0, 4,
+     "Refinement level in the viewport: lower = faster live dragging of the hit empties"),
     ("Tooth Root", 'NodeSocketFloat', 1.0, -1.0, 1.0, "+1 = roots point up (upper teeth), -1 = down"),
 )
 
@@ -2115,7 +2119,9 @@ def build_gore_node_group():
     # 1. refine where wounds need resolution
     g = t.store(g, "g_n", t.normal(), 'FLOAT_VECTOR')
     g = per_hit(t.store(g, "g_reg", 0.0), region_steps)
-    g = t.out(t.group(refine_g, {"Geometry": g, "Detail": t.inp("Detail"), "Layer": layer}))
+    is_vp = t.out(t.node('GeometryNodeIsViewport'))
+    detail = t.switch(is_vp, t.inp("Detail"), t.inp("Detail").min(t.inp("Viewport Detail")), 'INT')
+    g = t.out(t.group(refine_g, {"Geometry": g, "Detail": detail, "Layer": layer}))
     # 2. wound fields, hit by hit
     g = t.store(g, "g_cut", -1.0)
     g = t.store(g, "g_floor", 0.0)
@@ -2132,7 +2138,7 @@ def build_gore_node_group():
     is_skin = t.compare('EQUAL', layer, LAYER_SKIN, 'INT')
     is_bone = t.bool('OR', t.compare('EQUAL', layer, LAYER_SKULL, 'INT'), t.compare('EQUAL', layer, LAYER_JAW, 'INT'))
     empty = t.out(t.node('GeometryNodeJoinGeometry'))
-    # drips and spatter only need the skin near the wounds: crop it so the
+    # drips only need the skin near the wounds: crop it so the
     # surface lookups build small search trees
     all_hits = _join(t, *(hits[k][0] for k in KINDS))
     near_hits = t.out(t.node('GeometryNodeProximity', {'Target': all_hits}, target_element='POINTS'), 'Distance').lt(0.12)
@@ -2965,7 +2971,7 @@ def verify_gore(objs=None):
     _set_control("bleed", 0.0)
     b0 = _mesh_signature(skin)
     _set_control("bleed", saved["bleed"])
-    check("bleed 0 removes drips and spatter", b0[3] == 0, f"blood faces {b0[3]}")
+    check("bleed 0 removes drips and blood fills", b0[3] == 0, f"blood faces {b0[3]}")
     for k, v in saved.items():
         ctrl[k] = v
     ctrl.update_tag()

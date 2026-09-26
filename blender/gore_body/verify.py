@@ -591,8 +591,548 @@ def glb_contents():
 
 
 # ===========================================================================
+# B3 skeleton checks (plan §8.2 B3 acceptance): pieces, lengths, vertebra centres, double
+# shells, joint clearances, lean-site depths, intercostal spaces, variants, capsules, budgets
+# ===========================================================================
+# bones.json (B3 sidecar) schema, registered here too so the file checks work without importing skeleton
+gbc.SCHEMAS.setdefault("gb.bones/1", ("pieces", "capsules", "hit_mesh", "classes", "variants"))
+
+
+def _skel_pieces(name="GB_Skeleton"):
+    """{piece name: (verts, class array)} of a skeleton-like object (None if missing)."""
+    bpy = _bpy()
+    o = bpy.data.objects.get(name)
+    if o is None:
+        return None
+    v = gbc.get_verts(o.data)
+    pc = gbc.read_point_attr(o, "gb_piece", 'INT')
+    cl = gbc.read_point_attr(o, "gb_class", 'INT')
+    inv = {i: n for n, i in BN.BONE_PIECE_ID.items()}
+    return {inv.get(int(i), str(i)): (v[pc == i], cl[pc == i]) for i in np.unique(pc)}
+
+
+def _b3_built():
+    bpy = _bpy()
+    o = bpy.data.objects.get("GB_Skeleton")
+    return o is not None and o.get("gb_status") == "B3"
+
+
+def _kd(points):
+    from mathutils.kdtree import KDTree
+    kd = KDTree(len(points))
+    for i, p in enumerate(points):
+        kd.insert(p, i)
+    kd.balance()
+    return kd
+
+
+@check("scene", owner="B3")
+def skeleton_all_pieces():
+    """Every bone piece id of gb_data.bones exists in GB_Skeleton with its class."""
+    P = _skel_pieces()
+    if P is None:
+        return False, "GB_Skeleton missing"
+    missing = [n for n, _c in BN.BONE_PIECES if n not in P]
+    wrong = [n for n, c in BN.BONE_PIECES if n in P and not np.isin(c, P[n][1]).any()]
+    return not missing and not wrong, f"{len(P)} / {len(BN.BONE_PIECES)} pieces; missing {missing}; wrong class {wrong}"
+
+
+@check("scene", owner="B3")
+def skeleton_long_bone_lengths():
+    """Max length along the principal axis vs the bible: femur 47, tibia 41, fibula 39.5, humerus 34,
+    radius 26, ulna 27.5, clavicle 14.8 cm, each +-1 cm, both sides."""
+    if not _b3_built():
+        return True, "skipped (B3 skeleton not built; placeholder stands in)"
+    P = _skel_pieces()
+    bad, rows = [], []
+    for base, want in BN.ACCEPT_LENGTH_CM.items():
+        for s in "LR":
+            v, c = P[f"{base}_{s}"]
+            v = v[c != 6]
+            cc = v.mean(0)
+            _u, _s, vt = np.linalg.svd(v[::3] - cc, full_matrices=False)
+            t = (v - cc) @ vt[0]
+            L = 100 * (t.max() - t.min())
+            rows.append(f"{base}_{s} {L:.2f}")
+            if abs(L - want) > 1.0:
+                bad.append(f"{base}_{s} {L:.2f}/{want}")
+    return not bad, f"out of +-1 cm: {bad}; " + ", ".join(rows[::2])
+
+
+@check("scene", owner="B3")
+def skeleton_vertebra_centres():
+    """Vertebral body centres (bbox centre of the body in the level frame) within 2 mm of RB §7.3."""
+    if not _b3_built():
+        return True, "skipped (B3 skeleton not built)"
+    import skeleton as SK
+    P = _skel_pieces()
+    worst, bad = 0.0, []
+    for r in VT.VERTEBRAE:
+        lv = r["level"]
+        if lv in ("S1", "C1"):
+            continue
+        v, _c = P[lv.lower()]
+        F = SK.spine_frame(lv)
+        lx, ly, lz = F.local(v[:, 0], v[:, 1], v[:, 2])
+        h, d, w = r["body_h_mm"] / 1e3, r["body_d_mm"] / 1e3, r["body_w_mm"] / 1e3
+        sel = (ly < 0.5 * d - 0.002) & (np.abs(lz) < 0.5 * h + 0.004) & (np.abs(lx) < 0.5 * w + 0.004)
+        if lv == "C2":
+            sel &= lz < 0.0
+        if sel.sum() < 8:
+            bad.append(f"{lv}: no body vertices")
+            continue
+        c = np.array([0.5 * (lx[sel].min() + lx[sel].max()), 0.5 * (ly[sel].min() + ly[sel].max()), 0.0])
+        # height from the endplate centres only (uncinate lips / rims excluded)
+        mid = sel & (np.abs(lx) < 0.25 * w) & (np.abs(ly) < 0.25 * d)
+        if lv != "C2" and mid.sum() >= 4:
+            c[2] = 0.5 * (lz[mid].min() + lz[mid].max())
+        err = float(np.linalg.norm(c)) * 1000
+        worst = max(worst, err)
+        if err > 2.0:
+            bad.append(f"{lv} {err:.1f} mm")
+    return not bad, f"worst body-centre error {worst:.2f} mm (<= 2); bad {bad}"
+
+
+@check("scene", owner="B3")
+def skeleton_double_shells():
+    """Long bones carry a marrow core (class 6) fully inside the cortex; cortex at mid-shaft within
+    +-1.5 mm of the bible (femur 7, tibia 6, humerus 5, radius/ulna/fibula 3, clavicle 2.5 mm)."""
+    if not _b3_built():
+        return True, "skipped (B3 skeleton not built)"
+    from mathutils import Vector
+    from mathutils.bvhtree import BVHTree
+    bpy = _bpy()
+    o = bpy.data.objects["GB_Skeleton_HR"] if "GB_Skeleton_HR" in bpy.data.objects else bpy.data.objects["GB_Skeleton"]
+    v, tris = gbc.mesh_arrays(o.data)
+    pc = gbc.read_point_attr(o, "gb_piece", 'INT')
+    cl = gbc.read_point_attr(o, "gb_class", 'INT')
+    bad, rows = [], []
+    for base, row in BN.LONG_BONES.items():
+        for s in "LR":
+            pid = BN.BONE_PIECE_ID[f"{base}_{s}"]
+            outer_t = tris[(pc[tris[:, 0]] == pid) & (cl[tris[:, 0]] != 6)]
+            core_v = v[(pc == pid) & (cl == 6)]
+            if len(core_v) == 0:
+                bad.append(f"{base}_{s}: no marrow core")
+                continue
+            bvh = BVHTree.FromPolygons(v.tolist(), outer_t.tolist())
+            # inside test: nearest outer point, normal points away from the core vertex
+            outside = 0
+            dists = []
+            for p in core_v[:: max(1, len(core_v) // 400)]:
+                loc, nrm, _i, dist = bvh.find_nearest(Vector(p))
+                if (Vector(p) - loc).dot(nrm) > 0:
+                    outside += 1
+                dists.append(dist)
+            # cortex at mid-shaft: core vertices within the middle 20 % of the core length
+            cc = core_v.mean(0)
+            _u, _s, vt = np.linalg.svd(core_v - cc, full_matrices=False)
+            t = (core_v - cc) @ vt[0]
+            mid = core_v[np.abs(t) < 0.1 * (t.max() - t.min())]
+            cort = np.median([bvh.find_nearest(Vector(p))[3] for p in mid]) * 1000 if len(mid) else 0
+            want = row["cortex_mm"]
+            rows.append(f"{base}_{s} {cort:.1f}/{want}")
+            if outside or abs(cort - want) > 1.5:
+                bad.append(f"{base}_{s} cortex {cort:.1f} mm (want {want}), core verts outside {outside}")
+    return not bad, f"bad {bad}; cortex mid-shaft " + ", ".join(rows[::2])
+
+
+def _min_gap(P, a, b, cls_skip=6):
+    va = P[a][0][P[a][1] != cls_skip]
+    vb = P[b][0][P[b][1] != cls_skip]
+    kd = _kd(vb)
+    return min(kd.find(p)[2] for p in va[:: max(1, len(va) // 3000)])
+
+
+@check("scene", owner="B3")
+def skeleton_joint_clearance():
+    """Neighbouring bones never interpenetrate (HR vertex gap >= 0.5 mm at every joint pair)."""
+    if not _b3_built():
+        return True, "skipped (B3 skeleton not built)"
+    P = _skel_pieces("GB_Skeleton_HR") or _skel_pieces()
+    pairs = [("femur_L", "hip_bone_L"), ("humerus_L", "scapula_L"), ("c1", "skull"), ("c2", "skull"), ("c1", "c2"),
+             ("tibia_L", "femur_L"), ("patella_L", "femur_L"), ("fibula_L", "tibia_L"), ("foot_L", "tibia_L"),
+             ("radius_L", "humerus_L"), ("ulna_L", "humerus_L"), ("radius_L", "ulna_L"), ("hand_L", "radius_L"),
+             ("clavicle_L", "sternum"), ("clavicle_L", "scapula_L"), ("sacrum", "hip_bone_L"), ("l5", "sacrum"),
+             ("hip_bone_L", "hip_bone_R"), ("t7", "t8"), ("l3", "l4"), ("c5", "c6"), ("disc_l3_l4", "l3"),
+             ("rib5_L", "t5"), ("costal_cartilage5_L", "sternum"), ("costal_cartilage8_L", "costal_cartilage7_L"),
+             ("mandible", "skull"), ("rib1_L", "clavicle_L"), ("scapula_L", "rib4_L")]
+    bad, rows = [], []
+    for a, b in pairs:
+        g = _min_gap(P, a, b) * 1000
+        rows.append(f"{a}/{b} {g:.1f}")
+        if g < 0.5:
+            bad.append(f"{a}/{b} {g:.2f} mm")
+    return not bad, f"too close: {bad}; gaps mm: " + ", ".join(rows)
+
+
+def _depth_under_skin(points):
+    """Distance (m) from each point to the skin surface (GB_Head + GB_Body)."""
+    from mathutils import Vector
+    bvh = _skin_bvh()
+    return np.array([bvh.find_nearest(Vector(p))[3] for p in points])
+
+
+@check("scene", owner="B3", severity="warn")
+def skeleton_lean_site_depths():
+    """Lean sites [RB §7.6]: tibial face 3-6 mm, patella 4-8, malleoli 2-4, sternum 5-12 mm under the
+    skin (min distance bone -> skin over the site).  Depends on B1's skin (warn)."""
+    if not _b3_built():
+        return True, "skipped (B3 skeleton not built)"
+    from gb_data import tissue as TS
+    P = _skel_pieces()
+    want = TS.LEAN_SITE_DEPTH_MM
+    out, bad = {}, []
+    tib = P["tibia_L"][0][P["tibia_L"][1] != 6]
+    face = tib[(tib[:, 2] > 0.20) & (tib[:, 2] < 0.36)]
+    # anteromedial face: the bone points most anterior-medial at each height
+    s = -face[:, 1] - 0.6 * face[:, 0]
+    face = face[s > np.percentile(s, 85)]
+    out["tibial_face"] = float(np.median(_depth_under_skin(face)) * 1000)
+    pat = P["patella_L"][0]
+    out["patella"] = float(_depth_under_skin(pat[pat[:, 1] < np.percentile(pat[:, 1], 10)]).min() * 1000)
+    ft = P["tibia_L"][0]
+    mm = ft[ft[:, 2] < 0.085]
+    fb = P["fibula_L"][0][P["fibula_L"][1] != 6]
+    lm = fb[fb[:, 2] < 0.075]
+    out["malleoli"] = float(min(_depth_under_skin(mm).min(), _depth_under_skin(lm).min()) * 1000)
+    st = P["sternum"][0]
+    out["sternum"] = float(_depth_under_skin(st[st[:, 1] < np.percentile(st[:, 1], 8)]).min() * 1000)
+    for k, (lo, hi) in want.items():
+        if not lo - 0.5 <= out[k] <= hi + 0.5:
+            bad.append(f"{k} {out[k]:.1f} (want {lo}-{hi})")
+    return not bad, "depth mm " + ", ".join(f"{k} {v:.1f}" for k, v in out.items()) + f"; out of range {bad}"
+
+
+@check("scene", owner="B3")
+def skeleton_intercostal_spaces():
+    """Front intercostal spaces (ribs 2-6, anterior third, bone to bone) 15-25 mm [RB §7.3]."""
+    if not _b3_built():
+        return True, "skipped (B3 skeleton not built)"
+    P = _skel_pieces("GB_Skeleton_HR") or _skel_pieces()
+    rows, bad = [], []
+    for n in range(2, 7):
+        a = P[f"rib{n}_L"][0]
+        b = P[f"rib{n + 1}_L"][0]
+        fa = a[a[:, 1] < np.percentile(a[:, 1], 25)]
+        kd = _kd(b)
+        g = float(np.median([kd.find(p)[2] for p in fa[:: max(1, len(fa) // 300)]]) * 1000)
+        rows.append(f"{n}/{n + 1} {g:.1f}")
+        if not 15.0 <= g <= 25.0:
+            bad.append(f"{n}/{n + 1} {g:.1f}")
+    return not bad, "front spaces mm " + ", ".join(rows) + f"; out of 15-25: {bad}"
+
+
+@check("scene", owner="B3")
+def skeleton_variants():
+    """Fracture variants: closed fragments (every island closed), skull 20-80 fragments with median
+    15-25 mm, long bones simple = 1 break (2 main fragments per bone), comminuted 8-20 per bone."""
+    if not _b3_built():
+        return True, "skipped (B3 skeleton not built)"
+    bpy = _bpy()
+    import skeleton as SK
+    bad, rows = [], []
+    for n in gbc.VARIANT_OBJECTS:
+        o = bpy.data.objects.get(n)
+        if o is None:
+            bad.append(f"{n} missing")
+            continue
+        v, t = gbc.mesh_arrays(o.data)
+        fr = gbc.read_point_attr(o, "gb_frag", 'INT')
+        cl = gbc.read_point_attr(o, "gb_class", 'INT')
+        open_edges = SK.nonmanifold_edges(t)
+        pc = gbc.read_point_attr(o, "gb_piece", 'INT')
+        frags = np.unique(fr[cl != 6])
+        dims = []
+        for k in frags:
+            vv = v[(fr == k) & (cl != 6)]
+            dims.append(1000 * (vv.max(0) - vv.min(0)).max())
+        med = float(np.median(dims))
+        per_piece = [len(np.unique(fr[(pc == p) & (cl != 6)])) for p in np.unique(pc)]
+        if "Skull" in n:
+            ok = 20 <= len(frags) <= 80 and 15 <= med <= 25
+        elif n.endswith("simple"):
+            ok = all(c == 2 for c in per_piece)
+        else:
+            ok = all(8 <= c <= 20 for c in per_piece)
+        rows.append(f"{n[8:]} {len(frags)} fr, median {med:.0f} mm, open edges {open_edges}")
+        if not ok or open_edges:
+            bad.append(n)
+    return not bad, f"bad {bad}; " + "; ".join(rows)
+
+
+@check("scene", owner="B3")
+def skeleton_capsules_and_hit_mesh():
+    """bones.json: every non-disc piece has >= 1 capsule bounding its vertices, exact-hit mesh <= 20k."""
+    if not _b3_built():
+        return True, "skipped (B3 skeleton not built)"
+    import skeleton as SK
+    path = SK.BONES_JSON
+    if not os.path.exists(path):
+        return False, "bones.json missing"
+    d = gbc.read_json(path)["data"]
+    caps = d["capsules"]
+    P = _skel_pieces()
+    by = {}
+    for c in caps:
+        by.setdefault(c["piece"], []).append(c)
+    missing = [p for p in P if not p.startswith("disc_") and p not in by]
+    unbound = []
+    for p, cs in by.items():
+        v = P[p][0][P[p][1] != 6][::7]
+        inside = np.zeros(len(v), bool)
+        for c in cs:
+            a, b, r = np.array(c["a"]), np.array(c["b"]), c["r"]
+            ab = b - a
+            h = np.clip(((v - a) @ ab) / max(ab @ ab, 1e-12), 0, 1)
+            inside |= np.linalg.norm(v - (a + np.outer(h, ab)), axis=1) <= r + 1e-4
+        if inside.mean() < 0.999:
+            unbound.append(f"{p} {inside.mean():.3f}")
+    ntri = len(d["hit_mesh"]["tris"]) // 3
+    return not missing and not unbound and ntri <= 20000, \
+        f"{len(caps)} capsules, pieces without {missing}, not bounded {unbound}; hit mesh {ntri} tris (<= 20k)"
+
+
+@check("scene", owner="B3", severity="warn")
+def skeleton_budgets():
+    """GB_Skeleton <= 36k (+10 %), variants <= 60k in total [plan §4.1]."""
+    bpy = _bpy()
+    s = gbc.tri_count(bpy.data.objects["GB_Skeleton"].data)
+    v = sum(gbc.tri_count(bpy.data.objects[n].data) for n in gbc.VARIANT_OBJECTS if n in bpy.data.objects)
+    return s <= 36000 * 1.1 and v <= 60000 * 1.1, f"GB_Skeleton {s} tris (36k), variants {v} tris (60k)"
+
+
+# ===========================================================================
 # runner
 # ===========================================================================
+# ===========================================================================
+# B1 checks: body skin, shorts, muscle shell, codes, UVs (plan §8.2 B1 acceptance)
+# ===========================================================================
+def _b1_obj(name):
+    o = _bpy().data.objects.get(name)
+    return o if (o is not None and str(o.get("gb_status", "")).startswith("built (B1)")) else None
+
+
+def _b1_skip(name="GB_Body"):
+    return None if _b1_obj(name) is not None else (True, f"{name} is not built by B1 yet (placeholder)")
+
+
+@check("scene", owner="B1")
+def b1_girths_fb3():
+    """FB-3: girths within +-2 cm (neck, calf +-1.5) of RB §7.1, measured like a tape (convex hull)."""
+    skip = _b1_skip()
+    if skip:
+        return skip
+    import body_skin as BS
+    body = _b1_obj("GB_Body")
+    g = BS.girths(body)
+    head = _bpy().data.objects.get("GB_Head")
+    if head is not None:                                # the neck level (1.515) lies above the seam
+        v = np.vstack([gbc.get_verts(body.data), gbc.get_verts(head.data)])
+        t1 = BS._tris(body)[1]
+        t2 = BS._tris(head)[1] + len(body.data.vertices)
+        P = BS.mesh_section(v, np.vstack([t1, t2]), np.array([0, 0, 1.515]), np.array([0, 0, 1.0]))
+        P = P[np.abs(P[:, 0]) < 0.09]
+        g["neck"] = (round(100 * BS.hull_perimeter(P[:, :2]), 2),) + g["neck"][1:]
+    bad = {k: v for k, v in g.items() if abs(v[0] - v[1]) > v[2]}
+    return not bad, "cm (measured, target, tol): " + ", ".join(f"{k} {v[0]:.1f}/{v[1]:.1f}" for k, v in g.items()) + \
+        f"; out of tolerance {bad}"
+
+
+@check("scene", owner="B1")
+def b1_landmarks_fb3():
+    """FB-3: body skin landmarks of RB §7.1 lie on the skin within +-5 mm."""
+    skip = _b1_skip()
+    if skip:
+        return skip
+    import body_skin as BS
+    objs = [_b1_obj("GB_Body")] + [o for o in [_bpy().data.objects.get("GB_Head")] if o is not None]
+    e = BS.landmark_errors(objs)
+    bad = {k: v for k, v in e.items() if abs(v) > 5.0}
+    return not bad, f"mm from the skin (+ outside): {e}; off {bad}"
+
+
+@check("scene", owner="B1")
+def b1_checklist_rb7():
+    """RB §7 checklist: fingertip z ~0.77, nipples 15.5 cm under the notch and 20 cm apart, navel 20 cm under
+    the xiphoid, profile line ear canal - shoulder - trochanter - front of ankle within +-15 mm."""
+    skip = _b1_skip()
+    if skip:
+        return skip
+    import body_skin as BS
+    body = _b1_obj("GB_Body")
+    v = gbc.get_verts(body.data)
+    hr = _bpy().data.objects.get("GB_Body_HR")
+    vh = gbc.get_verts(hr.data) if hr is not None else v          # small features (nipples) from the HR mesh
+    hand = v[(v[:, 0] > 0.44)]
+    tip_z = float(hand[:, 2].min())
+    def nipple(sx):
+        # the vertex that stands out most from its 6-12 mm ring of neighbours near the RB §7.1 nipple
+        c = np.array([0.10 * sx, 1.30])
+        q = vh[(np.hypot(vh[:, 0] - c[0], vh[:, 2] - c[1]) < 0.045) & (vh[:, 1] < 0)]
+        dd = np.hypot(q[:, None, 0] - q[None, :, 0], q[:, None, 2] - q[None, :, 2])
+        ring = (dd > 0.006) & (dd < 0.012)
+        mean_y = (ring * q[None, :, 1]).sum(1) / np.maximum(ring.sum(1), 1)
+        score = np.where(np.hypot(q[:, 0] - c[0], q[:, 2] - c[1]) < 0.03, mean_y - q[:, 1], -1.0)
+        return q[np.argmax(score)]
+    nip, nip_r = nipple(1.0), nipple(-1.0)
+    notch = LM.landmark("jugular_notch")
+    drop = float(notch[2] - nip[2])
+    span = float(nip[0] - nip_r[0])
+    nav = v[(np.abs(v[:, 0]) < 0.01) & (np.abs(v[:, 2] - 1.075) < 0.015)]
+    nav_z = float(nav[np.argmax(nav[:, 1])][2])
+    navel_drop = float(LM.landmark("xiphoid_tip")[2] - nav_z)
+    troch = v[(np.abs(v[:, 2] - 0.913) < 0.006) & (v[:, 0] > 0)]
+    troch_y = float(troch[np.argmax(troch[:, 0])][1])
+    ank = v[(np.abs(v[:, 2] - 0.090) < 0.006) & (np.abs(v[:, 0] - 0.095) < 0.02)]
+    ank_y = float(ank[:, 1].min())
+    prof = np.array([LM.landmark("ear_canal_L")[1], LM.landmark("gh_joint_L")[1], troch_y, ank_y])
+    dev = float(np.abs(prof - prof.mean()).max())
+    ok = (abs(tip_z - 0.77) <= 0.015 and abs(drop - 0.155) <= 0.01 and abs(span - 0.20) <= 0.01
+          and abs(navel_drop - 0.20) <= 0.015 and dev <= 0.015)
+    return ok, (f"fingertip z {tip_z:.3f} (0.77); nipple {drop:.3f} below the notch (0.155), {span:.3f} apart (0.20); "
+                f"navel {navel_drop:.3f} below the xiphoid (0.20); profile y ear/shoulder/trochanter/ankle "
+                f"{np.round(prof, 3).tolist()} max dev {dev * 1000:.1f} mm (15)")
+
+
+@check("scene", owner="B1")
+def b1_watertight():
+    """GB_Body: manifold, the only open boundary is the 160-vertex seam ring; shorts and muscle shell closed."""
+    skip = _b1_skip()
+    if skip:
+        return skip
+    import bmesh
+    import gb_geom as gg
+    res = {}
+    for n, want in (("GB_Body", [gbc.SEAM_RING_N]), ("GB_Body_LOD1", [gbc.SEAM_RING_N]), ("GB_Shorts", []),
+                    ("GB_MuscleShell", [])):
+        o = _bpy().data.objects.get(n)
+        if o is None:
+            res[n] = "missing"
+            continue
+        bm = bmesh.new()
+        bm.from_mesh(o.data)
+        nm = sum(1 for e in bm.edges if len(e.link_faces) > 2)
+        bm.free()
+        loops = sorted(len(lp) for lp in gg.boundary_loops(o.data))
+        res[n] = "ok" if (nm == 0 and loops == want) else f"non-manifold {nm}, boundary loops {loops}"
+    return all(v == "ok" for v in res.values()), str(res)
+
+
+@check("scene", owner="B1")
+def b1_triangle_counts():
+    """Plan §8.2 B1: triangle counts within +-10 % of §4.1 (GB_Body 44k, GB_Shorts 4k, GB_MuscleShell 24k)."""
+    skip = _b1_skip()
+    if skip:
+        return skip
+    want = {"GB_Body": 44000, "GB_Shorts": 4000, "GB_MuscleShell": 24000, "GB_Body_LOD1": 22000}
+    got = {n: gbc.tri_count(_bpy().data.objects[n].data) for n in want if n in _bpy().data.objects}
+    bad = {n: c for n, c in got.items() if abs(c - want[n]) > 0.1 * want[n]}
+    return not bad, f"{got}; out of +-10 %: {bad}"
+
+
+@check("scene", owner="B1")
+def b1_uv_atlas():
+    """Body atlas: texel 0.84 mm +-20 % at 2,048 (neck island x2 excluded), islands do not overlap."""
+    skip = _b1_skip()
+    if skip:
+        return skip
+    import body_skin as BS
+    body = _b1_obj("GB_Body")
+    isl = gbc.read_point_attr(body, "gb_uv_island", 'INT')
+    texel = float(body.get("gb_texel_mm", 0.0))
+    ov = BS.uv_overlap_fraction(body, 1024)
+    uv = np.empty(len(body.data.loops) * 2, np.float32)
+    body.data.uv_layers["atlas"].data.foreach_get("uv", uv)
+    inside = bool(uv.min() >= 0.0 and uv.max() <= 1.0)
+    ok = 0.84 * 0.8 <= texel <= 0.84 * 1.2 and ov < 0.001 and inside and isl is not None
+    return ok, f"texel {texel:.3f} mm (0.67-1.01), overlapping texels {ov * 100:.3f} %, UVs in [0, 1] {inside}"
+
+
+@check("scene", owner="B1")
+def b1_codes_fb15():
+    """FB-15: navel -> T10, nipple -> T4, thumb -> C6, heel -> S1, palm -> region palm/sole (UV2 decode)."""
+    skip = _b1_skip()
+    if skip:
+        return skip
+    import body_skin as BS
+    from mathutils.kdtree import KDTree
+    body = _b1_obj("GB_Body")
+    v = gbc.get_verts(body.data)
+    u, dv = gbc.read_codes_uv(body)
+    kd = KDTree(len(v))
+    for i, p in enumerate(v):
+        kd.insert(p, i)
+    kd.balance()
+    want = {"navel": ("derm", DM.DERMATOME_ID["T10"]), "nipple": ("derm", DM.DERMATOME_ID["T4"]),
+            "thumb": ("derm", DM.DERMATOME_ID["C6"]), "heel": ("derm", DM.DERMATOME_ID["S1"]),
+            "palm": ("region", SG.REGION_ID["palm_sole"])}
+    got, bad = {}, {}
+    for k, p in BS.fb15_points().items():
+        i = kd.find(p)[1]
+        region, derm = int(u[i]) // SG.REGION_STRIDE, int(dv[i])
+        val = derm if want[k][0] == "derm" else region
+        got[k] = (DM.DERMATOMES.get(derm), SG.REGIONS.get(region))
+        if val != want[k][1]:
+            bad[k] = got[k]
+    return not bad, f"(dermatome, region) {got}; wrong {bad}"
+
+
+@check("scene", owner="B1")
+def b1_shorts_clearance():
+    """Shorts >= 1 mm off the skin everywhere in the bind pose (plan §8.2 B1; hip flexion 90 deg after B6)."""
+    skip = _b1_skip("GB_Shorts")
+    if skip:
+        return skip
+    import body_skin as BS
+    sh = _b1_obj("GB_Shorts")
+    v = gbc.get_verts(sh.data)
+    rng = gbc.rng("verify")
+    pts = v[rng.choice(len(v), min(4000, len(v)), replace=False)]
+    d = BS.surface_distance(pts, [_bpy().data.objects[n] for n in ("GB_Body", "GB_Head") if n in _bpy().data.objects])
+    return float(d.min()) >= 0.001, f"min {d.min() * 1000:.2f} mm, median {np.median(d) * 1000:.1f} mm off the skin"
+
+
+@check("scene", owner="B1")
+def b1_muscle_shell_depth():
+    """Muscle shell inside the skin at skin + fat depth [RB §7.6] (median error <= 1.5 mm, never outside)."""
+    skip = _b1_skip("GB_MuscleShell")
+    if skip:
+        return skip
+    import body_skin as BS
+    ms = _b1_obj("GB_MuscleShell")
+    v = gbc.get_verts(ms.data)
+    v = v[v[:, 2] < gbc.SEAM_Z - 0.01]                    # body part (the head part is the head's muscle)
+    rng = gbc.rng("verify")
+    pts = v[rng.choice(len(v), min(3000, len(v)), replace=False)]
+    skin = [_bpy().data.objects[n] for n in ("GB_Body", "GB_Head") if n in _bpy().data.objects]
+    d = -BS.surface_distance(pts, skin) * 1000.0                 # the head closes the neck for the parity test
+    t = BS.tissue_at(pts)
+    want = t[:, 0] + t[:, 1]
+    err = np.abs(d - want)
+    ok = d.min() > 0.5 and np.median(err) <= 1.5
+    return ok, (f"depth below skin min {d.min():.1f} mm; |depth - (skin + fat)| median {np.median(err):.2f} mm, "
+                f"p95 {np.percentile(err, 95):.2f} mm")
+
+
+@check("scene", owner="B1")
+def b1_body_maps():
+    """Tissue-depth and tension maps (512^2 RGBA, lossless) exist next to the subject."""
+    import body_skin as BS
+    d = os.path.join(gbc.SUBJECT_OUT, "textures")
+    res = {}
+    for f in (BS.TISSUE_MAP, BS.TENSION_MAP):
+        p = os.path.join(d, f)
+        if not os.path.exists(p):
+            res[f] = "missing"
+            continue
+        with open(p, "rb") as fh:
+            head = fh.read(33)
+        w, h = struct.unpack(">II", head[16:24])
+        res[f] = "ok" if (w, h) == (BS.MAP_SIZE, BS.MAP_SIZE) and head[25] == 6 else f"{w}x{h} type {head[25]}"
+    return all(v == "ok" for v in res.values()), str(res)
+
+
 def verify_all(groups=("tables", "scene", "files"), quiet=False):
     """Run every registered check of ``groups``; returns {name: {ok, severity, owner, group, detail}}."""
     res = {}

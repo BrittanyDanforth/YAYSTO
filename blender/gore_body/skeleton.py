@@ -430,15 +430,15 @@ def _region_params(lvl):
                     tp=None, facet_x=16.5, facet_r=(5.0, 6.0, 5.5))
     if reg == "T":
         return dict(n_body=2.2, back_indent=2.0, ped_w=6.0 + 0.25 * k, ped_h=0.55, lam_t=5.5, lam_h=1.15,
-                    tilt=0.55, sp_rx=(3.2, 2.4), sp_rz=(5.0, 3.6),
+                    tilt=0.55, sp_rx=(3.4, 2.6), sp_rz=(7.0, 4.2),
                     drop={1: 10, 2: 13, 3: 16, 4: 20, 5: 24, 6: 27, 7: 28, 8: 27, 9: 24, 10: 20, 11: 14,
                           12: 10}[k],
                     tp=dict(len=(38 - 1.1 * k), up=4.0, back=7.0 - 0.3 * k, r=(4.6, 5.2)),
-                    facet_x=9.0 + 0.3 * k, facet_r=(4.0, 5.5, 4.0))
+                    facet_x=9.5 + 0.3 * k, facet_r=(5.0, 6.0, 5.5))
     return dict(n_body=2.4, back_indent=3.0, ped_w=9.0 + 1.2 * k, ped_h=0.5, lam_t=6.5, lam_h=1.0,
                 tilt=0.25, sp_rx=(3.8, 3.4), sp_rz=(7.5, 9.0), drop=5.0,
                 tp=dict(len={1: 30, 2: 35, 3: 42, 4: 38, 5: 36}[k], up=0.0, back=-3.0, r=(5.0, 2.2)),
-                facet_x=12.0 + 1.3 * k, facet_r=(5.5, 7.0, 6.0))
+                facet_x=12.0 + 1.3 * k, facet_r=(6.5, 8.0, 7.5))
 
 
 def vertebra_sdf(lvl):
@@ -940,6 +940,8 @@ def rib_sdf(n):
     A = _A()
     pts = np.array(RB_.rib_points(n))
     hmm, tmm = RB_.RIB_SECTION_MM.get(n, RB_.RIB_SECTION_MM["default"])
+    if n in (2, 3):
+        hmm = 15.0                      # upper ribs at the top of the 12-15 mm range (front spaces <= 25 mm)
     H, Tk = hmm / 1e3, tmm / 1e3
     floating = n >= 11
     head = pts[0]
@@ -1097,7 +1099,7 @@ def scapula_sdf():
     outline = [Sa, root, (0.079, 0.103, 1.390), Ia, (0.112, 0.078, 1.357), (0.137, 0.046, 1.392),
                (0.140, 0.040, 1.403), (0.139, 0.036, 1.436), (0.128, 0.042, 1.452), (0.110, 0.058, 1.462),
                (0.094, 0.073, 1.471)]
-    extra = [(0.100, 0.083, 1.410), (0.110, 0.074, 1.385)]
+    extra = [(0.100, 0.089, 1.410), (0.110, 0.080, 1.385), (0.092, 0.094, 1.440)]     # convex back
     blade = Sheet(_pca_frame(outline), outline, extra,
                   thick=lambda u, v, e: 0.0024 + 0.0020 * np.exp(-(e / 0.004) ** 2))
     lat = [Ia, (0.100, 0.093, 1.340), (0.118, 0.073, 1.362), (0.137, 0.046, 1.392)]
@@ -1620,6 +1622,21 @@ def _cluster(items, gap=0.0012):
     return out
 
 
+def _clip_near(fn, other, gap, lo, hi):
+    """``fn`` with ``other`` (grown by ``gap``) carved away, evaluated only inside the box lo..hi."""
+    lo, hi = np.asarray(lo, float), np.asarray(hi, float)
+
+    def g(x, y, z):
+        d = fn(x, y, z)
+        m = (x >= lo[0]) & (x <= hi[0]) & (y >= lo[1]) & (y <= hi[1]) & (z >= lo[2]) & (z <= hi[2])
+        if m.any():
+            o = other(x[m], y[m], z[m])
+            d = d.copy()
+            d[m] = np.maximum(d[m], -(o - gap))
+        return d
+    return g
+
+
 def _clipped(fn, others, gap):
     """``fn`` with every SDF in ``others`` (grown by ``gap``) carved away."""
     def g(x, y, z):
@@ -1855,6 +1872,57 @@ def _one(fnbox, rigid, core=None):
     return [("main", fn, box, rigid, core)]
 
 
+def _below(lv):
+    """Vertebra ``lv`` clipped 0.8 mm clear of the vertebra above (facets, laminae, spinous)."""
+    fn, box = vertebra_sdf(lv)
+    i = LEVELS.index(lv)
+    if i == 0:
+        return fn, box
+    up, ubox = vertebra_sdf(LEVELS[i - 1])
+    return _clip_near(fn, up, 0.0008, *ubox), box
+
+
+def _sacrum_clipped():
+    fn, box = sacrum_sdf()
+    l5, b5 = vertebra_sdf("L5")
+    return _clip_near(fn, l5, 0.0008, *b5), box
+
+
+def _elbow_box():
+    return ELB_L - 0.045, ELB_L + 0.045
+
+
+def _wrist_box():
+    return WRI_L - 0.045, WRI_L + 0.03
+
+
+def _ulna_clipped():
+    fn, box, core = ulna_sdf()
+    return _clip_near(fn, humerus_sdf()[0], 0.0015, *_elbow_box()), box, core
+
+
+def _radius_clipped():
+    fn, box, core = radius_sdf()
+    hum, uln = humerus_sdf()[0], ulna_sdf()[0]
+    fn = _clip_near(fn, hum, 0.0015, *_elbow_box())
+    fn = _clip_near(fn, uln, 0.0010, *_elbow_box())
+    fn = _clip_near(fn, uln, 0.0010, *_wrist_box())
+    return fn, box, core
+
+
+def _tibia_clipped():
+    fn, box, core = tibia_sdf()
+    return _clip_near(fn, femur_sdf()[0], 0.0025, (0.03, -0.03, 0.455), (0.16, 0.08, 0.53)), box, core
+
+
+def _fibula_clipped():
+    fn, box, core = fibula_sdf()
+    tib = tibia_sdf()[0]
+    fn = _clip_near(fn, tib, 0.0010, (0.09, 0.0, 0.40), (0.16, 0.08, 0.48))
+    fn = _clip_near(fn, tib, 0.0010, (0.09, 0.02, 0.03), (0.16, 0.09, 0.16))
+    return fn, box, core
+
+
 def piece_table():
     """[(piece, mirrored, h_hr (m), lod0 triangles, subs())] in BONE_PIECES order.
 
@@ -1867,8 +1935,8 @@ def piece_table():
     for lv in LEVELS[:-1]:
         n = lod.get(lv, {"C": 200, "T": 190, "L": 250}[lv[0]])
         T.append((lv.lower(), False, 0.0008 if lv[0] != "L" else 0.0009, n,
-                  lambda lv=lv: _one(vertebra_sdf(lv), level_bone(ROW[lv]["z"]))))
-    T.append(("sacrum", False, 0.0010, 550, lambda: _one(sacrum_sdf(), "hips")))
+                  lambda lv=lv: _one(_below(lv), level_bone(ROW[lv]["z"]))))
+    T.append(("sacrum", False, 0.0010, 550, lambda: _one(_sacrum_clipped(), "hips")))
     T.append(("coccyx", False, 0.0007, 60, lambda: _one(coccyx_sdf(), "hips")))
     for a, b in zip(LEVELS[1:-1], LEVELS[2:]):
         T.append((f"disc_{a.lower()}_{b.lower()}", False, 0.0008, 30,
@@ -1889,14 +1957,14 @@ def piece_table():
                                                                   k=0.004))))
     T.append(("scapula_L", True, 0.0008, 450, lambda: _one(scapula_sdf(), "clavicle_L")))
     T.append(("humerus_L", True, 0.0010, 600, lambda: _one(humerus_sdf(), "upper_arm_L")))
-    T.append(("radius_L", True, 0.0009, 300, lambda: _one(radius_sdf(), "forearm_L")))
-    T.append(("ulna_L", True, 0.0009, 330, lambda: _one(ulna_sdf(), "forearm_L")))
+    T.append(("radius_L", True, 0.0009, 300, lambda: _one(_radius_clipped(), "forearm_L")))
+    T.append(("ulna_L", True, 0.0009, 330, lambda: _one(_ulna_clipped(), "forearm_L")))
     T.append(("hand_L", True, 0.0006, 900, lambda: [(n, f, b, r, None) for n, f, b, r in hand_parts()]))
     T.append(("hip_bone_L", True, 0.0010, 1300, lambda: _one(hip_bone_sdf(), "hips")))
     T.append(("femur_L", True, 0.0011, 850, lambda: _one(femur_sdf(), "thigh_L")))
     T.append(("patella_L", True, 0.0008, 90, lambda: _one(patella_sdf(), "shin_L")))
-    T.append(("tibia_L", True, 0.0010, 650, lambda: _one(tibia_sdf(), "shin_L")))
-    T.append(("fibula_L", True, 0.0009, 240, lambda: _one(fibula_sdf(), "shin_L")))
+    T.append(("tibia_L", True, 0.0010, 650, lambda: _one(_tibia_clipped(), "shin_L")))
+    T.append(("fibula_L", True, 0.0009, 240, lambda: _one(_fibula_clipped(), "shin_L")))
     T.append(("foot_L", True, 0.0007, 950, lambda: [(n, f, b, r, None) for n, f, b, r in foot_parts()]))
     return T
 
@@ -2256,23 +2324,26 @@ def _fragment_meshes(solid, cells, surf_pts, box, h, extra=None):
     return out
 
 
-def _skull_seeds(direction, rng, n=64):
-    """Seeds on the vault, dense (small fragments) toward the exit ``direction`` (head frame)."""
-    A = _A()
+def _skull_seeds(direction, rng, n_cap=70, n_plates=6, cap_deg=62.0):
+    """Seeds on the vault (head frame): ``n_cap`` in a cap around the exit ``direction`` (small
+    fragments, median ~20 mm) and ``n_plates`` over the rest of the vault (big plates 40-100 mm)."""
     d = _n(direction)
     c = np.array((0.0, 0.0, 0.035))
-    pts = []
-    while len(pts) < n:
+    r = np.array((0.074, 0.098, 0.099))
+    cos_cap = math.cos(math.radians(cap_deg))
+    cap, plates = [], []
+    while len(cap) < n_cap or len(plates) < n_plates:
         u = rng.normal(size=3)
         u /= np.linalg.norm(u)
         if u[2] < -0.25:
             continue
-        w = math.exp(2.2 * (u @ d - 1.0))                # 1 at the exit pole, ~0.01 opposite
-        if rng.uniform() > 0.08 + 0.92 * w:
-            continue
-        r = np.array((0.074, 0.098, 0.099))
-        pts.append(c + u * r * 0.95)
-    return np.array(pts)
+        p = c + u * r * 0.95
+        if u @ d >= cos_cap:
+            if len(cap) < n_cap:
+                cap.append(p)
+        elif len(plates) < n_plates and all(np.linalg.norm(p - q) > 0.06 for q in plates):
+            plates.append(p)
+    return np.array(cap + plates)
 
 
 def skull_variants(meshed):
@@ -2338,7 +2409,7 @@ def long_variants(meshed):
                     cells = Cells(seeds, warp=0.0022, freq=70.0, seed=int(rng.integers(1, 1 << 20)))
                 else:
                     zone = 0.035 if piece.startswith(("radius", "ulna")) else 0.045
-                    n_small = int(rng.integers(8, 14)) if not piece.startswith(("radius", "ulna")) else int(rng.integers(5, 8))
+                    n_small = int(rng.integers(8, 14)) if not piece.startswith(("radius", "ulna")) else int(rng.integers(7, 10))
                     r = np.linalg.norm((V - c0) - np.outer(t, ax), axis=1)
                     rad = float(np.median(r[np.abs(t - (mid - c0) @ ax) < 0.02])) if np.any(
                         np.abs(t - (mid - c0) @ ax) < 0.02) else 0.012
@@ -2381,12 +2452,12 @@ def _variant_object(name, rows, cls_of, rigid_of, budget):
     info = []
     for k, (piece, i, (v, f), core) in enumerate(rows):
         share = len(f) / max(tot, 1)
-        v2, f2 = decimate_arrays(v, f, max(16, int(budget * 0.93 * share)))
+        v2, f2 = _closed_decimate(v, f, max(16, int(budget * 0.93 * share)))
         pid = BN.BONE_PIECE_ID[piece]
         rb = RT.BONE_INDEX[rigid_of[piece]]
         parts.append(gg.part(v2, f2, 0, gb_piece=pid, gb_class=cls_of[piece], gb_rigid_bone=rb, gb_frag=k))
         if core is not None:
-            vc, fc = decimate_arrays(*core, max(12, int(budget * 0.07 * share)))
+            vc, fc = _closed_decimate(*core, max(12, int(budget * 0.07 * share)))
             parts.append(gg.part(vc, fc, 0, gb_piece=pid, gb_class=MARROW_CLASS, gb_rigid_bone=rb, gb_frag=k))
         ext = v.max(0) - v.min(0)
         vol = _mesh_volume(v, f)
@@ -2396,6 +2467,16 @@ def _variant_object(name, rows, cls_of, rigid_of, budget):
     obj = gg.object_from_parts(name, parts)
     _finish(obj)
     return obj, info
+
+
+def _closed_decimate(v, f, target):
+    """Decimate but never return a fragment with open / non-manifold edges (fall back to more
+    triangles, finally the undecimated fragment)."""
+    for mult in (1.0, 1.6, 2.5):
+        v2, f2 = decimate_arrays(v, f, int(target * mult))
+        if len(f2) and nonmanifold_edges(f2) == 0:
+            return v2, f2
+    return v, f
 
 
 def _mesh_volume(v, f):

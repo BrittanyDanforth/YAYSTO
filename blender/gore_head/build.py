@@ -687,6 +687,24 @@ CUT_LAYERS = {"GH_Skin_cut": 0, "GH_Muscle": 1, "GH_Skull": 2, "GH_Jaw": 2, "GH_
               "GH_Gums": 2, "GH_Brain": 3, "GH_Teeth_Upper": 3, "GH_Teeth_Lower": 3, "GH_Tongue": 3}
 
 
+def _vitreous_material():
+    """GH_Vitreous: the clear, slightly grey gel inside the eyeball (cutaway caps)."""
+    mat = bpy.data.materials.get("GH_Vitreous") or bpy.data.materials.new("GH_Vitreous")
+    if mat.node_tree is None:
+        mat.use_nodes = True
+    nt = mat.node_tree
+    nt.nodes.clear()
+    out = nt.nodes.new('ShaderNodeOutputMaterial')
+    bsdf = nt.nodes.new('ShaderNodeBsdfPrincipled')
+    bsdf.inputs['Base Color'].default_value = (0.80, 0.78, 0.74, 1.0)
+    bsdf.inputs['Roughness'].default_value = 0.08
+    bsdf.inputs['Transmission Weight'].default_value = 0.85
+    bsdf.inputs['IOR'].default_value = 1.336
+    nt.links.new(bsdf.outputs[0], out.inputs['Surface'])
+    mat.diffuse_color = (0.8, 0.78, 0.74, 1.0)
+    return mat
+
+
 def add_cutaway(objs, x_hi=0.030, x_lo=0.003, z_step=-0.036):
     """Cut the head open on the character's left: x > x_hi everywhere (through
     the left eye) and x > x_lo below z_step (the mid-line of mouth and jaw).
@@ -738,6 +756,10 @@ def add_cutaway(objs, x_hi=0.030, x_lo=0.003, z_step=-0.036):
         mod.operation = 'DIFFERENCE'
         mod.solver = 'MANIFOLD'
         mod.object = cutter
+        if name.startswith("GH_Eye"):
+            # the cut eye shows clear vitreous gel, not the sclera texture
+            cm.materials.append(_vitreous_material())
+            mod.material_mode = 'TRANSFER'
         added.append((obs[name], mod, cutter))
 
     def cleanup():

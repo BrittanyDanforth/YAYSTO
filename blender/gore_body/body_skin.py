@@ -289,11 +289,11 @@ TORSO = np.array([
     (1.130, 0.1435, -0.114, 0.088, 2.9, 2.7),    # natural waist 81 cm; L4 spinous skin 0.080 (furrow)
     (1.200, 0.146, -0.108, 0.096, 2.8, 2.7),
     (1.260, 0.150, -0.105, 0.112, 2.9, 2.8),
-    (1.300, 0.153, -0.108, 0.120, 3.0, 2.9),     # chest 100 cm; xiphisternal joint -0.110
+    (1.300, 0.153, -0.111, 0.120, 3.0, 2.9),     # chest 100 cm; xiphisternal joint -0.110
     (1.340, 0.154, -0.100, 0.125, 3.0, 2.9),     # T7 spinous skin 0.122
     (1.400, 0.145, -0.081, 0.117, 3.0, 2.9),     # sternal angle -0.075 (bone) + skin
-    (1.430, 0.150, -0.068, 0.108, 2.6, 2.6),     # shoulder girdle: clavicles in front, scapular spines behind
-    (1.455, 0.148, -0.050, 0.099, 2.3, 2.6),     # jugular notch -0.048
+    (1.430, 0.146, -0.068, 0.108, 2.5, 2.6),     # shoulder girdle: clavicles in front, scapular spines behind
+    (1.455, 0.136, -0.050, 0.099, 2.2, 2.5),     # jugular notch -0.048
     (1.470, 0.112, -0.050, 0.095, 2.2, 2.8),     # scapular superior angles under trapezius
     (1.485, 0.063, -0.054, 0.082, 2.1, 2.2),     # seam plane (plan D19)
     (1.515, 0.0595, -0.057, 0.069, 2.1, 2.2),    # neck 38 cm: 12 x 11.7 (front -0.055 / back +0.063)
@@ -323,7 +323,7 @@ def _pec_relief(x, z):
     ax = np.abs(x)
     # lower border: level medially, sweeping up laterally into the anterior axillary fold
     z_low = 1.265 + 2.8 * np.maximum(ax - 0.060, 0.0) ** 2 + 0.035 * sstep(0.110, 0.155, ax)
-    lower = sstep(z_low - 0.010, z_low + 0.022, z)
+    lower = sstep(z_low - 0.014, z_low + 0.030, z)
     dome = np.interp(z, [1.26, 1.30, 1.36, 1.42, 1.455], [1.0, 1.0, 0.75, 0.35, 0.0])
     medial = sstep(0.006, 0.030, ax)                                # sternal furrow between the heads
     lateral = sstep(0.180, 0.130, ax)
@@ -449,8 +449,8 @@ S_WRIST = float((WRIST - GH) @ ARM_D)               # 0.560
 
 # s from the shoulder joint, radii lateral / anterior / medial / posterior, n
 ARM = np.array([
-    (-0.050, 0.044, 0.047, 0.040, 0.049, 2.2),
-    (0.000, 0.046, 0.049, 0.041, 0.050, 2.2),
+    (-0.050, 0.030, 0.042, 0.040, 0.046, 2.2),     # inside the deltoid cap
+    (0.000, 0.038, 0.047, 0.041, 0.049, 2.2),
     (0.060, 0.044, 0.047, 0.040, 0.050, 2.2),
     (0.120, 0.041, 0.045, 0.040, 0.049, 2.2),
     (0.180, 0.039, 0.044, 0.038, 0.045, 2.2),
@@ -497,7 +497,7 @@ def _arm_tube():
     global ARM_TUBE
     if ARM_TUBE is None:
         ARM_TUBE = StarTube(GH, ARM_D, ARM_LAT, (0, -1, 0), -0.06, 0.60, _arm_profile, ds=0.002, nth=144,
-                            cap0=-0.045, cap1=0.585, cap_k=0.012)
+                            cap0=-0.030, cap1=0.585, cap_k=0.012)
     return ARM_TUBE
 
 
@@ -513,8 +513,8 @@ def _fold(ax, y, z, a, b, half_thick, half_height, up=(0.0, 0.0, 1.0)):
 def _shoulder(ax, y, z):
     """Deltoid cap, trapezius, clavicle, axillary folds (left, |x|)."""
     delt_axes = frame(ARM_D, ARM_LAT)
-    c = GH + 0.036 * ARM_D + 0.013 * ARM_LAT + np.array([0.0, -0.003, 0.0])
-    delt = sd_oellipsoid(ax, y, z, c, (0.090, 0.046, 0.057), delt_axes, n=2.0)
+    c = GH + 0.046 * ARM_D + 0.014 * ARM_LAT + np.array([0.0, -0.003, 0.0])
+    delt = sd_oellipsoid(ax, y, z, c, (0.092, 0.042, 0.057), delt_axes, n=2.0)
     # deltoid insertion: the cap narrows to a V on the lateral mid-humerus
     tub = sd_capsule(ax, y, z, GH + 0.05 * ARM_D + 0.036 * ARM_LAT, GH + 0.150 * ARM_D + 0.034 * ARM_LAT,
                      0.014, 0.005)
@@ -522,11 +522,11 @@ def _shoulder(ax, y, z):
     # upper trapezius: broad slope from the nape to the acromion
     # the lateral neck point sits at z ~1.49 (between the jugular notch 1.455 and C7 1.532) and the
     # shoulder line falls ~11 deg to the acromion; below the seam plane beyond |x| 0.075 (plan D19 ring)
-    trap = sd_polyline(ax, y, z, [(0.035, 0.056, 1.459), (0.100, 0.046, 1.4525), (0.186, 0.022, 1.446)],
-                       [0.022, 0.0235, 0.016], k=0.02)
+    trap = sd_polyline(ax, y, z, [(0.035, 0.056, 1.459), (0.090, 0.046, 1.452), (0.140, 0.035, 1.451),
+                                  (0.186, 0.022, 1.446)], [0.024, 0.0205, 0.018, 0.016], k=0.02)
     clav = sd_polyline(ax, y, z, [np.array(p) + np.array([0.0, -0.001, 0.001]) for p in
-                                  ((0.022, -0.040, 1.451), (0.070, -0.050, 1.453), (0.125, -0.021, 1.463),
-                                   (0.168, 0.008, 1.463))], [0.0095, 0.0080, 0.0078, 0.0095], k=0.01)
+                                  ((0.024, -0.040, 1.451), (0.070, -0.050, 1.453), (0.125, -0.021, 1.461),
+                                   (0.168, 0.008, 1.459))], [0.0080, 0.0078, 0.0076, 0.0080], k=0.01)
     # axillary folds: the pectoralis (front) and latissimus/teres (back) sweep from the chest wall into
     # the arm; only their lower borders show, the web above them fills up to the shoulder
     a_arm = GH + 0.075 * ARM_D - 0.018 * ARM_LAT + np.array([0.0, -0.022, 0.0])
@@ -796,8 +796,8 @@ def _foot_tube():
 
 
 TOES = [  # base s, w, tip s, tip w, radius base, radius tip, tip centre height
-    (0.200, -0.031, 0.262, -0.032, 0.0140, 0.0118, 0.0125),     # hallux (medial)
-    (0.212, -0.008, FOOT_LEN - 0.0065, -0.004, 0.0092, 0.0070, 0.0085),
+    (0.200, -0.031, 0.265, -0.032, 0.0140, 0.0118, 0.0125),     # hallux (medial)
+    (0.212, -0.008, FOOT_LEN - 0.0005, -0.004, 0.0092, 0.0070, 0.0085),     # 2nd toe: longest [RB §7.1]
     (0.206, 0.010, 0.256, 0.013, 0.0088, 0.0068, 0.0080),
     (0.198, 0.025, 0.246, 0.028, 0.0084, 0.0066, 0.0077),
     (0.188, 0.039, 0.231, 0.043, 0.0080, 0.0062, 0.0072),       # little toe (lateral)
@@ -839,7 +839,7 @@ FOOT_BOX = Box((0.02, -0.17, -0.01), (0.19, 0.14, 0.24), margin=0.03)
 # ===========================================================================
 def _neck_parts(ax, y, z):
     """Sternocleidomastoid ridges and the laryngeal prominence [RB §7.1 (0, -0.062, 1.537)]."""
-    scm = sd_capsule(ax, y, z, (0.018, -0.049, 1.462), (0.058, 0.022, 1.600), 0.0105, 0.0135)
+    scm = sd_capsule(ax, y, z, (0.017, -0.046, 1.463), (0.058, 0.022, 1.600), 0.0080, 0.0130)
     lar = sd_oellipsoid(ax, y, z, (0.0, -0.050, 1.535), (0.013, 0.0125, 0.017), np.eye(3))
     return scm, lar
 
@@ -867,6 +867,7 @@ def body_components(x, y, z):
     out["glute_k"] = 0.010 + 0.045 * sstep(0.85, 0.99, z) + 0.02 * sstep(0.10, 0.15, ax)
     out["foot"] = FOOT_BOX.run(_foot, ax, y, z)
     out["_y"] = y
+    out["_z"] = z
     return out
 
 
@@ -874,13 +875,13 @@ def union_components(c, off=None):
     """Blend the components into the body (``off``: per-component inward offsets, m)."""
     o = off or {}
     g = {k: (v + o.get(k, 0.0) if not (k.endswith("_k") or k.startswith("_")) else v) for k, v in c.items()}
-    trunk = smin(g["torso"], g["scm"], 0.012)
+    trunk = smin(g["torso"], g["scm"], 0.016)
     trunk = smin(trunk, g["larynx"], 0.008)
     trunk = smin(trunk, g["trapezius"], 0.020)
-    trunk = smin(trunk, g["clavicle"], 0.016)
+    trunk = smin(trunk, g["clavicle"], 0.020)
     arm = smin(g["arm"], g["deltoid"], 0.030)
     arm = smin(arm, g["hand"], 0.012)
-    body = smin(trunk, arm, 0.010)
+    body = smin(trunk, arm, 0.010 + 0.020 * sstep(1.39, 1.45, g["_z"]))
     body = smin(body, g["ant_fold"], 0.028)
     body = smin(body, g["post_fold"], 0.030)
     leg = smin(g["leg"], g["foot"], 0.012)
@@ -1185,7 +1186,7 @@ def shorts_sdf(x, y, z):
     split = 0.004 - ax - 2.0 * np.maximum(z - SHORTS_GUSSET, 0.0)       # separate leg tubes below the gusset
     d = smax(d, split, 0.004)
     body = union_components(c)
-    return np.minimum(d, body - 0.0032)              # never closer than 3.2 mm to the skin (outer surface)
+    return np.minimum(d, body - 0.0042)              # never closer than 4.2 mm to the skin (outer surface)
 
 
 # ===========================================================================
@@ -2092,6 +2093,191 @@ def bake_body_maps(obj, out_dir, size=MAP_SIZE):
     with open(os.path.join(out_dir, MAPS_JSON), "w", encoding="utf-8", newline="\n") as fh:
         fh.write(json.dumps(gbc._clean(meta), indent=1) + "\n")
     return [p1, p2]
+
+
+# ===========================================================================
+# Measurements used by verify.py (B1 checks) and the report
+# ===========================================================================
+GIRTH_TARGETS = {   # name: (kind, z or s, target cm, tolerance cm)   FB-3 [RB §7.1 girths]
+    "neck": ("torso", 1.515, 38.0, 1.5), "chest": ("torso", 1.300, 100.0, 2.0),
+    "natural_waist": ("torso", 1.130, 81.0, 2.0), "waist_navel": ("torso", 1.075, 84.0, 2.0),
+    "hips": ("hips", 0.885, 97.0, 2.0), "upper_thigh": ("leg", 0.790, 58.0, 2.0),
+    "mid_thigh": ("leg", 0.700, 51.0, 2.0), "knee": ("leg", 0.495, 37.5, 2.0),
+    "calf": ("leg", 0.370, 37.5, 1.5), "ankle": ("leg", 0.120, 22.5, 2.0),
+    "upper_arm_mid": ("arm", 0.145, 30.0, 2.0), "forearm_max": ("arm", 0.340, 27.5, 2.0),
+    "wrist": ("arm", 0.545, 17.0, 2.0),
+}
+BODY_SKIN_LANDMARKS = ("jugular_notch", "sternal_angle", "nipple_L", "xiphisternal_joint", "navel",
+                       "c7_spinous_cervicale", "t7_spinous_skin", "l4_spinous_skin", "psis_dimple_L", "asis_skin_L",
+                       "skin_over_greater_trochanter_L", "gluteal_fold_L", "patella_skin_L", "heel_L", "toe2_tip_L",
+                       "crotch", "cricoid", "laryngeal_prominence")
+
+
+def hull_perimeter(P):
+    """Perimeter of the 2-D convex hull (a tape measure's girth)."""
+    P = np.unique(np.round(np.asarray(P, float), 6), axis=0)
+    if len(P) < 3:
+        return 0.0
+    P = P[np.lexsort((P[:, 1], P[:, 0]))]
+
+    def cross(o, a, b):
+        return (a[0] - o[0]) * (b[1] - o[1]) - (a[1] - o[1]) * (b[0] - o[0])
+    lo, up = [], []
+    for p in P:
+        while len(lo) >= 2 and cross(lo[-2], lo[-1], p) <= 0:
+            lo.pop()
+        lo.append(p)
+    for p in P[::-1]:
+        while len(up) >= 2 and cross(up[-2], up[-1], p) <= 0:
+            up.pop()
+        up.append(p)
+    H = np.array(lo[:-1] + up[:-1])
+    return float(np.linalg.norm(np.diff(np.vstack([H, H[:1]]), axis=0), axis=1).sum())
+
+
+def mesh_section(v, tris, origin, normal):
+    """Points where the triangle edges cross the plane (origin, normal)."""
+    d = (v - origin) @ normal
+    pts = []
+    for a, b in ((0, 1), (1, 2), (2, 0)):
+        da, db = d[tris[:, a]], d[tris[:, b]]
+        m = (da * db) < 0
+        t = da[m] / (da[m] - db[m])
+        pts.append(v[tris[m, a]] + t[:, None] * (v[tris[m, b]] - v[tris[m, a]]))
+    return np.vstack(pts) if pts else np.zeros((0, 3))
+
+
+def _tris(obj):
+    me = obj.data
+    me.calc_loop_triangles()
+    t = np.empty(len(me.loop_triangles) * 3, np.int64)
+    me.loop_triangles.foreach_get("vertices", t)
+    return gbc.get_verts(me), t.reshape(-1, 3)
+
+
+def girths(obj):
+    """{name: (measured cm, target cm, tolerance cm)} measured on the mesh like a tape (convex hull)."""
+    v, t = _tris(obj)
+    out = {}
+    for name, (kind, h, target, tol) in GIRTH_TARGETS.items():
+        if kind == "arm":
+            o = GH + h * ARM_D
+            P = mesh_section(v, t, o, ARM_D)
+            P = P[(P[:, 0] > 0.17) & (np.linalg.norm(P - o, axis=1) < 0.09)]
+            Q = np.stack([(P - o) @ ARM_LAT, P[:, 1]], 1)
+        else:
+            o = np.array([0.0, 0.0, h])
+            P = mesh_section(v, t, o, np.array([0.0, 0.0, 1.0]))
+            if kind == "torso":
+                P = P[np.abs(P[:, 0]) < (0.19 if h < 1.45 else 0.09)]
+            elif kind == "leg":
+                P = P[(P[:, 0] > 0.0) & (P[:, 0] < 0.25)]
+            else:
+                P = P[np.abs(P[:, 0]) < 0.30]
+            Q = P[:, :2]
+        out[name] = (round(100.0 * hull_perimeter(Q), 2), target, tol)
+    return out
+
+
+def landmark_errors(objs):
+    """{landmark: signed distance (mm, + outside) from the skin mesh(es)} for the body skin landmarks."""
+    from mathutils.bvhtree import BVHTree
+    V, T, off = [], [], 0
+    for o in objs:
+        v, t = _tris(o)
+        V.append(v)
+        T.append(t + off)
+        off += len(v)
+    V, T = np.vstack(V), np.vstack(T)
+    bvh = BVHTree.FromPolygons(V.tolist(), T.tolist())
+    out = {}
+    for n in BODY_SKIN_LANDMARKS:
+        p = LM.landmark(n)
+        loc, nrm, _i, dist = bvh.find_nearest(p)
+        s = 1.0 if (np.asarray(p) - np.asarray(loc)) @ np.asarray(nrm) > 0 else -1.0
+        out[n] = round(1000.0 * s * dist, 2)
+    return out
+
+
+def _bvh(obj_list):
+    from mathutils.bvhtree import BVHTree
+    V, T, off = [], [], 0
+    for o in obj_list:
+        v, t = _tris(o)
+        V.append(v)
+        T.append(t + off)
+        off += len(v)
+    return BVHTree.FromPolygons(np.vstack(V).tolist(), np.vstack(T).tolist())
+
+
+def inside_parity(bvh, p, dirs=((1.0, 0.0, 0.0), (0.0, 0.0, 1.0), (0.3, 0.9, 0.3))):
+    """True if ``p`` is inside the closed surface: ray-crossing parity, majority of three directions.
+
+    (The nearest-face normal test is unreliable in concave places such as the armpit.)"""
+    from mathutils import Vector
+    votes = 0
+    for d in dirs:
+        d = Vector(d).normalized()
+        o = Vector(p)
+        n = 0
+        for _ in range(64):
+            loc, _nrm, _i, _dist = bvh.ray_cast(o, d)
+            if loc is None:
+                break
+            n += 1
+            o = loc + d * 1e-6
+        votes += n % 2
+    return votes >= 2
+
+
+def surface_distance(points, obj_list):
+    """Signed distance (m, + outside) from ``points`` to the closed surface made by ``obj_list``
+    (magnitude: nearest point; sign: ray parity)."""
+    bvh = _bvh(obj_list)
+    out = np.zeros(len(points))
+    for i, p in enumerate(points):
+        _loc, _nrm, _j, dist = bvh.find_nearest(p)
+        out[i] = -dist if inside_parity(bvh, p) else dist
+    return out
+
+
+def fb15_points():
+    """Body-frame probe points for FB-15 (navel, nipple, thumb tip, heel, palm centre)."""
+    th = [hand_point(*p) for p in THUMB_PTS]
+    tip = th[-1] + unit(th[-1] - th[-2]) * THUMB_R[-1]
+    return {"navel": LM.landmark("navel"), "nipple": LM.landmark("nipple_L"), "thumb": tip,
+            "heel": LM.landmark("heel_L"), "palm": hand_point(0.050, -0.002, 0.030)}
+
+
+def uv_overlap_fraction(obj, size=1024):
+    """Fraction of covered atlas texels hit by more than one triangle (islands must not overlap)."""
+    me = obj.data
+    uv = np.empty(len(me.loops) * 2, np.float32)
+    me.uv_layers["atlas"].data.foreach_get("uv", uv)
+    uv = uv.reshape(-1, 2).astype(float) * size - 0.5
+    me.calc_loop_triangles()
+    lt = np.empty(len(me.loop_triangles) * 3, np.int64)
+    me.loop_triangles.foreach_get("loops", lt)
+    lt = lt.reshape(-1, 3)
+    cnt = np.zeros((size, size), np.int16)
+    for a, b, c in lt:
+        pa, pb, pc = uv[a], uv[b], uv[c]
+        x0 = max(int(np.ceil(min(pa[0], pb[0], pc[0]))), 0)
+        x1 = min(int(np.floor(max(pa[0], pb[0], pc[0]))), size - 1)
+        y0 = max(int(np.ceil(min(pa[1], pb[1], pc[1]))), 0)
+        y1 = min(int(np.floor(max(pa[1], pb[1], pc[1]))), size - 1)
+        if x1 < x0 or y1 < y0:
+            continue
+        X, Y = np.meshgrid(np.arange(x0, x1 + 1), np.arange(y0, y1 + 1))
+        den = (pb[1] - pc[1]) * (pa[0] - pc[0]) + (pc[0] - pb[0]) * (pa[1] - pc[1])
+        if abs(den) < 1e-12:
+            continue
+        l1 = ((pb[1] - pc[1]) * (X - pc[0]) + (pc[0] - pb[0]) * (Y - pc[1])) / den
+        l2 = ((pc[1] - pa[1]) * (X - pc[0]) + (pa[0] - pc[0]) * (Y - pc[1])) / den
+        m = (l1 > 1e-4) & (l2 > 1e-4) & (1 - l1 - l2 > 1e-4)          # strict interior
+        cnt[Y[m], X[m]] += 1
+    cov = cnt > 0
+    return float((cnt > 1).sum()) / max(int(cov.sum()), 1)
 
 
 # ===========================================================================

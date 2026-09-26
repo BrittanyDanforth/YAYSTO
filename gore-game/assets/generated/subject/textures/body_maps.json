@@ -3,7 +3,7 @@
  "frame": "body_zup_m",
  "godot_mapping": "(x, z, -y)",
  "generator": "blender/gore_body/build.py",
- "build_id": "gb-d063a4a97319",
+ "build_id": "gb-b97791046d9e",
  "data": {
   "mesh": "GB_Body",
   "uv": "atlas (UV0)",
@@ -35,6 +35,6 @@
    },
    "source": "RB \u00a72.3.1 (Langer / RSTL, K)"
   },
-  "coverage_fraction": 0.5359
+  "coverage_fraction": 0.5386
  }
 }

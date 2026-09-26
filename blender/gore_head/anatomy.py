@@ -1577,7 +1577,8 @@ def brain_sdf(x, y, z):
     behind = smoothstep(TENTORIUM_Y0, TENTORIUM_Y0 + 0.012, y)
     cerebrum = smax(env, (zt + 0.0008 - z) * behind - 0.02 * (1 - behind), 0.003)
     cereb = smax(env, z - (zt - 0.0008), 0.003)
-    cereb = smax(cereb, sd_ellipsoid(ax, y, z, (0.0, 0.050, -0.010), (0.050, 0.034, 0.030)), 0.004)
+    # (fills the posterior fossa: only the membranes' gap to the bone)
+    cereb = smax(cereb, sd_ellipsoid(ax, y, z, (0.0, 0.052, -0.012), (0.057, 0.041, 0.037)), 0.004)
     # longitudinal fissure, closed underneath by the corpus callosum
     zcc = 0.046 - 0.30 * (smoothstep(0.034, 0.050, y) + smoothstep(-0.036, -0.052, y))
     fis = np.maximum(ax - 0.0013, zcc - z)
