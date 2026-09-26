@@ -1,6 +1,8 @@
 # Gore Head — Behaviour Bible (implementation spec for everything the body does)
 
 > Audio removed by the user; the game has no sound. Audio sections below were deleted or reworded to visuals.
+> **Visual reference notes:** also apply `gore-game/docs/REFERENCE_NOTES.md` (generic properties of real wounds and blood from forensic reference photos: far more blood coverage, soaked cloth, big dark lumpy pools, shredded irregular wet tissue with clots and strands, varied colours). A clean, dry, uniform or blood-sparse wound fails review like a sticker does.
+
 
 Project: **Gore Head**. Godot 4.5 (Forward+, GDScript + Godot shaders, built-in Jolt), Skeleton3D + PhysicalBone3D ragdoll, procedurally generated full adult body. The subject is fictional and procedurally generated. No real person is modelled.
 Status: v1.0, 2026-09-26.

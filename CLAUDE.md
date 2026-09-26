@@ -47,6 +47,9 @@ integration stage and becomes the head of the full body.
   total now; BB §7 is a "Removed" stub; vocal words like "scream" mean visible mouth/jaw/face movement only).
 - **No stickers.** Verbatim: "THE CUTS LOOK LIKE STICKERS ENSURE ITS THE ACTUAL SKIN ETC ALL THAT CUTTING SLICING AND NOT
   A STICKER ETC LIKE NICELY RELAISTIC DONE 1:1 REALISM". Every wound must be real geometry (see §8, the verbatim rule).
+- **Reference photos:** the user supplied real forensic reference photos for education. Use them ONLY for generic
+  injury/blood properties (recorded in `gore-game/docs/REFERENCE_NOTES.md`); never faces, tattoos, identities or a
+  specific person's injuries; never store the photos in the repo (a git-ignored `refs/` folder exists for local copies).
 - **Don't soften realism.** They explicitly want brain-damage deficits ("lose ability to do stuff, eyes might cross,
   arms twitch"), realistic body drops, reactions, stumbling, dying. Clinical, factual, complete.
 - **Performance:** "as long as Godot can handle 60 fps with blood and brain and gore" → target 60 fps at 1080p on a
@@ -124,6 +127,9 @@ gore-game/docs/
   REALISM_BIBLE.md    (≈2,040 lines) wound morphology per weapon, circulation + ~55-vessel table, physiology state
                       machine, eyes/face, post-mortem, anatomy coordinate tables (body frame), Godot architecture +
                       60 fps budgets, §2.7 "current head vs real" (25 fixes), §9 50-item realism checklist
+  REFERENCE_NOTES.md  generic visual properties of real wounds/blood from forensic reference photos the user supplied
+                      (no identities, photos never stored): more blood, soaked cloth, big dark lumpy pools, shredded wet
+                      tissue with clots/strands, varied colours — apply alongside the bibles
   BEHAVIOUR_BIBLE.md  (≈2,900 lines) neuro model (region → deficits), eye/face controller, reaction system, falls &
                       ragdoll (segment masses, joint limits, tone → stiffness), involuntary movement, severe-trauma
                       visuals, 8 second-by-second death timelines, §9 test checklist (40+)   [§7 audio = REMOVED]
@@ -252,6 +258,11 @@ damage = 0 returns the intact mesh. Carnage (9 hits) evaluates in ~4.5 s.
 > lacerations, exits) = generated wound-wall meshes; knife slashes follow the drag path with V-shaped walls; painted maps
 > (blood film, bruise, soot, char, wetness) only ever sit ON TOP of real geometry. Test every wound from 3 angles
 > (straight, 45°, grazing) plus a cross-section; any sticker-looking wound is a failure.
+>
+> ALSO apply `gore-game/docs/REFERENCE_NOTES.md`: real injuries are far wetter, bloodier, messier and more irregular than
+> our renders (large blood coverage, contour-following runs, wide fine speckle, soaked cloth with wicking halos, big
+> near-black glossy pools with clots, shredded torn tissue with flaps/strands/clot-filled cavities and strong colour
+> variation). A clean, dry, uniform or blood-sparse wound fails review exactly like a sticker does.
 
 ---
 
