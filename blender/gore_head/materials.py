@@ -612,8 +612,13 @@ def _group_muscle():
                        [("Color", 'RGBA'), ("Roughness", 'VALUE'), ("Coat", 'VALUE'), ("Height", 'VALUE')],
                        "Striated muscle: colour, gloss and height (fibres along Z)")
     p, wet = t.inp("Vector"), t.inp("Wetness")
-    pw = t.warp(p, 30.0, 0.006)
-    pf = pw * (1.0, 1.0, 0.05)                       # stretch along Z -> fibres
+    # (the fibres used to be noise stretched 20x along object Z; wound walls
+    # run roughly along Z too, so every wall came out as regular vertical
+    # stripes -- the "fence plank" artefact of refs/12. The grain now wanders
+    # with a strong two-scale domain warp and is only mildly anisotropic, so
+    # it reads as torn, bundled muscle with no repeating direction.)
+    pw = t.warp(t.warp(p, 30.0, 0.012), 110.0, 0.003)
+    pf = pw * (1.0, 1.0, 0.4)
     fib = t.noise(pf, 2600.0, 3.0, 0.55)
     fine = t.noise(pf, 7500.0, 1.0, 0.5)
     bund = t.noise(pf, 450.0, 2.0, 0.45)
@@ -1028,7 +1033,7 @@ def _muscle_material(g):
     nrm = t.bump(h, 0.00015)
     bsdf = t.principled({
         'Base Color': bl["Color"], 'Roughness': bl["Roughness"], 'IOR': 1.4,
-        'Anisotropic': 0.55 * (1.0 - bl["Mask"]), 'Tangent': _fibre_tangent(t),
+        'Anisotropic': 0.12 * (1.0 - bl["Mask"]), 'Tangent': _fibre_tangent(t),
         'Subsurface Weight': 0.35 * bl["SSS"], 'Subsurface Radius': (1.0, 0.25, 0.15),
         'Subsurface Scale': 0.002, 'Coat Weight': (m["Coat"] + bl["Coat"]).clamp(),
         'Coat Roughness': t.mix(bl["Mask"], 0.06 + (1.0 - wet) * 0.2, bl["Coat Roughness"]),
@@ -1182,28 +1187,45 @@ def _blood_material(g):
     p = t.coord()
     wet, age = t.control("wetness"), t.control("blood_age")
     n = t.noise(p, 300.0, 3.0)
-    a = (age + (n - 0.5) * 0.4 * age * (1.0 - age)).clamp()
-    clot = t.noise(p, 900.0, 4.0).smooth(0.5, 0.7) * (a * (1.0 - a) * 4.0).clamp()
-    # fresh venous blood #8E1420 thins to scarlet; pooled blood near-black red #5E070C
-    fresh = t.mix(n, (0.13, 0.005, 0.007), (0.22, 0.009, 0.012))
+    n_lo = t.noise(p, 60.0, 3.0)
+    # film thickness (gore_bthin from the gore system: 1 = thin edge of a run,
+    # 0 / missing = thick: run cores, beads, wound fills, clots). Colour by
+    # Beer-Lambert absorption: a thin film is translucent red #A0202A, 0.3 mm
+    # #8E1420, thick pooled blood #5E070C to near-black #2A0306.
+    thin = t.attr("gore_bthin")
+    thick = 1.0 - thin
+    # thin films dry first, from the edges inward
+    a = (age + (n - 0.5) * 0.4 * age * (1.0 - age) + thin * 0.35 * age).clamp()
+    fresh = (thick + (n_lo - 0.5) * 0.25).clamp().ramp([
+        (0.0, (0.33, 0.016, 0.022)), (0.3, (0.27, 0.007, 0.014)), (0.6, (0.11, 0.002, 0.004)),
+        (0.85, (0.045, 0.0015, 0.0025)), (1.0, (0.022, 0.0008, 0.0012))])
     old = t.mix(n, (0.022, 0.008, 0.006), (0.045, 0.014, 0.009))
+    old = t.mix(thin * 0.6, old, (0.10, 0.03, 0.02))            # dried thin film: brown stain
     col = t.mix(a, fresh, old)
+    # clots: matte near-black lumps in thick blood (fresh clot forms within minutes)
+    clot = t.noise(p, 900.0, 4.0).smooth(0.5, 0.7) * (a * (1.0 - a) * 4.0).clamp()
     col = t.mix(clot * 0.7, col, (0.07, 0.008, 0.006))
-    # fresh clot already forms in pooled blood: near-black red, matte lumps
-    fclot = t.noise(p, 160.0, 3.0).smooth(0.56, 0.7) * (1.0 - a)
-    col = t.mix(fclot * 0.85, col, (0.075, 0.003, 0.004))
-    # (never a perfect mirror: pooled blood seen at a grazing angle would
-    # reflect the key light as a chrome bar)
-    rough = t.mix(a, t.mix(wet, 0.3, 0.1), 0.32 + n * 0.2) + clot * 0.1 + fclot * 0.4
+    fclot = t.noise(p, 160.0, 3.0).smooth(0.56, 0.7) * (1.0 - a) * thick.smooth(0.3, 0.8)
+    col = t.mix(fclot * 0.85, col, (0.03, 0.0015, 0.002))
+    # roughness broken up everywhere (0.08 wet cores .. 0.5 matte clots and
+    # drying edges): no even gloss, never a chrome bar at grazing angles
+    rough = t.mix(a, t.mix(wet, 0.3, 0.08), 0.32 + n * 0.2) + clot * 0.1 + fclot * 0.35 \
+        + (n_lo - 0.5) * 0.12 + thin * 0.08
     h = clot * 0.3 * (1.0 - a) + t.noise(p, 4000.0) * a * 0.3 + fclot * t.noise(p, 700.0, 2.0) * 0.6
     bsdf = t.principled({
-        'Base Color': col, 'Roughness': rough, 'IOR': 1.36, 'Specular IOR Level': 0.5,
-        'Subsurface Weight': (1.0 - a) * 0.45, 'Subsurface Radius': (1.0, 0.02, 0.02),
+        'Base Color': col, 'Roughness': rough.max(0.06), 'IOR': 1.36, 'Specular IOR Level': 0.5,
+        'Subsurface Weight': (1.0 - a) * 0.45 * (0.4 + 0.6 * thin), 'Subsurface Radius': (1.0, 0.02, 0.02),
         'Subsurface Scale': 0.001, 'Subsurface IOR': 1.36,
         'Coat Weight': (1.0 - a * 0.85) * (0.3 + 0.7 * wet) * (1.0 - fclot * 0.75), 'Coat IOR': 1.36,
-        'Coat Roughness': 0.06 + (1.0 - wet) * 0.2 + a * 0.3, 'Coat Tint': t.mix(a, (0.9, 0.4, 0.4), (1, 1, 1)),
+        'Coat Roughness': 0.06 + (1.0 - wet) * 0.2 + a * 0.3 + fclot * 0.2,
+        'Coat Tint': t.mix(a, (0.9, 0.4, 0.4), (1, 1, 1)),
         'Normal': t.bump(h, 0.0001)})
-    t.output(bsdf)
+    # the thin edge of a film lets the skin show through (translucent red);
+    # the stain on the skin under it (gore_blood) tints what shows
+    alpha = 0.45 + 0.55 * thin.smooth(0.95, 0.55)
+    transp = t.node('ShaderNodeBsdfTransparent', {'Color': (0.85, 0.35, 0.35)})
+    mixs = t.node('ShaderNodeMixShader', {0: alpha, 1: transp.outputs[0], 2: bsdf.outputs[0]})
+    t.output(mixs)
     return _finish(mat, t, (0.25, 0.01, 0.01), 0.1)
 
 

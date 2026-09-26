@@ -3024,6 +3024,11 @@ def build_gore_system(objs=None, mats=None):
         mod[ident["Bone Material"]] = bone
         mod[ident["Strand Material"]] = strand
         mod[ident["Tooth Root"]] = -1.0 if name.endswith("Lower") else 1.0
+        # (a rebuilt group renumbers its sockets: drop drivers of the old ones)
+        if ob.animation_data is not None:
+            for fc in list(ob.animation_data.drivers):
+                if fc.data_path.startswith(f'modifiers["{MOD_NAME}"]'):
+                    ob.animation_data.drivers.remove(fc)
         # drivers from the global controls
         for prop, sock in (("damage", "Damage"), ("bleed", "Bleed"), ("drip_time", "Drip Time"),
                            ("bruising", "Bruising"), ("swelling", "Swelling"), ("wound_age", "Wound Age")):
