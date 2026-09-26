@@ -1182,18 +1182,36 @@ def sternum_parts():
     return fn, (np.array([-0.035, -0.11, 1.26]), np.array([0.035, -0.03, 1.47]))
 
 
-def cartilage_sdf(n):
-    """Costal cartilage ``n`` (1-10, left): CCJ -> sternum (1-7) or the cartilage above (8-10);
-    clipped against the sternum / upper cartilage so pieces never overlap."""
-    A = _A()
+def _cartilage_path(n):
+    """Centreline control points of costal cartilage ``n`` (left).
+
+    Cartilages 8-10 end ON the cartilage above (costal margin): their end point is the nearest point
+    of the upper cartilage's centreline to the table's end, so 7 -> 8 -> 9 -> 10 form one continuous
+    arch from the xiphisternal joint down to rib 10 (the table ends fell 1-3 cm short of it)."""
     cp = RB_.cartilage_points(n)
     ccj, end = np.array(cp[0]), np.array(cp[1])
+    if n >= 8:
+        up = _A().catmull(np.array(_cartilage_path(n - 1)), n=12)
+        j = int(np.argmin(np.linalg.norm(up - end, axis=1)))
+        j = min(max(j, 2), len(up) - 3)
+        end = up[j]
     rib_pts = np.array(RB_.rib_points(n))
     t_in = _n(rib_pts[-1] - rib_pts[-2])
     # leave the CCJ along the rib's direction, bend (costal cartilages rise medially), bulge forward
     p1 = ccj + t_in * 0.006
     mid = 0.5 * (p1 + end) + np.array([0.0, -0.004, 0.0]) + np.array([0.0, 0.0, 0.004 if n >= 5 else 0.0])
-    pts = [ccj + t_in * 0.0006, p1, mid, end]
+    return [ccj + t_in * 0.0006, p1, mid, end]
+
+
+def cartilage_sdf(n):
+    """Costal cartilage ``n`` (1-10, left): CCJ -> sternum (1-7) or the cartilage above (8-10);
+    clipped against the sternum / upper cartilage so pieces never overlap (0.3 mm contact gap, the
+    margin reads as one continuous arch)."""
+    cp = RB_.cartilage_points(n)
+    ccj = np.array(cp[0])
+    rib_pts = np.array(RB_.rib_points(n))
+    t_in = _n(rib_pts[-1] - rib_pts[-2])
+    pts = _cartilage_path(n)
     ch, ct = RB_.CARTILAGE_SECTION_MM
     w = 1.0 if n > 1 else 1.6
 
@@ -1201,7 +1219,7 @@ def cartilage_sdf(n):
         hh = 0.5 * ch / 1e3 * w * (1.0 - 0.25 * t)
         tt = 0.5 * ct / 1e3 * (1.0 - 0.2 * t)
         return gg_superellipse(nn, b, tt, hh, 2.2)
-    tube = Tube(pts, sec, ref_fn=_rib_normal_fn(n), step=0.0015, round_ends=True)
+    tube = Tube(pts, sec, ref_fn=_rib_normal_fn(n), step=0.0015, round_ends=True, centripetal=True)
     stern = sternum_parts()[0] if n <= 7 else None
     upper = cartilage_sdf(n - 1)[0] if n >= 8 else None
 
@@ -1211,7 +1229,7 @@ def cartilage_sdf(n):
         if stern is not None:
             d = np.maximum(d, -(stern(x, y, z) - 0.0006))
         if upper is not None:
-            d = np.maximum(d, -(upper(x, y, z) - 0.0006))
+            d = np.maximum(d, -(upper(x, y, z) - 0.0003))
         return d
     P = np.array(pts)
     return fn, (P.min(0) - 0.015, P.max(0) + 0.015)
