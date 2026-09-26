@@ -138,6 +138,11 @@ Columns: fresh = first minutes of exposure while living. 30–60 min = exposed i
 
 Fibre direction matters for the shader: store a per-vertex (or per-voxel) fibre tangent for every muscle mesh in rest space. Use it to pick the texture, the gape factor and the anisotropic highlight direction `[E]`.
 
+*Fact-check (muscle colour and gape):*
+- **Bloom.** The chemistry is ✓ verified `[K]` (Mancini & Hunt): cut meat exposed to air forms bright-red oxymyoglobin at the surface within roughly 15–30 min, and later turns brown as metmyoglobin forms. Transferring this to a **living** wound is only **partly valid**. Perfused muscle already contains partly oxygenated myoglobin and is covered by a film of fresh blood, so the visible bloom in the living is small and mostly masked. Near 37 °C, mitochondrial oxygen use also keeps the bloomed layer thin. **Recommendation:** in the living, apply only a weak bloom (≤ 30–50 % of the lerp toward `#A5362F`). After death, apply the full bloom over 15–30 min, then the brown shift.
+- **Browning after death.** 2–6 h is plausible at room temperature, mainly because the surface **dries**, darkening it to a brown parchment, with metmyoglobin formation adding to it. Refrigerated meat takes days to brown, so tie the rate to temperature and humidity. Unverified `[K](L)`.
+- **Gape factors** (across fibres 0.5–1.0 × depth, along 0.1–0.2 × depth) are **unverified** `[E]`. The **direction** of the effect is ✓ correct `[K]`: cuts across muscle fibres, or across the skin's tension lines, gape more than cuts parallel to them. Treat the numbers as tuning values.
+
 ### 1.3 Identifying structures in an open wound (arteries, veins, nerves, tendons)
 
 | Feature | Artery | Vein | Nerve | Tendon | Tag |
@@ -194,7 +199,7 @@ Neurovascular bundles travel together (artery + 1–2 veins + nerve in one sheat
 |---|---|---|---|---|
 | `tissue_palette` | §1.1 table | sRGB | One material per tissue ID; lerp fresh → 30–60 min → dead by exposure age | `[K](M)`, `[R1]` |
 | `exposure_age_rate_living` | 0.3–0.5 × dead rate | × | Re-wetting by ooze slows drying | `[E]` |
-| `muscle_bloom_time` | 10–30 | min | Lerp `#8E2A2A` → `#A5362F` on air-exposed muscle | `[K](M)` |
+| `muscle_bloom_time` | 10–30 (dead: 15–30, full lerp; living: weak, ≤ 30–50 % of the lerp) | min | Lerp `#8E2A2A` → `#A5362F` on air-exposed muscle. Fact-check: meat-science bloom mainly applies to non-perfused tissue (see §1.2 note) | `[K](M)` |
 | `muscle_brown_time_dead` | 2–6 | h | → `#6B3A2E` | `[K](M)` |
 | `muscle_gape_factor_across` | 0.5–1.0 | × depth | Width of gape for a cut across fibres | `[E]` |
 | `muscle_gape_factor_along` | 0.1–0.2 | × depth | | `[E]` |
@@ -212,7 +217,7 @@ Neurovascular bundles travel together (artery + 1–2 veins + nerve in one sheat
 
 - Every exposed tissue is identifiable at a glance by colour and texture: yellow lobulated fat, dark red grained muscle, silvery fascia and tendon, ivory bone with a red or yellow core, cream nerve without bleeding, pulsating pale artery, flat blue vein.
 - Muscle cut across its fibres gapes wide and shows a stippled end-grain; muscle cut along its fibres stays narrow and streaky.
-- Exposed muscle turns brighter red within half an hour in air, then brown after death over hours. Fat turns matte. Bone dries chalky white.
+- Exposed muscle turns brighter red within half an hour in air (clearly in the dead; only slightly in a living, blood-covered wound), then brown after death over hours as it dries. Fat turns matte. Bone dries chalky white.
 - Brain is visibly the softest thing in the body: it sags, smears, and extrudes like thick paste; CSF makes blood watery and pink.
 - Solid organs (liver, spleen, kidney) crack and split; lungs and muscle stretch and tear.
 
@@ -1365,7 +1370,7 @@ Disturbing a pool after it has gelled leaves lumps, furrows and smears that do n
 
 | Pattern | Description | Numbers | Tag |
 |---|---|---|---|
-| **Footwear prints** | Stepping in blood loads the sole; the first 1–3 prints are heavy, smeared, sometimes with slip marks; the next prints show the tread best; the last show only heel and ball | Pick-up 2–10 mL; intensity falls to ~60–75 % per step; visible for ~5–15 steps | `[E]`, `[K](L)` |
+| **Footwear prints** | Stepping in blood loads the sole; the first 1–3 prints are heavy, smeared, sometimes with slip marks; the next prints show the tread best; the last show only heel and ball | Pick-up 2–10 mL; intensity falls to ~60–75 % per step; visible for ~5–15 steps | `[E]`, `[K](L)`. Fact-check (arithmetic inconsistency): with 0.60–0.75 per step, intensity reaches 5 % after ln 0.05 / ln r = **6–10 steps**, not 15. To reach ~15 visible steps after heavy loading, use r ≈ 0.80. Recommended: r = 0.60–0.80 → 6–13 visible prints. Latent (chemically detectable) prints continue for dozens of steps beyond the visible ones, which matters only for a "forensic mode" |
 | Step length | Walking 0.65–0.8 m; running 1.0–1.5 m | — | `[K](H)` |
 | Bare footprints | Toe pads, ball, heel, outer edge; arch void; ridge detail in medium-intensity prints | — | `[K](H)` |
 | **Hand prints** | Partial palm and finger outlines; the wounded victim leaning on walls leaves prints that **drag downward** as they slide down the wall | Slide marks 10–100 cm | `[K](M)` |
@@ -1416,9 +1421,9 @@ Disturbing a pool after it has gelled leaves lumps, furrows and smears that do n
 
 | Parameter | Value / range | Unit | Notes | Tag |
 |---|---|---|---|---|
-| `arterial_volume_per_pulse` | 8–25 | mL | Carotid/femoral; scale with the wound flow | `[E]` |
+| `arterial_volume_per_pulse` | 6–25 (was 8–25) | mL | Carotid/femoral; initial value; scale with wound flow and MAP. Lower bound aligned to round one's femoral 800 mL/min at HR 140 | `[E]` |
 | `arterial_stain_size` | 5–30 (gush ≤ 50) | mm | Spines and satellites | `[E]` |
-| `vertical_run_threshold_drop` | 4–5 (30–60 µL) | mm | Larger stains on walls run 5–50 cm | `[E]` |
+| `vertical_run_threshold_drop` | 4–5 (30–60 µL) | mm | **Drop** diameter (not stain diameter; stains ≈ 10–20 mm). Larger drops or merged deposits on walls run 5–50 cm | `[E]` |
 | `castoff_drop_volume` | 50 µL × g/a | µL | a = v²/r of the weapon point | `[E]` |
 | `castoff_stain_size` | 2–8 | mm | | `[K](M)`, `[E]` |
 | `castoff_stains_per_trail` | 5–60 | count | Requires blood on the weapon (≥ 1 prior bloody contact) | `[E](L)` |
@@ -1431,7 +1436,7 @@ Disturbing a pool after it has gelled leaves lumps, furrows and smears that do n
 | `clot_retraction` | to ~50 % volume in 1–2 h | — | Island shrinks from the edge | `[K](M)` |
 | `serum_ring_width` | 2–20 (hard), 5–30 (absorbent) | mm | Appears 30 min – 3 h | `[K](M)` |
 | `footprint_pickup` | 2–10 | mL | | `[E]` |
-| `footprint_decay_per_step` | 0.60–0.75 | × | Visible to ~5 % intensity (5–15 steps) | `[E]` |
+| `footprint_decay_per_step` | 0.60–0.80 (corrected: was 0.60–0.75) | × | Visible to ~5 % intensity: 6–13 steps. The old range could not produce the stated 15 steps; 0.75 gives ~10 | `[E]` |
 | `expirated_stain_size` | 0.1–4 | mm | 30–60 % with vacuole rings; colour lightened 20–40 % | `[E]` |
 | `void_mask` | per blocking collider at spawn time | — | Stamp before decals | `[E]` |
 

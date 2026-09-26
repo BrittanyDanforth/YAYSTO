@@ -131,8 +131,8 @@ Worked stiffness values for the `τc` formula `[E]`: head–concrete `k ≈ 1.8 
 
 ### 1.2 What rings and what does not
 
-- **Soft tissue does not ring.** Skin, fat and muscle are highly damped viscoelastic materials. Flesh impacts have no audible resonance; their "wet" character comes from fluid films breaking, air pockets collapsing and skin slapping `[K] (H)`.
-- **Bone rings briefly.** Cortical bone is stiff and low-loss, but in the body it is wrapped in soft tissue. The intact living skull has resonances from about **0.8–1.5 kHz upward**, with damping ratios of a few per cent to ~10 % `[K; M1] (M)`. Long bones have lowest bending modes of a few hundred Hz in vivo `[K; M33] (L)`. The ring therefore lasts only **3–20 ms**.
+- **Soft tissue does not ring.** Skin, fat and muscle are highly damped viscoelastic materials. Flesh impacts have no audible resonance; their "wet" character comes from fluid films breaking, air pockets collapsing and skin slapping `[K] (H)`. ✓ verified [K] (H). The only "tonal" body responses are the air-filled cavities heard in clinical percussion (lung, stomach, below), which are cavity resonances, not tissue resonances.
+- **Bone rings briefly.** Cortical bone is stiff and low-loss, but in the body it is wrapped in soft tissue. The intact living skull has resonances from about **0.8–1.5 kHz upward**, with damping ratios of a few per cent to ~10 % `[K; M1] (M)`. ✓ consistent with the checker's recall of Håkansson et al. 1994 (first in-vivo resonance near ~1 kHz, several further modes up to several kHz) `[K]` (M); the paper was not re-opened. Long bones have lowest bending modes of a few hundred Hz in vivo `[K; M33] (L)`. With f = 0.8–1.5 kHz and ζ = 0.03–0.10, `τ = 1/(2π f ζ)` ≈ **1–7 ms** and **T60 ≈ 7–45 ms**, so the audible ring is roughly **10–40 ms** and is usually masked by the thud after ~20 ms. **Corrected: was "The ring therefore lasts only 3–20 ms"**, which matched neither τ nor T60 of the stated parameters (arithmetic).
 - **Hard floors and objects ring.** Tile laid over voids, wooden floors, metal grates, dropped weapons and keys ring for tens to hundreds of ms and are often the loudest part of a fall `[K] (H)`.
 - **Clinical percussion is a good analogy for body regions** `[K] (H)`: over air-filled lung the note is **resonant** (lower, longer); over gas-filled stomach it is **tympanic** (drum-like); over liver, thigh and heart it is **dull** (short, damped); over a chest full of blood (haemothorax) it is **stony dull**. Use the same three characters for blows and bullet strikes to thorax, stomach and solid regions.
 
@@ -141,12 +141,13 @@ Worked stiffness values for the `τc` formula `[E]`: head–concrete `k ≈ 1.8 
 | Source | Level at 1 m | Tag |
 |---|---|---|
 | Quiet nasal breathing | 15–25 dBA | [E] (M) |
-| Normal speech / raised / loud / shouted | **62 / 68 / 75 / 82 dB SPL** (average speech levels) | [K; M2] (H) |
-| Maximal adult scream | 90–105 dB SPL (default 98) | [K] (L–M), [E] |
+| Normal speech / raised / loud / shouted | **62 / 68 / 75 / 82 dB SPL** (average speech levels) | [K; M2] (H). ✓ verified [K] (H): ANSI S3.5-1997 overall levels 62.35 / 68.34 / 74.85 / 82.30 dB SPL at 1 m in front of the talker |
+| Maximal adult scream | 90–105 dB SPL (default 98) | [K] (L–M), [E]. ⚠ Plausible: maximal voice levels are usually measured at 30 cm (typically ~100–115 dB there, i.e. ~90–105 dB at 1 m after −10.5 dB); exceptional screamers exceed 110 dB at 1 m. Keep 98 as the default and allow up to 110 for rare characters |
 | Handgun muzzle blast (unsuppressed, at the shooter) | 150–165 dB peak | [K; M32] (M) |
 | Suppressed handgun or rifle | still ~125–140 dB peak | [K; M32] (L–M) |
 
-- The **gunshot report is 60–90 dB louder than a bullet striking flesh.** Near the gun the impact is masked. It becomes audible when the impact is far enough away that its sound arrives clearly **after** the report (§2.2), or when the listener is near the target and far from the gun `[K] (M)`.
+- The **gunshot report is 60–90 dB louder than a bullet striking flesh.** Near the gun the impact is masked. It becomes audible when the impact is far enough away that its sound arrives clearly **after** the report (§2.2), or when the listener is near the target and far from the gun `[K] (M)`. ⚠ Plausible, not verified: compared at the same 1 m distance, the levels in this table and §2.2 (150–165 vs 75–95 dB) give **55–90 dB**; at the shooter, with the target 20 m away (−26 dB for the impact), the gap is **~80–115 dB**. The impact level itself is `[E]` (L), so this difference is only as good as that estimate.
+- **Gap added (the shooter's own hearing)** `[K] (M)`: an unprotected indoor shot (150–165 dB peak) is followed by a temporary threshold shift (muffled hearing, especially above 2 kHz) and tinnitus lasting seconds to hours; the middle-ear reflex is too slow to protect against a single gunshot. Many people in shootings also report sounds as muted or absent ("auditory exclusion") because of attention under stress. An optional "realistic hearing" setting `[E]`: after an unsuppressed indoor shot near the listener, `LP` 2–4 kHz and −10 to −20 dB on all other sounds for 2–10 s, recovering over 10–60 s, plus a faint 4–8 kHz tone.
 - Air absorption at 20 °C, 50 % RH is ~0.03 dB/m at 4 kHz and ~0.1 dB/m at 8 kHz `[K] (M)`, so it hardly matters below ~30 m.
 
 ### 1.4 Synthesis primitives used by every recipe
@@ -173,11 +174,11 @@ All written for this document `[E]`; none is copied from any source.
 | Parameter | Value / range | Unit | Notes | Tag |
 |---|---|---|---|---|
 | `contact_tau` | `π √(m/k)` | s | Per body part and surface (§4) | [K] (H) |
-| `impact_band_limit` | `LP` at `1.5/τc`, 12 dB/oct | Hz | Applied to the "force" layer of every impact | [K] (H) |
-| `skull_mode1` / `zeta` | 0.8–1.5 kHz (default 1.0) / 0.03–0.10 (default 0.06) | Hz / — | Intact, living | [K; M1] (M) |
+| `impact_band_limit` | `LP` at ~`0.6/τc` (−3 dB), 12 dB/oct, or a half-sine force pulse filtered directly | Hz | Applied to the "force" layer of every impact. **Corrected: was `LP` at `1.5/τc`** (that is the first zero, where the level is already −∞; the −3 dB corner is ~0.6/τc) | [K] (H) ✓ verified (arithmetic) |
+| `skull_mode1` / `zeta` | 0.8–1.5 kHz (default 1.0) / 0.03–0.10 (default 0.06) | Hz / — | Intact, living. At the defaults τ = 2.7 ms, T60 = 18 ms | [K; M1] (M) ✓ consistent with recall, not re-opened |
 | `long_bone_mode1` | 200–1,000 | Hz | Tibia/femur lower; ribs, clavicle, facial bones higher (1–4 kHz) | [K; M33] (L), [E] |
 | `soft_tissue_ring` | none | — | No resonant modes on flesh layers | [K] (H) |
-| `muzzle_vs_impact` | 60–90 | dB | Duck nothing; rely on arrival-time separation (§2.2) | [K] (M) |
+| `muzzle_vs_impact` | 60–90 (55–90 at equal distance) | dB | Duck nothing; rely on arrival-time separation (§2.2) | [K] (M) ⚠ depends on the `[E]` (L) impact level |
 
 ### Visual/behavioural checklist (acoustic foundations)
 - Fist, knee and body falls: dull, low, short. Only bone, teeth and hard floors add "crack" and "click".
@@ -196,7 +197,7 @@ All written for this document `[E]`; none is copied from any source.
 
 ### 2.2 Gunshot impact on the body
 
-**Arrival time of the impact sound at the shooter** `[K] (H)` (physics; speed of sound `c = 343 m/s` at 20 °C): `t = d / v_bullet + d / c`.
+**Arrival time of the impact sound at the shooter** `[K] (H)` (physics; speed of sound `c = 343 m/s` at 20 °C): `t = d / v_bullet + d / c`. ✓ verified (arithmetic): all eight cells below were recomputed (e.g. 20 m handgun: 57.1 + 58.3 = 115 ms). The table ignores bullet deceleration, which adds a few per cent for rifles at 100 m.
 
 | Distance | Handgun (≈ 350 m/s) | Rifle (≈ 850 m/s mean) |
 |---|---|---|
@@ -218,7 +219,7 @@ All written for this document `[E]`; none is copied from any source.
 | Bone strike | Rib, spine, pelvis, long bone | 0–1 ms (co-timed with the shot `[R1-01 §5]`) | click 1–3 ms + ring 3–15 ms | 1–8 kHz + modes | +6 to +10 dB | [R1-01] [E] |
 | Wet grains | Fluid films and air pockets disrupted | 0–40 ms | 15–40 ms | 1–4 kHz grains | −15 dB | [E] |
 | Exit spray patter | Droplets and fragments landing 0.5–3 m away | 30–300 ms `[R1-01 §7]` | 10–200 ms | 2–8 kHz ticks | −20 to −30 dB | [R1-01] [E] |
-| Victim's forced grunt | Chest compression, startle | 60–150 ms (startle SCM 62 ms `[R2-02 §1]`) | 100–300 ms | Voice (§6) | Variable | [R2-02] [E] |
+| Victim's startle grunt or gasp (**optional**) | Startle or pain, **not** chest compression: a 9 mm bullet carries ~2.9 N·s, which moves a 75 kg body ~0.04 m/s `[R2-02 §1.3]` and cannot squeeze air out of the chest | 60–150 ms (startle SCM 62 ms `[R2-02 §1]`) | 100–300 ms | Voice (§6) | Variable; **often absent**: many people who are shot make no sound or only say "I'm hit", and pain is often delayed `[R2-02 §2.4, §14 row 15]` | [R2-02] [E]. **Corrected: was "Victim's forced grunt — chest compression, startle"** |
 
 **Region modifiers** `[E]` on the percussion analogy (§1.2):
 
@@ -324,8 +325,8 @@ The same blow sounds different as the skull fails. This progression is the most 
 | `crepitus_rate` | 10–60 × joint angular speed (rad/s) | clicks/s | 35–50 dBA; mostly felt | [K] (H) quality, [E] rate |
 
 ### Visual/behavioural checklist (impacts)
-- A shot at 30 m: the report, then about a tenth of a second later a separate dull "whop" from the target.
-- A rib or limb hit adds a sharp crack at the same instant; the victim's grunt follows ~0.1 s later.
+- A shot at 30 m: the report, then **0.12 s (rifle) to 0.17 s (handgun)** later a separate dull "whop" from the target. Corrected: was "about a tenth of a second later" (arithmetic: 30/350 + 30/343 = 0.173 s; 30/850 + 30/343 = 0.123 s).
+- A rib or limb hit adds a sharp crack at the same instant; a startle grunt, if there is one, follows ~0.1 s later. Silence is common.
 - Knife attacks are quiet: fabric, a soft tick, the victim's gasp. The loud part is the victim.
 - Hammer on a head: first blows knock hollowly; the fracturing blow cracks; later blows crunch and squelch without any ring.
 - A broken nose crunches on the blow and again, fainter, when touched.
