@@ -891,7 +891,9 @@ def bake_set(name, spec, out):
     rec["coverage"] = {"valid_texels": int(valid.sum()), "empty_inside_islands": int(holes.sum()),
                        "empty_fraction": round(float(holes.sum()) / max(int(valid.sum()), 1), 6),
                        "baked_outside_raster": int((covered & ~valid).sum())}
-    mask = covered | valid
+    if os.environ.get("GB_BAKE_DEBUG"):
+        dbg = np.stack([valid, covered, holes], -1).astype(float)
+        _write_png(os.path.join(os.environ["GB_BAKE_DEBUG"], f"{name}_coverage.png"), u8(dbg))
     # holes (if any) are filled from their neighbours before dilation
     alb = finish_map(maps["albedo"][..., :3], covered)
     nrm = finish_map(maps["normal"][..., :3], covered)
