@@ -232,7 +232,10 @@ build: `python3 bake.py [--only head,body] [--tiles] [--painter] [--quick] [--ou
   medial, 8 sectors on the trunk). Elbow and knee gates are **ray gates** (x = elevation angle seen from the
   joint centre) so skin, muscle shell and vessels on one ray keep identical weights and stay nested in deep
   flexion; the olecranon / patella skin moves 100 % with the forearm / shin. Jaw = Voronoi of the head project's
-  mandible vs skull (+ skin within 12-26 mm of the mandible); lids = B2 `face_weights` inside the same function;
+  mandible vs skull (+ skin within 12-22 mm of the mandible) plus the **throat sheet** (`rig.JAW_THROAT`: the front
+  of the neck shares the jaw 0 → 1 from z 1.46 to the chin, columns = rays from the neck axis, fading toward the
+  axis so spine/cord/deep vessels stay on the neck), so opening the mouth stretches the whole front of the neck
+  instead of tearing a band under the chin; lids = B2 `face_weights` inside the same function;
   hand fingers / thumb from B1's MCP arc and thumb polyline; toes along the oblique MTP row. 4 influences,
   1/4096 grid, rows sum exactly to 1. Gate numbers are in `rig.json` `weights`.
 - **Followers** (`GB_BrowLash`, `GB_EyeFX_L/R`): `weights_at` at each vertex's `gb_anchor_*` (their
@@ -242,6 +245,9 @@ build: `python3 bake.py [--only head,body] [--tiles] [--painter] [--quick] [--ou
   world 50 %), `forearm_twist_*` the mid/distal forearm (+0.5 × the hand's pronation). Drivers in
   `rig.json kinematic.*.driver` (swing-twist decomposition about the rest twist axis); `rig.apply_pose` applies
   them. Without drivers the twist bones carry 100 % (no candy-wrap relief, no harm).
+- **Jaw opening** = rotation about +X through the TMJ hinge **plus the TMJ glide** `rig.jaw_glide(deg)` =
+  (0, -0.45, -0.25) mm per degree of opening (condyle sliding down the eminence; `rig.json kinematic.jaw.rule`).
+  Limit 26 deg (about 45 mm incisal opening). G6 must apply both; the weights assume it.
 - **Key poses** `pose_idle/guard/cower/brace`: joint angles about the resolved world axes (`rig.POSES`), all inside
   the live limits; bent-knee poses key a hips translation that keeps both ankles within 0.4 mm of rest.
 - **rig.json** adds to B0's table: `kinematic` (fingers/thumb/toes/twist/jaw/eye axes, limits, drivers), directional
@@ -254,7 +260,8 @@ build: `python3 bake.py [--only head,body] [--tiles] [--painter] [--quick] [--ou
 - **Checks** (verify `b6_*`): joint positions, one weight function (vertex groups == `weights_at`), seam-ring
   weights identical on head and body, followers, FB-2 deformation (`posetest.TESTS` level `fb2`: elbow 130.5,
   knee 121.5, shoulder abduction +60/+90 from the bind, hip flexion 108: no inner-layer vertex > 3 mm outside the
-  posed skin by signed ray-crossing winding number; volume loss < 15 %), quality poses (warn), rest-pose nesting
+  posed skin by signed ray-crossing winding number or newly visible from outside through a tear / fold (26-ray
+  exposure test); volume loss < 15 %), quality poses (warn), rest-pose nesting
   (warn, other owners' geometry), key poses, rig.json, manifest + file limits, **round trip** (re-import in a fresh
   Blender process), **Godot 4.5.1 import** (temporary project under xvfb/OpenGL: 39 bones, every mesh skinned with
   4 weights + UV2, blend shapes, 4 animations, CUSTOM0 RGBA32F injection, and Godot's own skinning of 6 poses set
