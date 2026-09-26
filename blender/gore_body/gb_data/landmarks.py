@@ -42,7 +42,7 @@ xiphoid_tip,0.000,-0.094,1.273,bone
 scapula_inferior_angle_L,0.085,0.105,1.325,bone
 costal_margin_lowest_L,0.112,-0.050,1.125,bone
 navel,0.000,-0.108,1.075,skin
-iliac_crest_top_L,0.140,0.025,1.070,bone
+iliac_crest_top_L,0.132,0.025,1.070,bone
 asis_L,0.122,-0.062,0.992,bone
 psis_L,0.045,0.090,1.010,bone
 pubic_symphysis_top,0.000,-0.068,0.911,bone
@@ -56,7 +56,7 @@ wrist_centre_L_apose,0.460,0.020,0.930,joint
 mcp3_L_apose,0.508,0.020,0.848,joint
 fingertip3_L_apose,0.553,0.020,0.770,skin
 knee_centre_L,0.092,0.020,0.492,joint
-patella_centre_L,0.090,-0.035,0.497,bone
+patella_centre_L,0.090,-0.0215,0.500,bone
 tibial_tuberosity_L,0.090,-0.025,0.434,bone
 fibular_head_L,0.130,0.035,0.452,bone
 ankle_centre_L,0.095,0.050,0.075,joint
@@ -71,7 +71,7 @@ LANDMARK_EXTRA_CSV = """\
 tragion_L,0.073,0.012,1.650,skin,M
 t7_spinous_skin,0.000,0.122,1.335,skin,E
 l4_spinous_skin,0.000,0.080,1.080,skin,E
-iliac_tubercle_L,0.135,-0.030,1.055,bone,M
+iliac_tubercle_L,0.128,-0.030,1.055,bone,M
 pubic_tubercle_L,0.022,-0.068,0.913,bone,M
 pubic_symphysis_centre,0.000,-0.062,0.888,bone,M
 pubic_symphysis_lower,0.000,-0.055,0.866,bone,M
@@ -82,7 +82,7 @@ medial_epicondyle_L_apose,0.295,0.020,1.147,bone,E
 mtp1_L,0.084,-0.083,0.020,joint,E
 mtp5_L,0.161,-0.049,0.018,joint,E
 skin_over_greater_trochanter_L,0.178,0.000,0.913,skin,H
-patella_skin_L,0.090,-0.047,0.497,skin,H
+patella_skin_L,0.090,-0.039,0.499,skin,H
 asis_skin_L,0.122,-0.072,0.992,skin,M
 psis_dimple_L,0.045,0.100,1.010,skin,M
 """

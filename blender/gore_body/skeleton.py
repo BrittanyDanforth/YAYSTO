@@ -877,6 +877,54 @@ def drop_crumbs(v, f, min_verts=24):
     return compact(v, f[keepf])
 
 
+def _inside_parity(V, F, pts, dirs=((0.31, 0.72, 0.62), (-0.52, 0.11, 0.85), (0.83, -0.41, 0.38))):
+    """Per point: True when it lies inside the closed mesh (V, F) (majority of 3 ray-parity votes)."""
+    from mathutils import Vector
+    from mathutils.bvhtree import BVHTree
+    bvh = BVHTree.FromPolygons([tuple(p) for p in V], [tuple(int(i) for i in t) for t in F])
+    out = []
+    for p in pts:
+        votes = 0
+        for d in dirs:
+            dv = Vector(d).normalized()
+            o = Vector(p)
+            k = 0
+            for _ in range(64):
+                hit = bvh.ray_cast(o, dv)
+                if hit[0] is None:
+                    break
+                k += 1
+                o = hit[0] + dv * 1e-6
+            votes += k % 2
+        out.append(votes >= 2)
+    return np.array(out, bool)
+
+
+def keep_main_islands(v, f):
+    """Keep the largest island plus every island fully enclosed by it (inner tables, marrow-like
+    surfaces); drop free-floating chips (a real bone piece is one solid).  Returns (v, f, dropped)."""
+    if len(f) == 0:
+        return v, f, 0
+    lab = islands(len(v), f)
+    ids, cnt = np.unique(lab, return_counts=True)
+    if len(ids) == 1:
+        return v, f, 0
+    main = ids[np.argmax(cnt)]
+    fl = lab[f[:, 0]]
+    mv, mf = compact(v, f[fl == main])
+    keep = [main]
+    for i in ids:
+        if i == main:
+            continue
+        vi = np.nonzero(lab == i)[0]
+        probe = v[vi[np.linspace(0, len(vi) - 1, min(3, len(vi))).astype(int)]]
+        if _inside_parity(mv, mf, probe).all():
+            keep.append(i)
+    dropped = len(ids) - len(keep)
+    vv, ff = compact(v, f[np.isin(fl, keep)])
+    return vv, ff, dropped
+
+
 def nonmanifold_edges(f):
     """Number of edges not shared by exactly two triangles."""
     e = np.sort(np.concatenate([f[:, [0, 1]], f[:, [1, 2]], f[:, [2, 0]]]), axis=1)
@@ -949,6 +997,49 @@ def decimate_arrays(v, f, target, _depth=0):
     return v2, f2
 
 
+def decimate_manifold(v, f, target):
+    """``decimate_arrays`` that returns a closed 2-manifold: the quadric collapse occasionally folds two
+    sheets onto one edge; then the ratio is nudged (+-4-8 %) and the best attempt is repaired."""
+    best = None
+    for fac in (1.0, 0.96, 1.04, 0.92, 1.08):
+        v2, f2 = decimate_arrays(v, f, max(12, int(round(target * fac))))
+        nm = nonmanifold_edges(f2) if len(f2) else 0
+        if nm == 0:
+            return v2, f2
+        if best is None or nm < best[0]:
+            best = (nm, v2, f2)
+    return repair_manifold(best[1], best[2])
+
+
+def repair_manifold(v, f):
+    """After a collapse decimation: weld, drop degenerate and duplicate triangles, then remove the fans
+    around any edge still shared by more than two triangles (keeping the two largest) and drop tiny
+    islands, so every LOD piece is a closed 2-manifold (verify: no non-manifold edges)."""
+    if len(f) == 0 or nonmanifold_edges(f) == 0:
+        return v, f
+    v, f = _weld(v, f)
+    fs = np.sort(f, axis=1)
+    _u, first = np.unique(fs, axis=0, return_index=True)
+    f = f[np.sort(first)]
+    for _ in range(3):
+        e = np.sort(np.concatenate([f[:, [0, 1]], f[:, [1, 2]], f[:, [2, 0]]]), axis=1)
+        tri = np.tile(np.arange(len(f)), 3)
+        key = e[:, 0] * (len(v) + 1) + e[:, 1]
+        uk, inv, cnt = np.unique(key, return_inverse=True, return_counts=True)
+        over = np.nonzero(cnt > 2)[0]
+        if len(over) == 0:
+            break
+        a = np.linalg.norm(np.cross(v[f[:, 1]] - v[f[:, 0]], v[f[:, 2]] - v[f[:, 0]]), axis=1)
+        drop = set()
+        for o in over:
+            ts = tri[inv == o]
+            ts = ts[np.argsort(-a[ts])]
+            drop.update(ts[2:].tolist())
+        f = np.delete(f, sorted(drop), axis=0)
+    v, f = compact(v, f)
+    return drop_crumbs(v, f, min_verts=8)
+
+
 def _weld(v, f, eps=1e-6):
     """Merge coincident vertices and drop degenerate triangles."""
     key = np.round(v / eps).astype(np.int64)
@@ -983,7 +1074,12 @@ def _rib_normal_fn(n):
         out /= np.maximum(np.linalg.norm(out, axis=1, keepdims=True), 1e-9)
         hz = np.cross(np.tile(EZ, (len(P), 1)), T)
         hz /= np.maximum(np.linalg.norm(hz, axis=1, keepdims=True), 1e-9)
-        hz *= np.where((hz * out).sum(1) < 0.0, -1.0, 1.0)[:, None]
+        # continuous sign along the rib (never flip between neighbours), outward on the whole
+        for i in range(1, len(hz)):
+            if hz[i] @ hz[i - 1] < 0.0:
+                hz[i] = -hz[i]
+        if (hz * out).sum() < 0.0:
+            hz = -hz
         if n == 1:
             return np.tile(EZ, (len(P), 1)) * 0.85 + hz * 0.15
         if n == 2:
@@ -1172,16 +1268,25 @@ def scapula_sdf():
                   thick=lambda u, v, e: 0.0024 + 0.0020 * np.exp(-(e / 0.004) ** 2))
     lat = [Ia, (0.100, 0.093, 1.340), (0.118, 0.073, 1.362), (0.137, 0.046, 1.392)]
     med = [Sa, root, (0.079, 0.103, 1.390), Ia]
-    crest = [(0.077, 0.099, 1.438), (0.105, 0.088, 1.446), (0.138, 0.068, 1.452), (0.166, 0.056, 1.456),
-             tuple(S["acromion_posterior_angle"])]
-    base = [(0.076, 0.093, 1.440), (0.105, 0.078, 1.445), (0.132, 0.056, 1.442), (0.140, 0.043, 1.432)]
+    # spine of the scapula and acromion sit ~3 mm lower and ~3 mm more anterior than the raw table (the
+    # crest used to reach the skin; RB §7.6 wants 5-8 mm of soft tissue over it)
+    sh = np.array([0.0, -0.003, -0.0025])
+
+    def dn(p):
+        return tuple(np.asarray(p, float) + sh)
+    crest = [dn(p) for p in ((0.077, 0.099, 1.438), (0.105, 0.088, 1.446), (0.138, 0.068, 1.452),
+                             (0.166, 0.056, 1.456), S["acromion_posterior_angle"])]
+    base = [dn(p) for p in ((0.076, 0.093, 1.440), (0.105, 0.078, 1.445), (0.132, 0.056, 1.442),
+                            (0.140, 0.043, 1.432))]
     spine_outline = base + [crest[3], crest[2], crest[1], crest[0]]
     spine = Sheet(_pca_frame(spine_outline), spine_outline, (), thick=lambda u, v, e: 0.0040)
-    acro_outline = [tuple(S["acromion_posterior_angle"]), (0.203, 0.040, 1.457), (0.204, 0.022, 1.458),
-                    tuple(S["acromion_tip"]), (0.188, 0.006, 1.460), (0.172, 0.010, 1.462), (0.164, 0.028, 1.459),
-                    (0.163, 0.052, 1.456)]
-    acro = Sheet(_pca_frame(acro_outline), acro_outline, (), thick=lambda u, v, e: 0.0068 - 0.002 * sstep(
-        -0.004, 0.0, e))
+    # acromion: a thick (7-8 mm) flat process with a rounded lateral border that overhangs the humeral head
+    # by 1-2 mm (not a thin pointed blade)
+    acro_outline = [dn(p) for p in (S["acromion_posterior_angle"], (0.201, 0.040, 1.457), (0.203, 0.024, 1.458),
+                                    (0.199, 0.012, 1.458), (0.188, 0.004, 1.460), (0.172, 0.008, 1.462),
+                                    (0.164, 0.028, 1.459), (0.163, 0.052, 1.456))]
+    acro = Sheet(_pca_frame(acro_outline), acro_outline, (),
+                 thick=lambda u, v, e: 0.0078 - 0.0030 * sstep(-0.005, 0.0, e))
     gax = np.array([G_DIR, _n(EZ - (EZ @ G_DIR) * G_DIR), np.cross(G_DIR, _n(EZ - (EZ @ G_DIR) * G_DIR))])
     cor = [(0.134, 0.034, 1.444), (0.139, 0.016, 1.458), (0.140, -0.004, 1.448), tuple(S["coracoid_tip"])]
 
@@ -1192,6 +1297,8 @@ def scapula_sdf():
         d = smin(d, spine(x, y, z), 0.004)
         d = smin(d, A.sd_polyline(x, y, z, crest, [0.0030, 0.0036, 0.0040, 0.0042, 0.0045])[0], 0.003)
         d = smin(d, acro(x, y, z), 0.005)
+        d = smin(d, A.sd_polyline(x, y, z, [acro_outline[1], acro_outline[2], acro_outline[3]],
+                                  [0.0034, 0.0036, 0.0034])[0], 0.004)      # rounded lateral border
         glen = ell3(x, y, z, gf - G_DIR * 0.006, (0.0075, 0.0190, 0.0140), gax)
         neck = ecap(x, y, z, (0.132, 0.046, 1.415), gf - G_DIR * 0.006, (0.009, 0.013), (0.007, 0.010), EZ)
         d = smin(d, smin(glen, neck, 0.004), 0.005)
@@ -1239,17 +1346,17 @@ def hip_bone_sdf():
     piis = np.array((0.052, 0.086, 0.986))
     notch = np.array((0.068, 0.056, 0.950))
     acet_top = ACET_C + np.array((0.002, 0.006, 0.036))
-    ctrl = [asis, tub, top, (0.121, 0.052, 1.064), crest_back, (0.064, 0.082, 1.040), psis, piis,
+    ctrl = [asis, tub, top, (0.116, 0.052, 1.064), crest_back, (0.064, 0.082, 1.040), psis, piis,
             (0.062, 0.070, 0.966), notch, (0.078, 0.030, 0.950), acet_top, (0.100, -0.038, 0.952), aiis,
             (0.114, -0.060, 0.974)]
     outline = _smooth_loop(ctrl, 5)
     fr = _pca_frame(outline)
     outer = fr.R[2] if fr.R[2] @ np.array((0.66, 0.40, -0.61)) > 0 else -fr.R[2]   # gluteal (convex) side
     fossa = [np.array(p) + outer * dz for p, dz in (((0.108, 0.010, 1.020), 0.0105), ((0.090, 0.035, 1.000), 0.0070),
-                                                    ((0.118, -0.028, 1.012), 0.0070), ((0.100, 0.020, 0.985), 0.0055),
-                                                    ((0.120, 0.012, 1.045), 0.0060))]
+                                                    ((0.114, -0.028, 1.012), 0.0070), ((0.100, 0.020, 0.985), 0.0055),
+                                                    ((0.115, 0.012, 1.045), 0.0060))]
     wing = Sheet(fr, outline, fossa, thick=lambda u, v, e: 0.0028 + 0.0045 * np.exp(-(e / 0.007) ** 2))
-    crest = [asis, tub, top, (0.121, 0.052, 1.064), crest_back, (0.064, 0.082, 1.040), psis]
+    crest = [asis, tub, top, (0.116, 0.052, 1.064), crest_back, (0.064, 0.082, 1.040), psis]
     crest_r = [0.0055, 0.0072, 0.0062, 0.0058, 0.0058, 0.0060, 0.0068]
     post_border = [psis, piis, (0.060, 0.072, 0.968), notch, (0.058, 0.043, 0.925),
                    np.array(P["ischial_spine"])]
@@ -1553,9 +1660,10 @@ def femur_sdf():
 
 def patella_sdf():
     """Patella (left): rounded triangle with the apex down, thick centre, ridged articular back;
-    the front ~6 mm under the skin (lean site 4-8 mm)."""
+    the front ~6-8 mm under the skin (lean site 4-8 mm).  It sits in the femoral trochlea: the
+    articular ridge 5-6 mm (two cartilage layers) off the femur, 3 mm above the table centre."""
     A = _A()
-    c = np.array(BN.KNEE_LEG["patella_centre"]) + np.array((0.0, 0.0045, 0.0))
+    c = np.array(BN.KNEE_LEG["patella_centre"]) + np.array((0.0, 0.0135, 0.003))
 
     def fn(x, y, z):
         zz = (z - c[2]) / 0.0265
@@ -2104,14 +2212,17 @@ def mesh_pieces(quick=False, only=None, log=True):
         cls = BN.BONE_PIECE_CLASS[piece]
         slot = CARTILAGE_SLOT if cls == 4 else 0
         meshed = []
+        dropped = 0
         for sub, fn, box, rigid, core in subs:
             v, f = mesh_sdf(fn, box, h * scale)
+            v, f, nd = keep_main_islands(v, f)
+            dropped += nd
             meshed.append(dict(sub=sub, rigid=rigid, fn=fn, box=box, core_fn=core, hr=(v, f)))
         tot = sum(len(m["hr"][1]) for m in meshed)
         for m in meshed:
             share = len(m["hr"][1]) / max(tot, 1)
-            m["lod"] = decimate_arrays(*m["hr"], max(24, int(round(lod * share))))
-            m["hr"] = decimate_arrays(*m["hr"], max(200, int(round(HR_FACTOR * lod * share))))
+            m["lod"] = decimate_manifold(*m["hr"], max(24, int(round(lod * share))))
+            m["hr"] = decimate_manifold(*m["hr"], max(200, int(round(HR_FACTOR * lod * share))))
             if m["core_fn"] is not None:
                 vc, fc = mesh_sdf(m["core_fn"], m["box"], h * scale)
                 m["core_hr"] = decimate_arrays(vc, fc, 30 * CORE_TRIS.get(piece, 40))
@@ -2130,7 +2241,8 @@ def mesh_pieces(quick=False, only=None, log=True):
             out[_right(piece)] = dict(subs=rsubs, cls=cls, slot=slot)
         if log:
             gbc.log(f"  B3 {piece:22s} hr {sum(len(m['hr'][1]) for m in meshed):7d}  lod "
-                    f"{sum(len(m['lod'][1]) for m in meshed):5d} tris  {time.perf_counter() - t0:5.1f} s")
+                    f"{sum(len(m['lod'][1]) for m in meshed):5d} tris  {time.perf_counter() - t0:5.1f} s"
+                    + (f"  ({dropped} loose chip(s) dropped)" if dropped else ""))
     _MESHED.update(out)
     return out
 

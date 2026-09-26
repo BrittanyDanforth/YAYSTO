@@ -54,7 +54,7 @@ HAND_BONES = {
 }
 
 PELVIS = {
-    "iliac_crest_top": (0.140, 0.025, 1.070), "iliac_tubercle": (0.135, -0.030, 1.055),
+    "iliac_crest_top": (0.132, 0.025, 1.070), "iliac_tubercle": (0.128, -0.030, 1.055),
     "asis": (0.122, -0.062, 0.992), "aiis": (0.105, -0.055, 0.958), "psis": (0.045, 0.090, 1.010),
     "acetabulum_centre": (0.087, -0.015, 0.918), "acetabulum_d_mm": 55,
     "pubic_tubercle": (0.022, -0.068, 0.913),
