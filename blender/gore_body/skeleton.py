@@ -790,10 +790,16 @@ def sacrum_sdf():
         crest = A.sd_polyline(ax, y, z, [(0.0, 0.062, 1.005), (0.0, 0.066, 0.985), (0.0, 0.062, 0.962),
                                          (0.0, 0.058, 0.944)], [0.0035, 0.0035, 0.0030, 0.0022])[0]
         d = smin(d, crest, 0.004)
-        # sacral canal (continues the lumbar canal; opens at the hiatus low down)
-        canal = A.sd_polyline(ax, y, z, [(0.0, 0.050, 1.030), (0.0, 0.048, 1.000), (0.0, 0.052, 0.975),
-                                         (0.0, 0.054, 0.952), (0.0, 0.058, 0.935)],
-                              [0.0075, 0.0068, 0.0055, 0.0042, 0.0030])[0]
+        # sacral canal: continues the L5 canal (RB §7.3: S1 canal 30 x 15 mm, triangular-flat) in line with
+        # the thecal sac (cord_y 0.035 at S1), narrowing to the hiatus; the dural sac ends at S2
+        cp = [(0.0, 0.036, 1.040), (0.0, 0.038, 1.012), (0.0, 0.044, 0.985), (0.0, 0.050, 0.962),
+              (0.0, 0.055, 0.945), (0.0, 0.058, 0.933)]
+        cw = [0.0150, 0.0140, 0.0110, 0.0075, 0.0050, 0.0035]
+        ca = [0.0085, 0.0080, 0.0066, 0.0050, 0.0038, 0.0030]
+        canal = None
+        for i in range(len(cp) - 1):
+            seg = ecap(x, y, z, cp[i], cp[i + 1], (cw[i], cw[i + 1]), (ca[i], ca[i + 1]), EX)
+            canal = seg if canal is None else np.minimum(canal, seg)
         d = smax(d, -canal, 0.0008)
         # four pairs of anterior and posterior sacral foramina
         for k, (zf, xf) in enumerate(((0.998, 0.016), (0.975, 0.015), (0.955, 0.013), (0.940, 0.011))):
@@ -1372,7 +1378,11 @@ def hip_bone_sdf():
     outer = fr.R[2] if fr.R[2] @ np.array((0.66, 0.40, -0.61)) > 0 else -fr.R[2]   # gluteal (convex) side
     fossa = [np.array(p) + outer * dz for p, dz in (((0.108, 0.010, 1.020), 0.0105), ((0.090, 0.035, 1.000), 0.0070),
                                                     ((0.114, -0.028, 1.012), 0.0070), ((0.100, 0.020, 0.985), 0.0055),
-                                                    ((0.115, 0.012, 1.045), 0.0060))]
+                                                    ((0.115, 0.012, 1.045), 0.0060),
+                                                    # S-curve of the wing: the anterior upper wing turns
+                                                    # inward, the posterior (gluteal) part bulges outward
+                                                    ((0.121, -0.042, 1.040), -0.0040),
+                                                    ((0.094, 0.056, 1.030), 0.0050))]
     wing = Sheet(fr, outline, fossa, thick=lambda u, v, e: 0.0028 + 0.0045 * np.exp(-(e / 0.007) ** 2))
     crest = [asis, tub, top, (0.116, 0.052, 1.064), crest_back, (0.064, 0.082, 1.040), psis]
     crest_r = [0.0055, 0.0072, 0.0062, 0.0058, 0.0058, 0.0060, 0.0068]
@@ -1405,13 +1415,26 @@ def hip_bone_sdf():
         d = smin(d, body, 0.010)
         d = smin(d, A.sd_polyline(x, y, z, brim, [0.0062, 0.0058, 0.0060, 0.0060, 0.0062, 0.0055])[0], 0.004)
         d = smin(d, A.sd_polyline(x, y, z, sup_ramus, [0.0095, 0.0082, 0.0078])[0], 0.005)
-        pub = ebox(x, y, z, (0.0130, -0.0605, 0.889), (0.0105, 0.0065, 0.0215), pub_axes, rnd=0.0055)
-        d = smin(d, pub, 0.006)
+        # pubic body: a rounded (not boxy) mass with a flat oval symphyseal face (cut by the gap plane below)
+        pub = ell3(x, y, z, (0.0125, -0.0605, 0.889), (0.0120, 0.0082, 0.0235), pub_axes)
+        d = smin(d, pub, 0.007)
         d = smin(d, A.sd_ellipsoid(x, y, z, np.array(P["pubic_tubercle"]), (0.0045, 0.0045, 0.0045)), 0.003)
-        d = smin(d, A.sd_polyline(x, y, z, inf_ramus, [0.0055, 0.0052, 0.0058, 0.0080])[0], 0.005)
+        # ischiopubic ramus: a flat bar (4-5 mm thick, 11-13 mm wide in the plane of the obturator foramen)
+        ram = None
+        for a_, b_, w0, w1 in zip(inf_ramus[:-1], inf_ramus[1:], (0.0060, 0.0056, 0.0062), (0.0056, 0.0062, 0.0085)):
+            seg = ecap(x, y, z, a_, b_, (0.0024, 0.0028), (w0, w1), OBT_AXES[2])
+            ram = seg if ram is None else smin(ram, seg, 0.004)
+        d = smin(d, ram, 0.005)
         d = smin(d, A.sd_polyline(x, y, z, isch, [0.0115, 0.0110, 0.0105])[0], 0.008)
         d = smin(d, A.sd_ellipsoid(x, y, z, np.array(P["ischial_tuberosity"]) + np.array((0.002, 0.003, 0.004)),
                                    (0.0110, 0.0140, 0.0180)), 0.006)
+        # anterior inferior iliac spine and ischial spine as real processes
+        d = smin(d, A.sd_ellipsoid(x, y, z, aiis + np.array((0.002, -0.003, 0.0)), (0.0060, 0.0055, 0.0075)), 0.004)
+        d = smin(d, A.sd_ellipsoid(x, y, z, np.array(P["ischial_spine"]) + np.array((-0.002, 0.002, 0.0)),
+                                   (0.0045, 0.0060, 0.0050)), 0.004)
+        # acetabular rim (labral lip of bone): a raised ring around the socket mouth
+        rim = _torus(x, y, z, ACET_C + ACET_DIR * 0.0045, ACET_DIR, FEM_HEAD_R + 0.0060, 0.0042)
+        d = smin(d, rim, 0.004)
         # obturator foramen (open)
         obt = ell3(x, y, z, np.array(P["obturator_centre"]) + np.array((0.002, 0.004, 0.0)),
                    (0.0235, 0.0165, 0.016), OBT_AXES)
@@ -2055,13 +2078,107 @@ def foot_parts():
 # Skull and mandible: the head project's bones (6.5 mm vault with outer/inner tables),
 # re-imported read-only at every build and moved into the body frame
 # ===========================================================================
+def _alveolar(A, ax, y, z, upper, crest_mm=6.6, depth=0.030):
+    """Alveolar process (head frame): a band of bone around the tooth roots along the dental arch,
+    starting just beyond the gum band (``crest_mm`` from the gum margin toward the roots) and running
+    ``depth`` toward the base of the jaw / the maxilla, with socket walls thickening away from the crest."""
+    ca = A._cerv(upper)
+    s, q = ca.arch.project(ax, y)
+    zc, D, pap = ca.props(s)
+    sgn = 1.0 if upper else -1.0
+    margin = zc - sgn * (0.0006 + 0.0027 * pap)
+    hr = (z - margin) * sgn
+    w = 0.5 * D + 0.0017 + 0.0024 * A.smoothstep(0.008, 0.020, hr)
+    d = np.abs(q + 0.0004) - w
+    d = smax(d, crest_mm / 1e3 - hr, 0.0015)
+    d = smax(d, hr - depth, 0.004)
+    return smax(d, s - (ca.s_end + 0.0045), 0.004)
+
+
+def _condyle(A, ax, y, z):
+    """The mandibular condyle of ``gore_head.anatomy.jaw_raw`` (head frame, |x|)."""
+    return A.sd_ellipsoid(ax, y, z, (0.0500, -0.0115, -0.0020), (0.0085, 0.0048, 0.0050), rot=A.rot_xyz(0, 0, 12))
+
+
+def _skull_head(x, y, z):
+    """Body-side refinement of the head project's skull (head frame).
+
+    ``gore_head.anatomy.skull_sdf`` is a smooth vault with a flat cut base; the head team owns it
+    (CLAUDE.md §7).  For the full-body skeleton (x-ray, headshot close-ups) this adds, inside the head
+    skin and clear of the brain: mastoid processes, stronger zygomatic arches with the articular
+    tubercle, the glenoid (mandibular) fossa that seats the condyle, styloid processes, a rounded
+    occipital base behind the foramen magnum instead of a shelf, and the maxillary alveolar process
+    around the upper roots (no gap between the maxilla and the teeth)."""
+    import body_skin as BS
+    A = _A()
+    ax = np.abs(x)
+    d = A.skull_sdf(x, y, z)
+    # mastoid process: a stout cone behind and below the ear canal [RB mastoid tip 1.612 -> head -0.035]
+    mast = A.sd_ellipsoid(ax, y, z, (0.0515, 0.0120, -0.0285), (0.0090, 0.0115, 0.0165), rot=A.rot_xyz(18, 0, 0))
+    d = smin(d, mast, 0.006)
+    # zygomatic arch (from the zygomatic body to the root in front of the ear) + articular tubercle
+    arch = A.sd_capsule(ax, y, z, (0.0535, -0.0520, 0.0000), (0.0650, -0.0150, 0.0015), 0.0048, 0.0040)
+    d = smin(d, arch, 0.004)
+    tub = A.sd_ellipsoid(ax, y, z, (0.0560, -0.0200, -0.0050), (0.0080, 0.0045, 0.0040))
+    d = smin(d, tub, 0.004)
+    # styloid process: thin spike down and forward from under the ear canal
+    sty = A.sd_capsule(ax, y, z, (0.0360, 0.0030, -0.0300), (0.0310, -0.0110, -0.0560), 0.0021, 0.0008)
+    d = smin(d, sty, 0.002)
+    # occipital base: rounded (posterior cranial fossa) from the inion down and forward to the foramen
+    # magnum, instead of a flat shelf; kept clear of the atlas/axis (checked below) and the foramen
+    occ = A.sd_ellipsoid(ax, y, z, (0.0, 0.0500, -0.0260), (0.0520, 0.0400, 0.0200))
+    occ = smax(occ, -A.sd_ellipsoid(ax, y, z, (0.0, 0.0200, -0.0380), (0.0160, 0.0190, 0.0150)), 0.003)
+    d = smin(d, occ, 0.010)
+    # maxillary alveolar process around the upper roots
+    d = smin(d, _alveolar(A, ax, y, z, True, crest_mm=6.6, depth=0.022), 0.003)
+    # glenoid fossa: seats the condyle with a 2 mm articular disc space
+    d = smax(d, -(_condyle(A, ax, y, z) - 0.0022), 0.0015)
+    # never through the skin (4 mm soft tissue; the combined head+neck skin of B1) or into the brain,
+    # the eyes, the gums, the tongue or the air of the mouth outside the alveolar band
+    hx, hy, hz = x, y, z
+    bx, by, bz = hx + HEAD_OFFSET[0], hy + HEAD_OFFSET[1], hz + HEAD_OFFSET[2]
+    d = np.maximum(d, BS.skin_sdf(bx, by, bz) + 0.004)
+    d = np.maximum(d, -(A.cranial_cavity(ax, y, z) - 0.0025))
+    d = np.maximum(d, -(A.sd_sphere(ax, y, z, A.EYE_C, A.EYE_R) - 0.0015))
+    d = np.maximum(d, -(A.gum_sdf(ax, y, z, True) - 0.0008))
+    return d
+
+
 def skull_sdf():
     A = _A()
     o = HEAD_OFFSET
 
     def fn(x, y, z):
-        return A.skull_sdf(x - o[0], y - o[1], z - o[2])
-    return fn, (np.array(A.SKULL_BOX[0]) + o, np.array(A.SKULL_BOX[1]) + o)
+        return _skull_head(x - o[0], y - o[1], z - o[2])
+    lo, hi = np.array(A.SKULL_BOX[0]) + o, np.array(A.SKULL_BOX[1]) + o
+    return fn, (lo - np.array([0.0, 0.0, 0.010]), hi)
+
+
+def _mandible_head(x, y, z):
+    """Body-side mandible (head frame): ``gore_head.anatomy.jaw_raw`` (U-shaped body 30-33 mm tall at
+    the symphysis, mental protuberance, rami, gonial angle, coronoid and condylar processes) with the
+    lower alveolar process around the roots, clamped only where it must be: 4 mm inside the combined
+    skin, clear of the tongue, the lower gums, the skull (the condyle sits in the glenoid fossa with a
+    2 mm disc space) and of the mouth's air except for the alveolar band.  The head project's own
+    ``jaw_sdf`` clamps against its whole skull envelope and mouth box, which cut the condyle, the upper
+    ramus and the upper half of the body away (the flat 'plank')."""
+    import body_skin as BS
+    A = _A()
+    ax = np.abs(x)
+    d = A.jaw_raw(ax, y, z)
+    alv = _alveolar(A, ax, y, z, False, crest_mm=6.6, depth=0.034)
+    d = smin(d, alv, 0.004)
+    # chin: mental protuberance and tubercles
+    d = smin(d, A.sd_ellipsoid(ax, y, z, (0.0090, -0.0840, -0.0935), (0.0080, 0.0050, 0.0060)), 0.005)
+    bx, by, bz = x + HEAD_OFFSET[0], y + HEAD_OFFSET[1], z + HEAD_OFFSET[2]
+    d = np.maximum(d, BS.skin_sdf(bx, by, bz) + 0.004)
+    d = np.maximum(d, A.skin_sdf(x, y, z, mouth_cavity=False) + 0.004)
+    void = A.oral_void(ax, y, z)
+    d = np.maximum(d, np.minimum(-(void + 0.0012), alv))
+    d = np.maximum(d, -(A.tongue_sdf(ax, y, z) - 0.0010))
+    d = np.maximum(d, -(A.gum_sdf(ax, y, z, False) - 0.0008))
+    d = np.maximum(d, -(_skull_head(x, y, z) - 0.0012))
+    return d
 
 
 def mandible_sdf():
@@ -2069,7 +2186,7 @@ def mandible_sdf():
     o = HEAD_OFFSET
 
     def fn(x, y, z):
-        return A.jaw_sdf(x - o[0], y - o[1], z - o[2])
+        return _mandible_head(x - o[0], y - o[1], z - o[2])
     return fn, (np.array(A.JAW_BOX[0]) + o, np.array(A.JAW_BOX[1]) + o)
 
 
