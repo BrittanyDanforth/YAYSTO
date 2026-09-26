@@ -487,7 +487,14 @@ RENDERS = {
                           (0.60, -0.75, 1.35), (0.25, -0.05, 1.25), 50.0),
     "neck_rot_flex": ({"neck": [("twist", 35.0), ("flex", 20.0)], "head": [("twist", 30.0), ("flex", 15.0)]},
                       (0.35, -0.70, 1.62), (0.0, 0.0, 1.55), 55.0),
-    "jaw_open_19": ({"jaw": [("open", 19.0)]}, (0.22, -0.45, 1.64), (0.0, -0.03, 1.60), 70.0),
+    "neck_flex_42": ({"neck": [("flex", 25.2)], "head": [("flex", 17.1)]}, (0.55, -0.35, 1.50), (0.0, -0.02, 1.52),
+                     55.0),
+    "neck_ext_50": ({"neck": [("flex", -29.7)], "head": [("flex", -19.8)]}, (0.45, -0.50, 1.52), (0.0, -0.02, 1.55),
+                    55.0),
+    "jaw_open_19": ({"jaw": [("open", 19.0)]}, (0.22, -0.45, 1.60), (0.0, -0.03, 1.57), 60.0),
+    "jaw_open_19_side": ({"jaw": [("open", 19.0)]}, (0.50, -0.10, 1.58), (0.0, -0.02, 1.56), 60.0),
+    "jaw_open_19_under": ({"jaw": [("open", 19.0)]}, (0.10, -0.40, 1.38), (0.0, -0.03, 1.55), 60.0),
+    "jaw_open_26": ({"jaw": [("open", 26.0)]}, (0.22, -0.45, 1.60), (0.0, -0.03, 1.57), 60.0),
     "fist": ({"fingers_L": [("flex", 80.0)], "thumb_L": [("flex", 45.0)], "forearm_L": [("flex", 90.0)]},
              (0.66, -0.50, 1.10), (0.46, -0.12, 1.08), 60.0),
     "ankle_plantar_50": ({"foot_L": [("flex", -50.0)]}, (0.60, -0.35, 0.20), (0.10, 0.00, 0.08), 50.0),
@@ -625,8 +632,8 @@ def render_key_poses(names=gbc.POSE_ACTIONS, views=KEY_VIEWS, samples=20, res=(3
     """Full-body renders of the key-pose actions (as keyed, hips translation included)."""
     arm = bpy.data.objects[gbc.ARMATURE]
     mats = _render_setup()
-    assign = {"GB_Body": "skin", "GB_Head": "skin", "GB_Shorts": "shorts", "GB_Mouth": "bone",
-              "GB_Eye_L": "bone", "GB_Eye_R": "bone"}
+    assign = {"GB_Body": "skin", "GB_Head": "skin", "GB_Shorts": "shorts", "GB_Mouth": "mouth",
+              "GB_Eye_L": "eye", "GB_Eye_R": "eye"}
     saved = {}
     for o in bpy.data.objects:
         if o.type == 'MESH':
