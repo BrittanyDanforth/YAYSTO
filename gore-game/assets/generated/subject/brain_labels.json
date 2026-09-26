@@ -1,0 +1,204 @@
+{
+ "schema": "gb.brain_labels/1",
+ "frame": "body_zup_m",
+ "godot_mapping": "(x, z, -y)",
+ "generator": "blender/gore_body/build.py",
+ "build_id": "gb-7038256d11c1",
+ "data": {
+  "origin": [
+   -0.07,
+   -0.07,
+   1.582
+  ],
+  "voxel_size": [
+   0.00219,
+   0.00297,
+   0.00281
+  ],
+  "dims": [
+   64,
+   64,
+   64
+  ],
+  "atlas": {
+   "file": "brain_labels.png",
+   "tiles": [
+    8,
+    8
+   ],
+   "tile_px": [
+    64,
+    64
+   ],
+   "slice_order": "tile t = k (z index) at column t % 8, row t // 8 from the top",
+   "pixel": "column i (x), row j (y) from the top of the tile; R = region id"
+  },
+  "regions": {
+   "0": {
+    "name": "none",
+    "side": "-",
+    "rb_row": ""
+   },
+   "1": {
+    "name": "prefrontal_L",
+    "side": "L",
+    "rb_row": "Prefrontal"
+   },
+   "2": {
+    "name": "prefrontal_R",
+    "side": "R",
+    "rb_row": "Prefrontal"
+   },
+   "3": {
+    "name": "motor_strip_L",
+    "side": "L",
+    "rb_row": "Motor strip / internal capsule"
+   },
+   "4": {
+    "name": "motor_strip_R",
+    "side": "R",
+    "rb_row": "Motor strip / internal capsule"
+   },
+   "5": {
+    "name": "frontal_eye_field_L",
+    "side": "L",
+    "rb_row": "Frontal eye field"
+   },
+   "6": {
+    "name": "frontal_eye_field_R",
+    "side": "R",
+    "rb_row": "Frontal eye field"
+   },
+   "7": {
+    "name": "broca_L",
+    "side": "L",
+    "rb_row": "Left (dominant) language areas"
+   },
+   "8": {
+    "name": "wernicke_L",
+    "side": "L",
+    "rb_row": "Left (dominant) language areas"
+   },
+   "9": {
+    "name": "parietal_L",
+    "side": "L",
+    "rb_row": "(parietal, sensory; left: language support)"
+   },
+   "10": {
+    "name": "parietal_R",
+    "side": "R",
+    "rb_row": "Right parietal (left neglect)"
+   },
+   "11": {
+    "name": "occipital_L",
+    "side": "L",
+    "rb_row": "Occipital"
+   },
+   "12": {
+    "name": "occipital_R",
+    "side": "R",
+    "rb_row": "Occipital"
+   },
+   "13": {
+    "name": "temporal_L",
+    "side": "L",
+    "rb_row": "Temporal"
+   },
+   "14": {
+    "name": "temporal_R",
+    "side": "R",
+    "rb_row": "Temporal"
+   },
+   "15": {
+    "name": "thalamus_L",
+    "side": "L",
+    "rb_row": "Thalamus / diencephalon"
+   },
+   "16": {
+    "name": "thalamus_R",
+    "side": "R",
+    "rb_row": "Thalamus / diencephalon"
+   },
+   "17": {
+    "name": "internal_capsule_L",
+    "side": "L",
+    "rb_row": "Motor strip / internal capsule"
+   },
+   "18": {
+    "name": "internal_capsule_R",
+    "side": "R",
+    "rb_row": "Motor strip / internal capsule"
+   },
+   "19": {
+    "name": "cerebellum_L",
+    "side": "L",
+    "rb_row": "Cerebellar hemisphere"
+   },
+   "20": {
+    "name": "cerebellum_R",
+    "side": "R",
+    "rb_row": "Cerebellar hemisphere"
+   },
+   "21": {
+    "name": "vermis",
+    "side": "mid",
+    "rb_row": "Vermis"
+   },
+   "22": {
+    "name": "midbrain",
+    "side": "mid",
+    "rb_row": "Midbrain"
+   },
+   "23": {
+    "name": "pons_tegmentum",
+    "side": "mid",
+    "rb_row": "Pons, tegmentum"
+   },
+   "24": {
+    "name": "pons_basis",
+    "side": "mid",
+    "rb_row": "Pons, ventral basis only"
+   },
+   "25": {
+    "name": "medulla",
+    "side": "mid",
+    "rb_row": "Medulla"
+   },
+   "26": {
+    "name": "corpus_callosum",
+    "side": "mid",
+    "rb_row": "(midline white matter; part of bilateral hemisphere damage)"
+   }
+  },
+  "counts": {
+   "0": 201380,
+   "1": 2388,
+   "2": 2493,
+   "3": 2272,
+   "4": 2272,
+   "5": 1596,
+   "6": 1596,
+   "7": 105,
+   "8": 517,
+   "9": 9817,
+   "10": 9937,
+   "11": 4420,
+   "12": 4420,
+   "13": 4174,
+   "14": 4571,
+   "15": 250,
+   "16": 250,
+   "17": 363,
+   "18": 363,
+   "19": 2046,
+   "20": 2046,
+   "21": 1960,
+   "22": 1156,
+   "23": 230,
+   "24": 278,
+   "25": 462,
+   "26": 782
+  },
+  "status": "v0 (B0 geometric rules; B4 refines)"
+ }
+}

@@ -1,5 +1,7 @@
 # Visual reference notes (generic, from real forensic reference photos)
 
+> **Reference photos:** real forensic reference photos are in the git-ignored folder `refs/` at the repo root (1-8). LOOK at them with the image viewer whenever you build or judge anything wound-, blood-, tissue-, bone-, skull-, brain- or death-related, and compare your renders side by side. Use injury/blood/tissue properties only; never faces or identities. Per-image notes: `gore-game/docs/REFERENCE_NOTES.md` §5.
+
 These notes record **generic visual properties** observed in real forensic reference photographs supplied by the user
 for educational realism. No identity, face, tattoo, location or case detail is used or recorded, no specific person's
 injuries are recreated, and the photos themselves are never stored in the repo. Everything here is a general property

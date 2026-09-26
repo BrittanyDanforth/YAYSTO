@@ -1,0 +1,4127 @@
+{
+ "schema": "gb.rig/1",
+ "frame": "body_zup_m",
+ "godot_mapping": "(x, z, -y)",
+ "generator": "blender/gore_body/build.py",
+ "build_id": "gb-7038256d11c1",
+ "data": {
+  "bones": [
+   {
+    "name": "root",
+    "parent": null,
+    "head": [
+     0.0,
+     0.0,
+     0.0
+    ],
+    "tail": [
+     0.0,
+     0.0,
+     0.1
+    ],
+    "deform": true,
+    "physical": false,
+    "kinematic": true,
+    "rest_basis_world": {
+     "x": [
+      1.0,
+      0.0,
+      0.0
+     ],
+     "y": [
+      0.0,
+      0.0,
+      1.0
+     ],
+     "z": [
+      0.0,
+      -1.0,
+      0.0
+     ]
+    },
+    "note": "Never simulated"
+   },
+   {
+    "name": "hips",
+    "parent": "root",
+    "head": [
+     0.0,
+     -0.005,
+     0.965
+    ],
+    "tail": [
+     0.0,
+     0.006,
+     1.027
+    ],
+    "deform": true,
+    "physical": true,
+    "kinematic": false,
+    "rest_basis_world": {
+     "x": [
+      1.0,
+      0.0,
+      0.0
+     ],
+     "y": [
+      0.0,
+      0.17469,
+      0.98462
+     ],
+     "z": [
+      0.0,
+      -0.98462,
+      0.17469
+     ]
+    },
+    "note": "Ragdoll root"
+   },
+   {
+    "name": "spine",
+    "parent": "hips",
+    "head": [
+     0.0,
+     0.006,
+     1.027
+    ],
+    "tail": [
+     0.0,
+     0.002,
+     1.212
+    ],
+    "deform": true,
+    "physical": true,
+    "kinematic": false,
+    "rest_basis_world": {
+     "x": [
+      1.0,
+      0.0,
+      0.0
+     ],
+     "y": [
+      0.0,
+      -0.02162,
+      0.99977
+     ],
+     "z": [
+      0.0,
+      -0.99977,
+      -0.02162
+     ]
+    },
+    "note": "Lumbar"
+   },
+   {
+    "name": "chest",
+    "parent": "spine",
+    "head": [
+     0.0,
+     0.002,
+     1.212
+    ],
+    "tail": [
+     0.0,
+     0.049,
+     1.353
+    ],
+    "deform": true,
+    "physical": true,
+    "kinematic": false,
+    "rest_basis_world": {
+     "x": [
+      1.0,
+      0.0,
+      0.0
+     ],
+     "y": [
+      0.0,
+      0.31623,
+      0.94868
+     ],
+     "z": [
+      0.0,
+      -0.94868,
+      0.31623
+     ]
+    },
+    "note": "Lower thorax"
+   },
+   {
+    "name": "upper_chest",
+    "parent": "chest",
+    "head": [
+     0.0,
+     0.049,
+     1.353
+    ],
+    "tail": [
+     0.0,
+     0.015,
+     1.49
+    ],
+    "deform": true,
+    "physical": true,
+    "kinematic": false,
+    "rest_basis_world": {
+     "x": [
+      1.0,
+      0.0,
+      0.0
+     ],
+     "y": [
+      0.0,
+      -0.24087,
+      0.97056
+     ],
+     "z": [
+      0.0,
+      -0.97056,
+      -0.24087
+     ]
+    }
+   },
+   {
+    "name": "neck",
+    "parent": "upper_chest",
+    "head": [
+     0.0,
+     0.015,
+     1.49
+    ],
+    "tail": [
+     0.0,
+     0.015,
+     1.622
+    ],
+    "deform": true,
+    "physical": true,
+    "kinematic": false,
+    "rest_basis_world": {
+     "x": [
+      1.0,
+      0.0,
+      0.0
+     ],
+     "y": [
+      0.0,
+      0.0,
+      1.0
+     ],
+     "z": [
+      0.0,
+      -1.0,
+      0.0
+     ]
+    }
+   },
+   {
+    "name": "head",
+    "parent": "neck",
+    "head": [
+     0.0,
+     0.015,
+     1.622
+    ],
+    "tail": [
+     0.0,
+     0.02,
+     1.78
+    ],
+    "deform": true,
+    "physical": true,
+    "kinematic": false,
+    "rest_basis_world": {
+     "x": [
+      1.0,
+      0.0,
+      0.0
+     ],
+     "y": [
+      0.0,
+      0.03163,
+      0.9995
+     ],
+     "z": [
+      0.0,
+      -0.9995,
+      0.03163
+     ]
+    },
+    "note": "Nodding pivot = atlanto-occipital (0, 0.015, 1.622)"
+   },
+   {
+    "name": "jaw",
+    "parent": "head",
+    "head": [
+     0.0,
+     0.0,
+     1.64
+    ],
+    "tail": [
+     0.0,
+     -0.06,
+     1.544
+    ],
+    "deform": true,
+    "physical": false,
+    "kinematic": true,
+    "rest_basis_world": {
+     "x": [
+      -1.0,
+      0.0,
+      0.0
+     ],
+     "y": [
+      0.0,
+      -0.53,
+      -0.848
+     ],
+     "z": [
+      0.0,
+      -0.848,
+      0.53
+     ]
+    },
+    "note": "E: TMJ axis centre -> menton; fit to GH_Jaw condyles (B2)"
+   },
+   {
+    "name": "tongue",
+    "parent": "jaw",
+    "head": [
+     0.0,
+     -0.03,
+     1.585
+    ],
+    "tail": [
+     0.0,
+     -0.075,
+     1.59
+    ],
+    "deform": true,
+    "physical": false,
+    "kinematic": true,
+    "rest_basis_world": {
+     "x": [
+      -1.0,
+      0.0,
+      0.0
+     ],
+     "y": [
+      0.0,
+      -0.99388,
+      0.11043
+     ],
+     "z": [
+      0.0,
+      0.11043,
+      0.99388
+     ]
+    },
+    "note": "E; falls back at death"
+   },
+   {
+    "name": "eye_L",
+    "parent": "head",
+    "head": [
+     0.032,
+     -0.05,
+     1.669
+    ],
+    "tail": [
+     0.032,
+     -0.062,
+     1.669
+    ],
+    "deform": true,
+    "physical": false,
+    "kinematic": true,
+    "rest_basis_world": {
+     "x": [
+      -1.0,
+      0.0,
+      0.0
+     ],
+     "y": [
+      0.0,
+      -1.0,
+      0.0
+     ],
+     "z": [
+      0.0,
+      0.0,
+      1.0
+     ]
+    },
+    "note": "Eyeball centre [RB §1.2]; tail +12 mm along -Y (gaze)"
+   },
+   {
+    "name": "eye_R",
+    "parent": "head",
+    "head": [
+     -0.032,
+     -0.05,
+     1.669
+    ],
+    "tail": [
+     -0.032,
+     -0.062,
+     1.669
+    ],
+    "deform": true,
+    "physical": false,
+    "kinematic": true,
+    "rest_basis_world": {
+     "x": [
+      -1.0,
+      0.0,
+      0.0
+     ],
+     "y": [
+      0.0,
+      -1.0,
+      0.0
+     ],
+     "z": [
+      0.0,
+      0.0,
+      1.0
+     ]
+    },
+    "note": "Eyeball centre [RB §1.2]; tail +12 mm along -Y (gaze)"
+   },
+   {
+    "name": "lid_upper_L",
+    "parent": "head",
+    "head": [
+     0.032,
+     -0.05,
+     1.669
+    ],
+    "tail": [
+     0.032,
+     -0.05,
+     1.684
+    ],
+    "deform": true,
+    "physical": false,
+    "kinematic": true,
+    "rest_basis_world": {
+     "x": [
+      1.0,
+      0.0,
+      0.0
+     ],
+     "y": [
+      0.0,
+      0.0,
+      1.0
+     ],
+     "z": [
+      0.0,
+      -1.0,
+      0.0
+     ]
+    },
+    "note": "Rotates about the eye's X axis"
+   },
+   {
+    "name": "lid_upper_R",
+    "parent": "head",
+    "head": [
+     -0.032,
+     -0.05,
+     1.669
+    ],
+    "tail": [
+     -0.032,
+     -0.05,
+     1.684
+    ],
+    "deform": true,
+    "physical": false,
+    "kinematic": true,
+    "rest_basis_world": {
+     "x": [
+      1.0,
+      0.0,
+      0.0
+     ],
+     "y": [
+      0.0,
+      0.0,
+      1.0
+     ],
+     "z": [
+      0.0,
+      -1.0,
+      0.0
+     ]
+    },
+    "note": "Rotates about the eye's X axis"
+   },
+   {
+    "name": "lid_lower_L",
+    "parent": "head",
+    "head": [
+     0.032,
+     -0.05,
+     1.669
+    ],
+    "tail": [
+     0.032,
+     -0.05,
+     1.654
+    ],
+    "deform": true,
+    "physical": false,
+    "kinematic": true,
+    "rest_basis_world": {
+     "x": [
+      -1.0,
+      0.0,
+      0.0
+     ],
+     "y": [
+      0.0,
+      0.0,
+      -1.0
+     ],
+     "z": [
+      0.0,
+      -1.0,
+      0.0
+     ]
+    },
+    "note": "Rotates about the eye's X axis"
+   },
+   {
+    "name": "lid_lower_R",
+    "parent": "head",
+    "head": [
+     -0.032,
+     -0.05,
+     1.669
+    ],
+    "tail": [
+     -0.032,
+     -0.05,
+     1.654
+    ],
+    "deform": true,
+    "physical": false,
+    "kinematic": true,
+    "rest_basis_world": {
+     "x": [
+      -1.0,
+      0.0,
+      0.0
+     ],
+     "y": [
+      0.0,
+      0.0,
+      -1.0
+     ],
+     "z": [
+      0.0,
+      -1.0,
+      0.0
+     ]
+    },
+    "note": "Rotates about the eye's X axis"
+   },
+   {
+    "name": "clavicle_L",
+    "parent": "upper_chest",
+    "head": [
+     0.025,
+     -0.04,
+     1.45
+    ],
+    "tail": [
+     0.165,
+     0.01,
+     1.462
+    ],
+    "deform": true,
+    "physical": true,
+    "kinematic": false,
+    "rest_basis_world": {
+     "x": [
+      0.0854,
+      0.0,
+      -0.99635
+     ],
+     "y": [
+      0.93869,
+      0.33525,
+      0.08046
+     ],
+     "z": [
+      0.33402,
+      -0.94213,
+      0.02863
+     ]
+    },
+    "note": "SC -> AC"
+   },
+   {
+    "name": "clavicle_R",
+    "parent": "upper_chest",
+    "head": [
+     -0.025,
+     -0.04,
+     1.45
+    ],
+    "tail": [
+     -0.165,
+     0.01,
+     1.462
+    ],
+    "deform": true,
+    "physical": true,
+    "kinematic": false,
+    "rest_basis_world": {
+     "x": [
+      0.0854,
+      0.0,
+      0.99635
+     ],
+     "y": [
+      -0.93869,
+      0.33525,
+      0.08046
+     ],
+     "z": [
+      -0.33402,
+      -0.94213,
+      0.02863
+     ]
+    },
+    "note": "SC -> AC"
+   },
+   {
+    "name": "upper_arm_L",
+    "parent": "clavicle_L",
+    "head": [
+     0.18,
+     0.02,
+     1.415
+    ],
+    "tail": [
+     0.325,
+     0.02,
+     1.164
+    ],
+    "deform": true,
+    "physical": true,
+    "kinematic": false,
+    "rest_basis_world": {
+     "x": [
+      -0.8659,
+      0.0,
+      -0.50022
+     ],
+     "y": [
+      0.50022,
+      0.0,
+      -0.8659
+     ],
+     "z": [
+      0.0,
+      -1.0,
+      0.0
+     ]
+    },
+    "note": "A-pose 30 deg"
+   },
+   {
+    "name": "upper_arm_R",
+    "parent": "clavicle_R",
+    "head": [
+     -0.18,
+     0.02,
+     1.415
+    ],
+    "tail": [
+     -0.325,
+     0.02,
+     1.164
+    ],
+    "deform": true,
+    "physical": true,
+    "kinematic": false,
+    "rest_basis_world": {
+     "x": [
+      -0.8659,
+      0.0,
+      0.50022
+     ],
+     "y": [
+      -0.50022,
+      0.0,
+      -0.8659
+     ],
+     "z": [
+      0.0,
+      -1.0,
+      0.0
+     ]
+    },
+    "note": "A-pose 30 deg"
+   },
+   {
+    "name": "upper_arm_twist_L",
+    "parent": "upper_arm_L",
+    "head": [
+     0.2525,
+     0.02,
+     1.2895
+    ],
+    "tail": [
+     0.325,
+     0.02,
+     1.164
+    ],
+    "deform": true,
+    "physical": false,
+    "kinematic": true,
+    "rest_basis_world": {
+     "x": [
+      -0.8659,
+      0.0,
+      -0.50022
+     ],
+     "y": [
+      0.50022,
+      0.0,
+      -0.8659
+     ],
+     "z": [
+      0.0,
+      -1.0,
+      0.0
+     ]
+    },
+    "note": "Mid-arm -> elbow; 50 % of shoulder twist"
+   },
+   {
+    "name": "upper_arm_twist_R",
+    "parent": "upper_arm_R",
+    "head": [
+     -0.2525,
+     0.02,
+     1.2895
+    ],
+    "tail": [
+     -0.325,
+     0.02,
+     1.164
+    ],
+    "deform": true,
+    "physical": false,
+    "kinematic": true,
+    "rest_basis_world": {
+     "x": [
+      -0.8659,
+      0.0,
+      0.50022
+     ],
+     "y": [
+      -0.50022,
+      0.0,
+      -0.8659
+     ],
+     "z": [
+      0.0,
+      -1.0,
+      0.0
+     ]
+    },
+    "note": "Mid-arm -> elbow; 50 % of shoulder twist"
+   },
+   {
+    "name": "forearm_L",
+    "parent": "upper_arm_L",
+    "head": [
+     0.325,
+     0.02,
+     1.164
+    ],
+    "tail": [
+     0.46,
+     0.02,
+     0.93
+    ],
+    "deform": true,
+    "physical": true,
+    "kinematic": false,
+    "rest_basis_world": {
+     "x": [
+      -0.86619,
+      0.0,
+      -0.49972
+     ],
+     "y": [
+      0.49972,
+      0.0,
+      -0.86619
+     ],
+     "z": [
+      0.0,
+      -1.0,
+      0.0
+     ]
+    }
+   },
+   {
+    "name": "forearm_R",
+    "parent": "upper_arm_R",
+    "head": [
+     -0.325,
+     0.02,
+     1.164
+    ],
+    "tail": [
+     -0.46,
+     0.02,
+     0.93
+    ],
+    "deform": true,
+    "physical": true,
+    "kinematic": false,
+    "rest_basis_world": {
+     "x": [
+      -0.86619,
+      0.0,
+      0.49972
+     ],
+     "y": [
+      -0.49972,
+      0.0,
+      -0.86619
+     ],
+     "z": [
+      0.0,
+      -1.0,
+      0.0
+     ]
+    }
+   },
+   {
+    "name": "forearm_twist_L",
+    "parent": "forearm_L",
+    "head": [
+     0.3925,
+     0.02,
+     1.047
+    ],
+    "tail": [
+     0.46,
+     0.02,
+     0.93
+    ],
+    "deform": true,
+    "physical": false,
+    "kinematic": true,
+    "rest_basis_world": {
+     "x": [
+      -0.86619,
+      0.0,
+      -0.49972
+     ],
+     "y": [
+      0.49972,
+      0.0,
+      -0.86619
+     ],
+     "z": [
+      0.0,
+      -1.0,
+      0.0
+     ]
+    },
+    "note": "Mid-forearm -> wrist; carries pronation"
+   },
+   {
+    "name": "forearm_twist_R",
+    "parent": "forearm_R",
+    "head": [
+     -0.3925,
+     0.02,
+     1.047
+    ],
+    "tail": [
+     -0.46,
+     0.02,
+     0.93
+    ],
+    "deform": true,
+    "physical": false,
+    "kinematic": true,
+    "rest_basis_world": {
+     "x": [
+      -0.86619,
+      0.0,
+      0.49972
+     ],
+     "y": [
+      -0.49972,
+      0.0,
+      -0.86619
+     ],
+     "z": [
+      0.0,
+      -1.0,
+      0.0
+     ]
+    },
+    "note": "Mid-forearm -> wrist; carries pronation"
+   },
+   {
+    "name": "hand_L",
+    "parent": "forearm_L",
+    "head": [
+     0.46,
+     0.02,
+     0.93
+    ],
+    "tail": [
+     0.508,
+     0.02,
+     0.848
+    ],
+    "deform": true,
+    "physical": true,
+    "kinematic": false,
+    "rest_basis_world": {
+     "x": [
+      -0.86301,
+      0.0,
+      -0.50518
+     ],
+     "y": [
+      0.50518,
+      0.0,
+      -0.86301
+     ],
+     "z": [
+      0.0,
+      -1.0,
+      0.0
+     ]
+    },
+    "note": "Wrist -> MCP3"
+   },
+   {
+    "name": "hand_R",
+    "parent": "forearm_R",
+    "head": [
+     -0.46,
+     0.02,
+     0.93
+    ],
+    "tail": [
+     -0.508,
+     0.02,
+     0.848
+    ],
+    "deform": true,
+    "physical": true,
+    "kinematic": false,
+    "rest_basis_world": {
+     "x": [
+      -0.86301,
+      0.0,
+      0.50518
+     ],
+     "y": [
+      -0.50518,
+      0.0,
+      -0.86301
+     ],
+     "z": [
+      0.0,
+      -1.0,
+      0.0
+     ]
+    },
+    "note": "Wrist -> MCP3"
+   },
+   {
+    "name": "fingers_L",
+    "parent": "hand_L",
+    "head": [
+     0.508,
+     0.02,
+     0.848
+    ],
+    "tail": [
+     0.553,
+     0.02,
+     0.77
+    ],
+    "deform": true,
+    "physical": false,
+    "kinematic": true,
+    "rest_basis_world": {
+     "x": [
+      -0.86619,
+      0.0,
+      -0.49972
+     ],
+     "y": [
+      0.49972,
+      0.0,
+      -0.86619
+     ],
+     "z": [
+      0.0,
+      -1.0,
+      0.0
+     ]
+    },
+    "note": "MCP3 -> tip; kinematic curl (grip, tenodesis, cadaveric spasm)"
+   },
+   {
+    "name": "fingers_R",
+    "parent": "hand_R",
+    "head": [
+     -0.508,
+     0.02,
+     0.848
+    ],
+    "tail": [
+     -0.553,
+     0.02,
+     0.77
+    ],
+    "deform": true,
+    "physical": false,
+    "kinematic": true,
+    "rest_basis_world": {
+     "x": [
+      -0.86619,
+      0.0,
+      0.49972
+     ],
+     "y": [
+      -0.49972,
+      0.0,
+      -0.86619
+     ],
+     "z": [
+      0.0,
+      -1.0,
+      0.0
+     ]
+    },
+    "note": "MCP3 -> tip; kinematic curl (grip, tenodesis, cadaveric spasm)"
+   },
+   {
+    "name": "thumb_L",
+    "parent": "hand_L",
+    "head": [
+     0.468,
+     -0.005,
+     0.915
+    ],
+    "tail": [
+     0.5,
+     -0.03,
+     0.84
+    ],
+    "deform": true,
+    "physical": false,
+    "kinematic": true,
+    "rest_basis_world": {
+     "x": [
+      -0.91978,
+      0.0,
+      -0.39244
+     ],
+     "y": [
+      0.3752,
+      -0.29313,
+      -0.87938
+     ],
+     "z": [
+      -0.11503,
+      -0.95607,
+      0.26961
+     ]
+    },
+    "note": "E: CMC -> tip, kinematic"
+   },
+   {
+    "name": "thumb_R",
+    "parent": "hand_R",
+    "head": [
+     -0.468,
+     -0.005,
+     0.915
+    ],
+    "tail": [
+     -0.5,
+     -0.03,
+     0.84
+    ],
+    "deform": true,
+    "physical": false,
+    "kinematic": true,
+    "rest_basis_world": {
+     "x": [
+      -0.91978,
+      0.0,
+      0.39244
+     ],
+     "y": [
+      -0.3752,
+      -0.29313,
+      -0.87938
+     ],
+     "z": [
+      0.11503,
+      -0.95607,
+      0.26961
+     ]
+    },
+    "note": "E: CMC -> tip, kinematic"
+   },
+   {
+    "name": "thigh_L",
+    "parent": "hips",
+    "head": [
+     0.087,
+     -0.015,
+     0.918
+    ],
+    "tail": [
+     0.092,
+     0.02,
+     0.492
+    ],
+    "deform": true,
+    "physical": true,
+    "kinematic": false,
+    "rest_basis_world": {
+     "x": [
+      -0.99993,
+      0.0,
+      -0.01174
+     ],
+     "y": [
+      0.0117,
+      0.08188,
+      -0.99657
+     ],
+     "z": [
+      0.00096,
+      -0.99665,
+      -0.08187
+     ]
+    }
+   },
+   {
+    "name": "thigh_R",
+    "parent": "hips",
+    "head": [
+     -0.087,
+     -0.015,
+     0.918
+    ],
+    "tail": [
+     -0.092,
+     0.02,
+     0.492
+    ],
+    "deform": true,
+    "physical": true,
+    "kinematic": false,
+    "rest_basis_world": {
+     "x": [
+      -0.99993,
+      0.0,
+      0.01174
+     ],
+     "y": [
+      -0.0117,
+      0.08188,
+      -0.99657
+     ],
+     "z": [
+      -0.00096,
+      -0.99665,
+      -0.08187
+     ]
+    }
+   },
+   {
+    "name": "shin_L",
+    "parent": "thigh_L",
+    "head": [
+     0.092,
+     0.02,
+     0.492
+    ],
+    "tail": [
+     0.095,
+     0.05,
+     0.075
+    ],
+    "deform": true,
+    "physical": true,
+    "kinematic": false,
+    "rest_basis_world": {
+     "x": [
+      -0.99997,
+      0.0,
+      -0.00719
+     ],
+     "y": [
+      0.00718,
+      0.07176,
+      -0.9974
+     ],
+     "z": [
+      0.00052,
+      -0.99743,
+      -0.07175
+     ]
+    }
+   },
+   {
+    "name": "shin_R",
+    "parent": "thigh_R",
+    "head": [
+     -0.092,
+     0.02,
+     0.492
+    ],
+    "tail": [
+     -0.095,
+     0.05,
+     0.075
+    ],
+    "deform": true,
+    "physical": true,
+    "kinematic": false,
+    "rest_basis_world": {
+     "x": [
+      -0.99997,
+      0.0,
+      0.00719
+     ],
+     "y": [
+      -0.00718,
+      0.07176,
+      -0.9974
+     ],
+     "z": [
+      -0.00052,
+      -0.99743,
+      -0.07175
+     ]
+    }
+   },
+   {
+    "name": "foot_L",
+    "parent": "shin_L",
+    "head": [
+     0.095,
+     0.05,
+     0.075
+    ],
+    "tail": [
+     0.119,
+     -0.079,
+     0.025
+    ],
+    "deform": true,
+    "physical": true,
+    "kinematic": false,
+    "rest_basis_world": {
+     "x": [
+      -0.98313,
+      -0.18291,
+      0.0
+     ],
+     "y": [
+      0.17092,
+      -0.91869,
+      -0.35608
+     ],
+     "z": [
+      0.06513,
+      -0.35008,
+      0.93445
+     ]
+    },
+    "note": "Ankle -> 2nd MT head"
+   },
+   {
+    "name": "foot_R",
+    "parent": "shin_R",
+    "head": [
+     -0.095,
+     0.05,
+     0.075
+    ],
+    "tail": [
+     -0.119,
+     -0.079,
+     0.025
+    ],
+    "deform": true,
+    "physical": true,
+    "kinematic": false,
+    "rest_basis_world": {
+     "x": [
+      -0.98313,
+      0.18291,
+      0.0
+     ],
+     "y": [
+      -0.17092,
+      -0.91869,
+      -0.35608
+     ],
+     "z": [
+      -0.06513,
+      -0.35008,
+      0.93445
+     ]
+    },
+    "note": "Ankle -> 2nd MT head"
+   },
+   {
+    "name": "toes_L",
+    "parent": "foot_L",
+    "head": [
+     0.119,
+     -0.079,
+     0.025
+    ],
+    "tail": [
+     0.128,
+     -0.151,
+     0.01
+    ],
+    "deform": true,
+    "physical": false,
+    "kinematic": true,
+    "rest_basis_world": {
+     "x": [
+      -0.99228,
+      -0.12404,
+      0.0
+     ],
+     "y": [
+      0.12147,
+      -0.97174,
+      -0.20244
+     ],
+     "z": [
+      0.02511,
+      -0.20088,
+      0.97929
+     ]
+    },
+    "note": "Kinematic"
+   },
+   {
+    "name": "toes_R",
+    "parent": "foot_R",
+    "head": [
+     -0.119,
+     -0.079,
+     0.025
+    ],
+    "tail": [
+     -0.128,
+     -0.151,
+     0.01
+    ],
+    "deform": true,
+    "physical": false,
+    "kinematic": true,
+    "rest_basis_world": {
+     "x": [
+      -0.99228,
+      0.12404,
+      0.0
+     ],
+     "y": [
+      -0.12147,
+      -0.97174,
+      -0.20244
+     ],
+     "z": [
+      -0.02511,
+      -0.20088,
+      0.97929
+     ]
+    },
+    "note": "Kinematic"
+   }
+  ],
+  "bodies": [
+   {
+    "bone": "hips",
+    "mass_kg": 10.65,
+    "com_from_head": 0.5,
+    "com_world": [
+     0.0,
+     0.0005,
+     0.996
+    ],
+    "com_tag": "E",
+    "shape": {
+     "type": "box",
+     "center_world": [
+      0.0,
+      0.005,
+      0.955
+     ],
+     "tag": "E (plan §3.1.2 shapes)",
+     "size": [
+      0.33,
+      0.2,
+      0.16
+     ],
+     "basis_world": {
+      "x": [
+       1.0,
+       0.0,
+       0.0
+      ],
+      "y": [
+       0.0,
+       0.98462,
+       -0.17469
+      ],
+      "z": [
+       0.0,
+       0.17469,
+       0.98462
+      ]
+     },
+     "size_is": "full lengths along basis x, y, z"
+    },
+    "joint": null
+   },
+   {
+    "bone": "spine",
+    "mass_kg": 10.4,
+    "com_from_head": 0.56,
+    "com_world": [
+     0.0,
+     0.00376,
+     1.1306
+    ],
+    "com_tag": "V (Winter abdomen 0.44 from T12/L1)",
+    "shape": {
+     "type": "box",
+     "center_world": [
+      0.0,
+      0.004,
+      1.1195
+     ],
+     "tag": "E (plan §3.1.2 shapes)",
+     "size": [
+      0.3,
+      0.2,
+      0.18
+     ],
+     "basis_world": {
+      "x": [
+       1.0,
+       0.0,
+       0.0
+      ],
+      "y": [
+       0.0,
+       0.99977,
+       0.02162
+      ],
+      "z": [
+       0.0,
+       -0.02162,
+       0.99977
+      ]
+     },
+     "size_is": "full lengths along basis x, y, z"
+    },
+    "joint": {
+     "type": "6dof",
+     "parent": "hips",
+     "pivot_world": [
+      0.0,
+      0.006,
+      1.027
+     ],
+     "axes": {
+      "flex": {
+       "world": [
+        1.0,
+        0.0,
+        0.0
+       ],
+       "sign": 1,
+       "pos": "flex",
+       "neg": "ext"
+      },
+      "lat": {
+       "world": [
+        0.0,
+        0.99977,
+        0.02162
+       ],
+       "sign": 1,
+       "pos": "lat_L",
+       "neg": "lat_R"
+      },
+      "twist": {
+       "world": [
+        0.0,
+        -0.02162,
+        0.99977
+       ],
+       "sign": 1,
+       "pos": "rot_L",
+       "neg": "rot_R"
+      }
+     },
+     "limits_live_deg": {
+      "flex": [
+       -15,
+       40
+      ],
+      "lat": [
+       -15,
+       15
+      ],
+      "twist": [
+       -15,
+       15
+      ]
+     },
+     "limits_dead_deg": {
+      "flex": [
+       -16.5,
+       44.0
+      ],
+      "lat": [
+       -16.5,
+       16.5
+      ],
+      "twist": [
+       -16.5,
+       16.5
+      ]
+     },
+     "torque_cap_nm": {
+      "flex": 250.0,
+      "lat_L": 250.0,
+      "rot_L": 250.0,
+      "ext": 250.0,
+      "lat_R": 250.0,
+      "rot_R": 250.0
+     },
+     "torque_cap_range_nm": [
+      200,
+      300
+     ],
+     "myotomes": {
+      "flex": {
+       "T10": 0.25,
+       "T11": 0.25,
+       "T12": 0.25,
+       "L1": 0.25
+      },
+      "ext": {
+       "T10": 0.125,
+       "T11": 0.125,
+       "T12": 0.125,
+       "L1": 0.125,
+       "L2": 0.125,
+       "L3": 0.125,
+       "L4": 0.125,
+       "L5": 0.125
+      },
+      "lat_L": {
+       "T12": 0.25,
+       "L1": 0.25,
+       "L2": 0.25,
+       "L3": 0.25
+      },
+      "lat_R": {
+       "T12": 0.25,
+       "L1": 0.25,
+       "L2": 0.25,
+       "L3": 0.25
+      },
+      "rot_L": {
+       "T12": 0.25,
+       "L1": 0.25,
+       "L2": 0.25,
+       "L3": 0.25
+      },
+      "rot_R": {
+       "T12": 0.25,
+       "L1": 0.25,
+       "L2": 0.25,
+       "L3": 0.25
+      }
+     }
+    }
+   },
+   {
+    "bone": "chest",
+    "mass_kg": 8.6,
+    "com_from_head": 0.5,
+    "com_world": [
+     0.0,
+     0.0255,
+     1.2825
+    ],
+    "com_tag": "E",
+    "shape": {
+     "type": "box",
+     "center_world": [
+      0.0,
+      0.0255,
+      1.2825
+     ],
+     "tag": "E (plan §3.1.2 shapes)",
+     "size": [
+      0.32,
+      0.22,
+      0.15
+     ],
+     "basis_world": {
+      "x": [
+       1.0,
+       0.0,
+       0.0
+      ],
+      "y": [
+       0.0,
+       0.94868,
+       -0.31623
+      ],
+      "z": [
+       0.0,
+       0.31623,
+       0.94868
+      ]
+     },
+     "size_is": "full lengths along basis x, y, z"
+    },
+    "joint": {
+     "type": "6dof",
+     "parent": "spine",
+     "pivot_world": [
+      0.0,
+      0.002,
+      1.212
+     ],
+     "axes": {
+      "flex": {
+       "world": [
+        1.0,
+        0.0,
+        0.0
+       ],
+       "sign": 1,
+       "pos": "flex",
+       "neg": "ext"
+      },
+      "lat": {
+       "world": [
+        0.0,
+        0.94868,
+        -0.31623
+       ],
+       "sign": 1,
+       "pos": "lat_L",
+       "neg": "lat_R"
+      },
+      "twist": {
+       "world": [
+        0.0,
+        0.31623,
+        0.94868
+       ],
+       "sign": 1,
+       "pos": "rot_L",
+       "neg": "rot_R"
+      }
+     },
+     "limits_live_deg": {
+      "flex": [
+       -10,
+       30
+      ],
+      "lat": [
+       -15,
+       15
+      ],
+      "twist": [
+       -20,
+       20
+      ]
+     },
+     "limits_dead_deg": {
+      "flex": [
+       -11.0,
+       33.0
+      ],
+      "lat": [
+       -16.5,
+       16.5
+      ],
+      "twist": [
+       -22.0,
+       22.0
+      ]
+     },
+     "torque_cap_nm": {
+      "flex": 150.0,
+      "lat_L": 150.0,
+      "rot_L": 150.0,
+      "ext": 150.0,
+      "lat_R": 150.0,
+      "rot_R": 150.0
+     },
+     "torque_cap_range_nm": [
+      150,
+      150
+     ],
+     "myotomes": {
+      "flex": {
+       "T6": 0.14286,
+       "T7": 0.14286,
+       "T8": 0.14286,
+       "T9": 0.14286,
+       "T10": 0.14286,
+       "T11": 0.14286,
+       "T12": 0.14286
+      },
+      "ext": {
+       "T6": 0.11111,
+       "T7": 0.11111,
+       "T8": 0.11111,
+       "T9": 0.11111,
+       "T10": 0.11111,
+       "T11": 0.11111,
+       "T12": 0.11111,
+       "L1": 0.11111,
+       "L2": 0.11111
+      },
+      "lat_L": {
+       "T7": 0.14286,
+       "T8": 0.14286,
+       "T9": 0.14286,
+       "T10": 0.14286,
+       "T11": 0.14286,
+       "T12": 0.14286,
+       "L1": 0.14286
+      },
+      "lat_R": {
+       "T7": 0.14286,
+       "T8": 0.14286,
+       "T9": 0.14286,
+       "T10": 0.14286,
+       "T11": 0.14286,
+       "T12": 0.14286,
+       "L1": 0.14286
+      },
+      "rot_L": {
+       "T7": 0.14286,
+       "T8": 0.14286,
+       "T9": 0.14286,
+       "T10": 0.14286,
+       "T11": 0.14286,
+       "T12": 0.14286,
+       "L1": 0.14286
+      },
+      "rot_R": {
+       "T7": 0.14286,
+       "T8": 0.14286,
+       "T9": 0.14286,
+       "T10": 0.14286,
+       "T11": 0.14286,
+       "T12": 0.14286,
+       "L1": 0.14286
+      }
+     }
+    }
+   },
+   {
+    "bone": "upper_chest",
+    "mass_kg": 6.1,
+    "com_from_head": 0.5,
+    "com_world": [
+     0.0,
+     0.032,
+     1.4215
+    ],
+    "com_tag": "E",
+    "shape": {
+     "type": "box",
+     "center_world": [
+      0.0,
+      0.032,
+      1.4215
+     ],
+     "tag": "E (plan §3.1.2 shapes)",
+     "size": [
+      0.34,
+      0.2,
+      0.14
+     ],
+     "basis_world": {
+      "x": [
+       1.0,
+       0.0,
+       0.0
+      ],
+      "y": [
+       0.0,
+       0.97056,
+       0.24087
+      ],
+      "z": [
+       0.0,
+       -0.24087,
+       0.97056
+      ]
+     },
+     "size_is": "full lengths along basis x, y, z"
+    },
+    "joint": {
+     "type": "6dof",
+     "parent": "chest",
+     "pivot_world": [
+      0.0,
+      0.049,
+      1.353
+     ],
+     "axes": {
+      "flex": {
+       "world": [
+        1.0,
+        0.0,
+        0.0
+       ],
+       "sign": 1,
+       "pos": "flex",
+       "neg": "ext"
+      },
+      "lat": {
+       "world": [
+        0.0,
+        0.97056,
+        0.24087
+       ],
+       "sign": 1,
+       "pos": "lat_L",
+       "neg": "lat_R"
+      },
+      "twist": {
+       "world": [
+        0.0,
+        -0.24087,
+        0.97056
+       ],
+       "sign": 1,
+       "pos": "rot_L",
+       "neg": "rot_R"
+      }
+     },
+     "limits_live_deg": {
+      "flex": [
+       -10,
+       15
+      ],
+      "lat": [
+       -10,
+       10
+      ],
+      "twist": [
+       -10,
+       10
+      ]
+     },
+     "limits_dead_deg": {
+      "flex": [
+       -11.0,
+       16.5
+      ],
+      "lat": [
+       -11.0,
+       11.0
+      ],
+      "twist": [
+       -11.0,
+       11.0
+      ]
+     },
+     "torque_cap_nm": {
+      "flex": 100.0,
+      "lat_L": 100.0,
+      "rot_L": 100.0,
+      "ext": 100.0,
+      "lat_R": 100.0,
+      "rot_R": 100.0
+     },
+     "torque_cap_range_nm": [
+      100,
+      100
+     ],
+     "myotomes": {
+      "flex": {
+       "T1": 0.16667,
+       "T2": 0.16667,
+       "T3": 0.16667,
+       "T4": 0.16667,
+       "T5": 0.16667,
+       "T6": 0.16667
+      },
+      "ext": {
+       "T1": 0.125,
+       "T2": 0.125,
+       "T3": 0.125,
+       "T4": 0.125,
+       "T5": 0.125,
+       "T6": 0.125,
+       "T7": 0.125,
+       "T8": 0.125
+      },
+      "lat_L": {
+       "T1": 0.16667,
+       "T2": 0.16667,
+       "T3": 0.16667,
+       "T4": 0.16667,
+       "T5": 0.16667,
+       "T6": 0.16667
+      },
+      "lat_R": {
+       "T1": 0.16667,
+       "T2": 0.16667,
+       "T3": 0.16667,
+       "T4": 0.16667,
+       "T5": 0.16667,
+       "T6": 0.16667
+      },
+      "rot_L": {
+       "T1": 0.16667,
+       "T2": 0.16667,
+       "T3": 0.16667,
+       "T4": 0.16667,
+       "T5": 0.16667,
+       "T6": 0.16667
+      },
+      "rot_R": {
+       "T1": 0.16667,
+       "T2": 0.16667,
+       "T3": 0.16667,
+       "T4": 0.16667,
+       "T5": 0.16667,
+       "T6": 0.16667
+      }
+     }
+    }
+   },
+   {
+    "bone": "neck",
+    "mass_kg": 1.1,
+    "com_from_head": 0.5,
+    "com_world": [
+     0.0,
+     0.015,
+     1.556
+    ],
+    "com_tag": "E",
+    "shape": {
+     "type": "capsule",
+     "center_world": [
+      0.0,
+      0.015,
+      1.556
+     ],
+     "tag": "E (plan §3.1.2 shapes)",
+     "radius": 0.055,
+     "height": 0.13,
+     "axis_world": [
+      0.0,
+      0.0,
+      1.0
+     ],
+     "height_is": "total incl. caps (Godot CapsuleShape3D.height)"
+    },
+    "joint": {
+     "type": "6dof",
+     "parent": "upper_chest",
+     "pivot_world": [
+      0.0,
+      0.015,
+      1.49
+     ],
+     "axes": {
+      "flex": {
+       "world": [
+        1.0,
+        0.0,
+        0.0
+       ],
+       "sign": 1,
+       "pos": "flex",
+       "neg": "ext"
+      },
+      "lat": {
+       "world": [
+        0.0,
+        1.0,
+        0.0
+       ],
+       "sign": 1,
+       "pos": "lat_L",
+       "neg": "lat_R"
+      },
+      "twist": {
+       "world": [
+        0.0,
+        0.0,
+        1.0
+       ],
+       "sign": 1,
+       "pos": "rot_L",
+       "neg": "rot_R"
+      }
+     },
+     "limits_live_deg": {
+      "flex": [
+       -33,
+       28
+      ],
+      "lat": [
+       -27,
+       27
+      ],
+      "twist": [
+       -35,
+       35
+      ]
+     },
+     "limits_dead_deg": {
+      "flex": [
+       -51,
+       42
+      ],
+      "lat": [
+       -30,
+       30
+      ],
+      "twist": [
+       -45,
+       45
+      ]
+     },
+     "torque_cap_nm": {
+      "flex": 30.0,
+      "lat_L": 30.0,
+      "rot_L": 30.0,
+      "ext": 30.0,
+      "lat_R": 30.0,
+      "rot_R": 30.0
+     },
+     "torque_cap_range_nm": [
+      20,
+      40
+     ],
+     "myotomes": {
+      "flex": {
+       "XI": 0.4,
+       "C1": 0.13333,
+       "C2": 0.13333,
+       "C3": 0.13333,
+       "C4": 0.06667,
+       "C5": 0.06667,
+       "C6": 0.06667
+      },
+      "ext": {
+       "XI": 0.3,
+       "C1": 0.1,
+       "C2": 0.1,
+       "C3": 0.1,
+       "C4": 0.1,
+       "C5": 0.075,
+       "C6": 0.075,
+       "C7": 0.075,
+       "C8": 0.075
+      },
+      "rot_L": {
+       "XI": 0.4,
+       "C1": 0.1,
+       "C2": 0.1,
+       "C3": 0.1,
+       "C4": 0.1,
+       "C5": 0.05,
+       "C6": 0.05,
+       "C7": 0.05,
+       "C8": 0.05
+      },
+      "rot_R": {
+       "XI": 0.4,
+       "C1": 0.1,
+       "C2": 0.1,
+       "C3": 0.1,
+       "C4": 0.1,
+       "C5": 0.05,
+       "C6": 0.05,
+       "C7": 0.05,
+       "C8": 0.05
+      },
+      "lat_L": {
+       "XI": 0.4,
+       "C1": 0.1,
+       "C2": 0.1,
+       "C3": 0.1,
+       "C4": 0.1,
+       "C5": 0.05,
+       "C6": 0.05,
+       "C7": 0.05,
+       "C8": 0.05
+      },
+      "lat_R": {
+       "XI": 0.4,
+       "C1": 0.1,
+       "C2": 0.1,
+       "C3": 0.1,
+       "C4": 0.1,
+       "C5": 0.05,
+       "C6": 0.05,
+       "C7": 0.05,
+       "C8": 0.05
+      }
+     }
+    }
+   },
+   {
+    "bone": "head",
+    "mass_kg": 5.0,
+    "com_from_head": 0.158,
+    "com_world": [
+     0.0,
+     0.01579,
+     1.64696
+    ],
+    "com_tag": "V (head+neck COM at the ear canal)",
+    "shape": {
+     "type": "capsule",
+     "center_world": [
+      0.0,
+      0.0,
+      1.667
+     ],
+     "tag": "E (plan §3.1.2 shapes)",
+     "radius": 0.08,
+     "height": 0.22,
+     "axis_world": [
+      0.0,
+      0.0,
+      1.0
+     ],
+     "height_is": "total incl. caps (Godot CapsuleShape3D.height)"
+    },
+    "joint": {
+     "type": "6dof",
+     "parent": "neck",
+     "pivot_world": [
+      0.0,
+      0.015,
+      1.622
+     ],
+     "axes": {
+      "flex": {
+       "world": [
+        1.0,
+        0.0,
+        0.0
+       ],
+       "sign": 1,
+       "pos": "flex",
+       "neg": "ext"
+      },
+      "lat": {
+       "world": [
+        0.0,
+        0.9995,
+        -0.03163
+       ],
+       "sign": 1,
+       "pos": "lat_L",
+       "neg": "lat_R"
+      },
+      "twist": {
+       "world": [
+        0.0,
+        0.03163,
+        0.9995
+       ],
+       "sign": 1,
+       "pos": "rot_L",
+       "neg": "rot_R"
+      }
+     },
+     "limits_live_deg": {
+      "flex": [
+       -22,
+       19
+      ],
+      "lat": [
+       -18,
+       18
+      ],
+      "twist": [
+       -35,
+       35
+      ]
+     },
+     "limits_dead_deg": {
+      "flex": [
+       -34,
+       28
+      ],
+      "lat": [
+       -20,
+       20
+      ],
+      "twist": [
+       -45,
+       45
+      ]
+     },
+     "torque_cap_nm": {
+      "flex": 30.0,
+      "lat_L": 30.0,
+      "rot_L": 30.0,
+      "ext": 30.0,
+      "lat_R": 30.0,
+      "rot_R": 30.0
+     },
+     "torque_cap_range_nm": [
+      20,
+      40
+     ],
+     "myotomes": {
+      "flex": {
+       "XI": 0.4,
+       "C1": 0.13333,
+       "C2": 0.13333,
+       "C3": 0.13333,
+       "C4": 0.06667,
+       "C5": 0.06667,
+       "C6": 0.06667
+      },
+      "ext": {
+       "XI": 0.3,
+       "C1": 0.1,
+       "C2": 0.1,
+       "C3": 0.1,
+       "C4": 0.1,
+       "C5": 0.075,
+       "C6": 0.075,
+       "C7": 0.075,
+       "C8": 0.075
+      },
+      "rot_L": {
+       "XI": 0.4,
+       "C1": 0.1,
+       "C2": 0.1,
+       "C3": 0.1,
+       "C4": 0.1,
+       "C5": 0.05,
+       "C6": 0.05,
+       "C7": 0.05,
+       "C8": 0.05
+      },
+      "rot_R": {
+       "XI": 0.4,
+       "C1": 0.1,
+       "C2": 0.1,
+       "C3": 0.1,
+       "C4": 0.1,
+       "C5": 0.05,
+       "C6": 0.05,
+       "C7": 0.05,
+       "C8": 0.05
+      },
+      "lat_L": {
+       "XI": 0.4,
+       "C1": 0.1,
+       "C2": 0.1,
+       "C3": 0.1,
+       "C4": 0.1,
+       "C5": 0.05,
+       "C6": 0.05,
+       "C7": 0.05,
+       "C8": 0.05
+      },
+      "lat_R": {
+       "XI": 0.4,
+       "C1": 0.1,
+       "C2": 0.1,
+       "C3": 0.1,
+       "C4": 0.1,
+       "C5": 0.05,
+       "C6": 0.05,
+       "C7": 0.05,
+       "C8": 0.05
+      }
+     }
+    }
+   },
+   {
+    "bone": "clavicle_L",
+    "mass_kg": 0.75,
+    "com_from_head": 0.5,
+    "com_world": [
+     0.095,
+     -0.015,
+     1.456
+    ],
+    "com_tag": "E",
+    "shape": {
+     "type": "capsule",
+     "center_world": [
+      0.095,
+      -0.015,
+      1.456
+     ],
+     "tag": "E (plan §3.1.2 shapes)",
+     "radius": 0.025,
+     "height": 0.15,
+     "axis_world": [
+      0.93869,
+      0.33525,
+      0.08046
+     ],
+     "height_is": "total incl. caps (Godot CapsuleShape3D.height)"
+    },
+    "joint": {
+     "type": "6dof",
+     "parent": "upper_chest",
+     "pivot_world": [
+      0.025,
+      -0.04,
+      1.45
+     ],
+     "axes": {
+      "elev": {
+       "world": [
+        0.33402,
+        -0.94213,
+        0.02863
+       ],
+       "sign": 1,
+       "pos": "elev",
+       "neg": "depr"
+      },
+      "protr": {
+       "world": [
+        0.0854,
+        0.0,
+        -0.99635
+       ],
+       "sign": 1,
+       "pos": "protr",
+       "neg": "retr"
+      },
+      "twist": {
+       "world": [
+        0.93869,
+        0.33525,
+        0.08046
+       ],
+       "sign": 1,
+       "pos": "roll_fwd",
+       "neg": "roll_back"
+      }
+     },
+     "limits_live_deg": {
+      "elev": [
+       -10,
+       30
+      ],
+      "protr": [
+       -15,
+       15
+      ],
+      "twist": [
+       0,
+       0
+      ]
+     },
+     "limits_dead_deg": {
+      "elev": [
+       -11.0,
+       33.0
+      ],
+      "protr": [
+       -16.5,
+       16.5
+      ],
+      "twist": [
+       0.0,
+       0.0
+      ]
+     },
+     "torque_cap_nm": {
+      "elev": 40.0,
+      "protr": 40.0,
+      "roll_fwd": 40.0,
+      "depr": 40.0,
+      "retr": 40.0,
+      "roll_back": 40.0
+     },
+     "torque_cap_range_nm": [
+      40,
+      40
+     ],
+     "myotomes": {
+      "elev": {
+       "XI": 0.5,
+       "C3": 0.16667,
+       "C4": 0.16667,
+       "C5": 0.16667
+      },
+      "protr": {
+       "C5": 0.2,
+       "C6": 0.2,
+       "C7": 0.2,
+       "C8": 0.2,
+       "T1": 0.2
+      },
+      "depr": {
+       "C5": 0.2,
+       "C6": 0.2,
+       "C7": 0.2,
+       "C8": 0.2,
+       "T1": 0.2
+      },
+      "retr": {
+       "XI": 0.4,
+       "C4": 0.3,
+       "C5": 0.3
+      }
+     }
+    }
+   },
+   {
+    "bone": "clavicle_R",
+    "mass_kg": 0.75,
+    "com_from_head": 0.5,
+    "com_world": [
+     -0.095,
+     -0.015,
+     1.456
+    ],
+    "com_tag": "E",
+    "shape": {
+     "type": "capsule",
+     "center_world": [
+      -0.095,
+      -0.015,
+      1.456
+     ],
+     "tag": "E (plan §3.1.2 shapes)",
+     "radius": 0.025,
+     "height": 0.15,
+     "axis_world": [
+      -0.93869,
+      0.33525,
+      0.08046
+     ],
+     "height_is": "total incl. caps (Godot CapsuleShape3D.height)"
+    },
+    "joint": {
+     "type": "6dof",
+     "parent": "upper_chest",
+     "pivot_world": [
+      -0.025,
+      -0.04,
+      1.45
+     ],
+     "axes": {
+      "elev": {
+       "world": [
+        0.33402,
+        0.94213,
+        -0.02863
+       ],
+       "sign": 1,
+       "pos": "elev",
+       "neg": "depr"
+      },
+      "protr": {
+       "world": [
+        0.0854,
+        0.0,
+        0.99635
+       ],
+       "sign": 1,
+       "pos": "protr",
+       "neg": "retr"
+      },
+      "twist": {
+       "world": [
+        0.93869,
+        -0.33525,
+        -0.08046
+       ],
+       "sign": 1,
+       "pos": "roll_fwd",
+       "neg": "roll_back"
+      }
+     },
+     "limits_live_deg": {
+      "elev": [
+       -10,
+       30
+      ],
+      "protr": [
+       -15,
+       15
+      ],
+      "twist": [
+       0,
+       0
+      ]
+     },
+     "limits_dead_deg": {
+      "elev": [
+       -11.0,
+       33.0
+      ],
+      "protr": [
+       -16.5,
+       16.5
+      ],
+      "twist": [
+       0.0,
+       0.0
+      ]
+     },
+     "torque_cap_nm": {
+      "elev": 40.0,
+      "protr": 40.0,
+      "roll_fwd": 40.0,
+      "depr": 40.0,
+      "retr": 40.0,
+      "roll_back": 40.0
+     },
+     "torque_cap_range_nm": [
+      40,
+      40
+     ],
+     "myotomes": {
+      "elev": {
+       "XI": 0.5,
+       "C3": 0.16667,
+       "C4": 0.16667,
+       "C5": 0.16667
+      },
+      "protr": {
+       "C5": 0.2,
+       "C6": 0.2,
+       "C7": 0.2,
+       "C8": 0.2,
+       "T1": 0.2
+      },
+      "depr": {
+       "C5": 0.2,
+       "C6": 0.2,
+       "C7": 0.2,
+       "C8": 0.2,
+       "T1": 0.2
+      },
+      "retr": {
+       "XI": 0.4,
+       "C4": 0.3,
+       "C5": 0.3
+      }
+     }
+    }
+   },
+   {
+    "bone": "upper_arm_L",
+    "mass_kg": 2.1,
+    "com_from_head": 0.436,
+    "com_world": [
+     0.24322,
+     0.02,
+     1.30556
+    ],
+    "com_tag": "V",
+    "shape": {
+     "type": "capsule",
+     "center_world": [
+      0.2525,
+      0.02,
+      1.2895
+     ],
+     "tag": "E (plan §3.1.2 shapes)",
+     "radius": 0.045,
+     "height": 0.29,
+     "axis_world": [
+      0.50022,
+      0.0,
+      -0.8659
+     ],
+     "height_is": "total incl. caps (Godot CapsuleShape3D.height)"
+    },
+    "joint": {
+     "type": "cone",
+     "parent": "clavicle_L",
+     "pivot_world": [
+      0.18,
+      0.02,
+      1.415
+     ],
+     "axes": {
+      "flex": {
+       "world": [
+        -0.8659,
+        0.0,
+        -0.50022
+       ],
+       "sign": 1,
+       "pos": "flex",
+       "neg": "ext"
+      },
+      "abd": {
+       "world": [
+        0.0,
+        -1.0,
+        0.0
+       ],
+       "sign": 1,
+       "pos": "abd",
+       "neg": "add"
+      },
+      "twist": {
+       "world": [
+        -0.50022,
+        0.0,
+        0.8659
+       ],
+       "sign": 1,
+       "pos": "rot_ext",
+       "neg": "rot_int"
+      }
+     },
+     "limits_live_deg": {
+      "swing": [
+       0,
+       100
+      ],
+      "twist": [
+       -70,
+       70
+      ]
+     },
+     "limits_dead_deg": {
+      "swing": [
+       0,
+       110
+      ],
+      "twist": [
+       -77,
+       77
+      ]
+     },
+     "torque_cap_nm": {
+      "flex": 80.0,
+      "abd": 80.0,
+      "rot_ext": 80.0,
+      "ext": 80.0,
+      "add": 80.0,
+      "rot_int": 80.0
+     },
+     "torque_cap_range_nm": [
+      60,
+      100
+     ],
+     "myotomes": {
+      "abd": {
+       "C5": 0.6,
+       "C6": 0.4
+      },
+      "flex": {
+       "C5": 0.6,
+       "C6": 0.4
+      },
+      "ext": {
+       "C6": 0.3,
+       "C7": 0.4,
+       "C8": 0.3
+      },
+      "add": {
+       "C6": 0.3,
+       "C7": 0.4,
+       "C8": 0.3
+      },
+      "rot_int": {
+       "C5": 0.5,
+       "C6": 0.5
+      },
+      "rot_ext": {
+       "C5": 0.5,
+       "C6": 0.5
+      }
+     }
+    }
+   },
+   {
+    "bone": "upper_arm_R",
+    "mass_kg": 2.1,
+    "com_from_head": 0.436,
+    "com_world": [
+     -0.24322,
+     0.02,
+     1.30556
+    ],
+    "com_tag": "V",
+    "shape": {
+     "type": "capsule",
+     "center_world": [
+      -0.2525,
+      0.02,
+      1.2895
+     ],
+     "tag": "E (plan §3.1.2 shapes)",
+     "radius": 0.045,
+     "height": 0.29,
+     "axis_world": [
+      -0.50022,
+      0.0,
+      -0.8659
+     ],
+     "height_is": "total incl. caps (Godot CapsuleShape3D.height)"
+    },
+    "joint": {
+     "type": "cone",
+     "parent": "clavicle_R",
+     "pivot_world": [
+      -0.18,
+      0.02,
+      1.415
+     ],
+     "axes": {
+      "flex": {
+       "world": [
+        -0.8659,
+        0.0,
+        0.50022
+       ],
+       "sign": 1,
+       "pos": "flex",
+       "neg": "ext"
+      },
+      "abd": {
+       "world": [
+        0.0,
+        1.0,
+        0.0
+       ],
+       "sign": 1,
+       "pos": "abd",
+       "neg": "add"
+      },
+      "twist": {
+       "world": [
+        -0.50022,
+        0.0,
+        -0.8659
+       ],
+       "sign": 1,
+       "pos": "rot_ext",
+       "neg": "rot_int"
+      }
+     },
+     "limits_live_deg": {
+      "swing": [
+       0,
+       100
+      ],
+      "twist": [
+       -70,
+       70
+      ]
+     },
+     "limits_dead_deg": {
+      "swing": [
+       0,
+       110
+      ],
+      "twist": [
+       -77,
+       77
+      ]
+     },
+     "torque_cap_nm": {
+      "flex": 80.0,
+      "abd": 80.0,
+      "rot_ext": 80.0,
+      "ext": 80.0,
+      "add": 80.0,
+      "rot_int": 80.0
+     },
+     "torque_cap_range_nm": [
+      60,
+      100
+     ],
+     "myotomes": {
+      "abd": {
+       "C5": 0.6,
+       "C6": 0.4
+      },
+      "flex": {
+       "C5": 0.6,
+       "C6": 0.4
+      },
+      "ext": {
+       "C6": 0.3,
+       "C7": 0.4,
+       "C8": 0.3
+      },
+      "add": {
+       "C6": 0.3,
+       "C7": 0.4,
+       "C8": 0.3
+      },
+      "rot_int": {
+       "C5": 0.5,
+       "C6": 0.5
+      },
+      "rot_ext": {
+       "C5": 0.5,
+       "C6": 0.5
+      }
+     }
+    }
+   },
+   {
+    "bone": "forearm_L",
+    "mass_kg": 1.2,
+    "com_from_head": 0.43,
+    "com_world": [
+     0.38305,
+     0.02,
+     1.06338
+    ],
+    "com_tag": "V",
+    "shape": {
+     "type": "capsule",
+     "center_world": [
+      0.3925,
+      0.02,
+      1.047
+     ],
+     "tag": "E (plan §3.1.2 shapes)",
+     "radius": 0.038,
+     "height": 0.27,
+     "axis_world": [
+      0.49972,
+      0.0,
+      -0.86619
+     ],
+     "height_is": "total incl. caps (Godot CapsuleShape3D.height)"
+    },
+    "joint": {
+     "type": "hinge",
+     "parent": "upper_arm_L",
+     "pivot_world": [
+      0.325,
+      0.02,
+      1.164
+     ],
+     "axes": {
+      "flex": {
+       "world": [
+        -0.86619,
+        0.0,
+        -0.49972
+       ],
+       "sign": 1,
+       "pos": "flex",
+       "neg": "ext"
+      }
+     },
+     "limits_live_deg": {
+      "flex": [
+       -5,
+       145
+      ]
+     },
+     "limits_dead_deg": {
+      "flex": [
+       -10,
+       155
+      ]
+     },
+     "torque_cap_nm": {
+      "flex": 65.0,
+      "ext": 65.0
+     },
+     "torque_cap_range_nm": [
+      50,
+      80
+     ],
+     "myotomes": {
+      "flex": {
+       "C5": 0.6,
+       "C6": 0.4
+      },
+      "ext": {
+       "C6": 0.2,
+       "C7": 0.6,
+       "C8": 0.2
+      }
+     }
+    }
+   },
+   {
+    "bone": "forearm_R",
+    "mass_kg": 1.2,
+    "com_from_head": 0.43,
+    "com_world": [
+     -0.38305,
+     0.02,
+     1.06338
+    ],
+    "com_tag": "V",
+    "shape": {
+     "type": "capsule",
+     "center_world": [
+      -0.3925,
+      0.02,
+      1.047
+     ],
+     "tag": "E (plan §3.1.2 shapes)",
+     "radius": 0.038,
+     "height": 0.27,
+     "axis_world": [
+      -0.49972,
+      0.0,
+      -0.86619
+     ],
+     "height_is": "total incl. caps (Godot CapsuleShape3D.height)"
+    },
+    "joint": {
+     "type": "hinge",
+     "parent": "upper_arm_R",
+     "pivot_world": [
+      -0.325,
+      0.02,
+      1.164
+     ],
+     "axes": {
+      "flex": {
+       "world": [
+        -0.86619,
+        0.0,
+        0.49972
+       ],
+       "sign": 1,
+       "pos": "flex",
+       "neg": "ext"
+      }
+     },
+     "limits_live_deg": {
+      "flex": [
+       -5,
+       145
+      ]
+     },
+     "limits_dead_deg": {
+      "flex": [
+       -10,
+       155
+      ]
+     },
+     "torque_cap_nm": {
+      "flex": 65.0,
+      "ext": 65.0
+     },
+     "torque_cap_range_nm": [
+      50,
+      80
+     ],
+     "myotomes": {
+      "flex": {
+       "C5": 0.6,
+       "C6": 0.4
+      },
+      "ext": {
+       "C6": 0.2,
+       "C7": 0.6,
+       "C8": 0.2
+      }
+     }
+    }
+   },
+   {
+    "bone": "hand_L",
+    "mass_kg": 0.45,
+    "com_from_head": 0.506,
+    "com_world": [
+     0.48429,
+     0.02,
+     0.88851
+    ],
+    "com_tag": "V",
+    "shape": {
+     "type": "box",
+     "center_world": [
+      0.5075,
+      0.02,
+      0.8477
+     ],
+     "tag": "E (plan §3.1.2 shapes)",
+     "size": [
+      0.03,
+      0.087,
+      0.19
+     ],
+     "basis_world": {
+      "x": [
+       -0.86301,
+       0.0,
+       -0.50518
+      ],
+      "y": [
+       0.0,
+       1.0,
+       0.0
+      ],
+      "z": [
+       0.50518,
+       0.0,
+       -0.86301
+      ]
+     },
+     "size_is": "full lengths along basis x, y, z"
+    },
+    "joint": {
+     "type": "6dof",
+     "parent": "forearm_L",
+     "pivot_world": [
+      0.46,
+      0.02,
+      0.93
+     ],
+     "axes": {
+      "flex": {
+       "world": [
+        0.0,
+        1.0,
+        0.0
+       ],
+       "sign": 1,
+       "pos": "flex",
+       "neg": "ext"
+      },
+      "dev": {
+       "world": [
+        -0.86301,
+        0.0,
+        -0.50518
+       ],
+       "sign": 1,
+       "pos": "rad",
+       "neg": "uln"
+      },
+      "twist": {
+       "world": [
+        -0.50518,
+        0.0,
+        0.86301
+       ],
+       "sign": 1,
+       "pos": "sup",
+       "neg": "pron"
+      }
+     },
+     "limits_live_deg": {
+      "flex": [
+       -65,
+       75
+      ],
+      "dev": [
+       -30,
+       20
+      ],
+      "twist": [
+       -80,
+       80
+      ]
+     },
+     "limits_dead_deg": {
+      "flex": [
+       -71.5,
+       82.5
+      ],
+      "dev": [
+       -33.0,
+       22.0
+      ],
+      "twist": [
+       -88.0,
+       88.0
+      ]
+     },
+     "torque_cap_nm": {
+      "flex": 11.5,
+      "rad": 11.5,
+      "sup": 11.5,
+      "ext": 11.5,
+      "uln": 11.5,
+      "pron": 11.5
+     },
+     "torque_cap_range_nm": [
+      8,
+      15
+     ],
+     "myotomes": {
+      "ext": {
+       "C6": 0.7,
+       "C7": 0.3
+      },
+      "flex": {
+       "C7": 0.6,
+       "C8": 0.4
+      },
+      "rad": {
+       "C6": 0.5,
+       "C7": 0.5
+      },
+      "uln": {
+       "C7": 0.5,
+       "C8": 0.5
+      },
+      "sup": {
+       "C6": 1.0
+      },
+      "pron": {
+       "C6": 0.5,
+       "C7": 0.5
+      }
+     }
+    }
+   },
+   {
+    "bone": "hand_R",
+    "mass_kg": 0.45,
+    "com_from_head": 0.506,
+    "com_world": [
+     -0.48429,
+     0.02,
+     0.88851
+    ],
+    "com_tag": "V",
+    "shape": {
+     "type": "box",
+     "center_world": [
+      -0.5075,
+      0.02,
+      0.8477
+     ],
+     "tag": "E (plan §3.1.2 shapes)",
+     "size": [
+      0.03,
+      0.087,
+      0.19
+     ],
+     "basis_world": {
+      "x": [
+       0.86301,
+       0.0,
+       -0.50518
+      ],
+      "y": [
+       0.0,
+       -1.0,
+       0.0
+      ],
+      "z": [
+       -0.50518,
+       0.0,
+       -0.86301
+      ]
+     },
+     "size_is": "full lengths along basis x, y, z"
+    },
+    "joint": {
+     "type": "6dof",
+     "parent": "forearm_R",
+     "pivot_world": [
+      -0.46,
+      0.02,
+      0.93
+     ],
+     "axes": {
+      "flex": {
+       "world": [
+        0.0,
+        -1.0,
+        0.0
+       ],
+       "sign": 1,
+       "pos": "flex",
+       "neg": "ext"
+      },
+      "dev": {
+       "world": [
+        -0.86301,
+        0.0,
+        0.50518
+       ],
+       "sign": 1,
+       "pos": "rad",
+       "neg": "uln"
+      },
+      "twist": {
+       "world": [
+        -0.50518,
+        0.0,
+        -0.86301
+       ],
+       "sign": 1,
+       "pos": "sup",
+       "neg": "pron"
+      }
+     },
+     "limits_live_deg": {
+      "flex": [
+       -65,
+       75
+      ],
+      "dev": [
+       -30,
+       20
+      ],
+      "twist": [
+       -80,
+       80
+      ]
+     },
+     "limits_dead_deg": {
+      "flex": [
+       -71.5,
+       82.5
+      ],
+      "dev": [
+       -33.0,
+       22.0
+      ],
+      "twist": [
+       -88.0,
+       88.0
+      ]
+     },
+     "torque_cap_nm": {
+      "flex": 11.5,
+      "rad": 11.5,
+      "sup": 11.5,
+      "ext": 11.5,
+      "uln": 11.5,
+      "pron": 11.5
+     },
+     "torque_cap_range_nm": [
+      8,
+      15
+     ],
+     "myotomes": {
+      "ext": {
+       "C6": 0.7,
+       "C7": 0.3
+      },
+      "flex": {
+       "C7": 0.6,
+       "C8": 0.4
+      },
+      "rad": {
+       "C6": 0.5,
+       "C7": 0.5
+      },
+      "uln": {
+       "C7": 0.5,
+       "C8": 0.5
+      },
+      "sup": {
+       "C6": 1.0
+      },
+      "pron": {
+       "C6": 0.5,
+       "C7": 0.5
+      }
+     }
+    }
+   },
+   {
+    "bone": "thigh_L",
+    "mass_kg": 7.5,
+    "com_from_head": 0.433,
+    "com_world": [
+     0.08916,
+     0.00016,
+     0.73354
+    ],
+    "com_tag": "V",
+    "shape": {
+     "type": "capsule",
+     "center_world": [
+      0.0895,
+      0.0025,
+      0.705
+     ],
+     "tag": "E (plan §3.1.2 shapes)",
+     "radius": 0.075,
+     "height": 0.43,
+     "axis_world": [
+      0.0117,
+      0.08188,
+      -0.99657
+     ],
+     "height_is": "total incl. caps (Godot CapsuleShape3D.height)"
+    },
+    "joint": {
+     "type": "6dof",
+     "parent": "hips",
+     "pivot_world": [
+      0.087,
+      -0.015,
+      0.918
+     ],
+     "axes": {
+      "flex": {
+       "world": [
+        -0.99993,
+        0.00096,
+        -0.01166
+       ],
+       "sign": 1,
+       "pos": "flex",
+       "neg": "ext"
+      },
+      "abd": {
+       "world": [
+        0.0,
+        -0.99664,
+        -0.08188
+       ],
+       "sign": 1,
+       "pos": "abd",
+       "neg": "add"
+      },
+      "twist": {
+       "world": [
+        -0.0117,
+        -0.08188,
+        0.99657
+       ],
+       "sign": 1,
+       "pos": "rot_ext",
+       "neg": "rot_int"
+      }
+     },
+     "limits_live_deg": {
+      "flex": [
+       -25,
+       120
+      ],
+      "abd": [
+       -30,
+       45
+      ],
+      "twist": [
+       -45,
+       45
+      ]
+     },
+     "limits_dead_deg": {
+      "flex": [
+       -27.5,
+       132.0
+      ],
+      "abd": [
+       -33.0,
+       49.5
+      ],
+      "twist": [
+       -49.5,
+       49.5
+      ]
+     },
+     "torque_cap_nm": {
+      "flex": 250.0,
+      "abd": 250.0,
+      "rot_ext": 250.0,
+      "ext": 250.0,
+      "add": 250.0,
+      "rot_int": 250.0
+     },
+     "torque_cap_range_nm": [
+      200,
+      300
+     ],
+     "myotomes": {
+      "flex": {
+       "L1": 0.2,
+       "L2": 0.5,
+       "L3": 0.3
+      },
+      "ext": {
+       "L5": 0.3,
+       "S1": 0.5,
+       "S2": 0.2
+      },
+      "abd": {
+       "L4": 0.3,
+       "L5": 0.5,
+       "S1": 0.2
+      },
+      "rot_int": {
+       "L4": 0.3,
+       "L5": 0.5,
+       "S1": 0.2
+      },
+      "add": {
+       "L2": 0.3,
+       "L3": 0.5,
+       "L4": 0.2
+      },
+      "rot_ext": {
+       "L5": 0.3,
+       "S1": 0.5,
+       "S2": 0.2
+      }
+     }
+    }
+   },
+   {
+    "bone": "thigh_R",
+    "mass_kg": 7.5,
+    "com_from_head": 0.433,
+    "com_world": [
+     -0.08916,
+     0.00016,
+     0.73354
+    ],
+    "com_tag": "V",
+    "shape": {
+     "type": "capsule",
+     "center_world": [
+      -0.0895,
+      0.0025,
+      0.705
+     ],
+     "tag": "E (plan §3.1.2 shapes)",
+     "radius": 0.075,
+     "height": 0.43,
+     "axis_world": [
+      -0.0117,
+      0.08188,
+      -0.99657
+     ],
+     "height_is": "total incl. caps (Godot CapsuleShape3D.height)"
+    },
+    "joint": {
+     "type": "6dof",
+     "parent": "hips",
+     "pivot_world": [
+      -0.087,
+      -0.015,
+      0.918
+     ],
+     "axes": {
+      "flex": {
+       "world": [
+        -0.99993,
+        -0.00096,
+        0.01166
+       ],
+       "sign": 1,
+       "pos": "flex",
+       "neg": "ext"
+      },
+      "abd": {
+       "world": [
+        0.0,
+        0.99664,
+        0.08188
+       ],
+       "sign": 1,
+       "pos": "abd",
+       "neg": "add"
+      },
+      "twist": {
+       "world": [
+        -0.0117,
+        0.08188,
+        -0.99657
+       ],
+       "sign": 1,
+       "pos": "rot_ext",
+       "neg": "rot_int"
+      }
+     },
+     "limits_live_deg": {
+      "flex": [
+       -25,
+       120
+      ],
+      "abd": [
+       -30,
+       45
+      ],
+      "twist": [
+       -45,
+       45
+      ]
+     },
+     "limits_dead_deg": {
+      "flex": [
+       -27.5,
+       132.0
+      ],
+      "abd": [
+       -33.0,
+       49.5
+      ],
+      "twist": [
+       -49.5,
+       49.5
+      ]
+     },
+     "torque_cap_nm": {
+      "flex": 250.0,
+      "abd": 250.0,
+      "rot_ext": 250.0,
+      "ext": 250.0,
+      "add": 250.0,
+      "rot_int": 250.0
+     },
+     "torque_cap_range_nm": [
+      200,
+      300
+     ],
+     "myotomes": {
+      "flex": {
+       "L1": 0.2,
+       "L2": 0.5,
+       "L3": 0.3
+      },
+      "ext": {
+       "L5": 0.3,
+       "S1": 0.5,
+       "S2": 0.2
+      },
+      "abd": {
+       "L4": 0.3,
+       "L5": 0.5,
+       "S1": 0.2
+      },
+      "rot_int": {
+       "L4": 0.3,
+       "L5": 0.5,
+       "S1": 0.2
+      },
+      "add": {
+       "L2": 0.3,
+       "L3": 0.5,
+       "L4": 0.2
+      },
+      "rot_ext": {
+       "L5": 0.3,
+       "S1": 0.5,
+       "S2": 0.2
+      }
+     }
+    }
+   },
+   {
+    "bone": "shin_L",
+    "mass_kg": 3.49,
+    "com_from_head": 0.433,
+    "com_world": [
+     0.0933,
+     0.03299,
+     0.31144
+    ],
+    "com_tag": "V",
+    "shape": {
+     "type": "capsule",
+     "center_world": [
+      0.0935,
+      0.035,
+      0.2835
+     ],
+     "tag": "E (plan §3.1.2 shapes)",
+     "radius": 0.05,
+     "height": 0.42,
+     "axis_world": [
+      0.00718,
+      0.07176,
+      -0.9974
+     ],
+     "height_is": "total incl. caps (Godot CapsuleShape3D.height)"
+    },
+    "joint": {
+     "type": "hinge",
+     "parent": "thigh_L",
+     "pivot_world": [
+      0.092,
+      0.02,
+      0.492
+     ],
+     "axes": {
+      "flex": {
+       "world": [
+        0.99997,
+        -0.00051,
+        0.00716
+       ],
+       "sign": 1,
+       "pos": "flex",
+       "neg": "ext"
+      }
+     },
+     "limits_live_deg": {
+      "flex": [
+       0,
+       135
+      ]
+     },
+     "limits_dead_deg": {
+      "flex": [
+       -10,
+       158
+      ]
+     },
+     "torque_cap_nm": {
+      "flex": 225.0,
+      "ext": 225.0
+     },
+     "torque_cap_range_nm": [
+      200,
+      250
+     ],
+     "myotomes": {
+      "ext": {
+       "L2": 0.2,
+       "L3": 0.5,
+       "L4": 0.3
+      },
+      "flex": {
+       "L5": 0.3,
+       "S1": 0.5,
+       "S2": 0.2
+      }
+     }
+    }
+   },
+   {
+    "bone": "shin_R",
+    "mass_kg": 3.49,
+    "com_from_head": 0.433,
+    "com_world": [
+     -0.0933,
+     0.03299,
+     0.31144
+    ],
+    "com_tag": "V",
+    "shape": {
+     "type": "capsule",
+     "center_world": [
+      -0.0935,
+      0.035,
+      0.2835
+     ],
+     "tag": "E (plan §3.1.2 shapes)",
+     "radius": 0.05,
+     "height": 0.42,
+     "axis_world": [
+      -0.00718,
+      0.07176,
+      -0.9974
+     ],
+     "height_is": "total incl. caps (Godot CapsuleShape3D.height)"
+    },
+    "joint": {
+     "type": "hinge",
+     "parent": "thigh_R",
+     "pivot_world": [
+      -0.092,
+      0.02,
+      0.492
+     ],
+     "axes": {
+      "flex": {
+       "world": [
+        0.99997,
+        0.00051,
+        -0.00716
+       ],
+       "sign": 1,
+       "pos": "flex",
+       "neg": "ext"
+      }
+     },
+     "limits_live_deg": {
+      "flex": [
+       0,
+       135
+      ]
+     },
+     "limits_dead_deg": {
+      "flex": [
+       -10,
+       158
+      ]
+     },
+     "torque_cap_nm": {
+      "flex": 225.0,
+      "ext": 225.0
+     },
+     "torque_cap_range_nm": [
+      200,
+      250
+     ],
+     "myotomes": {
+      "ext": {
+       "L2": 0.2,
+       "L3": 0.5,
+       "L4": 0.3
+      },
+      "flex": {
+       "L5": 0.3,
+       "S1": 0.5,
+       "S2": 0.2
+      }
+     }
+    }
+   },
+   {
+    "bone": "foot_L",
+    "mass_kg": 1.09,
+    "com_from_head": 0.5,
+    "com_world": [
+     0.107,
+     -0.0145,
+     0.05
+    ],
+    "com_tag": "V",
+    "shape": {
+     "type": "box",
+     "center_world": [
+      0.11,
+      -0.018,
+      0.04
+     ],
+     "tag": "E (plan §3.1.2 shapes)",
+     "size": [
+      0.1,
+      0.07,
+      0.26
+     ],
+     "basis_world": {
+      "x": [
+       0.99254,
+       0.12194,
+       0.0
+      ],
+      "y": [
+       0.0,
+       0.0,
+       1.0
+      ],
+      "z": [
+       0.12194,
+       -0.99254,
+       0.0
+      ]
+     },
+     "size_is": "full lengths along basis x, y, z"
+    },
+    "joint": {
+     "type": "6dof",
+     "parent": "shin_L",
+     "pivot_world": [
+      0.095,
+      0.05,
+      0.075
+     ],
+     "axes": {
+      "flex": {
+       "world": [
+        -0.98529,
+        -0.15937,
+        -0.06177
+       ],
+       "sign": 1,
+       "pos": "dorsi",
+       "neg": "plantar"
+      },
+      "twist": {
+       "world": [
+        -0.17092,
+        0.91869,
+        0.35608
+       ],
+       "sign": 1,
+       "pos": "inv",
+       "neg": "ev"
+      },
+      "abd": {
+       "world": [
+        0.0,
+        -0.3614,
+        0.93241
+       ],
+       "sign": 1,
+       "pos": "abd",
+       "neg": "add"
+      }
+     },
+     "limits_live_deg": {
+      "flex": [
+       -50,
+       20
+      ],
+      "twist": [
+       -20,
+       30
+      ],
+      "abd": [
+       0,
+       0
+      ]
+     },
+     "limits_dead_deg": {
+      "flex": [
+       -55.0,
+       22.0
+      ],
+      "twist": [
+       -22.0,
+       33.0
+      ],
+      "abd": [
+       0.0,
+       0.0
+      ]
+     },
+     "torque_cap_nm": {
+      "dorsi": 125.0,
+      "inv": 125.0,
+      "abd": 125.0,
+      "plantar": 125.0,
+      "ev": 125.0,
+      "add": 125.0
+     },
+     "torque_cap_range_nm": [
+      100,
+      150
+     ],
+     "myotomes": {
+      "dorsi": {
+       "L4": 0.7,
+       "L5": 0.3
+      },
+      "plantar": {
+       "S1": 0.7,
+       "S2": 0.3
+      },
+      "inv": {
+       "L4": 0.5,
+       "L5": 0.5
+      },
+      "ev": {
+       "L5": 0.5,
+       "S1": 0.5
+      }
+     }
+    }
+   },
+   {
+    "bone": "foot_R",
+    "mass_kg": 1.09,
+    "com_from_head": 0.5,
+    "com_world": [
+     -0.107,
+     -0.0145,
+     0.05
+    ],
+    "com_tag": "V",
+    "shape": {
+     "type": "box",
+     "center_world": [
+      -0.11,
+      -0.018,
+      0.04
+     ],
+     "tag": "E (plan §3.1.2 shapes)",
+     "size": [
+      0.1,
+      0.07,
+      0.26
+     ],
+     "basis_world": {
+      "x": [
+       -0.99254,
+       0.12194,
+       0.0
+      ],
+      "y": [
+       0.0,
+       0.0,
+       -1.0
+      ],
+      "z": [
+       -0.12194,
+       -0.99254,
+       0.0
+      ]
+     },
+     "size_is": "full lengths along basis x, y, z"
+    },
+    "joint": {
+     "type": "6dof",
+     "parent": "shin_R",
+     "pivot_world": [
+      -0.095,
+      0.05,
+      0.075
+     ],
+     "axes": {
+      "flex": {
+       "world": [
+        -0.98529,
+        0.15937,
+        0.06177
+       ],
+       "sign": 1,
+       "pos": "dorsi",
+       "neg": "plantar"
+      },
+      "twist": {
+       "world": [
+        -0.17092,
+        -0.91869,
+        -0.35608
+       ],
+       "sign": 1,
+       "pos": "inv",
+       "neg": "ev"
+      },
+      "abd": {
+       "world": [
+        0.0,
+        0.3614,
+        -0.93241
+       ],
+       "sign": 1,
+       "pos": "abd",
+       "neg": "add"
+      }
+     },
+     "limits_live_deg": {
+      "flex": [
+       -50,
+       20
+      ],
+      "twist": [
+       -20,
+       30
+      ],
+      "abd": [
+       0,
+       0
+      ]
+     },
+     "limits_dead_deg": {
+      "flex": [
+       -55.0,
+       22.0
+      ],
+      "twist": [
+       -22.0,
+       33.0
+      ],
+      "abd": [
+       0.0,
+       0.0
+      ]
+     },
+     "torque_cap_nm": {
+      "dorsi": 125.0,
+      "inv": 125.0,
+      "abd": 125.0,
+      "plantar": 125.0,
+      "ev": 125.0,
+      "add": 125.0
+     },
+     "torque_cap_range_nm": [
+      100,
+      150
+     ],
+     "myotomes": {
+      "dorsi": {
+       "L4": 0.7,
+       "L5": 0.3
+      },
+      "plantar": {
+       "S1": 0.7,
+       "S2": 0.3
+      },
+      "inv": {
+       "L4": 0.5,
+       "L5": 0.5
+      },
+      "ev": {
+       "L5": 0.5,
+       "S1": 0.5
+      }
+     }
+    }
+   }
+  ],
+  "face": {
+   "lid_aperture_mm_to_deg": [
+    [
+     0.0,
+     -38.0
+    ],
+    [
+     9.5,
+     0.0
+    ],
+    [
+     12.0,
+     7.5
+    ]
+   ],
+   "lid_table_status": "placeholder format values; B2 measures them on the head mesh",
+   "blend_shapes": [
+    "AU01_L",
+    "AU01_R",
+    "AU02_L",
+    "AU02_R",
+    "AU04_L",
+    "AU04_R",
+    "AU06_L",
+    "AU06_R",
+    "AU07_L",
+    "AU07_R",
+    "AU09_L",
+    "AU09_R",
+    "AU10_L",
+    "AU10_R",
+    "AU12_L",
+    "AU12_R",
+    "AU15_L",
+    "AU15_R",
+    "AU20_L",
+    "AU20_R",
+    "mouth_slack_L",
+    "mouth_slack_R",
+    "swell_periorbital_L",
+    "swell_periorbital_R"
+   ],
+   "bone_driven": {
+    "AU05": "lid_upper_*",
+    "AU26": "jaw",
+    "AU43": "lid_upper_*"
+   },
+   "eye_bones": {
+    "eye_L": [
+     0.032,
+     -0.05,
+     1.669
+    ],
+    "eye_R": [
+     -0.032,
+     -0.05,
+     1.669
+    ]
+   }
+  },
+  "kinematic_myotomes": {
+   "forearm_twist": {
+    "sup": {
+     "C6": 1.0
+    },
+    "pron": {
+     "C6": 0.5,
+     "C7": 0.5
+    }
+   },
+   "fingers": {
+    "grip": {
+     "C8": 0.7,
+     "T1": 0.3
+    },
+    "open": {
+     "C7": 1.0
+    }
+   },
+   "thumb": {
+    "grip": {
+     "C8": 0.7,
+     "T1": 0.3
+    },
+    "open": {
+     "C7": 1.0
+    }
+   },
+   "toes": {
+    "ext": {
+     "L5": 1.0
+    },
+    "flex": {
+     "S1": 0.5,
+     "S2": 0.5
+    }
+   }
+  },
+  "poses": [
+   "pose_idle",
+   "pose_guard",
+   "pose_cower",
+   "pose_brace"
+  ],
+  "friction": {
+   "skin_cloth": [
+    0.6,
+    0.9
+   ],
+   "wet_blood": [
+    0.1,
+    0.25
+   ],
+   "restitution": [
+    0.1,
+    0.3
+   ]
+  },
+  "notes": {
+   "limits": "degrees about axes[*].world; positive = axes[*].pos direction",
+   "torque_cap_nm": "per direction key, before tone/paralysis multipliers (plan §3.2)",
+   "b2g": "Godot = (x, z, -y) of every vector here"
+  }
+ }
+}

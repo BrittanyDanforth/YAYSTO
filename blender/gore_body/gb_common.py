@@ -165,6 +165,8 @@ MATERIAL_ROUGHNESS = {"GBM_cloth": 0.85, "GBM_eye": 0.05, "GBM_tearline": 0.05, 
                       "GBM_bone": 0.55, "GBM_cartilage": 0.35, "GBM_brain": 0.35, "GBM_organ": 0.3,
                       "GBM_cord": 0.4, "GBM_vessel_art": 0.3, "GBM_vessel_ven": 0.3}
 
+MATERIAL_ALPHA = {"GBM_hair_card": 0.35, "GBM_tearline": 0.4, "GBM_eye_occlusion": 0.15}
+
 # shape keys (plan §5.6)
 FACE_SHAPE_KEYS = tuple(f"{au}_{s}" for au in ("AU01", "AU02", "AU04", "AU06", "AU07", "AU09", "AU10",
                                                 "AU12", "AU15", "AU20", "mouth_slack", "swell_periorbital")
@@ -233,10 +235,13 @@ def not_built(owner, what):
 # ---------------------------------------------------------------------------
 def script_args(argv=None):
     """Return the script's own arguments: everything after ``--`` if present
-    (Blender binary), else ``sys.argv[1:]`` (bpy module)."""
+    (Blender binary), else ``sys.argv[1:]`` (bpy module).  Inside the Blender
+    binary without ``--`` there are no script arguments."""
     argv = list(sys.argv if argv is None else argv)
     if "--" in argv:
         return argv[argv.index("--") + 1:]
+    if any(a in argv for a in ("--python", "-P", "--background", "-b")):
+        return []
     return argv[1:] if argv and not argv[0].startswith("-") else argv
 
 
@@ -585,6 +590,8 @@ def placeholder_material(name):
         if bsdf is not None:
             bsdf.inputs["Base Color"].default_value = col
             bsdf.inputs["Roughness"].default_value = MATERIAL_ROUGHNESS.get(name, 0.5)
+            if name in MATERIAL_ALPHA:            # placeholder cards/shells read as see-through
+                bsdf.inputs["Alpha"].default_value = MATERIAL_ALPHA[name]
     return mat
 
 
@@ -764,8 +771,25 @@ class StageCache:
                 continue
             obj.use_fake_user = False
             link(obj, OBJECT_COLLECTION.get(obj.name, "GB_Data"))
+            _dedupe_materials(obj)
             out[obj.name] = obj
         return out
+
+
+def _dedupe_materials(obj):
+    """Point slots at the scene's existing contract material instead of an appended 'GBM_x.001' copy."""
+    import re
+    me = getattr(obj, "data", None)
+    if me is None or not hasattr(me, "materials"):
+        return
+    for i, m in enumerate(me.materials):
+        if m is None:
+            continue
+        base = re.sub(r"\.\d{3}$", "", m.name)
+        if base != m.name and base in bpy.data.materials:
+            me.materials[i] = bpy.data.materials[base]
+            if m.users == 0:
+                bpy.data.materials.remove(m)
 
 
 def stage_cache(name, input_paths, extra=""):
@@ -827,15 +851,18 @@ def log(msg):
 # Test renders (plan §5.1: <= 640 px, <= 48 samples, denoised)
 # ---------------------------------------------------------------------------
 BODY_VIEWS = {
-    # name: (camera location, look-at target, lens mm)
-    "front": ((0.0, -4.6, 1.00), (0.0, 0.0, 0.93), 50.0),
-    "three_q": ((-2.9, -3.5, 1.25), (0.0, 0.0, 0.93), 50.0),
-    "side": ((-4.6, 0.02, 1.00), (0.0, 0.0, 0.93), 50.0),
-    "back": ((0.0, 4.6, 1.05), (0.0, 0.0, 0.93), 50.0),
+    # name: (camera location, look-at target, lens mm); portrait frames fit the 1.78 m body
+    "front": ((0.0, -3.2, 0.95), (0.0, 0.0, 0.90), 50.0),
+    "three_q": ((-2.05, -2.45, 1.15), (0.0, 0.0, 0.90), 50.0),
+    "side": ((-3.2, 0.02, 0.95), (0.0, 0.0, 0.90), 50.0),
+    "back": ((0.0, 3.2, 1.00), (0.0, 0.0, 0.90), 50.0),
     "head_front": ((0.0, -0.95, 1.62), (0.0, 0.0, 1.60), 85.0),
     "head_three_q": ((-0.60, -0.72, 1.66), (0.0, 0.0, 1.60), 85.0),
+    "head_side": ((-0.95, 0.01, 1.62), (0.0, 0.0, 1.60), 85.0),
     "torso_front": ((0.0, -2.2, 1.28), (0.0, 0.0, 1.22), 70.0),
     "torso_side": ((-2.2, 0.0, 1.28), (0.0, 0.0, 1.22), 70.0),
+    "hand": ((0.95, -0.55, 0.95), (0.49, 0.0, 0.87), 85.0),
+    "foot": ((0.55, -0.60, 0.25), (0.10, -0.02, 0.05), 70.0),
 }
 
 
@@ -871,17 +898,17 @@ def _area_light(name, location, target, energy, size, color=(1, 1, 1)):
 def setup_stage(floor=True):
     """Neutral studio for full-body test renders: key/fill/rim area lights, grey floor, AgX."""
     scene = bpy.context.scene
-    _area_light("GB_Key", (-2.2, -3.0, 3.0), (0, 0, 1.1), 1400.0, 2.0, (1.0, 0.96, 0.9))
-    _area_light("GB_Fill", (3.0, -2.4, 1.4), (0, 0, 1.0), 450.0, 2.5, (0.85, 0.9, 1.0))
+    _area_light("GB_Key", (-2.2, -3.0, 3.0), (0, 0, 1.1), 900.0, 2.0, (1.0, 0.96, 0.9))
+    _area_light("GB_Fill", (3.0, -2.4, 1.4), (0, 0, 1.0), 300.0, 2.5, (0.85, 0.9, 1.0))
     _area_light("GB_Rim", (1.2, 3.2, 2.6), (0, 0, 1.2), 1100.0, 1.5, (1.0, 0.97, 0.95))
     if floor and "GB_StageFloor" not in bpy.data.objects:
         me = mesh_from_arrays("GB_StageFloor", [(-6, -6, 0), (6, -6, 0), (6, 6, 0), (-6, 6, 0)], [(0, 1, 2, 3)])
         fl = bpy.data.objects.new("GB_StageFloor", me)
         mat = bpy.data.materials.get("GB_StageFloorMat") or bpy.data.materials.new("GB_StageFloorMat")
-        mat.diffuse_color = (0.18, 0.18, 0.19, 1.0)
+        mat.diffuse_color = (0.045, 0.047, 0.05, 1.0)
         bsdf = next((n for n in mat.node_tree.nodes if n.type == 'BSDF_PRINCIPLED'), None)
         if bsdf is not None:
-            bsdf.inputs["Base Color"].default_value = (0.18, 0.18, 0.19, 1.0)
+            bsdf.inputs["Base Color"].default_value = (0.045, 0.047, 0.05, 1.0)
             bsdf.inputs["Roughness"].default_value = 0.8
         me.materials.append(mat)
         link(fl, "Stage")
@@ -942,3 +969,27 @@ def render_views(prefix, views=("front", "three_q", "side", "back"), out_dir=REN
         cam = add_camera(f"GB_Cam_{v}", loc, tgt, lens)
         paths.append(render(os.path.join(out_dir, f"{prefix}_{v}.png"), cam, samples, res))
     return paths
+
+
+# ---------------------------------------------------------------------------
+# Lossless 8-bit PNG writer (pure Python: exact values, deterministic bytes)
+# ---------------------------------------------------------------------------
+def write_png_u8(path, img):
+    """Write a uint8 (H, W) grey or (H, W, 3|4) RGB/RGBA array as PNG, rows top to bottom."""
+    import struct
+    import zlib
+    a = np.ascontiguousarray(np.asarray(img, dtype=np.uint8))
+    if a.ndim == 2:
+        a = a[:, :, None]
+    h, w, c = a.shape
+    ctype = {1: 0, 3: 2, 4: 6}[c]
+    raw = b"".join(b"\x00" + a[r].tobytes() for r in range(h))
+
+    def chunk(tag, data):
+        return struct.pack(">I", len(data)) + tag + data + struct.pack(">I", zlib.crc32(tag + data) & 0xFFFFFFFF)
+    png = (b"\x89PNG\r\n\x1a\n" + chunk(b"IHDR", struct.pack(">IIBBBBB", w, h, 8, ctype, 0, 0, 0))
+           + chunk(b"IDAT", zlib.compress(raw, 9)) + chunk(b"IEND", b""))
+    os.makedirs(os.path.dirname(os.path.abspath(path)), exist_ok=True)
+    with open(path, "wb") as fh:
+        fh.write(png)
+    return path

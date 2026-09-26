@@ -265,8 +265,8 @@ def zip_to_ring(obj, ring, centre_xy, side):
     bm = bmesh.new()
     bm.from_mesh(me)
     bm.verts.ensure_lookup_table()
-    RV = [bm.verts.new(Vector(p)) for p in ring]
     AV = [bm.verts[i] for i in A]
+    RV = [bm.verts.new(Vector(p)) for p in ring]
     na, nr = len(AV), len(RV)
     # merge the two angular sequences (cyclic): walk both loops once
     i = j = 0
@@ -307,31 +307,85 @@ def decimate_to(obj, target_tris, keep_boundary=False):
     n = gbc.tri_count(obj.data)
     if n <= target_tris or n == 0:
         return n
+    snap = _snapshot_codes(obj)
     mod = obj.modifiers.new("gb_decimate", 'DECIMATE')
     mod.decimate_type = 'COLLAPSE'
     mod.ratio = max(0.01, target_tris / n)
     mod.use_collapse_triangulate = True
     dg = bpy.context.evaluated_depsgraph_get()
     new = bpy.data.meshes.new_from_object(obj.evaluated_get(dg))
-    old = obj.data
+    _swap_mesh(obj, new)
     obj.modifiers.remove(mod)
-    obj.data = new
-    new.name = old.name
-    bpy.data.meshes.remove(old)
+    remove_loose(new)
+    new.validate(clean_customdata=False)
     new.shade_smooth()
+    _restore_codes(obj, snap)
     return gbc.tri_count(new)
+
+
+def _snapshot_codes(obj):
+    """Positions + every ``gb_*`` point attribute + the ``gb_codes`` UV (per vertex) before decimation."""
+    me = obj.data
+    snap = {"v": gbc.get_verts(me), "attrs": {}, "codes": None}
+    for a in me.attributes:
+        if a.name.startswith("gb_") and a.domain == 'POINT' and a.data_type in ('INT', 'FLOAT'):
+            snap["attrs"][a.name] = (a.data_type, gbc.read_point_attr(obj, a.name, a.data_type))
+    if "gb_codes" in me.uv_layers:
+        u, v = gbc.read_codes_uv(obj)
+        snap["codes"] = (u, v)
+    return snap
+
+
+def _restore_codes(obj, snap):
+    """Categorical data must never be interpolated: give every new vertex the ``gb_*`` attributes and
+    codes of the nearest original vertex (decimation averages INT attributes, which would turn
+    e.g. bone indices 'fingers_L'/'thumb_L' into an unrelated bone)."""
+    from mathutils.kdtree import KDTree
+    if not snap["attrs"] and snap["codes"] is None:
+        return
+    v0 = snap["v"]
+    kd = KDTree(len(v0))
+    for i, p in enumerate(v0):
+        kd.insert(p, i)
+    kd.balance()
+    v1 = gbc.get_verts(obj.data)
+    near = np.fromiter((kd.find(p)[1] for p in v1), dtype=np.int64, count=len(v1))
+    for name, (kind, arr) in snap["attrs"].items():
+        gbc.point_attr(obj, name, arr[near], kind)
+    if snap["codes"] is not None:
+        u, v = snap["codes"]
+        gbc.set_codes_uv(obj, u[near], v[near])
+
+
+def remove_loose(me):
+    """Delete vertices that belong to no face (left behind by decimation)."""
+    bm = bmesh.new()
+    bm.from_mesh(me)
+    loose = [v for v in bm.verts if not v.link_faces]
+    if loose:
+        bmesh.ops.delete(bm, geom=loose, context='VERTS')
+        bm.to_mesh(me)
+    bm.free()
+    me.update()
+    return len(loose)
+
+
+def _swap_mesh(obj, new):
+    """Give ``obj`` the mesh ``new`` under the old mesh's exact name (no '.001' suffix)."""
+    old = obj.data
+    name = old.name
+    obj.data = new
+    if old.users == 0:
+        bpy.data.meshes.remove(old)
+    new.name = name
 
 
 def apply_modifier(obj, mod):
     """Apply one modifier by evaluating the object (no operators)."""
     dg = bpy.context.evaluated_depsgraph_get()
     new = bpy.data.meshes.new_from_object(obj.evaluated_get(dg))
-    old = obj.data
     obj.modifiers.remove(mod)
-    obj.data = new
-    new.name = old.name
-    if old.users == 0:
-        bpy.data.meshes.remove(old)
+    _swap_mesh(obj, new)
     return obj
 
 
@@ -406,3 +460,138 @@ def smart_uv(obj, margin=0.004, angle_deg=66.0):
     bpy.ops.uv.smart_project(angle_limit=math.radians(angle_deg), island_margin=margin)
     bpy.ops.object.mode_set(mode='OBJECT')
     obj.select_set(False)
+
+
+# ---------------------------------------------------------------------------
+# SDF -> arrays (no Blender object), oriented primitives, parts
+# ---------------------------------------------------------------------------
+def sdf_arrays(fn, lo, hi, h, project=2):
+    """Polygonise ``fn`` (negative inside) into ``(verts[N,3], quads[M,4])`` without Blender objects.
+
+    Surface nets on the head toolkit's sparse grid, then Newton projection onto
+    the exact zero set.  Fast path for many small parts (bones, organs)."""
+    A = head()
+    F, origin = A.sample_grid(fn, lo, hi, h)
+    verts, quads = A.surface_nets(F, origin, h)
+    del F
+    if len(verts) and project:
+        verts = A.project_to_surface(fn, verts, h, project)
+    return np.asarray(verts, float), np.asarray(quads, np.int64)
+
+
+def orthonormal(u, v):
+    """Right-handed orthonormal frame (U, V, W) from two approximate axes (Gram-Schmidt)."""
+    U = np.asarray(u, float)
+    U = U / np.linalg.norm(U)
+    V = np.asarray(v, float)
+    V = V - (V @ U) * U
+    V = V / np.linalg.norm(V)
+    return U, V, np.cross(U, V)
+
+
+def to_local(x, y, z, c, axes):
+    """Coordinates of the points in the frame (centre ``c``, orthonormal ``axes`` = (U, V, W))."""
+    dx, dy, dz = x - c[0], y - c[1], z - c[2]
+    return tuple(a[0] * dx + a[1] * dy + a[2] * dz for a in axes)
+
+
+def sd_oellipsoid(x, y, z, c, radii, axes):
+    """Ellipsoid with semi-axes ``radii`` along the frame ``axes`` (IQ bound)."""
+    lx, ly, lz = to_local(x, y, z, c, axes)
+    return head().sd_ellipsoid(lx, ly, lz, (0.0, 0.0, 0.0), radii)
+
+
+def sd_obox(x, y, z, c, half, axes, rnd=0.0):
+    """Rounded box with half extents ``half`` along the frame ``axes``."""
+    lx, ly, lz = to_local(x, y, z, c, axes)
+    return head().sd_box(lx, ly, lz, (0.0, 0.0, 0.0), half, round_=rnd)
+
+
+def sd_superellipsoid(x, y, z, c, radii, axes, n=3.0):
+    """Superellipsoid ``(|x/a|^n + |y/b|^n + |z/c|^n)^(1/n) = 1`` (distance scaled by the
+    smallest radius; a bound good enough for smooth unions and meshing)."""
+    lx, ly, lz = to_local(x, y, z, c, axes)
+    r = (np.abs(lx / radii[0]) ** n + np.abs(ly / radii[1]) ** n + np.abs(lz / radii[2]) ** n) ** (1.0 / n)
+    return (r - 1.0) * min(radii)
+
+
+def sd_plate(x, y, z, poly, thickness, rim=0.0):
+    """Flat plate over the convex planar polygon ``poly`` (K,3), total ``thickness``,
+    edges rounded by ``rim`` (a bent sheet for scapulae, iliac wings, sternum)."""
+    P = np.asarray(poly, float)
+    c = P.mean(axis=0)
+    U, V, W = orthonormal(P[1] - P[0], P[2] - P[0])
+    lx, ly, lz = to_local(x, y, z, c, (U, V, W))
+    q = np.stack([(P - c) @ U, (P - c) @ V], axis=1)
+    # convex polygon distance in 2D (positive outside)
+    d2 = np.full(lx.shape, -1e9)
+    k = len(q)
+    area = 0.0
+    for i in range(k):
+        a, b = q[i], q[(i + 1) % k]
+        area += a[0] * b[1] - a[1] * b[0]
+    sgn = 1.0 if area > 0 else -1.0
+    for i in range(k):
+        a, b = q[i], q[(i + 1) % k]
+        e = b - a
+        nrm = sgn * np.array([e[1], -e[0]]) / np.linalg.norm(e)
+        d2 = np.maximum(d2, (lx - a[0]) * nrm[0] + (ly - a[1]) * nrm[1])
+    return head().extrude(d2 + rim, lz, 0.5 * thickness, rnd=0.0) - rim
+
+
+def superellipse2(a, b, ra, rb, n):
+    """2D superellipse ``(|a/ra|^n + |b/rb|^n)^(1/n) = 1`` (distance scaled by min radius)."""
+    r = (np.abs(a / ra) ** n + np.abs(b / rb) ** n) ** (1.0 / n)
+    return (r - 1.0) * np.minimum(ra, rb)
+
+
+def part(verts, faces, slot=0, **attrs):
+    """A ``join_parts`` part dict.  ``attrs``: name -> scalar or per-vertex array; names in
+    ``INT_ATTRS`` become INT point attributes, the rest FLOAT."""
+    v = np.asarray(verts, float)
+    out = {"verts": v, "faces": [list(map(int, f)) for f in faces], "slot": slot, "attrs": {}}
+    for name, val in attrs.items():
+        kind = "INT" if name in INT_ATTRS else "FLOAT"
+        arr = np.broadcast_to(np.asarray(val), (len(v),)).copy()
+        out["attrs"][name] = (kind, arr)
+    return out
+
+
+INT_ATTRS = {"gb_seg", "gb_region", "gb_derm", "gb_piece", "gb_rigid_bone", "gb_organ", "gb_sub",
+             "gb_class", "gb_frag"}
+
+
+def mirror_part(p):
+    """Mirror a part across x = 0 (faces reversed so normals stay outward)."""
+    q = dict(p)
+    v = np.array(p["verts"], float)
+    v[:, 0] *= -1.0
+    q["verts"] = v
+    q["faces"] = [list(reversed(f)) for f in p["faces"]]
+    q["attrs"] = {k: (kind, np.array(a)) for k, (kind, a) in p["attrs"].items()}
+    return q
+
+
+def object_from_parts(name, parts, col=None, slots=None):
+    """Join parts into contract object ``name``: mesh, material slots, INT/FLOAT point attributes."""
+    me, face_slot, attrs = join_parts(name, parts)
+    obj = gbc.new_object(name, me, col)
+    gbc.set_material_slots(obj, face_slot, slots)
+    for k, (kind, arr) in attrs.items():
+        gbc.point_attr(obj, k, arr, kind)
+    return obj
+
+
+def weld(obj, dist=1e-6):
+    """Merge coincident vertices (bmesh remove_doubles)."""
+    bm = bmesh.new()
+    bm.from_mesh(obj.data)
+    bmesh.ops.remove_doubles(bm, verts=bm.verts, dist=dist)
+    bm.to_mesh(obj.data)
+    bm.free()
+    obj.data.update()
+
+
+def decimate_obj(obj, target_tris):
+    """Collapse-decimate keeping point attributes and material indices (Blender interpolates them)."""
+    return decimate_to(obj, target_tris)

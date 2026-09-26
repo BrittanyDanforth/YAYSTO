@@ -119,7 +119,7 @@ def weights_at(points, layer="skin"):
     names, A, B, R = _SEGS
     out_i = np.empty((n, 4), dtype=np.int32)
     out_w = np.empty((n, 4), dtype=np.float64)
-    chunk = 200000
+    chunk = 40000
     for s in range(0, n, chunk):
         q = p[s:s + chunk]
         ab = B - A                                        # (K,3)

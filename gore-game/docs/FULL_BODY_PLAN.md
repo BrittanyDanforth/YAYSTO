@@ -1,5 +1,7 @@
 # Gore Head — Full-Body Build Plan (technical direction)
 
+> **Reference photos:** real forensic reference photos are in the git-ignored folder `refs/` at the repo root (1-8). LOOK at them with the image viewer whenever you build or judge anything wound-, blood-, tissue-, bone-, skull-, brain- or death-related, and compare your renders side by side. Use injury/blood/tissue properties only; never faces or identities. Per-image notes: `gore-game/docs/REFERENCE_NOTES.md` §5.
+
 > Audio removed by the user; the game has no sound. Audio sections below were deleted or reworded to visuals.
 > **Visual reference notes:** also apply `gore-game/docs/REFERENCE_NOTES.md` (generic properties of real wounds and blood from forensic reference photos: far more blood coverage, soaked cloth, big dark lumpy pools, shredded irregular wet tissue with clots and strands, varied colours). A clean, dry, uniform or blood-sparse wound fails review like a sticker does.
 

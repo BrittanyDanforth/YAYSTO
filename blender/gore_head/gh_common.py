@@ -24,6 +24,9 @@ CONTROL_PROPS = {
     "blood_age":  (0.0, 0.0, 1.0, "0 = fresh bright red, 1 = dried dark brown"),
     "bruising":   (0.6, 0.0, 1.0, "Bruise strength around blunt hits"),
     "swelling":   (0.5, 0.0, 1.0, "Tissue swelling around blunt hits"),
+    "wound_age":  (0.2, 0.0, 1.0, "Time since the injuries: 0 = this instant, hours = 48 * age^2 "
+                                  "(0.1 = 30 min, 0.2 = 2 h, 0.5 = 12 h, 1 = 48 h). Bruises, swelling "
+                                  "and burn blisters develop with it"),
     "skin_tone":  (0.25, 0.0, 1.0, "0 = very light skin, 1 = very dark skin"),
     "pallor":     (0.0, 0.0, 1.0, "Paleness from blood loss"),
 }

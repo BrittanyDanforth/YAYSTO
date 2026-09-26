@@ -25,5 +25,6 @@ vessels     RB §3.3 vessel table (+ beds, collaterals, pulse delays); B5 extend
 nerves      main nerves as data-only curves (plan §3.4.1; E/K fits)
 myotomes    plan §3.2 myotome map, respiratory capacity by level (RB §4.6)
 dermatomes  plan §5.5 dermatome codes and R04 §6.2 anchors
+brain       brain region ids (RB §4.5 rows) for the 64^3 label grid and GB_Brain UV2
 tissue      RB §7.6 tissue layers, skin thickness, fat map, cut colours, bone cortex
 """

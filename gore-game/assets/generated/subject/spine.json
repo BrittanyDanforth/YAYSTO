@@ -1,0 +1,1442 @@
+{
+ "schema": "gb.spine/1",
+ "frame": "body_zup_m",
+ "godot_mapping": "(x, z, -y)",
+ "generator": "blender/gore_body/build.py",
+ "build_id": "gb-7038256d11c1",
+ "data": {
+  "vertebrae": [
+   {
+    "level": "C1",
+    "c": [
+     0.0,
+     0.02,
+     1.61
+    ],
+    "body_hwd_mm": [
+     10.0,
+     78.0,
+     45.0
+    ],
+    "disc_below_mm": 0.0,
+    "canal_ap_w_mm": [
+     30.0,
+     28.0
+    ],
+    "spinous_dy_mm": 30.0,
+    "cord": {
+     "c": [
+      0.0,
+      0.024,
+      1.61
+     ],
+     "w_mm": 11.5,
+     "ap_mm": 8.5
+    },
+    "cauda_only": false,
+    "lesioned_segments": [
+     "C1",
+     "C1"
+    ]
+   },
+   {
+    "level": "C2",
+    "c": [
+     0.0,
+     0.012,
+     1.59
+    ],
+    "body_hwd_mm": [
+     23.0,
+     17.0,
+     15.5
+    ],
+    "disc_below_mm": 5.0,
+    "canal_ap_w_mm": [
+     16.0,
+     24.0
+    ],
+    "spinous_dy_mm": 43.0,
+    "cord": {
+     "c": [
+      0.0,
+      0.027,
+      1.59
+     ],
+     "w_mm": 11.9,
+     "ap_mm": 7.9
+    },
+    "cauda_only": false,
+    "lesioned_segments": [
+     "C2",
+     "C3"
+    ]
+   },
+   {
+    "level": "C3",
+    "c": [
+     0.0,
+     0.007,
+     1.57
+    ],
+    "body_hwd_mm": [
+     14.0,
+     16.5,
+     15.5
+    ],
+    "disc_below_mm": 5.0,
+    "canal_ap_w_mm": [
+     14.5,
+     23.0
+    ],
+    "spinous_dy_mm": 40.0,
+    "cord": {
+     "c": [
+      0.0,
+      0.023,
+      1.57
+     ],
+     "w_mm": 12.5,
+     "ap_mm": 8.0
+    },
+    "cauda_only": false,
+    "lesioned_segments": [
+     "C3",
+     "C4"
+    ]
+   },
+   {
+    "level": "C4",
+    "c": [
+     0.0,
+     0.004,
+     1.553
+    ],
+    "body_hwd_mm": [
+     14.0,
+     17.5,
+     15.5
+    ],
+    "disc_below_mm": 5.0,
+    "canal_ap_w_mm": [
+     14.0,
+     24.0
+    ],
+    "spinous_dy_mm": 40.0,
+    "cord": {
+     "c": [
+      0.0,
+      0.02,
+      1.553
+     ],
+     "w_mm": 13.0,
+     "ap_mm": 7.8
+    },
+    "cauda_only": false,
+    "lesioned_segments": [
+     "C4",
+     "C5"
+    ]
+   },
+   {
+    "level": "C5",
+    "c": [
+     0.0,
+     0.003,
+     1.536
+    ],
+    "body_hwd_mm": [
+     13.5,
+     18.5,
+     16.0
+    ],
+    "disc_below_mm": 5.0,
+    "canal_ap_w_mm": [
+     14.0,
+     24.0
+    ],
+    "spinous_dy_mm": 42.0,
+    "cord": {
+     "c": [
+      0.0,
+      0.019,
+      1.536
+     ],
+     "w_mm": 13.5,
+     "ap_mm": 7.7
+    },
+    "cauda_only": false,
+    "lesioned_segments": [
+     "C5",
+     "C6"
+    ]
+   },
+   {
+    "level": "C6",
+    "c": [
+     0.0,
+     0.004,
+     1.518
+    ],
+    "body_hwd_mm": [
+     13.5,
+     20.0,
+     16.5
+    ],
+    "disc_below_mm": 5.0,
+    "canal_ap_w_mm": [
+     14.0,
+     24.0
+    ],
+    "spinous_dy_mm": 45.0,
+    "cord": {
+     "c": [
+      0.0,
+      0.02,
+      1.518
+     ],
+     "w_mm": 13.0,
+     "ap_mm": 7.5
+    },
+    "cauda_only": false,
+    "lesioned_segments": [
+     "C6",
+     "C7"
+    ]
+   },
+   {
+    "level": "C7",
+    "c": [
+     0.0,
+     0.01,
+     1.5
+    ],
+    "body_hwd_mm": [
+     15.0,
+     22.0,
+     16.5
+    ],
+    "disc_below_mm": 5.0,
+    "canal_ap_w_mm": [
+     14.0,
+     23.0
+    ],
+    "spinous_dy_mm": 57.0,
+    "cord": {
+     "c": [
+      0.0,
+      0.026,
+      1.5
+     ],
+     "w_mm": 12.0,
+     "ap_mm": 7.5
+    },
+    "cauda_only": false,
+    "lesioned_segments": [
+     "C7",
+     "C8"
+    ]
+   },
+   {
+    "level": "T1",
+    "c": [
+     0.0,
+     0.019,
+     1.481
+    ],
+    "body_hwd_mm": [
+     16.0,
+     26.0,
+     16.5
+    ],
+    "disc_below_mm": 4.5,
+    "canal_ap_w_mm": [
+     14.0,
+     19.0
+    ],
+    "spinous_dy_mm": 60.0,
+    "cord": {
+     "c": [
+      0.0,
+      0.035,
+      1.481
+     ],
+     "w_mm": 10.5,
+     "ap_mm": 7.0
+    },
+    "cauda_only": false,
+    "lesioned_segments": [
+     "C8",
+     "T2"
+    ]
+   },
+   {
+    "level": "T2",
+    "c": [
+     0.0,
+     0.028,
+     1.461
+    ],
+    "body_hwd_mm": [
+     17.0,
+     27.0,
+     17.5
+    ],
+    "disc_below_mm": 4.5,
+    "canal_ap_w_mm": [
+     14.0,
+     17.0
+    ],
+    "spinous_dy_mm": 60.0,
+    "cord": {
+     "c": [
+      0.0,
+      0.044,
+      1.461
+     ],
+     "w_mm": 9.0,
+     "ap_mm": 6.5
+    },
+    "cauda_only": false,
+    "lesioned_segments": [
+     "T3",
+     "T4"
+    ]
+   },
+   {
+    "level": "T3",
+    "c": [
+     0.0,
+     0.036,
+     1.441
+    ],
+    "body_hwd_mm": [
+     17.5,
+     27.0,
+     18.5
+    ],
+    "disc_below_mm": 4.5,
+    "canal_ap_w_mm": [
+     14.0,
+     16.0
+    ],
+    "spinous_dy_mm": 61.0,
+    "cord": {
+     "c": [
+      0.0,
+      0.053,
+      1.441
+     ],
+     "w_mm": 8.8,
+     "ap_mm": 6.5
+    },
+    "cauda_only": false,
+    "lesioned_segments": [
+     "T4",
+     "T5"
+    ]
+   },
+   {
+    "level": "T4",
+    "c": [
+     0.0,
+     0.042,
+     1.42
+    ],
+    "body_hwd_mm": [
+     18.0,
+     27.5,
+     20.0
+    ],
+    "disc_below_mm": 5.0,
+    "canal_ap_w_mm": [
+     13.5,
+     15.5
+    ],
+    "spinous_dy_mm": 62.0,
+    "cord": {
+     "c": [
+      0.0,
+      0.06,
+      1.42
+     ],
+     "w_mm": 8.5,
+     "ap_mm": 6.5
+    },
+    "cauda_only": false,
+    "lesioned_segments": [
+     "T5",
+     "T6"
+    ]
+   },
+   {
+    "level": "T5",
+    "c": [
+     0.0,
+     0.046,
+     1.398
+    ],
+    "body_hwd_mm": [
+     18.5,
+     28.5,
+     22.0
+    ],
+    "disc_below_mm": 5.0,
+    "canal_ap_w_mm": [
+     13.5,
+     15.5
+    ],
+    "spinous_dy_mm": 63.0,
+    "cord": {
+     "c": [
+      0.0,
+      0.065,
+      1.398
+     ],
+     "w_mm": 8.5,
+     "ap_mm": 6.4
+    },
+    "cauda_only": false,
+    "lesioned_segments": [
+     "T6",
+     "T7"
+    ]
+   },
+   {
+    "level": "T6",
+    "c": [
+     0.0,
+     0.049,
+     1.376
+    ],
+    "body_hwd_mm": [
+     19.0,
+     30.0,
+     24.0
+    ],
+    "disc_below_mm": 5.0,
+    "canal_ap_w_mm": [
+     13.5,
+     15.5
+    ],
+    "spinous_dy_mm": 64.0,
+    "cord": {
+     "c": [
+      0.0,
+      0.069,
+      1.376
+     ],
+     "w_mm": 8.3,
+     "ap_mm": 6.4
+    },
+    "cauda_only": false,
+    "lesioned_segments": [
+     "T8",
+     "T9"
+    ]
+   },
+   {
+    "level": "T7",
+    "c": [
+     0.0,
+     0.049,
+     1.353
+    ],
+    "body_hwd_mm": [
+     19.5,
+     31.0,
+     26.0
+    ],
+    "disc_below_mm": 5.0,
+    "canal_ap_w_mm": [
+     13.5,
+     15.5
+    ],
+    "spinous_dy_mm": 64.0,
+    "cord": {
+     "c": [
+      0.0,
+      0.069,
+      1.353
+     ],
+     "w_mm": 8.0,
+     "ap_mm": 6.3
+    },
+    "cauda_only": false,
+    "lesioned_segments": [
+     "T9",
+     "T10"
+    ]
+   },
+   {
+    "level": "T8",
+    "c": [
+     0.0,
+     0.046,
+     1.329
+    ],
+    "body_hwd_mm": [
+     20.0,
+     32.5,
+     27.5
+    ],
+    "disc_below_mm": 5.5,
+    "canal_ap_w_mm": [
+     14.0,
+     16.0
+    ],
+    "spinous_dy_mm": 63.0,
+    "cord": {
+     "c": [
+      0.0,
+      0.067,
+      1.329
+     ],
+     "w_mm": 8.0,
+     "ap_mm": 6.3
+    },
+    "cauda_only": false,
+    "lesioned_segments": [
+     "T10",
+     "T11"
+    ]
+   },
+   {
+    "level": "T9",
+    "c": [
+     0.0,
+     0.04,
+     1.305
+    ],
+    "body_hwd_mm": [
+     21.0,
+     34.0,
+     28.5
+    ],
+    "disc_below_mm": 6.0,
+    "canal_ap_w_mm": [
+     14.0,
+     16.0
+    ],
+    "spinous_dy_mm": 62.0,
+    "cord": {
+     "c": [
+      0.0,
+      0.061,
+      1.305
+     ],
+     "w_mm": 8.3,
+     "ap_mm": 6.5
+    },
+    "cauda_only": false,
+    "lesioned_segments": [
+     "T11",
+     "T12"
+    ]
+   },
+   {
+    "level": "T10",
+    "c": [
+     0.0,
+     0.031,
+     1.28
+    ],
+    "body_hwd_mm": [
+     22.0,
+     37.0,
+     29.5
+    ],
+    "disc_below_mm": 6.5,
+    "canal_ap_w_mm": [
+     14.5,
+     17.0
+    ],
+    "spinous_dy_mm": 62.0,
+    "cord": {
+     "c": [
+      0.0,
+      0.053,
+      1.28
+     ],
+     "w_mm": 8.5,
+     "ap_mm": 7.0
+    },
+    "cauda_only": false,
+    "lesioned_segments": [
+     "T11",
+     "L1"
+    ]
+   },
+   {
+    "level": "T11",
+    "c": [
+     0.0,
+     0.02,
+     1.254
+    ],
+    "body_hwd_mm": [
+     23.0,
+     40.0,
+     31.0
+    ],
+    "disc_below_mm": 7.0,
+    "canal_ap_w_mm": [
+     15.0,
+     18.0
+    ],
+    "spinous_dy_mm": 58.0,
+    "cord": {
+     "c": [
+      0.0,
+      0.043,
+      1.254
+     ],
+     "w_mm": 9.5,
+     "ap_mm": 7.5
+    },
+    "cauda_only": false,
+    "lesioned_segments": [
+     "L1",
+     "L3"
+    ]
+   },
+   {
+    "level": "T12",
+    "c": [
+     0.0,
+     0.008,
+     1.227
+    ],
+    "body_hwd_mm": [
+     24.0,
+     42.0,
+     32.0
+    ],
+    "disc_below_mm": 8.0,
+    "canal_ap_w_mm": [
+     16.0,
+     21.0
+    ],
+    "spinous_dy_mm": 58.0,
+    "cord": {
+     "c": [
+      0.0,
+      0.031,
+      1.227
+     ],
+     "w_mm": 10.0,
+     "ap_mm": 8.0
+    },
+    "cauda_only": false,
+    "lesioned_segments": [
+     "L3",
+     "S1"
+    ]
+   },
+   {
+    "level": "L1",
+    "c": [
+     0.0,
+     -0.004,
+     1.197
+    ],
+    "body_hwd_mm": [
+     25.5,
+     43.0,
+     33.0
+    ],
+    "disc_below_mm": 10.0,
+    "canal_ap_w_mm": [
+     17.0,
+     22.0
+    ],
+    "spinous_dy_mm": 68.0,
+    "cord": {
+     "c": [
+      0.0,
+      0.021,
+      1.197
+     ],
+     "w_mm": 8.0,
+     "ap_mm": 7.0
+    },
+    "cauda_only": false,
+    "lesioned_segments": [
+     "S2",
+     "S5"
+    ]
+   },
+   {
+    "level": "L2",
+    "c": [
+     0.0,
+     -0.013,
+     1.161
+    ],
+    "body_hwd_mm": [
+     26.5,
+     45.0,
+     34.0
+    ],
+    "disc_below_mm": 11.0,
+    "canal_ap_w_mm": [
+     17.0,
+     23.0
+    ],
+    "spinous_dy_mm": 70.0,
+    "cord": null,
+    "cauda_only": true,
+    "lesioned_segments": []
+   },
+   {
+    "level": "L3",
+    "c": [
+     0.0,
+     -0.018,
+     1.124
+    ],
+    "body_hwd_mm": [
+     27.0,
+     48.0,
+     35.0
+    ],
+    "disc_below_mm": 12.0,
+    "canal_ap_w_mm": [
+     16.0,
+     23.0
+    ],
+    "spinous_dy_mm": 70.0,
+    "cord": null,
+    "cauda_only": true,
+    "lesioned_segments": []
+   },
+   {
+    "level": "L4",
+    "c": [
+     0.0,
+     -0.016,
+     1.087
+    ],
+    "body_hwd_mm": [
+     27.0,
+     50.0,
+     35.0
+    ],
+    "disc_below_mm": 12.0,
+    "canal_ap_w_mm": [
+     16.0,
+     24.0
+    ],
+    "spinous_dy_mm": 70.0,
+    "cord": null,
+    "cauda_only": true,
+    "lesioned_segments": []
+   },
+   {
+    "level": "L5",
+    "c": [
+     0.0,
+     -0.005,
+     1.05
+    ],
+    "body_hwd_mm": [
+     26.5,
+     52.0,
+     35.0
+    ],
+    "disc_below_mm": 11.0,
+    "canal_ap_w_mm": [
+     17.0,
+     26.0
+    ],
+    "spinous_dy_mm": 65.0,
+    "cord": null,
+    "cauda_only": true,
+    "lesioned_segments": []
+   },
+   {
+    "level": "S1",
+    "c": [
+     0.0,
+     0.014,
+     1.012
+    ],
+    "body_hwd_mm": [
+     30.0,
+     50.0,
+     30.0
+    ],
+    "disc_below_mm": 0.0,
+    "canal_ap_w_mm": [
+     15.0,
+     30.0
+    ],
+    "spinous_dy_mm": 0.0,
+    "cord": null,
+    "cauda_only": true,
+    "lesioned_segments": []
+   }
+  ],
+  "cord_segments": [
+   {
+    "id": "C1",
+    "index": 0,
+    "z_top": 1.619,
+    "z_bottom": 1.613,
+    "vertebra": "C1",
+    "c": [
+     0.0,
+     0.028,
+     1.616
+    ],
+    "w_mm": 11.16667,
+    "ap_mm": 8.83333
+   },
+   {
+    "id": "C2",
+    "index": 1,
+    "z_top": 1.613,
+    "z_bottom": 1.6,
+    "vertebra": "C1",
+    "c": [
+     0.0,
+     0.02453,
+     1.6065
+    ],
+    "w_mm": 11.57,
+    "ap_mm": 8.395
+   },
+   {
+    "id": "C3",
+    "index": 2,
+    "z_top": 1.6,
+    "z_bottom": 1.58,
+    "vertebra": "C2",
+    "c": [
+     0.0,
+     0.027,
+     1.59
+    ],
+    "w_mm": 11.9,
+    "ap_mm": 7.9
+   },
+   {
+    "id": "C4",
+    "index": 3,
+    "z_top": 1.58,
+    "z_bottom": 1.5615,
+    "vertebra": "C3",
+    "c": [
+     0.0,
+     0.02315,
+     1.57075
+    ],
+    "w_mm": 12.4775,
+    "ap_mm": 7.99625
+   },
+   {
+    "id": "C5",
+    "index": 4,
+    "z_top": 1.5615,
+    "z_bottom": 1.5445,
+    "vertebra": "C4",
+    "c": [
+     0.0,
+     0.02,
+     1.553
+    ],
+    "w_mm": 13.0,
+    "ap_mm": 7.8
+   },
+   {
+    "id": "C6",
+    "index": 5,
+    "z_top": 1.5445,
+    "z_bottom": 1.527,
+    "vertebra": "C5",
+    "c": [
+     0.0,
+     0.01901,
+     1.53575
+    ],
+    "w_mm": 13.49306,
+    "ap_mm": 7.69722
+   },
+   {
+    "id": "C7",
+    "index": 6,
+    "z_top": 1.527,
+    "z_bottom": 1.509,
+    "vertebra": "C6",
+    "c": [
+     0.0,
+     0.02,
+     1.518
+    ],
+    "w_mm": 13.0,
+    "ap_mm": 7.5
+   },
+   {
+    "id": "C8",
+    "index": 7,
+    "z_top": 1.509,
+    "z_bottom": 1.49367,
+    "vertebra": "C7",
+    "c": [
+     0.0,
+     0.02556,
+     1.50133
+    ],
+    "w_mm": 12.07407,
+    "ap_mm": 7.5
+   },
+   {
+    "id": "T1",
+    "index": 8,
+    "z_top": 1.49367,
+    "z_bottom": 1.481,
+    "vertebra": "T1",
+    "c": [
+     0.0,
+     0.032,
+     1.48733
+    ],
+    "w_mm": 11.0,
+    "ap_mm": 7.16667
+   },
+   {
+    "id": "T2",
+    "index": 9,
+    "z_top": 1.481,
+    "z_bottom": 1.46767,
+    "vertebra": "T1",
+    "c": [
+     0.0,
+     0.038,
+     1.47433
+    ],
+    "w_mm": 10.0,
+    "ap_mm": 6.83333
+   },
+   {
+    "id": "T3",
+    "index": 10,
+    "z_top": 1.46767,
+    "z_bottom": 1.453,
+    "vertebra": "T2",
+    "c": [
+     0.0,
+     0.0443,
+     1.46033
+    ],
+    "w_mm": 8.99333,
+    "ap_mm": 6.5
+   },
+   {
+    "id": "T4",
+    "index": 11,
+    "z_top": 1.453,
+    "z_bottom": 1.4368,
+    "vertebra": "T3",
+    "c": [
+     0.0,
+     0.05124,
+     1.4449
+    ],
+    "w_mm": 8.839,
+    "ap_mm": 6.5
+   },
+   {
+    "id": "T5",
+    "index": 12,
+    "z_top": 1.4368,
+    "z_bottom": 1.42,
+    "vertebra": "T4",
+    "c": [
+     0.0,
+     0.0572,
+     1.4284
+    ],
+    "w_mm": 8.62,
+    "ap_mm": 6.5
+   },
+   {
+    "id": "T6",
+    "index": 13,
+    "z_top": 1.42,
+    "z_bottom": 1.40533,
+    "vertebra": "T4",
+    "c": [
+     0.0,
+     0.06167,
+     1.41267
+    ],
+    "w_mm": 8.5,
+    "ap_mm": 6.46667
+   },
+   {
+    "id": "T7",
+    "index": 14,
+    "z_top": 1.40533,
+    "z_bottom": 1.3892,
+    "vertebra": "T5",
+    "c": [
+     0.0,
+     0.06513,
+     1.39727
+    ],
+    "w_mm": 8.49333,
+    "ap_mm": 6.4
+   },
+   {
+    "id": "T8",
+    "index": 15,
+    "z_top": 1.3892,
+    "z_bottom": 1.3714,
+    "vertebra": "T6",
+    "c": [
+     0.0,
+     0.06822,
+     1.3803
+    ],
+    "w_mm": 8.33909,
+    "ap_mm": 6.4
+   },
+   {
+    "id": "T9",
+    "index": 16,
+    "z_top": 1.3714,
+    "z_bottom": 1.353,
+    "vertebra": "T7",
+    "c": [
+     0.0,
+     0.069,
+     1.3622
+    ],
+    "w_mm": 8.12,
+    "ap_mm": 6.34
+   },
+   {
+    "id": "T10",
+    "index": 17,
+    "z_top": 1.353,
+    "z_bottom": 1.3338,
+    "vertebra": "T7",
+    "c": [
+     0.0,
+     0.0682,
+     1.3434
+    ],
+    "w_mm": 8.0,
+    "ap_mm": 6.3
+   },
+   {
+    "id": "T11",
+    "index": 18,
+    "z_top": 1.3338,
+    "z_bottom": 1.3146,
+    "vertebra": "T8",
+    "c": [
+     0.0,
+     0.0658,
+     1.3242
+    ],
+    "w_mm": 8.06,
+    "ap_mm": 6.34
+   },
+   {
+    "id": "T12",
+    "index": 19,
+    "z_top": 1.3146,
+    "z_bottom": 1.2925,
+    "vertebra": "T9",
+    "c": [
+     0.0,
+     0.06054,
+     1.30355
+    ],
+    "w_mm": 8.3116,
+    "ap_mm": 6.529
+   },
+   {
+    "id": "L1",
+    "index": 20,
+    "z_top": 1.2925,
+    "z_bottom": 1.27133,
+    "vertebra": "T10",
+    "c": [
+     0.0,
+     0.05361,
+     1.28192
+    ],
+    "w_mm": 8.48467,
+    "ap_mm": 6.96167
+   },
+   {
+    "id": "L2",
+    "index": 21,
+    "z_top": 1.27133,
+    "z_bottom": 1.254,
+    "vertebra": "T11",
+    "c": [
+     0.0,
+     0.04633,
+     1.26267
+    ],
+    "w_mm": 9.16667,
+    "ap_mm": 7.33333
+   },
+   {
+    "id": "L3",
+    "index": 22,
+    "z_top": 1.254,
+    "z_bottom": 1.2405,
+    "vertebra": "T11",
+    "c": [
+     0.0,
+     0.04,
+     1.24725
+    ],
+    "w_mm": 9.625,
+    "ap_mm": 7.625
+   },
+   {
+    "id": "L4",
+    "index": 23,
+    "z_top": 1.2405,
+    "z_bottom": 1.227,
+    "vertebra": "T12",
+    "c": [
+     0.0,
+     0.034,
+     1.23375
+    ],
+    "w_mm": 9.875,
+    "ap_mm": 7.875
+   },
+   {
+    "id": "L5",
+    "index": 24,
+    "z_top": 1.227,
+    "z_bottom": 1.2195,
+    "vertebra": "T12",
+    "c": [
+     0.0,
+     0.02975,
+     1.22325
+    ],
+    "w_mm": 9.75,
+    "ap_mm": 7.875
+   },
+   {
+    "id": "S1",
+    "index": 25,
+    "z_top": 1.2195,
+    "z_bottom": 1.212,
+    "vertebra": "T12",
+    "c": [
+     0.0,
+     0.02725,
+     1.21575
+    ],
+    "w_mm": 9.25,
+    "ap_mm": 7.625
+   },
+   {
+    "id": "S2",
+    "index": 26,
+    "z_top": 1.212,
+    "z_bottom": 1.2045,
+    "vertebra": "L1",
+    "c": [
+     0.0,
+     0.02475,
+     1.20825
+    ],
+    "w_mm": 8.75,
+    "ap_mm": 7.375
+   },
+   {
+    "id": "S3",
+    "index": 27,
+    "z_top": 1.2045,
+    "z_bottom": 1.197,
+    "vertebra": "L1",
+    "c": [
+     0.0,
+     0.02225,
+     1.20075
+    ],
+    "w_mm": 8.25,
+    "ap_mm": 7.125
+   },
+   {
+    "id": "S4",
+    "index": 28,
+    "z_top": 1.197,
+    "z_bottom": 1.1885,
+    "vertebra": "L1",
+    "c": [
+     0.0,
+     0.02,
+     1.19275
+    ],
+    "w_mm": 6.75,
+    "ap_mm": 6.0
+   },
+   {
+    "id": "S5",
+    "index": 29,
+    "z_top": 1.1885,
+    "z_bottom": 1.18,
+    "vertebra": "L1",
+    "c": [
+     0.0,
+     0.018,
+     1.18425
+    ],
+    "w_mm": 4.25,
+    "ap_mm": 4.0
+   }
+  ],
+  "conus_tip": [
+   0.0,
+   0.017,
+   1.18
+  ],
+  "thecal_end": [
+   0.0,
+   0.035,
+   0.995
+  ],
+  "cervicomedullary_junction": [
+   0.0,
+   0.03,
+   1.619
+  ],
+  "cauda": {
+   "points": [
+    [
+     0.0,
+     0.017,
+     1.18
+    ],
+    [
+     0.0,
+     0.013,
+     1.161
+    ],
+    [
+     0.0,
+     0.008,
+     1.124
+    ],
+    [
+     0.0,
+     0.011,
+     1.087
+    ],
+    [
+     0.0,
+     0.022,
+     1.05
+    ],
+    [
+     0.0,
+     0.035,
+     0.995
+    ]
+   ],
+   "radius": 0.007
+  },
+  "brainstem": [
+   {
+    "id": "medulla",
+    "a": [
+     0.0,
+     0.03,
+     1.619
+    ],
+    "b": [
+     0.0,
+     0.022,
+     1.644
+    ],
+    "r": 0.008,
+    "concussive_r_mm": 18
+   },
+   {
+    "id": "pons_tegmentum",
+    "a": [
+     0.0,
+     0.022,
+     1.648
+    ],
+    "b": [
+     0.0,
+     0.017,
+     1.67
+    ],
+    "r": 0.0065,
+    "concussive_r_mm": 18
+   },
+   {
+    "id": "pons_basis",
+    "a": [
+     0.0,
+     0.009,
+     1.648
+    ],
+    "b": [
+     0.0,
+     0.004,
+     1.67
+    ],
+    "r": 0.007,
+    "concussive_r_mm": 18
+   },
+   {
+    "id": "midbrain",
+    "a": [
+     0.0,
+     0.013,
+     1.674
+    ],
+    "b": [
+     0.0,
+     0.008,
+     1.69
+    ],
+    "r": 0.012,
+    "concussive_r_mm": 18
+   },
+   {
+    "id": "cord_C1_C2",
+    "a": [
+     0.0,
+     0.027,
+     1.59
+    ],
+    "b": [
+     0.0,
+     0.03,
+     1.619
+    ],
+    "r": 0.006,
+    "concussive_r_mm": 18
+   }
+  ],
+  "brainstem_chain": {
+   "points": [
+    [
+     0.0,
+     0.03,
+     1.619
+    ],
+    [
+     0.0,
+     0.025,
+     1.633
+    ],
+    [
+     0.0,
+     0.02,
+     1.647
+    ],
+    [
+     0.0,
+     0.014,
+     1.659
+    ],
+    [
+     0.0,
+     0.01,
+     1.682
+    ]
+   ],
+   "radius": 0.011
+  },
+  "cauda_vertebrae": [
+   "L2",
+   "L3",
+   "L4",
+   "L5",
+   "S1"
+  ],
+  "resp_capacity": [
+   {
+    "from": "C1",
+    "to": "C3",
+    "vc_fraction": 0.05
+   },
+   {
+    "from": "C4",
+    "to": "C4",
+    "vc_fraction": 0.25
+   },
+   {
+    "from": "C5",
+    "to": "C5",
+    "vc_fraction": 0.3
+   },
+   {
+    "from": "C6",
+    "to": "C6",
+    "vc_fraction": 0.4
+   },
+   {
+    "from": "C7",
+    "to": "C8",
+    "vc_fraction": 0.5
+   },
+   {
+    "from": "T1",
+    "to": "T6",
+    "vc_fraction": 0.6
+   },
+   {
+    "from": "T7",
+    "to": "T12",
+    "vc_fraction": 0.8
+   },
+   {
+    "from": "L1",
+    "to": "S5",
+    "vc_fraction": 1.0
+   }
+  ],
+  "cord_index": {
+   "C1": 0,
+   "C2": 1,
+   "C3": 2,
+   "C4": 3,
+   "C5": 4,
+   "C6": 5,
+   "C7": 6,
+   "C8": 7,
+   "T1": 8,
+   "T2": 9,
+   "T3": 10,
+   "T4": 11,
+   "T5": 12,
+   "T6": 13,
+   "T7": 14,
+   "T8": 15,
+   "T9": 16,
+   "T10": 17,
+   "T11": 18,
+   "T12": 19,
+   "L1": 20,
+   "L2": 21,
+   "L3": 22,
+   "L4": 23,
+   "L5": 24,
+   "S1": 25,
+   "S2": 26,
+   "S3": 27,
+   "S4": 28,
+   "S5": 29
+  },
+  "status": "v0 (B0 from gb_data; B4 refines)"
+ }
+}

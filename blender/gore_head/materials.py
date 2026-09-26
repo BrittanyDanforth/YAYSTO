@@ -648,8 +648,9 @@ def _group_fat():
     sept = (1.0 - e1.smooth(0.0, 0.035)).max((1.0 - e2.smooth(0.0, 0.05)) * 0.45)
     tone = t.sep(c1)[0] * 0.6 + t.sep(c2)[1] * 0.4
     n = t.noise(p, 1400.0, 2.0)
-    col = (lob * 0.45 + tone * 0.4 + n * 0.15).ramp([(0.15, (0.40, 0.21, 0.035)), (0.5, (0.57, 0.37, 0.085)),
-                                                     (0.85, (0.66, 0.50, 0.17))])
+    # pale cream-yellow lobules (fresh subcutaneous fat is not orange)
+    col = (lob * 0.45 + tone * 0.4 + n * 0.15).ramp([(0.15, (0.40, 0.25, 0.085)), (0.5, (0.56, 0.41, 0.17)),
+                                                     (0.85, (0.66, 0.55, 0.30))])
     cap = t.ridge(t.noise(t.warp(p, 120.0, 0.002), 160.0, 3.0), 0.012) * t.noise(p, 45.0).smooth(0.4, 0.6)
     col = t.mix(sept * 0.6, col, (0.48, 0.17, 0.08))
     col = t.mix(cap * 0.75, col, (0.30, 0.025, 0.018))
@@ -834,7 +835,7 @@ def _skin_material(g, name="GH_Skin"):
     bone = t.group(g["bone"], {"Vector": p, "Wetness": wet})
     dn = depth + (t.noise(p, 380.0, 3.0, 0.6) - 0.5) * 0.4
     f_fat, f_mus, f_bone = dn.smooth(0.10, 0.16), dn.smooth(0.50, 0.57), dn.smooth(0.92, 0.98)
-    dermis = t.mix(t.noise(p, 900.0, 2.0), (0.46, 0.18, 0.14), (0.60, 0.36, 0.30))
+    dermis = t.mix(t.noise(p, 900.0, 2.0), (0.62, 0.40, 0.35), (0.74, 0.54, 0.48))
     tis = t.mix(f_fat, dermis, fat["Color"])
     tis = t.mix(f_mus, tis, mus["Color"])
     fresh_bone = t.mix(t.noise(p, 250.0).smooth(0.35, 0.55), bone["Color"] * (0.85, 0.68, 0.62),
@@ -986,24 +987,42 @@ def _muscle_material(g):
 
 
 def _fat_material(g):
-    """GH_Fat: subcutaneous fat (skin wound walls). Reads gore_depth (dermis at the top), gore_blood."""
+    """GH_Fat: the skin's own wound walls below the dermis ring.
+
+    Reads gore_depth: pale dermis line at the top, then lobular fat with blood
+    in the septa between the lobules, then (deep cuts) blood-soaked muscle.
+    The walls darken with depth (the bed of a wound is in its own shadow and
+    full of blood). Reads gore_blood for wet blood films and clots.
+    """
     mat, t = _new_material("GH_Fat")
     p, wet = t.coord(), t.control("wetness")
     f = t.group(g["fat"], {"Vector": p, "Wetness": wet})
-    # the top of the wall is the dermis: dense, pale pink-white
+    mus = t.group(g["muscle"], {"Vector": p, "Wetness": wet})
     d = t.attr("gore_depth")
-    dm = (1.0 - (d + (t.noise(p, 500.0) - 0.5) * 0.05).smooth(0.10, 0.16)) * d.smooth(0.0, 0.02)
-    col = t.mix(dm, f["Color"], t.mix(t.noise(p, 900.0), (0.48, 0.22, 0.18), (0.60, 0.38, 0.32)))
-    bl = _blood_layer(t, g, col, f["Roughness"], (t.attr("gore_blood") * 0.6).max(0.1), p)
-    h = t.mix(bl["Height Mask"], f["Height"], bl["Height"] * 2.0)
+    dj = d + (t.noise(p, 500.0) - 0.5) * 0.06
+    # the top of the wall is the dermis: dense, pale pink-white
+    dm = (1.0 - dj.smooth(0.10, 0.16)) * d.smooth(0.0, 0.02)
+    dermis = t.mix(t.noise(p, 900.0), (0.62, 0.40, 0.35), (0.74, 0.54, 0.48))
+    col = t.mix(dm, f["Color"], dermis)
+    # deep in a cut: muscle (dark red, blood-soaked)
+    fm = dj.smooth(0.58, 0.68)
+    col = t.mix(fm, col, mus["Color"] * (0.8, 0.7, 0.7))
+    # blood between the fat lobules
+    sept = 1.0 - f["Height"].smooth(0.1, 0.5)
+    col = t.mix(sept * 0.55 * (1.0 - dm), col, (0.10, 0.012, 0.012))
+    # the deeper, the darker (self-shadowed, blood-filled bed)
+    col = col * (1.0 - 0.55 * dj.smooth(0.2, 0.75))
+    rough = t.mix(fm, f["Roughness"], mus["Roughness"])
+    bl = _blood_layer(t, g, col, rough, (t.attr("gore_blood") * 0.75).max(0.1), p)
+    h = t.mix(bl["Height Mask"], t.mix(fm, f["Height"], mus["Height"]), bl["Height"] * 2.0)
     bsdf = t.principled({
         'Base Color': bl["Color"], 'Roughness': bl["Roughness"], 'IOR': 1.45,
-        'Subsurface Weight': 0.7 * bl["SSS"], 'Subsurface Radius': (1.0, 0.7, 0.35),
-        'Subsurface Scale': 0.002, 'Coat Weight': (f["Coat"] + bl["Coat"]).clamp(),
+        'Subsurface Weight': 0.6 * bl["SSS"], 'Subsurface Radius': (1.0, 0.6, 0.3),
+        'Subsurface Scale': 0.0015, 'Coat Weight': (f["Coat"] + bl["Coat"]).clamp(),
         'Coat Roughness': t.mix(bl["Mask"], 0.1, bl["Coat Roughness"]), 'Coat Tint': bl["Coat Tint"],
         'Normal': t.bump(h, 0.00025)})
     t.output(bsdf)
-    return _finish(mat, t, (0.78, 0.58, 0.20), 0.25)
+    return _finish(mat, t, (0.70, 0.55, 0.30), 0.25)
 
 
 def _bone_material(g):

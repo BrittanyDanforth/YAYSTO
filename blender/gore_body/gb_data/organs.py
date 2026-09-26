@@ -148,7 +148,7 @@ ORGANS = [
 ORGAN_BY_ID = {o["id"]: o for o in ORGANS}
 
 # Added primitives (B0 fit, E) for records without a bible primitive
-PRIMITIVES["larynx"] = dict(shape="ellipsoid", c=(0.0, -0.045, 1.528), size=(0.045, 0.040, 0.055),
+PRIMITIVES["larynx"] = dict(shape="ellipsoid", c=(0.0, -0.040, 1.528), size=(0.042, 0.034, 0.050),
                             u=(1, 0, 0), v=(0, 1, 0), w=(0, 0, 1), mass_g=30.0, tag="E fit=B0")
 PRIMITIVES["omentum"] = dict(shape="aabb", c=(0.0, -0.085, 1.035), size=(0.260, 0.010, 0.170),
                              u=(1, 0, 0), v=(0, 1, 0), w=(0, 0, 1), mass_g=300.0,
