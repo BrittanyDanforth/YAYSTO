@@ -412,6 +412,8 @@ def _abdomen_relief(x, z):
     ing = -(0.0028 + 0.0160 * gauss(t - 0.60, 0.22)) * gauss(np.hypot(ax - px, z - pz), 0.013) * sstep(1.2, 0.9, t)
     # costal margin: slight hollow below the ribs, epigastric fossa
     epi = -0.0022 * gauss(ax, 0.03) * gauss(z - 1.245, 0.025)
+    # costal margin: the lower cartilages lift the skin a little (fix round 3: 3 mm poke at trunk_flex_76)
+    epi = epi + 0.0016 * gauss(ax - 0.085, 0.020) * gauss(z - 1.238, 0.016)
     jug = -0.004 * gauss(ax, 0.012) * gauss(z - 1.458, 0.010)
     return bulk + alba + inter + semil + navel + ing + epi + jug + mons
 
@@ -1680,14 +1682,15 @@ FOLD_FAT_SITES = (
     ((0.020, 0.010, 0.775), (0.030, 0.060, 0.055), 0.0060),     # perineum / medial groin
     # (fix round 1: plantar 6 -> 9.5 mm; the shell slid 3.7-5.6 mm out at toes_ext_36 - the plantar pad under the
     # MT heads is 8-10 mm thick)
-    ((0.000, -0.068, 0.885), (0.030, 0.020, 0.030), 0.0045),    # mons pubis / root of the penis over the symphysis
+    ((0.000, -0.068, 0.885), (0.034, 0.022, 0.034), 0.0090),    # mons pubis / root of the penis over the symphysis
+    #                                              (fix round 3: 4.5 -> 9 mm, the shell poked 4 mm at hip_flex_108)
     ((0.132, -0.080, 0.004), (0.040, 0.050, 0.010), 0.0095),    # plantar pad under the toes / MT heads
     # upper trapezius behind the neck base (fix round 1: the shell slid 3.5 mm out through the skin in a shrug,
     # shoulder_rhythm_90; the nuchal subcutis is 5-8 mm there)
     ((0.080, 0.090, 1.474), (0.032, 0.022, 0.020), 0.0025),
     # trapezius top under the D19 height cap (fix round 1: the flattened skin left the shell 2 mm under it; it slid
     # 6 mm out in the shrug)
-    ((0.105, 0.040, 1.466), (0.030, 0.025, 0.018), 0.0035),
+    ((0.105, 0.040, 1.466), (0.032, 0.026, 0.020), 0.0050),     # (round 3: 3.5 -> 5 mm, shrug poke 3.3 mm)
 )
 
 

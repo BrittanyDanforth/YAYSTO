@@ -1723,6 +1723,11 @@ def _build_blast():
     bone_bl = is_bone * on * t.smooth(R * 1.2, R * 0.4, c.rho) \
         * (0.35 + 0.6 * t.smooth(-0.2, 0.4, t.noise(c.np * 150.0, detail=2.0)))
     blood = blood.max(bone_bl).max(in_frag * frag_on * (0.45 + 0.5 * t.smooth(-0.3, 0.3, t.noise(c.np * 200.0))))
+    # teeth in the crater (still in their segments or loose) are smeared with
+    # blood and tissue: clean white crowns read as plastic / candy (§5.15)
+    teeth_bl = c.is_layer(LAYER_TEETH) * on * t.smooth(R * 1.4, R * 0.4, c.rho) \
+        * (0.55 + 0.4 * t.smooth(-0.3, 0.3, t.noise(c.np * 120.0, detail=2.0)))
+    blood = blood.max(teeth_bl)
     frac = (t.smooth(0.004, 0.0, slot) * frag_on).max(is_bone * on * t.smooth(0.004, 0.0, d_out))
     bruise = is_skin * on * t.smooth(R * 2.0, R * 0.8, c.rho) * 0.6 * t.inp("Bruising")
     # walls: the crater drops straight in; the fracture gaps close along their line
@@ -3056,6 +3061,11 @@ def _film(t, paths, surface):
     """
     sel = t.out(t.node('GeometryNodeProximity', {'Target': paths}, target_element='EDGES'), 'Distance').lt(FILM_REACH)
     sel = t.bool('AND', sel, t.attr("gore_clot").lt(0.5))
+    # (a run that crosses a gaping wound falls INTO it: the film follows the
+    # lip and the top of the wall, but does not wrap the deep walls -- a
+    # glossy sheet over a throat cut hid its whole cross-section)
+    # (g_wk = wall ring: the top 40 % of a wall, ~dermis and fat, keeps it)
+    sel = t.bool('AND', sel, t.attr("g_wk").lt(WALL_STEPS * 0.4))
     near = t.out(t.node('GeometryNodeSeparateGeometry', {'Geometry': surface, 'Selection': sel}, domain='FACE'),
                  'Selection')
     area = t.out(t.node('GeometryNodeInputMeshFaceArea'))
@@ -3998,6 +4008,13 @@ def _mush(t, g, on_faces):
         tear = t.noise(pn * 520.0 + t.vec(ci * 3.1, 0.0, 0.0), detail=2.0) * 0.00055 \
             + t.noise(pn * 1500.0, detail=2.0) * 0.0002 \
             + (t.noise(pn * 220.0, detail=1.0, signed=False) - 0.5).max(0.0) * -0.0022
+        # press the fused mass onto the wall it lies on (keep ~40 % of its
+        # height): a torn, lumpy crust of pulp smeared over the tissue, not
+        # berries sitting on it
+        wq = _nearest_point(t, g, t.pos())
+        wn_ = _nearest_normal(t, g, t.pos())
+        hq = (t.pos() - wq).dot(wn_).max(0.0)
+        mm = t.out(t.node('GeometryNodeSetPosition', {'Geometry': mm, 'Offset': wn_ * (hq * -0.6)}))
         mm = t.out(t.node('GeometryNodeSetPosition', {'Geometry': mm, 'Offset': t.normal() * tear}))
         bl_ = t.noise(pn * 600.0 + t.vec(0.0, ci * 1.7, 0.0), detail=2.0, signed=False)
         mm = t.store(mm, "g_a", t.vec(1.0, 0.0, t.smooth(0.45, 0.8, bl_) * bl_amt), 'FLOAT_VECTOR')

@@ -390,11 +390,14 @@ def zygomatic_arch(ax, y, z):
 
 def pterygoid_plates(ax, y, z):
     """Lateral and medial pterygoid plates hanging from the sphenoid behind the maxilla (2 mm plates)."""
+    # (fix round 3: bottoms at -0.036 / -0.035, the hamulus at the level of the palate; at -0.047 the plates
+    # stood into the oropharynx and poked the posed lining in neck flexion / rotation) and >= 4 mm off the mouth
     lat = np.maximum(np.abs(ax - (0.0200 + 0.10 * (y + 0.030))) - 0.0010,
-                     np.maximum(np.abs(y + 0.0300) - 0.0085, np.maximum(-0.0470 - z, z + 0.0080)))
+                     np.maximum(np.abs(y + 0.0300) - 0.0085, np.maximum(-0.0360 - z, z + 0.0080)))
     med = np.maximum(np.abs(ax - 0.0120) - 0.0009,
-                     np.maximum(np.abs(y + 0.0290) - 0.0050, np.maximum(-0.0440 - z, z + 0.0100)))
-    return smin(lat, med, 0.002)
+                     np.maximum(np.abs(y + 0.0290) - 0.0050, np.maximum(-0.0350 - z, z + 0.0100)))
+    d = smin(lat, med, 0.002)
+    return np.maximum(d, -(_A().oral_void(ax, y, z) - 0.0040))
 
 
 def piriform_aperture(ax, y, z):

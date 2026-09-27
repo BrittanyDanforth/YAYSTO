@@ -808,7 +808,7 @@ def _larynx_parts(x, y, z):
     # (the vestibule above the lowered thyroid notch leans back to the epiglottis: pre-epiglottic space and the
     #  thyrohyoid membrane lie in front of it, under the submental skin)
     soft_o = chain(x, y, z, [(0.0, -0.0325 + dy, 1.505 + dz), (0.0, -0.0350 + dy, 1.528 + dz), (0.0, -0.026 + 0.5 * dy, 1.550)],
-                   [0.0121, 0.0146, 0.0098])
+                   [0.0123, 0.0148, 0.0095])
     soft_o = smax(soft_o, np.maximum(1.5062 + dz - z, z - 1.552), 0.002)
     # epiglottis: a leaf rising behind the hyoid body (hyoid 0, -0.030, 1.556), behind the tongue base
     epig = ell(x, y, z, (0.0, -0.026 + 0.5 * dy, 1.551), (0.010, 0.0030, 0.0080))       # tip 1.559 (fix round 2: 4 mm lower,

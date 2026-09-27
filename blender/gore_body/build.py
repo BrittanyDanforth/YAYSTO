@@ -57,7 +57,7 @@ SOURCES = {"skin": ["body_skin.py", "uv.py", "placeholder.py", "head_integration
            "skeleton": ["skeleton.py", "skull.py", "placeholder.py", "body_skin.py"],
            "viscera": ["viscera.py", "placeholder.py", "body_skin.py", "skeleton.py", "skull.py"],
            "neuro": ["neuro.py", "viscera.py", "placeholder.py", "skeleton.py", "skull.py"],
-           "vascular": ["vascular.py", "placeholder.py", "rig.py"]}
+           "vascular": ["vascular.py", "placeholder.py", "rig.py", "skull.py"]}
 # files a geometry stage writes into SUBJECT_OUT besides its objects: stored next to the stage cache and
 # restored (with the current build_id) when the stage is loaded from cache, so every exported file set is
 # complete and consistent even when stages come from the cache or the output root is redirected (--quick).

@@ -451,8 +451,13 @@ def _head_sdfs():
     global _HEAD_SDF
     if _HEAD_SDF is None:
         import head_integration as hi_
+        import skull as SKL
         f = hi_.head_layer_sdfs()
-        _HEAD_SDF = (f["skull"][0], f["jaw"][0])
+        o = gbc.HEAD_OFFSET
+        # the jaw territory is the BODY mandible (skull.mandible_raw: 31 mm symphysis, ramus, coronoid, condyle -
+        # the bone the skeleton exports), not the head project's plank jaw (fix round 3: deep vessels 1-2 cm
+        # from the real ramus took jaw weights and were dragged 8-15 mm in jaw_open_19)
+        _HEAD_SDF = (f["skull"][0], lambda x, y, z: SKL.mandible_raw(x - o[0], y - o[1], z - o[2]))
     return _HEAD_SDF
 
 

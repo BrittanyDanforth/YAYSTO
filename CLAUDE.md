@@ -284,6 +284,9 @@ damage = 0 returns the intact mesh. Carnage (9 hits) evaluates in ~4.5 s.
 - Wounds fixer (22:44, d4m): throat cut now has a yellow fat layer along its lips but the bed is still one glossy dark-red
   sheet (no muscle/trachea/vessels); exit fragments = tiles with dots; slash walls still gold foil stripes; blast teeth white
   cubes + candy beads. HIGH.
+- 23:03 renders: crushed face close-up (d5m) covered in YELLOW/green-yellow beads and bright red bead clusters = fat/tissue
+  as candy beads (§5.22 fail); slash walls still yellow-gold. Body (fix5/ld2): eye now real iris in body render (good);
+  heart/pericardium still a grey-white block; neck side: seam line of dots across the neck + ledge at base still there. HIGH.
 - USER (HIGH, REFERENCE_NOTES §5.22): far too much bright yellow fat (throat-cut rim = yellow bead band; yellow dots on burn/crush).
   Real face/neck fat is thin (2-6 mm), pale cream, mostly blood-stained; a visible yellow band anywhere = FAIL.
 - USER (HIGH, REFERENCE_NOTES §5.21): a slash stream started on intact skin beside the cut (no wound above it); every stream
