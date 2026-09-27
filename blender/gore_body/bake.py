@@ -1258,6 +1258,8 @@ def bake_set(name, spec, out):
     ao_half = finish_map(maps["ao"][..., :1], maps["ao"][..., 3] > 0.5)
     ao = _upsample(ao_half, size)[..., 0]
     orm = np.stack([ao, rough, np.zeros_like(ao), sss], -1)
+    if name in SEAM_FEATHER_SETS:
+        alb, nrm, rec["seam_feather_texels"] = feather_seam(target, size, alb, nrm, covered)
     files = {"albedo": f"{name}_albedo.png", "normal": f"{name}_normal.png", "orm": f"{name}_orm.png"}
     _write_png(os.path.join(out, files["albedo"]), u8(srgb_encode(alb)))
     _write_png(os.path.join(out, files["normal"]), u8(nrm))
@@ -1274,6 +1276,53 @@ def bake_set(name, spec, out):
     _log(f"set {name}: {size}^2, empty {rec['coverage']['empty_inside_islands']} texels, normal from source "
          f"{rec['coverage']['normal_from_source'] * 100:.1f} %, {rec['seconds']} s")
     return rec
+
+
+# The head (GB_Head) and body (GB_Body) atlases meet at the zipped neck ring.  Their normals match exactly
+# (FB-1), but the two bakes come from different high-res sources and island borders, and printed a thin
+# light/dark line around the neck base in the textured renders (fix round 2).  Within SEAM_FEATHER_M of the
+# ring both sets fade their tangent normal to flat and their albedo to the set's own median skin colour of
+# the 20-40 mm band next to the ring (head and body medians agree within 1 %, b7_skin_luminance).
+SEAM_FEATHER_SETS = ("head", "body")
+SEAM_FEATHER_M = (0.004, 0.018)
+
+
+def feather_seam(target, size, alb, nrm, covered):
+    """(albedo, normal, texel count) with the neck-ring feather applied (see SEAM_FEATHER_SETS)."""
+    import gb_geom as gg
+    me = target.data
+    loops = gg.boundary_loops(me)
+    if not loops:
+        return alb, nrm, 0
+    v = gbc.get_verts(me)
+    # the neck ring is the lowest open loop (the head's eye / mouth openings are boundaries too)
+    ring = v[np.asarray(min(loops, key=lambda lp: float(v[np.asarray(lp), 2].mean())))]
+    tri_img, bary = rasterize(target, size)
+    # rasterize() returns row 0 = top; match the orientation of the baked arrays by their coverage
+    cov_r = tri_img >= 0
+    if (cov_r & covered).sum() < (cov_r[::-1] & covered).sum():
+        tri_img, bary = tri_img[::-1], bary[::-1]
+    pos = interp(target, tri_img, bary, per_vertex=v)
+    m = tri_img >= 0
+    zr = ring[:, 2]
+    near = m & (pos[..., 2] > zr.min() - 0.05) & (pos[..., 2] < zr.max() + 0.05)
+    idx = np.nonzero(near)
+    P = pos[idx]
+    d = np.full(len(P), 1.0)
+    for s0 in range(0, len(P), 200000):
+        q = P[s0:s0 + 200000]
+        d[s0:s0 + 200000] = np.sqrt(((q[:, None, :] - ring[None, :, :]) ** 2).sum(-1)).min(1)
+    w = 1.0 - np.clip((d - SEAM_FEATHER_M[0]) / (SEAM_FEATHER_M[1] - SEAM_FEATHER_M[0]), 0.0, 1.0)
+    w = w * w * (3.0 - 2.0 * w)
+    band = (d > 0.020) & (d < 0.040)
+    alb = np.array(alb, float, copy=True)
+    nrm = np.array(nrm, float, copy=True)
+    if band.any():
+        tgt = np.median(alb[idx][band], axis=0)
+        alb[idx] = alb[idx] * (1.0 - w[:, None]) + tgt[None, :] * w[:, None]
+    flat = np.array([0.5, 0.5, 1.0])
+    nrm[idx] = nrm[idx] * (1.0 - w[:, None]) + flat[None, :] * w[:, None]
+    return alb, nrm, int((w > 0).sum())
 
 
 def bake_all(objs, out, only=None):
