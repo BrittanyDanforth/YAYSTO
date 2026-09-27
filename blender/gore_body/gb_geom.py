@@ -636,3 +636,31 @@ def fix_foldovers(v, f, fn, h, rounds=4):
         v[m] = 0.4 * v[m] + 0.6 * (acc / deg[:, None])[m]
         v[m] = head().project_to_surface(fn, v[m], h, 2)
     return v, int(foldover_faces(v, f, fn).sum())
+
+
+def close_small_holes(obj, max_sides=32):
+    """Fill every boundary hole except the largest boundary loop (the seam ring): the head's cut + zip can leave
+    2-4 vertex slits just above the ring (fix round 3: they rendered as a dotted black line round the neck).
+    Returns the number of boundary edges filled."""
+    me = obj.data
+    loops = boundary_loops(me)
+    if len(loops) <= 1:
+        return 0
+    ring = set(max(loops, key=len))
+    bm = bmesh.new()
+    bm.from_mesh(me)
+    bm.verts.ensure_lookup_table()
+    edges = [e for e in bm.edges if e.is_boundary and not (e.verts[0].index in ring and e.verts[1].index in ring)]
+    n = len(edges)
+    if edges:
+        bmesh.ops.holes_fill(bm, edges=edges, sides=max_sides)
+        bmesh.ops.triangulate(bm, faces=[f for f in bm.faces if len(f.verts) > 3])
+        # slivers made of two coincident boundary edges: weld their vertices (never a ring vertex)
+        rest = [e for e in bm.edges if e.is_boundary and not (e.verts[0].index in ring and e.verts[1].index in ring)]
+        vs = list({v for e in rest for v in e.verts if v.index not in ring})
+        if vs:
+            bmesh.ops.remove_doubles(bm, verts=vs, dist=2e-4)
+    bm.to_mesh(me)
+    bm.free()
+    me.update()
+    return n

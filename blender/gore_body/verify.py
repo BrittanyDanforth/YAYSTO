@@ -1228,6 +1228,24 @@ def neck_tape(v, t, front=None, tilts=range(0, 17, 2)):
     return best
 
 
+@check("scene", owner="B2")
+def b2_skin_single_boundary():
+    """GB_Head / GB_Body and their LOD1 / HR copies are closed except for the one 160-vertex seam ring (fix round 3:
+    2-4 vertex slits above the ring rendered as a dotted line round the neck)."""
+    bpy = _bpy()
+    import gb_geom as gg
+    out, ok = [], True
+    for n in ("GB_Head", "GB_Head_LOD1", "GB_Head_HR", "GB_Body", "GB_Body_LOD1", "GB_Body_HR"):
+        o = bpy.data.objects.get(n)
+        if o is None:
+            continue
+        loops = sorted(len(l) for l in gg.boundary_loops(o.data))
+        good = loops == [gbc.SEAM_RING_N]
+        ok &= good
+        out.append(f"{n} {loops[:8]}{'' if good else ' BAD'}")
+    return ok, "; ".join(out)
+
+
 @check("scene", owner="B1", quick_ok=False)
 def b1_no_skin_pits():
     """No decimation pits on GB_Body / GB_Body_LOD1 outside the anatomical creases (vertex 1-ring score <

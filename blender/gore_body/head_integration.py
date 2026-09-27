@@ -700,8 +700,11 @@ def build_head_skin(quick=None):
         project_to_skin(head)
         fix_self_intersections(head)
         zip_to_ring(head, ring, side="above")
+        # the cut + zip leaves 2-4 vertex slits just above the ring (a dotted black line round the neck in round 2)
+        gg.close_small_holes(head)
         _cut_above(hr, SEAM_Z + 0.5 * h)
         zip_to_ring(hr, ring, side="above")
+        gg.close_small_holes(hr)
     lining = mouth_lining_faces(head)
     with T("B2: head UV (islands, back-midline seam, pack)"):
         labels = uv_labels(head, lining)
@@ -714,6 +717,7 @@ def build_head_skin(quick=None):
                             DECIMATE_FACTOR)
         project_to_skin(lod)
         fix_self_intersections(lod)
+        gg.close_small_holes(lod)
         _finish_skin(lod, ring, mouth_lining_faces(lod))
         _finish_skin(hr, ring, mouth_lining_faces(hr))
         for o in (head, lod, hr):

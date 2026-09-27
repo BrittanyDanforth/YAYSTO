@@ -140,12 +140,18 @@ def _torso(ax, y, z):
     return np.maximum(d, np.maximum(T[0, 0] - z, z - T[-1, 0]))
 
 
+def _along(points, radii):
+    """Radii given at evenly spaced stations, resampled to one per point of ``points`` (any count)."""
+    t = np.linspace(0.0, 1.0, len(points))
+    return list(np.interp(t, np.linspace(0.0, 1.0, len(radii)), radii))
+
+
 def _torso_extras(ax, y, z):
     """Gluteals, scapular muscles, clavicles, acromion, trapezius, deltoids and the larynx on top of the sections."""
     A = _A()
     back = A.sd_ellipsoid(ax, y, z, (0.080, 0.064, 1.405), (0.080, 0.040, 0.085))      # scapular muscles
     acro = A.sd_ellipsoid(ax, y, z, (0.168, 0.022, 1.440), (0.045, 0.060, 0.034))
-    clav = A.sd_polyline(ax, y, z, np.array(BN.CLAVICLE_WAYPOINTS), [0.018, 0.016, 0.016, 0.018])[0]
+    clav = A.sd_polyline(ax, y, z, np.array(BN.CLAVICLE_WAYPOINTS), _along(BN.CLAVICLE_WAYPOINTS, [0.018, 0.016, 0.016, 0.018]))[0]
     glut = A.sd_ellipsoid(ax, y, z, (0.075, 0.075, 0.905), (0.080, 0.068, 0.095))
     trap = A.sd_capsule(ax, y, z, (0.035, 0.030, 1.480), (0.165, 0.028, 1.440), 0.034, 0.030)
     delt = gg.sd_oellipsoid(ax, y, z, (0.196, 0.014, 1.400), (0.050, 0.062, 0.082),
@@ -791,7 +797,7 @@ def _long_bone_sdfs():
     out = {}
 
     def clav(x, y, z):
-        return A.sd_polyline(x, y, z, BN.CLAVICLE_WAYPOINTS, [0.0105, 0.0068, 0.0062, 0.0085])[0]
+        return A.sd_polyline(x, y, z, BN.CLAVICLE_WAYPOINTS, _along(BN.CLAVICLE_WAYPOINTS, [0.0105, 0.0068, 0.0062, 0.0085]))[0]
     out["clavicle"] = (clav, (0.0, -0.075, 1.425), (0.19, 0.03, 1.49), "clavicle_L")
 
     def scap(x, y, z):

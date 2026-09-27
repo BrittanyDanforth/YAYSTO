@@ -680,7 +680,8 @@ def _shoulder(ax, y, z):
     trap = _trapezius_tube()(ax, y, z)
     # clavicle: soft subcutaneous ridge over B3's bone (its waypoints), bone half-depth + skin + subcutis
     clav = sd_polyline(ax, y, z, [np.array(p) + np.array([0.0, -0.0015, 0.0015]) for p in BN_CLAVICLE],
-                       [0.0088, 0.0074, 0.0070, 0.0080], k=0.014)    # (round 2: 1.5 mm lower ridge; the pad keeps cover)
+                       list(np.interp(np.linspace(0, 1, len(BN_CLAVICLE)), np.linspace(0, 1, 4),
+                                      [0.0088, 0.0074, 0.0070, 0.0080])), k=0.014)    # (round 2: 1.5 mm lower ridge; the pad keeps cover)
     # axillary folds: the pectoralis (front) and latissimus/teres (back) sweep from the chest wall into
     # the arm; only their lower borders show, the web above them fills up to the shoulder
     a_arm = GH + 0.075 * ARM_D - 0.018 * ARM_LAT + np.array([0.0, -0.022, 0.0])

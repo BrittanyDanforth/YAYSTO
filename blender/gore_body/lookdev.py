@@ -677,7 +677,7 @@ def crease_field(v, nrm, region, seg):
     """Flexion creases (0..1, 1 = the fold line) baked into the body normal / albedo at meso scale (fix round 3,
     critics: the body bake averaged away every line, a vinyl mannequin): antecubital creases of the elbow, the two
     to three wrist creases on the palm side, the popliteal crease behind the knee and soft horizontal skin folds
-    above the patella.  Lines are 1-1.4 mm wide gaussians across the limb axis, faded round the limb."""
+    above the patella.  Lines are 2-3 mm wide gaussians (the bake source's 2.5 mm vertex spacing) across the limb axis, faded round the limb."""
     out = np.zeros(len(v))
 
     def lines(J, a, flex, offsets, width, reach, strength=1.0, radial=0.07):
@@ -698,17 +698,17 @@ def crease_field(v, nrm, region, seg):
     for sd in ("L", "R"):
         sg = 1.0 if sd == "L" else -1.0
         el, wr, mc = _lm("elbow_centre_L_apose", sd), _lm("wrist_centre_L_apose", sd), _lm("mcp3_L_apose", sd)
-        out = np.maximum(out, lines(el, wr - el, (0.0, -1.0, 0.0), [(-0.007, 0.7), (0.0, 1.0), (0.008, 0.6)],
-                                    0.0012, 0.03, radial=0.06))
+        out = np.maximum(out, lines(el, wr - el, (0.0, -1.0, 0.0), [(-0.008, 0.7), (0.0, 1.0), (0.009, 0.6)],
+                                    0.0024, 0.03, radial=0.06))
         hand = seg == (6 if sd == "L" else 7)
         pn = nrm[hand & (region == 7)].mean(0) if (hand & (region == 7)).any() else np.array([-sg, 0.0, 0.0])
-        out = np.maximum(out, lines(wr, mc - wr, pn, [(-0.004, 1.0), (-0.011, 0.8), (-0.019, 0.5)], 0.0010, 0.02,
+        out = np.maximum(out, lines(wr, mc - wr, pn, [(-0.004, 1.0), (-0.012, 0.8), (-0.021, 0.5)], 0.0020, 0.02,
                                     radial=0.035))
         kn, pk = _lm("knee_centre_L", sd), _lm("patella_skin_L", sd)
-        out = np.maximum(out, lines(kn, (0.0, 0.0, -1.0), (0.0, 1.0, 0.0), [(0.0, 1.0), (-0.009, 0.5)], 0.0014,
+        out = np.maximum(out, lines(kn, (0.0, 0.0, -1.0), (0.0, 1.0, 0.0), [(0.0, 1.0), (-0.010, 0.5)], 0.0028,
                                     0.04, radial=0.08))
         out = np.maximum(out, lines(pk, (0.0, 0.0, -1.0), (0.0, -1.0, 0.0), [(-0.024, 0.45), (-0.033, 0.35),
-                                                                             (-0.042, 0.2)], 0.0016, 0.03,
+                                                                             (-0.042, 0.2)], 0.0030, 0.03,
                                     radial=0.07))
     return np.clip(out, 0.0, 1.0)
 

@@ -1122,7 +1122,13 @@ def _build_slash():
         + t.noise(c.np * 600.0, detail=1.0) * (0.00005 + 0.00007 * wide)
     hw = (0.00055 + gape * 0.15 * lobes) * lens + micro * t.smooth(0.0, 0.25, lens)
     d_rim = gape * 0.35 * lens * lobes                       # how far each lip is pulled back
-    opened = is_skin * D.gt(0.04)
+    # a deep cut of the throat also divides the platysma and the strap
+    # muscles (the muscle layer opens along the knife line and its cut walls
+    # run down toward the larynx / trachea); elsewhere a knife cut opens the
+    # skin only and the muscle below is exposed at the bottom of the V
+    is_muscle = c.is_layer(LAYER_MUSCLE)
+    neck_c = t.inp("Region").z
+    opened = (is_skin * D.gt(0.04)).max(is_muscle * neck_c.gt(0.5) * D.gt(0.55))
     # (where the opening would be thinner than ~0.3 mm the blade only scored
     # the skin: no hole, the scratch tail takes over -- a hairline hole with a
     # noisy outline would open and close in a saw-tooth)
@@ -1166,7 +1172,8 @@ def _build_slash():
     # near the two ends the walls also lean in along the cut, so the V closes
     # at the tips too (walls that only move sideways leave a slot at each end)
     end_u = -(u - t.clamp(u, -half_len * 0.8, half_len * 0.8))
-    wall = t.vec(end_u, -sgn * open_hw, -vd)
+    # (the muscle's own walls: shorter, the knife line lies nearer its top)
+    wall = t.vec(end_u, -sgn * open_hw, -vd * (1.0 - 0.35 * is_muscle))
     center = t.vec(end_u, -sgn * (av + d_rim * fall), 0.0)
     # bone under a deep cut is only scored (<= 1 mm), never opened
     zl = c.lc(LAYER_Z)
@@ -3151,7 +3158,11 @@ def _drops(t, tips, rest):
     # pendant drops where the skin faces down (chin, nose tip, jaw line,
     # earlobe): 30-60 uL = a bead 3-4.5 mm across, flattened against the skin
     # it hangs from, a little longer than wide (REFERENCE_NOTES §5.21)
-    hang = t.bool('AND', runs, n.z.lt(-0.3))
+    # (only about a third of the runs that reach a down-facing edge form a
+    # drop there; the rest end in a thin film tail: a pendant drop on every
+    # run lined a lip or the chin with a row of beads)
+    keep_d = t.rand(0.0, 1.0, t.attr("d_id", 'INT'), 72).lt(0.35)
+    hang = t.bool('AND', t.bool('AND', runs, n.z.lt(-0.3)), keep_d)
     r = 0.0015 + 0.0007 * t.rand(0.0, 1.0, t.index(), 71)
     # (local Z along the skin normal: the drop is a flattened cap on the skin
     # that sags downward, ~2-3 mm proud of it, not a ball stuck on)
@@ -3638,7 +3649,7 @@ CLOT_DENSITY_K = {"bullet": 2.5, "exit": 1.3, "slash": 0.0, "blunt": 3.0, "blast
 STRAND_P = {"blunt": 0.0014, "exit": 0.0018, "blast": 0.004}
 # wet pulp lumps and torn shreds per wall area (lumps per m^2 at factor 1) and
 # per kind: destroyed tissue is mush at three scales (REFERENCE_NOTES §5.18 A)
-MUSH_DENSITY = 450000.0
+MUSH_DENSITY = 90000.0
 MUSH_K = {"exit": 2.6, "blunt": 1.6, "blast": 0.8}
 # extra blood on the wound walls per kind: a bullet track is a narrow tube
 # lined with blood and clot (no clean yellow fat), an exit is soaked
@@ -3916,7 +3927,7 @@ def _mush(t, g, on_faces):
     incised = mk.gt(3.5)
     upper = t.attr("g_wk").lt(float(WALL_STEPS) * 0.55)
     # three scales: 6 % big torn flaps, 36 % medium lumps, the rest grit
-    big = r1.gt(0.98)
+    big = r1.gt(0.94)
     med = t.bool('AND', r1.gt(0.58), t.bool('NOT', big))
     sz = t.switch(big, t.switch(med, 0.0003 + 0.0006 * r2, 0.0009 + 0.0013 * r2), 0.002 + 0.0018 * r2)
     sz = t.switch(brain, sz, sz.min(0.0022))
@@ -3924,9 +3935,7 @@ def _mush(t, g, on_faces):
     # (most pieces are torn shreds and sheets, only some are lumps: rounded
     # blobs read as berries / beads)
     # (pulped brain comes out as soft lumps, not sheets)
-    # (the density is high so the lumps fuse into masses; keep the number of
-    # separate torn sheets about the same)
-    flap = t.bool('AND', t.bool('AND', t.bool('OR', big, r3.lt(0.2)), t.bool('NOT', brain)), t.bool('NOT', incised))
+    flap = t.bool('AND', t.bool('AND', t.bool('OR', big, r3.lt(0.6)), t.bool('NOT', brain)), t.bool('NOT', incised))
     # flaps: thin torn sheets (0.3-0.6 mm); lumps: flattened blobs
     sx = sz * t.switch(flap, 0.8 + 0.5 * r4, 1.1 + 0.6 * r4)
     sy = sz * t.switch(flap, 0.6 + 0.5 * r5, 0.7 + 0.5 * r3)
@@ -3965,66 +3974,24 @@ def _mush(t, g, on_faces):
         + t.noise(t.pos() * 900.0, detail=2.0, color=True) * 0.0004 \
         + t.noise(t.pos() * 2400.0, detail=1.0, color=True) * 0.00012
     sheets = t.out(t.node('GeometryNodeSetPosition', {'Geometry': sheets, 'Offset': jit}))
-    # ---- lumps: ONE merged, torn mass per tissue class ----------------------
-    # (separate smooth ellipsoids read as beans / pebbles / candy: the lumps
-    # of a class are fused through a volume -- a union of 0.5-4 mm balls at
-    # three scales -- and the surface is torn by noise, so pulp is a
-    # continuous wet mush with lobes, pits and crevices, REFERENCE_NOTES
-    # §5.18 A, refs 3, 4, 13, 15, 16)
-    # (pulped brain at an exit is made by the pool instead -- an amorphous,
-    # smeared mass bulging out of the blood; fused balls read as grapes)
+    # ---- lumps: flattened, crumpled pulp pieces (tissue only) --------------
+    # (fusing them through a volume gave round berries / grapes seen face-on;
+    # pulped brain at an exit is made by the pool instead -- an amorphous,
+    # smeared mass bulging out of the blood)
     lump_pts = t.out(t.node('GeometryNodeSeparateGeometry', {'Geometry': pts,
                                                              'Selection': t.bool('OR', flap, brain)}, domain='POINT'),
                      'Inverted')
-    # ball radius: the lump size, pulp a little fuller; buried half in the wall
-    # (small balls, 0.45-1.7 mm: their union is a lumpy aggregate; a few
-    # big balls fused into round cherries / dough balls)
-    # (balls of 1.1-2.6 mm at ~1.5 mm spacing overlap: the union is one
-    # continuous lumpy layer of pulp with pits, never a row of beads)
-    rad = (t.attr("m_sz") * 1.1).max(0.0011).min(0.0026)
-    lump_pts = t.out(t.node('GeometryNodeSetPosition', {'Geometry': lump_pts,
-                                                        'Offset': nrm * (rad * -0.25)}))
-    lump_pts = t.store(lump_pts, "m_r", rad)
-    k = t.attr("m_cls")
-    classes = (
-        # (selection, material input, g_wk, gore_clot, blood amount)
-        (t.bool('AND', k.lt(0.5), t.bool('NOT', brain)), "Strand Material", float(WALL_STEPS + 2), 0.0, 0.25),
-        (t.bool('AND', t.bool('AND', k.gt(0.5), k.lt(1.5)), t.bool('NOT', brain)), "Wall Material",
-         WALL_STEPS * 0.4, 0.0, 0.3),
-        (t.bool('AND', k.lt(1.5), brain), "Pulp Material", float(WALL_STEPS + 2), 0.0, 0.7),
-        # (clot: matte near-black jelly in the blood shader, gore_clot = 1)
-        (k.gt(1.5), "Blood Material", float(WALL_STEPS + 2), 1.0, 1.0),
-    )
-    masses = []
-    for ci, (sel_c, mat_in, wk, clot_v, bl_amt) in enumerate(classes):
-        cp = t.out(t.node('GeometryNodeSeparateGeometry', {'Geometry': lump_pts, 'Selection': sel_c},
-                          domain='POINT'), 'Selection')
-        vol = t.out(t.node('GeometryNodePointsToVolume', {'Points': cp, 'Density': 1.0, 'Resolution Mode': 'Size',
-                                                          'Voxel Size': 0.00022, 'Radius': t.attr("m_r")}))
-        mm = t.out(t.node('GeometryNodeVolumeToMesh', {'Volume': vol, 'Resolution Mode': 'Grid',
-                                                       'Threshold': 0.3, 'Adaptivity': 0.0}))
-        # tear the fused surface: folds, pits and crevices at three scales
-        pn = t.pos()
-        tear = t.noise(pn * 520.0 + t.vec(ci * 3.1, 0.0, 0.0), detail=2.0) * 0.00055 \
-            + t.noise(pn * 1500.0, detail=2.0) * 0.0002 \
-            + (t.noise(pn * 220.0, detail=1.0, signed=False) - 0.5).max(0.0) * -0.0022
-        # press the fused mass onto the wall it lies on (keep ~40 % of its
-        # height): a torn, lumpy crust of pulp smeared over the tissue, not
-        # berries sitting on it
-        wq = _nearest_point(t, g, t.pos())
-        wn_ = _nearest_normal(t, g, t.pos())
-        hq = (t.pos() - wq).dot(wn_).max(0.0)
-        mm = t.out(t.node('GeometryNodeSetPosition', {'Geometry': mm, 'Offset': wn_ * (hq * -0.6)}))
-        mm = t.out(t.node('GeometryNodeSetPosition', {'Geometry': mm, 'Offset': t.normal() * tear}))
-        bl_ = t.noise(pn * 600.0 + t.vec(0.0, ci * 1.7, 0.0), detail=2.0, signed=False)
-        mm = t.store(mm, "g_a", t.vec(1.0, 0.0, t.smooth(0.45, 0.8, bl_) * bl_amt), 'FLOAT_VECTOR')
-        mm = t.store(mm, "g_own", 1.0)
-        mm = t.store(mm, "gore_clot", clot_v)
-        mm = t.store(mm, "g_wk", wk)
-        mm = t.store(mm, "g_side", 99.0, 'FLOAT', 'FACE')
-        mm = t.out(t.node('GeometryNodeSetMaterial', {'Geometry': mm, 'Material': t.inp(mat_in)}))
-        masses.append(mm)
-    # sheets: their own blood streaks and material per class
+    ico_l = t.out(t.node('GeometryNodeMeshIcoSphere', {'Radius': 1.0, 'Subdivisions': 2}))
+    inst_l = t.node('GeometryNodeInstanceOnPoints', {'Points': lump_pts, 'Instance': ico_l, 'Rotation': rot,
+                                                     'Scale': t.attr("m_sc", 'FLOAT_VECTOR')})
+    lumps = t.out(t.node('GeometryNodeRealizeInstances', {'Geometry': t.out(inst_l)}))
+    jit_l = t.noise(t.pos() * 350.0, detail=1.0, color=True) * 0.0008 \
+        + t.noise(t.pos() * 900.0, detail=2.0, color=True) * 0.00035 \
+        + t.noise(t.pos() * 2400.0, detail=1.0, color=True) * 0.00012
+    lumps = t.out(t.node('GeometryNodeSetPosition', {'Geometry': lumps, 'Offset': jit_l}))
+    masses = [lumps]
+    # sheets and lumps: their own blood streaks and material per class
+    sheets = _join(t, sheets, *masses)
     bl_ = t.noise(t.pos() * 600.0, detail=2.0, signed=False)
     sheets = t.store(sheets, "g_a", t.vec(1.0, 0.0, t.smooth(0.5, 0.8, bl_) * 0.45), 'FLOAT_VECTOR')
     sheets = t.store(sheets, "g_own", 1.0)
@@ -4041,8 +4008,8 @@ def _mush(t, g, on_faces):
                                                       'Material': t.inp("Wall Material")}))
     sheets = t.out(t.node('GeometryNodeSetMaterial', {'Geometry': sheets, 'Selection': is_clot,
                                                       'Material': t.inp("Blood Material")}))
-    m = _join(t, sheets, *masses)
-    for nm in ("m_cls", "m_flap", "m_r", "m_sc", "m_sz"):
+    m = sheets
+    for nm in ("m_cls", "m_flap", "m_sc", "m_sz"):
         m = t.out(t.node('GeometryNodeRemoveAttribute', {'Geometry': m, 'Pattern Mode': 'Exact', 'Name': nm}))
     return t.out(t.node('GeometryNodeSetShadeSmooth', {'Mesh': m, 'Shade Smooth': True}))
 
