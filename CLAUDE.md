@@ -281,6 +281,9 @@ damage = 0 returns the intact mesh. Carnage (9 hits) evaluates in ~4.5 s.
   triangle hollow, smooth trapezius slope) and blend into the head's own neck without steps; fix the ledge at the
   neck base. Keep every inner layer (muscle shell, vessels, organs) at least 3 mm inside the skin so nothing
   pushes it out.
+- Final-build test render (fix2/r3/skin_face.png): the pink is the EYEBROW and EYELASH hair cards (missing alpha/hair
+  texture -> Blender's magenta), not the eyeballs; teeth look brown/rotten on the body; neck base ledge + a visible seam
+  line across the neck at the head/body join are STILL there (skin_neck_side/tq). HIGH.
 - Final-build test render (fix2/r3/skin_front.png): the EYES render bright PINK/MAGENTA = a missing eye texture in the body
   materials (iris/sclera image not found or not packed); the scattered dark/red dots on chest, belly and legs are still there. HIGH.
 - Organs: still smooth clay; lungs read as folded sheets/plastic (need spongy lobed lungs with fissures); the fat apron
