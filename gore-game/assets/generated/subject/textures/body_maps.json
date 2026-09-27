@@ -3,7 +3,7 @@
  "frame": "body_zup_m",
  "godot_mapping": "(x, z, -y)",
  "generator": "blender/gore_body/build.py",
- "build_id": "gb-2f9ee5b74ffc",
+ "build_id": "gb-d78295c975d3",
  "data": {
   "mesh": "GB_Body",
   "uv": "atlas (UV0)",
