@@ -257,6 +257,10 @@ damage = 0 returns the intact mesh. Carnage (9 hits) evaluates in ~4.5 s.
 - Blood fixer rebuild (13:00): crushed preset shows a large dark flat triangular FLAP sticking out of the face at the upper-left
   (a stray skin/tissue sheet, geometry artefact) — HIGH; entry at 60 s is still one straight even tube; exit close-up blood is a
   flat red cut-out with a hard jagged edge; mouth blast still candy teeth/confetti bone.
+- Wounds fixer tests (15:48, fix2_wounds/m3.png): crushed bone now reads as big cream PAPER/PLASTER PLATES and folded sheets
+  (the opposite of chalky chunky bone); exit hole filled with pink/red smooth pebble-balls; blast teeth still red-white
+  candy blocks. HIGH for the critics. Positive: new eye cutaway (c1_cut_eye) shows a real globe section, orbital fat,
+  muscle, cortical bone with diploe.
 - USER (HIGH, REFERENCE_NOTES §5.21): a slash stream started on intact skin beside the cut (no wound above it); every stream
   must trace up into an overflowing low point of a wound rim. Drops/streams too thick (drops ~3-4.5 mm, streams 2-5 mm wide, 0.1-0.4 mm thick).
 - USER (HIGH, REFERENCE_NOTES §5.20): crushed preset leaves the NOSE TIP intact/unbruised inside the wound; the eyeball is

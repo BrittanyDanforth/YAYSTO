@@ -719,123 +719,276 @@ CUT_LAYERS = {"GH_Skin_cut": 0, "GH_Muscle": 1, "GH_Skull": 2, "GH_Jaw": 2, "GH_
               "GH_Cervical": 2}
 
 
-def _vitreous_material():
-    """GH_Vitreous: the clear, slightly grey gel inside the eyeball (cutaway caps)."""
-    mat = bpy.data.materials.get("GH_Vitreous") or bpy.data.materials.new("GH_Vitreous")
-    if mat.node_tree is None:
-        mat.use_nodes = True
-    nt = mat.node_tree
-    nt.nodes.clear()
-    out = nt.nodes.new('ShaderNodeOutputMaterial')
-    bsdf = nt.nodes.new('ShaderNodeBsdfPrincipled')
-    bsdf.inputs['Base Color'].default_value = (0.80, 0.78, 0.74, 1.0)
-    bsdf.inputs['Roughness'].default_value = 0.08
-    bsdf.inputs['Transmission Weight'].default_value = 0.85
-    bsdf.inputs['IOR'].default_value = 1.336
-    nt.links.new(bsdf.outputs[0], out.inputs['Surface'])
-    mat.diffuse_color = (0.8, 0.78, 0.74, 1.0)
+class _SN:
+    """Tiny shader-node helper for the cutaway materials (constants or sockets)."""
+
+    def __init__(self, mat):
+        if mat.node_tree is None:
+            mat.use_nodes = True
+        self.nt = mat.node_tree
+        self.nt.nodes.clear()
+        self.N, self.L = self.nt.nodes, self.nt.links
+        self.out = self.N.new('ShaderNodeOutputMaterial')
+        self.bsdf = self.N.new('ShaderNodeBsdfPrincipled')
+        self.L.new(self.bsdf.outputs[0], self.out.inputs['Surface'])
+        tc = self.N.new('ShaderNodeTexCoord')
+        self.p = tc.outputs['Object']
+
+    def _in(self, sock, v):
+        if isinstance(v, bpy.types.NodeSocket):
+            self.L.new(v, sock)
+        elif isinstance(v, (tuple, list)):
+            sock.default_value = (*v, 1.0) if sock.type == 'RGBA' and len(v) == 3 else v
+        else:
+            sock.default_value = v
+
+    def math(self, op, a, b=None, c=None):
+        m = self.N.new('ShaderNodeMath')
+        m.operation = op
+        for i, v in enumerate((a, b, c)):
+            if v is not None:
+                self._in(m.inputs[i], v)
+        return m.outputs[0]
+
+    def vmath(self, op, a, b=None, scale=None):
+        m = self.N.new('ShaderNodeVectorMath')
+        m.operation = op
+        for i, v in enumerate((a, b)):
+            if v is not None:
+                self._in(m.inputs[i], v)
+        if scale is not None:
+            self._in(m.inputs['Scale'], scale)
+        return m.outputs['Value'] if op in ('DOT_PRODUCT', 'LENGTH', 'DISTANCE') else m.outputs['Vector']
+
+    def sep(self, v):
+        n = self.N.new('ShaderNodeSeparateXYZ')
+        self.L.new(v, n.inputs[0])
+        return n.outputs[0], n.outputs[1], n.outputs[2]
+
+    def vec(self, x, y, z):
+        n = self.N.new('ShaderNodeCombineXYZ')
+        for i, v in enumerate((x, y, z)):
+            self._in(n.inputs[i], v)
+        return n.outputs[0]
+
+    def smooth(self, x, e0, e1):
+        m = self.N.new('ShaderNodeMapRange')
+        m.interpolation_type = 'SMOOTHSTEP'
+        self._in(m.inputs['Value'], x)
+        m.inputs['From Min'].default_value = e0
+        m.inputs['From Max'].default_value = e1
+        return m.outputs['Result']
+
+    def noise(self, v, scale, detail=2.0, rough=0.5):
+        n = self.N.new('ShaderNodeTexNoise')
+        self.L.new(v, n.inputs['Vector'])
+        n.inputs['Scale'].default_value = scale
+        n.inputs['Detail'].default_value = detail
+        n.inputs['Roughness'].default_value = rough
+        return n.outputs['Fac']
+
+    def voronoi(self, v, scale, feature='F1'):
+        n = self.N.new('ShaderNodeTexVoronoi')
+        n.feature = feature
+        self.L.new(v, n.inputs['Vector'])
+        n.inputs['Scale'].default_value = scale
+        return n.outputs['Distance'], n.outputs['Color']
+
+    def mix(self, f, a, b):
+        m = self.N.new('ShaderNodeMix')
+        m.data_type = 'RGBA'
+        self._in(m.inputs['Factor'], f)
+        self._in(m.inputs[6], a)
+        self._in(m.inputs[7], b)
+        return m.outputs[2]
+
+    def fmix(self, f, a, b):
+        m = self.N.new('ShaderNodeMix')
+        m.data_type = 'FLOAT'
+        self._in(m.inputs['Factor'], f)
+        self._in(m.inputs[2], a)
+        self._in(m.inputs[3], b)
+        return m.outputs[0]
+
+    def set(self, name, v):
+        self._in(self.bsdf.inputs[name], v)
+
+
+def _eye_section_material():
+    """GH_EyeSection: the cut face of the eyeball, a real globe section.
+
+    Eye object space (origin at the centre, -Y = gaze, R 12 mm): the white
+    sclera wall (~1 mm) with the dark brown choroid and the thin pink-red
+    retina lining its back two thirds, the clear cornea in front, the aqueous
+    front chamber, the pigmented iris band with the pupil gap, the ciliary body
+    at the limbus, the biconvex amber lens behind the iris, clear vitreous gel
+    filling the rest and the optic nerve leaving at the back.
+    """
+    mat = bpy.data.materials.get("GH_EyeSection") or bpy.data.materials.new("GH_EyeSection")
+    t = _SN(mat)
+    x, y, z = t.sep(t.p)
+    r = t.vmath('LENGTH', t.p)
+    rp = t.vmath('LENGTH', t.vec(x, 0.0, z))                        # distance from the visual axis
+    R = materials.EYE_R
+    back = t.smooth(y, -0.0085, -0.0070)                            # behind the limbus
+    # cornea: the front sphere (centre 0, -CORNEA_OFF, 0; r 7.5 mm), ~0.6 mm thick
+    rc = t.vmath('DISTANCE', t.p, (0.0, -materials.CORNEA_OFF, 0.0))
+    front = t.math('SUBTRACT', 1.0, back)
+    cornea = t.math('MULTIPLY', t.smooth(rc, materials.CORNEA_R - 0.0007, materials.CORNEA_R - 0.0005), front)
+    sclera = t.math('MULTIPLY', t.smooth(r, R - 0.0011, R - 0.0009), back)
+    choroid = t.math('MULTIPLY', t.math('MULTIPLY', t.smooth(r, R - 0.0015, R - 0.0013),
+                                        t.math('SUBTRACT', 1.0, sclera)), t.smooth(y, -0.0075, -0.0055))
+    retina = t.math('MULTIPLY', t.math('MULTIPLY', t.smooth(r, R - 0.0019, R - 0.0017),
+                                       t.math('SUBTRACT', 1.0, t.smooth(r, R - 0.0015, R - 0.0013))),
+                    t.smooth(y, -0.006, -0.004))
+    # iris: a thin pigmented band in the iris plane, from the pupil to the limbus
+    iris_y = materials.IRIS_PLANE_Y
+    iris = t.math('MULTIPLY', t.math('MULTIPLY', t.smooth(t.math('ABSOLUTE', t.math('SUBTRACT', y, iris_y)),
+                                                          0.00045, 0.0003),
+                                     t.smooth(rp, materials.PUPIL_R, materials.PUPIL_R + 0.0003)),
+                  t.smooth(rp, materials.LIMBUS_R + 0.0004, materials.LIMBUS_R))
+    ciliary = t.math('MULTIPLY', t.smooth(t.vmath('DISTANCE', t.vec(rp, y, 0.0), (0.0060, -0.0085, 0.0)), 0.0013, 0.0009),
+                     1.0)
+    # lens: biconvex, centre 3.5 mm behind the iris, 9 mm across, 4 mm thick
+    lq = t.vmath('LENGTH', t.vmath('DIVIDE', t.vec(rp, t.math('ADD', y, 0.0078), 0.0), (0.0046, 0.0020, 1.0)))
+    lens = t.smooth(lq, 1.0, 0.94)
+    ant = t.math('MULTIPLY', t.smooth(y, iris_y + 0.0001, iris_y - 0.0002), front)     # aqueous chamber
+    nerve = t.math('MULTIPLY', t.smooth(rp, 0.0017, 0.0013), t.smooth(y, R - 0.0025, R - 0.0012))
+    n1 = t.noise(t.p, 900.0, 3.0)
+    col = t.mix(n1, (0.20, 0.205, 0.20), (0.26, 0.26, 0.25))        # clear vitreous gel (dark behind)
+    col = t.mix(ant, col, (0.05, 0.055, 0.06))
+    col = t.mix(lens, col, t.mix(t.smooth(lq, 0.2, 0.9), (0.62, 0.52, 0.30), (0.48, 0.40, 0.22)))
+    col = t.mix(retina, col, t.mix(n1, (0.40, 0.12, 0.10), (0.52, 0.20, 0.15)))
+    col = t.mix(choroid, col, (0.035, 0.014, 0.010))
+    col = t.mix(ciliary, col, (0.05, 0.02, 0.014))
+    col = t.mix(iris, col, t.mix(n1, (0.05, 0.035, 0.02), (0.12, 0.08, 0.045)))
+    col = t.mix(sclera, col, t.mix(n1, (0.66, 0.63, 0.57), (0.74, 0.71, 0.65)))
+    col = t.mix(cornea, col, (0.50, 0.52, 0.54))
+    col = t.mix(nerve, col, (0.66, 0.60, 0.50))
+    t.set('Base Color', col)
+    wall = t.math('MAXIMUM', t.math('MAXIMUM', sclera, choroid), t.math('MAXIMUM', iris, nerve))
+    t.set('Roughness', t.fmix(wall, 0.06, 0.35))
+    t.set('Coat Weight', 0.6)
+    t.set('Coat Roughness', 0.04)
+    t.set('Subsurface Weight', t.fmix(t.math('MAXIMUM', lens, ant), 0.15, 0.4))
+    t.bsdf.inputs['Subsurface Radius'].default_value = (1.0, 0.8, 0.6)
+    t.bsdf.inputs['Subsurface Scale'].default_value = 0.001
+    mat.diffuse_color = (0.3, 0.3, 0.3, 1.0)
     return mat
 
 
-def _matter_material(white):
-    """Cut brain tissue: grey cortex (pinkish grey-brown) or white matter (cream).
+def _sulcus_distance(t, pa):
+    """Shader version of anatomy.gyri_field: distance (m) to the sulcus sheets.
 
-    The white-matter cap also shows the cortex folding into it: winding grey
-    ribbons (~2.5 mm, the cortex lining each sulcus) with a thin dark line of
-    blood / pia at the bottom of every sulcus, dense near the outside of the
-    cerebrum and fading out in the deep white matter (centrum semiovale), so
-    the cut face reads as folded brain and not as a flat disc.
+    The same monochromatic random wave fields (directions, phases,
+    wavelengths and domain warp) whose nodal lines fold the brain surface;
+    in 3D their nodal sets are sheets running from the surface into the
+    depth -- exactly where the sulci cut into a section of the brain. The
+    gradient is replaced by its RMS value k sqrt(N / 2)."""
+    kw = 2.0 * math.pi / 0.060
+    w = None
+    for i, (d, ph) in enumerate(zip(anatomy._WARP_K, anatomy._WARP_PH)):
+        s = t.math('SINE', t.math('ADD', t.math('MULTIPLY', t.vmath('DOT_PRODUCT', pa, tuple(float(c) for c in d)), kw),
+                                  float(ph)))
+        a = anatomy._WARP_K[(i + 2) % len(anatomy._WARP_K)]
+        term = t.vmath('SCALE', tuple(float(c) for c in a), scale=s)
+        w = term if w is None else t.vmath('ADD', w, term)
+    pw = t.vmath('ADD', pa, t.vmath('SCALE', w, scale=0.0035))
+
+    def field(dirs, phases, wl):
+        k = 2.0 * math.pi / wl
+        acc = None
+        for d, ph in zip(dirs, phases):
+            c = t.math('COSINE', t.math('ADD', t.math('MULTIPLY', t.vmath('DOT_PRODUCT', pw, tuple(float(v) for v in d)), k),
+                                        float(ph)))
+            acc = c if acc is None else t.math('ADD', acc, c)
+        return t.math('DIVIDE', t.math('ABSOLUTE', acc), k * math.sqrt(len(dirs) / 2.0))
+    s1 = field(anatomy._GYRI_K, anatomy._GYRI_PH, 0.0175)
+    s2 = field(anatomy._GYRI_K2, anatomy._GYRI_PH2, 0.0300)
+    return t.math('MINIMUM', s1, t.math('ADD', s2, 0.0008))
+
+
+def _matter_material(white):
+    """Cut brain tissue: grey cortex (outer rim) or white matter (the core's cap).
+
+    The white-matter cap shows the cortex folding into it: the sulci are the
+    nodal sheets of anatomy's own gyri field (_sulcus_distance), so every
+    sulcus on the brain surface continues into the section as a dark,
+    blood-lined cleft, lined on both sides by a ~2.5 mm ribbon of grey
+    cortex that wraps round its floor; they reach 10-20 mm deep from the
+    surface and the deep white matter (centrum semiovale) stays cream. A grey
+    island (basal ganglia), a dark CSF slit (ventricle) and the cerebellum's
+    folia with their white core (arbor vitae) complete the section.
     """
     name = "GH_WhiteMatterCut" if white else "GH_GreyMatterCut"
     mat = bpy.data.materials.get(name) or bpy.data.materials.new(name)
-    if mat.node_tree is None:
-        mat.use_nodes = True
-    nt = mat.node_tree
-    nt.nodes.clear()
-    N, L = nt.nodes, nt.links
-    out = N.new('ShaderNodeOutputMaterial')
-    bsdf = N.new('ShaderNodeBsdfPrincipled')
-    tc = N.new('ShaderNodeTexCoord')
-    grey_lo, grey_hi = (0.34, 0.21, 0.19), (0.42, 0.28, 0.25)
-    wm_lo, wm_hi = (0.50, 0.44, 0.37), (0.58, 0.51, 0.43)
-
-    def math(op, a, b=None, clamp=False):
-        m = N.new('ShaderNodeMath')
-        m.operation = op
-        m.use_clamp = clamp
-        for i, v in enumerate((a, b)):
-            if v is None:
-                continue
-            if isinstance(v, (int, float)):
-                m.inputs[i].default_value = v
-            else:
-                L.new(v, m.inputs[i])
-        return m.outputs[0]
-
-    def mix(fac, a, b):
-        m = N.new('ShaderNodeMix')
-        m.data_type = 'RGBA'
-        L.new(fac, m.inputs['Factor'])
-        for sock, v in ((m.inputs[6], a), (m.inputs[7], b)):
-            if isinstance(v, tuple):
-                sock.default_value = (*v, 1.0)
-            else:
-                L.new(v, sock)
-        return m.outputs[2]
-
-    fine = N.new('ShaderNodeTexNoise')
-    fine.inputs['Scale'].default_value = 900.0
-    L.new(tc.outputs['Object'], fine.inputs['Vector'])
-    base = N.new('ShaderNodeValToRGB')
-    lo, hi = (wm_lo, wm_hi) if white else (grey_lo, grey_hi)
-    base.color_ramp.elements[0].color = (*lo, 1.0)
-    base.color_ramp.elements[1].color = (*hi, 1.0)
-    L.new(fine.outputs['Fac'], base.inputs[0])
-    col = base.outputs['Color']
+    t = _SN(mat)
+    x, y, z = t.sep(t.p)
+    pa = t.vec(t.math('ABSOLUTE', x), y, z)
+    sd = _sulcus_distance(t, pa)
+    # depth into the cerebrum: normalised ellipsoid radius (1 at the cortex)
+    ln = t.vmath('LENGTH', t.vmath('DIVIDE', t.vmath('SUBTRACT', pa, (0.0, 0.005, 0.043)), (0.066, 0.086, 0.066)))
+    reach = t.smooth(ln, 0.58 + 0.12 * 0.0, 0.80)
+    reach = t.math('MULTIPLY', reach, t.smooth(t.noise(t.p, 60.0, 2.0), 0.25, 0.45))
+    n1 = t.noise(t.p, 900.0, 3.0)
+    grey = t.mix(n1, (0.25, 0.155, 0.14), (0.33, 0.21, 0.185))
+    whitec = t.mix(n1, (0.58, 0.52, 0.43), (0.66, 0.60, 0.50))
+    # cerebellum (behind the tentorium, below the cerebrum)
+    cb = t.math('MULTIPLY', t.smooth(y, 0.018, 0.032), t.smooth(z, 0.012, 0.0))
     if white:
-        # meandering sulci: iso-line of a warped low-frequency noise (~8 mm folds)
-        fold = N.new('ShaderNodeTexNoise')
-        fold.inputs['Scale'].default_value = 75.0
-        fold.inputs['Detail'].default_value = 3.0
-        fold.inputs['Roughness'].default_value = 0.55
-        fold.inputs['Distortion'].default_value = 0.35
-        L.new(tc.outputs['Object'], fold.inputs['Vector'])
-        band = math('ABSOLUTE', math('SUBTRACT', fold.outputs['Fac'], 0.5))
-        # depth into the cerebrum: 0 at the centre, ~1 at the cortex surface
-        cen = N.new('ShaderNodeVectorMath')
-        cen.operation = 'SUBTRACT'
-        L.new(tc.outputs['Object'], cen.inputs[0])
-        cen.inputs[1].default_value = (0.0, 0.005, 0.045)
-        sc = N.new('ShaderNodeVectorMath')
-        sc.operation = 'DIVIDE'
-        L.new(cen.outputs[0], sc.inputs[0])
-        sc.inputs[1].default_value = (0.068, 0.088, 0.068)
-        ln = N.new('ShaderNodeVectorMath')
-        ln.operation = 'LENGTH'
-        L.new(sc.outputs[0], ln.inputs[0])
-        reach = N.new('ShaderNodeMapRange')          # folds only in the outer ~40 %
-        reach.inputs['From Min'].default_value = 0.5
-        reach.inputs['From Max'].default_value = 0.78
-        L.new(ln.outputs['Value'], reach.inputs['Value'])
-        cortex = N.new('ShaderNodeMapRange')         # grey ribbon along each sulcus
-        cortex.inputs['From Min'].default_value = 0.06
-        cortex.inputs['From Max'].default_value = 0.04
-        L.new(band, cortex.inputs['Value'])
-        sulc = N.new('ShaderNodeMapRange')           # blood / pia line in the sulcus
-        sulc.inputs['From Min'].default_value = 0.012
-        sulc.inputs['From Max'].default_value = 0.004
-        L.new(band, sulc.inputs['Value'])
-        g_mask = math('MULTIPLY', cortex.outputs['Result'], reach.outputs['Result'])
-        s_mask = math('MULTIPLY', sulc.outputs['Result'], reach.outputs['Result'])
-        col = mix(g_mask, col, grey_hi)
-        col = mix(math('MULTIPLY', s_mask, 0.9), col, (0.16, 0.035, 0.03))
-    L.new(col, bsdf.inputs['Base Color'])
-    bsdf.inputs['Roughness'].default_value = 0.35
-    bsdf.inputs['Subsurface Weight'].default_value = 0.4
-    bsdf.inputs['Subsurface Radius'].default_value = (1.0, 0.5, 0.4)
-    bsdf.inputs['Subsurface Scale'].default_value = 0.002
-    L.new(bsdf.outputs[0], out.inputs['Surface'])
-    mat.diffuse_color = (*hi, 1.0)
+        ribbon = t.math('MULTIPLY', t.smooth(sd, 0.0030, 0.0022), reach)
+        sulc = t.math('MULTIPLY', t.smooth(sd, 0.00055, 0.0002), reach)
+        col = t.mix(ribbon, whitec, grey)
+        # basal ganglia: a grey island deep in the white matter; a dark CSF slit
+        bg = t.smooth(t.vmath('LENGTH', t.vmath('DIVIDE', t.vmath('SUBTRACT', pa, (0.0, -0.002, 0.030)),
+                                                (1.0, 0.013, 0.008))), 1.0, 0.85)
+        col = t.mix(t.math('MULTIPLY', bg, 0.85), col, t.mix(n1, (0.30, 0.20, 0.17), (0.36, 0.25, 0.21)))
+        ven = t.smooth(t.vmath('LENGTH', t.vmath('DIVIDE', t.vmath('SUBTRACT', pa, (0.0, 0.012, 0.047)),
+                                                 (1.0, 0.016, 0.0016))), 1.0, 0.8)
+        col = t.mix(ven, col, (0.05, 0.035, 0.035))
+        # cerebellum: folia in thin grey leaves around a branching white core
+        cr = t.vmath('LENGTH', t.vmath('MULTIPLY', t.vmath('SUBTRACT', pa, (0.0, 0.030, 0.004)), (1.0, 0.9, 1.2)))
+        fol = t.math('COSINE', t.math('MULTIPLY', t.math('ADD', cr, t.math('MULTIPLY', t.noise(t.p, 120.0), 0.001)),
+                                      2.0 * math.pi / 0.0030))
+        arbor = t.math('MAXIMUM', t.smooth(fol, -0.55, -0.9), t.smooth(cr, 0.016, 0.011))
+        cbcol = t.mix(arbor, grey, whitec)
+        col = t.mix(cb, col, cbcol)
+    else:
+        sulc = t.smooth(sd, 0.00055, 0.0002)
+        col = grey
+    # the sulcal clefts hold blood and pia: dark red, clotted in places
+    clot = t.smooth(t.noise(t.p, 180.0, 2.0), 0.55, 0.7)
+    col = t.mix(t.math('MULTIPLY', sulc, 0.95), col, t.mix(clot, (0.16, 0.02, 0.018), (0.05, 0.006, 0.006)))
+    # small vessels cut across (dark red dots) and a thin blood film
+    vd, _vc = t.voronoi(t.p, 700.0)
+    dots = t.math('MULTIPLY', t.smooth(vd, 0.08, 0.03), t.smooth(t.noise(t.p, 200.0), 0.62, 0.7))
+    col = t.mix(dots, col, (0.18, 0.02, 0.02))
+    t.set('Base Color', col)
+    t.set('Roughness', t.fmix(sulc, 0.32, 0.12))
+    t.set('Coat Weight', 0.35)
+    t.set('Coat Roughness', 0.08)
+    t.set('Subsurface Weight', 0.35)
+    t.bsdf.inputs['Subsurface Radius'].default_value = (1.0, 0.5, 0.4)
+    t.bsdf.inputs['Subsurface Scale'].default_value = 0.0015
+    mat.diffuse_color = (0.6, 0.5, 0.45, 1.0)
+    return mat
+
+
+def _diploe_material():
+    """GH_DiploeCut: cancellous bone between the two tables of the skull (and in
+    the mandible): pale trabeculae around dark red marrow spaces, matte."""
+    mat = bpy.data.materials.get("GH_DiploeCut") or bpy.data.materials.new("GH_DiploeCut")
+    t = _SN(mat)
+    d1, c1 = t.voronoi(t.p, 1500.0)
+    d2, _c2 = t.voronoi(t.p, 520.0)
+    holes = t.math('MAXIMUM', t.smooth(d1, 0.42, 0.22), t.math('MULTIPLY', t.smooth(d2, 0.35, 0.15), 0.8))
+    n1 = t.noise(t.p, 300.0, 3.0)
+    trab = t.mix(n1, (0.52, 0.42, 0.30), (0.64, 0.54, 0.40))
+    marrow = t.mix(t.noise(t.p, 800.0), (0.12, 0.02, 0.015), (0.30, 0.07, 0.045))
+    col = t.mix(holes, trab, marrow)
+    t.set('Base Color', col)
+    t.set('Roughness', t.fmix(holes, 0.7, 0.35))
+    mat.diffuse_color = (0.5, 0.35, 0.25, 1.0)
     return mat
 
 
@@ -882,10 +1035,28 @@ def add_cutaway(objs, x_hi=0.030, x_lo=0.003, z_step=-0.036):
         white.data.shade_smooth()
         white.data.materials.append(brain.data.materials[0] if brain.data.materials else None)
         obs["GH_WhiteMatter"] = white
+    # the spongy diploe between the two tables of the vault (and the cancellous
+    # core of the mandible): the bone field moved ~1.4 mm inward from both of
+    # its surfaces; its cap covers the bone's cap except for the dense ivory
+    # cortex along both edges (thin face bones stay all cortex)
+    cores = {}
+    for base, fn, box, inset in (("GH_Skull", anatomy.skull_sdf, anatomy.SKULL_BOX, 0.0014),
+                                 ("GH_Jaw", anatomy.jaw_sdf, anatomy.JAW_BOX, 0.0016)):
+        if objs.get(base) is None:
+            continue
+        name = base + "_Diploe"
+        core = anatomy.mesh_sdf(name, lambda x, y, z, fn=fn, inset=inset: fn(x, y, z) + inset,
+                                *box, 0.001, voxel=0.001, project=1, collection=ghc.get_collection("GoreHead"))
+        core.data.shade_smooth()
+        core.data.materials.append(_diploe_material())
+        obs[name] = core
+        cores[name] = core
     added = []
     layers = dict(CUT_LAYERS)
     if white is not None:
         layers["GH_WhiteMatter"] = 3.4
+    for name in cores:
+        layers[name] = 2.4
     for name, lvl in layers.items():
         if obs.get(name) is None:
             continue
@@ -909,8 +1080,9 @@ def add_cutaway(objs, x_hi=0.030, x_lo=0.003, z_step=-0.036):
         mod.solver = 'MANIFOLD'
         mod.object = cutter
         if name.startswith("GH_Eye"):
-            # the cut eye shows clear vitreous gel, not the sclera texture
-            cm.materials.append(_vitreous_material())
+            # the cut eye is a real globe section: sclera, choroid, retina,
+            # cornea, iris, lens, vitreous (not a grey disc)
+            cm.materials.append(_eye_section_material())
             mod.material_mode = 'TRANSFER'
         elif name in ("GH_Brain", "GH_WhiteMatter"):
             cm.materials.append(_matter_material(name == "GH_WhiteMatter"))
@@ -923,10 +1095,11 @@ def add_cutaway(objs, x_hi=0.030, x_lo=0.003, z_step=-0.036):
             bpy.data.objects.remove(cutter, do_unlink=True)
         bpy.data.objects.remove(joined, do_unlink=True)
         bpy.data.meshes.remove(me)
-        if white is not None:
-            wm = white.data
-            bpy.data.objects.remove(white, do_unlink=True)
-            bpy.data.meshes.remove(wm)
+        for ob_ in [white] + list(cores.values()):
+            if ob_ is not None:
+                me_ = ob_.data
+                bpy.data.objects.remove(ob_, do_unlink=True)
+                bpy.data.meshes.remove(me_)
         for ob in hidden:
             ob.hide_render = False
     return cleanup

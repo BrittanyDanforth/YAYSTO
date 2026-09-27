@@ -1230,9 +1230,10 @@ def union_components(c, off=None, kplus=0.0):
     # D19 seam plane (z 1.485): outside the neck column the shoulder / trapezius top must stay below it, or the
     # seam cut leaves a thin tongue of skin above the plane that the canonical 160-vertex ring does not follow
     # (fix round 1: a 4-vertex hole on the trapezius top at |x| 0.09-0.11 in two builds).  A soft height cap
-    # 3.5 mm under the plane beyond |x| 0.088 (the neck column is < 0.07 wide there).
-    cap = (g["_z"] - (SEAM_Z - 0.0035 - K)) * sstep(0.074, 0.088, ax_) - 0.05 * sstep(0.088, 0.074, ax_)
-    trunk = smax(trunk, cap, 0.004)
+    # 3 mm under the plane beyond |x| 0.09, blended over 14 mm so the shoulder top stays rounded (a 4 mm blend
+    # printed a plateau with a rim); the neck column is < 0.07 wide there.
+    cap = (g["_z"] - (SEAM_Z - 0.0030 - K)) * sstep(0.070, 0.090, ax_) - 0.05 * sstep(0.090, 0.070, ax_)
+    trunk = smax(trunk, cap, 0.014)
     # supraclavicular fossa (fix round 1): behind the medial two thirds of the clavicle, between the SCM and the
     # trapezius, the top of the shoulder sinks into a soft groove instead of the torso tube's flat top (whose
     # square front edge read as a collar ledge around the neck base).  A smooth inward displacement (gaussian

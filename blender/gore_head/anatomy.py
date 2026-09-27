@@ -1267,9 +1267,20 @@ def gum_sdf(x, y, z, upper):
 def tongue_sdf(x, y, z):
     """Tongue resting on the floor of the mouth behind the lower teeth."""
     ax = np.abs(x)
-    body = sd_ellipsoid(ax, y, z, (0.0, -0.0490, -0.0640), (0.0215, 0.0340, 0.0128))
-    tip = sd_ellipsoid(ax, y, z, (0.0, -0.0730, -0.0612), (0.0135, 0.0078, 0.0048))
-    d = smin(body, tip, 0.008)
+    # a domed muscular body, not a slab: the dorsum arches from the thin,
+    # rounded tip up over the middle and curves down into the root toward the
+    # pharynx; the sides round off into the floor of the mouth
+    segs = [((0.0, -0.0742, -0.0616), (0.0122, 0.0064, 0.0044)),
+            ((0.0, -0.0640, -0.0598), (0.0180, 0.0105, 0.0080)),
+            ((0.0, -0.0500, -0.0600), (0.0212, 0.0125, 0.0108)),
+            ((0.0, -0.0340, -0.0630), (0.0210, 0.0125, 0.0125)),
+            ((0.0, -0.0200, -0.0700), (0.0180, 0.0100, 0.0130))]
+    d = None
+    for c, r in segs:
+        e = sd_ellipsoid(ax, y, z, c, r)
+        d = e if d is None else smin(d, e, 0.0065)
+    base = sd_ellipsoid(ax, y, z, (0.0, -0.046, -0.0735), (0.0195, 0.030, 0.0075))
+    d = smin(d, base, 0.006)
     # median sulcus along the dorsum
     dorsum = smoothstep(-0.080, -0.068, y) * smoothstep(-0.064, -0.058, z)
     d = d + 0.0007 * np.exp(-(ax / 0.0022) ** 2) * dorsum

@@ -119,14 +119,18 @@ What each kind does (research-based, see gore-game/docs/research/01-02 and
 REALISM_BIBLE §2.7):
 
 - **bullet**: skin hole smaller than the bullet (scalp ~7.5 mm, face ~7 mm, neck
-  ~5 mm), crisp 1.6-2.4 mm abrasion collar (concentric when square-on, widest
+  ~5 mm), slightly oval with small marginal splits (never a punched disc),
+  a 1.6-2.4 mm abrasion collar with a scalloped, patchy border (concentric when square-on, widest
   toward the shooter when oblique; oblique holes are elliptical), skin wall down
   to the bone, skull hole larger than the skin hole with an inward bevel, brain
   track (~11 mm) with haemorrhage to r 18 mm, inner-table chips driven into the
   brain, teeth in the path shattered; soot / stippling / contact tear by range.
 - **exit**: 10-30 mm, shape class by chance (circular / stellate / irregular /
-  slit / crescent), everted <= 4 mm, frayed margins, no collar, outward-bevelled
-  jagged bone, bone chips, herniated brain. The margin is raw torn dermis
+  slit / crescent); every class has 3-6 tapered splits (long rays for the
+  stellate class, short ones on a "circular" exit: never a punched disc),
+  everted <= 4 mm, frayed margins, no collar, outward-bevelled jagged bone,
+  bone chips (2-4 mm thick chunks of both tables, diploe on their broken
+  edges), pulped brain and clot bulging out of the opening (see mush). The margin is raw torn dermis
   (<= ~1 mm wet); no film, pool or blotches are painted on the scalp around it.
 - **slash**: an incised cut; the knife line is narrow and the lips gape apart
   (gape = length x G(angle to the skin tension lines) x depth factor, ~0.2 L
@@ -162,6 +166,30 @@ REALISM_BIBLE §2.7):
   (~55 %) or left loose and tilted; 18 bone chips in the torn tissue; the skin
   around is soot-blackened (`gore_soot`), stippled, seared and swollen; heavy
   bleeding (6+ runs). Use size ~1.5, depth 1.0, aimed into the open mouth.
+- **eyes** (every kind that reaches an eyeball, `_KindCtx.eye_injury`,
+  REFERENCE_NOTES §5.20): the globe keeps its true size (r 0.012; the blunt
+  swelling never applies to the eye layer). A rupture (crushed orbit, a bullet
+  or exit through the globe) DEFLATES it: the side facing the blow caves in
+  up to ~0.6 R, the rest shrinks, with folds; a ragged tear opens through the
+  impact and uvea / vitreous bulge out through it. On the eye layer
+  `gore_wound` = collapsed / clouded globe, `gore_edge` = extruded dark uvea
+  and grey jelly, `gore_bruise` = hyphaema level (blood layered behind the
+  cornea, flat top), `gore_blood` = subconjunctival haemorrhage (flat solid
+  bright red sheet stopping at the limbus). A blow near the orbit also closes
+  the swollen lids over the eye (skin layer); an eye no hit reaches stays
+  pristine.
+- **nose** (blunt, REFERENCE_NOTES §5.20.1): a blow on / beside the nose or a
+  crushed mid-face breaks it: the external nose is pushed back 6-9 mm,
+  deviated 4-6 mm away from the blow, droops and swells, turns dark purple,
+  the skin splits over the dorsum / tip (`gore.NOSE_C`), and both nostrils
+  bleed (runs seeded in the nostrils, `gore.NOSTRIL`, 10-30 mL/min).
+- **mush** (`gore._mush`, REFERENCE_NOTES §5.18 A-C): destroyed tissue
+  (crushed blunt areas, blasts) carries wet pulp lumps and torn shreds at three
+  scales (flaps 2-4 mm, lumps 1-2 mm, grit < 1 mm): torn muscle, yellow fat
+  lobules and near-black clot (`GH_Muscle` / wall material / `GH_Blood`);
+  an exit pushes pulped cream-grey brain (`Pulp Material` = `GH_Brain`) mixed
+  with clot out through the opening. Each lump keeps its own blood streaks
+  (`g_own`). Tissue strands are few, slanted, some torn and hanging (no comb).
 - **burn**: smooth lobed, flame-licked dose field (reaches further upward,
   zones interlock unevenly): red band, partial thickness (moist red, few large
   flattened blister domes that appear after 30 s-5 min and fill over hours, a few peeling

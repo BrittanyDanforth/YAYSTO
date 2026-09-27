@@ -626,8 +626,11 @@ def _group_muscle():
         * t.noise(pf, 120.0).smooth(0.3, 0.55)
     fasc = t.noise(pf + (1.1, 4.2, 0.0), 160.0, 2.0, 0.5)         # whole fascicles, 5-8 mm
     v = fib * 0.4 + fine * 0.1 + bund * 0.3 + fasc * 0.35 - 0.08
-    col = v.ramp([(0.2, (0.045, 0.004, 0.006)), (0.45, (0.11, 0.011, 0.014)), (0.65, (0.19, 0.024, 0.026)),
-                  (0.85, (0.30, 0.05, 0.045))])
+    # (fresh torn muscle is the brightest thing in a wound: orange-red to
+    # scarlet #B8231A-#D8452E, darker maroon in the seams -- REFERENCE_NOTES
+    # §5.18 B; a uniformly dark maroon reads as old liver)
+    col = v.ramp([(0.2, (0.07, 0.006, 0.007)), (0.45, (0.20, 0.018, 0.016)), (0.65, (0.36, 0.045, 0.03)),
+                  (0.85, (0.50, 0.10, 0.055))])
     col = t.mix(seam * 0.75, col, (0.05, 0.004, 0.004))
     # translucent whitish fascia sheets and a little fat along some seams
     fascia = t.noise(p, 45.0, 3.0, 0.6).smooth(0.64, 0.80) * 0.4
@@ -687,8 +690,10 @@ def _group_bone():
     p, wet = t.inp("Vector"), t.inp("Wetness")
     n1 = t.noise(p, 90.0, 3.0, 0.55)
     n2 = t.noise(p, 700.0, 2.0, 0.5)
-    col = (n1 * 0.7 + n2 * 0.3).ramp([(0.3, (0.46, 0.37, 0.25)), (0.55, (0.61, 0.53, 0.39)),
-                                      (0.8, (0.69, 0.62, 0.48))])
+    # (pale chalky ivory #E6DCC4 at its brightest, greyer and yellower in
+    # places; kept a little below paper white so a lit plate never blows out)
+    col = (n1 * 0.7 + n2 * 0.3).ramp([(0.3, (0.40, 0.33, 0.23)), (0.55, (0.53, 0.47, 0.35)),
+                                      (0.8, (0.62, 0.56, 0.43))])
     pd, _, _ = t.voronoi(p, 2400.0)
     pit = 1.0 - pd.smooth(0.0, 0.22)
     col = t.mix(pit * 0.6, col, (0.26, 0.18, 0.12))
@@ -706,7 +711,7 @@ def _group_bone():
     col = t.mix(stain, col, (0.40, 0.27, 0.16))
     t.result("Color", col)
     # (matte ivory, never glossy plaster: only blood on it is shiny)
-    t.result("Roughness", t.mix(wet * 0.15, 0.7 + (n1 - 0.5) * 0.16 + pit * 0.1, 0.45))
+    t.result("Roughness", t.mix(wet * 0.1, 0.8 + (n1 - 0.5) * 0.12 + pit * 0.08, 0.5))
     t.result("Height", n2 * 0.5 - pit * 0.7)
     # spongy bone between the tables: marrow-filled cavities
     sd, scol, _ = t.voronoi(p, 1100.0, 'F1')
@@ -978,8 +983,9 @@ def _skin_material(g, name="GH_Skin"):
     col = t.mix(fissure, col, (0.003, 0.0025, 0.002))
     col = t.mix(crack, col, t.mix(kd.smooth(0.0, 0.015), (0.03, 0.005, 0.004), (0.13, 0.018, 0.012)))
     rgh = t.mix(ery, rgh, rgh - 0.05)
-    rgh = t.mix(raw, rgh, t.mix(wet, 0.35, 0.1))
-    rgh = t.mix(bm, rgh, 0.12 + roof * 0.35)
+    rgh = t.mix(raw, rgh, t.mix(wet, 0.45, 0.24) + (bnf - 0.5) * 0.2)
+    # (a blister roof is dead, wrinkled epidermis: satin, never glossy plastic)
+    rgh = t.mix(bm, rgh, 0.34 + roof * 0.3)
     rgh = t.mix(peel, rgh, 0.5)
     rgh = t.mix(leather, rgh, 0.38)
     rgh = t.mix(char, rgh, 0.35 + cn.smooth(0.35, 0.7) * 0.55)       # glossy tarry spots
@@ -996,7 +1002,7 @@ def _skin_material(g, name="GH_Skin"):
     damaged = t.principled(dict(skin_sss, **{
         'Base Color': bl["Color"], 'Roughness': bl["Roughness"], 'Subsurface Weight': sss.clamp(),
         'Coat Weight': (bl["Coat"] + (0.12 + oily * 0.1 + lip * 0.15) * (1.0 - bl["Mask"]) * (1.0 - em * 0.9)
-                        + (wm * 0.35 + raw + bm) * wet * 0.5).clamp(),
+                        + (wm * 0.35 + raw * 0.35 + bm * 0.12) * wet * 0.5).clamp(),
         'Coat Roughness': t.mix(bl["Mask"], 0.3 - lip * 0.1, bl["Coat Roughness"]),
         'Coat IOR': 1.45, 'Coat Tint': bl["Coat Tint"], 'Coat Normal': n_fine,
         'Sheen Weight': 0.06 * (1.0 - bl["Mask"]), 'Normal': n_fine}), sss_method='RANDOM_WALK_SKIN')
@@ -1089,6 +1095,29 @@ def _fat_material(g):
     col = t.mix(fresh_m * 0.8, col, (0.22, 0.012, 0.016))
     fascia_m = t.noise(pc + (5.1, 3.3, 0.2), 420.0, 2.0).smooth(0.72, 0.8) * (1.0 - clot_m) * d.smooth(0.2, 0.4)
     col = t.mix(fascia_m * 0.6, col, (0.42, 0.30, 0.27))
+    # ---- deep cuts of the throat: a cross-section, not a painted disc
+    # (REFERENCE_NOTES §5.2, §5.18 E; refs 1/17): where a wall passes the
+    # airway it shows the pale ringed cartilage of the larynx / trachea around
+    # the dark lumen; cut vessels are dark round openings (arteries with a
+    # thick pale wall); the strap muscles are granular bundles
+    px, py, pz = t.sep(p)
+    neck = (-pz).smooth(0.095, 0.11) * d.smooth(0.25, 0.45)
+    y_ax = -0.011 - (-0.09 - pz).max(0.0).min(0.06) * 0.30
+    d_ax = t.vec(px, py - y_ax, 0.0).length()
+    lumen = (1.0 - d_ax.smooth(0.0072, 0.0080)) * neck
+    shell = d_ax.smooth(0.0074, 0.0082) * (1.0 - d_ax.smooth(0.0102, 0.0112)) * neck
+    rings = t.math('COSINE', pz * (2.0 * math.pi / 0.0042) + t.noise(p, 90.0) * 1.5).smooth(-0.35, 0.1)
+    cart = t.mix(t.noise(p, 700.0), (0.62, 0.60, 0.55), (0.74, 0.72, 0.66))
+    col = t.mix(shell, col, t.mix(rings, (0.42, 0.24, 0.22), cart))
+    col = t.mix(lumen, col, (0.025, 0.006, 0.006))
+    vd_, _, _ = t.voronoi(t.warp(p, 200.0, 0.001), 180.0, 'F1', rand=0.9)
+    vsel = t.noise(p + (4.0, 1.0, 2.0), 60.0).smooth(0.58, 0.64) * neck
+    ves_wall = (1.0 - vd_.smooth(0.10, 0.16)) * vsel
+    ves_lum = (1.0 - vd_.smooth(0.06, 0.1)) * vsel
+    col = t.mix(ves_wall * 0.8, col, (0.55, 0.40, 0.36))
+    col = t.mix(ves_lum, col, (0.03, 0.004, 0.004))
+    gran = t.noise(p, 1600.0, 2.0)
+    col = t.mix(neck * fm * 0.5, col, col * (0.75 + 0.5 * gran))
     # the deeper, the darker (self-shadowed, blood-filled bed)
     # (the whole wall sits in the wound's shade: a wall facing the key light
     # must not come out brighter than the skin around it)
@@ -1146,11 +1175,14 @@ def _bone_material(g):
     h = h - main * 3.0 - hair * 1.2
     # wounds and fractures are bloody, but the bone must still read: patchy film
     gb = t.attr("gore_blood")
-    blood = (gb * 0.55).max(main * 0.7).max(gb.smooth(0.8, 1.0) * 0.95)
+    # (broken bone in a wound lies in blood: mostly filmed, pale chalky
+    # patches and edges showing through, never clean white plates)
+    blood = (gb * 0.6).max(main * 0.7).max(gb.smooth(0.55, 0.95) * 0.92)
     bl = _blood_layer(t, g, col, b["Roughness"], blood, p)
     h = t.mix(bl["Height Mask"], h, bl["Height"] * 2.0 - main * 2.0)
     bsdf = t.principled({
         'Base Color': bl["Color"], 'Roughness': bl["Roughness"], 'IOR': 1.55,
+        'Specular IOR Level': 0.35 + bl["Mask"] * 0.15,
         'Subsurface Weight': 0.2 * bl["SSS"], 'Subsurface Radius': (1.0, 0.75, 0.5),
         'Subsurface Scale': 0.0012, 'Coat Weight': bl["Coat"],
         'Coat Roughness': t.mix(bl["Mask"], 0.25, bl["Coat Roughness"]), 'Coat Tint': bl["Coat Tint"],
@@ -1422,7 +1454,9 @@ def _teeth_material(g):
     z_occ = t.value("occlusal_z", OCCLUSAL_Z) + (py - OCCLUSAL_Y) * OCCLUSAL_SLOPE
     h = ((pz - z_occ).abs() - 0.0007) / 0.0085            # 0 biting edge .. 1 gum line
     rnd = t.white(t.vec(t.attr("tooth_id"), 0.37, 0.0))
-    body = t.mix(h.smooth(0.15, 1.0), (0.68, 0.63, 0.51), (0.56, 0.44, 0.25))
+    # (ivory enamel, never plastic white: warm, slightly translucent, yellower
+    # toward the neck of the tooth)
+    body = t.mix(h.smooth(0.15, 1.0), (0.58, 0.53, 0.41), (0.50, 0.39, 0.22))
     body = body * (0.92 + 0.12 * rnd)
     front = 1.0 - py.smooth(-0.075, -0.068)               # incisors and canines
     edge = (1.0 - h.smooth(0.0, 0.2)) * front
@@ -1479,8 +1513,8 @@ def _wet_mucosa(g, name, base_lo, base_hi, extra=None, sss=0.8, view=(0.6, 0.2, 
     # lumpy dark-red to bright red-orange tissue
     wd = (t.attr("gore_wound") + (t.noise(p, 400.0) - 0.5) * 0.3).smooth(0.3, 0.6)
     pn = t.noise(p, 300.0, 3.0, 0.6)
-    pulp = pn.ramp([(0.2, (0.10, 0.006, 0.008)), (0.45, (0.26, 0.02, 0.018)), (0.7, (0.42, 0.07, 0.04)),
-                    (0.9, (0.50, 0.16, 0.10))])
+    pulp = pn.ramp([(0.2, (0.12, 0.008, 0.009)), (0.45, (0.36, 0.035, 0.022)), (0.7, (0.56, 0.10, 0.05)),
+                    (0.9, (0.62, 0.22, 0.12))])
     col = t.mix(wd, col, pulp)
     h = t.mix(wd, h, t.noise(p, 700.0, 3.0) * 2.0)
     bl = _blood_layer(t, g, col, t.mix(wet, 0.5, 0.2) + rough_add, t.attr("gore_blood"), p)
