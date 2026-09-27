@@ -252,6 +252,8 @@ damage = 0 returns the intact mesh. Carnage (9 hits) evaluates in ~4.5 s.
 - seq_exit_05s: the first trickle starts slightly BELOW the rim (thin clean-skin gap) — §5.17 violation.
 - USER (HIGH, REFERENCE_NOTES §5.19): gap STILL visible between wound and stream on the exit sequence; wound skin still looks
   THICK; bleeding must be wired to real named arteries/veins (rate, colour, pulsing per vessel) — 1:1 like the refs.
+- USER (HIGH, REFERENCE_NOTES §5.21): a slash stream started on intact skin beside the cut (no wound above it); every stream
+  must trace up into an overflowing low point of a wound rim. Drops/streams too thick (drops ~3-4.5 mm, streams 2-5 mm wide, 0.1-0.4 mm thick).
 - USER (HIGH, REFERENCE_NOTES §5.20): crushed preset leaves the NOSE TIP intact/unbruised inside the wound; the eyeball is
   too BIG (trauma never enlarges it; keep r 0.012); the eye must take real damage (rupture = deflate/collapse + extruded
   vitreous, hyphaema, subconjunctival haemorrhage, lid tears, blow-out/enophthalmos).

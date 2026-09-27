@@ -417,6 +417,20 @@ SHOULD BE ABLE TO GET DAMAGED AND BE REALISTIC LIKE REAL LIFE 1:1".
    Build this as part of GH_Gore on the eye layer (per-hit: rupture, collapse, extrusion, haemorrhage, hyphaema),
    verify with close-ups against real anatomy, and keep the undamaged eye pristine only when no hit reaches it.
 
+## 5.21 User verdict on the cheek-slash test (2026-09-27, fix pass 2 blood test `t4s_Slash_Cheek_wide_60s.png`) — HIGH
+
+User: "THE BLOOD U CAN SEE STREAK ON RIGHT SIDE IS COMMING FROM NOTHING? ABOVE IT ISNT A WOUND ... IT WOULDNT MAKE SENSE
+THAT SECOND ONE BE THERE IN THAT SPECIFIC SPOT ALSO THE DROPLETS ... A BIT THICK".
+1. **Every stream must start at a point of the wound rim that is directly above it and actually overflowing.** In the
+   test the right-hand stream starts on intact skin to the right of the cut's end, with no wound above it. Streams may
+   only be seeded at rim points that are (a) on the wound's own edge, (b) local LOW points of that edge under gravity,
+   (c) where the pooled blood level reaches the rim. A second stream must come from a second low point of the SAME rim
+   (or from a separate wound), and its top must visibly connect to the rim. Test: trace every stream upward — it must
+   end inside a wound opening; any stream whose top is on skin = HIGH FAIL (same class as 5.9/5.17).
+2. **Drops too thick.** Pendant drops are ~30-60 uL (a bead ~3-4.5 mm across), slightly flattened against the skin,
+   teardrop-shaped, translucent at the thin edge; the stream feeding them is 2-5 mm wide and ~0.1-0.4 mm thick
+   (REALISM_BIBLE rivulet row). Current drops read as fat glossy berries and the streams as thick flat tape.
+
 ## 6. What to change in our assets (actionable)
 
 | Where | Change |
