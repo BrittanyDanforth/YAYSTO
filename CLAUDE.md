@@ -263,6 +263,16 @@ damage = 0 returns the intact mesh. Carnage (9 hits) evaluates in ~4.5 s.
 - Test build after the neck lift (fix2/r1/skin_neck_*): a hard horizontal LEDGE/step around the base of the neck
   (collar-like seam where neck meets shoulders), a flat shelf + blob under the chin at the front, notch at the nape;
   scattered dark/red dots on chest, belly and legs that read as a texture error. All HIGH for the next body round.
+- USER (HIGH, "DO NOT SLACK"): the standalone head (gore_head renders/hero.png) looks fine, but once assembled on the body
+  the head/neck looks deformed. Acceptance: render the assembled body's head+neck and the standalone head from the SAME
+  cameras side by side — face, jaw line and under-ear region must match; only the neck below the jaw may differ.
+  Root cause found (not arteries — the skin render contains no vessels): body_skin.py `_neck_parts` builds the neck from
+  straight SDF capsules — `scm` (0.017,-0.045,1.463)->(0.057,0.022,1.600) r 7-11.5 mm reads as a hard tube, and
+  `nuchal` (0.038,0.048,1.545)->(0.050,0.054,1.608) r 7-14 mm makes the bump under each ear; smin blends are too
+  tight. Replace with a sculpted neck profile (tapered, flattened SCM belly fading into the mastoid, soft posterior
+  triangle hollow, smooth trapezius slope) and blend into the head's own neck without steps; fix the ledge at the
+  neck base. Keep every inner layer (muscle shell, vessels, organs) at least 3 mm inside the skin so nothing
+  pushes it out.
 - Organs: still smooth clay; lungs read as folded sheets/plastic (need spongy lobed lungs with fissures); the fat apron
   is a flat slab (needs lumpy lobular fat); heart too glossy/blobby. Skeleton too white/uniform (ivory, varied).
 
