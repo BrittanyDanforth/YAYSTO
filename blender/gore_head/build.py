@@ -168,8 +168,10 @@ PRESETS = {
             ("blunt", (-0.042, -0.074, 0.020), dict(size=1.1, depth=0.9, name="GH_Hit_Crush_3")),
             ("blunt", (-0.014, -0.100, -0.018), dict(size=1.0, depth=0.9, name="GH_Hit_Crush_Nose")),
         ],
-        # ~10 h after the beating: massively swollen, deep purple (§5.18 D)
-        controls=dict(bleed=1.0, bruising=1.0, swelling=0.9, wound_age=0.45),
+        # ~10 h after the beating: massively swollen, deep purple (§5.18 D);
+        # the blood on the face is partly dried -- dark, tacky, clotted, with
+        # the fresh flow from the nose and the torn vessels on top of it
+        controls=dict(bleed=1.0, bruising=1.0, swelling=0.9, wound_age=0.45, blood_age=0.3),
     ),
 }
 PRESET_NAMES = tuple(PRESETS)
@@ -938,7 +940,7 @@ def _matter_material(white):
     # (sulci run in from the surface and end blindly 8-15 mm deep; deeper
     # the nodal sheets of the wave field close into cells, which read as a
     # crackle web, so they are faded out there)
-    reach = t.smooth(ln, 0.66 + 0.06 * t.noise(t.p, 45.0, 2.0), 0.86)
+    reach = t.smooth(ln, t.math('ADD', 0.66, t.math('MULTIPLY', t.noise(t.p, 45.0, 2.0), 0.06)), 0.86)
     reach = t.math('MULTIPLY', reach, t.smooth(t.noise(t.p, 60.0, 2.0), 0.2, 0.4))
     n1 = t.noise(t.p, 900.0, 3.0)
     # (grey matter is clearly darker than the cream white matter: pinkish

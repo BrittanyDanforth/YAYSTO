@@ -1413,8 +1413,10 @@ def _build_blunt():
     # the broken plates of a crushed area lie in blood and pulp
     # (R_cr is zero on the bone layers: use the soft-tissue opening's size)
     R_crs = s * (0.004 + 0.02 * cr)
-    blood = blood.max(is_bone * cr * t.smooth(R_crs * 1.8 + 0.006, R_crs * 0.8, c.rho)
-                      * (0.72 + 0.28 * t.smooth(-0.3, 0.3, t.noise(c.np * 180.0, detail=2.0))))
+    # (every broken plate of the crushed area lies in blood and pulp: clean
+    # cream plates at the crater's edge read as paper / plaster)
+    blood = blood.max(is_bone * cr * t.smooth(R_crs * 2.8 + 0.012, R_crs * 1.2, c.rho)
+                      * (0.78 + 0.22 * t.smooth(-0.3, 0.3, t.noise(c.np * 180.0, detail=2.0))))
     # subconjunctival haemorrhage of the eye near the blow (eye_injury)
     blood = blood.max(eye["blood"])
     # the broken nose: the split over it is wet, the whole nose swells
@@ -2801,7 +2803,16 @@ def _build_pools(t, hits, surface, drip):
     g = t.store(g, "pl_upmin", up_min)
     recede = ((t.attr("pl_up") - t.attr("pl_upmin")) * 0.5 * g_t.length()).clamp(0.0, 0.012) \
         * (t.attr("pl_col") + t.attr("pl_spl")).clamp()
-    L = t.attr("pl_low") - 0.0032 * (1.0 - fill) + 0.0003 * fill - tilt.max(0.0) - recede
+    # a gaping cut that lies ACROSS gravity (a throat cut on the upright
+    # neck) is no cup: the blood runs out over its lower lip as fast as it
+    # comes, so only the floor of the V holds liquid and the cut walls --
+    # muscle, cartilage, vessel openings -- stand out of it (a trench flooded
+    # flush read as one flat glossy slab, REFERENCE_NOTES §5.18 E)
+    gh = g_t.normalize()
+    across = (1.0 - t.math('ABSOLUTE', T1.dot(gh))) * g_t.length()
+    sink_cut = t.attr("pl_col") * across * (t.attr("pl_Ry") * 0.55).min(0.0065) \
+        * t.smooth(0.003, 0.007, t.attr("pl_Ry"))
+    L = t.attr("pl_low") - 0.0032 * (1.0 - fill) + 0.0003 * fill - tilt.max(0.0) - recede - sink_cut
     hs = t.attr("pl_h")
     # just past the rim the liquid drapes onto the lip where the lip is lower
     # than the level (spilling); everywhere else it tucks under the skin
@@ -3540,7 +3551,7 @@ def _build_teeth():
 # ---------------------------------------------------------------------------
 # The shared main group
 # ---------------------------------------------------------------------------
-WALL_STEPS = 6
+WALL_STEPS = 9
 # cumulative share of the sideways wall movement reached after each ring
 # (x^1.9: walls drop steeply at the lip and converge lower down)
 WALL_PROFILE = tuple(round((k / WALL_STEPS) ** 1.9, 4) for k in range(1, WALL_STEPS + 1))
@@ -3550,13 +3561,13 @@ WALL_PROFILE = tuple(round((k / WALL_STEPS) ** 1.9, 4) for k in range(1, WALL_ST
 V_PROFILE = tuple(round((k / WALL_STEPS) ** 1.25, 4) for k in range(1, WALL_STEPS + 1))
 VSHAPE_KINDS = ("slash",)
 # ring from which the blood fill of a bleeding wound spans the wound bed
-FILL_RING = 3
+FILL_RING = 4
 # wall relaxation (Blur Attribute iterations on the wall vertices) and the
 # lumpy relief pushed along the wall normal: (scale 1/m, amplitude m)
 WALL_RELAX = 10
 # wall ring the tissue strands start from (a third of the way down: bridges
 # span the deep part of a wound, they do not hang from the lips)
-STRAND_RING = 2
+STRAND_RING = 3
 WALL_LUMPS = ((210.0, 0.00055), (650.0, 0.00018))
 # kinds whose wound bed fills with blood (skin layer, when bleeding), and how
 # far the fill reaches toward the centre line: a cut's bed is flooded; an
@@ -3585,8 +3596,8 @@ CLOT_DENSITY_K = {"bullet": 2.5, "exit": 1.3, "slash": 0.0, "blunt": 3.0, "blast
 STRAND_P = {"blunt": 0.0014, "exit": 0.0018, "blast": 0.004}
 # wet pulp lumps and torn shreds per wall area (lumps per m^2 at factor 1) and
 # per kind: destroyed tissue is mush at three scales (REFERENCE_NOTES §5.18 A)
-MUSH_DENSITY = 90000.0
-MUSH_K = {"exit": 2.6, "blunt": 1.6, "blast": 1.3, "slash": 1.1}
+MUSH_DENSITY = 160000.0
+MUSH_K = {"exit": 2.6, "blunt": 1.6, "blast": 1.3}
 # extra blood on the wound walls per kind: a bullet track is a narrow tube
 # lined with blood and clot (no clean yellow fat), an exit is soaked
 WALL_BLOOD = {"bullet": 0.85, "exit": 0.6, "blast": 0.6}
@@ -3919,7 +3930,9 @@ def _mush(t, g, on_faces):
     lump_pts = t.out(t.node('GeometryNodeSeparateGeometry', {'Geometry': pts, 'Selection': flap}, domain='POINT'),
                      'Inverted')
     # ball radius: the lump size, pulp a little fuller; buried half in the wall
-    rad = (t.attr("m_sz") * t.switch(brain, 0.8, 1.05)).max(0.00045)
+    # (small balls, 0.45-1.7 mm: their union is a lumpy aggregate; a few
+    # big balls fused into round cherries / dough balls)
+    rad = (t.attr("m_sz") * t.switch(brain, 0.55, 0.7)).max(0.00045).min(0.0017)
     lump_pts = t.out(t.node('GeometryNodeSetPosition', {'Geometry': lump_pts,
                                                         'Offset': nrm * (rad * -0.25)}))
     lump_pts = t.store(lump_pts, "m_r", rad)
@@ -3927,8 +3940,9 @@ def _mush(t, g, on_faces):
     classes = (
         # (selection, material input, g_wk, gore_clot, blood amount)
         (t.bool('AND', k.lt(0.5), t.bool('NOT', brain)), "Strand Material", float(WALL_STEPS + 2), 1.0, 0.45),
-        (t.bool('AND', t.bool('AND', k.gt(0.5), k.lt(1.5)), t.bool('NOT', brain)), "Wall Material", 2.4, 1.0, 0.3),
-        (t.bool('AND', k.lt(1.5), brain), "Pulp Material", float(WALL_STEPS + 2), 1.0, 0.35),
+        (t.bool('AND', t.bool('AND', k.gt(0.5), k.lt(1.5)), t.bool('NOT', brain)), "Wall Material",
+         WALL_STEPS * 0.4, 1.0, 0.3),
+        (t.bool('AND', k.lt(1.5), brain), "Pulp Material", float(WALL_STEPS + 2), 1.0, 0.7),
         (k.gt(1.5), "Blood Material", float(WALL_STEPS + 2), 0.0, 1.0),
     )
     masses = []
@@ -3941,9 +3955,9 @@ def _mush(t, g, on_faces):
                                                        'Threshold': 0.3, 'Adaptivity': 0.0}))
         # tear the fused surface: folds, pits and crevices at three scales
         pn = t.pos()
-        tear = t.noise(pn * 700.0 + t.vec(ci * 3.1, 0.0, 0.0), detail=2.0) * 0.00032 \
-            + t.noise(pn * 1900.0, detail=2.0) * 0.00012 \
-            + (t.noise(pn * 260.0, detail=1.0, signed=False) - 0.55).max(0.0) * -0.0012
+        tear = t.noise(pn * 520.0 + t.vec(ci * 3.1, 0.0, 0.0), detail=2.0) * 0.00055 \
+            + t.noise(pn * 1500.0, detail=2.0) * 0.0002 \
+            + (t.noise(pn * 220.0, detail=1.0, signed=False) - 0.5).max(0.0) * -0.0022
         mm = t.out(t.node('GeometryNodeSetPosition', {'Geometry': mm, 'Offset': t.normal() * tear}))
         bl_ = t.noise(pn * 600.0 + t.vec(0.0, ci * 1.7, 0.0), detail=2.0, signed=False)
         mm = t.store(mm, "g_a", t.vec(1.0, 0.0, t.smooth(0.45, 0.8, bl_) * bl_amt), 'FLOAT_VECTOR')
@@ -3962,7 +3976,7 @@ def _mush(t, g, on_faces):
     sheets = t.store(sheets, "gore_clot", t.switch(is_clot, 0.0, 1.0))
     # fat sheets take the upper wall's depth (yellow, the pale fatty underside
     # of a torn flap); the rest the deep wall
-    sheets = t.store(sheets, "g_wk", t.switch(is_mid, float(WALL_STEPS + 2), 2.4))
+    sheets = t.store(sheets, "g_wk", t.switch(is_mid, float(WALL_STEPS + 2), WALL_STEPS * 0.4))
     sheets = t.store(sheets, "g_side", 99.0, 'FLOAT', 'FACE')
     sheets = t.out(t.node('GeometryNodeSetMaterial', {'Geometry': sheets, 'Selection': is_mus,
                                                       'Material': t.inp("Strand Material")}))
@@ -4133,6 +4147,18 @@ def _build_cut():
         lump = term if lump is None else lump + term
     # torn (not incised) walls also bulge and pit at the ~5-15 mm scale
     lump = lump + t.noise(p * 75.0 + t.vec(2.3, 0.4, 5.1), detail=2.0) * 0.0011 * (1.0 - vshape)
+    # an incised wall is a clean section, but never a smooth plane: the cut
+    # subcutaneous fat bulges out as rounded yellow lobules (2-4 mm, domed,
+    # with thin septa between them) and the cut muscle below shows its
+    # bundles as low ridges (the colours come from GH_Fat by depth; this is
+    # the relief, so the wall has real shape at the 1-4 mm scale)
+    lv = t.voronoi(p + t.noise(p * 300.0, detail=1.0, color=True) * 0.0006, 380.0, 'F1', 1.0)
+    ld = t.out(lv, 'Distance')
+    dome = (1.0 - (ld / 0.72) ** 2.0).max(0.0).sqrt()
+    fat_band = t.smooth(0.08, 0.2, fr_w) * t.smooth(0.8, 0.66, fr_w)
+    mus_band = t.smooth(0.74, 0.86, fr_w)
+    bund = t.noise(p * t.vec(160.0, 160.0, 900.0) + t.vec(1.3, 0.2, 0.7), detail=2.0)
+    lump = lump + vshape * (fat_band * dome * 0.00042 + mus_band * bund * 0.00022)
     g = t.out(t.node('GeometryNodeSetPosition', {'Geometry': g, 'Selection': wallv,
                                                  'Offset': t.normal() * (lump * (0.35 + 0.65 * fr_w))}))
     # blood filling the bed of a bleeding cut: a separate liquid sheet spanning

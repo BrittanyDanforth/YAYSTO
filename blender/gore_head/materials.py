@@ -581,8 +581,13 @@ def _group_blood_film():
     # fresh thin film glossy (0.05-0.15), clots matte (0.4-0.6)
     r_blood = t.mix(a, t.mix(wet, 0.34, 0.07) + clot * 0.42, t.mix(thick, 0.64, 0.42))
     t.result("Roughness", t.mix(mask, rough, r_blood))
-    t.result("Coat", mask * (0.35 + 0.65 * thick) * (1.0 - a * 0.9) * (0.25 + 0.75 * wet) * (1.0 - clot * 0.8))
-    t.result("Coat Roughness", 0.02 + (1.0 - wet) * 0.25 + a * 0.3)
+    # (fresh blood is wet, but a blood-soaked wound is never one smooth
+    # mirror: tacky / clotting patches lose their coat, and the gloss breaks
+    # into many small glints over granular clot and tissue -- §5.18 C)
+    tacky = t.noise(p, 55.0, 3.0).smooth(0.5, 0.68)
+    t.result("Coat", mask * (0.35 + 0.65 * thick) * (1.0 - a * 0.9) * (0.25 + 0.75 * wet) * (1.0 - clot * 0.8)
+             * (1.0 - tacky * 0.55))
+    t.result("Coat Roughness", 0.06 + (1.0 - wet) * 0.25 + a * 0.3 + tacky * 0.18 + (n_mid - 0.5) * 0.08)
     t.result("Coat Tint", t.mix(thick * (1.0 - a), (1.0, 1.0, 1.0), (0.92, 0.32, 0.27)))
     t.result("Mask", mask)
     t.result("Thickness", thick * mask)
@@ -592,7 +597,8 @@ def _group_blood_film():
     hthick = cov_h.smooth(0.45, 1.0)
     crack_h = (1.0 - cd.smooth(0.0, 0.05)) * age.smooth(0.55, 0.95) * hthick.smooth(0.7, 1.0) \
         * n_big.smooth(0.4, 0.6)
-    t.result("Height", hmask * (0.25 + 0.75 * hthick) - crack_h * 0.6)
+    gran = t.noise(p, 1500.0, 2.0) * 0.5 + n_mid * 0.35 + t.voronoi(p, 700.0)[0].smooth(0.0, 0.5) * 0.3
+    t.result("Height", hmask * (0.25 + 0.75 * hthick) - crack_h * 0.6 + hmask * gran * (0.25 + 0.35 * clot))
     t.result("Height Mask", hmask * hthick.max(0.3))
     t.result("SSS", 1.0 - mask * (0.4 + 0.6 * thick))
     t.layout()
@@ -917,8 +923,8 @@ def _skin_material(g, name="GH_Skin"):
     # is dark plum to near-black purple, refs 5 / 15 / 16, not a lilac tint)
     young = bz.ramp([(0.0, (1.0, 1.0, 1.0)), (0.2, (0.90, 0.64, 0.64)), (0.5, (0.64, 0.33, 0.38)),
                      (1.0, (0.34, 0.13, 0.22))])
-    mid = bz.ramp([(0.0, (1.0, 1.0, 1.0)), (0.15, (0.86, 0.68, 0.72)), (0.4, (0.54, 0.30, 0.40)),
-                   (0.65, (0.30, 0.14, 0.28)), (1.0, (0.13, 0.05, 0.13))])
+    mid = bz.ramp([(0.0, (1.0, 1.0, 1.0)), (0.15, (0.84, 0.66, 0.74)), (0.4, (0.50, 0.28, 0.44)),
+                   (0.65, (0.28, 0.13, 0.33)), (1.0, (0.12, 0.045, 0.15))])
     tint = t.mix(ageh.smooth(0.5, 4.0), young, mid)
     old_edge = ageh.smooth(18.0, 40.0) * (1.0 - bz.smooth(0.2, 0.55)) * bz.smooth(0.0, 0.08)
     tint = t.mix(old_edge, tint, (0.86, 0.84, 0.58))

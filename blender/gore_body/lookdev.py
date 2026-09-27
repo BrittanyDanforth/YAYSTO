@@ -376,6 +376,39 @@ def _organ_material():
     return _finish(mat, t, (0.45, 0.15, 0.15), 0.25)
 
 
+def _brain_material():
+    """GBL_brain: the living brain surface of the intact body (fix round 3, critics: the copied head material baked to
+    a dark mauve-burgundy #926863 because the LOD's gb_depth p50 of 0.68 put ~70 % of the surface in 'sulcus').
+
+    Cream-pink-grey cortex (#D9B8A8 - #C9A99A, refs 6/19) with a glossy pia-arachnoid, red only deep in the sulci
+    (smoothstep(0.75, 0.97, gb_depth)), dark bluish-red pial veins that follow the sulci and fine red arteries.
+    Cut faces (the game's G3 cut shader) show the grey / white matter contrast, not this surface."""
+    mat, t = _new("GBL_brain")
+    p = t.coord()
+    sul = t.attr("gb_depth").smooth(0.75, 0.97)
+    n1 = t.noise(p, 80.0, 4.0, 0.55)
+    col = n1.ramp([(0.25, (0.58, 0.40, 0.33)), (0.55, (0.66, 0.47, 0.39)), (0.85, (0.72, 0.53, 0.44))])
+    blush = t.noise(p, 220.0, 3.0).smooth(0.55, 0.8)
+    col = t.mix(blush * 0.25, col, col * (1.0, 0.80, 0.78))
+    col = t.mix(sul * 0.75, col, col * (0.55, 0.26, 0.24))                 # red-dark only deep in the sulci
+    pv = t.warp(p, 40.0, 0.006)
+    vmask = t.noise(p, 30.0).smooth(0.35, 0.6)
+    veins = t.ridge(t.noise(pv, 70.0, 3.0), 0.018) * vmask * 0.8
+    veins = veins.max(sul.smooth(0.3, 0.9) * t.noise(pv, 150.0).smooth(0.45, 0.55) * 0.7)
+    arts = t.ridge(t.noise(pv + (3.1, 7.7, 1.3), 260.0, 3.0), 0.02) * (0.3 + 0.5 * sul)
+    caps = t.ridge(t.noise(pv + (1.3, 2.1, 5.3), 800.0, 2.0), 0.03) * 0.35
+    col = t.mix(veins * 0.85, col, (0.16, 0.030, 0.050))
+    col = t.mix(arts * 0.6, col, (0.45, 0.06, 0.05))
+    col = t.mix(caps * 0.4, col, (0.62, 0.22, 0.18))
+    h = veins * 1.0 + arts * 0.4 + t.noise(p, 900.0) * 0.3 - sul * 0.8
+    rough = 0.34 + (t.noise(p, 300.0) - 0.5) * 0.12
+    bsdf = t.principled({'Base Color': col, 'Roughness': rough, 'IOR': 1.4, 'Subsurface Weight': 0.7,
+                         'Subsurface Radius': (1.0, 0.5, 0.4), 'Subsurface Scale': 0.003,
+                         'Coat Weight': 0.55, 'Coat Roughness': 0.08, 'Normal': t.bump(h, 0.0001)})
+    t.output(bsdf)
+    return _finish(mat, t, (0.66, 0.47, 0.39), 0.3)
+
+
 def _organ_row(name):
     rows = OR.ORGANS
     if isinstance(rows, dict):
@@ -470,7 +503,7 @@ def build_materials(eyes=None):
                                radius=(0.9, 0.7, 0.5), noise=0.06)
     out["GBL_gums"] = _shifted_copy(ghm["GH_Gums"], "GBL_gums", HEAD_OFFSET)
     out["GBL_tongue"] = _shifted_copy(ghm["GH_Tongue"], "GBL_tongue", HEAD_OFFSET)
-    out["GBL_brain"] = _shifted_copy(ghm["GH_Brain"], "GBL_brain", HEAD_OFFSET, {"gh_sulcus": "gb_depth"})
+    out["GBL_brain"] = _brain_material()
     out["GBL_muscle"] = _shifted_copy(ghm["GH_Muscle"], "GBL_muscle")
     out["GBL_bone"] = _bone_material(ghm["GH_Bone"])
     for side in ("L", "R"):

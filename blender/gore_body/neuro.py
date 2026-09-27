@@ -372,15 +372,90 @@ def build_cord_only():
 # ===========================================================================
 # GB_Brain: the head project's brain + re-routed lower medulla
 # ===========================================================================
-def brain_sdf(x, y, z):
-    """Body-frame brain SDF: head-project brain above BRAIN_CUT_Z (its stem below is replaced by a
-    medulla that follows CMJ_PATH through the foramen magnum), closed at BRAIN_BOTTOM."""
+# Fix round 3 (critics: 1,074 cm3 = ~20 % small, no Sylvian fissure / temporal lobe, smooth cerebellum):
+BRAIN_GROW = 0.0006            # m, the head's gyrified brain dilated toward the inner table ...
+CSF_MIN = 0.0010               # ... keeping >= 1 mm of CSF under the (body) cranial cavity
+SYLVIAN_R = 0.0017             # half width of the lateral sulcus opening
+SYLVIAN_DEPTH = 0.0140         # how far the cleft runs in (the insula lies ~1.5-2 cm deep)
+FOLIA_PERIOD = 0.0026          # cerebellar folia spacing (2-3 mm)
+FOLIA_DEPTH = 0.0015           # groove depth between folia (1-1.5 mm)
+HFISSURE_DEPTH = 0.0035        # horizontal fissure of the cerebellum
+
+
+def _sylvian(ax, y, z):
+    """SDF of the lateral (Sylvian) sulcus cleft (head frame, |x|): the head's LATERAL_FISSURE line swept inward
+    (medial) over SYLVIAN_DEPTH and extended to the temporal pole and the posterior ramus, a 4 mm wide slot that
+    separates the temporal lobe from the frontal and parietal operculum."""
     A = _A()
     V = _V()
-    d = _tent_brain(A, x - O[0], y - O[1], z - O[2])
+    L = np.asarray(A.LATERAL_FISSURE, float)
+    ext = np.vstack([L[0] + (L[0] - L[1]) * 0.9 + np.array([0.0, 0.0, -0.004]), L,
+                     L[-1] + (L[-1] - L[-2]) * 0.8 + np.array([-0.002, 0.0, 0.006])])
+    d = None
+    for k, f in enumerate(np.linspace(0.0, 1.0, 5)):
+        pts = [tuple(p - np.array([SYLVIAN_DEPTH * f, 0.0, 0.0015 * f])) for p in ext]
+        r = SYLVIAN_R * (1.0 - 0.45 * f)
+        q = V.chain(ax, y, z, pts, [r] * len(pts))
+        d = q if d is None else V.smin(d, q, 0.003)
+    return d
+
+
+def _cereb_mask(ax, y, z):
+    """0..1 weight of the cerebellar region (head frame, |x|): under the tentorium, behind the brain stem."""
+    A = _A()
+    zt = 0.010 - 0.010 * A.smoothstep(0.02, 0.09, y)
+    return A.smoothstep(zt - 0.002, zt - 0.008, z) * A.smoothstep(0.018, 0.032, y) * A.smoothstep(0.066, 0.052, ax)
+
+
+def _cerebellum_detail(ax, y, z, d):
+    """Folia (transverse lamellae every FOLIA_PERIOD, grooves FOLIA_DEPTH deep) and the horizontal fissure on the
+    cerebellar surface (head frame; the region under the tentorium behind the brain stem)."""
+    A = _A()
+    reg = _cereb_mask(ax, y, z)
+    if not np.any(reg > 1e-6):
+        return d
+    cc = np.array([0.0, 0.026, 0.006])
+    r = np.sqrt(ax ** 2 + ((y - cc[1]) * 0.92) ** 2 + ((z - cc[2]) * 1.25) ** 2)
+    ph = r + 0.0006 * np.sin(ax * 260.0) + 0.0004 * np.sin(y * 330.0 + 1.1)       # lamellae meander a little
+    fol = 0.5 + 0.5 * np.cos(2.0 * np.pi * ph / FOLIA_PERIOD)
+    groove = A.smoothstep(0.62, 0.97, fol)
+    near = A.smoothstep(-0.006, -0.0015, d)                                    # only the cortex layer
+    hf = np.exp(-((r - 0.047) / 0.0011) ** 2)                                   # horizontal fissure
+    return d + reg * near * (FOLIA_DEPTH * groove + HFISSURE_DEPTH * hf)
+
+
+def brain_sdf(x, y, z):
+    """Body-frame brain SDF: head-project brain above BRAIN_CUT_Z (its stem below is replaced by a
+    medulla that follows CMJ_PATH through the foramen magnum), closed at BRAIN_BOTTOM; dilated to an adult
+    volume under the body skull's cavity, with a real Sylvian cleft and cerebellar folia (fix round 3)."""
+    A = _A()
+    V = _V()
+    hx, hy, hz = x - O[0], y - O[1], z - O[2]
+    d = _tent_brain(A, hx, hy, hz) - BRAIN_GROW
+    ax = np.abs(hx)
+    # the dilation must not close the longitudinal fissure (falx, 2.6 mm) or the tentorial gap (1.6 mm): re-cut
+    zcc = 0.046 - 0.30 * (A.smoothstep(0.034, 0.050, hy) + A.smoothstep(-0.036, -0.052, hy))
+    zt = 0.010 - 0.010 * A.smoothstep(0.02, 0.09, hy)
+    # (the falx cerebri lies above the tentorium only: the cerebellum keeps its vermis)
+    d = V.smax(d, -np.maximum(np.maximum(ax - 0.0013, zcc - hz), (zt - 0.0010) - hz), 0.0025)
+    lift = 0.007 * np.clip(1.0 - (ax / 0.045) ** 2, 0.0, 1.0) * A.smoothstep(A.TENTORIUM_Y0, A.TENTORIUM_Y0 + 0.012, hy) \
+        * A.smoothstep(0.095, 0.075, hy)
+    tent = zt + lift
+    slot = np.maximum(np.abs(hz - (tent - 0.0000)) - 0.0008, 0.020 - hy)
+    d = V.smax(d, -slot, 0.0012)
+    d = V.smax(d, -_sylvian(ax, hy, hz), 0.0015)
     import skull as SKL
     # the body skull raises the lateral middle fossa floor over the TMJ / ear (skull.cranial_cavity_body)
-    d = V.smax(d, SKL.cranial_cavity_body(np.abs(x - O[0]), y - O[1], z - O[2]) + A.BRAIN_GAP, 0.001)
+    cav = SKL.cranial_cavity_body(ax, hy, hz) + max(A.BRAIN_GAP, CSF_MIN)
+    d = V.smax(d, cav, 0.001)
+    # where the cavity clamp flattened the cortex (temporal lobe on the raised middle fossa, gyri crests under the
+    # vault) the gyri / sulci pattern continues on the flattened face instead of a clean cut plane
+    wall = A.smoothstep(-0.0035, -0.0008, cav)
+    if np.any(wall > 1e-6):
+        wall = wall * (1.0 - _cereb_mask(ax, hy, hz))
+        d = d + A._sulcus_profile(A.gyri_field(ax, hy, hz)) * wall * A.smoothstep(-0.012, -0.004, hz + 0.060)
+    d = _cerebellum_detail(ax, hy, hz, d)            # folia (also on the faces the clamp flattened)
+
     low = (BRAIN_CUT_Z - z) * 1.0
     d = V.smax(d, np.where(y < 0.062, low, -1.0), 0.004)            # remove the head's lower stem
     med = V.chain(x / 0.82, y, z, [(0.0, 0.0365, 1.640)] + CMJ_PATH, [0.0068, 0.0060, 0.0050, 0.0047, 0.0046, 0.0046])

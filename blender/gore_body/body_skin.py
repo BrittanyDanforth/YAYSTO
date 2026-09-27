@@ -490,7 +490,7 @@ LARYNX_RIDGE_H = (0.0, 0.0012, 0.0040, 0.0066, 0.0078, 0.0032, 0.0)
 LARYNX_RIDGE_W = 0.0200                    # half width of the ridge base (the laminae meet at ~90 deg)
 # anterolateral pinch of the column under the mandible (m): the jaw border overhangs the neck by 5-8 mm there
 NECK_PINCH_Z = (1.505, 1.525, 1.545, 1.562, 1.585, 1.610)
-NECK_PINCH_H = (0.0, 0.0020, 0.0050, 0.0062, 0.0035, 0.0)
+NECK_PINCH_H = (0.0, 0.0010, 0.0025, 0.0030, 0.0018, 0.0)
 
 
 def neck_relief(xs, TH, Z, wf, wb):
@@ -1392,10 +1392,14 @@ def head_clip_z(x, y):
                    [1.5415, 1.5425, 1.5465, 1.5515, 1.5595, 1.564, 1.582, 1.596, 1.604])
 
 
+HEAD_CLIP_K = 0.016            # rounding of the head skin's cut under the jaw (fix round 3: 6 mm printed a hard jaw
+                               # 'mask edge' crease along the whole mandibular border)
+
+
 def _head_part(x, y, z):
     A = _A()
     h = A.skin_sdf(x, y - HEAD_OFFSET[1], z - HEAD_OFFSET[2])
-    return smax(h, head_clip_z(x, y) - z, 0.006)
+    return smax(h, head_clip_z(x, y) - z, HEAD_CLIP_K)
 
 
 HEAD_BOX = Box((-0.12, -0.135, 1.50), (0.12, 0.15, 1.80), margin=0.03)
@@ -1412,7 +1416,7 @@ def skin_sdf(x, y, z):
     k = 0.016 + 0.012 * sstep(0.0, 0.06, y) - 0.008 * sstep(1.57, 1.60, z) * sstep(0.02, -0.02, y)
     # under the chin the blend stays tight (6 mm) so the submental plane meets the jaw in a defined
     # cervicomental angle instead of the wide blend refilling it into a pouch (fix round 2)
-    k = k - 0.010 * sstep(-0.030, -0.045, y) * sstep(0.045, 0.025, np.abs(x)) * sstep(1.565, 1.550, z)
+    k = k - 0.004 * sstep(-0.030, -0.045, y) * sstep(0.045, 0.025, np.abs(x)) * sstep(1.565, 1.550, z)
     # behind, where the occiput meets the nape, a wider blend (up to 40 mm) so the join does not print a
     # curved 'cap edge' line across the back of the head (fix round 2)
     k = k + 0.012 * sstep(0.030, 0.080, y) * sstep(1.575, 1.615, z)

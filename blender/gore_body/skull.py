@@ -585,15 +585,18 @@ def _mand_body(ax, y, z):
 
 
 # ramus outline in its own plane (y, z), head frame: condyle in the glenoid fossa (y -0.0115, z -0.002), bone
-# gonion (y -0.0175, z -0.0715; RB gonion skin (0.052, -0.025, -0.070) head frame), posterior border leaning ~8 deg
-# back going up, the lower border continuing the mandibular plane -> gonial angle ~121 deg; coronoid tip under the
-# zygomatic arch, sigmoid notch ~14 mm deep, ramus ~30 mm wide at its narrowest
-RAMUS_POLY = [(-0.0175, -0.0715), (-0.0150, -0.0600), (-0.0125, -0.0400), (-0.0100, -0.0200),       # posterior border
-              (-0.0082, -0.0080), (-0.0150, -0.0070), (-0.0195, -0.0140),                          # condylar neck
-              (-0.0245, -0.0190), (-0.0305, -0.0140),                                             # sigmoid notch
-              (-0.0350, -0.0050), (-0.0385, -0.0075),                                             # coronoid tip
-              (-0.0410, -0.0300), (-0.0445, -0.0560), (-0.0480, -0.0700),                         # anterior border
-              (-0.0400, -0.0790), (-0.0280, -0.0765)]                                             # inferior border
+# gonion (y -0.019, z -0.069; RB gonion skin (0.052, -0.025, -0.070) head frame), S-curved posterior border leaning
+# ~10 deg back going up, the lower border continuing the mandibular plane (~27 deg) -> gonial angle ~125 deg;
+# a tall triangular coronoid process whose tip reaches the level of the condyle under the zygomatic arch, the
+# sigmoid notch ~18 mm deep between them, a concave anterior border running into the external oblique line;
+# ramus ~30 mm wide at its narrowest (fix round 3b: the first outline read as a rectangular post)
+RAMUS_POLY = [(-0.0190, -0.0690), (-0.0152, -0.0600), (-0.0120, -0.0450), (-0.0104, -0.0300),   # posterior border
+              (-0.0101, -0.0180), (-0.0090, -0.0100),                                             # (S-curved)
+              (-0.0145, -0.0085), (-0.0185, -0.0140),                                             # condylar neck
+              (-0.0240, -0.0195), (-0.0300, -0.0160), (-0.0345, -0.0080),                         # sigmoid notch
+              (-0.0372, -0.0012), (-0.0398, -0.0040),                                             # coronoid tip
+              (-0.0410, -0.0180), (-0.0418, -0.0330), (-0.0442, -0.0480), (-0.0490, -0.0600),     # anterior border
+              (-0.0450, -0.0745), (-0.0330, -0.0748), (-0.0250, -0.0730)]                         # inferior border
 
 
 def _ramus_x(z, y):
@@ -656,7 +659,10 @@ def _mand_ramus(ax, y, z):
     """Ramus plate (5-6 mm, thicker at the borders), coronoid process, condylar neck and head."""
     out = _poly2d(y, z, _ramus_outline())
     # round the outline (2 mm) and give the plate its thickness about the flaring mid-plane
-    thick = 0.0026 + 0.0012 * sstep(-0.004, 0.004, np.abs(out)) + 0.0010 * sstep(-0.050, -0.076, z)
+    # thicker rounded borders, and the lower ramus thickening into the body (external oblique line / angle) so the
+    # plate does not meet the 10-14 mm body in an L-shaped step
+    thick = 0.0026 + 0.0012 * sstep(-0.004, 0.004, np.abs(out)) + 0.0010 * sstep(-0.050, -0.076, z) \
+        + 0.0018 * sstep(-0.045, -0.066, z) * sstep(-0.028, -0.044, y)
     plate = np.maximum(out + 0.0015, np.abs(ax - _ramus_x(z, y)) - thick)
     plate = smax(plate, out + 0.0015, 0.0015)
     cond = ell(ax, y, z, (0.0500, -0.0115, -0.0020), (0.0085, 0.0048, 0.0050))
@@ -669,7 +675,7 @@ def mandible_raw(x, y, z):
     ax = np.abs(x)
     body = _mand_body(ax, y, z)
     ram = _mand_ramus(ax, y, z)
-    d = smin(body, ram, 0.010)
+    d = smin(body, ram, 0.014)
     # mental protuberance and tubercles (a triangular chin), mental foramen region stays smooth
     d = smin(d, ell(ax, y, z, (0.0, -0.0835, -0.0915), (0.0150, 0.0050, 0.0075)), 0.006)
     d = smin(d, ell(ax, y, z, (0.0110, -0.0810, -0.0955), (0.0060, 0.0045, 0.0040)), 0.004)
