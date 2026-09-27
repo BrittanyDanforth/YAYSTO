@@ -200,6 +200,57 @@ Beer-Lambert colour of `GH_Blood` (#A0202A thin -> #8E1420 -> #5E070C thick);
 clot blobs carry `gore_clot` = 1 (matte near-black). No spatter is placed on the
 victim's own skin (back- and forward-spatter fly away from the head).
 
+**Where the blood comes from: the head vessel table** (REFERENCE_NOTES §5.19.3).
+`gore.HEAD_VESSELS` lists the named vessels of the head and upper neck in head
+space (left side given, "LR" rows mirrored): superficial temporal a./v. with
+frontal and parietal branches, occipital a./v., posterior auricular a.,
+supraorbital / supratrochlear a./v., facial / angular a. and v., superior /
+inferior labial a., infraorbital, transverse facial and mental a.,
+retromandibular, external and internal jugular v., carotid, middle meningeal
+a. (frontal / parietal), ophthalmic / central retinal a., superior sagittal
+and transverse / sigmoid sinuses. Columns: `id` (stable, e.g. `HA01`; snapped
+courses get `_L` / `_R` / `_M`), `name`, `cls` (artery | vein | deep_artery |
+sinus), `d_mm`, `bleed_ml_min` (transected, normal BP), `depth` (mm below the
+skin, or `inner_table+N` inside the skull), `pulsatile`, `persist` (0..1: scalp
+vessels are held open by the galea and keep pouring; face vessels spasm and
+clot), `pts` (course control points). Beds without a named trunk are area
+sources (`gore.AREA_SOURCES`: scalp venous plexus / scalp sheet, face dermis,
+diploic veins of the cancellous skull, brain, cut muscle). `build_gore_system`
+snaps the courses onto the head (`gore.vessel_courses()`) into the hidden data
+mesh `GH_Vessels` (collection `GH_Data`, never rendered) and
+`gore.export_vessel_table(path)` writes the snapped table as JSON for the Godot
+game (`build.py` writes `vessels_head.json`).
+
+Each bleeding hit tests points of its wound volume against the vessels
+(`_build_source_group`): every vessel within the wound's reach is cut and adds
+its bleed rate. The result per wound: `b_q` (mL/min), arterial share, tissue
+share (bone / brain ooze), persistence and the dominant named vessel. It
+drives how many runs leave the wound and when (fill time = cavity volume / Q),
+their speed, width and length, the arterial pulse surges along a run (one
+bulge per heartbeat) and the colour: arterial thin films bright scarlet
+`#C0141E`, venous dark maroon `#8E1420`, thick pooled blood `#5E070C`
+(`gore_art` 0..1 on the blood geometry). The blood geometry also carries
+`gore_bq` (mL/min of its wound) and `gore_bsrc` (HEAD_VESSELS row + 1 of the
+dominant vessel, 0 = beds only), and runs carry `gore_run` (run id + 1) and
+`gore_runf` (0 inside the wound .. 1 at the front).
+
+**How a run leaves the wound (zero gap).** Every run is seeded on the wound's
+own rim: `_find_lips` marches from inside the opening outward (a fan around
+"downhill" for round holes, across the cut toward the lower lip for slashes)
+and takes the first sample over intact skin; the main run uses the lowest rim
+point, later runs a random low one. The run's first curve point lies INSIDE
+the opening (in the blood filling it), so the liquid body is continuous from
+the pool over the lip. Near the rim a run is no wider than the part of the rim
+it spills over (`d_spill`) and widens further down. The runs are one liquid
+layer lying on the skin (`_film`: the skin near the runs re-meshed at ~0.3 mm
+and lifted by the rivulet thickness, 0.1-0.3 mm, meniscus cross-section, runs
+that touch merge into one sheet), plus flat front lobes and pendant drops
+(3-4.5 mm) where the skin faces down. `proof_blood.py` proves it: it renders
+every bleeding wound at 0/5/10/20/40/60 s from straight, 45 deg and grazing,
+samples every pixel along the main run's axis from inside the hole to 5 mm
+below the rim against an exact material mask, and fails on any skin-coloured
+pixel (`renders/proof_rim_zero_gap.png`).
+
 Wound walls are extruded in 6 rings with a smoothly varying ring spacing, then
 relaxed (Blur Attribute on the wall vertices) and given lumpy relief along the
 wall normal only (gore.WALL_LUMPS), so they never fold into light/dark stripes

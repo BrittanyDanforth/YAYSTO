@@ -1053,7 +1053,7 @@ def apply_pose(arm, pose, twist_drivers=True):
 # TMJ glide (K: the condyle slides forward and down the articular eminence as the mouth opens: about
 # 15-20 mm at a full 45-50 mm opening, less early in the opening).  Without it a pure hinge swings the
 # chin straight back into the throat.  Body-frame metres per degree of "open"; closing (< 0) has none.
-JAW_GLIDE_M_PER_DEG = (0.0, -0.00045, -0.00025)
+JAW_GLIDE_M_PER_DEG = (0.0, -0.00060, -0.00025)     # fix round 1: 15.6 mm forward at 26 deg (K 15-20 mm)
 
 
 def jaw_glide(open_deg):

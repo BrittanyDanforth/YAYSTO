@@ -593,6 +593,8 @@ def build_scene():
     timings["materials"] = time.time() - t
     t = time.time()
     gore.build_gore_system(objs, mats)
+    # the snapped head vessel table, machine-readable for the Godot game
+    gore.export_vessel_table(os.path.join(ghc.HERE, "vessels_head.json"))
     timings["gore"] = time.time() - t
     t = time.time()
     build_facial_hair(objs)

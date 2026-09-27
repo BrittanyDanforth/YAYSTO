@@ -1601,6 +1601,9 @@ def shorts_sdf(x, y, z):
     trunk = smin(c["torso"], c["glute"], 0.05)        # the cloth bridges the natal cleft and the creases
     base = smin(trunk, leg, 0.05)
     ease = sinterp(z, [0.68, 0.72, 0.80, 0.88, 0.95, 1.01, 1.045], [0.017, 0.016, 0.015, 0.014, 0.011, 0.006, 0.004])
+    # front of the hip (fly / groin fold): real shorts stand off the groin crease; +5 mm of ease there keeps the
+    # cloth outside the belly skin that rolls over the fold in hip flexion (fix round 1: -8 mm at 90 deg)
+    ease = ease + 0.005 * band(z, 0.80, 0.985, 0.03) * sstep(-0.050, -0.080, y) * sstep(0.150, 0.110, ax)
     d = base - ease - _shorts_folds(ax, y, z)
     split = 0.004 - ax - 2.0 * np.maximum(z - SHORTS_GUSSET, 0.0)       # separate leg tubes below the gusset
     d = smax(d, split, 0.004)

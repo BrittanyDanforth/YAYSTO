@@ -391,6 +391,22 @@ Rig / tests:
   (a remote inside-out fold along a winding ray no longer flags rigidly-inside points); "exposed" needs two
   escaping rays; shorts in a closed skin crease (two facing skin sheets within 25 mm) are reported as pinched.
 
+Fix round 1 (continuation, 2026-09-27):
+- **Head snapshot**: `build.run` first calls `gbc.snapshot_head()`: the head project's sources (`anatomy.py`,
+  `materials.py`, `gh_common.py`, `build.py`, `gore.py`) are copied to `.cache/head_snapshot/<hash>/` and imported
+  from there, so a 60-90 min build uses ONE version of the head even while the head team edits `gore_head`. Hash
+  names of snapshot files equal the live names (`gbc._hash_name`), so keys match the live folder when unchanged.
+  The manifest records `head_snapshot` + `head_sources`; `verify.stage_caches_current` (fail) checks body-side
+  staleness against that snapshot, `verify.head_project_current` (warn) reports head edits made since.
+- **PNG size limit**: 12 MB per 2,048² texels (a 4,096² hero atlas may use 48 MB, the same bytes per texel),
+  never above the 50 MB per-file hard limit (`export.png_limit_bytes`).
+- **Neck base**: a neck-to-acromion slope (`slope` capsule in `_shoulder`, ~16° below horizontal) replaces the
+  flat torso shelf that read as a collar ledge; a soft supraclavicular groove (<= 6 mm) behind the clavicle.
+- **Shorts**: +5 mm ease over the front of the hip; `posetest` counts cloth that still hangs at its rest clearance
+  over its own posed skin point while another skin sheet has closed in (belly over the groin fold) as pinched.
+- **Jaw glide** 0.60 mm/deg forward (15.6 mm at 26°, K 15-20 mm).
+- `lookdev.build_materials` can be re-run on a saved `.blend` (old GBL_* users are remapped, no empty slots).
+
 ## Final body frame: neck lengthening (fix round 2, user feedback)
 
 The RB frame put the menton only 9.1 cm from the sternal notch (chin pressed into the neck). All stages still

@@ -888,12 +888,16 @@ def _build_exit():
     cut = t.switch(opened.gt(0.5), -1.0, r - c.rho)
     d_out = c.rho - r
     # everted flaps: lifted <= ~4 mm right at the margin, fading within ~R/2
-    flap = t.smooth(R * 0.55, 0.0, d_out) * opened
+    # (thin torn skin flaps turned outward, not a swollen ring: the lift dies
+    # out within ~R/4 of the margin and varies flap by flap -- some sectors
+    # stand up 2-4 mm, others lie flat -- REFERENCE_NOTES §5.16 / §5.19.2)
+    flap = t.smooth(R * 0.28, 0.0, d_out) * opened
     tip = t.switch(is_star, 0.6, 1.0 - star.min(1.0))
-    curl = 0.8 + t.noise(c.np * 110.0, detail=1.0) * 0.35
-    lift = flap * flap * s.min(1.3) * 0.0028 * (0.5 + 0.5 * tip) * curl * evert_amt
+    sector = t.smooth(0.35, 0.75, t.noise(ring * 2.3 + t.vec(0.0, 0.0, 5.0), detail=1.0, signed=False))
+    curl = (0.25 + 0.95 * sector) * (0.85 + t.noise(c.np * 110.0, detail=1.0) * 0.3)
+    lift = flap ** 2.5 * s.min(1.3) * 0.0026 * (0.5 + 0.5 * tip) * curl * evert_amt
     disp_evert = t.vec(0.0, 0.0, lift) + c.radial * (lift * 0.45)
-    edge_lift = s.min(1.3) * 0.0028 * (0.5 + 0.5 * tip) * curl * evert_amt * opened
+    edge_lift = s.min(1.3) * 0.0026 * (0.5 + 0.5 * tip) * curl * evert_amt * opened
     # brain: pulped tissue herniating out toward the skull defect, a torn
     # track in the middle
     # (2-30 mL of pulped brain is extruded, mostly at the exit: a lumpy,
@@ -1856,6 +1860,20 @@ FACE_DERMIS = (3.0, 0.35)       # dermal cut of the face without a named vessel:
 DIPLOE_OOZE = (3.0, 0.8)        # cancellous skull bone: 0.3-1 per cm^2, clots poorly
 BRAIN_OOZE = (6.0, 0.9)         # open skull / brain: 1-10 of blood, CSF and pulp
 MUSCLE_OOZE = 0.5               # cut skeletal muscle: 0.2-1 mL/min per cm^2
+# the same beds as table rows (machine-readable, exported with the vessels)
+AREA_SOURCES = (
+    dict(id="HB01", name="scalp venous plexus / scalp sheet (through the galea)", cls="plexus",
+         region="scalp", bleed_ml_min=SCALP_SHEET[0], persist=SCALP_SHEET[1], pulsatile=False,
+         note="per scalp laceration; vessels held open by the galea, keeps pouring"),
+    dict(id="HB02", name="facial dermal capillaries", cls="capillary", region="face", bleed_ml_min=FACE_DERMIS[0],
+         persist=FACE_DERMIS[1], pulsatile=False, note="per 3 cm of cut; clots in 5-15 min"),
+    dict(id="HB03", name="diploic veins (cancellous skull)", cls="bone", region="skull", bleed_ml_min=DIPLOE_OOZE[0],
+         persist=DIPLOE_OOZE[1], pulsatile=False, note="dark ooze from broken bone, clots poorly"),
+    dict(id="HB04", name="brain / pia (blood, CSF and pulp)", cls="brain", region="brain", bleed_ml_min=BRAIN_OOZE[0],
+         persist=BRAIN_OOZE[1], pulsatile=False, note="through an open skull, mixed with tissue"),
+    dict(id="HB05", name="cut skeletal muscle", cls="muscle", region="any", bleed_ml_min=MUSCLE_OOZE,
+         persist=0.5, pulsatile=False, note="mL/min per cm^2 of cut wall"),
+)
 VESSEL_OBJECT = "GH_Vessels"
 DATA_COLLECTION = "GH_Data"
 VESSEL_STEP = 0.0015            # resampling of the snapped courses (m)
@@ -2045,6 +2063,7 @@ def export_vessel_table(path):
         "classes": list(VESSEL_CLASSES),
         "area_sources_ml_min": {"scalp_sheet": SCALP_SHEET[0], "face_dermis": FACE_DERMIS[0],
                                 "diploe": DIPLOE_OOZE[0], "brain": BRAIN_OOZE[0]},
+        "area_sources": [dict(a) for a in AREA_SOURCES],
         "colours": {"arterial_thin": "#C0141E", "venous_thin": "#8E1420", "pool": "#5E070C"},
         "vessels": [dict(c, id=f"{c['id']}_{c['side_tag']}") for c in courses],
     }
@@ -2085,7 +2104,7 @@ RUN_SPEED = (0.016, 0.014, 0.010)
 RUN_MAX = 0.34                  # longest run (m): forehead to the cut of the neck
 BEAT_S = 0.8                    # heart period (s) of the arterial surges
 # half width (m) of a run: 0.8 mm trickle .. ~2.4 mm (rivulets 2-5 mm wide, RB §3.11, REFERENCE_NOTES §5.21)
-RUN_W = (0.0008, 0.0012, 0.0004)
+RUN_W = (0.0009, 0.0016, 0.0005)
 BRANCH_P = 0.07                # chance per trail step that a heavy run splits
 
 
@@ -2570,6 +2589,11 @@ def _find_lips(t, seeds, surface):
     g = _end_repeat(t, rout, [("Geometry", g)])["Geometry"]
     g = t.out(t.node('GeometryNodeSetPosition', {'Geometry': g, 'Position': V("lp_L")}))
     g = t.store(g, "d_in", V("lp_I"), 'FLOAT_VECTOR')
+    # later runs fan out from where they left the rim (they came over a
+    # different part of it), the main run just follows gravity
+    off = (V("lp_L") - V("lp_ctr")).dot(V("lp_sd"))
+    fan = V("lp_sd") * (off / (t.attr("lp_r1") * 0.4).max(0.001)).clamp(-1.0, 1.0) * 0.45
+    g = t.store(g, "d_bias", t.switch(t.attr("lp_tol").gt(0.0), (0.0, 0.0, 0.0), fan, 'VECTOR'), 'FLOAT_VECTOR')
     g = t.store(g, "d_arc0", (V("lp_L") - V("lp_I")).length())
     g = t.out(t.node('GeometryNodeRemoveAttribute', {'Geometry': g, 'Pattern Mode': 'Wildcard', 'Name': "lp_*"}))
     return g
@@ -2595,7 +2619,7 @@ def _walk(t, seeds, surface, steps, rest):
     wob = wob - n * wob.dot(n)
     bias = t.attr("d_bias", 'FLOAT_VECTOR')
     bias = bias - n * bias.dot(n)
-    push = (1.0 - it / 7.0).max(0.0)
+    push = (1.0 - it / 14.0).max(0.0)
     # (two scales of meander: pinning on skin texture, wander over cm)
     wob2 = t.noise(p * 45.0 + t.vec(0.0, t.attr("d_id", 'INT') * 0.91, 0.0), detail=1.0, color=True)
     wob2 = wob2 - n * wob2.dot(n)
@@ -2673,7 +2697,7 @@ def _run_mesh(t, trail, surface, steps):
     curves = t.store(curves, "d_rad", rad)
     # run id and position along it (0 = where it leaves the wound): lets tests
     # and the game follow a run from its source
-    curves = t.store(curves, "gore_run", t.math('ADD', t.attr("d_id", 'INT'), 0.0))
+    curves = t.store(curves, "gore_run", t.math('ADD', t.attr("d_id", 'INT'), 1.0))
     curves = t.store(curves, "gore_runf", tt)
     # crest height of the rivulet: 0.1-0.3 mm (thicker for a heavy flow and
     # where it slowed and gathered), REFERENCE_NOTES §5.21 / RB rivulet row
@@ -2717,17 +2741,20 @@ def _film(t, paths, surface):
         g = t.store(g, "f_" + name, t.sample(paths, t.attr(name, dt), ni, dt))
     p = t.pos()
     # ragged contact line: the edge pins on the skin's micro relief
-    edge_n = t.noise(p * 1400.0, detail=1.0) * 0.07 + t.noise(p * 380.0, detail=2.0) * 0.1
+    edge_n = t.noise(p * 1400.0, detail=1.0) * 0.08 + t.noise(p * 380.0, detail=2.0) * 0.12 \
+        + t.noise(p * 110.0, detail=1.0) * 0.14
     rel = (d / t.attr("f_d_rad").max(0.00015)) * (1.0 + edge_n)
-    h = t.attr("f_d_cap") * (1.0 - rel * rel).max(0.0) ** 0.7
+    # cross-section: a low meniscus, fullest in the middle and thinning to a
+    # translucent film at the contact line; the crest varies along the run
+    # (it gathers where the skin flattens, thins where it runs fast)
+    u = (1.0 - rel * rel).max(0.0)
+    crest = t.attr("f_d_cap") * (0.72 + 0.56 * t.noise(p * 170.0, detail=2.0, signed=False))
+    h = crest * t.smooth(0.0, 0.8, u) ** 0.8
     g = t.store(g, "f_h", h)
-    # runs lying side by side merge into one sheet (the liquid bridges the
-    # narrow dry strip between them): the thickness spread over ~1-2 mm fills
-    # the gaps up to near the crest, it only adds a thin skirt at open edges
-    hb = F(t, t.node('GeometryNodeBlurAttribute', {'Value': t.attr("f_h"), 'Iterations': 6, 'Weight': 1.0},
+    hb = F(t, t.node('GeometryNodeBlurAttribute', {'Value': t.attr("f_h"), 'Iterations': 4, 'Weight': 1.0},
                      data_type='FLOAT').outputs[0])
     g = t.store(g, "f_hb", hb)
-    g = t.store(g, "f_h", t.attr("f_h").max((t.attr("f_hb") * 2.2 - 0.00002).min(t.attr("f_d_cap") * 0.85)))
+    g = t.store(g, "f_h", t.attr("f_h").max(t.attr("f_hb")) * t.attr("f_h").gt(1e-6))
     wet = F(t, t.node('GeometryNodeFieldOnDomain', {'Value': t.switch(t.attr("f_h").gt(1e-6), 0.0, 1.0)},
                       domain='FACE', data_type='FLOAT').outputs[0])
     g = t.out(t.node('GeometryNodeDeleteGeometry', {'Geometry': g, 'Selection': wet.lt(0.34)}, domain='FACE'))
@@ -2773,11 +2800,13 @@ def _drops(t, tips, rest):
     # it hangs from, a little longer than wide (REFERENCE_NOTES §5.21)
     hang = t.bool('AND', runs, n.z.lt(-0.3))
     r = 0.0015 + 0.0007 * t.rand(0.0, 1.0, t.index(), 71)
+    # (local Z along the skin normal: the drop is a flattened cap on the skin
+    # that sags downward, ~2-3 mm proud of it, not a ball stuck on)
+    rot = t.out(t.node('FunctionNodeAlignRotationToVector', {'Vector': n}, axis='Z'))
     pend = t.node('GeometryNodeInstanceOnPoints', {'Points': tips, 'Selection': hang, 'Instance': ico,
-                                                   'Scale': t.vec(r, r, r * 1.22)})
+                                                   'Rotation': rot, 'Scale': t.vec(r, r * 1.15, r * 0.62)})
     pend = t.out(t.node('GeometryNodeRealizeInstances', {'Geometry': t.out(pend)}))
-    # (its top sits in the skin: only the hanging part shows)
-    pend = t.out(t.node('GeometryNodeSetPosition', {'Geometry': pend, 'Offset': t.vec(0.0, 0.0, -1.0) * (r * 0.55)}))
+    pend = t.out(t.node('GeometryNodeSetPosition', {'Geometry': pend, 'Offset': t.vec(0.0, 0.0, -1.0) * (r * 0.35)}))
     # falling drops below a hanging one while it keeps being fed (d_mov)
     fall_sel = t.bool('AND', hang, t.attr("d_mov").gt(0.5))
     fr = t.rand(0.0, 1.0, t.index(), 72)
@@ -3729,11 +3758,14 @@ def build_gore_node_group():
     # where the blood actually travelled
     # (an empty trail reports distance 0 everywhere, hence Is Valid)
     ni = t.out(t.node('GeometryNodeSampleNearest', {'Geometry': trail, 'Sample Position': t.pos()}, domain='POINT'))
-    dw_n = t.sample(trail, t.attr("d_w"), ni).max(0.0005)
-    # (a translucent film ~2-3x the run's width: where the stream wandered and
-    # the thin edge it leaves while it drains, broken up at its margin)
-    dprox = t.out(prox, 'Distance') + t.noise(t.pos() * 900.0) * dw_n * 0.35 + t.noise(t.pos() * 140.0) * dw_n * 0.6
-    trail_cov = (t.smooth(dw_n * 2.8, dw_n * 0.7, dprox) * 0.3 + t.smooth(dw_n * 1.4, dw_n * 0.6, dprox) * 0.3) \
+    dw_n = t.sample(trail, t.attr("d_rad"), ni).max(0.0005)
+    # the thin translucent smear the blood leaves around and behind a run
+    # (where the stream wandered, spread and drained), ~2-3x the run's width,
+    # uneven and broken up at its margin; under the run itself the skin is wet
+    pn = t.pos()
+    dprox = t.out(prox, 'Distance') + t.noise(pn * 900.0) * dw_n * 0.45 + t.noise(pn * 140.0) * dw_n * 1.1
+    smear = t.smooth(dw_n * (2.2 + 1.2 * t.noise(pn * 60.0, signed=False)), dw_n * 0.9, dprox)
+    trail_cov = (smear * (0.16 + 0.12 * t.noise(pn * 220.0, signed=False)) + t.smooth(dw_n * 1.2, dw_n * 0.7, dprox) * 0.3) \
         * t.out(prox, 'Is Valid') * bleed.gt(0.02)
     a = t.attr("g_a", 'FLOAT_VECTOR')
     g_sk = t.store(g, "g_a", t.vec(a.x, a.y, a.z.max(trail_cov)), 'FLOAT_VECTOR', sel=near_hits)
