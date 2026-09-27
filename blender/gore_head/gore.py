@@ -829,7 +829,7 @@ def _build_bullet():
     # (never a punched disc: slightly oval, with a few small notches where the
     # stretched skin split at the margin -- refs/20, gsw sheet)
     ell = 1.0 + 0.16 * c.hash(44) * (t.math('COSINE', (c.theta - c.hash(45) * TAU) * 2.0))
-    notch = c.tears(4, first=30, width=(0.12, 0.3), length=(0.15, 0.45), sharp=1.4, wobble=0.2)
+    notch = c.tears(5, first=30, width=(0.07, 0.2), length=(0.2, 0.75), sharp=1.5, wobble=0.25)
     rag = rag + t.noise(t.vec(c.theta.cos() * 1.4, c.theta.sin() * 1.4, c.seed * 4.0), detail=2.0) * 1.6
     r_soft = r0 * (1.0 + rag * 0.07 + notch * 0.35) * ell * c.lc([1.0, 1.2, 0.0, 0.0, 1.0, 1.0, 1.0, 1.0]) \
         + contact * star * s * 0.011
@@ -850,7 +850,9 @@ def _build_bullet():
     # (the width wanders +-30 % around the hole in 4-6 lobes: a real collar is
     # never a machined ring)
     lobe_dir = t.vec(c.theta.cos() * 0.8, c.theta.sin() * 0.8, c.seed * 9.0)
-    w_c = s * 0.002 * (1.0 + 0.3 * t.noise(lobe_dir, detail=1.0) + 0.08 * t.noise(c.np * 900.0)) \
+    lobe2 = t.vec(c.theta.cos() * 2.2, c.theta.sin() * 2.2, c.seed * 5.0 + 3.0)
+    w_c = s * 0.002 * (1.0 + 0.5 * t.noise(lobe_dir, detail=1.0) + 0.25 * t.noise(lobe2, detail=1.0)
+                       + 0.12 * t.noise(c.np * 900.0)).max(0.35) \
         * (1.0 + ecc * toward)
     # crisp outer edge (~0.2-0.3 mm of falloff, the mesh is ~0.45 mm): no soft
     # brown halo beyond it -- a blurred ring reads as a coffee stain
@@ -859,7 +861,7 @@ def _build_bullet():
     # band reads as a ring decal)
     collar = t.smooth(r + w_c * 1.05 + 0.00015, r + w_c * 1.05 - 0.00015,
                       c.rho + t.noise(c.np * 380.0) * w_c * 0.2 + t.noise(c.np * 1100.0) * w_c * 0.1) \
-        * (0.7 + 0.3 * t.smooth(-0.3, 0.3, t.noise(c.np * 900.0, detail=2.0)))
+        * (0.45 + 0.55 * t.smooth(-0.35, 0.3, t.noise(c.np * 650.0, detail=2.0)))
     edge = collar * is_skin * (1.0 - contact) + t.smooth(r + 0.0009, r, c.rho) * (1.0 - is_skin)
     # range of fire: stippling (burnt powder grains, abrasions that do not
     # wipe off) and soot (grey-black, wipes off) around close shots

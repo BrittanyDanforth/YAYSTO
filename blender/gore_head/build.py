@@ -775,8 +775,8 @@ class _SN:
         m = self.N.new('ShaderNodeMapRange')
         m.interpolation_type = 'SMOOTHSTEP'
         self._in(m.inputs['Value'], x)
-        m.inputs['From Min'].default_value = e0
-        m.inputs['From Max'].default_value = e1
+        self._in(m.inputs['From Min'], e0)
+        self._in(m.inputs['From Max'], e1)
         return m.outputs['Result']
 
     def noise(self, v, scale, detail=2.0, rough=0.5):
@@ -935,13 +935,22 @@ def _matter_material(white):
     sd = _sulcus_distance(t, pa)
     # depth into the cerebrum: normalised ellipsoid radius (1 at the cortex)
     ln = t.vmath('LENGTH', t.vmath('DIVIDE', t.vmath('SUBTRACT', pa, (0.0, 0.005, 0.043)), (0.066, 0.086, 0.066)))
-    reach = t.smooth(ln, 0.58 + 0.12 * 0.0, 0.80)
-    reach = t.math('MULTIPLY', reach, t.smooth(t.noise(t.p, 60.0, 2.0), 0.25, 0.45))
+    # (sulci run in from the surface and end blindly 8-15 mm deep; deeper
+    # the nodal sheets of the wave field close into cells, which read as a
+    # crackle web, so they are faded out there)
+    reach = t.smooth(ln, 0.66 + 0.06 * t.noise(t.p, 45.0, 2.0), 0.86)
+    reach = t.math('MULTIPLY', reach, t.smooth(t.noise(t.p, 60.0, 2.0), 0.2, 0.4))
     n1 = t.noise(t.p, 900.0, 3.0)
     # (grey matter is clearly darker than the cream white matter: pinkish
     # grey-brown, the contrast that makes the folding readable)
     grey = t.mix(n1, (0.17, 0.10, 0.09), (0.24, 0.15, 0.13))
-    whitec = t.mix(n1, (0.55, 0.49, 0.40), (0.63, 0.57, 0.47))
+    # white matter: cream with a faint pink-grey blush and a fibrous grain
+    # (a flat uniform cream reads as a plaster disc)
+    fib = t.noise(t.vmath('MULTIPLY', t.p, (1.0, 0.35, 1.0)), 420.0, 3.0)
+    blush = t.smooth(t.noise(t.p, 70.0, 3.0), 0.45, 0.75)
+    whitec = t.mix(n1, (0.50, 0.44, 0.36), (0.60, 0.54, 0.45))
+    whitec = t.mix(t.math('MULTIPLY', blush, 0.55), whitec, (0.52, 0.38, 0.33))
+    whitec = t.mix(t.math('MULTIPLY', t.smooth(fib, 0.45, 0.7), 0.35), whitec, (0.44, 0.39, 0.32))
     # cerebellum (behind the tentorium, below the cerebrum)
     cb = t.math('MULTIPLY', t.smooth(y, 0.018, 0.032), t.smooth(z, 0.012, 0.0))
     if white:
@@ -956,6 +965,20 @@ def _matter_material(white):
         bg = t.smooth(t.vmath('LENGTH', t.vmath('DIVIDE', t.vmath('SUBTRACT', pw, (0.0, -0.002, 0.030)),
                                                 (1.0, 0.013, 0.008))), 1.05, 0.7)
         col = t.mix(t.math('MULTIPLY', bg, 0.7), col, t.mix(n1, (0.24, 0.15, 0.13), (0.30, 0.20, 0.17)))
+        # lateral ventricle: a C-shaped CSF slit (body above, atrium behind,
+        # temporal horn curving down and forward), 1-3 mm, dark with a
+        # blood-tinged lining, lateral to the septum (|x| > 5 mm)
+        vr = t.vmath('LENGTH', t.vec(0.0, t.math('SUBTRACT', y, 0.0), t.math('SUBTRACT', z, 0.019)))
+        arc = t.math('ABSOLUTE', t.math('SUBTRACT', vr, t.math('ADD', 0.027, t.math('MULTIPLY', t.noise(t.p, 90.0), 0.002))))
+        # (open toward the front-bottom: no slit below-in-front of the arc centre)
+        ang_ok = t.math('MAXIMUM', t.smooth(y, -0.004, 0.006), t.smooth(z, 0.012, 0.022))
+        vhw = t.math('ADD', 0.0007, t.math('MULTIPLY', t.smooth(y, 0.005, 0.03), 0.0011))
+        vent = t.math('MULTIPLY', t.math('MULTIPLY', t.smooth(arc, vhw, t.math('MULTIPLY', vhw, 0.5)), ang_ok),
+                      t.math('MULTIPLY', t.smooth(pa_x := t.sep(pa)[0], 0.004, 0.007), t.smooth(pa_x, 0.036, 0.03)))
+        vent = t.math('MULTIPLY', vent, t.smooth(y, -0.034, -0.028))
+        col = t.mix(t.math('MULTIPLY', t.smooth(arc, t.math('MULTIPLY', vhw, 2.2), vhw), t.math('MULTIPLY', ang_ok, 0.5)),
+                    col, (0.30, 0.16, 0.14))
+        col = t.mix(vent, col, t.mix(n1, (0.03, 0.012, 0.012), (0.09, 0.02, 0.02)))
         # cerebellum: folia in thin grey leaves around a branching white core
         cr = t.vmath('LENGTH', t.vmath('MULTIPLY', t.vmath('SUBTRACT', pa, (0.0, 0.030, 0.004)), (1.0, 0.9, 1.2)))
         fol = t.math('COSINE', t.math('MULTIPLY', t.math('ADD', cr, t.math('MULTIPLY', t.noise(t.p, 120.0), 0.001)),
@@ -971,7 +994,7 @@ def _matter_material(white):
     col = t.mix(t.math('MULTIPLY', sulc, 0.95), col, t.mix(clot, (0.16, 0.02, 0.018), (0.05, 0.006, 0.006)))
     # small vessels cut across (dark red dots) and a thin blood film
     vd, _vc = t.voronoi(t.p, 700.0)
-    dots = t.math('MULTIPLY', t.smooth(vd, 0.08, 0.03), t.smooth(t.noise(t.p, 200.0), 0.62, 0.7))
+    dots = t.math('MULTIPLY', t.smooth(vd, 0.08, 0.03), t.smooth(t.noise(t.p, 200.0), 0.52, 0.64))
     col = t.mix(dots, col, (0.18, 0.02, 0.02))
     t.set('Base Color', col)
     t.set('Roughness', t.fmix(sulc, 0.32, 0.12))

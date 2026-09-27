@@ -365,10 +365,13 @@ def _organ_material():
     height = n2 * 0.3 + lob * lung * -0.6 + rug * 2.0 + (1.0 - pd.smooth(0.0, 0.5)) * panc * 0.8 \
         + oment * (1.0 - od.smooth(0.0, 0.06)) * -0.8 - ves * 0.3
     nrm = t.bump(height, 0.00012)
+    # the fibrous/serous pericardium is a thin glistening sac: semi-translucent in look-dev so the heart's grooves,
+    # fat and great-vessel roots show through it (fix round 3, critics: 'heart/pericardium a white block')
+    peri = is_(oid, ids.get("pericardium", 22))
     bsdf = t.principled({'Base Color': col, 'Roughness': rough, 'IOR': 1.4,
                          'Subsurface Weight': 0.55 - inner * 0.3, 'Subsurface Radius': (1.0, 0.35, 0.25),
                          'Subsurface Scale': 0.003, 'Coat Weight': 0.45, 'Coat Roughness': 0.06,
-                         'Coat Normal': nrm, 'Normal': nrm})
+                         'Coat Normal': nrm, 'Normal': nrm, 'Alpha': 1.0 - peri * 0.62})
     t.output(bsdf)
     return _finish(mat, t, (0.45, 0.15, 0.15), 0.25)
 
