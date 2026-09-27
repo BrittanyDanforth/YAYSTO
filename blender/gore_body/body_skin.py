@@ -330,8 +330,8 @@ TORSO = np.array([
                                                  # (flat front: the chest wall rises flush to the clavicles)
     (1.470, 0.102, -0.050, 0.100, 2.2, 2.8),     # scapular superior angles under trapezius
     (1.485, 0.063, -0.054, 0.085, 2.1, 2.2),     # seam plane (plan D19)
-    (1.515, 0.0575, -0.057, 0.066, 2.1, 2.2),    # neck 38 cm: 12 x 11.7 (front -0.055 / back +0.063)
-    (1.540, 0.0550, -0.044, 0.067, 2.1, 2.2),     # C7 spinous skin 0.075 at 1.532 (bump added); the front
+    (1.515, 0.0565, -0.057, 0.066, 2.1, 2.2),    # neck 38 cm: 12 x 11.7 (front -0.055 / back +0.063)
+    (1.540, 0.0535, -0.044, 0.066, 2.1, 2.2),     # C7 spinous skin 0.075 at 1.532 (bump added); the front
     (1.565, 0.057, -0.032, 0.075, 2.1, 2.2),     # recedes under the jaw: submental surface / cervicomental
     (1.595, 0.059, -0.024, 0.089, 2.1, 2.3),     # angle ~110 deg with the chin (menton -0.068, 1.550)
     (1.625, 0.060, -0.014, 0.098, 2.1, 2.4),     # nape: suboccipital mass under the occiput
@@ -609,8 +609,9 @@ def _shoulder(ax, y, z):
     # nape slope: the upper trapezius fibres run from the ligamentum nuchae down and out over the superior
     # angle, so behind the neck the surface falls in one ~40 deg slope from the nape to the upper back
     # (fix round 2: the superior-angle mass alone left a 1 cm 'collar ledge' at the neck base behind)
-    nape = sd_capsule(ax, y, z, (0.030, 0.072, 1.500), (0.064, 0.092, 1.462), 0.006, 0.013)
-    trap = smin(trap, nape, 0.026)
+    nape = sd_oellipsoid(ax, y, z, (0.046, 0.074, 1.480), (0.034, 0.016, 0.028), frame((0.6, 0.25, -0.75),
+                                                                                       (0.0, 1.0, 0.0)))
+    trap = smin(trap, nape, 0.024)
     # teres major / infraspinatus lower belly: fills the posterior axillary junction (no pit behind the arm)
     teres = _fold(ax, y, z, (0.105, 0.098, 1.360), GH + 0.070 * ARM_D + 0.020 * ARM_LAT + np.array([0.0, 0.030, 0.0]),
                   0.018, 0.030)
@@ -1074,8 +1075,8 @@ def _neck_parts(ax, y, z):
     scm = sd_capsule(ax, y, z, (0.017, -0.045, 1.463), (0.057, 0.022, 1.600), 0.0070, 0.0115)
     # splenius capitis + upper trapezius under the occiput: the neck behind the ear is as wide as the mastoids
     # and rises into the superior nuchal line (fix round 2: the thin neck column left a step under the occiput)
-    nuchal = sd_capsule(ax, y, z, (0.038, 0.048, 1.545), (0.050, 0.054, 1.608), 0.007, 0.014)
-    scm = smin(scm, nuchal, 0.014)
+    nuchal = sd_oellipsoid(ax, y, z, (0.034, 0.042, 1.568), (0.021, 0.016, 0.052), np.eye(3))
+    scm = smin(scm, nuchal, 0.020)
     # keel: the thyroid laminae meet in front at ~90 deg, so the skin over them is a rounded wedge, deepest
     # at the superior notch level and receding toward the cricoid (skin -0.054 at 1.504)
     lar = sd_oellipsoid(ax, y, z, (0.0, -0.0460, 1.5200), (0.0150, 0.0140, 0.0180), np.eye(3))
