@@ -210,7 +210,7 @@ def _body_skin_material():
     vv = (vein + net * 0.7).clamp()
     col = t.mix(vv * (0.30 + 0.45 * pallor), col, col * (0.60, 0.72, 0.92))
     # moles
-    col = t.mix(mole, col, t.mix(m_fine, (0.10, 0.052, 0.035), (0.16, 0.085, 0.06)))
+    col = t.mix(mole, col, t.mix(m_fine, (0.19, 0.105, 0.068), (0.27, 0.155, 0.10)))     # light-medium brown naevi
     # regional colour zones (red / yellow / blue of the skin-painting convention): warmer, redder
     # extremities, knees, elbows and lower face side of the neck; paler, slightly cooler trunk
     col = t.mix(warm * body_k * 0.45, col, col * (1.06, 0.90, 0.86))
@@ -481,6 +481,10 @@ def lookdev_for(obj, slot_name):
     return SLOT_LOOKDEV.get(slot_name)
 
 
+MOLE_COUNT = 12
+MOLE_MIN_SPACING = 0.08
+
+
 def lookdev_on(objs):
     """Swap every GBM_* slot of ``objs`` to its look-dev material; returns the state for lookdev_off."""
     state = []
@@ -658,15 +662,22 @@ def body_region_fields(obj):
     f["lk_sun"] = _smooth_attr(me, np.clip(sun, 0, 1), 6)
     # covered by the shorts (waist to mid-thigh), softened
     f["lk_covered"] = _smooth_attr(me, ((v[:, 2] > 0.60) & (v[:, 2] < 1.02) & (np.isin(seg, (1, 4, 5)))).astype(float), 8)
-    # moles: 36 deterministic spots on trunk, back, arms and thighs, 1.2-3 mm radius
+    # moles: 12 deterministic small naevi on trunk, back, arms and thighs, 0.8-1.8 mm radius, >= 8 cm apart
+    # (fix round 2: 36 dark 1.2-3 mm spots clustered on the chest and read as a texture error in review renders)
     rng = gbc.rng("lookdev")
     cand = np.nonzero(np.isin(seg, (1, 2, 3, 4, 5)) & (region != 7))[0]
     mole = np.zeros(n)
     if len(cand):
-        for i in rng.choice(cand, size=min(36, len(cand)), replace=False):
-            r = rng.uniform(0.0012, 0.003)
+        placed = []
+        for i in rng.permutation(cand)[:4000]:
+            if len(placed) >= MOLE_COUNT:
+                break
+            if placed and np.min(np.linalg.norm(v[placed] - v[i], axis=1)) < MOLE_MIN_SPACING:
+                continue
+            placed.append(int(i))
+            r = rng.uniform(0.0008, 0.0018)
             d = np.linalg.norm(v - v[i], axis=1)
-            mole = np.maximum(mole, 1.0 - np.clip((d - r) / 0.0006, 0, 1))
+            mole = np.maximum(mole, 1.0 - np.clip((d - r) / 0.0005, 0, 1))
     f["lk_mole"] = mole
     # body hair density (adult male, light): chest, abdomen midline, forearms, legs, axillae
     ax_ = np.abs(v[:, 0])
