@@ -431,6 +431,17 @@ THAT SECOND ONE BE THERE IN THAT SPECIFIC SPOT ALSO THE DROPLETS ... A BIT THICK
    teardrop-shaped, translucent at the thin edge; the stream feeding them is 2-5 mm wide and ~0.1-0.4 mm thick
    (REALISM_BIBLE rivulet row). Current drops read as fat glossy berries and the streams as thick flat tape.
 
+## 5.22 User verdict: far too much yellow fat (2026-09-27, fix pass 2 test `fix2_wounds/d4m.png` throat cut, also burn/crush)
+
+User: "Y SO MUCH FAT OR YELLOW THAT ISNT REALISTIC". The throat cut shows a thick bright yellow beaded rim of "fat" running
+along both lips; yellow also dots the burn and crushed wounds. Real facts: face/neck subcutaneous fat in a lean adult male
+is thin (face 2-6 mm, anterior neck 2-5 mm, scalp ~1-3 mm with almost none on the forehead) and it is PALE CREAM to faintly
+yellow, glistening, often pink-tinged and quickly stained red/brown by blood — never a saturated yellow band or a row of
+yellow beads. In a fresh wound the fat layer shows only as a thin, partly blood-covered pale line between the dermis
+and the dark red muscle, visible mainly where the wound gapes (refs 15/16/18: small pale lobules, mostly bloody).
+Fix: reduce fat thickness to anatomical values per region, desaturate to pale cream #E8D9B5-#D9C6A0 with blood staining,
+no bead/cobble pattern at the rim, and let blood cover most of it. A clearly visible yellow band anywhere = FAIL.
+
 ## 6. What to change in our assets (actionable)
 
 | Where | Change |
