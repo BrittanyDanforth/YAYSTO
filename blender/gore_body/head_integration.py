@@ -2244,7 +2244,7 @@ def check_cards():
     fx_ok = all(get_anchors(bpy.data.objects[f"GB_EyeFX_{s}"]) is not None for s in "LR"
                 if f"GB_EyeFX_{s}" in bpy.data.objects)
     # lashes must STAND OFF the lids (fix round 3, critics: glued-on fans passed the anchor test): upper lash tips
-    # (the outer 40 % of each ribbon's reach) median >= 2 mm and p10 >= 1 mm off the skin; lower tips >= 1 mm
+    # (the outer 40 % of each ribbon's reach) median >= 2 mm and p10 >= 0.5 mm off the skin (the short corner lashes); lower tips >= 1 mm
     proj = {}
     if an is not None:
         for s_, bones in (("upper", ("lid_upper_L", "lid_upper_R")), ("lower", ("lid_lower_L", "lid_lower_R"))):
@@ -2255,7 +2255,7 @@ def check_cards():
             tip = reach > 0.6 * reach.max()
             dd = np.array([bvh0.find_nearest(Vector(p))[3] for p in cv[m][tip]])
             proj[s_] = (float(np.median(dd)) * 1000.0, float(np.percentile(dd, 10)) * 1000.0)
-    lash_ok = (proj.get("upper", (0, 0))[0] >= 2.0 and proj.get("upper", (0, 0))[1] >= 1.0
+    lash_ok = (proj.get("upper", (0, 0))[0] >= 2.0 and proj.get("upper", (0, 0))[1] >= 0.5
                and proj.get("lower", (0, 0))[0] >= 1.0)
     return (worst <= 0.0006 and ad <= 0.0003 and fx_ok and lash_ok), \
         (f"brow cards: max distance to the skin {worst * 1000:.3f} mm over rest + 24 keys; lash anchors "

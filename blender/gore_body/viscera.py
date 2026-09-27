@@ -808,7 +808,7 @@ def _larynx_parts(x, y, z):
     # (the vestibule above the lowered thyroid notch leans back to the epiglottis: pre-epiglottic space and the
     #  thyrohyoid membrane lie in front of it, under the submental skin)
     soft_o = chain(x, y, z, [(0.0, -0.0325 + dy, 1.505 + dz), (0.0, -0.0350 + dy, 1.528 + dz), (0.0, -0.026 + 0.5 * dy, 1.550)],
-                   [0.0115, 0.0140, 0.0095])
+                   [0.0121, 0.0146, 0.0098])
     soft_o = smax(soft_o, np.maximum(1.5062 + dz - z, z - 1.552), 0.002)
     # epiglottis: a leaf rising behind the hyoid body (hyoid 0, -0.030, 1.556), behind the tongue base
     epig = ell(x, y, z, (0.0, -0.026 + 0.5 * dy, 1.551), (0.010, 0.0030, 0.0080))       # tip 1.559 (fix round 2: 4 mm lower,
@@ -895,7 +895,8 @@ def thyroid_sdf(x, y, z):
     trachea (impression) with the carotid sheath lateral [R05 §10.1]."""
     d = None
     for sx in (1.0, -1.0):
-        lobe = ell(x * sx, y, z, (0.0220, -0.0265 + THYROID_DY, 1.505 + THYROID_DZ), (0.0102, 0.0096, 0.0262))
+        # (fix round 3: lobes 6 % fuller - the carves round the moved larynx left 15 g of the 20 g gland)
+        lobe = ell(x * sx, y, z, (0.0222, -0.0265 + THYROID_DY, 1.505 + THYROID_DZ), (0.0110, 0.0102, 0.0275))
         pole = ell(x * sx, y, z, (0.0170, -0.0245 + THYROID_DY, 1.524 + THYROID_DZ), (0.0055, 0.0055, 0.0070))
         lobe = smin(lobe, pole, 0.006)
         d = lobe if d is None else smin(d, lobe, 0.002)

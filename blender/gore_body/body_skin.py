@@ -395,9 +395,9 @@ def _abdomen_relief(x, z):
     bulk = 0.0045 * rect * (0.7 + 0.3 * gauss(z - 1.00, 0.06))      # lower belly slightly rounded
     # (fix round 3: the narrow 6-8 mm grooves printed plastic highlight stripes along the linea alba / semilunaris
     # in Godot; softer and wider)
-    alba = -0.0019 * gauss(ax, 0.0090) * band(z, 1.09, 1.26, 0.02)
+    alba = -0.0022 * gauss(ax, 0.0090) * band(z, 1.09, 1.26, 0.02)
     inter = sum(-0.0012 * gauss(z - zi, 0.011) for zi in (1.140, 1.198, 1.245)) * sstep(0.070, 0.045, ax)
-    semil = -0.0015 * gauss(ax - 0.078, 0.013) * band(z, 1.0, 1.23, 0.03)
+    semil = -0.0018 * gauss(ax - 0.078, 0.013) * band(z, 1.0, 1.23, 0.03)
     # mons pubis fat pad over the symphysis (10-15 mm of suprapubic fat, fix round 3: the symphysis lay 2.2 mm
     # under the skin)
     mons = 0.0070 * gauss(ax, 0.042) * gauss(z - 0.895, 0.022)
@@ -445,7 +445,7 @@ def _back_relief(x, z):
                       [0.003, 0.006, 0.0090, 0.0088, 0.0068, 0.0052, 0.0034, 0.002, 0.004])
     width = sinterp(z, [0.95, 1.10, 1.25, 1.45, 1.55], [0.010, 0.016, 0.013, 0.010, 0.012])
     furrow = -depth * gauss(ax, width)
-    erect = 0.0072 * gauss(ax - 0.034, 0.019) * band(z, 0.99, 1.34, 0.06)
+    erect = 0.0062 * gauss(ax - 0.034, 0.019) * band(z, 0.99, 1.34, 0.06)
     sd = _tri_sdf2(ax, z, SCAPULA)
     scap = 0.0055 * sstep(0.016, -0.022, sd)
     scap += 0.0035 * gauss(np.hypot(ax - 0.086, z - 1.330), 0.013)            # inferior angle
@@ -2431,7 +2431,12 @@ def fix_pits(obj, fn, h, iters=3):
         np.add.at(acc, e[:, 1], v[e[:, 0]])
         deg = np.maximum(np.bincount(e.ravel(), minlength=len(v)), 1).astype(float)[:, None]
         v[ring] = 0.5 * v[ring] + 0.5 * (acc / deg)[ring]
-    v[ring] = _A().project_to_surface(fn, v[ring], h, 2)
+    # the armpit apex is a crease of the union of the arm and trunk tubes, sharper than the 2.5 mm master mesh can
+    # carry: there the relaxed position is kept (projection would restore the single-vertex pit)
+    ax_ = np.abs(v[:, 0])
+    axilla = (np.abs(ax_ - 0.160) < 0.030) & (np.abs(v[:, 1] - 0.010) < 0.035) & (np.abs(v[:, 2] - 1.355) < 0.035)
+    proj = ring & ~axilla
+    v[proj] = _A().project_to_surface(fn, v[proj], h, 2)
     gbc.set_verts(me, v)
     me.update()
     return int(bad.sum())
