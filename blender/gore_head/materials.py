@@ -1359,15 +1359,36 @@ def _eye_material(g):
     scl = t.mix(v1 * vmask * (0.5 + 0.5 * shot), scl, (0.52, 0.06, 0.05))
     scl = t.mix(v2 * vmask * (0.3 + 0.6 * shot), scl, (0.62, 0.16, 0.13))
     scl = t.mix(shot * 0.55 * away, scl, scl * (1.0, 0.58, 0.52))
-    # subconjunctival haemorrhage: a confluent dark red sheet with a soft
-    # irregular edge (never speckled -- spots read as a strawberry)
-    hem = (t.noise(p, 45.0, 2.0) * 0.5 + blood * 1.2).smooth(0.75, 0.95) * away
-    scl = t.mix(hem, scl, t.mix(t.noise(p, 90.0), (0.16, 0.012, 0.012), (0.30, 0.02, 0.018)))
+    # subconjunctival haemorrhage: a confluent, flat, bright red sheet under
+    # the clear conjunctiva with a soft irregular edge that stops at the
+    # limbus (never speckled -- spots read as a strawberry)
+    hem = (t.noise(p, 45.0, 2.0) * 0.45 + blood * 1.25).smooth(0.72, 0.92) * rs.smooth(LIMBUS_R + 0.0002,
+                                                                                         LIMBUS_R + 0.0012).max(1.0 - front)
+    scl = t.mix(hem, scl, t.mix(t.noise(p, 90.0), (0.40, 0.018, 0.02), (0.58, 0.035, 0.03)))
+
+    # hyphaema (gore_bruise on the eye = level): blood settles in the front
+    # chamber behind the cornea, a dark red layer with a flat top (gravity:
+    # object Z), seen through the cornea over the lower iris
+    hyph = t.attr("gore_bruise")
+    lvl = -IRIS_R + hyph * 2.2 * IRIS_R + (t.noise(t.vec(hx * 900.0, 0.0, 0.0), 2.0) - 0.5) * 0.0002
+    hy = (1.0 - hz.smooth(lvl - 0.00012, lvl + 0.00012)) * hyph.smooth(0.02, 0.08)
+    iris = t.mix(hy, iris, t.mix(hz.smooth(lvl - 0.003, lvl), (0.07, 0.004, 0.005), (0.20, 0.012, 0.012)))
 
     col = t.mix(corn, scl, iris)
-    # ruptured globe: dark jelly and blood inside
+    # ruptured globe (gore_wound): collapsed and clouded, the cornea wrinkled
+    # and milky; dark jelly and blood inside
     inside = 1.0 - p.length().smooth(EYE_R * 0.93, EYE_R * 0.975)
-    col = t.mix(inside.max(wound * 0.8), col, t.mix(t.noise(p, 600.0), (0.10, 0.012, 0.01), (0.35, 0.26, 0.22)))
+    col = t.mix(wound.smooth(0.2, 0.7) * corn * 0.75, col, t.mix(t.noise(p, 500.0), (0.30, 0.25, 0.22), (0.46, 0.40, 0.36)))
+    col = t.mix(inside.max(wound.smooth(0.5, 1.0) * 0.45), col,
+                t.mix(t.noise(p, 600.0), (0.10, 0.012, 0.01), (0.35, 0.26, 0.22)))
+    # extruded tissue through the tear (gore_edge on the eye): dark brown-black
+    # uvea (choroid, iris pigment) mixed with grey translucent vitreous jelly
+    ext = t.attr("gore_edge")
+    en = t.noise(p, 700.0, 3.0)
+    uvea = t.mix(en.smooth(0.35, 0.65), (0.018, 0.008, 0.006), (0.07, 0.02, 0.014))
+    jelly = t.mix(t.noise(p, 300.0), (0.30, 0.27, 0.25), (0.45, 0.40, 0.37))
+    extr_col = t.mix(t.noise(p + (3.0, 1.0, 2.0), 160.0, 2.0).smooth(0.45, 0.62), uvea, jelly)
+    col = t.mix(ext.smooth(0.1, 0.5), col, extr_col)
     # burned eye: the cooked cornea turns milky and hides the iris, the exposed
     # sclera dries to a yellow-brown, charred where the burn is worst
     burn = t.attr("gore_burn")
@@ -1376,7 +1397,7 @@ def _eye_material(g):
     col = t.mix(cloud * corn * 0.92, col, t.mix(bnz, (0.50, 0.49, 0.45), (0.70, 0.68, 0.63)))
     col = t.mix(cloud * (1.0 - corn) * 0.6, col, col * (0.85, 0.62, 0.38))
     col = t.mix((burn + (bnz - 0.5) * 0.4).smooth(0.75, 0.95) * 0.85, col, (0.035, 0.025, 0.02))
-    rough = t.mix(corn, 0.28, 0.45)
+    rough = t.mix(corn, 0.28, 0.45) + wound.smooth(0.3, 0.9) * 0.2 * corn - ext.smooth(0.2, 0.6) * 0.1
     # blood on the globe is a patchy film that runs off the wet cornea: the
     # iris stays readable through it (a fully coated globe reads as a cherry)
     film = blood * 0.6 * (1.0 - 0.85 * corn) * t.noise(p, 70.0, 2.0).smooth(0.3, 0.7)
@@ -1386,7 +1407,8 @@ def _eye_material(g):
         'Base Color': bl["Color"], 'Roughness': bl["Roughness"], 'IOR': 1.376,
         'Subsurface Weight': 0.25 * (1.0 - corn) * bl["SSS"], 'Subsurface Radius': (1.0, 0.55, 0.45),
         'Subsurface Scale': 0.0015, 'Coat Weight': 1.0, 'Coat IOR': CORNEA_IOR,
-        'Coat Roughness': t.mix(bl["Mask"], 0.015 + (1.0 - wet) * 0.03 + cloud * 0.25, bl["Coat Roughness"]),
+        'Coat Roughness': t.mix(bl["Mask"], 0.015 + (1.0 - wet) * 0.03 + cloud * 0.25 + wound.smooth(0.3, 0.9) * 0.18,
+                                bl["Coat Roughness"]),
         'Coat Tint': bl["Coat Tint"], 'Normal': t.bump(h, 0.00005)})
     t.output(bsdf)
     return _finish(mat, t, (0.8, 0.75, 0.7), 0.1)

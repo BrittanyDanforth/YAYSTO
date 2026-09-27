@@ -3,7 +3,7 @@
  "frame": "body_zup_m",
  "godot_mapping": "(x, z, -y)",
  "generator": "blender/gore_body/build.py",
- "build_id": "gb-4235da7a7e00",
+ "build_id": "gb-07b2b8cae538",
  "data": {
   "bones": [
    {
@@ -4351,7 +4351,7 @@
     },
     "glide_m_per_deg": [
      0.0,
-     -0.00045,
+     -0.0006,
      -0.00025
     ],
     "rule": "open = rotation about axes.open.world through the bone head (TMJ hinge) PLUS a bone translation of glide_m_per_deg x max(open, 0) in body-frame metres (condyle sliding down the articular eminence); the weights assume both",
