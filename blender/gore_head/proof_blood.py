@@ -142,7 +142,7 @@ def _mesh_arrays(ob):
     return dict(co=co, run=run, runf=runf, wound=wound, depth=depth, blood=blood, vcls=vcls)
 
 
-def _main_axis(m, centre, reach):
+def _main_axis(m, centre, reach, skip=()):
     """Centre line of the wound's main run, from inside the opening to BELOW_RIM past the rim.
 
     Returns (axis points (k, 3), index of the rim point) or (None, None)."""
@@ -155,7 +155,7 @@ def _main_axis(m, centre, reach):
     for rid in np.unique(ids):
         sel = ids == rid
         start = co_f[sel][np.argmin(rf[sel])]
-        if np.linalg.norm(start - centre) > reach:
+        if np.linalg.norm(start - centre) > reach or rid in skip:
             continue
         # the main run: the longest one leaving this wound
         if sel.sum() > best_n:
@@ -186,6 +186,7 @@ def _main_axis(m, centre, reach):
             break
     if rim is None:
         return None, None
+    _main_axis.last = best
     # extend to BELOW_RIM past the rim (arc length)
     arc = np.concatenate([[0.0], np.cumsum(np.linalg.norm(np.diff(axis, axis=0), axis=1))])
     end = np.searchsorted(arc, arc[rim] + BELOW_RIM)
@@ -388,8 +389,20 @@ def run(args):
             ctrl.update_tag()
             bpy.context.view_layer.update()
             m = _mesh_arrays(skin)
-            axis, rim = _main_axis(m, centre, reach)
-            cams = _cameras(hit, dist, None if axis is None else axis[rim] + np.array([0.0, 0.0, -0.002]))
+            # the main run = the longest one leaving this wound whose rim point
+            # can be seen at all (in a caved-in crater a run may start and stay
+            # deep inside, hidden by the crater's own edge from every side)
+            skip = []
+            for _try in range(6):
+                axis, rim = _main_axis(m, centre, reach, skip)
+                if axis is None:
+                    break
+                cams = _cameras(hit, dist, axis[rim] + np.array([0.0, 0.0, -0.002]))
+                if any(_visible(c, axis[rim:rim + 1]).any() for c in cams.values()):
+                    break
+                skip.append(_main_axis.last)
+            if axis is None:
+                cams = _cameras(hit, dist)
             for v in VIEWS:
                 cam = cams[v]
                 base = os.path.join(tmp, f"{label}_{v}_{sec:02d}")
