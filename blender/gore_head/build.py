@@ -787,6 +787,13 @@ class _SN:
         n.inputs['Roughness'].default_value = rough
         return n.outputs['Fac']
 
+    def noise_col(self, v, scale, detail=2.0):
+        n = self.N.new('ShaderNodeTexNoise')
+        self.L.new(v, n.inputs['Vector'])
+        n.inputs['Scale'].default_value = scale
+        n.inputs['Detail'].default_value = detail
+        return n.outputs['Color']
+
     def voronoi(self, v, scale, feature='F1'):
         n = self.N.new('ShaderNodeTexVoronoi')
         n.feature = feature
@@ -931,8 +938,10 @@ def _matter_material(white):
     reach = t.smooth(ln, 0.58 + 0.12 * 0.0, 0.80)
     reach = t.math('MULTIPLY', reach, t.smooth(t.noise(t.p, 60.0, 2.0), 0.25, 0.45))
     n1 = t.noise(t.p, 900.0, 3.0)
-    grey = t.mix(n1, (0.25, 0.155, 0.14), (0.33, 0.21, 0.185))
-    whitec = t.mix(n1, (0.58, 0.52, 0.43), (0.66, 0.60, 0.50))
+    # (grey matter is clearly darker than the cream white matter: pinkish
+    # grey-brown, the contrast that makes the folding readable)
+    grey = t.mix(n1, (0.17, 0.10, 0.09), (0.24, 0.15, 0.13))
+    whitec = t.mix(n1, (0.55, 0.49, 0.40), (0.63, 0.57, 0.47))
     # cerebellum (behind the tentorium, below the cerebrum)
     cb = t.math('MULTIPLY', t.smooth(y, 0.018, 0.032), t.smooth(z, 0.012, 0.0))
     if white:
@@ -940,12 +949,13 @@ def _matter_material(white):
         sulc = t.math('MULTIPLY', t.smooth(sd, 0.00055, 0.0002), reach)
         col = t.mix(ribbon, whitec, grey)
         # basal ganglia: a grey island deep in the white matter; a dark CSF slit
-        bg = t.smooth(t.vmath('LENGTH', t.vmath('DIVIDE', t.vmath('SUBTRACT', pa, (0.0, -0.002, 0.030)),
-                                                (1.0, 0.013, 0.008))), 1.0, 0.85)
-        col = t.mix(t.math('MULTIPLY', bg, 0.85), col, t.mix(n1, (0.30, 0.20, 0.17), (0.36, 0.25, 0.21)))
-        ven = t.smooth(t.vmath('LENGTH', t.vmath('DIVIDE', t.vmath('SUBTRACT', pa, (0.0, 0.012, 0.047)),
-                                                 (1.0, 0.016, 0.0016))), 1.0, 0.8)
-        col = t.mix(ven, col, (0.05, 0.035, 0.035))
+        # (a soft-edged, irregular island, warped by noise: a clean ellipse
+        # reads as a sticker)
+        pw = t.vmath('ADD', pa, t.vmath('SCALE', t.vmath('SUBTRACT', t.noise_col(t.p, 70.0), (0.5, 0.5, 0.5)),
+                                        scale=0.006))
+        bg = t.smooth(t.vmath('LENGTH', t.vmath('DIVIDE', t.vmath('SUBTRACT', pw, (0.0, -0.002, 0.030)),
+                                                (1.0, 0.013, 0.008))), 1.05, 0.7)
+        col = t.mix(t.math('MULTIPLY', bg, 0.7), col, t.mix(n1, (0.24, 0.15, 0.13), (0.30, 0.20, 0.17)))
         # cerebellum: folia in thin grey leaves around a branching white core
         cr = t.vmath('LENGTH', t.vmath('MULTIPLY', t.vmath('SUBTRACT', pa, (0.0, 0.030, 0.004)), (1.0, 0.9, 1.2)))
         fol = t.math('COSINE', t.math('MULTIPLY', t.math('ADD', cr, t.math('MULTIPLY', t.noise(t.p, 120.0), 0.001)),
@@ -981,10 +991,11 @@ def _diploe_material():
     t = _SN(mat)
     d1, c1 = t.voronoi(t.p, 1500.0)
     d2, _c2 = t.voronoi(t.p, 520.0)
-    holes = t.math('MAXIMUM', t.smooth(d1, 0.42, 0.22), t.math('MULTIPLY', t.smooth(d2, 0.35, 0.15), 0.8))
+    holes = t.math('MAXIMUM', t.smooth(d1, 0.5, 0.28), t.math('MULTIPLY', t.smooth(d2, 0.4, 0.18), 0.85))
     n1 = t.noise(t.p, 300.0, 3.0)
-    trab = t.mix(n1, (0.52, 0.42, 0.30), (0.64, 0.54, 0.40))
-    marrow = t.mix(t.noise(t.p, 800.0), (0.12, 0.02, 0.015), (0.30, 0.07, 0.045))
+    # (red-brown spongy bone, clearly different from the dense ivory tables)
+    trab = t.mix(n1, (0.40, 0.27, 0.19), (0.52, 0.38, 0.27))
+    marrow = t.mix(t.noise(t.p, 800.0), (0.08, 0.012, 0.01), (0.22, 0.045, 0.03))
     col = t.mix(holes, trab, marrow)
     t.set('Base Color', col)
     t.set('Roughness', t.fmix(holes, 0.7, 0.35))

@@ -1254,8 +1254,8 @@ def _build_blunt():
     # crushed, ragged margins (not a clean cut)
     # (irregular lobes and notches at 2-6 mm; only a little fine fraying -- a
     # strong high-frequency term reads as a saw-toothed paper edge)
-    ragged = t.noise(c.np * 1500.0, detail=1.0) * 0.00012 + t.noise(c.np * 450.0, detail=2.0) * 0.0005 \
-        + t.noise(c.np * 180.0, detail=2.0) * 0.0009
+    ragged = t.noise(c.np * 1500.0, detail=1.0) * 0.00018 + t.noise(c.np * 450.0, detail=2.0) * 0.0007 \
+        + t.noise(c.np * 180.0, detail=2.0) * 0.0011 + t.noise(c.np * 800.0, detail=2.0) * 0.0004
     cut_split = cut_centre.max(cut_arm) + ragged
     in_arm = cut_arm.gt(cut_centre)
     # tissue bridges: thin strands of nerves / vessels / fibrous tissue that
@@ -1335,7 +1335,7 @@ def _build_blunt():
     # deviated away from the side the blow came from (random when head-on)
     side_ = t.math('SIGN', Io.x + (c.hash(41) - 0.5) * 0.004) * -1.0
     nose_disp = t.vec(side_ * (0.0045 + 0.002 * c.hash(42)) * nf * prot,
-                      (0.0065 + 0.003 * c.hash(43)) * nf * prot,
+                      (0.009 + 0.004 * c.hash(43)) * nf * prot,
                       -0.0018 * nf)
     # nasal laceration: the skin bursts over the broken dorsum and tip
     NA = t.vec(side_ * -0.0015, -0.1035, 0.004)
@@ -1345,12 +1345,15 @@ def _build_blunt():
     hq = (pa.dot(ba) / ba.dot(ba)).clamp()
     to_seg = NA + ba * hq - P
     d_seg = to_seg.length()
-    nose_cut_amt = nose_hit * t.smooth(0.3, 0.75, cr + t.smooth(0.92, 1.0, D) * 0.5) \
+    nose_cut_amt = nose_hit * t.smooth(0.15, 0.45, cr + t.smooth(0.85, 1.0, D) * 0.5) \
         * c.lc([1.0, 0.8, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0])
     hw_n = (0.0006 + 0.0011 * nose_cut_amt) * ((1.0 - (hq * 2.0 - 1.0) * (hq * 2.0 - 1.0)).max(0.0) ** 0.5) \
         * (1.0 + 0.35 * t.noise(c.np * 700.0, detail=2.0))
     cut_nose = t.switch(nose_cut_amt.gt(0.2), -1.0, hw_n - d_seg)
     disp = disp + c.to_hit(nose_disp)
+    # (the broken nose swells moderately but never balloons into the round
+    # goose egg of a blow over flat bone: that made the tip a pink ball)
+    swell = swell * (1.0 - 0.85 * (prot * near_nose).clamp())
     # ---- swollen lids close over the eye (periorbital haematoma) ------------
     f_close = (t.smooth(0.7, 1.0, D) * 0.45 + cr) * t.inp("Swelling") * f_sw * is_skin \
         * t.smooth(s * 0.058, s * 0.042, c.rho)
@@ -1394,7 +1397,9 @@ def _build_blunt():
     blood = blood.max(t.smooth(0.0015, 0.0, -cut_split) * split_on * (0.55 + 0.45 * bleed))
     blood = blood.max(t.smooth(0.002, 0.0, d_cr) * cr * soft_cr * (0.6 + 0.4 * bleed))
     # the broken plates of a crushed area lie in blood and pulp
-    blood = blood.max(is_bone * cr * t.smooth(R_cr * 1.8 + 0.006, R_cr * 0.8, c.rho)
+    # (R_cr is zero on the bone layers: use the soft-tissue opening's size)
+    R_crs = s * (0.004 + 0.02 * cr)
+    blood = blood.max(is_bone * cr * t.smooth(R_crs * 1.8 + 0.006, R_crs * 0.8, c.rho)
                       * (0.72 + 0.28 * t.smooth(-0.3, 0.3, t.noise(c.np * 180.0, detail=2.0))))
     # subconjunctival haemorrhage of the eye near the blow (eye_injury)
     blood = blood.max(eye["blood"])
@@ -1422,7 +1427,9 @@ def _build_blunt():
     # skin walls run down to the bone (the floor of a blunt split is the
     # bruised periosteum); the arms close in a V toward their mid line
     bd = t.inp("Bone Depth")
-    wl = t.mix(tw * t.mix(0.55, 1.0, crush), (bd * 0.95).min(0.012).max(0.002), is_skin)
+    # (bone: a short wall, about the thickness of the broken table -- long
+    # extruded bone walls hang into the orbit and sinuses as pale paper sheets)
+    wl = t.mix(tw * t.mix(0.55, 1.0, crush) * (1.0 - 0.6 * cr * is_bone), (bd * 0.95).min(0.012).max(0.002), is_skin)
     center = t.switch(in_arm, c.center, to_line, 'VECTOR')
     wall = t.vec(0.0, 0.0, -wl) + center * t.switch(in_arm, 0.75 - 0.6 * crush, 0.9)
     # walls of the crushed opening drop steeply (a crater, not a V)
@@ -1641,10 +1648,13 @@ def _build_blast():
     # does not erase it: a hole there only looks into a black void, while the
     # references show torn, pulped, blood-soaked tissue everywhere (§5.15)
     soft_in = c.lc([0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0])
-    deep = t.smooth(-0.022, -0.032, c.wT) * soft_in
+    # (the tongue is a solid organ in a closed mesh: a hole would show its
+    # hollow inside; it is torn by deep ragged craters pushed into it instead)
+    deep = t.smooth(-0.011, -0.019, c.wT) * soft_in
     lac = t.noise(c.np * 140.0 + t.vec(c.seed * 3.0, 0.0, 0.0), detail=3.0, signed=False)
-    cut_lac = t.switch(on.gt(0.5), -1.0, (lac - 0.66) * 0.02) * t.smooth(R * 1.1, R * 0.6, c.rho)
-    cut_crater = t.mix(cut_crater, cut_lac - (1.0 - t.smooth(R * 1.1, R * 0.6, c.rho)), deep)
+    in_cr = t.smooth(R * 1.1, R * 0.6, c.rho) * on
+    lac_dent = t.smooth(0.5, 0.72, lac) * in_cr * deep * 0.0045
+    cut_crater = t.mix(cut_crater, -1.0, deep)
     # the mandible segment: fracture gaps separate it, it is moved rigidly
     in_frag, moved, slot = _blast_fragment(t, s, c.hash, c.u, c.v, c.wT)
     frag_on = is_jaw * t.smooth(0.5, 0.7, D)
@@ -1665,7 +1675,7 @@ def _build_blast():
     pulp_on = c.lc([0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0]) * on * t.smooth(R * 1.15, R * 0.55, c.rho)
     pulp = (t.noise(c.np * 70.0, detail=2.0) * 0.003 + t.noise(c.np * 180.0, detail=3.0, rough=0.6) * 0.0028
             + t.noise(c.np * 520.0, detail=2.0) * 0.0009) * pulp_on * s.min(1.6)
-    swell = swell + pulp
+    swell = swell + pulp - lac_dent
     disp = t.vec(0.0, 0.0, lift) + c.radial * (lift * 0.7) + frag_disp
     # soot, searing and powder stippling on the skin around the crater
     soot = is_skin * on * t.smooth(R * 2.2, R * 0.9, c.rho + t.noise(c.np * 80.0, detail=2.0) * R * 0.5) \
@@ -1679,7 +1689,8 @@ def _build_blast():
     # raw pulped tissue and blood in and at the crater
     exposed = t.smooth(R * 1.1, R * 0.5, c.rho) * on * c.lc([0.0, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0])
     wound = (t.smooth(0.0015, 0.0, d_out) * on).max(exposed).max(t.smooth(0.001, -0.0005, slot) * frag_on)
-    blood = (t.smooth(0.0015, 0.0, d_out) * on * 0.85).max(exposed * 0.9) \
+    blood = (t.smooth(0.0015, 0.0, d_out) * on * 0.85) \
+        .max(exposed * (0.35 + 0.45 * t.smooth(-0.2, 0.4, t.noise(c.np * 90.0, detail=2.0)))) \
         .max(frag_on * t.smooth(0.004, 0.0, slot) * 0.8)
     # the broken-off segment and the bone around the crater are bloody (the
     # bone must still read in patches)
@@ -2761,7 +2772,8 @@ def _build_pools(t, hits, surface, drip):
     s_exu = t.out(t.node('GeometryNodeAccumulateField', {'Value': exu, 'Group ID': pid_h}), 'Total')
     up_min = t.attr("pl_mup") - k_up * t.math('LOGARITHM', (s_exu / cnt_h.max(1.0)).max(1.0), math.e)
     g = t.store(g, "pl_upmin", up_min)
-    recede = ((t.attr("pl_up") - t.attr("pl_upmin")) * 0.5 * g_t.length()).clamp(0.0, 0.012) * t.attr("pl_col")
+    recede = ((t.attr("pl_up") - t.attr("pl_upmin")) * 0.5 * g_t.length()).clamp(0.0, 0.012) \
+        * (t.attr("pl_col") + t.attr("pl_spl")).clamp()
     L = t.attr("pl_low") - 0.0032 * (1.0 - fill) + 0.0003 * fill - tilt.max(0.0) - recede
     hs = t.attr("pl_h")
     # just past the rim the liquid drapes onto the lip where the lip is lower
@@ -3185,6 +3197,8 @@ def _build_blood():
             hk = t.store(hk, "pl_col", 0.0)
         hk = t.store(hk, "pl_pulp", {"bullet": 0.0, "exit": 0.75, "blunt": 0.25, "slash": 0.0}[k] + 0.35 * h["crush"])
         hk = t.store(hk, "pl_cr", h["crush"] if k == "blunt" else 0.0)
+        # (a blunt split is a channel like a cut: it brims over only at its low end)
+        hk = t.store(hk, "pl_spl", 1.0 if k == "blunt" else 0.0)
         hk = t.store(hk, "pl_Ry", rpy)
         pool_hits.append(t.store(hk, "pl_R", rp))
     pool_pts = _join(t, *pool_hits)
@@ -4089,7 +4103,7 @@ def _build_attributes():
     wn2 = t.noise(p * 90.0, detail=2.0, signed=False)
     # patches of real blood (clear tissue between them), not a thin pink veil
     # over everything
-    wall_blood = t.smooth(0.42, 0.62, t.pick(layer, [0.95, 0.7, 0.3, 0.3, 0.5, 0.7, 0.3, 0.6]) * (0.5 + 0.5 * fr)
+    wall_blood = t.smooth(0.42, 0.62, t.pick(layer, [0.95, 0.7, 0.55, 0.55, 0.5, 0.7, 0.3, 0.6]) * (0.5 + 0.5 * fr)
                           + (wn - 0.5) * 0.9 + (wn2 - 0.5) * 0.5)
     # (pulp lumps and shreds carry their own blood mask, g_own)
     wall_blood = t.mix(wall_blood, a.z, t.attr("g_own"))
