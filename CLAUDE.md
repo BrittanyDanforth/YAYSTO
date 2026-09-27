@@ -55,6 +55,8 @@ integration stage and becomes the head of the full body.
 - **Reference photos:** the user supplied real forensic reference photos for education. Use them ONLY for generic
   injury/blood properties (recorded in `gore-game/docs/REFERENCE_NOTES.md`); never faces, tattoos, identities or a
   specific person's injuries; never commit the photos. The photos (1-21 plus face and GSW sheets) are in the git-ignored `refs/` folder at the repo root (they must be copied there locally; they are NOT in git); `refs/12_our_render_wall_stripes.png` shows OUR stripe artefact to eliminate; every agent building or reviewing wounds, blood, tissue, bone, skull, brain or the dead body must LOOK at them and compare renders side by side.
+- **Standing rule (user, 2026-09-27): "ensure 1:1 realism on ur efforts. allways".** Every change on every part is judged against real
+  anatomy and the refs. (Eyes: the deeper-set eye fix is no longer required; keep the eyes unless anatomically wrong.)
 - **Don't soften realism.** They explicitly want brain-damage deficits ("lose ability to do stuff, eyes might cross,
   arms twitch"), realistic body drops, reactions, stumbling, dying. Clinical, factual, complete.
 - **Performance:** "as long as Godot can handle 60 fps with blood and brain and gore" → target 60 fps at 1080p on a

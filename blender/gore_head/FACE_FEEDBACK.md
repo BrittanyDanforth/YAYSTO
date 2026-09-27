@@ -9,7 +9,8 @@ The user's verdict on the current head (verbatim intent):
   leading into the canal, tragus and antitragus, and a SMALL lobe. Ears sit between brow line and nose base, tilted back
   ~15-20°, and stand off the head only slightly.
 - **Earlobes are far too long.** Shorten to a normal adult lobe (~15-20 mm of the ~60-65 mm ear height).
-- **Eyes look bug-eyed.** Seat the eyeballs deeper in the orbits: more brow-ridge overhang, deeper upper-lid crease and
+- ~~Eyes look bug-eyed / seat deeper~~ — **NO LONGER REQUIRED (user, 2026-09-27: "u dont gotta fix the eyes deepset just ensure 1:1 realism")**. Keep the eyes as they are; only fix them if something is anatomically wrong.
+- (old note) **Eyes look bug-eyed.** Seat the eyeballs deeper in the orbits: more brow-ridge overhang, deeper upper-lid crease and
   orbital hollow, lids covering more of the globe (upper lid over the top of the iris), less of the eyeball exposed from
   the side.
 - **Eyes are too far apart.** Reduce the interpupillary distance a little (adult male IPD ~62-64 mm, i.e. eye centres at
@@ -49,3 +50,7 @@ layer overlap checks pass (`python3 anatomy.py`). Also new for the cutaway: cerv
 spinal cord continuing the brain stem down the canal, an airway (pharynx → trachea) carved in the muscle layer,
 a frontal sinus, a larger maxillary sinus, a thinner palate and a domed tongue.
 Not done: a full sculpt-level rebuild of the auricle (helix roll / antihelix Y are the round-1 ones).
+
+
+## Standing rule (user, 2026-09-27)
+"ensure 1:1 realism on ur efforts. allways" — every change, on every part, is judged against real anatomy and the reference photos; nothing is "good enough" if it looks less real than the refs.
