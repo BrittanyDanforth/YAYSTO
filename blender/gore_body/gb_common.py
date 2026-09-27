@@ -187,7 +187,7 @@ POSE_ACTIONS = ("pose_idle", "pose_guard", "pose_cower", "pose_brace")
 TRI_BUDGET = {
     "GB_Head": 30000, "GB_Body": 44000, "GB_Shorts": 4000, "GB_Eye+EyeFX": 5000, "GB_Mouth": 8500,
     "GB_BrowLash": 2000, "GB_MuscleShell": 24000, "GB_Skeleton": 36000, "GB_Brain": 28000,
-    "GB_Organs": 22000, "GB_Cord": 4200, "GB_Vessels": 14000, "GB_Variants": 60000,
+    "GB_Organs": 22000, "GB_Cord": 4200, "GB_Vessels": 18000, "GB_Variants": 60000,
 }
 TRI_BUDGET_GROUPS = {"GB_Eye+EyeFX": ("GB_Eye_L", "GB_Eye_R", "GB_EyeFX_L", "GB_EyeFX_R"),
                      "GB_Vessels": ("GB_Vessels_Art", "GB_Vessels_Ven"),

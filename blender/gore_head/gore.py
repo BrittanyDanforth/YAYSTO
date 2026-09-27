@@ -3233,6 +3233,31 @@ def _build_blood():
         ng_ = t.store(ng_, nm, val)
     seeds.append(t.out(t.group(_build_seed_group("bullet", 7, "GH_Gore_DripSeeds_Nose"),
                                {"Hits": ng_, "Damage": damage, "Drip Time": drip})))
+    # a globe torn by a bullet or an exit bleeds from the orbit (ophthalmic
+    # artery branches, vortex veins, torn uvea: 5-20 mL/min, blood mixed with
+    # vitreous): it wells up in the lid opening and runs over the LOWER LID
+    # margin down the cheek -- the palpebral fissure is the wound's opening
+    for ki, kname in enumerate(("bullet", "exit")):
+        he = _hit_fields(t, damage)
+        for sx in (1.0, -1.0):
+            E = t.vec(sx * 0.032, -0.070, 0.022)
+            d_ = E - he["I"]
+            perp = (d_ - he["Z"] * d_.dot(he["Z"])).length()
+            thru = t.smooth(EYE_R + 0.006, EYE_R, perp) * t.smooth(0.25, 0.4, he["D"])
+            ed = t.node('GeometryNodeDuplicateElements', {'Geometry': sources[kname],
+                                                          'Amount': thru.gt(0.3).max(0.0)}, domain='POINT')
+            eg = t.out(ed, 'Geometry')
+            eN = (0.0, -0.8, -0.6)
+            for nm, val in (("hit_I", (sx * 0.0305, -0.0800, 0.0150)), ("hit_N", eN), ("hit_X", (1.0, 0.0, 0.0)),
+                            ("hit_Y", (0.0, 0.6, -0.8)), ("hit_Z", eN), ("hit_T", (1.0, 0.0, 0.0))):
+                eg = t.store(eg, nm, val, 'FLOAT_VECTOR')
+            for nm, val in (("b_q", thru * (8.0 + 10.0 * _hash(t, he["seed"], 53.0 + ki)) * bleed / 0.7),
+                            ("b_fa", 0.4), ("b_hole", 0.004), ("b_t0", 0.05), ("b_pers", 0.7), ("b_tis", 0.15),
+                            ("b_src", 0.0)):
+                eg = t.store(eg, nm, val)
+            seeds.append(t.out(t.group(_build_seed_group("bullet", 8 + ki * 2 + int(sx > 0),
+                                                         f"GH_Gore_DripSeeds_Orbit_{kname}_{'L' if sx > 0 else 'R'}"),
+                                       {"Hits": eg, "Damage": damage, "Drip Time": drip})))
     # pools in the openings (grid radius per kind)
     pool_hits = []
     for k in POOL_KINDS:

@@ -2563,7 +2563,10 @@ def _piece_rigid_bones():
         for n in range(1, 13):
             fixed[f"rib{n}_{side}"] = level_bone(RB_.RIB_TABLE[n][1][2])
         for n in range(1, 11):
-            fixed[f"costal_cartilage{n}_{side}"] = level_bone(RB_.RIB_TABLE[n][1][2])
+            # the lower cartilages form the costal margin with the chest skin over it: they ride the 'chest' bone
+            # (fix round 3, critics: cartilage 7 on upper_chest poked 3 mm through the costal margin in trunk
+            # flexion)
+            fixed[f"costal_cartilage{n}_{side}"] = "chest" if n >= 6 else level_bone(RB_.RIB_TABLE[n][1][2])
     for a, b in zip(LEVELS[1:-1], LEVELS[2:]):
         fixed[f"disc_{a.lower()}_{b.lower()}"] = level_bone(0.5 * (ROW[a]["z"] + ROW[b]["z"]))
     return fixed
