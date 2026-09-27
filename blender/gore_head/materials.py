@@ -1336,7 +1336,7 @@ def _eye_material(g):
     # subconjunctival haemorrhage: a confluent dark red sheet with a soft
     # irregular edge (never speckled -- spots read as a strawberry)
     hem = (t.noise(p, 45.0, 2.0) * 0.5 + blood * 1.2).smooth(0.75, 0.95) * away
-    scl = t.mix(hem, scl, (0.42, 0.018, 0.014))
+    scl = t.mix(hem, scl, t.mix(t.noise(p, 90.0), (0.16, 0.012, 0.012), (0.30, 0.02, 0.018)))
 
     col = t.mix(corn, scl, iris)
     # ruptured globe: dark jelly and blood inside
