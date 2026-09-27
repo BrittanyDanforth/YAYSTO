@@ -121,7 +121,7 @@ ${USER_FEEDBACK}
 ${BLOOD_RULE}
 ${REFS_RULE}
 ${BUDGET}
-Earlier parts: ${JSON.stringify(history, null, 1)}
+Earlier parts: ${JSON.stringify(history, null, 1)}${f.key === 'wounds' ? '\nNOTE: a second container restart interrupted an earlier run of this wounds part after ~6 hours of work; its edits are already in gore.py/materials.py/anatomy.py and its renders/tests are in '+SCRATCH+'/fix2_wounds/ (latest sheets f3.png, m10.png). Done so far per its renders: crushed crater incl. nose side, eye rupture, eye/orbit cutaway, burn reaching the eye with irregular zones, blast mid-face pulp, open neck gash. Still open per the lead: cheek slash reads as a second mouth; neck gash needs a torn cross-section (muscle, trachea, vessels); crushed lower face coated in one glossy blood gel bag; bone plates paper-like; exit streams flat jagged cut-outs; blast teeth candy-white; cutaway brain centre flat; everything too glossy; no swelling/bruise on the blunt preset. Inspect the current state, do NOT redo finished work, finish the open items, then run the full build.' : ''}
 Put throwaway renders in ${SCRATCH}/fix2_${f.key}/. Run \`cd ${DIR} && python3 gore.py --no-render\` (verify_gore) and \`python3 anatomy.py\` (overlap checks) after your changes; both must pass. Report honestly what is still not 1:1.`,
     { label: `fix2:${f.key}`, phase: 'Fix', schema: BUILD_SCHEMA })
   history.push({ part: f.key, summary: r ? r.summary : 'agent failed', still_open: r ? r.known_issues : [] })
