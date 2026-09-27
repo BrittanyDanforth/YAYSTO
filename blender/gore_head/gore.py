@@ -2675,14 +2675,77 @@ def _run_mesh(t, trail, surface, steps):
     # and the game follow a run from its source
     curves = t.store(curves, "gore_run", t.math('ADD', t.attr("d_id", 'INT'), 0.0))
     curves = t.store(curves, "gore_runf", tt)
-    profile = t.out(t.node('GeometryNodeCurvePrimitiveCircle', {'Resolution': 10, 'Radius': 1.0}, mode='RADIUS'))
-    radius = t.out(t.node('GeometryNodeInputRadius'))
-    tubes = t.out(t.node('GeometryNodeCurveToMesh', {'Curve': curves, 'Profile Curve': profile,
-                                                     'Scale': radius, 'Fill Caps': True}))
-    tubes = t.store(tubes, "d_flat", 0.24)
-    tubes = t.store(tubes, "d_cap", 0.00016 + 0.00012 * t.attr("d_ib"))
+    # crest height of the rivulet: 0.1-0.3 mm (thicker for a heavy flow and
+    # where it slowed and gathered), REFERENCE_NOTES §5.21 / RB rivulet row
+    curves = t.store(curves, "d_cap", (0.00011 + 0.00012 * t.attr("d_ib")) * (1.0 + 0.5 * t.attr("d_slow")))
     path = t.out(t.node('GeometryNodeCurveToMesh', {'Curve': curves}))
-    return tubes, path
+    return path
+
+
+FILM_REACH = 0.0065             # skin within this of a run's centre line is re-meshed for the film (m)
+FILM_FINE = 4.0e-7              # faces larger than this (m^2) are subdivided twice for the film outline
+
+
+def _film(t, paths, surface):
+    """The runs as ONE liquid layer lying on the skin (not tubes laid on it).
+
+    The skin (and pools / wound walls) near the runs is copied, subdivided to
+    ~0.3 mm, and every vertex gets the thickness of the rivulet over it: a
+    meniscus profile h = crest * (1 - (d / half width)^2)^0.7 across the
+    nearest run (half width d_rad, crest d_cap), with a slightly ragged edge.
+    Where runs meet they merge into one sheet; the layer follows every bump
+    and crease of the skin because it IS the skin, lifted by h. Faces with no
+    thickness are dropped, so the outline is the rivulet's contact line.
+    """
+    sel = t.out(t.node('GeometryNodeProximity', {'Target': paths}, target_element='EDGES'), 'Distance').lt(FILM_REACH)
+    sel = t.bool('AND', sel, t.attr("gore_clot").lt(0.5))
+    near = t.out(t.node('GeometryNodeSeparateGeometry', {'Geometry': surface, 'Selection': sel}, domain='FACE'),
+                 'Selection')
+    area = t.out(t.node('GeometryNodeInputMeshFaceArea'))
+    big = t.out(t.node('GeometryNodeSeparateGeometry', {'Geometry': near, 'Selection': area.gt(FILM_FINE)},
+                       domain='FACE'), 'Selection')
+    small = t.out(t.node('GeometryNodeSeparateGeometry', {'Geometry': near, 'Selection': area.gt(FILM_FINE)},
+                         domain='FACE'), 'Inverted')
+    big = t.out(t.node('GeometryNodeSubdivideMesh', {'Mesh': big, 'Level': 2}))
+    small = t.out(t.node('GeometryNodeSubdivideMesh', {'Mesh': small, 'Level': 1}))
+    g = _join(t, big, small)
+    prox = t.node('GeometryNodeProximity', {'Target': paths}, target_element='EDGES')
+    d, q = t.out(prox, 'Distance'), t.out(prox, 'Position')
+    ni = t.out(t.node('GeometryNodeSampleNearest', {'Geometry': paths, 'Sample Position': q}, domain='POINT'))
+    for name, dt in (("d_rad", 'FLOAT'), ("d_cap", 'FLOAT'), ("d_art", 'FLOAT'), ("d_q", 'FLOAT'),
+                     ("d_src", 'FLOAT'), ("gore_run", 'FLOAT'), ("gore_runf", 'FLOAT')):
+        g = t.store(g, "f_" + name, t.sample(paths, t.attr(name, dt), ni, dt))
+    p = t.pos()
+    # ragged contact line: the edge pins on the skin's micro relief
+    edge_n = t.noise(p * 1400.0, detail=1.0) * 0.07 + t.noise(p * 380.0, detail=2.0) * 0.1
+    rel = (d / t.attr("f_d_rad").max(0.00015)) * (1.0 + edge_n)
+    h = t.attr("f_d_cap") * (1.0 - rel * rel).max(0.0) ** 0.7
+    g = t.store(g, "f_h", h)
+    # runs lying side by side merge into one sheet (the liquid bridges the
+    # narrow dry strip between them): the thickness spread over ~1-2 mm fills
+    # the gaps up to near the crest, it only adds a thin skirt at open edges
+    hb = F(t, t.node('GeometryNodeBlurAttribute', {'Value': t.attr("f_h"), 'Iterations': 6, 'Weight': 1.0},
+                     data_type='FLOAT').outputs[0])
+    g = t.store(g, "f_hb", hb)
+    g = t.store(g, "f_h", t.attr("f_h").max((t.attr("f_hb") * 2.2 - 0.00002).min(t.attr("f_d_cap") * 0.85)))
+    wet = F(t, t.node('GeometryNodeFieldOnDomain', {'Value': t.switch(t.attr("f_h").gt(1e-6), 0.0, 1.0)},
+                      domain='FACE', data_type='FLOAT').outputs[0])
+    g = t.out(t.node('GeometryNodeDeleteGeometry', {'Geometry': g, 'Selection': wet.lt(0.34)}, domain='FACE'))
+    g = t.out(t.node('GeometryNodeSetPosition', {'Geometry': g,
+                                                 'Offset': t.normal() * (t.attr("f_h") + 0.00003)}))
+    # Beer-Lambert thickness for the shader: the edge is a thin translucent film
+    # (a 0.1-0.3 mm rivulet is still a red film, only pools / thick heads
+    # reach the near-black of thick blood)
+    g = t.store(g, "gore_bthin", 1.0 - (t.attr("f_h") / 0.00055).clamp() ** 0.8)
+    for src, dst in (("f_d_art", "gore_art"), ("f_d_q", "gore_bq"), ("f_d_src", "gore_bsrc"),
+                     ("f_gore_run", "gore_run"), ("f_gore_runf", "gore_runf")):
+        g = t.store(g, dst, t.attr(src))
+    g = t.store(g, "gore_tis", 0.0)
+    g = t.out(t.node('GeometryNodeRemoveAttribute', {'Geometry': g, 'Pattern Mode': 'Wildcard', 'Name': "f_*"}))
+    for pat in ("g_*", "gore_wound", "gore_depth", "gore_edge", "gore_bruise", "gore_burn", "gore_fracture",
+                "gore_soot", "pl_*", "b_*"):
+        g = t.out(t.node('GeometryNodeRemoveAttribute', {'Geometry': g, 'Pattern Mode': 'Wildcard', 'Name': pat}))
+    return g
 
 
 def _drops(t, tips, rest):
@@ -2813,13 +2876,14 @@ def _build_blood():
     bseeds = t.store(bseeds, "d_arc0", 0.0)
     trail2, tips2 = _walk(t, bseeds, surf2, BRANCH_STEPS, rest)
 
-    tubes1, path1 = _run_mesh(t, trail1, surf2, DRIP_STEPS)
-    tubes2, path2 = _run_mesh(t, trail2, surf2, BRANCH_STEPS)
+    path1 = _run_mesh(t, trail1, surf2, DRIP_STEPS)
+    path2 = _run_mesh(t, trail2, surf2, BRANCH_STEPS)
+    paths = _join(t, path1, path2)
+    film = _film(t, paths, surf2)
     beads, hung = _drops(t, _join(t, tips1, tips2), rest)
-    blood = _join(t, tubes1, tubes2, beads)
-    # flatten the runs onto the skin: blood runs as a flat film 0.1-0.4 mm
-    # thick with rounded sides (a round tube reads as a glass rod); cross
-    # section = a low dome thinning to nothing at the edges
+    blood = beads
+    # flatten the front lobes onto the skin: a low dome thinning to nothing
+    # at the edges (a sphere reads as a berry)
     p = t.pos()
     q = _nearest_point(t, surf2, p)
     n = _nearest_normal(t, surf2, p)
@@ -2838,11 +2902,11 @@ def _build_blood():
     runs = t.store(runs, "gore_tis", 0.0)
     runs = t.store(runs, "gore_bq", t.attr("d_q"))
     runs = t.store(runs, "gore_bsrc", t.attr("d_src"))
-    allb = _join(t, pools, runs)
+    allb = _join(t, pools, film, runs)
     allb = t.out(t.node('GeometryNodeSetMaterial', {'Geometry': allb, 'Material': t.inp("Material")}))
     allb = t.out(t.node('GeometryNodeSetShadeSmooth', {'Mesh': allb, 'Shade Smooth': True}))
     t.result("Blood", allb)
-    t.result("Trail", _join(t, path1, path2))
+    t.result("Trail", paths)
     t.layout()
     return t
 

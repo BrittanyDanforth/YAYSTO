@@ -253,13 +253,44 @@ def stage_caches_current():
         return False, "manifest has no stage_keys (exported by an older build.py)"
     import build
     quick = bool(b.get("quick"))
+    # body-side staleness only: the head sources are taken from the build's own head snapshot when it still
+    # exists (the head team edits gore_head during/after a build; that is reported by head_project_current)
+    snap = b.get("head_snapshot")
+    snap_dir = os.path.join(gbc.HEAD_SNAPSHOT_ROOT, snap) if snap else None
+    saved = gbc.HEAD_DIR
+    note = "head sources: live folder"
+    if snap_dir and os.path.isdir(snap_dir) and gbc.HEAD_DIR == gbc.HEAD_SRC_DIR:
+        gbc.HEAD_DIR = snap_dir
+        note = f"head sources: build snapshot {snap}"
+    elif gbc.HEAD_DIR != gbc.HEAD_SRC_DIR:
+        note = f"head sources: this build's snapshot {gbc.head_snapshot_id()}"
     bad = {}
-    for stage, key in keys.items():
-        if str(st.get(stage, "")).startswith(("built", "cached")):
-            now = build.stage_key(stage, quick)
-            if now != key:
-                bad[stage] = f"manifest {key} != current {now}"
-    return not bad, f"stale stages: {bad}" if bad else f"all {len(keys)} stage keys match the current sources"
+    try:
+        for stage, key in keys.items():
+            if str(st.get(stage, "")).startswith(("built", "cached")):
+                now = build.stage_key(stage, quick)
+                if now != key:
+                    bad[stage] = f"manifest {key} != current {now}"
+    finally:
+        gbc.HEAD_DIR = saved
+    return not bad, (f"stale stages: {bad}" if bad else f"all {len(keys)} stage keys match the current sources") \
+        + f" ({note})"
+
+
+@check("files", severity="warn")
+def head_project_current():
+    """The head project (read-only, another team) has not changed since the head snapshot this build used;
+    when it has, the next build picks the changes up (warning, not a failure of this build)."""
+    path = os.path.join(gbc.SUBJECT_OUT, "manifest.json")
+    if not os.path.exists(path):
+        return None, "manifest.json missing"
+    b = gbc.read_json(path)["data"]["build"]
+    used = b.get("head_sources") or {}
+    live = {os.path.basename(p): gbc.file_hash(p)[:16] for p in gbc.head_source_files(gbc.HEAD_SRC_DIR)
+            if os.path.exists(p)}
+    changed = sorted(k for k in set(used) | set(live) if used.get(k) != live.get(k))
+    return not changed, (f"head files changed since the build's snapshot {b.get('head_snapshot')}: {changed}"
+                         if changed else f"head sources unchanged since snapshot {b.get('head_snapshot')}")
 
 
 @check("tables")

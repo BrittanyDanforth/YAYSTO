@@ -501,7 +501,10 @@ def write_manifest(out, glb_paths=(), sidecars=None, pending=None, timings=None,
                   "input_hashes": {os.path.relpath(p, gbc.HERE).replace(os.sep, "/"): gbc.file_hash(p)[:16]
                                    for p in gbc.source_files() if os.path.exists(p)},
                   "schemas": {k: k for k in gbc.SCHEMAS},
-                  "stage_keys": dict(stage_keys or {}), "stage_status": dict(status or {})},
+                  "stage_keys": dict(stage_keys or {}), "stage_status": dict(status or {}),
+                  "head_snapshot": gbc.head_snapshot_id(),
+                  "head_sources": {os.path.basename(p): gbc.file_hash(p)[:16] for p in gbc.head_source_files()
+                                   if os.path.exists(p)}},
         "files": files,
         "meshes": meshes,
         "armature": {"bones": [b.name for b in arm.data.bones] if arm else [],

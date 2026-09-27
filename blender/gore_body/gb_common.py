@@ -526,9 +526,52 @@ def set_output_root(root):
     return GAME_OUT
 
 
-def head_source_files():
-    """The head-project files the body build depends on (for cache keys and manifest hashes)."""
-    return [os.path.join(HEAD_DIR, f) for f in ("anatomy.py", "materials.py", "gh_common.py")]
+HEAD_SRC_DIR = HEAD_DIR            # the head team's live folder (HEAD_DIR may point at a build snapshot)
+HEAD_PY = ("anatomy.py", "materials.py", "gh_common.py", "build.py", "gore.py")
+HEAD_SNAPSHOT_ROOT = os.path.join(CACHE_DIR, "head_snapshot")
+
+
+def head_source_files(head_dir=None):
+    """The head-project files the body build depends on (for cache keys and manifest hashes): the modules
+    imported by ``import_head`` plus ``build.py``/``gore.py`` (B2 grows the lashes with the head's hair code)."""
+    d = head_dir or HEAD_DIR
+    return [os.path.join(d, f) for f in HEAD_PY]
+
+
+def snapshot_head():
+    """Freeze the head project for this build: copy its sources into ``.cache/head_snapshot/<hash>/`` and
+    point ``HEAD_DIR`` there before anything imports or hashes them.
+
+    The head team edits ``blender/gore_head`` while a 60-90 min body build runs; importing from a frozen copy
+    keeps every stage key, cache and exported mesh of one build on the same head sources (the live folder is
+    still read, never written).  Returns the snapshot directory.  No-op once the head modules are imported."""
+    global HEAD_DIR
+    if _HEAD is not None or HEAD_DIR != HEAD_SRC_DIR:
+        return HEAD_DIR
+    import shutil
+    src = [p for p in head_source_files(HEAD_SRC_DIR) if os.path.exists(p)]
+    key = input_hash(src)[:12]
+    dst = os.path.join(HEAD_SNAPSHOT_ROOT, key)
+    if not os.path.isdir(dst):
+        tmp = dst + ".tmp%d" % os.getpid()
+        os.makedirs(tmp, exist_ok=True)
+        for p in src:
+            shutil.copyfile(p, os.path.join(tmp, os.path.basename(p)))
+        os.replace(tmp, dst)
+    # keep the 4 newest snapshots
+    snaps = sorted((os.path.join(HEAD_SNAPSHOT_ROOT, d) for d in os.listdir(HEAD_SNAPSHOT_ROOT)
+                    if not d.count(".tmp")), key=os.path.getmtime)
+    for old in snaps[:-4]:
+        if old != dst:
+            shutil.rmtree(old, ignore_errors=True)
+    os.utime(dst)
+    HEAD_DIR = dst
+    return dst
+
+
+def head_snapshot_id():
+    """The snapshot key this process imports the head from (None: the live folder)."""
+    return os.path.basename(HEAD_DIR) if HEAD_DIR != HEAD_SRC_DIR else None
 
 
 # ---------------------------------------------------------------------------
@@ -884,11 +927,19 @@ def file_hash(path, algo="sha256"):
     return h.hexdigest()
 
 
+def _hash_name(p):
+    """Name of an input file inside a hash: relative to HERE; a head snapshot file counts as its live
+    ``../gore_head/<name>`` so a snapshot and the live folder with the same contents give the same key."""
+    if os.path.abspath(p).startswith(HEAD_SNAPSHOT_ROOT + os.sep):
+        return "../gore_head/" + os.path.basename(p)
+    return os.path.relpath(p, HERE).replace(os.sep, "/")
+
+
 def input_hash(paths, extra=""):
     """Stable hash over the contents (not mtimes) of ``paths`` plus ``extra`` text."""
     h = hashlib.sha256()
-    for p in sorted(set(os.path.abspath(p) for p in paths)):
-        h.update(os.path.relpath(p, HERE).replace(os.sep, "/").encode())
+    for p in sorted(set(os.path.abspath(p) for p in paths), key=_hash_name):
+        h.update(_hash_name(p).encode())
         h.update(file_hash(p).encode() if os.path.exists(p) else b"<missing>")
     h.update(extra.encode())
     return h.hexdigest()

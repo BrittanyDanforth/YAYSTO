@@ -612,6 +612,13 @@ def _shoulder(ax, y, z):
     nape = sd_oellipsoid(ax, y, z, (0.046, 0.074, 1.480), (0.034, 0.016, 0.028), frame((0.6, 0.25, -0.75),
                                                                                        (0.0, 1.0, 0.0)))
     trap = smin(trap, nape, 0.024)
+    # neck-shoulder slope at mid-depth (fix round 1: the torso's top station left a flat shelf at z ~1.47 with the
+    # neck column standing on it - a horizontal 'collar' crease around the neck base - and a 7 mm dip between the
+    # shelf and the acromion pad that printed a wavy line along the top of the shoulder).  The upper trapezius
+    # over levator scapulae and the scalenes runs as one straight, slightly rounded slope from the side of the
+    # neck (skin 1.504 at |x| 0.062) down to the acromion (1.474 at 0.170), ~16 deg below horizontal
+    slope = sd_capsule(ax, y, z, (0.062, 0.008, 1.492), (0.170, 0.010, 1.462), 0.0120, 0.0115)
+    trap = smin(trap, slope, 0.020)
     # teres major / infraspinatus lower belly: fills the posterior axillary junction (no pit behind the arm)
     teres = _fold(ax, y, z, (0.105, 0.098, 1.360), GH + 0.070 * ARM_D + 0.020 * ARM_LAT + np.array([0.0, 0.030, 0.0]),
                   0.018, 0.030)
@@ -1218,6 +1225,13 @@ def union_components(c, off=None, kplus=0.0):
     trunk = smax(trunk, submental_limit(ax_, g["_y"], g["_z"]) - K, 0.005 + K)
     trunk = smin(trunk, g["trapezius"], 0.028 + 0.016 * sstep(1.455, 1.49, g["_z"]) + K)    # softer neck / shoulder junction (round 2)
     trunk = smin(trunk, g["clavicle"], 0.028 + K)
+    # supraclavicular fossa (fix round 1): behind the medial two thirds of the clavicle, between the SCM and the
+    # trapezius, the top of the shoulder sinks into a soft groove instead of the torso tube's flat top (whose
+    # square front edge read as a collar ledge around the neck base).  A smooth inward displacement (gaussian
+    # across a line behind the clavicle, <= 6 mm) - a carved ellipsoid read as a crater.  The clavicle ridge is
+    # restored by its bone pad (united after this).
+    sd_line = sd_capsule(ax_, g["_y"], g["_z"], (0.052, -0.030, 1.474), (0.118, -0.012, 1.474), 0.0, 0.0)
+    trunk = trunk + 0.0060 * gauss(sd_line, 0.011) * sstep(0.040, 0.056, ax_)
     arm = smin(g["arm"], g["deltoid"], 0.030 + K)
     arm = smin(arm, g["hand"], 0.012 + K)
     # arm <-> trunk: crisp in the armpit hollow, wide (26-30 mm) at the anterior/posterior axillary

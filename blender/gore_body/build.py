@@ -215,6 +215,9 @@ def run(stages, opts):
         gbc.set_output_root(os.environ["GB_OUTPUT_ROOT"])
     elif opts["quick"] and not opts.get("force_export"):
         gbc.set_output_root(QUICK_OUT)
+    # freeze the head project's sources for this build (the head team keeps editing them during our 60-90 min
+    # build; every stage key, cache and mesh of one build must come from the same head sources)
+    gbc.snapshot_head()
     import bpy
     import export
     import placeholder
