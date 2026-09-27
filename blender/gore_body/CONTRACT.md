@@ -57,12 +57,12 @@ fast on a 5.0 -> 5.1 difference.
 | `build.py` | B0 | done | `--stage …`, `run(stages, opts)` |
 | `export.py` | B6 | done | `export_subject(objs, out)` (B7 atlases re-applied, painter bone maps refreshed when the weights change), `export_props(out)`, `write_manifest(out, …)`, `round_trip(glb)`, `godot_import_check(glb)`, `landmarks_table()`, `codes_table()`, `GLTF_OPTIONS` (= plan §5.9) |
 | `rig.py`, `posetest.py` | B6 | done | `build_armature()`, `bone_rows()`, `weights_at(points, layer)`, `skin_all(objs)`, `build_poses(arm)`, `rig_table()`, `apply_pose`/`pose_matrices`/`lbs`; posetest: `run_tests()`, `render_poses()`, `render_key_poses()`, `render_weights()`, `section_png()` (details: "Rig, weights, export (B6)" below) |
-| `body_skin.py` | B1 | stub (`body_sdf`/`skin_sdf`/`paint_codes` delegate to the placeholder) | `body_sdf`, `skin_sdf`, `build_body_skin()`, `build_shorts(skin)`, `build_muscle_shell(skin)`, `paint_codes(obj)` |
-| `head_integration.py` | B2 | stub (`seam_ring`, `zip_to_ring` work) | `seam_ring(n=160)`, `zip_to_ring(obj, ring)`, `build_head()`, `build_face_shapes(head)`, `build_eye_fx()`, `build_hair_cards()` |
-| `skeleton.py` | B3 | stub | `build_skeleton()`, `build_fracture_variants()`, `bone_capsules()` |
+| `body_skin.py` | B1 | built (fix rounds 1-2) | `body_sdf`, `skin_sdf`, `build_body_skin()`, `build_shorts(skin)`, `build_muscle_shell(skin)`, `paint_codes(obj)` |
+| `head_integration.py` | B2 | built (fix rounds 1-2) | `seam_ring(n=160)`, `zip_to_ring(obj, ring)`, `build_head()`, `build_face_shapes(head)`, `build_eye_fx()`, `build_hair_cards()` |
+| `skeleton.py` | B3 | built (fix rounds 1-2) | `build_skeleton()`, `build_fracture_variants()`, `bone_capsules()` |
 | `viscera.py` | B4 | done | `build_organs()` -> GB_Organs (+ GB_Organs_HR), `organ_table()`, `render_organs()`; SDF toolkit: `mesh_sdf` (marching tetrahedra: watertight, keeps sealed cavities), `decimate_components`, `cage_sdf`/`dome_height`/`lung_border_z` (rib-table cage model) |
 | `neuro.py` | B4 | done | `build_cord()` -> GB_Cord + GB_Brain + GB_Brain_HR (the whole neuro stage), `build_brain()`, `spine_table()`, `brain_labels()`, `brain_region_at()`, `render_neuro()` |
-| `vascular.py` | B5 | stub (`vessel_table`, `centreline`, `mesh_for` v0 work) | `build_vessels()`, `vessel_table()` |
+| `vascular.py` | B5 | built (fix rounds 1-2) | `build_vessels()`, `vessel_table()` |
 | `uv.py` | B1/B2 (v0 by B0) | working v0 | `mark_seams(obj, rules)`, `unwrap(obj, method)`, `pack(obj, size, margin_px)` |
 | `lookdev.py`, `bake.py`, `texgen.py` | B7 | built | `build_materials()`, `lookdev_on/off`, `prepare_attributes`; `prepare_uvs`, `bake_all`, `bake_tileables`, `bake_painter_inputs`, `write_texture_manifest`; numpy texture library (tileables, iris, sclera, decals, room/props) |
 | `props.py` | B8 | done | `build_weapons(quick)`, `build_room(quick)`, `export_props(out)`, `measure_props()`, `spec_check()`, `floor_height(x, y)`, `room_bounds()`, `SPEC`, `ROOM`, `render_items()`, `render_room()` (details: "Props and room" below) |
@@ -95,7 +95,7 @@ GoreBody
 ├── GB_Variants   GB_Frac_Skull_{L,R,T}, GB_Frac_{Humerus,RadUlna,Femur,Tibia}_{L,R}_{simple,comminuted}
 ├── GB_LOD1       GB_Head_LOD1, GB_Body_LOD1
 ├── GB_Data       GBL_<landmark> empties, GBH_<organ>_<n> hit empties, GBV_<segment> / GBN_<nerve>_<side> / GBC_cord curves
-├── GB_HighRes    GB_Head_HR, GB_Body_HR, GB_Skeleton_HR, GB_Organs_HR, GB_Brain_HR   (bake sources; not built yet)
+├── GB_HighRes    GB_Head_HR, GB_Body_HR, GB_Skeleton_HR, GB_Organs_HR, GB_Brain_HR   (bake sources)
 └── Stage         cameras, lights, floor for test renders
 ```
 
@@ -369,6 +369,12 @@ Deviations from the bible / plan that the code now makes on purpose (each also n
 | Left lung | RB box | cardiac notch below z 1.345 medial of x 4.8 cm | the lingula tip reached the lower sternum over the heart |
 | Epiglottis | - | behind the hyoid (0, −0.027, 1.555) | it sat in front of the hyoid under the submental skin |
 | Cord roots / cauda | straight stubs to the table canal width | run down beside the cord and exit 1.2 mm inside B3's fitted canal; C1 exits between the skull base and the atlas | the stubs cut through pedicles and the condyles (8 % of GB_Cord vertices in bone) |
+| Larynx / thyroid (fix round 2) | R05 prominence (0, −0.058, 1.537), cricoid 1.513; thyroid lobes 1.505 | larynx 12 mm lower (`viscera.LARYNX_DZ`), prominence 2 mm back, 28 mm laminae with a 1 cm V notch; thyroid 5 mm lower; skin prominence (0, −0.060, 1.515), cricoid skin 1.502 (authoring frame) | the head project's menton is at 1.544: at the bible height the thyroid cartilage filled the space under the chin (the 'pouch'); now a submental plane (`body_skin.SUBMENTAL_*`) and a cervicomental angle of ~110° exist |
+| Bone pads (fix round 2) | - | pads sink smoothly into their bone over 18 mm beyond the site box (`PAD_FADE`, `PAD_SINK`); sternum / spinous pads blend over 20 / 11 mm | the old 3 m/m cut left straight shading lines across the chest (sternum box bottom), the lower back and beside the manubrium |
+| Skin smooth steps (fix round 2) | - | `body_skin.sstep` is quintic (C2) | cubic steps printed curvature lines along every relief border in raking light |
+| Body LOD0 density (fix round 2) | - | zoned collapse weights (`DEC_W_*`): torso edges ~9 mm (p95 14 mm) instead of 2-7 cm | long torso triangles showed as straight lines across the chest and back |
+| Muscle shell under folds (fix round 2) | RB §7.6 fat | +2.5-6 mm extra shell depth under the axillary folds, perineum and plantar pad (`FOLD_FAT_SITES`) | LBS compresses the skin there more than the shell (FB-2 pokes 3-10 mm) |
+| Inner atlases (fix round 2) | non-overlapping | folded normal-cone charts re-flattened with an angle-based unwrap and re-packed (`bake.unfold_charts`), overlap < 0.01 %; brain coverage ~0.10 (texel ~0.5 mm at 2048) | isolating single faces made 4-8k islands and halved the texel density |
 
 Rig / tests:
 - Deep layers (bone, organs, vessels, nerves, cord, brain) take the head share of the 12-22 mm band around the
