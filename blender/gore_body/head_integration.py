@@ -787,18 +787,42 @@ def _eye_arrays(side):
             a = mean_az if a is None else a
             rr = 0.5 * polar[i] / math.pi
             uv_loops.append((0.5 + rr * math.cos(a), 0.5 + rr * math.sin(a)))
+    # outward winding: glTF/Godot cull back faces, so an inside-out globe shows the inside of its far
+    # hemisphere (no iris, no pupil) while Cycles hides the error (critics round 2: signed volume -7.25 cm3).
+    # Reverse every face together with its per-loop UVs when the closed sphere's signed volume is negative.
+    if _signed_volume(verts, faces) < 0.0:
+        faces, uv_loops = _reverse_faces(faces, uv_loops)
     sx = 1.0 if side == "L" else -1.0
     c = eye_centre(side)
     v = verts * np.array([sx, 1.0, 1.0]) + c
     if sx < 0:
-        faces = [f[::-1] for f in faces]
-        uv_f, o = [], 0
-        for f in faces:
-            n = len(f)
-            uv_f += uv_loops[o:o + n][::-1]
-            o += n
+        # the mirror flips the winding: reverse it back (outward) and mirror the UVs
+        faces, uv_f = _reverse_faces(faces, uv_loops)
         uv_loops = [(1.0 - a, b) for a, b in uv_f]
+    assert _signed_volume(v - c, faces) > 0.0, f"GB_Eye_{side} is inside-out"
     return v, faces, np.array(uv_loops)
+
+
+def _reverse_faces(faces, uv_loops):
+    """Reverse the winding of every polygon of ``faces`` together with its per-loop ``uv_loops``."""
+    out_f, out_uv, o = [], [], 0
+    for f in faces:
+        n = len(f)
+        out_f.append(list(f)[::-1])
+        out_uv += list(uv_loops[o:o + n])[::-1]
+        o += n
+    return out_f, out_uv
+
+
+def _signed_volume(verts, faces):
+    """Signed volume (m^3) of a closed polygon mesh (fan-triangulated); > 0 when the faces wind outward."""
+    v = np.asarray(verts, float)
+    vol = 0.0
+    for f in faces:
+        a = v[f[0]]
+        for i in range(1, len(f) - 1):
+            vol += float(np.dot(a, np.cross(v[f[i]], v[f[i + 1]])))
+    return vol / 6.0
 
 
 def build_eyes():

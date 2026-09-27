@@ -132,10 +132,13 @@ def rig_joint_positions():
     for bone, l in pairs.items():
         if not _close(bm[bone]["head"], lm[l], 0.002):
             bad.append(bone)
-    eye = gbc.head_to_body(LM.HEAD_CONTRACT["eye_L"])
-    if not _close(bm["eye_L"]["head"], eye, 0.001):
-        bad.append("eye_L")
-    return not bad, f"joint heads vs RB §7.1/§1.2 landmarks within 2 mm; off: {bad}"
+    # eye and lid bones pivot at the MEASURED globe centre (head project's EYE_C + HEAD_OFFSET, within 0.2 mm),
+    # not at the RB §1.2 table value 2.5 mm in front of it (critics round 2: the globe swung through the lids)
+    eye = gbc.head_to_body(np.asarray(gbc.import_head().anatomy.EYE_C, float))
+    for b in ("eye_L", "lid_upper_L", "lid_lower_L"):
+        if not _close(bm[b]["head"], eye, 0.0002):
+            bad.append(b)
+    return not bad, f"joint heads vs RB §7.1 landmarks within 2 mm, eye/lid pivots at the globe centre (0.2 mm); off: {bad}"
 
 
 @check("tables")

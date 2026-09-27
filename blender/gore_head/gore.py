@@ -956,9 +956,9 @@ def _build_exit():
     star, tear_phi = c.tears(6, width=(0.1, 0.3), length=(0.25, 1.0), sharp=1.3, wobble=0.18, with_angle=True)
     phi0 = c.hash(8) * TAU
     dphi = theta - phi0
-    r_circ = R * (0.40 + 0.2 * lf + 0.32 * star)
-    r_star = R * (0.2 + 0.12 * lf + 0.8 * star)
-    r_irr = R * (0.26 + 0.5 * lf2 + 0.36 * star)
+    r_circ = R * (0.48 + 0.2 * lf + 0.3 * star)
+    r_star = R * (0.3 + 0.14 * lf + 0.72 * star)
+    r_irr = R * (0.34 + 0.5 * lf2 + 0.34 * star)
     a_, b_ = R * 0.95, R * 0.2
     r_slit = a_ * b_ / ((b_ * dphi.cos()) ** 2.0 + (a_ * dphi.sin()) ** 2.0).sqrt().max(1e-7) + R * 0.25 * star
     r_cres = R * (0.3 + 0.62 * t.smooth(-0.3, 0.7, dphi.cos())) * (0.85 + 0.2 * lf) + R * 0.2 * star
@@ -1040,7 +1040,7 @@ def _build_exit():
     return t
 
 
-def _slash_params(t, s, e, D, tx, ty, scalp):
+def _slash_params(t, s, e, D, tx, ty, scalp, neck=None):
     """Length and gape of an incised cut.
 
     Gape (total opening at the widest point) = L * G(theta) * f_depth * f_region
@@ -1054,7 +1054,11 @@ def _slash_params(t, s, e, D, tx, ty, scalp):
     # (a cut through the muscle gapes more: the muscle retracts as well)
     G = 0.035 + 0.175 * sin2 + 0.045 * t.smooth(0.6, 0.9, D)
     f_depth = t.smooth(0.1, 0.5, D)
+    # (a deep throat cut divides the platysma and strap muscles: they retract
+    # and the wound gapes widely even along the neck's skin lines)
     f_reg = 1.0 + scalp * t.smooth(0.45, 0.6, D) * 0.45
+    if neck is not None:
+        f_reg = f_reg + neck * t.smooth(0.55, 0.8, D) * 1.6
     gape = (half_len * 2.0 * G * f_depth * f_reg).min(0.016)
     return half_len, gape
 
@@ -1093,7 +1097,7 @@ def _build_slash():
     is_skin = c.is_layer(LAYER_SKIN)
     is_bone = c.lc(LAYER_IS_BONE)
     tens = t.inp("Tension")
-    half_len, gape = _slash_params(t, s, c.e, D, tens.x, tens.y, t.inp("Region").x)
+    half_len, gape = _slash_params(t, s, c.e, D, tens.x, tens.y, t.inp("Region").x, t.inp("Region").z)
     tt = u / half_len
     # the cut line bows and wanders a little
     bow = (c.hash(1) - 0.5) * 0.16
@@ -1477,7 +1481,10 @@ def _build_burn():
     # relief heights follow the tissue, not the burn's extent
     sd = s.min(1.2)
     # (distance over the surface, not in the hit plane: the face curves away)
-    rho_e = (c.u * c.u + (c.v / c.e) ** 2.0 + c.w * c.w).sqrt()
+    # (the depth term is halved: on the side of the head, which is nearly a
+    # vertical cylinder, a full 3D distance cuts the dose off along vertical
+    # lines)
+    rho_e = (c.u * c.u + (c.v / c.e) ** 2.0 + c.w * c.w * 0.35).sqrt()
     # smooth dose with a lobed, irregular boundary (no thresholded noise)
     ring = t.vec(c.theta.cos() * 1.3, c.theta.sin() * 1.3, c.seed * 7.0)
     lobes = t.noise(ring, detail=2.0)
@@ -1497,7 +1504,8 @@ def _build_burn():
     # the lateral edges wander strongly (irregular zones, never a straight line)
     edge_w = t.noise(t.vec(up_ * 55.0, c.seed * 3.0, 1.7), detail=3.0) * 0.35 \
         + t.noise(c.np * 160.0, detail=2.0) * 0.08
-    rn = rho_e / R * (1.0 + 0.45 * lobes) + 0.12 * n2 + 0.3 * n3 - 0.45 * lick + edge_w
+    n4 = t.noise(c.np * 16.0 + t.vec(0.0, c.seed * 4.0, 0.0), detail=2.0)
+    rn = rho_e / R * (1.0 + 0.45 * lobes) + 0.12 * n2 + 0.3 * n3 + 0.4 * n4 - 0.45 * lick + edge_w
     # soft edge: a 5-15 mm band of red skin; the flame tongues fade out well
     # inside the hit's reach (or the evaluation bounds show as a straight edge)
     # (the outer clamp is lobed too: a clean ellipse here gave the burn long
@@ -1896,7 +1904,7 @@ class _Hit:
                 return t.bool('AND', au.lt(hl + s * 0.03), av.lt(s * 0.024 + 0.004))
             return t.bool('AND', au.lt(hl * 1.04 + 0.002), av.lt(s * 0.0095 + 0.002))
         if kind == "burn":
-            rr = (self.u * self.u + (self.v / e) ** 2.0 + self.w * self.w).sqrt()
+            rr = (self.u * self.u + (self.v / e) ** 2.0 + self.w * self.w * 0.35).sqrt()
             if reach:
                 # (beyond the dose field's lobed edge, so it never ends in a cut line)
                 return rr.lt(s * 0.022 * 2.3 + 0.004)
@@ -2559,7 +2567,7 @@ def _drip_seeds(t, pts, kind, kind_id, damage, drip):
     hole = t.attr("b_hole")
     if kind == "slash":
         Tw = t.attr("hit_T", 'FLOAT_VECTOR')
-        half_len, gape = _slash_params(t, s, e, D, Tw.dot(X), Tw.dot(Y), h["R"].x)
+        half_len, gape = _slash_params(t, s, e, D, Tw.dot(X), Tw.dot(Y), h["R"].x, h["R"].z)
         dx, dy = -X.z, -Y.z
         sy = t.math('SIGN', dy)
 
@@ -2717,7 +2725,7 @@ def _build_pools(t, hits, surface, drip):
     # skin at the cut's ends; a miss there is air, not the opening -- those
     # vertices once floated as a flat collar around the neck)
     near_s = t.out(t.node('GeometryNodeProximity', {'Target': surface, 'Source Position': P0},
-                          target_element='FACES'), 'Distance').lt(0.009)
+                          target_element='FACES'), 'Distance').lt(0.0035)
     in_miss = t.bool('AND', in_miss, near_s)
     inside = t.bool('OR', t.bool('AND', hit, wk.gt(0.25)), t.bool('AND', t.bool('NOT', hit), in_miss))
     outside = t.switch(inside, 1.0, 0.0)
@@ -3199,7 +3207,8 @@ def _build_blood():
         hole, _r = _wound_extent(t, k, h)
         if k == "slash":
             Tw = t.attr("hit_T", 'FLOAT_VECTOR')
-            hl, gape = _slash_params(t, h["s"], h["e"], h["D"], Tw.dot(h["X"]), Tw.dot(h["Y"]), h["R"].x)
+            hl, gape = _slash_params(t, h["s"], h["e"], h["D"], Tw.dot(h["X"]), Tw.dot(h["Y"]), h["R"].x,
+                                     h["R"].z)
             rp, rpy = hl * 1.08 + 0.0015, gape * 0.5 + 0.0028
             hk = t.store(hk, "pl_col", 1.0)
         else:
@@ -3817,9 +3826,11 @@ def _mush(t, g, on_faces):
     big = r1.gt(0.94)
     med = t.bool('AND', r1.gt(0.58), t.bool('NOT', big))
     sz = t.switch(big, t.switch(med, 0.0003 + 0.0006 * r2, 0.0009 + 0.0013 * r2), 0.002 + 0.0018 * r2)
+    sz = t.switch(brain, sz, sz.min(0.0022))
     # (most pieces are torn shreds and sheets, only some are lumps: rounded
     # blobs read as berries / beads)
-    flap = t.bool('OR', big, r3.lt(0.6))
+    # (pulped brain comes out as soft lumps, not sheets)
+    flap = t.bool('AND', t.bool('OR', big, r3.lt(0.6)), t.bool('NOT', brain))
     # flaps: thin torn sheets (0.3-0.6 mm); lumps: flattened blobs
     sx = sz * t.switch(flap, 0.8 + 0.5 * r4, 1.1 + 0.6 * r4)
     sy = sz * t.switch(flap, 0.6 + 0.5 * r5, 0.7 + 0.5 * r3)

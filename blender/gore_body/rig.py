@@ -626,7 +626,7 @@ def _face(p, idx, w):
     """Blend B2's lid-bone weights in (only points near the eyes are touched)."""
     near = np.zeros(len(p), bool)
     for sx in (1.0, -1.0):
-        c = np.array([sx * 0.032, -0.050, 1.669])
+        c = np.array([sx * RT._EYE_L[0], RT._EYE_L[1], RT._EYE_L[2]])
         near |= np.linalg.norm(p - c, axis=1) < 0.024
     if not near.any():
         return idx, w

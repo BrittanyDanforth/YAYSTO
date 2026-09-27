@@ -53,6 +53,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import gb_common as gbc  # noqa: E402
 from gb_data import landmarks as LM  # noqa: E402
 from gb_data import organs as OR  # noqa: E402
+from gb_data import rig_table as RT  # noqa: E402
 
 HEAD_OFFSET = tuple(float(x) for x in gbc.HEAD_OFFSET)
 
@@ -471,7 +472,7 @@ def build_materials(eyes=None):
     out["GBL_bone"] = _bone_material(ghm["GH_Bone"])
     for side in ("L", "R"):
         o = (eyes or {}).get(f"GB_Eye_{side}") or bpy.data.objects.get(f"GB_Eye_{side}")
-        c = eye_centre(o) if o is not None else (0.032 if side == "L" else -0.032, -0.050, 1.669)
+        c = eye_centre(o) if o is not None else (RT._EYE_L[0] * (1.0 if side == "L" else -1.0), RT._EYE_L[1], RT._EYE_L[2])
         out[f"GBL_eye_{side}"] = _shifted_copy(ghm["GH_Eye"], f"GBL_eye_{side}", c)
     out["GBL_skin_body"] = _body_skin_material()
     for n_ in ("GBL_skin_head", "GBL_skin_body"):

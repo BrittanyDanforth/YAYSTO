@@ -22,7 +22,11 @@ from . import myotomes as _myo
 _FWD = (0.0, -1.0, 0.0)
 _UP = (0.0, 0.0, 1.0)
 
-_EYE_L = (0.032, -0.050, 1.669)                     # eyeball centre [RB §1.2] (head eye + offset)
+# eyeball centre = the head project's measured globe centre (gore_head anatomy.EYE_C (0.0315, -0.0675, 0.022)
+# + HEAD_OFFSET), not the RB §1.2 table value (0.032, -0.050, 1.669): the bible point is 2.5 mm in front of the
+# real globe centre, so every gaze rotation swung the globe through the lids (critics round 2).  verify
+# (rig_joint_positions, b6_eye_pivots) proves it equals head_integration.eye_centre() within 0.2 mm.
+_EYE_L = (0.0315, -0.0475, 1.669)
 
 BONES_MID = [
     ("root", None, (0.0, 0.0, 0.0), (0.0, 0.0, 0.10), _FWD, True, "Never simulated"),
