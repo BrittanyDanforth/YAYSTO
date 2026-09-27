@@ -362,7 +362,14 @@ more uniform, more symmetric or less bloody than the refs is a FAIL.
 
 User, verbatim: "THERES STILL LEGIT A GAP ITS NOT COMMING FROMM THE ACTUAL WOUND LIKE U CAN SEE SLIGHT GAP STILL ALSO THE
 SKIN STILL LOOKS THICK AND ENSURE ARTERYS ETC ALL THAT IS WIRED FOR BLOOD TOO VERY NICELY 1:1 REALISM LIKE PHOTOS I GAVE U SHOW".
-1. **Zero gap, proven.** The stream must be ONE continuous liquid body with the blood inside the wound: the blood
+1. **Blood comes OUT OF THE HOLE ITSELF (user clarified: "BY GAP I MEAN FROM THE HOLE OF THE INJURY THERES A SLIGHT
+   GAP WERE BLOOD STARTS ITS NOT COMMING FROM INJURY HOLE").** Zoomed renders show it: at the entry the dark opening is
+   empty and dry, and the stream starts on the brown abrasion ring BELOW the opening; at the exit a thin pale band of
+   skin/rim sits between the torn opening and the top of the streams. Required: the opening fills with dark glossy blood
+   from inside (welling up out of the track), that blood surface rises to and over the lowest part of the opening's own
+   edge, and the stream is the continuation of that same liquid body — its top is INSIDE the hole, not on the skin or
+   collar next to it. The collar/rim below the opening is covered by the flowing blood.
+   **Zero gap, proven.** The stream must be ONE continuous liquid body with the blood inside the wound: the blood
    surface in the cavity, the wet rim lip and the stream share geometry (or overlap by >= 1 mm) with no skin pixel
    between them at ANY time (0, 5, 10, 20, 40, 60 s) and from any angle. Test: close-up renders at the rim from straight,
    45 deg and grazing at every sequence time; sample the image along the stream axis from inside the hole to 5 mm below
