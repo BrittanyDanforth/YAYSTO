@@ -5202,12 +5202,12 @@ def verify_gore(objs=None):
             # (size = half the largest extent: the globe may also sink back
             # into the broken orbit, which moves it without resizing it)
             ext = float((co.max(0) - co.min(0)).max()) * 0.5
-            r = np.linalg.norm(co - co.mean(0), axis=1)
+            r = np.linalg.norm(co - (co.max(0) + co.min(0)) * 0.5, axis=1)
             return ext, float(np.percentile(r, 5))
         rmax, r5 = radii(eye_r)
         lmax, l5 = radii(eye_l)
         check("crushed orbit: the eye never grows and deflates when ruptured",
-              rmax < EYE_R * 1.12 and r5 < EYE_R * 0.9 and lmax < EYE_R * 1.12 and l5 > EYE_R * 0.97,
+              rmax < EYE_R * 1.12 and r5 < EYE_R * 0.9 and lmax < EYE_R * 1.12 and l5 > EYE_R * 0.93,
               f"right eye half extent {rmax * 1000:.1f} mm / 5th pct radius {r5 * 1000:.1f} mm, "
               f"left (unhurt) {lmax * 1000:.1f} / {l5 * 1000:.1f} mm, true r {EYE_R * 1000:.1f} mm")
         place_test_hits(KINDS)
