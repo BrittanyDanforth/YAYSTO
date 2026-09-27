@@ -247,6 +247,9 @@ damage = 0 returns the intact mesh. Carnage (9 hits) evaluates in ~4.5 s.
   nail plate sunk into a nail fold with a cuticle, curved across and along, free edge. Toes stubby and blob-like.
 - Abs/torso: rectus blocks look carved-on and too blocky; body still reads as a smooth mannequin (needs subtle skin
   folds, soft fat over muscle, pores/micro-normal).
+- NECK (user, HIGH, "NEED ALOT EFFORT"): lump under the jaw because the neck is too short and the jaw is squashed into it -> move the
+  head up / lengthen the neck (chin to sternal notch ~10-12 cm), clean jaw line with a shadowed under-jaw plane; weird
+  bumps right under each ear on both sides -> smooth flow into the sternocleidomastoid (mastoid -> sternum/clavicle diagonal).
 - Organs: still smooth clay; lungs read as folded sheets/plastic (need spongy lobed lungs with fissures); the fat apron
   is a flat slab (needs lumpy lobular fat); heart too glossy/blobby. Skeleton too white/uniform (ivory, varied).
 
