@@ -3441,6 +3441,7 @@ MAIN_INPUTS = (
     ("Blood Material", 'NodeSocketMaterial'),
     ("Bone Material", 'NodeSocketMaterial'),
     ("Strand Material", 'NodeSocketMaterial'),
+    ("Pulp Material", 'NodeSocketMaterial'),
     ("Detail", 'NodeSocketInt', 2, 0, 4, "Subdivision level of the refined patch around wounds (render)"),
     ("Viewport Detail", 'NodeSocketInt', 1, 0, 4,
      "Refinement level in the viewport: lower = faster live dragging of the hit empties"),
@@ -3695,12 +3696,14 @@ def _mush(t, g, on_faces):
     ctr = t.attr("g_ctr", 'FLOAT_VECTOR')
     cdir = ctr.normalize()
     out = (-(wall - cdir * wall.dot(cdir))).normalize()
-    lift = t.switch(brain, 0.0, out * ((0.0015 + 0.004 * r4 * r4) * (0.4 + 0.6 * r5)) + ctr * (0.25 + 0.6 * r3))
+    lift = t.switch(brain, (0.0, 0.0, 0.0), out * ((0.0015 + 0.004 * r4 * r4) * (0.4 + 0.6 * r5)) + ctr * (0.25 + 0.6 * r3),
+                    'VECTOR')
     pos = t.pos() + nrm * (sz_ * 0.3) + lift
     pts = t.out(t.node('GeometryNodeSetPosition', {'Geometry': pts, 'Position': pos}))
     # material class per lump: 0 muscle, 1 fat (tissue) / brain pulp (exit), 2 clot
-    cls = t.switch(brain, t.switch(r4.gt(0.42), 1.0, t.switch(r4.gt(0.66), 0.0, 2.0)),
-                   t.switch(r4.gt(0.5), 1.0, t.switch(r4.gt(0.66), 0.0, 2.0)))
+    cls_b = t.switch(r4.lt(0.55), t.switch(r4.lt(0.9), 0.0, 2.0), 1.0)      # pulp 55 %, clot 35 %, muscle
+    cls_t = t.switch(r4.lt(0.42), t.switch(r4.lt(0.62), 2.0, 1.0), 0.0)      # muscle 42 %, fat 20 %, clot
+    cls = t.switch(brain, cls_t, cls_b)
     pts = t.store(pts, "m_cls", cls)
     ico = t.out(t.node('GeometryNodeMeshIcoSphere', {'Radius': 1.0, 'Subdivisions': 2}))
     inst = t.node('GeometryNodeInstanceOnPoints', {'Points': pts, 'Instance': ico, 'Rotation': rot,
@@ -3748,16 +3751,27 @@ def _tissue_strands(t, g, vshape):
     ok = t.bool('AND', t.bool('AND', ring1, pick), t.bool('AND', sl.gt(0.0009), sl.lt(0.014)))
     pts = t.out(t.node('GeometryNodeMeshToPoints', {'Mesh': g, 'Selection': ok}, mode='VERTICES'))
     rr = t.rand(0.0, 1.0, t.index(), 98)
+    r2 = t.rand(0.0, 1.0, t.index(), 96)
+    r3 = t.rand(0.0, 1.0, t.index(), 95)
+    # (never a comb of parallel bars: each strand runs at its own slant along
+    # the wound, some are torn through and hang into the wound from one side)
+    tang = cdir.cross(dn.normalize())
+    span = span + tang * (sl * (r2 - 0.5) * 1.4)
+    torn = r3.lt(0.35)
+    span = span * t.switch(torn, 1.0, 0.35 + 0.3 * rr)
+    sag = t.switch(torn, 0.04 + 0.16 * rr, 0.35 + 0.4 * rr)
     pts = t.store(pts, "s_a", t.pos(), 'FLOAT_VECTOR')
     pts = t.store(pts, "s_b", span, 'FLOAT_VECTOR')
-    pts = t.store(pts, "s_c", dn * (0.04 + 0.16 * rr) + span * ((rr - 0.5) * 0.25), 'FLOAT_VECTOR')
-    pts = t.store(pts, "s_r", 0.00025 + 0.00035 * t.rand(0.0, 1.0, t.index(), 99))
+    pts = t.store(pts, "s_c", dn * sag + span * ((rr - 0.5) * 0.25), 'FLOAT_VECTOR')
+    pts = t.store(pts, "s_r", 0.00015 + 0.00045 * t.rand(0.0, 1.0, t.index(), 99) ** 2.0)
+    pts = t.store(pts, "s_t", t.switch(torn, 0.0, 1.0))
     line = t.out(t.node('GeometryNodeCurvePrimitiveLine', {'Start': (0.0, 0.0, 0.0), 'End': (1.0, 0.0, 0.0)}))
     line = t.out(t.node('GeometryNodeResampleCurve', {'Curve': line, 'Count': 10}))
     inst = t.node('GeometryNodeInstanceOnPoints', {'Points': pts, 'Instance': line})
     cur = t.out(t.node('GeometryNodeRealizeInstances', {'Geometry': t.out(inst)}))
     f = t.out(t.node('GeometryNodeSplineParameter'), 'Factor')
-    bell = f * (1.0 - f) * 4.0
+    # an intact bridge sags in the middle; a torn one hangs down from its root
+    bell = t.mix(f * (1.0 - f) * 4.0, f * f * 1.6, t.attr("s_t"))
     wob = t.noise(t.attr("s_a", 'FLOAT_VECTOR') * 900.0 + t.vec(f * 3.0, 0.0, 0.0), detail=1.0, color=True)
     pos = t.attr("s_a", 'FLOAT_VECTOR') + t.attr("s_b", 'FLOAT_VECTOR') * f \
         + t.attr("s_c", 'FLOAT_VECTOR') * bell + wob * (0.0003 * bell)
@@ -3767,7 +3781,7 @@ def _tissue_strands(t, g, vshape):
     mesh = t.out(t.node('GeometryNodeCurveToMesh', {'Curve': cur, 'Profile Curve': prof,
                                                     'Scale': t.out(t.node('GeometryNodeInputRadius')),
                                                     'Fill Caps': True}))
-    for name in ("s_a", "s_b", "s_c", "s_r"):
+    for name in ("s_a", "s_b", "s_c", "s_r", "s_t"):
         mesh = t.out(t.node('GeometryNodeRemoveAttribute', {'Geometry': mesh, 'Pattern Mode': 'Exact', 'Name': name}))
     mesh = t.store(mesh, "g_wk", 3.0)
     mesh = t.store(mesh, "g_side", 99.0, 'FLOAT', 'FACE')
@@ -3778,7 +3792,8 @@ def _build_cut():
     """Displace, delete the holes, snap the rims and extrude thick walls."""
     t = NodeTree("GH_Gore_Cut", (("Geometry", 'NodeSocketGeometry'), ("Layer", 'NodeSocketInt', 0),
                                  ("Wall Material", 'NodeSocketMaterial'), ("Blood Material", 'NodeSocketMaterial'),
-                                 ("Strand Material", 'NodeSocketMaterial'), ("Drip Time", 'NodeSocketFloat', 1.0)),
+                                 ("Strand Material", 'NodeSocketMaterial'), ("Drip Time", 'NodeSocketFloat', 1.0),
+                                 ("Pulp Material", 'NodeSocketMaterial')),
                  (("Geometry", 'NodeSocketGeometry'),), description="Holes and wound walls")
     layer = t.inp("Layer")
     # gradient of the hole field from the edges around each vertex (before
@@ -3916,6 +3931,8 @@ def _build_cut():
                                  0.8),
                   _clot_blobs(t, fill, t.attr("g_fill").gt(0.05), 0.7))
     strands = _tissue_strands(t, g, vshape)
+    # wet pulp and shreds over the walls and floor of destroyed tissue
+    mush = _mush(t, g, t.bool('AND', side.gt(0.5), side.lt(WALL_STEPS + 1.5)))
     # every wall ring gets the wall material (it paints the thin dermis line at
     # its top itself): skin's random-walk subsurface on thin, folded wall
     # strips leaks light and shows as glowing white tabs
@@ -3934,7 +3951,7 @@ def _build_cut():
     g = t.out(t.node('GeometryNodeSetShadeSmooth', {'Mesh': g, 'Selection': t.bool('AND', side_e.gt(0.3), side_e.lt(0.7)),
                                                     'Shade Smooth': False}, domain='EDGE'))
     strands = t.out(t.node('GeometryNodeSetMaterial', {'Geometry': strands, 'Material': t.inp("Strand Material")}))
-    t.result("Geometry", _join(t, g, fill, clots, strands))
+    t.result("Geometry", _join(t, g, fill, clots, strands, mush))
     t.layout()
     return t
 
@@ -4055,7 +4072,8 @@ def build_gore_node_group():
     # 3. holes and walls
     g = t.out(t.group(cut_g, {"Geometry": g, "Layer": layer, "Wall Material": t.inp("Wall Material"),
                               "Blood Material": t.inp("Blood Material"),
-                              "Strand Material": t.inp("Strand Material"), "Drip Time": t.inp("Drip Time")}))
+                              "Strand Material": t.inp("Strand Material"), "Drip Time": t.inp("Drip Time"),
+                              "Pulp Material": t.inp("Pulp Material")}))
     # 4. extra geometry: blood on the skin, bone chips on skull and jaw
     is_skin = t.compare('EQUAL', layer, LAYER_SKIN, 'INT')
     is_bone = t.bool('OR', t.compare('EQUAL', layer, LAYER_SKULL, 'INT'), t.compare('EQUAL', layer, LAYER_JAW, 'INT'))
@@ -4403,6 +4421,7 @@ def build_gore_system(objs=None, mats=None):
              if it.item_type == 'SOCKET' and it.in_out == 'INPUT'}
     walls, blood, bone = _wall_materials(mats)
     strand = (mats or {}).get("GH_Muscle") or bpy.data.materials.get("GH_Muscle") or walls[LAYER_MUSCLE]
+    pulp = (mats or {}).get("GH_Brain") or bpy.data.materials.get("GH_Brain") or strand
     mods = {}
     for name, layer in LAYERS.items():
         ob = objs.get(name)
@@ -4427,6 +4446,7 @@ def build_gore_system(objs=None, mats=None):
         mod[ident["Blood Material"]] = blood
         mod[ident["Bone Material"]] = bone
         mod[ident["Strand Material"]] = strand
+        mod[ident["Pulp Material"]] = pulp
         mod[ident["Tooth Root"]] = -1.0 if name.endswith("Lower") else 1.0
         mod[ident["Vessels"]] = vessels
         # (a rebuilt group renumbers its sockets: drop drivers of the old ones)
@@ -4442,7 +4462,7 @@ def build_gore_system(objs=None, mats=None):
     return {"node_group": ng, "modifiers": mods, "collections": cols, "controls": ctrl}
 
 
-_GROUP_VERSION = 9
+_GROUP_VERSION = 10
 
 
 # ---------------------------------------------------------------------------
