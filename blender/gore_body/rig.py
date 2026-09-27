@@ -788,7 +788,13 @@ FOLLOWERS = ("GB_BrowLash", "GB_EyeFX_L", "GB_EyeFX_R")
 # The shorts hang 1-3 cm off the thigh, so their own position can fall outside the thigh territory.  (The
 # muscle shell was tried here too: nearest-point transfer mis-assigns it in the groin / perineum creases,
 # where the nearest skin belongs to the other side of the crease; it keeps the analytic weights.)
-TRANSFERRED = {"GB_Shorts": (("GB_Body",), 6)}
+TRANSFERRED = {"GB_Shorts": (("GB_Body",), 6), "GB_MuscleShell": (("GB_Body",), 2)}
+# The muscle shell takes the skin weights at the skin point straight OUT along its own normal (fix round 2): its
+# analytic weights differed from the skin above it by up to 0.4 (L1) at the axillary folds and the sole, so in
+# shoulder abduction / toe extension the shell slid 3-7 mm out through the skin.  Casting along the normal
+# (not the nearest skin point) keeps the groin / perineum creases on the correct side of the fold.
+RAY_TRANSFER = ("GB_MuscleShell",)
+RAY_TRANSFER_MAX = 0.060
 TRANSFER_SMOOTH_ITERS = 6
 
 
@@ -818,6 +824,14 @@ def transfer_weights(obj, src_names=None, smooth_iters=None):
         return weights_at(pv)
     bvh = BVHTree.FromPolygons(np.vstack(V).tolist(), np.vstack(T).tolist())
     near = np.array([tuple(bvh.find_nearest(Vector(p))[0]) for p in pv])
+    if obj.name in RAY_TRANSFER:
+        vn = np.empty(len(pv) * 3)
+        me.vertex_normals.foreach_get("vector", vn)
+        vn = vn.reshape(-1, 3)
+        for i, (p, n) in enumerate(zip(pv, vn)):
+            hit = bvh.ray_cast(Vector(p), Vector(n), RAY_TRANSFER_MAX)
+            if hit[0] is not None:
+                near[i] = tuple(hit[0])
     W = np.zeros((len(pv), NB))
     near = gbc.unwarp_points(near)                  # final frame -> the weight model's authoring frame
     for s0 in range(0, len(pv), 40000):
