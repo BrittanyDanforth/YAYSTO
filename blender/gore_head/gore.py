@@ -1733,7 +1733,7 @@ def _build_blast():
     # teeth in the crater (still in their segments or loose) are smeared with
     # blood and tissue: clean white crowns read as plastic / candy (§5.15)
     teeth_bl = c.is_layer(LAYER_TEETH) * on * t.smooth(R * 1.4, R * 0.4, c.rho) \
-        * (0.55 + 0.4 * t.smooth(-0.3, 0.3, t.noise(c.np * 120.0, detail=2.0)))
+        * (0.2 + 0.45 * t.smooth(-0.2, 0.45, t.noise(c.np * 120.0, detail=2.0)))
     blood = blood.max(teeth_bl)
     frac = (t.smooth(0.004, 0.0, slot) * frag_on).max(is_bone * on * t.smooth(0.004, 0.0, d_out))
     bruise = is_skin * on * t.smooth(R * 2.0, R * 0.8, c.rho) * 0.6 * t.inp("Bruising")

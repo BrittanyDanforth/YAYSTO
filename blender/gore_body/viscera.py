@@ -1382,7 +1382,7 @@ def omentum_sdf(x, y, z):
     # greater curvature, a free lower edge with irregular 8-12 mm scallops and loose drape folds)
     fold = 0.0024 * np.sin(x * 70.0 + 0.8) * sstep(1.10, 1.00, z) + 0.0012 * np.sin(x * 31.0 + z * 18.0)
     lobules = fbm3(x, y, z, 0.0085, 62, 2) + 0.6 * fbm3(x, y, z, 0.0045, 64, 1)
-    half = 0.0031 + 0.0017 * (0.5 + 0.5 * fbm3(x, y, z, 0.030, 61, 2))
+    half = 0.0041 + 0.0017 * (0.5 + 0.5 * fbm3(x, y, z, 0.030, 61, 2))
     top = 1.118 - 0.020 * sstep(0.00, 0.10, -x) + 0.012 * sstep(0.02, 0.09, x)
     bottom = 0.962 + 0.034 * np.clip(ax / 0.104, 0.0, 1.2) ** 2.4 + 0.009 * np.sin(x * 45.0 + 1.3) \
         + 0.006 * fbm3(x, y, z, 0.016, 63, 1) + 0.004 * np.sin(x * 97.0 + 0.2)
@@ -1390,7 +1390,9 @@ def omentum_sdf(x, y, z):
     width = 0.101 + 0.008 * np.sin(np.clip((z - 0.96) / 0.16, 0.0, 1.0) * np.pi)
     outline = smax(smax(ax - width, bottom - z, 0.022), z - top, 0.010)
     half = half + 0.0018 * sstep(0.020, 0.0, z - bottom)            # rolled, thicker free edge
-    d = np.abs(cav + 0.0068 + fold) - half + 0.0026 * lobules - 0.0011 * ves
+    # (lobule amplitude kept under the sheet half-thickness: deeper relief perforated the 3-5 mm apron into
+    # hundreds of islands the decimation could not reduce)
+    d = np.abs(cav + 0.0068 + fold) - half + 0.0014 * lobules - 0.0009 * ves
     import body_skin as BS
     _a, yf, yb, _nf, _nb = BS.torso_station(z)
     d = smax(d, y - (0.62 * yf + 0.38 * yb), 0.006)
