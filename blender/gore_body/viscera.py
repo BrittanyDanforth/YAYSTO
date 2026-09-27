@@ -647,7 +647,7 @@ def pericardium_sdf(x, y, z):
 # Airway: trachea (C-rings, membranous back wall) + main bronchi, one Y-shaped hollow solid
 # [R05 §10.1: cricoid -> carina 11 cm, outer 20 x 18 mm, wall ~3 mm, 16-20 C-rings ~4 mm]
 # ===========================================================================
-TRACHEA_PTS = [(0.000, -0.0295, 1.5045), (0.000, -0.018, 1.455), (-0.003, 0.008, 1.402)]
+TRACHEA_PTS = [(0.000, -0.0295, 1.4925), (0.000, -0.018, 1.455), (-0.003, 0.008, 1.402)]
 BRONCHUS_PTS = {"R": [(-0.003, 0.008, 1.402), (-0.028, 0.012, 1.380), (-0.043, 0.016, 1.371)],
                 "L": [(-0.003, 0.008, 1.402), (0.042, 0.020, 1.380), (0.051, 0.023, 1.377)]}
 AIR_R = {"trachea": (0.0100, 0.0090), "R": (0.0075, 0.0070), "L": (0.0062, 0.0058)}
@@ -723,28 +723,36 @@ def airway_outer(x, y, z):
 # ===========================================================================
 # Larynx: thyroid cartilage (shield), cricoid (signet ring), mucosal tube with the glottis
 # [R05 §10.1: prominence (0, -0.058, 1.537), laminae 40 mm; cricoid (0, -0.033, 1.513)]
+# Fix round 2: the whole larynx (thyroid + cricoid cartilage, glottis, subglottis) sits LARYNX_DZ = 12 mm lower
+# and the prominence 2 mm further back than R05.  The head project's menton lies at z 1.544, only 7 mm above
+# the bible prominence, so at the bible height the thyroid cartilage filled the space under the chin and the
+# skin could not form a submental plane / cervicomental angle (critics: 'pouch', 'double chin').  The
+# prominence now lies ~2.4 cm under the menton; the epiglottis stays behind the hyoid.
 # ===========================================================================
 LARYNX_SUB = {"thyroid_cartilage": 1, "cricoid": 2, "soft": 3, "lumen": 4}
+LARYNX_DZ = -0.012          # m, larynx below the R05 height (see above)
+THYROID_DZ = -0.005         # m, thyroid gland follows (isthmus stays under the cricoid)
 
 
 def _larynx_parts(x, y, z):
     ax = np.abs(x)
     # thyroid cartilage: two laminae meeting in front at ~90 deg (the prominence), 2.5 mm plates
-    yp, zc = -0.058, 1.531
+    dz = LARYNX_DZ
+    yp, zc = -0.056, 1.531 + dz
     # the anterior angle is most prominent above (the Adam's apple) and recedes ~6 mm toward the inferior
     # border, where the cricothyroid membrane and the cricoid arch lie deeper still
-    ypz = yp + 0.006 * sstep(1.531, 1.516, z)
+    ypz = yp + 0.006 * sstep(1.531 + dz, 1.516 + dz, z)
     dpl = np.abs(0.7071 * ax - 0.7071 * (y - ypz) + 0.0015) - 0.0015  # 3 mm plates, outer face on the line
     back = (y - (yp + 0.028))                                   # laminae ~30 mm deep
     lam = np.maximum(dpl, back)
-    lam = np.maximum(lam, np.abs(z - zc) - 0.0150)              # 30 mm tall
-    notch = ell(x, y, z, (0.0, yp - 0.002, zc + 0.0165), (0.006, 0.012, 0.009))   # superior notch
+    lam = np.maximum(lam, np.maximum(z - zc - 0.0130, zc - 0.0150 - z))   # 28 mm tall
+    notch = ell(x, y, z, (0.0, yp - 0.002, zc + 0.0175), (0.0095, 0.014, 0.0115))  # superior notch (V, ~1 cm deep)
     lam = np.maximum(lam, -notch)
     lam = np.maximum(lam, ax - 0.021)                           # 42 mm across the laminae
     horn = capsule(ax, y, z, (0.020, yp + 0.029, zc + 0.010), (0.019, yp + 0.031, zc + 0.018), 0.0022)
     thyroid = smin(lam, horn, 0.002)
     # cricoid: low anterior arch, tall posterior lamina (signet ring)
-    cz, cy = 1.5105, -0.033
+    cz, cy = 1.5105 + dz, -0.033
     ring_o = np.sqrt((x / 0.0128) ** 2 + ((y - cy) / 0.0132) ** 2) - 1.0
     ring_i = np.sqrt((x / 0.0090) ** 2 + ((y - cy) / 0.0092) ** 2) - 1.0
     ring = np.maximum(ring_o * 0.012, -ring_i * 0.009)
@@ -752,18 +760,20 @@ def _larynx_parts(x, y, z):
     zc2 = cz + 0.0090 * sstep(-0.006, 0.010, y - cy)
     cric = np.maximum(ring, np.abs(z - zc2) - height)
     # mucosal/muscular tube (vocal folds, arytenoids, conus elasticus) between the cartilages
-    soft_o = chain(x, y, z, [(0.0, -0.0325, 1.505), (0.0, -0.0350, 1.528), (0.0, -0.036, 1.550)],
-                   [0.0115, 0.0140, 0.0135])
-    soft_o = smax(soft_o, np.maximum(1.5062 - z, z - 1.552), 0.002)
+    # (the vestibule above the lowered thyroid notch leans back to the epiglottis: pre-epiglottic space and the
+    #  thyrohyoid membrane lie in front of it, under the submental skin)
+    soft_o = chain(x, y, z, [(0.0, -0.0325, 1.505 + dz), (0.0, -0.0350, 1.528 + dz), (0.0, -0.026, 1.550)],
+                   [0.0115, 0.0140, 0.0095])
+    soft_o = smax(soft_o, np.maximum(1.5062 + dz - z, z - 1.552), 0.002)
     # epiglottis: a leaf rising behind the hyoid body (hyoid 0, -0.030, 1.556), behind the tongue base
     epig = ell(x, y, z, (0.0, -0.027, 1.555), (0.010, 0.0030, 0.0085))
     soft_o = smin(soft_o, epig, 0.003)
     # airway: subglottis -> glottis slit (rima ~ 8 x 16 mm) -> vestibule; closed at the inlet
-    lz = np.clip((z - 1.505) / 0.050, 0, 1)
-    rx = 0.0080 - 0.0045 * np.exp(-((z - 1.527) / 0.0035) ** 2)
-    ry = 0.0085 - 0.0010 * np.exp(-((z - 1.527) / 0.0035) ** 2)
+    lz = np.clip((z - 1.505 - dz) / (0.050 + dz), 0, 1)
+    rx = 0.0080 - 0.0045 * np.exp(-((z - 1.527 - dz) / 0.0035) ** 2)
+    ry = 0.0085 - 0.0010 * np.exp(-((z - 1.527 - dz) / 0.0035) ** 2)
     lumen = np.sqrt((x / rx) ** 2 + ((y - (-0.031 - 0.004 * lz)) / ry) ** 2) - 1.0
-    lumen = np.maximum(lumen * 0.006, np.maximum(1.5075 - z, z - 1.545))
+    lumen = np.maximum(lumen * 0.006, np.maximum(1.5075 + dz - z, z - 1.545))
     return thyroid, cric, soft_o, lumen
 
 
@@ -785,7 +795,7 @@ def larynx_sub(v):
 # ===========================================================================
 # Oesophagus (collapsed, slit lumen) and thyroid
 # ===========================================================================
-OESO_PTS = [(0.000, -0.0125, 1.506), (0.004, 0.012, 1.450), (0.000, 0.022, 1.415), (0.002, 0.024, 1.355),
+OESO_PTS = [(0.000, -0.0125, 1.494), (0.004, 0.012, 1.450), (0.000, 0.022, 1.415), (0.002, 0.024, 1.355),
             (0.012, 0.012, 1.310), (0.022, -0.008, 1.280), (0.027, -0.014, 1.264)]
 
 
@@ -838,11 +848,11 @@ def thyroid_sdf(x, y, z):
     trachea (impression) with the carotid sheath lateral [R05 §10.1]."""
     d = None
     for sx in (1.0, -1.0):
-        lobe = ell(x * sx, y, z, (0.0215, -0.0265, 1.505), (0.0095, 0.0090, 0.0250))
-        pole = ell(x * sx, y, z, (0.0170, -0.0245, 1.524), (0.0055, 0.0055, 0.0070))
+        lobe = ell(x * sx, y, z, (0.0215, -0.0265, 1.505 + THYROID_DZ), (0.0095, 0.0090, 0.0250))
+        pole = ell(x * sx, y, z, (0.0170, -0.0245, 1.524 + THYROID_DZ), (0.0055, 0.0055, 0.0070))
         lobe = smin(lobe, pole, 0.006)
         d = lobe if d is None else smin(d, lobe, 0.002)
-    isth = ell(x, y, z, (0.0, -0.0415, 1.492), (0.012, 0.0032, 0.0085))
+    isth = ell(x, y, z, (0.0, -0.0415, 1.492 + THYROID_DZ), (0.012, 0.0032, 0.0085))
     d = smin(d, isth, 0.005)
     d = carve(d, _AIRB(x, y, z), 0.0012, 0.002)
     d = carve(d, _LARB(x, y, z), 0.0012, 0.002)
@@ -1713,7 +1723,7 @@ _KFAT = {sd: boxed(kidney_fat_sdf(sd), *_pbox(OR.PRIMITIVES["kidney_" + sd]["c"]
          for sd in ("L", "R")}
 _KID = {sd: boxed(kidney_sdf(sd), *_pbox(OR.PRIMITIVES["kidney_" + sd]["c"], (0.050, 0.050, 0.075)))
         for sd in ("L", "R")}
-_THYB = boxed(thyroid_sdf, (-0.040, -0.055, 1.465), (0.040, -0.008, 1.550))
+_THYB = boxed(thyroid_sdf, (-0.040, -0.055, 1.458), (0.040, -0.008, 1.550))
 _CRURA = boxed(crura_sdf, (-0.030, -0.050, 1.110), (0.030, -0.005, 1.275))
 _LIVB = boxed(_liver_base, (-0.160, -0.110, 1.120), (0.110, 0.090, 1.340))
 _SPLB = boxed(spleen_sdf, *_pbox(OR.PRIMITIVES["spleen"]["c"], (0.070, 0.070, 0.075)))
@@ -1722,7 +1732,7 @@ _GALB = boxed(gallbladder_sdf, (-0.100, -0.090, 1.150), (-0.020, 0.000, 1.250))
 _OMEB = boxed(omentum_sdf, (-0.140, -0.130, 0.930), (0.140, 0.010, 1.140))
 _AIRB = boxed(airway_outer, (-0.070, -0.050, 1.350), (0.075, 0.045, 1.520))
 _OESB = boxed(lambda x, y, z: _oeso_fields(x, y, z)[0], (-0.030, -0.040, 1.240), (0.055, 0.050, 1.520))
-_LARB = boxed(larynx_sdf, (-0.035, -0.070, 1.495), (0.035, -0.005, 1.570))
+_LARB = boxed(larynx_sdf, (-0.035, -0.070, 1.483), (0.035, -0.005, 1.570))
 _ADRB_L = boxed(adrenal_sdf("L"), *_pbox(OR.PRIMITIVES["adrenal_L"]["c"], (0.025, 0.020, 0.035)))
 _RIBT = rib_tubes_sdf
 _STERN = boxed(sternum_sdf, (-0.040, -0.110, 1.260), (0.040, -0.030, 1.470))
@@ -1756,12 +1766,12 @@ def organ_specs():
               diaphragm_sub))
     S.append(("airway", "trachea", airway_sdf, (np.array([-0.055, -0.045, 1.360]), np.array([0.062, 0.035, 1.512])),
               0.00065, 1400, None))
-    S.append(("larynx", "larynx", larynx_sdf, (np.array([-0.030, -0.066, 1.498]), np.array([0.030, -0.012, 1.565])),
+    S.append(("larynx", "larynx", larynx_sdf, (np.array([-0.030, -0.066, 1.486]), np.array([0.030, -0.012, 1.565])),
               0.0006, 900, larynx_sub))
     S.append(("oesophagus", "oesophagus", oesophagus_sdf, (np.array([-0.020, -0.030, 1.250]),
                                                            np.array([0.045, 0.040, 1.512])), 0.0007, 800,
               oesophagus_sub))
-    S.append(("thyroid", "thyroid", thyroid_sdf, (np.array([-0.036, -0.050, 1.470]), np.array([0.036, -0.012, 1.545])),
+    S.append(("thyroid", "thyroid", thyroid_sdf, (np.array([-0.036, -0.050, 1.462]), np.array([0.036, -0.012, 1.545])),
               0.0008, 480, _const(1)))
     S.append(("stomach", "stomach", stomach_sdf, (np.array([-0.055, -0.100, 1.080]), np.array([0.125, 0.055, 1.315])),
               0.0010, 2400, stomach_sub))

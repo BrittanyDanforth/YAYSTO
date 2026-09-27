@@ -602,6 +602,11 @@ def _shoulder(ax, y, z):
     # palpable as a knob); a broad mass blended into the slope, kept under the D19 seam plane (top 1.479)
     sang = sd_oellipsoid(ax, y, z, (0.082, 0.070, 1.449), (0.034, 0.030, 0.026), np.eye(3))
     trap = smin(trap, sang, 0.022)
+    # nape slope: the upper trapezius fibres run from the ligamentum nuchae down and out over the superior
+    # angle, so behind the neck the surface falls in one ~40 deg slope from the nape to the upper back
+    # (fix round 2: the superior-angle mass alone left a 1 cm 'collar ledge' at the neck base behind)
+    nape = sd_capsule(ax, y, z, (0.022, 0.066, 1.528), (0.064, 0.092, 1.462), 0.007, 0.014)
+    trap = smin(trap, nape, 0.026)
     # teres major / infraspinatus lower belly: fills the posterior axillary junction (no pit behind the arm)
     teres = _fold(ax, y, z, (0.105, 0.098, 1.360), GH + 0.070 * ARM_D + 0.020 * ARM_LAT + np.array([0.0, 0.030, 0.0]),
                   0.018, 0.030)
@@ -1056,15 +1061,39 @@ FOOT_BOX = Box((0.02, -0.17, -0.01), (0.19, 0.14, 0.24), margin=0.03)
 # Neck primitives
 # ===========================================================================
 def _neck_parts(ax, y, z):
-    """Sternocleidomastoid ridges and the laryngeal prominence (0, -0.061, 1.527).
+    """Sternocleidomastoid ridges and the laryngeal prominence (0, -0.060, 1.515).
 
-    The prominence sits 10 mm below RB §7.1's 1.537 (C5 level instead of C4-C5) so it lies 2.3 cm
-    under the menton with a real cervicomental angle between them (gb_data.landmarks, CONTRACT.md)."""
+    Fix round 2: the larynx (B4, ``viscera.LARYNX_DZ``) sits 10 mm below RB §7.1 so it lies ~2.2 cm under
+    the head project's menton; the skin prominence is a narrow keel over the thyroid laminae (a lean
+    man's Adam's apple, 24 mm wide, ~4 mm proud of the neck) instead of the round 35 mm ellipsoid that
+    filled the space under the chin and read as a pouch."""
     scm = sd_capsule(ax, y, z, (0.017, -0.046, 1.463), (0.058, 0.022, 1.600), 0.0080, 0.0130)
-    # over the thyroid cartilage (B4 organ: prominence y -0.058 over z 1.516-1.538): skin 3 mm in front of it,
-    # ending above the cricoid (skin -0.055 at 1.515)
-    lar = sd_oellipsoid(ax, y, z, (0.0, -0.0490, 1.534), (0.0175, 0.0128, 0.0155), np.eye(3))
+    # splenius capitis + upper trapezius under the occiput: the neck behind the ear is as wide as the mastoids
+    # and rises into the superior nuchal line (fix round 2: the thin neck column left a step under the occiput)
+    nuchal = sd_capsule(ax, y, z, (0.034, 0.052, 1.515), (0.050, 0.055, 1.608), 0.013, 0.016)
+    scm = smin(scm, nuchal, 0.014)
+    # keel: the thyroid laminae meet in front at ~90 deg, so the skin over them is a rounded wedge, deepest
+    # at the superior notch level and receding toward the cricoid (skin -0.054 at 1.504)
+    lar = sd_oellipsoid(ax, y, z, (0.0, -0.0460, 1.5200), (0.0150, 0.0140, 0.0180), np.eye(3))
+    wedge = 0.7071 * ax - 0.7071 * (y + 0.0600) - 0.0040            # 90 deg V, apex 4 mm rounded
+    lar = np.maximum(lar, wedge)
     return scm, lar
+
+
+# Submental plane: in front of the neck, between the thyroid notch and the chin, the body neck may not reach
+# further forward than SUBMENTAL_Y(z) (body frame).  With the menton at z 1.544 / y -0.065 this leaves a
+# 2-2.5 cm submental plane back to the cervical point (y ~ -0.045) and a cervicomental angle of ~110 deg
+# before the neck front runs down over the prominence (fix round 2; critics: pouch / crease under the chin).
+SUBMENTAL_Z = (1.522, 1.530, 1.536, 1.542, 1.548, 1.560)
+SUBMENTAL_Y = (-0.080, -0.0605, -0.0545, -0.0480, -0.0440, -0.0420)
+
+
+def submental_limit(ax, y, z):
+    """SDF-like limit (positive in front of the allowed neck front, i.e. to be carved) under the chin; zero
+    effect below 1.522 and beyond |x| 0.05 (the submandibular sides are shaped by the neck tube)."""
+    yf = sinterp(z, SUBMENTAL_Z, SUBMENTAL_Y) + 0.020 * (ax / 0.05) ** 2
+    lat = sstep(0.055, 0.035, ax)
+    return (yf - y) * lat - (1.0 - lat) * 0.05
 
 
 # ===========================================================================
@@ -1076,11 +1105,12 @@ def _neck_parts(ax, y, z):
 # the bone poking through (FB-4).  The muscle shell covers the same bones by 0.5 mm.
 # ===========================================================================
 # (key, skeleton builder (name, args), box lo, box hi, pad depth (m), blend k (m), tissue group)
+# fix round 2: sternum and spinous pads blend over 10-11 mm (at 3-4 mm they showed as knobs and V-lines)
 PAD_SITES = (
     ("clavicle", ("clavicle_sdf", ()), (0.0, -0.075, 1.425), (0.200, 0.035, 1.490), 0.0035, 0.006, "trunk"),
     ("scapula", ("scapula_sdf", ()), (0.070, -0.005, 1.428), (0.220, 0.120, 1.490), 0.0042, 0.003, "trunk"),
-    ("sternum", ("sternum_parts", ()), (0.0, -0.120, 1.270), (0.040, -0.030, 1.470), 0.0055, 0.003, "trunk"),
-    ("spine", ("upper_spinous_sdf", ()), (0.0, 0.030, 1.360), (0.030, 0.130, 1.520), 0.0075, 0.004, "trunk"),
+    ("sternum", ("sternum_parts", ()), (0.0, -0.120, 1.270), (0.040, -0.030, 1.470), 0.0055, 0.010, "trunk"),
+    ("spine", ("upper_spinous_sdf", ()), (0.0, 0.030, 1.360), (0.030, 0.130, 1.520), 0.0080, 0.011, "trunk"),
     ("iliac_crest", ("hip_bone_sdf", ()), (0.030, -0.090, 0.995), (0.170, 0.062, 1.090), 0.0060, 0.005, "trunk"),
     ("psis", ("hip_bone_sdf", ()), (0.030, 0.062, 0.985), (0.110, 0.110, 1.080), 0.0035, 0.005, "trunk"),
     ("tibia", ("tibia_sdf", ()), (0.030, -0.060, 0.060), (0.150, 0.080, 0.440), 0.0035, 0.004, "leg"),
@@ -1156,6 +1186,7 @@ def body_components(x, y, z):
     out["foot"] = FOOT_BOX.run(_foot, ax, y, z)
     out["pad_trunk"], out["pad_trunk_k"] = bone_pads(ax, y, z, "trunk")
     out["pad_leg"], out["pad_leg_k"] = bone_pads(ax, y, z, "leg")
+    out["_x"] = x
     out["_y"] = y
     out["_z"] = z
     return out
@@ -1171,7 +1202,10 @@ def union_components(c, off=None, kplus=0.0):
     g = {k: (v + o.get(k, 0.0) if not (k.endswith("_k") or k.startswith("_")) else v) for k, v in c.items()}
     K = kplus
     trunk = smin(g["torso"], g["scm"], 0.016 + K)
-    trunk = smin(trunk, g["larynx"], 0.008 + K)
+    trunk = smin(trunk, g["larynx"], 0.006 + K)
+    # submental plane / cervicomental angle (applied before the head is united in skin_sdf)
+    ax_ = np.abs(g["_x"])
+    trunk = smax(trunk, submental_limit(ax_, g["_y"], g["_z"]) - K, 0.005 + K)
     trunk = smin(trunk, g["trapezius"], 0.028 + K)
     trunk = smin(trunk, g["clavicle"], 0.028 + K)
     arm = smin(g["arm"], g["deltoid"], 0.030 + K)
@@ -1234,6 +1268,9 @@ def skin_sdf(x, y, z):
     b = body_sdf(x, y, z)
     h = HEAD_BOX.run(_head_part, x, y, z)
     k = 0.016 + 0.012 * sstep(0.0, 0.06, y) - 0.008 * sstep(1.57, 1.60, z) * sstep(0.02, -0.02, y)
+    # under the chin the blend stays tight (6 mm) so the submental plane meets the jaw in a defined
+    # cervicomental angle instead of the wide blend refilling it into a pouch (fix round 2)
+    k = k - 0.010 * sstep(-0.030, -0.045, y) * sstep(0.045, 0.025, np.abs(x)) * sstep(1.565, 1.550, z)
     return smin(b, h, k)
 
 
@@ -2068,10 +2105,17 @@ def _write_tissue_attrs(obj):
     return t, tan
 
 
-# decimation weight at a limb joint (1 = elsewhere).  Blender's collapse decimation reacts to vertex-group
-# weights almost like a switch (0.995 = no effect, 0.98 = 2.5-4x the vertex density), so the zone is kept small
-JOINT_DENSITY = 0.98
+# Decimation weights per zone (lower = denser; 1 = plain quadric collapse).  Blender's collapse decimation
+# reacts to vertex-group weights almost like a switch (0.995 = no effect, 0.98 = 2.5-4x the vertex density).
+# Plain collapse spent the budget on the curved hands/feet/elbows and left the broad, gently curved torso with
+# 2-7 cm triangles whose long edges showed as straight shading lines across the chest and the lower back
+# (fix round 2).  The weights below give the torso ~8-9 mm edges (p95 14 mm) at the same 43.6k triangles.
+JOINT_DENSITY = 0.965         # limb joints (short edges where the skin bends)
 JOINT_DENSITY_R = 0.040       # m, radius of the denser zone around each joint centre
+DEC_W_BASE = 0.980            # limbs, neck
+DEC_W_TORSO = 0.972           # chest, abdomen, back (broad, visible, cut and shot most)
+DEC_W_EXTREMITY = 0.975       # hands and feet beyond the wrist / ankle (already curvature-dense)
+DEC_W_GROIN = 0.985           # under the shorts
 
 
 def joint_weighted_decimate(obj, target_tris):
@@ -2091,7 +2135,16 @@ def joint_weighted_decimate(obj, target_tris):
                                           "foot_R")], float)
     v = gbc.get_verts(me)
     d = np.min(np.linalg.norm(v[:, None, :] - J[None, :, :], axis=2), axis=1)
-    w = np.where(d < JOINT_DENSITY_R, JOINT_DENSITY, 1.0)
+    ax = np.abs(v[:, 0])
+    s_arm = (np.column_stack([ax, v[:, 1], v[:, 2]]) - WRIST) @ ARM_D
+    extremity = ((s_arm > 0.0) & (ax > 0.30)) | (v[:, 2] < ANKLE[2] + 0.01)
+    torso = (ax < 0.17) & (v[:, 2] > 0.95) & (v[:, 2] < 1.47)
+    groin = (ax < 0.10) & (v[:, 2] > 0.80) & (v[:, 2] < 0.98) & (v[:, 1] < 0.03)
+    w = np.full(len(v), DEC_W_BASE)
+    w[torso] = DEC_W_TORSO
+    w[groin] = DEC_W_GROIN
+    w[d < JOINT_DENSITY_R] = JOINT_DENSITY
+    w[extremity] = DEC_W_EXTREMITY
     vg = obj.vertex_groups.new(name="gb_decimate")
     for val in np.unique(w):
         vg.add(np.nonzero(w == val)[0].tolist(), float(val), 'REPLACE')

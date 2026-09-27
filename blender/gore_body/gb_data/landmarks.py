@@ -27,8 +27,8 @@ atlanto_occipital_pivot,0.000,0.015,1.622,joint
 menton,0.000,-0.068,1.550,skin
 gonion_L,0.052,-0.005,1.577,skin
 hyoid_body,0.000,-0.030,1.556,bone
-laryngeal_prominence,0.000,-0.061,1.527,skin
-cricoid,0.000,-0.055,1.515,skin
+laryngeal_prominence,0.000,-0.060,1.515,skin
+cricoid,0.000,-0.054,1.502,skin
 c7_spinous_cervicale,0.000,0.075,1.532,skin
 jugular_notch,0.000,-0.048,1.455,skin
 sc_joint_L,0.025,-0.040,1.450,joint
