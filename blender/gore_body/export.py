@@ -176,8 +176,10 @@ def landmarks_table():
                  "seam_z": float(gbc.lift_z(gbc.SEAM_Z)), "seam_z_authoring": gbc.SEAM_Z,
                  "neck_lift_m": gbc.NECK_LIFT, "neck_lift_z": list(gbc.NECK_LIFT_Z)},
         "girths": LM.GIRTHS, "arm_girths": LM.ARM_GIRTHS, "hand": LM.HAND, "foot": LM.FOOT,
-        "eyes": {"L": gbc.head_to_body(np.array(LM.HEAD_CONTRACT["eye_L"])).tolist(),
-                 "R": gbc.head_to_body(np.array(LM.HEAD_CONTRACT["eye_R"])).tolist(),
+        # measured globe centres (= the eye/lid bone pivots); the RB §1.2 table values under "rb"
+        "eyes": {"L": _eye_centre_measured(1.0), "R": _eye_centre_measured(-1.0),
+                 "rb": {"L": gbc.head_to_body(np.array(LM.HEAD_CONTRACT["eye_L"])).tolist(),
+                        "R": gbc.head_to_body(np.array(LM.HEAD_CONTRACT["eye_R"])).tolist()},
                  "constants": LM.EYE_CONSTANTS},
         "body": {"stature_m": round(float(gbc.lift_z(LM.STATURE_M)), 4), "stature_rb_m": LM.STATURE_M, "mass_kg": LM.MASS_KG, "body_fat_pct": LM.BODY_FAT_PCT,
                  "bsa_m2": LM.BSA_M2, "arm_direction_L": list(LM.ARM_DIRECTION_L),
