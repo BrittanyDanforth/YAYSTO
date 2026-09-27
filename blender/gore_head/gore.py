@@ -1500,7 +1500,10 @@ def _build_burn():
     rn = rho_e / R * (1.0 + 0.45 * lobes) + 0.12 * n2 + 0.3 * n3 - 0.45 * lick + edge_w
     # soft edge: a 5-15 mm band of red skin; the flame tongues fade out well
     # inside the hit's reach (or the evaluation bounds show as a straight edge)
-    b = t.smooth(1.02, 0.12, rn) * t.smooth(R * 1.5, R * 1.12, rho_e)
+    # (the outer clamp is lobed too: a clean ellipse here gave the burn long
+    # straight sides where two hits overlap)
+    b = t.smooth(1.02, 0.12, rn) * t.smooth(R * 1.5, R * 1.1, rho_e * (1.0 + 0.3 * lobes) + edge_w * R * 0.5
+                                            + n3 * R * 0.25)
     dose = (b * (0.55 + 0.6 * D)).clamp()
     partial = t.smooth(0.2, 0.3, dose) * t.smooth(0.56, 0.48, dose)
     full = t.smooth(0.52, 0.62, dose)
@@ -1896,7 +1899,7 @@ class _Hit:
             rr = (self.u * self.u + (self.v / e) ** 2.0 + self.w * self.w).sqrt()
             if reach:
                 # (beyond the dose field's lobed edge, so it never ends in a cut line)
-                return rr.lt(s * 0.022 * 1.55 + 0.004)
+                return rr.lt(s * 0.022 * 2.3 + 0.004)
             # only the skin blisters / peels, other layers keep their mesh
             return t.bool('AND', rr.lt(s * 0.026 + 0.002), t.compare('EQUAL', layer, LAYER_SKIN, 'INT'))
         if kind == "blast":

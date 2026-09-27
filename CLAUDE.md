@@ -265,6 +265,9 @@ damage = 0 returns the intact mesh. Carnage (9 hits) evaluates in ~4.5 s.
   crushed 3/4 now reads as a crater; still: thick glossy gel slab of blood on the crushed lip, nose tip still a round
   lump, cutaway brain centre still a flat white-grey cloud (needs white-matter texture + grey ribbon + visible gyri on
   the cut face). Body final2 neck side: ledge + bump at the neck base STILL there (HIGH for body review round 2).
+- Wounds fixer rebuild (17:41-18:21): scalp split pours heavily with branching runs (good); burn now affects the eye (cooked
+  opaque) with peeling blisters (still glossy); cheek slash STILL reads as a 'second mouth' (lens with lips); carnage neck cut
+  reads as a flat red ribbon/choker around the neck (sticker-like, no cross-section) — HIGH.
 - USER (HIGH, REFERENCE_NOTES §5.21): a slash stream started on intact skin beside the cut (no wound above it); every stream
   must trace up into an overflowing low point of a wound rim. Drops/streams too thick (drops ~3-4.5 mm, streams 2-5 mm wide, 0.1-0.4 mm thick).
 - USER (HIGH, REFERENCE_NOTES §5.20): crushed preset leaves the NOSE TIP intact/unbruised inside the wound; the eyeball is
