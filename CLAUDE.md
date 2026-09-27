@@ -268,6 +268,10 @@ damage = 0 returns the intact mesh. Carnage (9 hits) evaluates in ~4.5 s.
 - Wounds fixer rebuild (17:41-18:21): scalp split pours heavily with branching runs (good); burn now affects the eye (cooked
   opaque) with peeling blisters (still glossy); cheek slash STILL reads as a 'second mouth' (lens with lips); carnage neck cut
   reads as a flat red ribbon/choker around the neck (sticker-like, no cross-section) — HIGH.
+- Wounds fixer rebuild (18:32-18:45): crushed = torn crater with the nose side involved and the old triangle flap gone, BUT the
+  lower face is coated in one huge smooth glossy blood 'balloon/gel bag' over lips and chin (reads as plastic) — HIGH; blast
+  = much more mid-face pulp, barcode bars under the chin gone. Body organs (critic_contract_r2): heart/pericardium still a
+  white block, fat apron a cream slab, bladder a white bulb — HIGH for body fix round 2.
 - USER (HIGH, REFERENCE_NOTES §5.21): a slash stream started on intact skin beside the cut (no wound above it); every stream
   must trace up into an overflowing low point of a wound rim. Drops/streams too thick (drops ~3-4.5 mm, streams 2-5 mm wide, 0.1-0.4 mm thick).
 - USER (HIGH, REFERENCE_NOTES §5.20): crushed preset leaves the NOSE TIP intact/unbruised inside the wound; the eyeball is

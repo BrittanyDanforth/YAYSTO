@@ -2701,7 +2701,7 @@ def _build_pools(t, hits, surface, drip):
     P0 = I + (T1 * (uv.x * t.attr("pl_R")) + T2 * (uv.y * t.attr("pl_Ry"))) * stretch
     ray = t.node('GeometryNodeRaycast', {'Target Geometry': surface, 'Attribute': t.attr("g_wk"),
                                          'Source Position': P0 + N * 0.008, 'Ray Direction': -N,
-                                         'Ray Length': 0.03}, data_type='FLOAT')
+                                         'Ray Length': 0.05}, data_type='FLOAT')
     hit = t.out(ray, 'Is Hit')
     wk = t.out(ray, 'Attribute')
     hgt = (t.out(ray, 'Hit Position') - I).dot(N)
@@ -2713,6 +2713,12 @@ def _build_pools(t, hits, surface, drip):
     in_miss = t.switch(t.attr("pl_col").gt(0.5), r_loc.lt(t.attr("b_hole") * 1.15),
                        t.bool('AND', t.math('ABSOLUTE', uv.x).lt(0.92),
                               (t.math('ABSOLUTE', uv.y) * t.attr("pl_Ry")).lt(t.attr("pl_Ry") - 0.0026)), 'BOOLEAN')
+    # (a long cut on a round neck: the tangent-plane grid lies ~3 cm off the
+    # skin at the cut's ends; a miss there is air, not the opening -- those
+    # vertices once floated as a flat collar around the neck)
+    near_s = t.out(t.node('GeometryNodeProximity', {'Target': surface, 'Source Position': P0},
+                          target_element='FACES'), 'Distance').lt(0.009)
+    in_miss = t.bool('AND', in_miss, near_s)
     inside = t.bool('OR', t.bool('AND', hit, wk.gt(0.25)), t.bool('AND', t.bool('NOT', hit), in_miss))
     outside = t.switch(inside, 1.0, 0.0)
     g = t.store(g, "pl_out", outside)
