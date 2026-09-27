@@ -168,7 +168,8 @@ PRESETS = {
             ("blunt", (-0.042, -0.074, 0.020), dict(size=1.1, depth=0.9, name="GH_Hit_Crush_3")),
             ("blunt", (-0.014, -0.100, -0.018), dict(size=1.0, depth=0.9, name="GH_Hit_Crush_Nose")),
         ],
-        controls=dict(bleed=1.0, bruising=0.9, swelling=0.7, wound_age=0.3),
+        # ~10 h after the beating: massively swollen, deep purple (§5.18 D)
+        controls=dict(bleed=1.0, bruising=1.0, swelling=0.9, wound_age=0.45),
     ),
 }
 PRESET_NAMES = tuple(PRESETS)
@@ -735,28 +736,103 @@ def _vitreous_material():
 
 
 def _matter_material(white):
-    """Cut brain tissue: grey cortex (pinkish grey-brown) or white matter (cream)."""
+    """Cut brain tissue: grey cortex (pinkish grey-brown) or white matter (cream).
+
+    The white-matter cap also shows the cortex folding into it: winding grey
+    ribbons (~2.5 mm, the cortex lining each sulcus) with a thin dark line of
+    blood / pia at the bottom of every sulcus, dense near the outside of the
+    cerebrum and fading out in the deep white matter (centrum semiovale), so
+    the cut face reads as folded brain and not as a flat disc.
+    """
     name = "GH_WhiteMatterCut" if white else "GH_GreyMatterCut"
     mat = bpy.data.materials.get(name) or bpy.data.materials.new(name)
     if mat.node_tree is None:
         mat.use_nodes = True
     nt = mat.node_tree
     nt.nodes.clear()
-    out = nt.nodes.new('ShaderNodeOutputMaterial')
-    bsdf = nt.nodes.new('ShaderNodeBsdfPrincipled')
-    noise = nt.nodes.new('ShaderNodeTexNoise')
-    noise.inputs['Scale'].default_value = 900.0
-    ramp = nt.nodes.new('ShaderNodeValToRGB')
-    lo, hi = ((0.50, 0.44, 0.37), (0.58, 0.51, 0.43)) if white else ((0.34, 0.21, 0.19), (0.42, 0.28, 0.25))
-    ramp.color_ramp.elements[0].color = (*lo, 1.0)
-    ramp.color_ramp.elements[1].color = (*hi, 1.0)
-    nt.links.new(noise.outputs['Fac'], ramp.inputs[0])
-    nt.links.new(ramp.outputs['Color'], bsdf.inputs['Base Color'])
+    N, L = nt.nodes, nt.links
+    out = N.new('ShaderNodeOutputMaterial')
+    bsdf = N.new('ShaderNodeBsdfPrincipled')
+    tc = N.new('ShaderNodeTexCoord')
+    grey_lo, grey_hi = (0.34, 0.21, 0.19), (0.42, 0.28, 0.25)
+    wm_lo, wm_hi = (0.50, 0.44, 0.37), (0.58, 0.51, 0.43)
+
+    def math(op, a, b=None, clamp=False):
+        m = N.new('ShaderNodeMath')
+        m.operation = op
+        m.use_clamp = clamp
+        for i, v in enumerate((a, b)):
+            if v is None:
+                continue
+            if isinstance(v, (int, float)):
+                m.inputs[i].default_value = v
+            else:
+                L.new(v, m.inputs[i])
+        return m.outputs[0]
+
+    def mix(fac, a, b):
+        m = N.new('ShaderNodeMix')
+        m.data_type = 'RGBA'
+        L.new(fac, m.inputs['Factor'])
+        for sock, v in ((m.inputs[6], a), (m.inputs[7], b)):
+            if isinstance(v, tuple):
+                sock.default_value = (*v, 1.0)
+            else:
+                L.new(v, sock)
+        return m.outputs[2]
+
+    fine = N.new('ShaderNodeTexNoise')
+    fine.inputs['Scale'].default_value = 900.0
+    L.new(tc.outputs['Object'], fine.inputs['Vector'])
+    base = N.new('ShaderNodeValToRGB')
+    lo, hi = (wm_lo, wm_hi) if white else (grey_lo, grey_hi)
+    base.color_ramp.elements[0].color = (*lo, 1.0)
+    base.color_ramp.elements[1].color = (*hi, 1.0)
+    L.new(fine.outputs['Fac'], base.inputs[0])
+    col = base.outputs['Color']
+    if white:
+        # meandering sulci: iso-line of a warped low-frequency noise (~8 mm folds)
+        fold = N.new('ShaderNodeTexNoise')
+        fold.inputs['Scale'].default_value = 75.0
+        fold.inputs['Detail'].default_value = 3.0
+        fold.inputs['Roughness'].default_value = 0.55
+        fold.inputs['Distortion'].default_value = 0.35
+        L.new(tc.outputs['Object'], fold.inputs['Vector'])
+        band = math('ABSOLUTE', math('SUBTRACT', fold.outputs['Fac'], 0.5))
+        # depth into the cerebrum: 0 at the centre, ~1 at the cortex surface
+        cen = N.new('ShaderNodeVectorMath')
+        cen.operation = 'SUBTRACT'
+        L.new(tc.outputs['Object'], cen.inputs[0])
+        cen.inputs[1].default_value = (0.0, 0.005, 0.045)
+        sc = N.new('ShaderNodeVectorMath')
+        sc.operation = 'DIVIDE'
+        L.new(cen.outputs[0], sc.inputs[0])
+        sc.inputs[1].default_value = (0.068, 0.088, 0.068)
+        ln = N.new('ShaderNodeVectorMath')
+        ln.operation = 'LENGTH'
+        L.new(sc.outputs[0], ln.inputs[0])
+        reach = N.new('ShaderNodeMapRange')          # folds only in the outer ~40 %
+        reach.inputs['From Min'].default_value = 0.5
+        reach.inputs['From Max'].default_value = 0.78
+        L.new(ln.outputs['Value'], reach.inputs['Value'])
+        cortex = N.new('ShaderNodeMapRange')         # grey ribbon along each sulcus
+        cortex.inputs['From Min'].default_value = 0.06
+        cortex.inputs['From Max'].default_value = 0.04
+        L.new(band, cortex.inputs['Value'])
+        sulc = N.new('ShaderNodeMapRange')           # blood / pia line in the sulcus
+        sulc.inputs['From Min'].default_value = 0.012
+        sulc.inputs['From Max'].default_value = 0.004
+        L.new(band, sulc.inputs['Value'])
+        g_mask = math('MULTIPLY', cortex.outputs['Result'], reach.outputs['Result'])
+        s_mask = math('MULTIPLY', sulc.outputs['Result'], reach.outputs['Result'])
+        col = mix(g_mask, col, grey_hi)
+        col = mix(math('MULTIPLY', s_mask, 0.9), col, (0.16, 0.035, 0.03))
+    L.new(col, bsdf.inputs['Base Color'])
     bsdf.inputs['Roughness'].default_value = 0.35
     bsdf.inputs['Subsurface Weight'].default_value = 0.4
     bsdf.inputs['Subsurface Radius'].default_value = (1.0, 0.5, 0.4)
     bsdf.inputs['Subsurface Scale'].default_value = 0.002
-    nt.links.new(bsdf.outputs[0], out.inputs['Surface'])
+    L.new(bsdf.outputs[0], out.inputs['Surface'])
     mat.diffuse_color = (*hi, 1.0)
     return mat
 

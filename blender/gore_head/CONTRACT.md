@@ -138,7 +138,8 @@ REALISM_BIBLE §2.7):
   mouth lining; a throat cut goes 15-25 mm deep. Never opens bone (score mark only).
 - **blunt**: laceration over bone split along the skin lines (linear or Y),
   ragged crushed margins with a 2-4 mm abrasion rim, tissue bridges, walls to
-  the bone, a clot-filled bed; swelling (5-10 mm goose egg within hours) and
+  the bone, a bed packed with clot lumps at three sizes (no liquid sheet: its
+  strips shaded as slats); swelling (5-10 mm goose egg within hours) and
   bruise develop with `wound_age`; scalp splits bleed more;
   depressed skull fracture when deep; knocked-out teeth near the mouth. The
   goose egg is broad (radius ~25 mm, up to 8-12 mm high).
@@ -148,7 +149,9 @@ REALISM_BIBLE §2.7):
   *crushed* (crush 0..1 at hit_E 1.15..2.3): skin torn away over a large ragged
   area with everted flaps, contour caving in 5-15 mm, a large jagged hole of
   loose bone plates, many bone chips, the eye sinking into the broken orbit,
-  more clot and strands, much more bleeding.
+  more clot and strands, much more bleeding; the mid-face caves in over a
+  ~40 mm radius (the silhouette changes) and a tight 5-9 mm swollen ring with a
+  broad bruise surrounds the torn area.
 - **blast** (explosive in the mouth, contact shotgun; REFERENCE_NOTES §5.11 /
   refs/13): crater radius ~28 mm x size, torn further up (nose, one cheek) than
   down, shredded margins with everted flaps; muscle and gums open, the maxilla
@@ -180,13 +183,14 @@ shells. Global controls reach the modifiers through drivers from `GH_Controls`
 **Blood comes from the wound** (user rule, CLAUDE.md §8): no blood is painted
 on skin it did not physically travel to. `drip_time` 0..1 is 0..60 s after the
 injury. At 0 the holes are open and the blood surface lies at the bottom of the
-cavity; within ~7 s (drip_time 0.12) it wells up (gore.FILL_EXTENT: cuts and
-blunt splits; entrances hold clot blobs in the track instead of a sheet) and
+cavity; within ~7 s (drip_time 0.12) it wells up (gore.FILL_EXTENT: incised cuts;
+blunt splits and entrances hold clot blobs instead of a sheet) and
 overflows at the LOWEST point of the rim: the main run starts at drip_time
 0.03 (gore.DRIP_START), further runs split off later (up to +0.4) as the flow
-goes on. Runs are real geometry on the skin: flat films (3-8 mm wide, <= 0.18
-mm thick) whose front moves fast at first (~0.5-1 cm/s) and slows, that widen
-with the volume that has come down them, follow the surface under gravity and
+goes on. Runs are real geometry on the skin: flat films (3-10 mm wide, <= 0.18
+mm thick; the main run of a head wound reaches the jaw / neck within the minute,
+gore.DRIP_KINDS) whose front moves fast at first (~0.5-1 cm/s) and slows, that widen
+with the volume that has come down them, grow out of the lip (no flat cut-off start), follow the surface under gravity and
 carry a rounded bead only while still moving (a stopped run ends in a tapered
 film). Behind each run the skin gets a translucent stain exactly as wide as the
 run (`gore_blood` from the trail), which dries/darkens from the edges with
@@ -201,7 +205,7 @@ relaxed (Blur Attribute on the wall vertices) and given lumpy relief along the
 wall normal only (gore.WALL_LUMPS), so they never fold into light/dark stripes
 (the "fence plank" artefact of refs/12; `verify_gore` fails if more than 5 % of
 wall edges fold by > 60 deg). Bleeding wounds get clot blobs (flattened, lumpy,
-0.5-2 mm, gore.CLOT_DENSITY) on the walls, floor and fill, and tissue strands
+0.4-4 mm at three sizes, gore.CLOT_DENSITY; none in incised cuts) on the walls, floor and fill, and tissue strands
 (0.25-0.6 mm, material `GH_Muscle`) bridging the gap from the second wall ring
 (gore.STRAND_P per kind).
 

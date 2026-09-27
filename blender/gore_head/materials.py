@@ -705,7 +705,8 @@ def _group_bone():
     stain = t.noise(p, 30.0, 3.0).smooth(0.6, 0.8) * 0.4
     col = t.mix(stain, col, (0.40, 0.27, 0.16))
     t.result("Color", col)
-    t.result("Roughness", t.mix(wet * 0.35, 0.58 + (n1 - 0.5) * 0.2 + pit * 0.1, 0.25))
+    # (matte ivory, never glossy plaster: only blood on it is shiny)
+    t.result("Roughness", t.mix(wet * 0.15, 0.7 + (n1 - 0.5) * 0.16 + pit * 0.1, 0.45))
     t.result("Height", n2 * 0.5 - pit * 0.7)
     # spongy bone between the tables: marrow-filled cavities
     sd, scol, _ = t.voronoi(p, 1100.0, 'F1')
@@ -1151,7 +1152,7 @@ def _bone_material(g):
     bsdf = t.principled({
         'Base Color': bl["Color"], 'Roughness': bl["Roughness"], 'IOR': 1.55,
         'Subsurface Weight': 0.2 * bl["SSS"], 'Subsurface Radius': (1.0, 0.75, 0.5),
-        'Subsurface Scale': 0.0012, 'Coat Weight': (bl["Coat"] + wet * 0.15).clamp(),
+        'Subsurface Scale': 0.0012, 'Coat Weight': bl["Coat"],
         'Coat Roughness': t.mix(bl["Mask"], 0.25, bl["Coat Roughness"]), 'Coat Tint': bl["Coat Tint"],
         'Normal': t.bump(h, 0.00016)})
     t.output(bsdf)

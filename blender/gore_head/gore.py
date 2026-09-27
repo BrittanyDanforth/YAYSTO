@@ -1193,7 +1193,8 @@ def _build_blunt():
     cut = cut_soft.max(cut_bone)
     # contour collapse: skin, muscle and bone cave in 5-15 mm under crushing
     # blows; the loose plates at the edge of the bone hole are pushed in
-    cave = cr * s * 0.011 * t.math('EXPONENT', -(c.rho / (s * 0.03)) ** 2.0) \
+    # (broad: the whole mid-face flattens, so the silhouette changes -- §5.18 D)
+    cave = cr * s * 0.015 * t.math('EXPONENT', -(c.rho / (s * 0.042)) ** 2.0) \
         * c.lc([1.0, 1.0, 0.8, 0.8, 0.5, 0.0, 0.0, 1.0]) * (1.0 + 0.3 * nl)
     depress = depress * (1.0 + 1.5 * cr)
     # everted flaps around the torn-away skin: lifted and curled outward so
@@ -1209,6 +1210,10 @@ def _build_blunt():
     # the margins are pushed apart a little and bulge (crushed, swollen lips)
     mg = t.smooth(0.003, 0.0, -cut_split) * split_on * is_skin
     swell = swell + mg * 0.0006 - cave
+    # massive, tight swelling of the skin around a crushed area (a puffy ring
+    # 5-9 mm high outside the torn opening: the face widens, the eye closes)
+    ring_sw = t.smooth(0.0, R_cr * 0.5 + 0.003, d_cr) * t.smooth(s * 0.07, s * 0.02, c.rho)
+    swell = swell + ring_sw * cr * soft_cr * s * 0.0075 * (0.4 + 0.6 * t.inp("Swelling")) * (1.0 + 0.3 * nl)
     # pulped muscle exposed in the crushed area: lumpy, torn
     swell = swell + is_muscle * cr * t.smooth(R_cr * 1.6 + 0.004, R_cr * 0.5, c.rho) \
         * (t.noise(c.np * 200.0, detail=3.0, rough=0.6) * 0.0025 + t.noise(c.np * 600.0, detail=2.0) * 0.0008)
@@ -1238,7 +1243,8 @@ def _build_blunt():
     wound = (t.smooth(s * 0.0009, 0.0, -cut_split) * split_on).max(contusion * 0.5).max(frac * 0.4)
     wound = wound.max(t.smooth(s * 0.006, s * 0.0045, c.rho) * breach)
     wound = wound.max(t.smooth(0.0015, 0.0, d_cr) * cr * soft_cr)
-    bruise = bruise.max(cr * t.smooth(s * 0.05, s * 0.01, c.rho) * c.lc([1.0, 1.0, 0.0, 0.0, 0.0, 0.6, 0.0, 1.0]))
+    bruise = bruise.max(cr * t.smooth(s * 0.07, s * 0.012, c.rho + nl * 0.004)
+                        * c.lc([1.0, 1.0, 0.0, 0.0, 0.0, 0.6, 0.0, 1.0]))
     tw = c.lc(LAYER_WALL)
     # skin walls run down to the bone (the floor of a blunt split is the
     # bruised periosteum); the arms close in a V toward their mid line
@@ -1713,17 +1719,20 @@ def _end_repeat(t, rout, values):
 # ---------------------------------------------------------------------------
 # Blood: rivulets that run down the skin
 # ---------------------------------------------------------------------------
-DRIP_STEPS = 20
+DRIP_STEPS = 28
 # kind: (runs per hit, angular spread around "down" (rad), rim radius, max length, half width)
 # Rivulets are 3-8 mm wide and 0.1-0.3 mm thick (REALISM_BIBLE row 19,
 # REFERENCE_NOTES: far more blood than a few thin lines; scalp and exit
 # wounds keep pouring). The lengths are reached at drip_time 1 (= 60 s).
+# (final pass, REFERENCE_NOTES §5.18 G: head wounds keep pouring -- the main
+# run of a scalp / face wound reaches the jaw and the neck within the minute,
+# and the streams are wide and grow with the volume, never thin threads)
 DRIP_KINDS = {
-    "bullet": (1.6, 0.9, 0.0034, 0.100, 0.0016),
-    "exit":   (4.0, 1.7, 0.0085, 0.130, 0.0024),
-    "slash":  (1.0, 0.0, 0.0,    0.100, 0.0024),
-    "blunt":  (2.0, 1.0, 0.0085, 0.100, 0.0021),
-    "blast":  (6.0, 2.6, BLAST_R * 0.75, 0.140, 0.0030),
+    "bullet": (2.4, 1.0, 0.0034, 0.185, 0.0027),
+    "exit":   (5.0, 1.8, 0.0085, 0.200, 0.0034),
+    "slash":  (1.3, 0.0, 0.0,    0.150, 0.0030),
+    "blunt":  (2.6, 1.0, 0.0085, 0.160, 0.0030),
+    "blast":  (7.0, 2.6, BLAST_R * 0.75, 0.220, 0.0040),
 }
 # drip_time (0..1 = 0..60 s): the cavity fills first, the main run leaves the
 # lowest point of the rim at DRIP_START, further runs split off later as the
@@ -1818,8 +1827,8 @@ def _drip_seeds(t, pts, kind, kind_id, damage, bleed, drip):
     lfac = t.switch(first, 0.08 + 0.6 * r2 * r2, 0.75 + 0.25 * r2)
     d_len = s.sqrt() * lmax * lfac * (0.35 + 0.65 * bleed) * ease
     # the stream widens with the volume that has come down it
-    d_w = width * (0.5 + 0.8 * r3 * r3) * (0.8 + 0.2 * s) * t.switch(first, 0.75, 1.0) \
-        * (0.5 + 0.7 * t.smooth(0.0, 0.45, x))
+    d_w = width * (0.55 + 0.7 * r3 * r3) * (0.8 + 0.2 * s) * t.switch(first, 0.75, 1.0) \
+        * (0.4 + 0.95 * t.smooth(0.0, 0.6, x))
     g = t.out(t.node('GeometryNodeSetPosition', {'Geometry': g, 'Position': p0}))
     g = t.store(g, "d_len", d_len)
     g = t.store(g, "d_w", d_w)
@@ -1905,11 +1914,14 @@ def _build_blood():
     dw = t.attr("d_w")
     # a rivulet: wide where it leaves the wound, thinning with length, with
     # uneven bulges where it slowed down, and a fuller head
-    rad = dw * (1.15 - 0.45 * tt + 0.28 * t.noise(t.pos() * 180.0, detail=1.0)
+    # (the stream keeps its width down its length -- it carries the same
+    # volume -- with bulges where it slowed, and a fuller head)
+    rad = dw * (1.05 - 0.15 * tt + 0.3 * t.noise(t.pos() * 180.0, detail=1.0)
                 + 0.12 * t.noise(t.pos() * 520.0)) + dw * 0.35 * t.smooth(0.85, 1.0, tt)
-    # a run that stopped narrows to a rounded tip (no square-cut end); long
-    # runs get their heavy teardrop head below
-    rad = rad * (0.4 + 0.6 * t.smooth(1.0, 0.86, tt))
+    # a run that stopped narrows to a rounded tip (no square-cut end), and the
+    # start grows out of the lip instead of ending in a flat cut-off face;
+    # long runs get their heavy teardrop head below
+    rad = rad * (0.08 + 0.92 * t.smooth(1.0, 0.78, tt)) * (0.45 + 0.55 * t.smooth(0.0, 0.06, tt))
     curves = t.out(t.node('GeometryNodeSetCurveRadius', {'Curve': curves, 'Radius': rad}))
     curves = t.store(curves, "d_rad", rad)
     profile = t.out(t.node('GeometryNodeCurvePrimitiveCircle', {'Resolution': 10, 'Radius': 1.0}, mode='RADIUS'))
@@ -2183,14 +2195,19 @@ WALL_LUMPS = ((210.0, 0.00055), (650.0, 0.00018))
 # iris; clot blobs sit in the track instead)
 # (< 1: the two lips' sheets must never cross -- two sheets crossing along a
 # jagged line alternate which one is on top and the bed reads as a dashed strip)
-FILL_EXTENT = {"slash": 0.985, "blunt": 0.8}
+# (blunt splits have no sheet: the ragged split outline made the strip sheet
+# shade as a row of dark slats -- the refs/12 stripe artefact; their bed is
+# packed with clot lumps instead, as in the references)
+FILL_EXTENT = {"slash": 0.985}
 # clot blobs per wall area (relative to CLOT_DENSITY) and the chance that a
 # vertex of the first wall ring starts a tissue strand across the gap
 CLOT_DENSITY = 30000.0        # blobs per m^2 of wall at factor 1
-CLOT_DENSITY_K = {"bullet": 2.5, "exit": 1.3, "slash": 0.9, "blunt": 1.2, "blast": 0.9}
+# (no loose blobs in an incised cut: its bed is under the welling fill, and in
+# the narrow scratch tail they showed as a row of black dots)
+CLOT_DENSITY_K = {"bullet": 2.5, "exit": 1.3, "slash": 0.0, "blunt": 3.0, "blast": 1.2}
 # (none in incised cuts: a knife divides everything in its path -- tissue
 # bridges are the forensic sign of a blunt laceration, not of a cut)
-STRAND_P = {"blunt": 0.007, "exit": 0.0025, "blast": 0.006}
+STRAND_P = {"blunt": 0.0035, "exit": 0.0025, "blast": 0.006}
 # extra blood on the wound walls per kind: a bullet track is a narrow tube
 # lined with blood and clot (no clean yellow fat), an exit is soaked
 WALL_BLOOD = {"bullet": 0.85, "exit": 0.6, "blast": 0.6}
@@ -2406,7 +2423,8 @@ def _clot_blobs(t, g, on_faces, factor):
     pts, rot = t.out(dist, 'Points'), t.out(dist, 'Rotation')
     idx = t.index()
     r1, r2, r3 = (t.rand(0.0, 1.0, idx, 61 + k) for k in range(3))
-    sz = 0.0005 + 0.0015 * r1 * r1
+    # three scales: grit, 1-2 mm lumps, a few 3-4 mm clots
+    sz = 0.0004 + 0.0014 * r1 * r1 + 0.0022 * t.smooth(0.88, 1.0, r2)
     ico = t.out(t.node('GeometryNodeMeshIcoSphere', {'Radius': 1.0, 'Subdivisions': 2}))
     inst = t.node('GeometryNodeInstanceOnPoints', {'Points': pts, 'Instance': ico, 'Rotation': rot,
                                                    'Scale': t.vec(sz * (0.8 + 0.6 * r2), sz * (0.7 + 0.6 * r3),
