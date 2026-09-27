@@ -178,6 +178,7 @@ def landmarks_table():
     contract = {k: gbc.head_to_body(v).tolist() for k, v in LM.HEAD_CONTRACT.items()}
     return {
         "landmarks": {k: list(v) for k, v in LM.all_landmarks().items()},
+        "landmarks_rb": {k: list(v["p"]) for k, v in LM.LANDMARKS_RB.items()},     # RB values of the deviations
         "landmark_tags": {k: v["tag"] for k, v in {**LM.LANDMARKS, **LM.LANDMARKS_EXTRA}.items()},
         "head": {"measured": head, "contract_rb_1_2": contract, "offset": gbc.HEAD_OFFSET.tolist(),
                  "seam_z": float(gbc.lift_z(gbc.SEAM_Z)), "seam_z_authoring": gbc.SEAM_Z,

@@ -53,7 +53,10 @@ FRAME = "body_zup_m"
 GODOT_MAPPING = "(x, z, -y)"
 GENERATOR = "blender/gore_body/build.py"
 HEAD_OFFSET = np.array([0.0, 0.020, 1.647])   # p_body = p_head + HEAD_OFFSET  [RB §1.2] V
-SEAM_Z = 1.485                                 # canonical neck seam plane (plan D19)
+# canonical neck seam plane (plan D19; fix round 3: raised from 1.485 into the clean neck column - at 1.485 the plane
+# crossed the trapezius slope, which a planar height cap then flattened into the 'collar ledge' of rounds 1-2; at
+# 1.520 the plane cuts only the neck, final frame lift_z(1.520) = 1.5334)
+SEAM_Z = 1.520
 SEAM_RING_N = 160                              # vertices on the seam ring (plan §5.8 params)
 JSON_DECIMALS = 5                              # 1e-5 m = 10 µm (plan §5.8)
 
@@ -406,7 +409,7 @@ def set_scene_frame(frame):
 POINT_KEYS = {"head", "tail", "com_world", "center_world", "pivot_world", "joint", "jaw_pivot", "jaw_bone_head",
               "c", "centroid", "aabb", "points", "waypoints", "a", "b", "conus_tip", "thecal_end",
               "cervicomedullary_junction", "cmj_bible", "bounds", "origin", "offset", "axis_base", "axis_apex"}
-POINT_DICT_KEYS = {"landmarks", "measured", "contract_rb_1_2", "eye_centres", "valves"}
+POINT_DICT_KEYS = {"landmarks", "landmarks_rb", "measured", "contract_rb_1_2", "eye_centres", "valves"}
 
 
 def _is_pt(v):
@@ -430,7 +433,9 @@ def warp_json(data, _key=None, inverse=False):
                   and all(isinstance(q, (list, tuple)) and len(q) == 4 and _is_pt(q[:3]) for q in v)):
                 out[k] = [wp(q[:3]).tolist() + [q[3]] for q in v]     # (x, y, z, radius) rows
             elif k == "eyes" and isinstance(v, dict):
-                out[k] = {kk: (wp(vv).tolist() if _is_pt(vv) and kk in ("L", "R") else vv)
+                out[k] = {kk: (wp(vv).tolist() if _is_pt(vv) and kk in ("L", "R") else
+                               ({s: (wp(p).tolist() if _is_pt(p) else p) for s, p in vv.items()}
+                                if kk == "rb" and isinstance(vv, dict) else vv))
                           for kk, vv in v.items()}
             else:
                 out[k] = warp_json(v, k, inverse)

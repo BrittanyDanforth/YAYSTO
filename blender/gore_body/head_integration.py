@@ -22,7 +22,7 @@ The head project's skin SDF is authoritative above the jaw; ``body_skin.skin_sdf
 (B1) clips it under the jaw/occiput and smooth-unites it with the bible-placed
 body neck.  ``GB_Head`` is polygonised from that *same* combined field at the
 head project's resolution (1.2 mm), so head and neck are one surface; the only
-seam is the canonical ring at z = 1.485 m where ``GB_Head`` and ``GB_Body``
+seam is the canonical ring at z = gb_common.SEAM_Z (1.520 m authoring) where ``GB_Head`` and ``GB_Body``
 share 160 identical vertices with identical (analytic) normals (FB-1).
 
 Everything else of the head project (eyes, teeth, gums, tongue, lids, lips,

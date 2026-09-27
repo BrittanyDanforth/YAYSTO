@@ -28,7 +28,7 @@ stomach,aabb,0.038,-0.025,1.200,0.145,0.120,0.210,1,0,0,0,1,0,150
 bladder_empty,sphere,0.000,-0.030,0.898,0.050,0.050,0.050,1,0,0,0,1,0,50
 bladder_full,sphere,0.000,-0.035,0.943,0.100,0.100,0.100,1,0,0,0,1,0,50
 thyroid_lobe_L,ellipsoid,0.022,-0.028,1.500,0.020,0.018,0.050,1,0,0,0,1,0,9
-thyroid_isthmus,ellipsoid,0.000,-0.042,1.487,0.020,0.005,0.020,1,0,0,0,1,0,2
+thyroid_isthmus,ellipsoid,0.000,-0.039,1.487,0.020,0.005,0.020,1,0,0,0,1,0,2
 bowel_filler,aabb,0.000,-0.040,1.040,0.240,0.120,0.280,1,0,0,0,1,0,2200
 kidney_R,obb,-0.070,0.024,1.160,0.115,0.060,0.040,-0.258,-0.198,-0.946,0.804,-0.586,-0.097,150
 adrenal_R,ellipsoid,-0.040,0.030,1.235,0.030,0.010,0.050,1,0,0,0,1,0,5
@@ -36,14 +36,15 @@ thyroid_lobe_R,ellipsoid,-0.022,-0.028,1.500,0.020,0.018,0.050,1,0,0,0,1,0,9
 """
 # thyroid_lobe_R is the mirror of the left lobe (bible lists the left only).
 # Fix round 2: thyroid 5 mm and larynx 12 mm below the bible (viscera.LARYNX_DZ: submental plane under the
-# head project's low menton).
+# head project's low menton).  Fix round 3: larynx 7 mm, trachea top 4 mm, thyroid 3 mm further back
+# (viscera.LARYNX_DY: the head's menton is 8 mm behind RB; cervicomental angle).
 
 # name,radius,x1,y1,z1,x2,y2,z2,...  (RB §7.5)
 TUBE_CSV = """\
-trachea,0.010,0.000,-0.030,1.508,0.000,-0.018,1.455,-0.003,0.008,1.402
+trachea,0.010,0.000,-0.026,1.496,0.000,-0.016,1.455,-0.003,0.008,1.402
 bronchus_R,0.0075,-0.003,0.008,1.402,-0.028,0.012,1.380
 bronchus_L,0.006,-0.003,0.008,1.402,0.042,0.020,1.380
-oesophagus,0.009,0.000,-0.012,1.508,0.004,0.012,1.450,0.000,0.022,1.415,0.002,0.024,1.355,0.012,0.012,1.310,0.022,-0.008,1.280,0.030,-0.018,1.255
+oesophagus,0.009,0.000,-0.007,1.508,0.004,0.012,1.450,0.000,0.022,1.415,0.002,0.024,1.355,0.012,0.012,1.310,0.022,-0.008,1.280,0.030,-0.018,1.255
 pancreas,0.012,-0.035,-0.035,1.160,-0.005,-0.050,1.180,0.025,-0.045,1.195,0.090,0.015,1.215
 brainstem,0.011,0.000,0.030,1.619,0.000,0.025,1.633,0.000,0.020,1.647,0.000,0.014,1.659,0.000,0.010,1.682
 cauda_equina,0.007,0.000,0.017,1.180,0.000,0.013,1.161,0.000,0.008,1.124,0.000,0.011,1.087,0.000,0.022,1.050,0.000,0.035,0.995
@@ -150,7 +151,7 @@ ORGANS = [
 ORGAN_BY_ID = {o["id"]: o for o in ORGANS}
 
 # Added primitives (B0 fit, E) for records without a bible primitive
-PRIMITIVES["larynx"] = dict(shape="ellipsoid", c=(0.0, -0.040, 1.516), size=(0.042, 0.034, 0.050),
+PRIMITIVES["larynx"] = dict(shape="ellipsoid", c=(0.0, -0.033, 1.504), size=(0.042, 0.034, 0.050),
                             u=(1, 0, 0), v=(0, 1, 0), w=(0, 0, 1), mass_g=30.0, tag="E fit=B0")
 PRIMITIVES["omentum"] = dict(shape="aabb", c=(0.0, -0.085, 1.035), size=(0.260, 0.010, 0.170),
                              u=(1, 0, 0), v=(0, 1, 0), w=(0, 0, 1), mass_g=300.0,

@@ -103,6 +103,18 @@ def _parse(csv_text, with_tag=False):
 LANDMARKS = _parse(LANDMARK_CSV)
 LANDMARKS_EXTRA = _parse(LANDMARK_EXTRA_CSV, with_tag=True)
 
+# Documented deviations from RB §7.1 (tag "D"): the RB value stays in LANDMARKS_RB and is exported under
+# landmarks.json 'landmarks_rb'.  Fix round 3: the head project's menton lies 8 mm behind the RB menton, so the
+# larynx sits 12 mm lower (viscera.LARYNX_DZ) and 7 mm further back (viscera.LARYNX_DY) than R05/RB, which gives the
+# chin a submental plane / cervicomental angle; its skin landmarks follow the modelled skin.
+DEVIATIONS = {
+    "laryngeal_prominence": (0.000, -0.0507, 1.524),
+    "cricoid": (0.000, -0.0476, 1.4985),
+}
+LANDMARKS_RB = {k: dict(LANDMARKS[k]) for k in DEVIATIONS}
+for _k, _p in DEVIATIONS.items():
+    LANDMARKS[_k] = dict(LANDMARKS[_k], p=tuple(_p), tag="D")
+
 
 def all_landmarks(include_right=True, include_extra=True):
     """``{name: (x, y, z)}`` for every landmark; ``_L`` rows also produce mirrored ``_R`` rows.

@@ -647,7 +647,7 @@ def pericardium_sdf(x, y, z):
 # Airway: trachea (C-rings, membranous back wall) + main bronchi, one Y-shaped hollow solid
 # [R05 §10.1: cricoid -> carina 11 cm, outer 20 x 18 mm, wall ~3 mm, 16-20 C-rings ~4 mm]
 # ===========================================================================
-TRACHEA_PTS = [(0.000, -0.0295, 1.4925), (0.000, -0.018, 1.455), (-0.003, 0.008, 1.402)]
+TRACHEA_PTS = [(0.000, -0.0255, 1.4925), (0.000, -0.016, 1.455), (-0.003, 0.008, 1.402)]   # (top 4 mm back, round 3)
 BRONCHUS_PTS = {"R": [(-0.003, 0.008, 1.402), (-0.028, 0.012, 1.380), (-0.043, 0.016, 1.371)],
                 "L": [(-0.003, 0.008, 1.402), (0.042, 0.020, 1.380), (0.051, 0.023, 1.377)]}
 AIR_R = {"trachea": (0.0100, 0.0090), "R": (0.0075, 0.0070), "L": (0.0062, 0.0058)}
@@ -731,14 +731,20 @@ def airway_outer(x, y, z):
 # ===========================================================================
 LARYNX_SUB = {"thyroid_cartilage": 1, "cricoid": 2, "soft": 3, "lumen": 4}
 LARYNX_DZ = -0.012          # m, larynx below the R05 height (see above)
+# Fix round 3: and LARYNX_DY = 7 mm further back.  The head project's chin (menton y -0.060) lies 8 mm behind the RB
+# menton (-0.068), so with the R05 prominence the neck front stood as far forward as the chin (no cervicomental
+# angle).  The prominence skin is now at y -0.052 (a thin 3 mm cover over the laminae); the cricoid, the upper
+# trachea and the thyroid follow, the pharyngo-oesophageal junction behind the cricoid is flattened to fit.
+LARYNX_DY = 0.0085          # m, larynx behind the R05 position
 THYROID_DZ = -0.005         # m, thyroid gland follows (isthmus stays under the cricoid)
+THYROID_DY = 0.003          # m
 
 
 def _larynx_parts(x, y, z):
     ax = np.abs(x)
     # thyroid cartilage: two laminae meeting in front at ~90 deg (the prominence), 2.5 mm plates
-    dz = LARYNX_DZ
-    yp, zc = -0.056, 1.531 + dz
+    dz, dy = LARYNX_DZ, LARYNX_DY
+    yp, zc = -0.056 + dy, 1.531 + dz
     # the anterior angle is most prominent above (the Adam's apple) and recedes ~6 mm toward the inferior
     # border, where the cricothyroid membrane and the cricoid arch lie deeper still
     ypz = yp + 0.006 * sstep(1.531 + dz, 1.516 + dz, z)
@@ -752,7 +758,7 @@ def _larynx_parts(x, y, z):
     horn = capsule(ax, y, z, (0.020, yp + 0.029, zc + 0.010), (0.019, yp + 0.031, zc + 0.018), 0.0022)
     thyroid = smin(lam, horn, 0.002)
     # cricoid: low anterior arch, tall posterior lamina (signet ring)
-    cz, cy = 1.5105 + dz, -0.033
+    cz, cy = 1.5105 + dz, -0.033 + dy
     ring_o = np.sqrt((x / 0.0128) ** 2 + ((y - cy) / 0.0132) ** 2) - 1.0
     ring_i = np.sqrt((x / 0.0090) ** 2 + ((y - cy) / 0.0092) ** 2) - 1.0
     ring = np.maximum(ring_o * 0.012, -ring_i * 0.009)
@@ -762,18 +768,18 @@ def _larynx_parts(x, y, z):
     # mucosal/muscular tube (vocal folds, arytenoids, conus elasticus) between the cartilages
     # (the vestibule above the lowered thyroid notch leans back to the epiglottis: pre-epiglottic space and the
     #  thyrohyoid membrane lie in front of it, under the submental skin)
-    soft_o = chain(x, y, z, [(0.0, -0.0325, 1.505 + dz), (0.0, -0.0350, 1.528 + dz), (0.0, -0.026, 1.550)],
+    soft_o = chain(x, y, z, [(0.0, -0.0325 + dy, 1.505 + dz), (0.0, -0.0350 + dy, 1.528 + dz), (0.0, -0.026 + 0.5 * dy, 1.550)],
                    [0.0115, 0.0140, 0.0095])
     soft_o = smax(soft_o, np.maximum(1.5062 + dz - z, z - 1.552), 0.002)
     # epiglottis: a leaf rising behind the hyoid body (hyoid 0, -0.030, 1.556), behind the tongue base
-    epig = ell(x, y, z, (0.0, -0.026, 1.551), (0.010, 0.0030, 0.0080))       # tip 1.559 (fix round 2: 4 mm lower,
+    epig = ell(x, y, z, (0.0, -0.026 + 0.5 * dy, 1.551), (0.010, 0.0030, 0.0080))       # tip 1.559 (fix round 2: 4 mm lower,
     #                                                                   the dropped mouth floor exposed it at jaw_open_26)
     soft_o = smin(soft_o, epig, 0.003)
     # airway: subglottis -> glottis slit (rima ~ 8 x 16 mm) -> vestibule; closed at the inlet
     lz = np.clip((z - 1.505 - dz) / (0.050 + dz), 0, 1)
     rx = 0.0080 - 0.0045 * np.exp(-((z - 1.527 - dz) / 0.0035) ** 2)
     ry = 0.0085 - 0.0010 * np.exp(-((z - 1.527 - dz) / 0.0035) ** 2)
-    lumen = np.sqrt((x / rx) ** 2 + ((y - (-0.031 - 0.004 * lz)) / ry) ** 2) - 1.0
+    lumen = np.sqrt((x / rx) ** 2 + ((y - (-0.031 + dy - 0.004 * lz)) / ry) ** 2) - 1.0
     lumen = np.maximum(lumen * 0.006, np.maximum(1.5075 + dz - z, z - 1.545))
     return thyroid, cric, soft_o, lumen
 
@@ -796,7 +802,7 @@ def larynx_sub(v):
 # ===========================================================================
 # Oesophagus (collapsed, slit lumen) and thyroid
 # ===========================================================================
-OESO_PTS = [(0.000, -0.0125, 1.494), (0.004, 0.012, 1.450), (0.000, 0.022, 1.415), (0.002, 0.024, 1.355),
+OESO_PTS = [(0.000, -0.0070, 1.494), (0.004, 0.012, 1.450), (0.000, 0.022, 1.415), (0.002, 0.024, 1.355),
             (0.012, 0.012, 1.310), (0.022, -0.008, 1.280), (0.027, -0.014, 1.264)]
 
 
@@ -813,7 +819,8 @@ def _oeso_fields(x, y, z):
     ap = np.cross(Ti, lat)
     u, w = (rel * lat).sum(1), (rel * ap).sum(1)
     ra = 0.0100 + 0.0012 * t                                   # 20 x 15 mm collapsed, wider distally
-    rb = 0.0072 + 0.0010 * t
+    # (round 3: flattened to ~10 mm at the pharyngo-oesophageal junction behind the cricoid (C6), 15 mm below)
+    rb = 0.0072 + 0.0010 * t - 0.0022 * np.clip(1.0 - t / 0.08, 0.0, 1.0)
     outer = (np.sqrt((u / ra) ** 2 + (w / rb) ** 2) - 1.0) * rb
     lum = (np.sqrt((u / (ra - 0.0038)) ** 2 + (w / 0.0016) ** 2) - 1.0) * 0.0016
     ends = np.maximum(((np.stack([x, y, z], 1) - P[0]) @ unit(P[0] - P[1])),
@@ -849,11 +856,11 @@ def thyroid_sdf(x, y, z):
     trachea (impression) with the carotid sheath lateral [R05 §10.1]."""
     d = None
     for sx in (1.0, -1.0):
-        lobe = ell(x * sx, y, z, (0.0220, -0.0265, 1.505 + THYROID_DZ), (0.0102, 0.0096, 0.0262))
-        pole = ell(x * sx, y, z, (0.0170, -0.0245, 1.524 + THYROID_DZ), (0.0055, 0.0055, 0.0070))
+        lobe = ell(x * sx, y, z, (0.0220, -0.0265 + THYROID_DY, 1.505 + THYROID_DZ), (0.0102, 0.0096, 0.0262))
+        pole = ell(x * sx, y, z, (0.0170, -0.0245 + THYROID_DY, 1.524 + THYROID_DZ), (0.0055, 0.0055, 0.0070))
         lobe = smin(lobe, pole, 0.006)
         d = lobe if d is None else smin(d, lobe, 0.002)
-    isth = ell(x, y, z, (0.0, -0.0415, 1.492 + THYROID_DZ), (0.012, 0.0032, 0.0085))
+    isth = ell(x, y, z, (0.0, -0.0415 + THYROID_DY, 1.492 + THYROID_DZ), (0.012, 0.0032, 0.0085))
     d = smin(d, isth, 0.005)
     d = carve(d, _AIRB(x, y, z), 0.0012, 0.002)
     d = carve(d, _LARB(x, y, z), 0.0012, 0.002)
@@ -1733,7 +1740,7 @@ _GALB = boxed(gallbladder_sdf, (-0.100, -0.090, 1.150), (-0.020, 0.000, 1.250))
 _OMEB = boxed(omentum_sdf, (-0.140, -0.130, 0.930), (0.140, 0.010, 1.140))
 _AIRB = boxed(airway_outer, (-0.070, -0.050, 1.350), (0.075, 0.045, 1.520))
 _OESB = boxed(lambda x, y, z: _oeso_fields(x, y, z)[0], (-0.030, -0.040, 1.240), (0.055, 0.050, 1.520))
-_LARB = boxed(larynx_sdf, (-0.035, -0.070, 1.483), (0.035, -0.005, 1.570))
+_LARB = boxed(larynx_sdf, (-0.035, -0.070, 1.483), (0.035, 0.002, 1.570))
 _ADRB_L = boxed(adrenal_sdf("L"), *_pbox(OR.PRIMITIVES["adrenal_L"]["c"], (0.025, 0.020, 0.035)))
 _RIBT = rib_tubes_sdf
 _STERN = boxed(sternum_sdf, (-0.040, -0.110, 1.260), (0.040, -0.030, 1.470))
@@ -1767,7 +1774,7 @@ def organ_specs():
               diaphragm_sub))
     S.append(("airway", "trachea", airway_sdf, (np.array([-0.055, -0.045, 1.360]), np.array([0.062, 0.035, 1.512])),
               0.00065, 1400, None))
-    S.append(("larynx", "larynx", larynx_sdf, (np.array([-0.030, -0.066, 1.486]), np.array([0.030, -0.012, 1.565])),
+    S.append(("larynx", "larynx", larynx_sdf, (np.array([-0.030, -0.066, 1.486]), np.array([0.030, -0.004, 1.565])),
               0.0006, 900, larynx_sub))
     S.append(("oesophagus", "oesophagus", oesophagus_sdf, (np.array([-0.020, -0.030, 1.250]),
                                                            np.array([0.045, 0.040, 1.512])), 0.0007, 800,

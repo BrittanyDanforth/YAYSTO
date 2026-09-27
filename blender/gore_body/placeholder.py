@@ -12,7 +12,7 @@ What is real and what is a stand-in
   read-only on every build and moved into the body frame by (0, 0.020, 1.647).
 * **Body skin**: a smooth SDF mannequin built from the bible landmarks and
   girths [RB §7.1] (superellipse torso sections, tapered limb tubes, simple hands
-  and feet), joined to the head on the canonical seam ring at z = 1.485 (the
+  and feet), joined to the head on the canonical seam ring at z = SEAM_Z (the
   seam vertices of GB_Head and GB_Body are identical).  B1 replaces it.
 * **Inner layers**: muscle shell (skin SDF offset by skin + fat per region
   [RB §7.6]), a simplified but complete skeleton (every bone piece id of

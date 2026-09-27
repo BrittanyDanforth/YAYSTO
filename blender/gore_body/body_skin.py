@@ -186,6 +186,13 @@ def frame(a_axis, b_hint):
     return np.array([a, b, np.cross(a, b)])
 
 
+def _boxed_k(k, box):
+    """Blend radius ``k`` for a smooth union with a Box-bounded component; asserts the Box contract (k < margin: the
+    far-field bound of a component outside its box is >= margin, so a smaller blend never sees it)."""
+    assert float(np.max(k)) < box.margin, f"blend radius {float(np.max(k)):.4f} >= box margin {box.margin}"
+    return k
+
+
 class Box:
     """Axis-aligned box used to skip far points.
 
@@ -328,14 +335,22 @@ TORSO = np.array([
     (1.430, 0.146, -0.068, 0.114, 2.9, 2.6),     # shoulder girdle: clavicles in front, scapular spines behind
     (1.455, 0.136, -0.050, 0.106, 2.8, 2.5),     # jugular notch -0.048; T1-T3 spinous tips 8-12 mm deep
                                                  # (flat front: the chest wall rises flush to the clavicles)
-    (1.470, 0.102, -0.050, 0.100, 2.2, 2.8),     # scapular superior angles under trapezius
-    (1.485, 0.063, -0.054, 0.085, 2.1, 2.2),     # seam plane (plan D19)
-    (1.515, 0.0565, -0.057, 0.066, 2.1, 2.2),    # neck 38 cm: 12 x 11.7 (front -0.055 / back +0.063)
-    (1.540, 0.0535, -0.044, 0.066, 2.1, 2.2),     # C7 spinous skin 0.075 at 1.532 (bump added); the front
-    (1.565, 0.057, -0.032, 0.075, 2.1, 2.2),     # recedes under the jaw: submental surface / cervicomental
-    (1.595, 0.059, -0.024, 0.089, 2.1, 2.3),     # angle ~110 deg with the chin (menton -0.068, 1.550)
-    (1.625, 0.060, -0.014, 0.098, 2.1, 2.4),     # nape: suboccipital mass under the occiput
-    (1.660, 0.058, -0.006, 0.100, 2.1, 2.4),
+    # neck column (fix round 3, critics r2 'vertical cylinder with a collar'): the column narrows smoothly from the
+    # shoulder girdle into the neck (no shelf; the trapezius sweep draws the shoulder slope over it), its front
+    # recedes under the jaw (the submental fill draws the chin-throat plane in front of it) and, just below the
+    # mandible, the anterolateral sector is pinched (NECK_PINCH) so the jaw border overhangs the neck with a shadowed
+    # under-jaw plane.  The laryngeal prominence is a V ridge (LARYNX_RIDGE), not a primitive.
+    (1.470, 0.098, -0.048, 0.099, 2.4, 2.6),
+    (1.485, 0.074, -0.047, 0.090, 2.2, 2.4),
+    (1.500, 0.0620, -0.0470, 0.0830, 2.1, 2.3),
+    (1.515, 0.0575, -0.0460, 0.0770, 2.1, 2.2),   # neck 38 cm: tape just below the laryngeal prominence
+    (1.530, 0.0555, -0.0440, 0.0730, 2.1, 2.2),   # C7 spinous skin 0.075 at 1.532 (bump in _torso_profile)
+    (1.545, 0.0535, -0.0400, 0.0730, 2.0, 2.2),   # throat: the submental plane leaves the column here
+    (1.560, 0.0540, -0.0300, 0.0770, 2.0, 2.2),   # under the jaw border (column behind the submental fill)
+    (1.580, 0.0570, -0.0200, 0.0830, 2.0, 2.3),
+    (1.600, 0.0590, -0.0140, 0.0900, 2.1, 2.3),   # nape: suboccipital mass under the occiput
+    (1.625, 0.0600, -0.0100, 0.0980, 2.1, 2.4),
+    (1.660, 0.0580, -0.0060, 0.1000, 2.1, 2.4),
 ])
 TORSO_Z0, TORSO_Z1 = 0.862, 1.655
 
@@ -466,10 +481,39 @@ def _torso_profile(Z, TH):
     trunk = sstep(1.53, 1.47, Z)                    # reliefs belong to the trunk, not the neck
     rel = wf * (_pec_relief(xs, Z) + _abdomen_relief(xs, Z)) + wb * _back_relief(xs, Z)
     rel = rel * trunk + ws * _side_relief(ys, Z) * trunk
-    # neck: laryngeal prominence handled as a primitive; nuchal furrow at the back midline
-    nuchal = -0.0025 * gauss(xs, 0.010) * band(Z, 1.55, 1.62, 0.03) * wb
-    nuchal = nuchal + 0.0062 * gauss(xs, 0.016) * gauss(Z - 1.528, 0.012) * wb       # C7 vertebra prominens (fix round 1: 12 mm tall knob, not a 36 mm roll up the nape)
-    return R0 + rel + nuchal
+    return R0 + rel + neck_relief(xs, TH, Z, wf, wb)
+
+
+# laryngeal prominence (skin, V ridge over the thyroid laminae) and the throat above it: height (m) over z
+LARYNX_RIDGE_Z = (1.492, 1.502, 1.512, 1.5195, 1.5245, 1.5305, 1.5380)
+LARYNX_RIDGE_H = (0.0, 0.0012, 0.0040, 0.0066, 0.0078, 0.0032, 0.0)
+LARYNX_RIDGE_W = 0.0200                    # half width of the ridge base (the laminae meet at ~90 deg)
+# anterolateral pinch of the column under the mandible (m): the jaw border overhangs the neck by 5-8 mm there
+NECK_PINCH_Z = (1.505, 1.525, 1.545, 1.562, 1.585, 1.610)
+NECK_PINCH_H = (0.0, 0.0020, 0.0050, 0.0062, 0.0035, 0.0)
+
+
+def neck_relief(xs, TH, Z, wf, wb):
+    """Radial relief of the neck column (m): laryngeal V ridge, anterolateral pinch under the jaw, posterior
+    triangle hollow, nuchal furrow and the C7 vertebra prominens.  ``xs``: base-section x, ``TH``: polar angle
+    (0 lateral, +90 front, -90 back), ``wf``/``wb``: front / back weights."""
+    ax = np.abs(xs)
+    # Adam's apple: two laminae meeting in a rounded V (apex r ~3 mm), deepest at the prominence, receding toward
+    # the cricoid; a shallow notch dip above it (thyroid notch / thyrohyoid membrane)
+    h = sinterp(Z, LARYNX_RIDGE_Z, LARYNX_RIDGE_H) * band(Z, LARYNX_RIDGE_Z[0], LARYNX_RIDGE_Z[-1], 0.002)
+    tent = np.clip(1.0 - np.sqrt(ax * ax + 0.0030 ** 2) / LARYNX_RIDGE_W, 0.0, 1.0) ** 1.6
+    lar = h * tent * sstep(0.35, 0.75, np.sin(TH))
+    # anterolateral pinch (submandibular region recedes under the jaw border)
+    pinch = -sinterp(Z, NECK_PINCH_Z, NECK_PINCH_H) * gauss(wrap(TH - np.radians(48.0)), np.radians(30.0))
+    # suboccipital / splenius mass under the mastoids and the occiput: the upper neck widens into the skull base
+    # (the head's own surface there) so the head/body join shows no step
+    sub = 0.0065 * gauss(wrap(TH + np.radians(48.0)), np.radians(34.0)) * sstep(1.565, 1.600, Z)
+    # posterior triangle: soft hollow behind the SCM, above the clavicle, in front of the trapezius
+    tri = -0.0032 * gauss(wrap(TH - np.radians(8.0)), np.radians(26.0)) * gauss(Z - 1.498, 0.016)
+    # nuchal furrow up the back midline and the C7 vertebra prominens (a soft 12 mm knob)
+    nuchal = -0.0022 * gauss(xs, 0.011) * band(Z, 1.55, 1.62, 0.03) * wb
+    nuchal = nuchal + 0.0042 * gauss(xs, 0.015) * gauss(Z - 1.529, 0.010) * wb
+    return lar + pinch + sub + tri + nuchal
 
 
 TORSO_TUBE = None
@@ -561,6 +605,48 @@ def _fold(ax, y, z, a, b, half_thick, half_height, up=(0.0, 0.0, 1.0)):
     return sd_oellipsoid(ax, y, z, 0.5 * (a + b), (0.5 * L + 0.012, half_height, half_thick), axes)
 
 
+# Upper trapezius ridge (left, body frame, authoring): the top line of the muscle from where it leaves the neck column
+# (behind the SCM) out over the shoulder to the acromion.  In front view the line is concave (steep beside the neck,
+# ~11 deg over the lateral shoulder), in side view it runs forward and down to the lateral clavicle [RB §7.1
+# acromion (0.200, 0.015, 1.458); lateral neck point ~1.50].  Section (fix round 3): a tilted ellipse hanging from the
+# ridge - its long axis runs down and BACK (TRAPEZIUS_TILT below horizontal) so the posterior flank of the muscle
+# slides into the upper back without a hump, while the front drops steeply into the supraclavicular fossa.
+# Rows: ridge point, (long semi-axis, short semi-axis) (m).
+TRAPEZIUS_RIDGE = [(0.040, 0.052, 1.524), (0.060, 0.046, 1.501), (0.085, 0.037, 1.4845), (0.115, 0.028, 1.4735),
+                   (0.145, 0.021, 1.4660), (0.177, 0.016, 1.4595)]
+TRAPEZIUS_AXES = [(0.020, 0.010), (0.030, 0.014), (0.036, 0.016), (0.036, 0.016), (0.032, 0.015), (0.024, 0.013)]
+TRAPEZIUS_TILT = 55.0
+_TRAP = None
+
+
+def _trapezius_tube():
+    """Swept tilted-ellipse section hanging from ``TRAPEZIUS_RIDGE`` (cached skeleton.Tube; section coordinates:
+    n up, b anterior)."""
+    global _TRAP
+    if _TRAP is None:
+        import skeleton as SK
+        R = np.asarray(TRAPEZIUS_RIDGE, float)
+        AX = np.asarray(TRAPEZIUS_AXES, float)
+        tk = np.linspace(0.0, 1.0, len(R))
+        phi = math.radians(TRAPEZIUS_TILT)
+        un, ub = -math.sin(phi), -math.cos(phi)          # long axis: down and back
+        vn, vb = math.cos(phi), -math.sin(phi)           # short axis
+        # centre of the ellipse relative to its top-most point (the ridge), per station
+        ext = np.sqrt((AX[:, 0] * un) ** 2 + (AX[:, 1] * vn) ** 2)
+        top_b = (AX[:, 0] ** 2 * un * ub + AX[:, 1] ** 2 * vn * vb) / ext
+
+        def sec(n, b, t):
+            a1 = np.interp(t, tk, AX[:, 0])
+            a2 = np.interp(t, tk, AX[:, 1])
+            dn = n + np.interp(t, tk, ext)
+            db = b + np.interp(t, tk, top_b)
+            return SK.ell2(dn * un + db * ub, dn * vn + db * vb, a1, a2)
+        # N = up; B = T x N points anterior (T runs lateral)
+        _TRAP = SK.Tube(R, sec, ref_fn=lambda P: np.array([0.0, 0.0, 1.0]), step=0.004, centripetal=True)
+        assert _TRAP.B[len(_TRAP.B) // 2][1] < 0.0, "trapezius section: B must point anterior (-y)"
+    return _TRAP
+
+
 def _shoulder(ax, y, z):
     """Deltoid cap, trapezius, clavicle, axillary folds (left, |x|)."""
     delt_axes = frame(ARM_D, ARM_LAT)
@@ -576,15 +662,9 @@ def _shoulder(ax, y, z):
     th = np.arctan2(-q[..., 1], q @ ARM_LAT)
     heads = sum(0.0013 * gauss(wrap(th - np.radians(t0)), np.radians(9.0)) for t0 in (48.0, -50.0))
     delt = delt + heads * band(sa, -0.01, 0.13, 0.03)
-    # upper trapezius: broad slope from the nape to the acromion
-    # the lateral neck point sits at z ~1.49 (between the jugular notch 1.455 and C7 1.532) and the
-    # shoulder line falls ~11 deg to the acromion; below the seam plane beyond |x| 0.075 (plan D19 ring)
-    # upper trapezius: rises from the acromion up the side of the neck, so the neck-shoulder line is one
-    # smooth slope (top line 1.525 at |x| 0.045 -> 1.497 at 0.07 -> 1.478 at 0.10 -> 1.460 at the acromion)
-    # instead of a flat shelf with the neck standing on it; below the seam plane beyond |x| ~0.08 (D19 ring)
-    trap = sd_polyline(ax, y, z, [(0.042, 0.047, 1.502), (0.069, 0.042, 1.479), (0.100, 0.038, 1.458),
-                                  (0.140, 0.031, 1.449), (0.186, 0.022, 1.444)],
-                       [0.020, 0.021, 0.021, 0.019, 0.016], k=0.02)
+    # upper trapezius: one continuous swept mass from the nape to the acromion (TRAPEZIUS_RIDGE), concave upper
+    # edge in front view; replaces the capsule chain + slope + nape + superior-angle blobs of rounds 1-2
+    trap = _trapezius_tube()(ax, y, z)
     # clavicle: soft subcutaneous ridge over B3's bone (its waypoints), bone half-depth + skin + subcutis
     clav = sd_polyline(ax, y, z, [np.array(p) + np.array([0.0, -0.0015, 0.0015]) for p in BN_CLAVICLE],
                        [0.0088, 0.0074, 0.0070, 0.0080], k=0.014)    # (round 2: 1.5 mm lower ridge; the pad keeps cover)
@@ -602,23 +682,6 @@ def _shoulder(ax, y, z):
     # one rounded mass that wraps the bone (the spine is palpable, never a shelf) [RB §7.6: 5-8 mm over it]
     sup = _fold(ax, y, z, (0.078, 0.094, 1.450), (0.184, 0.046, 1.458), 0.0125, 0.020)
     trap = smin(trap, sup, 0.022)
-    # upper trapezius + levator scapulae over the superior angle of the scapula (it lies 1-2 cm deep, never
-    # palpable as a knob); a broad mass blended into the slope, kept under the D19 seam plane (top 1.479)
-    sang = sd_oellipsoid(ax, y, z, (0.082, 0.070, 1.449), (0.034, 0.030, 0.026), np.eye(3))
-    trap = smin(trap, sang, 0.022)
-    # nape slope: the upper trapezius fibres run from the ligamentum nuchae down and out over the superior
-    # angle, so behind the neck the surface falls in one ~40 deg slope from the nape to the upper back
-    # (fix round 2: the superior-angle mass alone left a 1 cm 'collar ledge' at the neck base behind)
-    nape = sd_oellipsoid(ax, y, z, (0.046, 0.074, 1.480), (0.034, 0.016, 0.028), frame((0.6, 0.25, -0.75),
-                                                                                       (0.0, 1.0, 0.0)))
-    trap = smin(trap, nape, 0.024)
-    # neck-shoulder slope at mid-depth (fix round 1: the torso's top station left a flat shelf at z ~1.47 with the
-    # neck column standing on it - a horizontal 'collar' crease around the neck base - and a 7 mm dip between the
-    # shelf and the acromion pad that printed a wavy line along the top of the shoulder).  The upper trapezius
-    # over levator scapulae and the scalenes runs as one straight, slightly rounded slope from the side of the
-    # neck (skin 1.504 at |x| 0.062) down to the acromion (1.474 at 0.170), ~16 deg below horizontal
-    slope = sd_capsule(ax, y, z, (0.068, 0.010, 1.4705), (0.170, 0.010, 1.4620), 0.0110, 0.0110)
-    trap = smin(trap, slope, 0.020)
     # teres major / infraspinatus lower belly: fills the posterior axillary junction (no pit behind the arm)
     teres = _fold(ax, y, z, (0.105, 0.098, 1.360), GH + 0.070 * ARM_D + 0.020 * ARM_LAT + np.array([0.0, 0.030, 0.0]),
                   0.018, 0.030)
@@ -1072,40 +1135,89 @@ FOOT_BOX = Box((0.02, -0.17, -0.01), (0.19, 0.14, 0.24), margin=0.03)
 # ===========================================================================
 # Neck primitives
 # ===========================================================================
+# Sternocleidomastoid (left, fix round 3): from the mastoid process down, forward and medially around the neck to
+# the manubrium (sternal head: a cord-like tendon beside the jugular notch) and to the medial third of the clavicle
+# (clavicular head); the lesser supraclavicular fossa stays between the two heads.  Guide rows: (z, polar angle about
+# the neck column axis (deg; 0 lateral, 90 front), height of the belly above the column surface (m), section half
+# width, half thickness).  The centreline is projected onto the torso tube (the neck column) at first use.
+SCM_STERNAL = [(1.606, -27.0, 0.0008, 0.0080, 0.0062), (1.585, -8.0, 0.0026, 0.0105, 0.0064),
+               (1.556, 16.0, 0.0036, 0.0120, 0.0062), (1.527, 38.0, 0.0040, 0.0115, 0.0060),
+               (1.500, 55.0, 0.0040, 0.0095, 0.0056), (1.478, 67.0, 0.0038, 0.0072, 0.0052),
+               (1.462, 74.0, 0.0028, 0.0058, 0.0048)]
+SCM_CLAVICULAR = [(1.540, 30.0, 0.0010, 0.0070, 0.0045), (1.510, 37.0, 0.0024, 0.0085, 0.0046),
+                  (1.483, 42.0, 0.0028, 0.0080, 0.0044), (1.463, 45.0, 0.0020, 0.0070, 0.0040)]
+_SCM = {}
+
+
+def _column_radius(z, th):
+    """Radius (m) of the torso tube (neck column) surface along the horizontal ray at height z, polar angle th."""
+    tube = _torso_tube()
+    d = np.array([math.cos(th), -math.sin(th), 0.0])
+    lo, hi = 0.0, 0.25
+    for _ in range(40):
+        m = 0.5 * (lo + hi)
+        p = m * d
+        if tube._eval(np.array([p[0]]), np.array([p[1]]), np.array([z]))[0] < 0.0:
+            lo = m
+        else:
+            hi = m
+    return 0.5 * (lo + hi)
+
+
+def _scm_tube(rows):
+    """skeleton.Tube along the SCM guide rows (cached per table)."""
+    key = id(rows)
+    if key not in _SCM:
+        import skeleton as SK
+        R = np.asarray(rows, float)
+        C = []
+        for z, deg, proud, _hw, ht in R:
+            th = math.radians(deg)
+            r = _column_radius(z, th) + proud - ht
+            C.append((r * math.cos(th), -r * math.sin(th), z))
+        C = np.asarray(C)
+        tk = np.linspace(0.0, 1.0, len(R))
+
+        def sec(n, b, t):
+            return SK.ell2(n, b, np.interp(t, tk, R[:, 4]), np.interp(t, tk, R[:, 3]))
+
+        def radial(P):
+            r = np.stack([P[:, 0], P[:, 1], np.zeros(len(P))], 1)
+            return r / np.maximum(np.linalg.norm(r, axis=1, keepdims=True), 1e-9)
+        _SCM[key] = SK.Tube(C, sec, ref_fn=radial, step=0.004, centripetal=True)
+    return _SCM[key]
+
+
+# Submental plane (fix round 3): the chin-throat surface runs from under the menton back and DOWN to the throat
+# point above the laryngeal prominence (a plane through SUBMENTAL_T and SUBMENTAL_M in the midline), so the chin
+# meets the neck in a cervicomental angle of ~110-120 deg (measured to the anterior neck below the larynx) instead of
+# the head's horizontal chin underside meeting a vertical neck (the 'pouch' + crease of rounds 1-2).  The fill is the
+# tissue behind that plane between the mandible's two halves; it narrows laterally into the pinched column.
+SUBMENTAL_T = (-0.0420, 1.5340)            # (y, z) throat point (skin over the hyoid / thyrohyoid membrane)
+SUBMENTAL_M = (-0.0610, 1.5445)            # (y, z) under the menton (head chin bottom: y -0.060, z 1.544)
+
+
+def submental_fill(ax, y, z):
+    """SDF of the submental tissue wedge behind the submental plane (left, |x|)."""
+    ty, tz = SUBMENTAL_T
+    my, mz = SUBMENTAL_M
+    u = np.array([my - ty, mz - tz])
+    u = u / np.linalg.norm(u)
+    n = np.array([u[1], -u[0]])                  # outward normal: anterior-inferior
+    if n[1] > 0.0:
+        n = -n
+    plane = (y - ty) * n[0] + (z - tz) * n[1]
+    w = 0.021 + 0.50 * np.maximum(y + 0.062, 0.0)
+    d = smax(plane, ax - w, 0.008)
+    d = smax(d, z - 1.556, 0.006)
+    d = smax(d, y + 0.022, 0.008)                # only in front of the column (the throat)
+    return smax(d, -0.066 - y, 0.004)
+
+
 def _neck_parts(ax, y, z):
-    """Sternocleidomastoid ridges and the laryngeal prominence (0, -0.060, 1.515).
-
-    Fix round 2: the larynx (B4, ``viscera.LARYNX_DZ``) sits 10 mm below RB §7.1 so it lies ~2.2 cm under
-    the head project's menton; the skin prominence is a narrow keel over the thyroid laminae (a lean
-    man's Adam's apple, 24 mm wide, ~4 mm proud of the neck) instead of the round 35 mm ellipsoid that
-    filled the space under the chin and read as a pouch."""
-    scm = sd_capsule(ax, y, z, (0.017, -0.045, 1.463), (0.057, 0.022, 1.600), 0.0070, 0.0115)
-    # splenius capitis + upper trapezius under the occiput: the neck behind the ear is as wide as the mastoids
-    # and rises into the superior nuchal line (fix round 2: the thin neck column left a step under the occiput)
-    nuchal = sd_oellipsoid(ax, y, z, (0.034, 0.042, 1.568), (0.021, 0.016, 0.052), np.eye(3))
-    scm = smin(scm, nuchal, 0.020)
-    # keel: the thyroid laminae meet in front at ~90 deg, so the skin over them is a rounded wedge, deepest
-    # at the superior notch level and receding toward the cricoid (skin -0.054 at 1.504)
-    lar = sd_oellipsoid(ax, y, z, (0.0, -0.0460, 1.5200), (0.0150, 0.0140, 0.0180), np.eye(3))
-    wedge = 0.7071 * ax - 0.7071 * (y + 0.0600) - 0.0040            # 90 deg V, apex 4 mm rounded
-    lar = np.maximum(lar, wedge)
-    return scm, lar
-
-
-# Submental plane: in front of the neck, between the thyroid notch and the chin, the body neck may not reach
-# further forward than SUBMENTAL_Y(z) (body frame).  With the menton at z 1.544 / y -0.065 this leaves a
-# 2-2.5 cm submental plane back to the cervical point (y ~ -0.045) and a cervicomental angle of ~110 deg
-# before the neck front runs down over the prominence (fix round 2; critics: pouch / crease under the chin).
-SUBMENTAL_Z = (1.522, 1.530, 1.536, 1.542, 1.548, 1.560)
-SUBMENTAL_Y = (-0.080, -0.0605, -0.0545, -0.0480, -0.0440, -0.0420)
-
-
-def submental_limit(ax, y, z):
-    """SDF-like limit (positive in front of the allowed neck front, i.e. to be carved) under the chin; no
-    effect outside z 1.505-1.585 and beyond |x| 0.055 (the submandibular sides are shaped by the neck tube)."""
-    yf = sinterp(z, SUBMENTAL_Z, SUBMENTAL_Y) + 0.020 * (ax / 0.05) ** 2
-    lat = sstep(0.055, 0.035, ax) * sstep(1.505, 1.522, z) * sstep(1.585, 1.570, z)
-    return (yf - y) * lat - (1.0 - lat) * 0.05
+    """Sternocleidomastoid (sternal + clavicular heads) and the submental fill."""
+    scm = smin(_scm_tube(SCM_STERNAL)(ax, y, z), _scm_tube(SCM_CLAVICULAR)(ax, y, z), 0.004)
+    return scm, submental_fill(ax, y, z)
 
 
 # ===========================================================================
@@ -1186,15 +1298,17 @@ def body_components(x, y, z):
     # posterior iliac crest + PSIS: the crest runs 7-12 mm under the skin behind (erector spinae, thoracolumbar
     # fascia and the lumbar fat pad over it) [RB §7.6]; a broad soft roll along the crest keeps that cover
     # without a bone-shaped ridge (the thin bone pad alone left sharp 'belt' ridges on the lower back)
-    lb = Box((0.0, 0.02, 0.95), (0.16, 0.16, 1.12), margin=0.02)
+    # (fix round 3: the box margin must exceed the blend radius - with margin 0.02 < k 0.04 the far-field bound
+    # entered the blend and printed a 0.95 mm step, the 'belt line' across the back at z 1.140)
+    lb = Box((0.0, 0.02, 0.95), (0.16, 0.16, 1.12), margin=0.05)
     roll = lb.run(lambda a, b, c: sd_capsule(a, b, c, (0.044, 0.068, 1.006), (0.108, 0.046, 1.068), 0.027, 0.027),
                   ax, y, z)
-    out["torso"] = smin(out["torso"], roll, 0.040)
+    out["torso"] = smin(out["torso"], roll, _boxed_k(0.040, lb))
     sh = Box((0.0, -0.10, 1.25), (0.30, 0.10, 1.53), margin=0.05)
     delt, trap, clav, afold, pfold = sh.run_multi(_shoulder, ax, y, z)[:5]
     out.update(deltoid=delt, trapezius=trap, clavicle=clav, ant_fold=afold, post_fold=pfold)
-    nk = Box((0.0, -0.08, 1.43), (0.08, 0.05, 1.62), margin=0.03)
-    out["scm"], out["larynx"] = nk.run_multi(_neck_parts, ax, y, z)[:2]
+    nk = Box((0.0, -0.08, 1.44), (0.085, 0.06, 1.625), margin=0.03)
+    out["scm"], out["submental"] = nk.run_multi(_neck_parts, ax, y, z)[:2]
     out["arm"] = _arm_tube()(ax, y, z)
     out["hand"] = _hand_box().run(_hand, ax, y, z)
     out["leg"] = _leg_tube()(ax, y, z)
@@ -1218,22 +1332,14 @@ def union_components(c, off=None, kplus=0.0):
     o = off or {}
     g = {k: (v + o.get(k, 0.0) if not (k.endswith("_k") or k.startswith("_")) else v) for k, v in c.items()}
     K = kplus
-    trunk = smin(g["torso"], g["scm"], 0.016 + K)
-    trunk = smin(trunk, g["larynx"], 0.006 + K)
-    # submental plane / cervicomental angle (applied before the head is united in skin_sdf)
-    ax_ = np.abs(g["_x"])
-    trunk = smax(trunk, submental_limit(ax_, g["_y"], g["_z"]) - K, 0.005 + K)
-    # softer neck / shoulder junction (round 2), tapering back above the neck base (fix round 1: the 44 mm blend
-    # up the whole neck bulged the sides of the neck at the tape level: neck girth 41.3 cm vs RB 38)
-    trunk = smin(trunk, g["trapezius"], 0.028 + 0.016 * sstep(1.455, 1.49, g["_z"]) * sstep(1.530, 1.500, g["_z"]) + K)
+    trunk = smin(g["torso"], g["submental"], 0.008 + K)
+    trunk = smin(trunk, g["scm"], 0.009 + K)
+    # neck / shoulder junction: the trapezius sweep melts into the neck column over >= 28 mm (a concave fillet, the
+    # neck-shoulder line) and into the chest wall; no planar height cap any more (fix round 3: the seam moved up
+    # into the neck column, gbc.SEAM_Z, so the shoulder top rises freely)
+    trunk = smin(trunk, g["trapezius"], 0.030 + K)
     trunk = smin(trunk, g["clavicle"], 0.028 + K)
-    # D19 seam plane (z 1.485): outside the neck column the shoulder / trapezius top must stay below it, or the
-    # seam cut leaves a thin tongue of skin above the plane that the canonical 160-vertex ring does not follow
-    # (fix round 1: a 4-vertex hole on the trapezius top at |x| 0.09-0.11 in two builds).  A soft height cap
-    # 3 mm under the plane beyond |x| 0.09, blended over 14 mm so the shoulder top stays rounded (a 4 mm blend
-    # printed a plateau with a rim); the neck column is < 0.07 wide there.
-    cap = (g["_z"] - (SEAM_Z - 0.0030 - K)) * sstep(0.070, 0.090, ax_) - 0.05 * sstep(0.090, 0.070, ax_)
-    trunk = smax(trunk, cap, 0.014)
+    ax_ = np.abs(g["_x"])
     # supraclavicular fossa (fix round 1): behind the medial two thirds of the clavicle, between the SCM and the
     # trapezius, the top of the shoulder sinks into a soft groove instead of the torso tube's flat top (whose
     # square front edge read as a collar ledge around the neck base).  A smooth inward displacement (gaussian
@@ -1279,8 +1385,11 @@ def head_clip_z(x, y):
     # polar angle about the point between the mandibular angles: 0 = straight ahead (menton), 90 deg = at
     # the angle (gonion), > 90 deg = behind the ramus, under the ear, nape
     ang = np.degrees(np.arctan2(ax, -(y - 0.004)))
+    # (fix round 3: 6-16 mm lower behind the ramus so the head keeps the underside of its mastoid / occiput curvature
+    # and the body neck, widened there to the head's own surface, meets it without the 'cap edge' crease that ran
+    # from behind the ear down to the nape)
     return sinterp(ang, [0.0, 25.0, 50.0, 70.0, 85.0, 100.0, 125.0, 150.0, 180.0],
-                   [1.5415, 1.5425, 1.5465, 1.5515, 1.5595, 1.570, 1.598, 1.614, 1.622])
+                   [1.5415, 1.5425, 1.5465, 1.5515, 1.5595, 1.564, 1.582, 1.596, 1.604])
 
 
 def _head_part(x, y, z):
@@ -1316,7 +1425,7 @@ def skin_sdf(x, y, z):
 # Tissue thickness [RB §7.6] and skin tension lines [RB §2.3.1]
 # ===========================================================================
 FAT_SCALE = LM.BODY_FAT_PCT / 15.0          # fat map is for 15 % body fat (tissue.FAT_MM)
-GROUPS = {"torso": ("torso", "scm", "larynx", "trapezius", "clavicle", "ant_fold", "post_fold", "pad_trunk"),
+GROUPS = {"torso": ("torso", "scm", "submental", "trapezius", "clavicle", "ant_fold", "post_fold", "pad_trunk"),
           "glute": ("glute",), "arm": ("arm", "deltoid"), "hand": ("hand",), "leg": ("leg", "pad_leg"),
           "foot": ("foot",)}
 
