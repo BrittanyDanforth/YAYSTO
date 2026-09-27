@@ -260,6 +260,9 @@ damage = 0 returns the intact mesh. Carnage (9 hits) evaluates in ~4.5 s.
 - NECK (user, HIGH, "NEED ALOT EFFORT"): lump under the jaw because the neck is too short and the jaw is squashed into it -> move the
   head up / lengthen the neck (chin to sternal notch ~10-12 cm), clean jaw line with a shadowed under-jaw plane; weird
   bumps right under each ear on both sides -> smooth flow into the sternocleidomastoid (mastoid -> sternum/clavicle diagonal).
+- Test build after the neck lift (fix2/r1/skin_neck_*): a hard horizontal LEDGE/step around the base of the neck
+  (collar-like seam where neck meets shoulders), a flat shelf + blob under the chin at the front, notch at the nape;
+  scattered dark/red dots on chest, belly and legs that read as a texture error. All HIGH for the next body round.
 - Organs: still smooth clay; lungs read as folded sheets/plastic (need spongy lobed lungs with fissures); the fat apron
   is a flat slab (needs lumpy lobular fat); heart too glossy/blobby. Skeleton too white/uniform (ivory, varied).
 
