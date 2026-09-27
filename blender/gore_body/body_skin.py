@@ -1734,6 +1734,9 @@ def shorts_sdf(x, y, z):
     # front of the hip (fly / groin fold): real shorts stand off the groin crease; +5 mm of ease there keeps the
     # cloth outside the belly skin that rolls over the fold in hip flexion (fix round 1: -8 mm at 90 deg)
     ease = ease + 0.005 * band(z, 0.80, 0.985, 0.03) * sstep(-0.050, -0.080, y) * sstep(0.150, 0.110, ax)
+    # crotch gusset behind the perineum: 4 mm more slack (fix round 3: at hip flexion the flexing thigh's inner/back
+    # skin met the gusset seam there: -0.2 mm at 90 deg, -1.0 mm at 108 deg with the side-true seat weights)
+    ease = ease + 0.004 * np.exp(-((ax / 0.030) ** 2 + ((y - 0.035) / 0.030) ** 2 + ((z - 0.775) / 0.030) ** 2))
     d = base - ease - _shorts_folds(ax, y, z)
     split = 0.004 - ax - 2.0 * np.maximum(z - SHORTS_GUSSET, 0.0)       # separate leg tubes below the gusset
     d = smax(d, split, 0.004)

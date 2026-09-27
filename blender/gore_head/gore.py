@@ -2738,6 +2738,8 @@ def _build_pools(t, hits, surface, drip):
                           target_element='FACES'), 'Distance').lt(0.0035)
     in_miss = t.bool('AND', in_miss, near_s)
     inside = t.bool('OR', t.bool('AND', hit, wk.gt(0.25)), t.bool('AND', t.bool('NOT', hit), in_miss))
+    # (the grid's own border is never inside the opening: no straight edges)
+    inside = t.bool('AND', inside, t.math('MAXIMUM', t.math('ABSOLUTE', uv.x), t.math('ABSOLUTE', uv.y)).lt(0.93))
     outside = t.switch(inside, 1.0, 0.0)
     g = t.store(g, "pl_out", outside)
     g = t.store(g, "pl_h", t.switch(hit, -0.004, hgt))
@@ -3241,7 +3243,9 @@ def _build_blood():
             rp, rpy = hl * 1.08 + 0.0015, gape * 0.5 + 0.0028
             hk = t.store(hk, "pl_col", 1.0)
         else:
-            rp = {"bullet": hole * 2.2 + 0.0012, "exit": hole * 2.2 + 0.0015, "blunt": hole * 2.6 + 0.002}[k]
+            # (the grid must reach well past the everted, torn margin: a
+            # wound wider than the grid showed the pool's square border)
+            rp = {"bullet": hole * 2.2 + 0.0012, "exit": hole * 3.2 + 0.004, "blunt": hole * 2.6 + 0.002}[k]
             rpy = rp
             hk = t.store(hk, "pl_col", 0.0)
         hk = t.store(hk, "pl_pulp", {"bullet": 0.0, "exit": 0.75, "blunt": 0.25, "slash": 0.0}[k] + 0.35 * h["crush"])
@@ -3596,7 +3600,7 @@ CLOT_DENSITY_K = {"bullet": 2.5, "exit": 1.3, "slash": 0.0, "blunt": 3.0, "blast
 STRAND_P = {"blunt": 0.0014, "exit": 0.0018, "blast": 0.004}
 # wet pulp lumps and torn shreds per wall area (lumps per m^2 at factor 1) and
 # per kind: destroyed tissue is mush at three scales (REFERENCE_NOTES §5.18 A)
-MUSH_DENSITY = 160000.0
+MUSH_DENSITY = 450000.0
 MUSH_K = {"exit": 2.6, "blunt": 1.6, "blast": 1.3}
 # extra blood on the wound walls per kind: a bullet track is a narrow tube
 # lined with blood and clot (no clean yellow fat), an exit is soaked
@@ -3874,7 +3878,7 @@ def _mush(t, g, on_faces):
     incised = mk.gt(3.5)
     upper = t.attr("g_wk").lt(float(WALL_STEPS) * 0.55)
     # three scales: 6 % big torn flaps, 36 % medium lumps, the rest grit
-    big = r1.gt(0.94)
+    big = r1.gt(0.98)
     med = t.bool('AND', r1.gt(0.58), t.bool('NOT', big))
     sz = t.switch(big, t.switch(med, 0.0003 + 0.0006 * r2, 0.0009 + 0.0013 * r2), 0.002 + 0.0018 * r2)
     sz = t.switch(brain, sz, sz.min(0.0022))
@@ -3882,7 +3886,9 @@ def _mush(t, g, on_faces):
     # (most pieces are torn shreds and sheets, only some are lumps: rounded
     # blobs read as berries / beads)
     # (pulped brain comes out as soft lumps, not sheets)
-    flap = t.bool('AND', t.bool('AND', t.bool('OR', big, r3.lt(0.6)), t.bool('NOT', brain)), t.bool('NOT', incised))
+    # (the density is high so the lumps fuse into masses; keep the number of
+    # separate torn sheets about the same)
+    flap = t.bool('AND', t.bool('AND', t.bool('OR', big, r3.lt(0.2)), t.bool('NOT', brain)), t.bool('NOT', incised))
     # flaps: thin torn sheets (0.3-0.6 mm); lumps: flattened blobs
     sx = sz * t.switch(flap, 0.8 + 0.5 * r4, 1.1 + 0.6 * r4)
     sy = sz * t.switch(flap, 0.6 + 0.5 * r5, 0.7 + 0.5 * r3)
@@ -3939,11 +3945,12 @@ def _mush(t, g, on_faces):
     k = t.attr("m_cls")
     classes = (
         # (selection, material input, g_wk, gore_clot, blood amount)
-        (t.bool('AND', k.lt(0.5), t.bool('NOT', brain)), "Strand Material", float(WALL_STEPS + 2), 1.0, 0.45),
+        (t.bool('AND', k.lt(0.5), t.bool('NOT', brain)), "Strand Material", float(WALL_STEPS + 2), 0.0, 0.45),
         (t.bool('AND', t.bool('AND', k.gt(0.5), k.lt(1.5)), t.bool('NOT', brain)), "Wall Material",
-         WALL_STEPS * 0.4, 1.0, 0.3),
-        (t.bool('AND', k.lt(1.5), brain), "Pulp Material", float(WALL_STEPS + 2), 1.0, 0.7),
-        (k.gt(1.5), "Blood Material", float(WALL_STEPS + 2), 0.0, 1.0),
+         WALL_STEPS * 0.4, 0.0, 0.3),
+        (t.bool('AND', k.lt(1.5), brain), "Pulp Material", float(WALL_STEPS + 2), 0.0, 0.7),
+        # (clot: matte near-black jelly in the blood shader, gore_clot = 1)
+        (k.gt(1.5), "Blood Material", float(WALL_STEPS + 2), 1.0, 1.0),
     )
     masses = []
     for ci, (sel_c, mat_in, wk, clot_v, bl_amt) in enumerate(classes):
@@ -4248,7 +4255,7 @@ def _build_attributes():
     wn2 = t.noise(p * 90.0, detail=2.0, signed=False)
     # patches of real blood (clear tissue between them), not a thin pink veil
     # over everything
-    wall_blood = t.smooth(0.42, 0.62, t.pick(layer, [0.95, 0.7, 0.55, 0.55, 0.5, 0.7, 0.3, 0.6]) * (0.5 + 0.5 * fr)
+    wall_blood = t.smooth(0.42, 0.62, t.pick(layer, [0.72, 0.7, 0.55, 0.55, 0.5, 0.7, 0.3, 0.6]) * (0.5 + 0.5 * fr)
                           + (wn - 0.5) * 0.9 + (wn2 - 0.5) * 0.5)
     # (pulp lumps and shreds carry their own blood mask, g_own)
     wall_blood = t.mix(wall_blood, a.z, t.attr("g_own"))

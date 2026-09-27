@@ -371,7 +371,9 @@ ETHMOID = ((0.0072, -0.0600, 0.0120), (0.0045, 0.0200, 0.0125))
 MASTOID = ((0.0500, 0.0130, -0.0200), (0.0110, 0.0130, 0.0170))
 MEATUS = ((0.0730, 0.0000, 0.0000), (0.0480, 0.0040, -0.0015), 0.0035)   # outer, inner end, radius
 TYMPANUM = ((0.0430, 0.0040, -0.0005), (0.0035, 0.0070, 0.0075))
-INFRATEMPORAL = ((0.0215, -0.0450, -0.0800), (0.0900, -0.0020, -0.0010))  # lo, hi (|x|, y, z), 11 mm rounding
+INFRATEMPORAL = ((0.0215, -0.0450, -0.0800), (0.0900, -0.0020, 0.0160))   # lo, hi (|x|, y, z), 11 mm rounding
+# (fix round 3b: up to z +0.016 - the temporal fossa medial to the arch, where the temporalis passes; the carve keeps
+# 3 mm of bone round the cranial cavity (temporal squama / greater wing), the arch is re-added as a free bar)
 ZYG_ARCH = [(0.0560, -0.0540, -0.0005), (0.0615, -0.0360, 0.0000), (0.0640, -0.0200, 0.0005),
             (0.0600, -0.0090, 0.0010)]
 ARCH_R = (0.0030, 0.0028)       # half height, half thickness of the arch (a 5-6 mm bar)
@@ -420,6 +422,17 @@ def palate(ax, y, z):
     d = smax(d, ax - 0.030, 0.004)
     # oral side: 1.5 mm of palatal mucosa over the bone
     return np.maximum(d, -(A.oral_void(ax, y, z) - 0.0015))
+
+
+def central_base(ax, y, z):
+    """Sphenoid body (holds the sphenoid sinus; sella turcica on top = the cavity clamp) and the clivus (basisphenoid
+    + basiocciput) sloping down and back to the basion at the anterior rim of the foramen magnum; the roof of the
+    nasopharynx stays open below z -0.031 and the body keeps 1.2 mm off the brain case (head frame, |x|)."""
+    body = rbox(ax, y, z, (-0.0170, -0.0420, -0.0300), (0.0170, -0.0040, 0.0140), 0.006)
+    clivus = capsule(ax * 1.45, y, z, (0.0, -0.0080, -0.0040), (0.0, 0.0165, -0.0330), 0.0100, 0.0085)
+    d = smin(body, clivus, 0.008)
+    d = smax(d, -0.0315 - z + 0.004 * sstep(-0.010, 0.012, y), 0.003)          # nasopharynx roof / basion
+    return smax(d, -(nasal_cavity(ax, y, z) - 0.0012), 0.002)
 
 
 TMJ_ZONE = ((0.0330, -0.0360, -0.0300), (0.0700, 0.0210, 0.0070))      # lo, hi (|x|, y, z)
@@ -489,6 +502,9 @@ def face_skull(x, y, z, base, clamps):
     add = smin(pal, alv, 0.004)
     add = smin(add, pterygoid_plates(ax, y, z), 0.002)
     add = smin(add, smax(smax(middle_fossa_roof(ax, y, z), -(cav - 0.0010), 0.001), env, 0.002), 0.003)
+    # central skull base (fix round 3b: the head skull ends in a flat cut base, so the midline between the choanae
+    # and the foramen magnum had no bone - no sphenoid body under the sella, no clivus under the pons)
+    add = smin(add, smax(central_base(ax, y, z), -(cav - 0.0012), 0.0015), 0.004)
     add = clamps(ax, y, z, add, 0.0030, mouth=False)
     d = smin(d, add, 0.002)
     d = np.minimum(d, clamps(ax, y, z, turbinates(ax, y, z), 0.0030, mouth=False))

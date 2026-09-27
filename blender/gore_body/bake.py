@@ -38,6 +38,7 @@ brain    GB_Brain             GB_Brain_HR       4096   GBL_brain
 GB_Head_LOD1 / GB_Body_LOD1 share their LOD0's atlas layout and use the same sets.
 """
 import hashlib
+import math
 import json
 import os
 import sys
@@ -57,7 +58,7 @@ DILATE_PX = 8
 UV_MARGIN_PX = 8          # island margin of the re-charted atlases (at the set's resolution)
 MIN_CHART_M2 = 0.5e-4     # 0.5 cm2: smaller charts are merged into a neighbour
 OVERLAP_MAX = 0.001       # re-chart until at most 0.1 % of the covered texels are shared
-UV_VERSION = 6            # bump when the charting algorithm changes (part of the UV cache key)
+UV_VERSION = 7            # bump when the charting algorithm changes (part of the UV cache key)
 
 SETS = {
     # name: target, source, size, cage extrusion (m), max ray (m), AO distance (m), surfaces
@@ -602,6 +603,119 @@ def rechart(obj, size=2048, smooth=0, interior_scale=1.0, margin_px=UV_MARGIN_PX
     return _project_pack(obj, chart, axes, size, interior_scale, margin_px)
 
 
+def uv_islands(me):
+    """Island id per polygon of the 'atlas' UV layer: faces joined across every edge whose two loops carry the same
+    UV coordinates on both faces (numpy + union-find; deterministic)."""
+    nl = len(me.loops)
+    uv = np.empty(nl * 2, np.float32)
+    me.uv_layers["atlas"].data.foreach_get("uv", uv)
+    uv = uv.reshape(-1, 2)
+    lv = np.empty(nl, np.int64)
+    me.loops.foreach_get("vertex_index", lv)
+    ls = np.empty(len(me.polygons), np.int64)
+    lt = np.empty(len(me.polygons), np.int64)
+    me.polygons.foreach_get("loop_start", ls)
+    me.polygons.foreach_get("loop_total", lt)
+    lf = np.repeat(np.arange(len(ls)), lt)
+    nxt = np.arange(nl) + 1
+    last = ls + lt - 1
+    nxt[last] = ls
+    a, b = lv, lv[nxt]
+    key = np.where(a < b, a * (1 << 32) + b, b * (1 << 32) + a)
+    ua = np.where((a < b)[:, None], uv, uv[nxt])
+    ub = np.where((a < b)[:, None], uv[nxt], uv)
+    order = np.lexsort((lf, key))
+    parent = np.arange(len(ls))
+
+    def find(i):
+        while parent[i] != i:
+            parent[i] = parent[parent[i]]
+            i = parent[i]
+        return i
+    ks, fo = key[order], lf[order]
+    uao, ubo = ua[order], ub[order]
+    same = (ks[1:] == ks[:-1]) & (np.abs(uao[1:] - uao[:-1]).max(1) < 1e-6) & (np.abs(ubo[1:] - ubo[:-1]).max(1) < 1e-6)
+    for i in np.nonzero(same)[0].tolist():
+        r1, r2 = find(int(fo[i])), find(int(fo[i + 1]))
+        if r1 != r2:
+            parent[max(r1, r2)] = min(r1, r2)
+    roots = np.array([find(i) for i in range(len(ls))])
+    _u, isl = np.unique(roots, return_inverse=True)
+    return isl, lf, uv
+
+
+def pack_islands_np(obj, size, margin_px):
+    """Deterministic replacement for ``bpy.ops.uv.pack_islands`` (fix round 3, critics: a clean rebuild gave a
+    different GB_Skeleton atlas and 95-99 % different inner texture maps).  Every island keeps its relative texel
+    scale, is rotated to its minimum-area bounding rectangle (hull calipers, landscape), and the rectangles are
+    shelf-packed tallest first into the smallest square that holds them, with ``margin_px`` texels between islands
+    at the ``size`` atlas; stable sorts only, so the same mesh always gives the same atlas."""
+    me = obj.data
+    isl, lf, uv = uv_islands(me)
+    li = isl[lf]
+    n = int(isl.max()) + 1 if len(isl) else 0
+    out = np.array(uv, float)
+    rects = []
+    for k in range(n):
+        L = np.nonzero(li == k)[0]
+        q = out[L]
+        c = q.mean(0)
+        q = q - c
+        best = None
+        try:
+            from scipy.spatial import ConvexHull            # noqa: F401  (not in the bpy wheel: fall back)
+            hull = q[ConvexHull(q).vertices]
+        except Exception:
+            hull = q
+        e = np.diff(np.vstack([hull, hull[:1]]), axis=0) if len(hull) > 2 else np.array([[1.0, 0.0]])
+        angs = np.unique(np.round(np.mod(np.arctan2(e[:, 1], e[:, 0]), np.pi / 2), 6))
+        if len(angs) > 64:
+            angs = np.linspace(0.0, np.pi / 2, 64, endpoint=False)
+        for a in np.concatenate([[0.0], angs]):
+            R = np.array([[math.cos(a), math.sin(a)], [-math.sin(a), math.cos(a)]])
+            r = hull @ R.T
+            w, h = r[:, 0].max() - r[:, 0].min(), r[:, 1].max() - r[:, 1].min()
+            if best is None or w * h < best[0] - 1e-18:
+                best = (w * h, a, w, h)
+        _ar, a, w, h = best
+        R = np.array([[math.cos(a), math.sin(a)], [-math.sin(a), math.cos(a)]])
+        if h > w:                                             # landscape
+            R = np.array([[0.0, 1.0], [-1.0, 0.0]]) @ R
+            w, h = h, w
+        q = q @ R.T
+        q = q - q.min(0)
+        out[L] = q
+        rects.append((k, max(w, 1e-9), max(h, 1e-9), L))
+    if not rects:
+        return
+    total = sum(w * h for _k, w, h, _L in rects)
+    side = math.sqrt(total / 0.72)
+    order = sorted(range(len(rects)), key=lambda i: (-round(rects[i][2], 9), -round(rects[i][1], 9), rects[i][0]))
+    for _try in range(200):
+        gap = side * margin_px / float(size)
+        x = y = row_h = 0.0
+        pos = {}
+        ok = True
+        for i in order:
+            _k, w, h, _L = rects[i]
+            if x + w > side + 1e-12:
+                x, y, row_h = 0.0, y + row_h + gap, 0.0
+            if y + h > side + 1e-12 or w > side:
+                ok = False
+                break
+            pos[i] = (x, y)
+            x += w + gap
+            row_h = max(row_h, h)
+        if ok:
+            break
+        side *= 1.03
+    for i, (x0, y0) in pos.items():
+        L = rects[i][3]
+        out[L] = (out[L] + np.array([x0, y0])) / side
+    me.uv_layers["atlas"].data.foreach_set("uv", out.astype(np.float32).ravel())
+    me.update()
+
+
 def _project_pack(obj, chart, axes, size, interior_scale, margin_px):
     """Planar-project every chart along its axis (metres), scale interior surfaces, pack with a margin."""
     me = obj.data
@@ -629,14 +743,7 @@ def _project_pack(obj, chart, axes, size, interior_scale, margin_px):
     # mark chart borders as seams so the packer sees the islands, then clear them again
     _set_seams(me, chart)
     me.uv_layers.active = me.uv_layers["atlas"]
-    _select_only(obj)
-    bpy.ops.object.mode_set(mode='EDIT')
-    bpy.ops.mesh.select_all(action='SELECT')
-    bpy.ops.uv.select_all(action='SELECT')
-    bpy.ops.uv.pack_islands(udim_source='CLOSEST_UDIM', margin_method='FRACTION', margin=margin_px / float(size),
-                            rotate=True, shape_method='CONCAVE', scale=True)
-    bpy.ops.object.mode_set(mode='OBJECT')
-    obj.select_set(False)
+    pack_islands_np(obj, size, margin_px)
     me.edges.foreach_set("use_seam", np.zeros(len(me.edges), bool))
     _LAST_CHARTS[obj.name] = chart
     _LAST_AXES[obj.name] = axes
@@ -756,14 +863,7 @@ def unfold_charts(obj, chart, size, margin_px, interior_scale=1.0):
         uv[L] = q + np.array([10.0 + 0.5 * (j % 64), 10.0 + 0.5 * (j // 64)]) * max(q.max(), 1e-6)
     me.uv_layers["atlas"].data.foreach_set("uv", uv.astype(np.float32).ravel())
     me.update()
-    _select_only(obj)
-    bpy.ops.object.mode_set(mode='EDIT')
-    bpy.ops.mesh.select_all(action='SELECT')
-    bpy.ops.uv.select_all(action='SELECT')
-    bpy.ops.uv.pack_islands(udim_source='CLOSEST_UDIM', margin_method='FRACTION', margin=margin_px / float(size),
-                            rotate=True, shape_method='CONCAVE', scale=True)
-    bpy.ops.object.mode_set(mode='OBJECT')
-    obj.select_set(False)
+    pack_islands_np(obj, size, margin_px)
     me.edges.foreach_set("use_seam", np.zeros(len(me.edges), bool))
     me.polygons.foreach_set("select", np.zeros(len(me.polygons), bool))
     me.update()
@@ -907,14 +1007,7 @@ def split_overlaps(obj, size, margin_px, rounds=3):
         me.uv_layers["atlas"].data.foreach_set("uv", uv.astype(np.float32).ravel())
         me.update()
         me.uv_layers.active = me.uv_layers["atlas"]
-        _select_only(obj)
-        bpy.ops.object.mode_set(mode='EDIT')
-        bpy.ops.mesh.select_all(action='SELECT')
-        bpy.ops.uv.select_all(action='SELECT')
-        bpy.ops.uv.pack_islands(udim_source='CLOSEST_UDIM', margin_method='FRACTION',
-                                margin=margin_px / float(size), rotate=True, shape_method='CONCAVE', scale=True)
-        bpy.ops.object.mode_set(mode='OBJECT')
-        obj.select_set(False)
+        pack_islands_np(obj, size, margin_px)
     return uv_overlap_exact(obj, size)[0]
 
 

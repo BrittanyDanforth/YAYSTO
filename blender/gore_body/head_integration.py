@@ -865,34 +865,33 @@ def _decimate_arrays(v, f, target):
 
 
 def _teeth_part(upper, h, target):
-    """One jaw's teeth from the head project (each tooth its own closed island), decimated per tooth."""
-    import bpy
-    A = _A()
-    tmp = A.build_teeth("_b2_teeth", upper, bpy.context.scene.collection, h=h)
-    me = tmp.data
-    ids = np.empty(len(me.vertices), np.int32)
-    me.attributes["tooth_id"].data.foreach_get("value", ids)
-    v = gbc.get_verts(me)
-    faces = [list(p.vertices) for p in me.polygons]
-    bpy.data.objects.remove(tmp, do_unlink=True)
-    bpy.data.meshes.remove(me)
-    # decimate each tooth on its own (keeps every tooth closed and recognisable)
-    fid = np.array([ids[f[0]] for f in faces])
-    teeth = sorted(set(ids.tolist()))
-    per = max(60, target // len(teeth))
+    """One jaw's teeth, each tooth its own closed island, decimated per tooth.
+
+    Fix round 3 (critics: 0 % of the root vertices inside bone): the crowns are the head project's, the roots are
+    ``skull.tooth_sdf_long`` - anatomical lengths (incisors 13, canines 16-17, molars 12-14 mm with 2-3 roots) - the
+    same SDF the body skeleton cuts its sockets from (+ 0.25 mm periodontal ligament), so every root sits in bone.
+    FDI ids as in the head project: 21-27 upper left (+X), 11-17 upper right, 31-37 lower left, 41-47 lower right."""
+    import skull as SKL
+    frames = SKL.tooth_frames_long(upper)
+    per = max(60, target // (2 * len(frames)))
     V, F, I = [], [], []
     off = 0
-    for t in teeth:
-        sel = [f for f, i in zip(faces, fid) if i == t]
-        used = sorted({k for f in sel for k in f})
-        remap = {k: j for j, k in enumerate(used)}
-        tv = v[used]
-        tf = [[remap[k] for k in f] for f in sel]
-        dv, df = _decimate_arrays(tv, tf, per)
-        V.append(dv)
-        F += [[k + off for k in f] for f in df]
-        I.append(np.full(len(dv), t, np.int32))
-        off += len(dv)
+    for frame in frames:
+        fn, lo, hi = SKL.tooth_sdf_long(frame, upper)
+        v, q = gg.sdf_arrays(fn, lo, hi, h)
+        for side in (1, -1):
+            vv = v.copy()
+            ff = [list(f) for f in q]
+            fdi = frame[0]
+            if side < 0:
+                vv[:, 0] *= -1.0
+                ff = [f[::-1] for f in ff]
+                fdi = fdi - 10 if upper else fdi + 10
+            dv, df = _decimate_arrays(vv, ff, per)
+            V.append(dv)
+            F += [[k + off for k in f] for f in df]
+            I.append(np.full(len(dv), fdi, np.int32))
+            off += len(dv)
     return np.vstack(V) + HEAD_OFFSET, F, np.concatenate(I)
 
 
@@ -907,13 +906,16 @@ def build_mouth(quick=None):
         v, f, ids = _teeth_part(upper, r["teeth"], MOUTH_TRIS["teeth"] // 2)
         parts.append(gg.part(v, f, 0, gb_rigid_bone=np.full(len(v), bone["head" if upper else "jaw"], np.int32),
                              gb_piece=ids))
+    import skull as SKL
     for upper in (True, False):
-        fn = (lambda x, y, z, u=upper: A.gum_sdf(x, y, z, u))
-        v, q = gg.sdf_arrays(fn, (-0.036, -0.098, -0.084), (0.036, -0.024, -0.030), r["soft"])
+        # the body gums cover the alveolar crest down to the long roots' bone (skull.gum_sdf, fix round 3)
+        fn = (lambda x, y, z, u=upper: SKL.gum_sdf(x, y, z, u))
+        v, q = gg.sdf_arrays(fn, (-0.036, -0.098, -0.090), (0.036, -0.024, -0.024), r["soft"])
         v, q = _decimate_arrays(v, q, MOUTH_TRIS["gums"] // 2)
         parts.append(gg.part(v + HEAD_OFFSET, q, 1, gb_rigid_bone=np.full(
             len(v), bone["head" if upper else "jaw"], np.int32), gb_piece=np.zeros(len(v), np.int32)))
-    v, q = gg.sdf_arrays(A.tongue_sdf, (-0.030, -0.095, -0.080), (0.030, -0.010, -0.045), r["soft"])
+    # domed tongue at rest (dorsum 1.5 mm under the palate), skull.tongue_sdf (fix round 3)
+    v, q = gg.sdf_arrays(SKL.tongue_sdf, (-0.030, -0.095, -0.085), (0.030, -0.005, -0.040), r["soft"])
     v, q = _decimate_arrays(v, q, MOUTH_TRIS["tongue"])
     parts.append(gg.part(v + HEAD_OFFSET, q, 2, gb_rigid_bone=np.full(len(v), bone["tongue"], np.int32),
                          gb_piece=np.zeros(len(v), np.int32)))

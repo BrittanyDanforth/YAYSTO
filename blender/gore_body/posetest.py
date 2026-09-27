@@ -91,6 +91,17 @@ TESTS = {
                     "quality"),
     "jaw_open_26": ({"jaw": [("open", 26.0)]}, "jaw", 0.16, "kinematic limit: about 45 mm incisal opening",
                     "quality"),
+    # combined death / ragdoll postures (fix round 3, critics: single-joint tests missed the torn seat of a seated
+    # slump or a curled body; refs 2, 7, 21 show seated deaths): shorts clearance and pokes around the pelvis
+    "hip_seated_95_95": ({"thigh_L": [("flex", 95.0)], "shin_L": [("flex", 95.0)], "thigh_R": [("flex", 95.0)],
+                          "shin_R": [("flex", 95.0)]}, "thigh_L", 0.24, "seated slump: both hips / knees 95", "combined"),
+    "hip_fetal_110_130": ({"thigh_L": [("flex", 110.0)], "shin_L": [("flex", 130.0)], "thigh_R": [("flex", 110.0)],
+                           "shin_R": [("flex", 130.0)]}, "thigh_L", 0.24, "curled: hips 110, knees 130", "combined"),
+    "hip_kneel_20_135": ({"thigh_L": [("flex", 20.0)], "shin_L": [("flex", 135.0)], "thigh_R": [("flex", 20.0)],
+                          "shin_R": [("flex", 135.0)]}, "thigh_L", 0.24, "kneeling collapse: hips 20, knees 135",
+                         "combined"),
+    "hip_sprawl_30_40": ({"thigh_L": [("abd", 30.0), ("twist", 40.0)], "thigh_R": [("abd", 30.0), ("twist", -40.0)]},
+                         "thigh_L", 0.24, "supine sprawl: hips abducted 30, externally rotated 40", "combined"),
 }
 NO_VOLUME = {"jaw_open_19", "jaw_open_26"}      # opening the mouth enlarges the oral cavity: a real volume change
 
@@ -361,6 +372,9 @@ def run_test(md, arm, name, spec, rest=None):
                 pinched[own[caught]] = True
             free = ~pinched
             res["shorts_mm"] = round(float(signed[free].min() * 1000.0), 2) if free.any() else None
+            if free.any():
+                kw = np.nonzero(free)[0][int(np.argmin(signed[free]))]
+                res["shorts_worst_rest"] = [round(float(c), 4) for c in sh.v[sel][kw]]
             res["shorts_inside"] = int((signed[free] < 0).sum())
             res["shorts_pinched"] = int(pinched.sum())
             res["shorts_pinched_mm"] = round(float(signed[pinched].min() * 1000.0), 2) if pinched.any() else None

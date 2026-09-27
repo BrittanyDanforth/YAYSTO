@@ -104,7 +104,7 @@ PRESETS = {
             ("blunt", (-0.052, -0.035, 0.092), dict(size=1.2, depth=0.95, name="GH_Hit_Blunt_Cranium")),
         ],
         # ~3 h after the blows: swollen, bruised
-        controls=dict(bleed=0.75, bruising=0.8, swelling=0.6, wound_age=0.25),
+        controls=dict(bleed=0.75, bruising=1.0, swelling=0.8, wound_age=0.25),
     ),
     "burn": dict(
         hits=[
@@ -945,7 +945,7 @@ def _matter_material(white):
     n1 = t.noise(t.p, 900.0, 3.0)
     # (grey matter is clearly darker than the cream white matter: pinkish
     # grey-brown, the contrast that makes the folding readable)
-    grey = t.mix(n1, (0.17, 0.10, 0.09), (0.24, 0.15, 0.13))
+    grey = t.mix(n1, (0.13, 0.075, 0.068), (0.19, 0.115, 0.10))
     # white matter: cream with a faint pink-grey blush and a fibrous grain
     # (a flat uniform cream reads as a plaster disc)
     fib = t.noise(t.vmath('MULTIPLY', t.p, (1.0, 0.35, 1.0)), 420.0, 3.0)
@@ -971,9 +971,12 @@ def _matter_material(white):
         # temporal horn curving down and forward), 1-3 mm, dark with a
         # blood-tinged lining, lateral to the septum (|x| > 5 mm)
         vr = t.vmath('LENGTH', t.vec(0.0, t.math('SUBTRACT', y, 0.0), t.math('SUBTRACT', z, 0.019)))
-        arc = t.math('ABSOLUTE', t.math('SUBTRACT', vr, t.math('ADD', 0.027, t.math('MULTIPLY', t.noise(t.p, 90.0), 0.002))))
+        arc = t.math('ABSOLUTE', t.math('SUBTRACT', vr, t.math('ADD', 0.017, t.math('MULTIPLY', t.noise(t.p, 90.0), 0.002))))
         # (open toward the front-bottom: no slit below-in-front of the arc centre)
-        ang_ok = t.math('MAXIMUM', t.smooth(y, -0.004, 0.006), t.smooth(z, 0.012, 0.022))
+        # (a C open toward the front and below: the body above, the atrium
+        # behind, the temporal horn curving down; nothing in front-below)
+        ang_ok = t.math('MULTIPLY', t.math('MAXIMUM', t.smooth(y, 0.0, 0.01), t.smooth(z, 0.02, 0.028)),
+                        t.smooth(y, -0.024, -0.016))
         vhw = t.math('ADD', 0.0007, t.math('MULTIPLY', t.smooth(y, 0.005, 0.03), 0.0011))
         vent = t.math('MULTIPLY', t.math('MULTIPLY', t.smooth(arc, vhw, t.math('MULTIPLY', vhw, 0.5)), ang_ok),
                       t.math('MULTIPLY', t.smooth(pa_x := t.sep(pa)[0], 0.004, 0.007), t.smooth(pa_x, 0.036, 0.03)))

@@ -1056,7 +1056,7 @@ def _muscle_material(g):
         'Anisotropic': 0.12 * (1.0 - bl["Mask"]), 'Tangent': _fibre_tangent(t),
         'Subsurface Weight': 0.35 * bl["SSS"], 'Subsurface Radius': (1.0, 0.25, 0.15),
         'Subsurface Scale': 0.002, 'Coat Weight': (m["Coat"] + bl["Coat"]).clamp(),
-        'Coat Roughness': t.mix(bl["Mask"], 0.06 + (1.0 - wet) * 0.2, bl["Coat Roughness"]),
+        'Coat Roughness': t.mix(bl["Mask"], 0.14 + (1.0 - wet) * 0.2, bl["Coat Roughness"]),
         'Coat Tint': bl["Coat Tint"], 'Coat Normal': nrm, 'Normal': nrm})
     t.output(bsdf)
     return _finish(mat, t, (0.30, 0.03, 0.03), 0.3)
@@ -1231,8 +1231,10 @@ def _brain_material(g):
     bsdf = t.principled({
         'Base Color': bl["Color"], 'Roughness': bl["Roughness"], 'IOR': 1.4,
         'Subsurface Weight': 0.7 * bl["SSS"], 'Subsurface Radius': (1.0, 0.45, 0.35),
-        'Subsurface Scale': 0.003, 'Coat Weight': (wet * 0.55 + bl["Coat"]).clamp(),
-        'Coat Roughness': t.mix(bl["Mask"], 0.04 + (1.0 - wet) * 0.2, bl["Coat Roughness"]),
+        # (pulped tissue is wet but torn and granular: a softer, broken sheen,
+        # never the mirror coat of the intact pia -- §5.16 / §5.18 C)
+        'Subsurface Scale': 0.003, 'Coat Weight': (wet * 0.55 * (1.0 - wm * 0.6) + bl["Coat"]).clamp(),
+        'Coat Roughness': t.mix(bl["Mask"], 0.04 + (1.0 - wet) * 0.2 + wm * 0.2, bl["Coat Roughness"]),
         'Coat Tint': bl["Coat Tint"], 'Normal': t.bump(t.mix(bl["Height Mask"], h, bl["Height"]), 0.0001)})
     t.output(bsdf)
     return _finish(mat, t, (0.68, 0.49, 0.46), 0.2)

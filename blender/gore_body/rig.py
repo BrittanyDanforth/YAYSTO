@@ -855,6 +855,10 @@ def transfer_weights(obj, src_names=None, smooth_iters=None):
         # crotch gusset on the midline takes the skin weights of the midline itself (fix round 2: a nearest-skin
         # weight picked up from one inner thigh dragged the gusset 3 cm sideways into that thigh in abduction)
         t = _sstep(0.016, 0.0, np.abs(pv[:, 0]))
+        # ... only in the perineum (front and bottom of the crotch): behind it, over the gluteal cleft, each half of
+        # the seat follows its own buttock (fix round 3: the midline rule there left the seat half a thigh behind
+        # the flexing buttock, which then passed 1.2-1.7 mm through the cloth at hip_flex_90/108)
+        t = t * _sstep(0.050, 0.030, near[:, 1])
         m = t > 0.0
         if m.any():
             mid = near[m].copy()
@@ -865,6 +869,16 @@ def transfer_weights(obj, src_names=None, smooth_iters=None):
             mid[:, 0] = -0.0005
             wm = 0.5 * (wl + dense_weights(mid, "skin"))
             W[m] = (1.0 - t[m, None]) * W[m] + t[m, None] * wm
+        # seat over the gluteal cleft: each half takes the weights of ITS buttock's medial skin 12 mm off the
+        # midline (not an average of both, which lags the flexing buttock and lets it through the cloth)
+        tb = _sstep(0.020, 0.004, np.abs(pv[:, 0])) * _sstep(0.050, 0.070, near[:, 1]) \
+            * _sstep(0.72, 0.75, pv[:, 2]) * _sstep(0.98, 0.94, pv[:, 2])
+        mb = tb > 0.0
+        if mb.any():
+            q = near[mb].copy()
+            sgn = np.where(pv[mb, 0] >= 0.0, 1.0, -1.0)
+            q[:, 0] = sgn * np.maximum(np.abs(q[:, 0]), 0.012)
+            W[mb] = (1.0 - tb[mb, None]) * W[mb] + tb[mb, None] * dense_weights(q, "skin")
     W /= np.maximum(W.sum(1, keepdims=True), 1e-12)
     return _quantise(*_top4(W))
 

@@ -893,6 +893,59 @@ def _min_gap(P, a, b, cls_skip=6):
 
 
 @check("scene", owner="B3", quick_ok=False)
+def b3_teeth_seated():
+    """Every tooth of GB_Mouth sits in bone (fix round 3, critics: 0 % of the root vertices inside bone): per tooth
+    >= 60 % of the root vertices (below the alveolar crest) have bone 0.8 mm outside them (the socket wall), the
+    apex has bone under it (socket floor), and the mandibular symphysis is 28-35 mm tall."""
+    if not _b3_built():
+        return True, "skipped (B3 skeleton not built)"
+    bpy = _bpy()
+    import skeleton as SK_
+    import skull as SKL
+    o = bpy.data.objects.get("GB_Mouth")
+    if o is None:
+        return False, "no GB_Mouth"
+    v = gbc.get_verts(o.data) - gbc.HEAD_OFFSET
+    nrm = np.empty(len(v) * 3)
+    o.data.vertices.foreach_get("normal", nrm)
+    nrm = nrm.reshape(-1, 3)
+    piece = gbc.read_point_attr(o, "gb_piece", 'INT')
+    bad, worst = [], 100.0
+    for upper in (True, False):
+        bone = SK_._skull_head if upper else SK_._mandible_head
+        for fdi, kind, dims, org, X, Y, Z in SKL.tooth_frames_long(upper):
+            for sx, f in ((1.0, fdi), (-1.0, fdi - 10 if upper else fdi + 10)):
+                m = piece == f
+                if not m.any():
+                    bad.append(f"{f} missing")
+                    continue
+                p = v[m] * np.array([sx, 1.0, 1.0])
+                n = nrm[m] * np.array([sx, 1.0, 1.0])
+                h = (p - org) @ Z
+                root = h < -(SKL.CREST_BELOW_CEJ + 0.0015)
+                if root.sum() < 4:
+                    bad.append(f"{f} no root")
+                    continue
+                q = p[root] + n[root] * 0.0008
+                inb = bone(q[:, 0] * sx, q[:, 1], q[:, 2]) < 0.0
+                frac = float(inb.mean()) * 100.0
+                worst = min(worst, frac)
+                apex = int(np.argmin(h))
+                qa = p[apex] - Z * 0.0012
+                floor_ok = bool(bone(np.array([qa[0] * sx]), np.array([qa[1]]), np.array([qa[2]]))[0] < 0.0)
+                if frac < 60.0 or not floor_ok:
+                    bad.append(f"{f} {frac:.0f} %{'' if floor_ok else ' no socket floor'}")
+    # symphysis height: vertical extent of the mandible in the midline at the chin
+    ys = np.linspace(-0.095, -0.060, 36)
+    zs = np.linspace(-0.115, -0.050, 131)
+    Yg, Zg = np.meshgrid(ys, zs, indexing="ij")
+    ins = SK_._mandible_head(np.zeros(Yg.size), Yg.ravel(), Zg.ravel()).reshape(Yg.shape) < 0.0
+    hgt = max(((zs[r].max() - zs[r].min()) if r.any() else 0.0) for r in ins) * 1000.0
+    ok = not bad and 28.0 <= hgt <= 35.0
+    return ok, f"root vertices in bone: worst tooth {worst:.0f} %; symphysis {hgt:.1f} mm (28-35); bad: {bad[:12]}"
+
+
+@check("scene", owner="B3", quick_ok=False)
 def skeleton_joint_clearance():
     """Neighbouring bones never interpenetrate (HR vertex gap >= 0.5 mm at every joint pair)."""
     if not _b3_built():
@@ -2764,11 +2817,25 @@ def b6_deformation_quality():
     if not _b6_ready():
         return True, "n/a (no scene)"
     res = _b6_deform()
-    other = {k: v for k, v in res.items() if v["level"] != "fb2"}
+    other = {k: v for k, v in res.items() if v["level"] not in ("fb2", "combined")}
     bad = [k for k, v in other.items() if not v["ok"]]
     s = "; ".join(f"{k} {v['poke_mm']}mm/{v['poke_over']}/exp {v.get('exposed', 0)}/{v['vol_loss']}"
                   for k, v in other.items())
     return not bad, f"over 3 mm, newly exposed or >= 15 % loss: {bad}; {s}"
+
+
+@check("scene", owner="B6", severity="warn", quick_ok=False)
+def b6_death_postures():
+    """Combined ragdoll end postures (seated slump 95/95, curled 110/130, kneeling 20/135, supine sprawl): pokes and
+    shorts clearance >= 1 mm (reported; LBS alone cannot keep cloth off a closing belly / thigh fold - the game's G5
+    cloth push-out along the skin normal, CUSTOM0 rest data, handles the rest)."""
+    if not _b6_ready():
+        return True, "n/a (no scene)"
+    res = {k: v for k, v in _b6_deform().items() if v["level"] == "combined"}
+    bad = [k for k, v in res.items() if not v["ok"]]
+    s = "; ".join(f"{k} poke {v['poke_mm']}mm shorts {v.get('shorts_mm')}mm at {v.get('shorts_worst_rest')}"
+                  for k, v in res.items())
+    return not bad, f"failing: {bad}; {s}"
 
 
 @check("scene", owner="B6", quick_ok=False)
