@@ -1349,7 +1349,10 @@ def _eye_material(g):
     col = t.mix(cloud * (1.0 - corn) * 0.6, col, col * (0.85, 0.62, 0.38))
     col = t.mix((burn + (bnz - 0.5) * 0.4).smooth(0.75, 0.95) * 0.85, col, (0.035, 0.025, 0.02))
     rough = t.mix(corn, 0.28, 0.45)
-    bl = _blood_layer(t, g, col, rough, blood * 0.6, p)
+    # blood on the globe is a patchy film that runs off the wet cornea: the
+    # iris stays readable through it (a fully coated globe reads as a cherry)
+    film = blood * 0.6 * (1.0 - 0.85 * corn) * t.noise(p, 260.0, 2.0).smooth(0.38, 0.62)
+    bl = _blood_layer(t, g, col, rough, film, p)
     h = v1 * vmask * 0.3 + t.noise(p, 1500.0) * 0.15 * (1.0 - corn)
     bsdf = t.principled({
         'Base Color': bl["Color"], 'Roughness': bl["Roughness"], 'IOR': 1.376,

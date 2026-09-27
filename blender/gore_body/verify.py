@@ -2428,7 +2428,8 @@ def b6_joint_positions():
     import rig
     bpy = _bpy()
     arm = bpy.data.objects[gbc.ARMATURE]
-    lm = LM.all_landmarks()
+    # the armature is in the final frame (neck lengthened): compare with the warped RB landmarks
+    lm = {k: gbc.warp_points(v) for k, v in LM.all_landmarks().items()}
     pairs = {"upper_arm": "gh_joint", "forearm": "elbow_centre", "hand": "wrist_centre", "fingers": "mcp3",
              "thigh": "hip_joint_centre", "shin": "knee_centre", "foot": "ankle_centre", "clavicle": "sc_joint"}
     worst, bad = 0.0, []
@@ -2444,7 +2445,7 @@ def b6_joint_positions():
     fits = [b["name"] for b in rig.bone_rows() if b.get("fit")]
     jaw = np.array(arm.data.bones["jaw"].head_local)
     import head_integration as hi
-    jd = float(np.linalg.norm(jaw - hi.jaw_pivot()))
+    jd = float(np.linalg.norm(jaw - gbc.warp_points(hi.jaw_pivot())))
     return not bad and jd < 1e-4, (f"worst joint offset {worst * 1000:.2f} mm (limit 2); off {bad}; jaw head = B2 "
                                    f"measured hinge ({jd * 1000:.2f} mm); fitted bones {fits}")
 
