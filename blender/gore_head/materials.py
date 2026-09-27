@@ -1333,7 +1333,9 @@ def _eye_material(g):
     scl = t.mix(v1 * vmask * (0.5 + 0.5 * shot), scl, (0.52, 0.06, 0.05))
     scl = t.mix(v2 * vmask * (0.3 + 0.6 * shot), scl, (0.62, 0.16, 0.13))
     scl = t.mix(shot * 0.55 * away, scl, scl * (1.0, 0.58, 0.52))
-    hem = (t.noise(p, 120.0, 3.0) + blood * 0.9).smooth(1.05, 1.2) * away
+    # subconjunctival haemorrhage: a confluent dark red sheet with a soft
+    # irregular edge (never speckled -- spots read as a strawberry)
+    hem = (t.noise(p, 45.0, 2.0) * 0.5 + blood * 1.2).smooth(0.75, 0.95) * away
     scl = t.mix(hem, scl, (0.42, 0.018, 0.014))
 
     col = t.mix(corn, scl, iris)
@@ -1351,7 +1353,7 @@ def _eye_material(g):
     rough = t.mix(corn, 0.28, 0.45)
     # blood on the globe is a patchy film that runs off the wet cornea: the
     # iris stays readable through it (a fully coated globe reads as a cherry)
-    film = blood * 0.6 * (1.0 - 0.85 * corn) * t.noise(p, 260.0, 2.0).smooth(0.38, 0.62)
+    film = blood * 0.6 * (1.0 - 0.85 * corn) * t.noise(p, 70.0, 2.0).smooth(0.3, 0.7)
     bl = _blood_layer(t, g, col, rough, film, p)
     h = v1 * vmask * 0.3 + t.noise(p, 1500.0) * 0.15 * (1.0 - corn)
     bsdf = t.principled({

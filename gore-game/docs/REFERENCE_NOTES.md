@@ -395,6 +395,28 @@ SKIN STILL LOOKS THICK AND ENSURE ARTERYS ETC ALL THAT IS WIRED FOR BLOOD TOO VE
    (vessels.json) — keep it 1:1 with the bible.
 4. Compare every frame against the refs (2, 7, 17, 21 for flow and volume; 13, 18 for wound edges).
 
+## 5.20 User verdict on the crushed preset (2026-09-27, `renders/preset_crushed_front.png`) — HIGH priority
+
+User: "WHY IS THE TIP OF NOSE ... STILL GLITCHED ... NOT AFFECTS THE TIP OF IT ... THE EYEBALL IS PRETTY BIG ... THE EYE
+SHOULD BE ABLE TO GET DAMAGED AND BE REALISTIC LIKE REAL LIFE 1:1".
+1. **Nose tip untouched inside the damage zone.** The crush destroys the cheek, orbit and nasal side, but the nose tip
+   stays a clean, intact, un-bruised lump floating at the wound edge. It must be part of the same injury: a mid-face
+   crush breaks and displaces the nasal bones/cartilage (nose pushed flat and to the side), tears or splits the skin of
+   the nose, bruises and swells it dark purple, and blood comes from the nostrils. No region inside or bordering a wound
+   may stay pristine — check every hit's falloff reaches the nose, lips, eyelids and ears.
+2. **Eyeball too big.** An adult globe is ~24 mm across and is NEVER enlarged by trauma; in the render it looks
+   ~1.5x bigger and bulging. Keep the eye at true size (GH_Eye r 0.012) and remove any scale/inflate applied by the crush.
+3. **The eye must take real damage** (all driven by the hits, 1:1 with forensic reality):
+   - globe rupture: the eye DEFLATES and collapses (wrinkled, flattened, misshapen), it does not swell or stay a
+     perfect sphere; clear/jelly vitreous and dark uveal tissue extrude through the tear, the cornea clouds or tears;
+   - hyphaema: blood layered in the front chamber (a red/dark level behind the cornea);
+   - subconjunctival haemorrhage: the white turns solid bright red under the surface (flat, not spotty dots);
+   - lid lacerations, periorbital "black eye" swelling that can close the lids, orbital-floor blow-out fracture with
+     the globe sunk (enophthalmos) or displaced; retrobulbar bleeding pushes the eye forward only a few mm;
+   - a bullet/fragment through the orbit destroys the globe; a nearby headshot gives raccoon eyes over hours.
+   Build this as part of GH_Gore on the eye layer (per-hit: rupture, collapse, extrusion, haemorrhage, hyphaema),
+   verify with close-ups against real anatomy, and keep the undamaged eye pristine only when no hit reaches it.
+
 ## 6. What to change in our assets (actionable)
 
 | Where | Change |
