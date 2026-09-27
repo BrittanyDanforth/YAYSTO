@@ -230,6 +230,24 @@ def root_sheaths(x, y, z, upper, wall=0.0019):
     return d
 
 
+def alveolar_ridge(x, y, z, upper, height=0.016):
+    """Continuous alveolar process along one dental arch: from the crest (1.7 mm apical to the CEJ, a little
+    higher between the teeth) toward the roots over ``height``, 0.5 x tooth depth + 2-3.5 mm about the arch line;
+    ends behind the last molar (maxillary tuberosity / retromolar region).  The root sheaths add the juga."""
+    A = _A()
+    ax = np.abs(x)
+    ca = A._cerv(upper)
+    s, q = ca.arch.project(ax, y)
+    zc, D, pap = ca.props(s)
+    sgn = 1.0 if upper else -1.0
+    hr = (z - zc) * sgn
+    w = 0.5 * D + 0.0020 + 0.0015 * A.smoothstep(0.004, 0.012, hr)
+    d = np.abs(q + 0.0004) - w
+    d = smax(d, (CREST_BELOW_CEJ - 0.0006 * pap) - hr, 0.0012)
+    d = smax(d, hr - height, 0.004)
+    return smax(d, s - (ca.s_end + 0.0045), 0.004)
+
+
 GUM_BAND = {True: 0.0085, False: 0.0125}
 
 
@@ -308,6 +326,7 @@ def septum(ax, y, z):
     d = ax - 0.0010
     d = smax(d, -0.081 - y, 0.002)                 # the cartilaginous septum in front is not bone
     d = smax(d, y - CHOANA_Y, 0.002)               # free posterior edge of the vomer at the choanae
+    d = smax(d, z - 0.0235, 0.002)                 # up to the cribriform plate (crista galli is in the base skull)
     return smax(d, NASAL_FLOOR - 0.001 - z, 0.001)
 
 
@@ -338,7 +357,7 @@ ETHMOID = ((0.0072, -0.0600, 0.0120), (0.0045, 0.0200, 0.0125))
 MASTOID = ((0.0500, 0.0130, -0.0200), (0.0110, 0.0130, 0.0170))
 MEATUS = ((0.0730, 0.0000, 0.0000), (0.0480, 0.0040, -0.0015), 0.0035)   # outer, inner end, radius
 TYMPANUM = ((0.0430, 0.0040, -0.0005), (0.0035, 0.0070, 0.0075))
-INFRATEMPORAL = ((0.0235, -0.0430, -0.0720), (0.0800, -0.0060, -0.0020))  # lo, hi (|x|, y, z)
+INFRATEMPORAL = ((0.0215, -0.0450, -0.0800), (0.0900, -0.0020, -0.0010))  # lo, hi (|x|, y, z), 11 mm rounding
 ZYG_ARCH = [(0.0560, -0.0540, -0.0005), (0.0615, -0.0360, 0.0000), (0.0640, -0.0200, 0.0005),
             (0.0600, -0.0090, 0.0010)]
 ARCH_R = (0.0030, 0.0028)       # half height, half thickness of the arch (a 5-6 mm bar)
@@ -393,8 +412,13 @@ def cranial_cavity_body(ax, y, z):
 
 
 def middle_fossa_roof(ax, y, z):
-    """Bone of the raised middle fossa floor over the TMJ / ear (the region the body cavity gave up)."""
-    return rbox(ax, y, z, TMJ_ZONE[0], TMJ_ZONE[1], 0.004)
+    """Bone of the raised middle fossa floor over the TMJ / ear (the region the body cavity gave up): the roof of
+    the glenoid fossa and the articular eminence (z -0.006 .. +0.007), the tympanic plate / postglenoid process
+    behind the condyle reaching down to -0.013, the petrous bone medially.  Rounded, never a box face outside."""
+    roof = rbox(ax, y, z, (0.0330, -0.0330, -0.0060), (0.0680, 0.0200, 0.0070), 0.0045)
+    tymp = rbox(ax, y, z, (0.0330, -0.0040, -0.0140), (0.0660, 0.0200, 0.0030), 0.0045)
+    petrous = rbox(ax, y, z, (0.0200, -0.0300, -0.0250), (0.0420, 0.0200, 0.0070), 0.0060)
+    return smin(smin(roof, tymp, 0.004), petrous, 0.006)
 
 
 def face_skull(x, y, z, base, clamps):
@@ -420,7 +444,7 @@ def face_skull(x, y, z, base, clamps):
     d = smin(base, fill, 0.002)
     # --- additions that face the mouth: palate, alveolar process (root sheaths), the bony plates
     pal = palate(ax, y, z)
-    alv = root_sheaths(x, y, z, True)
+    alv = smin(root_sheaths(x, y, z, True), alveolar_ridge(x, y, z, True), 0.003)
     # 1.2 mm of mucosa between the bone and the mouth's air, except under the gum band (0.7 mm of gingiva there)
     gum = gum_sdf(x, y, z, True)
     alv = np.maximum(alv, -np.maximum(A.oral_void(ax, y, z) - 0.0012, -(gum - 0.0007)))
@@ -464,7 +488,7 @@ def face_skull(x, y, z, base, clamps):
     # --- soft-tissue spaces: infratemporal / temporal fossa (temporalis, pterygoids, masseter) lateral to the
     # pterygoid plates, behind the maxilla and medial to the zygomatic arch and the ramus
     lo, hi = INFRATEMPORAL
-    itf = rbox(ax, y, z, lo, hi, 0.005)
+    itf = rbox(ax, y, z, lo, hi, 0.011)
     itf = smax(itf, -(cav - 0.0030), 0.003)                       # >= 3 mm of skull base above it
     itf = smax(itf, -(pterygoid_plates(ax, y, z) + 0.0), 0.001)
     itf = smax(itf, -(ell(ax, y, z, *MAX_SINUS) + 0.0005), 0.003)   # maxillary tuberosity (posterior wall)
@@ -561,11 +585,38 @@ def _poly2d(u, v, P):
     return sgn * d
 
 
+_RAMUS_SMOOTH = None
+
+
+def _ramus_outline():
+    """RAMUS_POLY smoothed (closed centripetal Catmull-Rom, 8 samples per edge): concave anterior border,
+    S-shaped posterior border, rounded gonial angle, coronoid and condyle."""
+    global _RAMUS_SMOOTH
+    if _RAMUS_SMOOTH is None:
+        P = np.asarray(RAMUS_POLY, float)
+        n = len(P)
+        out = []
+        for i in range(n):
+            p0, p1, p2, p3 = P[(i - 1) % n], P[i], P[(i + 1) % n], P[(i + 2) % n]
+            t0 = 0.0
+            t1 = t0 + max(np.linalg.norm(p1 - p0), 1e-9) ** 0.5
+            t2 = t1 + max(np.linalg.norm(p2 - p1), 1e-9) ** 0.5
+            t3 = t2 + max(np.linalg.norm(p3 - p2), 1e-9) ** 0.5
+            for k in range(8):
+                t = t1 + (t2 - t1) * k / 8
+                a1 = (t1 - t) / (t1 - t0) * p0 + (t - t0) / (t1 - t0) * p1
+                a2 = (t2 - t) / (t2 - t1) * p1 + (t - t1) / (t2 - t1) * p2
+                a3 = (t3 - t) / (t3 - t2) * p2 + (t - t2) / (t3 - t2) * p3
+                b1 = (t2 - t) / (t2 - t0) * a1 + (t - t0) / (t2 - t0) * a2
+                b2 = (t3 - t) / (t3 - t1) * a2 + (t - t1) / (t3 - t1) * a3
+                out.append((t2 - t) / (t2 - t1) * b1 + (t - t1) / (t2 - t1) * b2)
+        _RAMUS_SMOOTH = np.asarray(out)
+    return _RAMUS_SMOOTH
+
+
 def _mand_ramus(ax, y, z):
     """Ramus plate (5-6 mm, thicker at the borders), coronoid process, condylar neck and head."""
-    A = _A()
-    P = [(py, pz) for py, pz in RAMUS_POLY]
-    out = _poly2d(y, z, P)
+    out = _poly2d(y, z, _ramus_outline())
     # round the outline (2 mm) and give the plate its thickness about the flaring mid-plane
     thick = 0.0026 + 0.0012 * sstep(-0.004, 0.004, np.abs(out)) + 0.0010 * sstep(-0.050, -0.076, z)
     plate = np.maximum(out + 0.0015, np.abs(ax - _ramus_x(z, y)) - thick)
@@ -584,8 +635,8 @@ def mandible_raw(x, y, z):
     # mental protuberance and tubercles (a triangular chin), mental foramen region stays smooth
     d = smin(d, ell(ax, y, z, (0.0, -0.0835, -0.0915), (0.0150, 0.0050, 0.0075)), 0.006)
     d = smin(d, ell(ax, y, z, (0.0110, -0.0810, -0.0955), (0.0060, 0.0045, 0.0040)), 0.004)
-    # alveolar process: root sheaths of the lower teeth
-    d = smin(d, root_sheaths(x, y, z, False), 0.0035)
+    # alveolar process: continuous ridge + root sheaths (juga) of the lower teeth
+    d = smin(d, smin(root_sheaths(x, y, z, False), alveolar_ridge(x, y, z, False, height=0.020), 0.003), 0.0035)
     # digastric fossa / genial tubercles on the lingual symphysis (subtle)
     d = smax(d, -ell(ax, y, z, (0.0080, -0.0700, -0.0985), (0.0060, 0.0040, 0.0030)), 0.002)
     return smax(d, -socket_sdf(x, y, z, False), 0.0003)
