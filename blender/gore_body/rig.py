@@ -847,6 +847,15 @@ def transfer_weights(obj, src_names=None, smooth_iters=None):
         np.add.at(acc, e[:, 0], W[e[:, 1]])
         np.add.at(acc, e[:, 1], W[e[:, 0]])
         W = 0.5 * W + 0.5 * acc / deg
+    if obj.name == "GB_Shorts":
+        # crotch gusset on the midline takes the skin weights of the midline itself (fix round 2: a nearest-skin
+        # weight picked up from one inner thigh dragged the gusset 3 cm sideways into that thigh in abduction)
+        t = _sstep(0.016, 0.0, np.abs(pv[:, 0]))
+        m = t > 0.0
+        if m.any():
+            mid = near[m].copy()
+            mid[:, 0] = 0.0                      # the skin weights ON the midline (pelvis-dominant perineum)
+            W[m] = (1.0 - t[m, None]) * W[m] + t[m, None] * dense_weights(mid, "skin")
     W /= np.maximum(W.sum(1, keepdims=True), 1e-12)
     return _quantise(*_top4(W))
 

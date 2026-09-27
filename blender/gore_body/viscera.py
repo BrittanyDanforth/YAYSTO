@@ -766,7 +766,8 @@ def _larynx_parts(x, y, z):
                    [0.0115, 0.0140, 0.0095])
     soft_o = smax(soft_o, np.maximum(1.5062 + dz - z, z - 1.552), 0.002)
     # epiglottis: a leaf rising behind the hyoid body (hyoid 0, -0.030, 1.556), behind the tongue base
-    epig = ell(x, y, z, (0.0, -0.027, 1.555), (0.010, 0.0030, 0.0085))
+    epig = ell(x, y, z, (0.0, -0.026, 1.551), (0.010, 0.0030, 0.0080))       # tip 1.559 (fix round 2: 4 mm lower,
+    #                                                                   the dropped mouth floor exposed it at jaw_open_26)
     soft_o = smin(soft_o, epig, 0.003)
     # airway: subglottis -> glottis slit (rima ~ 8 x 16 mm) -> vestibule; closed at the inlet
     lz = np.clip((z - 1.505 - dz) / (0.050 + dz), 0, 1)

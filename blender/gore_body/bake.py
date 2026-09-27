@@ -33,7 +33,7 @@ shorts   GB_Shorts            GB_Shorts         1024   GBL_cloth
 mouth    GB_Mouth             GB_Mouth          1024   GBL_teeth, GBL_gums, GBL_tongue
 skeleton GB_Skeleton          GB_Skeleton_HR    2048   GBL_bone, GBL_cartilage
 organs   GB_Organs            GB_Organs_HR      2048   GBL_organ
-brain    GB_Brain             GB_Brain_HR       2048   GBL_brain
+brain    GB_Brain             GB_Brain_HR       4096   GBL_brain
 ======== ==================== ================= ====== =================================
 GB_Head_LOD1 / GB_Body_LOD1 share their LOD0's atlas layout and use the same sets.
 """
@@ -57,7 +57,7 @@ DILATE_PX = 8
 UV_MARGIN_PX = 8          # island margin of the re-charted atlases (at the set's resolution)
 MIN_CHART_M2 = 0.5e-4     # 0.5 cm2: smaller charts are merged into a neighbour
 OVERLAP_MAX = 0.001       # re-chart until at most 0.1 % of the covered texels are shared
-UV_VERSION = 5            # bump when the charting algorithm changes (part of the UV cache key)
+UV_VERSION = 6            # bump when the charting algorithm changes (part of the UV cache key)
 
 SETS = {
     # name: target, source, size, cage extrusion (m), max ray (m), AO distance (m), surfaces
@@ -77,13 +77,17 @@ SETS = {
                      surfaces=["GBM_bone", "GBM_cartilage"], id_attr="gb_piece", emit_from="target"),
     "organs": dict(target="GB_Organs", source="GB_Organs_HR", size=2048, cage=0.0015, ray=0.004, ao=0.01,
                    surfaces=["GBM_organ"], id_attr="gb_organ", emit_from="target"),
-    "brain": dict(target="GB_Brain", source="GB_Brain_HR", size=2048, cage=0.0008, ray=0.002, ao=0.006,
+    "brain": dict(target="GB_Brain", source="GB_Brain_HR", size=4096, cage=0.0008, ray=0.002, ao=0.006,
                   surfaces=["GBM_brain"], emit_from="target"),
 }
 # margins >= 8 px at 2048 (RB §8.3; BC7 mips 2-3 no longer bleed across islands)
-RECHART = {"GB_Skeleton": dict(size=2048, smooth=2, interior_scale=0.45, cone=60.0, margin=9),
-           "GB_Organs": dict(size=2048, smooth=2, interior_scale=0.6, cone=60.0, margin=9),
-           "GB_Brain": dict(size=2048, smooth=0, interior_scale=1.0, cone=62.0, margin=9)}
+# repair: how folded charts are fixed (fix round 2) - "unfold" (angle-based re-flattening: keeps the coverage;
+# texel distortion stays within 1 stop on bone and organs) or "refine" (planar sub-charts: no distortion, more
+# islands; the brain's gyri made the angle-based charts 2.5 stops uneven).  The brain atlas is 4096 so its
+# 2-3k small charts keep a 0.36 mm texel with the 9 px margin.
+RECHART = {"GB_Skeleton": dict(size=2048, smooth=2, interior_scale=0.45, cone=60.0, margin=9, repair="unfold"),
+           "GB_Organs": dict(size=2048, smooth=2, interior_scale=0.6, cone=60.0, margin=9, repair="unfold"),
+           "GB_Brain": dict(size=4096, smooth=0, interior_scale=1.0, cone=62.0, margin=9, repair="refine")}
 PAINTER = {"head": ("GB_Head", 1024, 512), "body": ("GB_Body", 1024, 512), "shorts": ("GB_Shorts", 1024, 512)}
 
 _RESULTS = {"sets": {}, "tileables": {}, "eyes": {}, "decals": {}, "painter": {}, "room": {}, "uv": {},
@@ -593,9 +597,14 @@ def rechart(obj, size=2048, smooth=0, interior_scale=1.0, margin_px=UV_MARGIN_PX
     marrow cores: ``gb_class`` 6; organ cavities: negative-volume components) are scaled by
     ``interior_scale`` since they only show in cuts, then Blender packs the islands with a
     ``margin_px`` margin at ``size``."""
-    me = obj.data
     # charts below 0.5 cm2 are absorbed by a neighbour (fewer tiny islands, fewer seams where wounds cut)
     chart, axes = grow_charts(obj, cone_deg, smooth=smooth, isolate=isolate, min_area=MIN_CHART_M2)
+    return _project_pack(obj, chart, axes, size, interior_scale, margin_px)
+
+
+def _project_pack(obj, chart, axes, size, interior_scale, margin_px):
+    """Planar-project every chart along its axis (metres), scale interior surfaces, pack with a margin."""
+    me = obj.data
     _, _, _, _, _, le, lf = _face_topology(me)
     lv = np.empty(len(me.loops), np.int64)
     me.loops.foreach_get("vertex_index", lv)
@@ -630,7 +639,63 @@ def rechart(obj, size=2048, smooth=0, interior_scale=1.0, margin_px=UV_MARGIN_PX
     obj.select_set(False)
     me.edges.foreach_set("use_seam", np.zeros(len(me.edges), bool))
     _LAST_CHARTS[obj.name] = chart
+    _LAST_AXES[obj.name] = axes
     return int(chart.max() + 1)
+
+
+_LAST_AXES = {}
+
+
+def refine_folded(obj, size, interior_scale, margin_px, cones=(38.0, 26.0, 16.0)):
+    """Fold repair by planar sub-charts (fix round 2): every chart that owns an overlapping face is split into
+    smaller normal-cone sub-charts (``cones`` in turn), each planar-projected along its own seed normal, and the
+    atlas is re-packed.  Planar projection keeps the metric texel density (stretch <= 1 / cos(cone)), unlike an
+    angle-based unwrap of a wrinkled chart, which folds the texel density by 2-3 stops on the brain's gyri."""
+    me = obj.data
+    fn, _fc, fa, pairs, _pe, _le, _lf = _face_topology(me)
+    nbr = [[] for _ in range(len(fn))]
+    for a_, b_ in pairs.tolist():
+        nbr[a_].append(b_)
+        nbr[b_].append(a_)
+    n_split = 0
+    over = uv_overlap_exact(obj, size)[0]
+    for cone in cones:
+        over, polys = uv_overlap_exact(obj, size)
+        if over <= OVERLAP_MAX or not len(polys):
+            break
+        chart = _LAST_CHARTS[obj.name].copy()
+        axes = list(_LAST_AXES[obj.name])
+        bad = set(np.unique(chart[polys]).tolist())
+        cos_c = np.cos(np.radians(cone))
+        k = int(chart.max()) + 1
+        for c in sorted(bad):
+            faces = np.nonzero(chart == c)[0]
+            free = set(faces.tolist())
+            first = True
+            for seed in faces[np.argsort(-fa[faces], kind="stable")].tolist():
+                if seed not in free:
+                    continue
+                ax = fn[seed]
+                cid = c if first else k
+                if first:
+                    axes[c] = ax
+                    first = False
+                else:
+                    axes.append(ax)
+                    k += 1
+                free.discard(seed)
+                chart[seed] = cid
+                stack = [seed]
+                while stack:
+                    f = stack.pop()
+                    for g in nbr[f]:
+                        if g in free and fn[g] @ ax >= cos_c:
+                            free.discard(g)
+                            chart[g] = cid
+                            stack.append(g)
+            n_split += 1
+        _project_pack(obj, chart, np.asarray(axes), size, interior_scale, margin_px)
+    return uv_overlap_exact(obj, size)[0], n_split
 
 
 _LAST_CHARTS = {}
@@ -764,10 +829,13 @@ def prepare_uvs(objs=None, force=False):
                 continue
         before = uv_stats(obj, 512)
         n = rechart(obj, cfg["size"], cfg["smooth"], cfg["interior_scale"], cfg["margin"], cfg["cone"])
-        # overlap repair (fix round 2): the folded charts are re-flattened with an angle-based unwrap
-        over, nfix = unfold_charts(obj, _LAST_CHARTS[name], cfg["size"], cfg["margin"], cfg["interior_scale"])
+        # overlap repair (fix round 2): folded charts are split into smaller planar sub-charts; what still
+        # overlaps after that is re-flattened with an angle-based unwrap, the last few faces split off
+        if cfg.get("repair") == "refine":
+            over, nfix = refine_folded(obj, cfg["size"], cfg["interior_scale"], cfg["margin"])
+        else:
+            over, nfix = uv_overlap_exact(obj, cfg["size"])[0], 0
         if over > OVERLAP_MAX:
-            # a second pass catches charts that the pack re-scaled into a remaining fold
             over, nfix2 = unfold_charts(obj, _LAST_CHARTS[name], cfg["size"], cfg["margin"], cfg["interior_scale"])
             nfix += nfix2
         if over > OVERLAP_MAX:

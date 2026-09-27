@@ -225,9 +225,11 @@ Measured on 2026-09-27 in a clean `python3 build.py` run (bpy 5.0.1 module, 4 CP
 | `hero.png` 1024 px, 96 samples | 716 s |
 | All renders | 6089 s (~1 h 41 min) |
 | Whole `python3 build.py` | 6576 s (~1 h 50 min) |
+| `python3 gore.py` (self-test + 7 renders) | ~35 min |
+| `python3 materials.py --samples 32` | ~23 min |
 | `python3 build.py --no-render` | ~7 min |
 
-The saved `gore_head.blend` is ~30 MB. On a machine with a GPU that Cycles can use, renders are far faster.
+The saved `gore_head.blend` is ~29 MB. On a machine with a GPU that Cycles can use, renders are far faster.
 
 Live editing is **not** interactive. Every change to an empty re-evaluates all 12 gore layers. Expect ~2-3 s
 for one hit, ~6-8 s for the carnage preset, and tens of seconds with 20+ large hits. Set **Viewport Detail** to
@@ -247,8 +249,9 @@ level yet:
 - **Mush and colour (fails §5.18 A-C for the big wounds)**: the blast and crushed wounds have torn flaps, bone chips,
   clots and a broken jaw, but the bone plates read as clean pale paper-like sheets. The pulp is dark red glass rather
   than wet lumpy tissue with 4+ colours and scattered small highlights. Exit bone chips are clean white wedges.
-- **Crushed silhouette (§5.18 D, partial)**: the mid-face caves in, but the change in outline is modest. A globe in
-  a crushed orbit reads as a red ball, because the whole sclera fills with haemorrhage.
+- **Crushed silhouette (§5.18 D, partial)**: the mid-face caves in, but the change in outline is modest. The cave-in
+  now fades out inside the refined patch; before, this left pale crease arcs across the forehead. The globe in a
+  crushed orbit is a dark haemorrhagic ball: the iris shows only when seen from the front.
 - **Entrance wound**: the right size (scalp ~7.5 mm), but the even brown abrasion collar still reads a little like a
   ring decal in close-ups.
 - **Slash**: the deep cheek cut reads like a "second mouth" from three-quarter view. The throat cut shows no muscle

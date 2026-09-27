@@ -361,7 +361,7 @@ Deviations from the bible / plan that the code now makes on purpose (each also n
 | Lung AABB | RB AABB | x 8 / y 6 mm tolerance; volumes below FRC (warn) | the lungs fit the rib cage model (ribs win) |
 | Left adrenal | RB centre | ellipsoid 6 mm lower before the kidney carve | the kidney pole carves the lower crescent; the carved gland is centred |
 | GB_Brain budget | plan 14k | 28k (`TRI_BUDGET`) | hero asset of every headshot / cutaway |
-| Body atlas | 2k | 4096 px (brain 2048) | body texel density |
+| Body atlas | 2k | 4096 px (brain 4096 since fix round 2) | body / brain texel density |
 | Rib arcs | 4 table points | + 2 round arc mid-points per rib (`ribs.rib_points`) | ribs were polygonal between the table points |
 | Neck girth | 38 cm at z 1.515 (horizontal) | measured as the anthropometric tape (`verify.neck_tape`: anchored at the cricoid point, perpendicular to the neck, smallest of 0-16 deg tilts): 39.1 cm | a horizontal cut at 1.515 runs below the C7 skin landmark (0.075, 1.532) through the trapezius (the neck *base*, 42.6 cm) |
 | Vessel tube rings | 0.35-0.5 r Douglas-Peucker | 0.7 r / 3 mm, turn limit by tube size (18-60 deg), 75 mm max span + forced rings at every limb joint | the 14,000-triangle plan budget with no kinks at joints |
@@ -374,7 +374,7 @@ Deviations from the bible / plan that the code now makes on purpose (each also n
 | Skin smooth steps (fix round 2) | - | `body_skin.sstep` is quintic (C2) | cubic steps printed curvature lines along every relief border in raking light |
 | Body LOD0 density (fix round 2) | - | zoned collapse weights (`DEC_W_*`): torso edges ~9 mm (p95 14 mm) instead of 2-7 cm | long torso triangles showed as straight lines across the chest and back |
 | Muscle shell under folds (fix round 2) | RB §7.6 fat | +2.5-6 mm extra shell depth under the axillary folds, perineum and plantar pad (`FOLD_FAT_SITES`) | LBS compresses the skin there more than the shell (FB-2 pokes 3-10 mm) |
-| Inner atlases (fix round 2) | non-overlapping | folded normal-cone charts re-flattened with an angle-based unwrap and re-packed (`bake.unfold_charts`), overlap < 0.01 %; brain coverage ~0.10 (texel ~0.5 mm at 2048) | isolating single faces made 4-8k islands and halved the texel density |
+| Inner atlases (fix round 2) | non-overlapping, 16 px margin | 9 px margin; folded normal-cone charts repaired per mesh (`bake.RECHART[...]['repair']`): skeleton / organs re-flattened with an angle-based unwrap (`unfold_charts`), brain split into planar sub-charts (`refine_folded`, no texel distortion) on a 4096 atlas; overlap < 0.1 % | isolating single faces made 4-8k islands and halved the texel density; the angle-based unwrap of gyri gave 2.5-stop texel distortion |
 
 Rig / tests:
 - Deep layers (bone, organs, vessels, nerves, cord, brain) take the head share of the 12-22 mm band around the
