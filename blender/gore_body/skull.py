@@ -248,6 +248,20 @@ def alveolar_ridge(x, y, z, upper, height=0.016):
     return smax(d, s - (ca.s_end + 0.0045), 0.004)
 
 
+def maxilla_flare(x, y, z):
+    """Lower maxilla envelope: the alveolar arch at the crest widening smoothly upward (a concave lateral surface)
+    into the zygomatic buttress / canine fossa level at z -0.011 - no shelf between the face and the teeth."""
+    A = _A()
+    ax = np.abs(x)
+    ca = A._cerv(True)
+    s, q = ca.arch.project(ax, y)
+    zc, D, _pap = ca.props(s)
+    w = 0.5 * D + 0.0032 + 0.026 * sstep(-0.040, -0.010, z) ** 1.4
+    d = np.abs(q + 0.0004) - w
+    d = smax(d, (zc + CREST_BELOW_CEJ) - z, 0.0015)
+    return smax(d, s - (ca.s_end + 0.0080), 0.005)
+
+
 GUM_BAND = {True: 0.0085, False: 0.0125}
 
 
@@ -381,6 +395,16 @@ def pterygoid_plates(ax, y, z):
     return smin(lat, med, 0.002)
 
 
+def piriform_aperture(ax, y, z):
+    """Pear-shaped piriform aperture (~24 mm wide low, ~9 mm under the nasal bones, 36 mm tall, rounded
+    bottom at the anterior nasal spine level), extruded backward into the nasal cavity."""
+    w = 0.0045 + 0.0078 * sstep(0.015, -0.013, z)
+    zb = -0.0270 + 0.0060 * (ax / 0.0125) ** 2                     # rounded floor of the aperture
+    d = smax(ax - w, zb - z, 0.004)
+    d = smax(d, z - 0.0165, 0.004)
+    return smax(d, -0.095 - y, 0.003)
+
+
 def palate(ax, y, z):
     """Hard palate: a 4-6 mm plate between the nasal floor and the oral mucosa (the vault rises in the midline)."""
     A = _A()
@@ -388,7 +412,11 @@ def palate(ax, y, z):
     d = z - top
     d = smax(d, (NASAL_FLOOR - 0.0110) - z, 0.002)                      # never thicker than ~11 mm
     d = smax(d, y - CHOANA_Y, 0.002)
-    d = smax(d, -0.084 - y, 0.003)
+    # only inside the dental arch (lingual to the tooth line; the alveolar ridge and root sheaths close it)
+    ca = A._cerv(True)
+    s, q = ca.arch.project(ax, y)
+    _zc, D, _pap = ca.props(s)
+    d = smax(d, q + 0.5 * D + 0.0008, 0.003)
     d = smax(d, ax - 0.030, 0.004)
     # oral side: 1.5 mm of palatal mucosa over the bone
     return np.maximum(d, -(A.oral_void(ax, y, z) - 0.0015))
@@ -437,11 +465,21 @@ def face_skull(x, y, z, base, clamps):
     fill = smax(fill, ax - 0.056, 0.004)
     fill = smax(fill, -(orbit - 0.0002), 0.002)
     fill = smax(fill, -(cav - 0.0010), 0.002)
-    w_ap = 0.0050 + 0.0072 * sstep(0.013, -0.017, z) - 0.0030 * sstep(-0.020, -0.028, z)
-    aperture = smax(smax(ax - w_ap, np.abs(z + 0.0060) - 0.0205, 0.0045), -0.080 - y, 0.003)
+    aperture = piriform_aperture(ax, y, z)
     fill = smax(fill, -aperture, 0.002)
     fill = clamps(ax, y, z, fill, 0.0040)
     d = smin(base, fill, 0.002)
+    # below the nasal floor level the face is only alveolar process, palate, sinus floor and the zygomatic
+    # buttress: the head's facial block ended in a flat 12 cm wide shelf over the upper teeth (a 'visor')
+    keep = smin(maxilla_flare(x, y, z), root_sheaths(x, y, z, True) - 0.0005, 0.003)
+    keep = np.minimum(keep, palate(ax, y, z) - 0.0005)
+    keep = smin(keep, ell(ax, y, z, MAX_SINUS[0], np.asarray(MAX_SINUS[1]) + 0.0019), 0.004)
+    keep = smin(keep, capsule(ax, y, z, (0.0380, -0.0560, -0.0400), (0.0500, -0.0540, -0.0100), 0.0048, 0.0060), 0.006)
+    keep = np.minimum(keep, pterygoid_plates(ax, y, z) - 0.0003)
+    lowface = smax(z + 0.0110, -keep, 0.004)
+    lowface = smax(lowface, y + 0.022, 0.004)                      # (the skull base behind is not face)
+    d = smax(d, -lowface, 0.003)
+    d = smax(d, -aperture, 0.002)
     # --- additions that face the mouth: palate, alveolar process (root sheaths), the bony plates
     pal = palate(ax, y, z)
     alv = smin(root_sheaths(x, y, z, True), alveolar_ridge(x, y, z, True), 0.003)
