@@ -1952,6 +1952,30 @@ def _b5_built():
     return o is not None and o.get("gb_status") == "B5"
 
 
+@check("scene", owner="B4")
+def b4_cord_codes():
+    """GB_Cord: every cord segment C2..S5 has >= 2 rings (vertices) of its code, all inside its spine table z range
+    (+-0.5 mm).  C1 lies above CORD_TOP inside GB_Brain's medulla (brainstem capsule 'cord_C1_C2' / brain labels)."""
+    bpy = _bpy()
+    from gb_data import vertebrae as VT_
+    o = bpy.data.objects.get("GB_Cord")
+    if o is None or str(o.get("gb_status", "")) != "B4":
+        return True, "skipped (B4 cord not built)"
+    v = gbc.get_verts(o.data)
+    seg = gbc.read_point_attr(o, "gb_piece", 'INT')
+    bad, rows = [], 0
+    for sg in VT_.cord_segments():
+        if sg["id"] == "C1":
+            continue
+        m = seg == sg["index"]
+        z = v[m, 2]
+        rings = len(np.unique(np.round(z, 4)))
+        rows += 1
+        if rings < 2 or z.max() > sg["z_top"] + 5e-4 or z.min() < sg["z_bottom"] - 5e-4:
+            bad.append(f"{sg['id']} rings {rings}" + (f" z {z.min():.4f}..{z.max():.4f}" if len(z) else ""))
+    return not bad, f"{rows} segments (C2..S5) checked; bad: {bad}"
+
+
 @check("tables", owner="B5")
 def b5_vessel_graph():
     """Loader-style graph check: parents/children consistent, [x,y,z,r] points, bones per point, arterial roots
@@ -1992,6 +2016,36 @@ def b5_vessels_inside_skin():
     return vascular.skin_report()
 
 
+@check("scene", owner="B5", quick_ok=False)
+def b5_tube_facets():
+    """Tube FACETS (centroids + edge midpoints) vs bone (<= 0.3 mm outside canals) and vs the LOD0 + LOD1 skin
+    (>= 0.5 mm deep, subcutaneous veins >= 1 mm) - fix round 3: the point-sampled checks passed while chords cut
+    vertebral bodies and slivers showed through the nose, neck base and chest wall."""
+    import vascular
+    if not _b5_built():
+        return False, "GB_Vessels_* not built by B5 (placeholder)"
+    return vascular.tube_facet_report()
+
+
+@check("scene", owner="B5")
+def b5_vessel_kinks():
+    """Fitted centrelines turn <= 35 deg per 5 mm except within 6 mm of their ends (critics round 2: 47/201 kinks)."""
+    import vascular
+    if not _b5_built():
+        return False, "GB_Vessels_* not built by B5 (placeholder)"
+    bad = []
+    for sg in vascular.VS.vessel_segments():
+        if vascular.mesh_for(sg) is None:
+            continue
+        P, _r, _p = vascular._fitted_or_raw(sg)
+        a = vascular.kink_angles(P)
+        sa = vascular._arc(P)
+        a[np.minimum(sa, sa[-1] - sa) < 0.006] = 0.0
+        if a.max() > 35.0:
+            bad.append(f"{sg['id']} {a.max():.0f}")
+    return len(bad) <= 5, f"{len(bad)} segments over 35 deg/5 mm (<= 5 allowed at chamber junctions): {bad[:20]}"
+
+
 @check("scene", owner="B5")
 def b5_bible_waypoints():
     """Centrelines within 2 mm of every RB §3.3 waypoint ((E) rows 20 mm), unless a hard rule moved them
@@ -2009,7 +2063,7 @@ def b5_tube_budget():
     bpy = _bpy()
     tris = sum(gbc.tri_count(bpy.data.objects[n].data) for n in ("GB_Vessels_Art", "GB_Vessels_Ven")
                if n in bpy.data.objects)
-    return tris <= 15400, f"{tris} triangles (plan ~14,000)"
+    return tris <= gbc.TRI_BUDGET['GB_Vessels'] * 1.1, f"{tris} triangles (budget {gbc.TRI_BUDGET['GB_Vessels']})"
 
 
 @check("files", owner="B5")

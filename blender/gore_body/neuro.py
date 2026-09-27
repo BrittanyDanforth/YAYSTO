@@ -233,7 +233,21 @@ def cord_parts(q=False):
     P = np.column_stack([np.zeros(len(prof)), prof[:, 1], prof[:, 0]])
     parts = []
     # --- cord proper (ellipse sections), segment code by z, t within the segment
-    v, f, tt = gg.sweep(P, prof[:, 2:4], sides=8, step=0.015, smooth=True,
+    # rings: >= 2 inside every cord segment's z range (fix round 3, critics: one 12-vertex ring per 15 mm left C1,
+    # S1 and S3 without vertices and the upper cervical rings one level off), at 25 % and 75 % of each range plus
+    # its boundaries, mapped to arc positions along the dense centreline
+    Pd, td = gg.resample(P, 0.0005, True)
+    zt = []
+    for sg in VT.cord_segments():
+        a, b = sg["z_top"], sg["z_bottom"]
+        zt += [a, a + 0.25 * (b - a), a + 0.75 * (b - a)]
+    zt += [float(Pd[0, 2]), float(Pd[-1, 2])]
+    zt = np.array(sorted({round(z, 5) for z in zt if Pd[-1, 2] <= z <= Pd[0, 2]}, reverse=True))
+    # arc position of each target height (the cord descends monotonically from the junction to the conus)
+    zz = Pd[:, 2]
+    mono = np.minimum.accumulate(zz)
+    at = np.interp(-zt, -mono, td)
+    v, f, tt = gg.sweep(P, prof[:, 2:4], sides=8, step=0.015, smooth=True, at=np.maximum.accumulate(at),
                         normal_fn=lambda Q: np.tile([1.0, 0.0, 0.0], (len(Q), 1)))
     seg, tseg = _seg_of_z(v[:, 2])
     parts.append(gg.part(v, f, 0, gb_piece=seg.astype(np.int32), gb_tt=tseg))

@@ -46,17 +46,15 @@ shader_type spatial;
 render_mode blend_mix, cull_back;
 uniform sampler2D sclera_tex : source_color, filter_linear_mipmap;
 uniform sampler2D iris_tex : source_color, filter_linear_mipmap;
-uniform vec3 eye_centre;        // model space (the rest pose == Godot body frame)
-uniform float iris_disc_radius; // textures.json eyes.iris.radius_m (image edge)
-varying vec3 lp;
-void vertex() { lp = VERTEX - eye_centre; }
+uniform float iris_uv_radius;   // UV radius of the iris image edge (azimuthal-equidistant eye UV about the gaze)
 void fragment() {
 	vec4 sc = texture(sclera_tex, UV);
-	// iris disc: projected along the gaze axis (+Z in Godot = body -Y), front hemisphere only
-	vec2 iuv = vec2(0.5) + vec2(lp.x, -lp.y) / (2.0 * iris_disc_radius);
+	// iris from the eye's own UV (centred on the gaze pole at (0.5, 0.5)), so it follows the eye bone when the
+	// eye rotates (fix round 3: the model-space projection stayed put while the globe turned)
+	vec2 iuv = vec2(0.5) + (UV - vec2(0.5)) * (0.5 / iris_uv_radius);
 	vec3 iris = texture(iris_tex, iuv).rgb;
-	float front = step(0.0, lp.z);
-	vec3 col = mix(iris, sc.rgb, mix(1.0, sc.a, front));
+	float inside = step(length(UV - vec2(0.5)), iris_uv_radius);
+	vec3 col = mix(iris, sc.rgb, mix(1.0, sc.a, inside));
 	ALBEDO = col;
 	ROUGHNESS = mix(0.06, 0.18, sc.a);
 	SPECULAR = 0.6;
@@ -66,26 +64,26 @@ void fragment() {
 }
 """
 
-func _eye_mat(mi: MeshInstance3D, iris_r: float) -> ShaderMaterial:
-	# eye centre: the eyeball is a sphere, so its bounding-box centre (back pole side) is the centre
-	var ab := mi.mesh.get_aabb()
+func _eye_mat(_mi: MeshInstance3D, iris_r: float) -> ShaderMaterial:
 	var m := ShaderMaterial.new()
 	var sh := Shader.new()
 	sh.code = EYE_SHADER
 	m.shader = sh
 	m.set_shader_parameter("sclera_tex", _tex("eye_sclera_albedo.png", true))
 	m.set_shader_parameter("iris_tex", _tex("eye_iris_albedo.png", true))
-	var c := ab.get_center()
-	c.z = ab.position.z + 0.012       # centre = back pole + radius (the cornea bulges in front)
-	m.set_shader_parameter("eye_centre", c)
-	m.set_shader_parameter("iris_disc_radius", iris_r)
+	# azimuthal-equidistant UV (head_integration._eye_arrays): uv radius = 0.5 * polar angle / pi
+	var polar: float = asin(clamp(iris_r / 0.012, 0.0, 1.0))
+	m.set_shader_parameter("iris_uv_radius", 0.5 * polar / PI)
 	return m
 
 func _lash_mat() -> StandardMaterial3D:
 	var m := StandardMaterial3D.new()
 	m.albedo_texture = _tex("hair_cards.png", true)
 	m.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA_SCISSOR
-	m.alpha_scissor_threshold = 0.35
+	m.alpha_scissor_threshold = 0.5
+	# alpha-to-coverage (MSAA): soft strand edges instead of hard black lines / specks (fix round 3)
+	m.alpha_antialiasing_mode = BaseMaterial3D.ALPHA_ANTIALIASING_ALPHA_TO_COVERAGE_AND_TO_ONE
+	m.alpha_antialiasing_edge = 0.3
 	m.cull_mode = BaseMaterial3D.CULL_DISABLED
 	m.roughness = 0.55
 	return m

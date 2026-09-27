@@ -528,6 +528,10 @@ def _head_jaw(p, g_axial, layer="skin"):
         qq = q[need]
         ds[need] = skull(qq[:, 0], qq[:, 1], qq[:, 2])
     gj[m] = _sstep(-0.004, 0.004, ds - dj)
+    # never the jaw inside the skull (intracranial vessels: A12 middle meningeal) or behind the ear-canal plane
+    # (occipital artery A09, nape): fix round 3, critics found 'jaw' weights on intracranial / occipital points
+    # (the mandible's highest point, the condyle, is at head z ~0 = body 1.647: nothing above 1.656 is jaw)
+    gj[m] *= _sstep(-0.0005, 0.0015, ds) * _sstep(0.030, 0.022, q[:, 1]) * _sstep(1.656, 1.650, q[:, 2])
     # the back of the mouth floor (tongue base, vallecula, oropharyngeal lining over the hyoid and epiglottis)
     # hangs from the hyoid, not the chin: it follows the jaw only 30 %, so a dropped jaw stretches the floor
     # instead of swinging it 2 cm down through the top of the larynx

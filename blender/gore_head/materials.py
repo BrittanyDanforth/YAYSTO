@@ -913,10 +913,12 @@ def _skin_material(g, name="GH_Skin"):
     # purple-blue after some hours, green-yellow margins only after ~18 h
     age = t.control("wound_age")
     ageh = age * age * 48.0
-    young = bz.ramp([(0.0, (1.0, 1.0, 1.0)), (0.25, (0.93, 0.70, 0.70)), (0.55, (0.74, 0.44, 0.48)),
-                     (1.0, (0.46, 0.22, 0.34))])
-    mid = bz.ramp([(0.0, (1.0, 1.0, 1.0)), (0.2, (0.88, 0.74, 0.76)), (0.45, (0.64, 0.40, 0.47)),
-                   (0.7, (0.42, 0.24, 0.42)), (1.0, (0.24, 0.13, 0.30))])
+    # (blood under the skin absorbs strongly: a deep bruise of a beaten face
+    # is dark plum to near-black purple, refs 5 / 15 / 16, not a lilac tint)
+    young = bz.ramp([(0.0, (1.0, 1.0, 1.0)), (0.2, (0.90, 0.64, 0.64)), (0.5, (0.64, 0.33, 0.38)),
+                     (1.0, (0.34, 0.13, 0.22))])
+    mid = bz.ramp([(0.0, (1.0, 1.0, 1.0)), (0.15, (0.86, 0.68, 0.72)), (0.4, (0.54, 0.30, 0.40)),
+                   (0.65, (0.30, 0.14, 0.28)), (1.0, (0.13, 0.05, 0.13))])
     tint = t.mix(ageh.smooth(0.5, 4.0), young, mid)
     old_edge = ageh.smooth(18.0, 40.0) * (1.0 - bz.smooth(0.2, 0.55)) * bz.smooth(0.0, 0.08)
     tint = t.mix(old_edge, tint, (0.86, 0.84, 0.58))
@@ -996,7 +998,7 @@ def _skin_material(g, name="GH_Skin"):
     # ---- blood on top -----------------------------------------------------
     bl = _blood_layer(t, g, col, rgh.clamp(), t.mix(wm, blood, blood * 0.65), p)
     height = t.mix(bl["Height Mask"], height, bl["Height"] * 3.0)
-    sss = (1.0 - wm * 0.75) * (1.0 - leather) * bl["SSS"] + bm * 0.5
+    sss = (1.0 - wm * 0.75) * (1.0 - leather) * bl["SSS"] * (1.0 - bz * 0.6) + bm * 0.5
     # one bump only: a Bump node re-evaluates its whole height graph twice more
     n_fine = t.bump(height, 0.0001)
     damaged = t.principled(dict(skin_sss, **{
@@ -1287,17 +1289,30 @@ def _blood_material(g):
     # (a liquid surface is never an optical flat: slow ripples and the
     # meniscus bulges break the reflection of a pool or a wide stream)
     ripple = (t.noise(p, 70.0, 2.0) * 0.6 + t.noise(p, 190.0, 2.0) * 0.25) * thick
+    # a 0.1-0.3 mm film on skin takes the skin's own relief (pores, fine
+    # lines) and beads up on it: the highlight breaks into many small glints
+    # instead of one smooth plastic sheen over a lip or the chin
+    sk_pd, _, _ = t.voronoi(p, 2200.0)
+    sk_rel = (1.0 - sk_pd.smooth(0.0, 0.3)) * -0.8 + t.noise(p, 5200.0, 2.0) * 0.5
+    bead_d, _, _ = t.voronoi(p, 520.0)
+    beads = (1.0 - bead_d.smooth(0.0, 0.55)) * t.noise(p, 90.0).smooth(0.4, 0.62)
+    film = thin.smooth(0.15, 0.55) * (1.0 - tis)
     h = clot * 0.3 * (1.0 - a) + t.noise(p, 4000.0) * a * 0.3 + fclot * t.noise(p, 700.0, 2.0) * 0.6 \
-        + tis_m * fold * 0.8 + ripple
+        + tis_m * fold * 0.8 + ripple + film * (sk_rel * 0.9 + beads * 0.6)
+    # patches where the film is tacky / wiped thin: satin, not mirror
+    tack = t.noise(p, 45.0, 3.0).smooth(0.5, 0.7) * film
+    rough = rough + tack * 0.25 + film * 0.06
     bsdf = t.principled({
         'Base Color': col, 'Roughness': rough.max(0.06), 'IOR': 1.36, 'Specular IOR Level': 0.5,
         # (thick blood barely scatters: a strong red subsurface glow makes
         # dark pooled blood read as bright red wax)
         'Subsurface Weight': (1.0 - a) * (0.08 + 0.4 * thin), 'Subsurface Radius': (1.0, 0.02, 0.02),
         'Subsurface Scale': 0.001, 'Subsurface IOR': 1.36,
-        'Coat Weight': (1.0 - a * 0.85) * (0.3 + 0.7 * wet) * (1.0 - fclot * 0.92) * (1.0 - tis_m * 0.6),
+        'Coat Weight': (1.0 - a * 0.85) * (0.3 + 0.7 * wet) * (1.0 - fclot * 0.92) * (1.0 - tis_m * 0.6)
+        * (1.0 - tack * 0.7) * (1.0 - film * 0.3),
         'Coat IOR': 1.36,
-        'Coat Roughness': 0.06 + (1.0 - wet) * 0.2 + a * 0.3 + fclot * 0.2,
+        'Coat Roughness': 0.09 + (1.0 - wet) * 0.2 + a * 0.3 + fclot * 0.2 + film * 0.05
+        + t.noise(p, 130.0, 2.0).smooth(0.45, 0.7) * 0.1,
         'Coat Tint': t.mix(a, (0.9, 0.4, 0.4), (1, 1, 1)),
         'Normal': t.bump(h, 0.0001)})
     # the thin edge of a film lets the skin show through (translucent red);
@@ -1473,18 +1488,21 @@ def _teeth_material(g):
     # (the gum-line bias is warped by noise: a loose or blown-out tooth sits
     # far from the occlusal plane and a clean height band would paint it as
     # a red-and-white capsule)
-    smear = t.noise(p, 1400.0, 3.0, 0.6)
+    # (broad smears wiped across the crowns, streaked along the tooth and
+    # pooled in the gaps: fine-noise spots on white enamel read as candy
+    # sprinkles or decay)
+    smear = t.noise(p * (1.0, 1.0, 0.45), 330.0, 3.0, 0.55) * 0.7 + t.noise(p, 1400.0, 2.0) * 0.3
     hw = (h + (smear - 0.5) * 0.9 + (t.noise(p, 380.0, 2.0) - 0.5) * 0.6).clamp()
-    tb = (t.attr("gore_blood") * (0.4 + 0.75 * hw.smooth(0.2, 1.0))).clamp()
-    tb = (tb.smooth(0.04, 0.3) * 0.55 + tb * 0.45) * (0.55 + 0.6 * smear.smooth(0.3, 0.65))
-    tb = tb.clamp()
+    gap = (1.0 - ao).smooth(0.1, 0.5)
+    tb = (t.attr("gore_blood") * (0.45 + 0.75 * hw.smooth(0.2, 1.0) + gap * 0.5)).clamp()
+    tb = (tb * (0.45 + 0.8 * smear.smooth(0.35, 0.6))).clamp()
     bl = _blood_layer(t, g, col, t.mix(wet, 0.3, 0.12), tb, p)
     nrm = t.bump(t.mix(bl["Height Mask"], peri * 0.3 + craze, bl["Height"]), 0.00004)
     bsdf = t.principled({
         'Base Color': bl["Color"], 'Roughness': bl["Roughness"], 'IOR': 1.62, 'Specular IOR Level': 0.6,
         'Subsurface Weight': 0.55 * bl["SSS"], 'Subsurface Radius': (1.0, 0.85, 0.6),
-        'Subsurface Scale': 0.0012, 'Coat Weight': (wet * 0.55 + bl["Coat"]).clamp(),
-        'Coat Roughness': t.mix(bl["Mask"], 0.05, bl["Coat Roughness"]), 'Coat Tint': bl["Coat Tint"],
+        'Subsurface Scale': 0.0012, 'Coat Weight': (wet * 0.3 + bl["Coat"]).clamp(),
+        'Coat Roughness': t.mix(bl["Mask"], 0.12, bl["Coat Roughness"]), 'Coat Tint': bl["Coat Tint"],
         'Normal': nrm})
     t.output(bsdf)
     return _finish(mat, t, (0.86, 0.82, 0.71), 0.2)

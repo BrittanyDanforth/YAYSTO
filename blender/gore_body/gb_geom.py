@@ -98,7 +98,7 @@ def _frames(P, up_hint=None):
 
 
 def sweep(points, radii, sides=8, step=None, smooth=True, ellipse=None, normal_fn=None, caps=True,
-          up_hint=None):
+          up_hint=None, at=None):
     """Sweep a closed section along a polyline.
 
     radii: scalar, per-control-point list, or (K, 2) per-point (radius along N, radius along B).
@@ -115,6 +115,11 @@ def sweep(points, radii, sides=8, step=None, smooth=True, ellipse=None, normal_f
     if step is None:
         step = max(0.004, 2.0 * float(r_ctrl.mean()))
     P, t = resample(ctrl, step, smooth)
+    if at is not None:
+        # rings at explicit normalised arc positions ``at`` (0..1, increasing) instead of every ``step``
+        Pd, td = resample(ctrl, 0.0005, smooth)
+        t = np.clip(np.asarray(at, float), 0.0, 1.0)
+        P = np.stack([np.interp(t, td, Pd[:, i]) for i in range(3)], axis=1)
     # radius along the arc: interpolate on the control points' cumulative length
     cl = np.concatenate([[0.0], np.cumsum(np.linalg.norm(np.diff(ctrl, axis=0), axis=1))])
     cl = cl / max(cl[-1], 1e-9)

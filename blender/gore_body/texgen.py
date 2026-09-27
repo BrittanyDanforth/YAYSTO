@@ -704,19 +704,23 @@ def sclera(p_local, n_img=None):
     around = (np.arctan2(p[:, 2], p[:, 0]) / (2.0 * np.pi)) % 1.0
     limbus_ang = math.asin(LIMBUS_R / 0.012)                   # ~29.5 deg
     t = np.clip((polar - limbus_ang) / (math.radians(110.0) - limbus_ang), 0.0, 1.0)   # 0 limbus .. 1 back
-    base = mix(lat.fbm(around, t, 8, 2, octaves=3), (0.62, 0.57, 0.52), (0.71, 0.67, 0.62))
-    col = mix(smooth(t, 0.45, 0.95), base, (0.52, 0.34, 0.30))
-    col = mix((1.0 - smooth(t, 0.0, 0.08)) * 0.55, col, (0.52, 0.53, 0.56))
+    # (fix round 3, critics: the mean visible sclera was salmon #C29F96 = a bloodshot living eye; target off-white
+    # ~#E6DED3 with sparse fine vessels concentrated in the nasal / temporal corners and a faint limbal yellowing)
+    base = mix(lat.fbm(around, t, 8, 2, octaves=3), (0.74, 0.70, 0.63), (0.81, 0.77, 0.70))
+    col = mix(smooth(t, 0.55, 0.98), base, (0.60, 0.45, 0.40))
+    col = mix((1.0 - smooth(t, 0.0, 0.07)) * 0.35, col, (0.70, 0.64, 0.50))
     # conjunctival vessels: iso-lines of noise stretched radially (many cycles around the eye)
     wa, wt = around + (lat.fbm(around, t, 12, 3, octaves=2, offset=(1.1, 2.2)) - 0.5) * 0.02, t
     v1 = ridge(lat.fbm(wa, wt, 18, 1, octaves=3, gain=0.6, offset=(0.0, 0.0), tile=False), 0.010 + 0.022 * t)
     v2 = ridge(lat.fbm(wa, wt, 46, 2, octaves=2, gain=0.6, offset=(5.0, 1.0), tile=False), 0.006 + 0.014 * t)
-    vmask = smooth(t, 0.04, 0.35) * (0.45 + 0.55 * smooth(lat.fbm(around, t, 5, 2, octaves=2,
-                                                                  offset=(3.3, 3.3)), 0.4, 0.6))
-    col = mix(v1 * vmask * 0.55, col, (0.52, 0.06, 0.05))
-    col = mix(v2 * vmask * 0.35, col, (0.62, 0.16, 0.13))
+    corner = np.exp(-(((around + 0.5) % 1.0 - 0.5) / 0.09) ** 2) + np.exp(-(((around) % 1.0 - 0.5) / 0.09) ** 2)
+    vmask = smooth(t, 0.06, 0.40) * (0.35 + 0.65 * smooth(lat.fbm(around, t, 5, 2, octaves=2,
+                                                                  offset=(3.3, 3.3)), 0.45, 0.65))
+    vmask = vmask * (0.22 + 0.78 * np.clip(corner, 0.0, 1.0))
+    col = mix(v1 * vmask * 0.34, col, (0.52, 0.06, 0.05))
+    col = mix(v2 * vmask * 0.18, col, (0.62, 0.16, 0.13))
     epi = smooth(lat.fbm(wa, wt, 10, 2, octaves=2, offset=(9.0, 4.0)), 0.55, 0.75) * smooth(t, 0.1, 0.5)
-    col = mix(epi * 0.18, col, col * np.array([1.0, 0.72, 0.68]))
+    col = mix(epi * 0.08, col, col * np.array([1.0, 0.80, 0.76]))
     ping = np.exp(-(((around - 0.0 + 0.5) % 1.0 - 0.5) / 0.05) ** 2) + np.exp(-(((around - 0.5 + 0.5) % 1.0 - 0.5)
                                                                                   / 0.05) ** 2)
     ping = ping * np.exp(-((t - 0.07) / 0.05) ** 2) * 0.25

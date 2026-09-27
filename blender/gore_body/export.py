@@ -176,9 +176,22 @@ def landmarks_table():
     except Exception as exc:                                         # pragma: no cover - reported, not fatal
         head["_error"] = str(exc)
     contract = {k: gbc.head_to_body(v).tolist() for k, v in LM.HEAD_CONTRACT.items()}
+    # measured-on-mesh primary values (fix round 3, critics: 'vertex' / stature said 1.795 while the mesh top is
+    # 1.786): the head project's skin top landmark; the RB value stays under landmarks_rb / stature_rb_m
+    lms = {k: list(v) for k, v in LM.all_landmarks().items()}
+    lms_rb = {k: list(v["p"]) for k, v in LM.LANDMARKS_RB.items()}
+    top = head.get("vertex_top")
+    if top is not None and "vertex" in lms:
+        lms_rb["vertex"] = list(lms["vertex"])
+        lms["vertex"] = [round(float(a), 5) for a in top]
+    for k, hk in (("menton", "chin_bottom"), ("ear_canal_L", "ear_canal_L"), ("ear_canal_R", "ear_canal_R")):
+        if head.get(hk) is not None and k in lms:
+            lms_rb[k] = list(lms[k])
+            lms[k] = [round(float(a), 5) for a in head[hk]]
+    stature = round(float(gbc.lift_z(top[2] if top is not None else LM.STATURE_M)), 4)
     return {
-        "landmarks": {k: list(v) for k, v in LM.all_landmarks().items()},
-        "landmarks_rb": {k: list(v["p"]) for k, v in LM.LANDMARKS_RB.items()},     # RB values of the deviations
+        "landmarks": lms,
+        "landmarks_rb": lms_rb,                                            # RB values of the deviations
         "landmark_tags": {k: v["tag"] for k, v in {**LM.LANDMARKS, **LM.LANDMARKS_EXTRA}.items()},
         "head": {"measured": head, "contract_rb_1_2": contract, "offset": gbc.HEAD_OFFSET.tolist(),
                  "seam_z": float(gbc.lift_z(gbc.SEAM_Z)), "seam_z_authoring": gbc.SEAM_Z,
@@ -189,7 +202,7 @@ def landmarks_table():
                  "rb": {"L": gbc.head_to_body(np.array(LM.HEAD_CONTRACT["eye_L"])).tolist(),
                         "R": gbc.head_to_body(np.array(LM.HEAD_CONTRACT["eye_R"])).tolist()},
                  "constants": LM.EYE_CONSTANTS},
-        "body": {"stature_m": round(float(gbc.lift_z(LM.STATURE_M)), 4), "stature_rb_m": LM.STATURE_M, "mass_kg": LM.MASS_KG, "body_fat_pct": LM.BODY_FAT_PCT,
+        "body": {"stature_m": stature, "stature_rb_m": LM.STATURE_M, "mass_kg": LM.MASS_KG, "body_fat_pct": LM.BODY_FAT_PCT,
                  "bsa_m2": LM.BSA_M2, "arm_direction_L": list(LM.ARM_DIRECTION_L),
                  "arm_medial_normal_L": list(LM.ARM_MEDIAL_NORMAL_L), "foot_axis_L": list(LM.FOOT_AXIS_L)},
         "segment_masses": {k: {"fraction": v[0], "mass_kg": v[0] * SG.BODY_MASS_KG, "com_from_proximal": v[1],

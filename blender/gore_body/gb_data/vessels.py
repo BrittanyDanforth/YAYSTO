@@ -172,9 +172,33 @@ def _intercostal_points(n):
     return out
 
 
+_AORTA_T = [(0.022, 0.030, 1.418), (0.020, 0.030, 1.329), (0.006, -0.012, 1.227)]     # A20 waypoints (below)
+
+
+def _intercostal_points_R(n):
+    """Right posterior intercostal n (3-11, from the aorta): the aorta lies on the LEFT front of the vertebral
+    bodies, so the right arteries leave its posterior wall and cross the FRONT of the vertebral body (behind the
+    oesophagus and the azygos vein, >= 3 mm clear of the bone) to the right costovertebral angle, then run in the
+    costal groove (fix round 3, critics: the mirrored left course cut straight through the T4-T9 bodies)."""
+    from . import vertebrae as VT_
+    rib = [(-a, b, c) for a, b, c in _intercostal_points(n)]
+    zh = rib[0][2]
+    A = np.array(_AORTA_T, float)
+    ya, xa = float(np.interp(-zh, -A[:, 2], A[:, 1])), float(np.interp(-zh, -A[:, 2], A[:, 0]))
+    v = VT_.VERTEBRA.get(f"T{n}") or VT_.VERTEBRA["T11"]
+    cy, hw, hd = v["c"][1], 0.5e-3 * v["body_w_mm"], 0.5e-3 * v["body_d_mm"]
+    yf = cy - hd                                         # front of the vertebral body
+    pre = [(xa - 0.008, ya + 0.004, zh + 0.002),         # posterior-right wall of the aorta
+           (-0.002, yf - 0.0055, zh + 0.001),            # across the front of the body (midline)
+           (-hw + 0.001, yf - 0.0035, zh),               # right anterolateral curve of the body
+           (-hw - 0.0055, cy - 0.002, zh)]               # side of the body, into the costovertebral angle
+    return [tuple(float(round(c, 4)) for c in q) for q in pre] + rib
+
+
 for _n in range(1, 12):
     _row(f"A16", "intercostal", "M", 2.0, (1.5, 2.5), (5, 15), "A20" if _n >= 3 else "A14", "LR",
          [(f"{_n:02d}", _intercostal_points(_n))],
+         pts_R=(_intercostal_points_R(_n) if _n >= 3 else None),
          landmarks="Costal groove (vein-artery-nerve top to bottom)", bleed=_b((50, 150), None, None, "-> hours"),
          outlet_default="pleura", tag="E fit B0 from the rib table",
          note="posterior intercostals 3-11 from the aorta, 1-2 via the supreme intercostal (subclavian)")
@@ -296,7 +320,7 @@ _row("A34", "peroneal", "M", 2.5, (2.5, 2.5), (20, 40), "A33", "LR",
      [(0.095, 0.060, 0.420), (0.120, 0.055, 0.200)], landmarks="Along the fibula, deep",
      bleed=_b((50, 150), None, None), self_stop="often", tag="E waypoints")
 _row("V10", "inferior vena cava", "V", 17.0, (13, 21), (3000, 3500), "RA", "R",
-     [(-0.020, -0.035, 1.050), (-0.022, -0.015, 1.260), (-0.022, -0.010, 1.325), (-0.025, -0.015, 1.315)],
+     [(-0.020, -0.035, 1.050), (-0.022, -0.015, 1.260), (-0.024, -0.012, 1.298), (-0.027, -0.019, 1.328)],
      circuit=VEN, listed="distal_first", landmarks="Right of the aorta; retrohepatic part embedded in liver",
      bleed=_b((500, 2000), (60, 300), None, "infrarenal 500-2,000 (50-200 tamponaded); retrohepatic/hepatic "
                                             "veins 1,000-3,000 -> 1-5 min"),

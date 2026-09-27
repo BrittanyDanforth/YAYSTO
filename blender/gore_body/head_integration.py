@@ -1712,8 +1712,12 @@ HAIR_TEX_PX = 1024
 BROW_BINS = 15                    # cards along each brow (x 11-58 mm) per layer
 BROW_LAYERS = 2                   # two staggered layers of cards (depth, fuller brow)
 LASH_STATIONS = {"upper": 22, "lower": 14}
-HAIR_RGB = (38, 28, 21)           # dark brown (brows); lashes a little darker
-LASH_RGB = (20, 15, 12)
+HAIR_RGB = (42, 30, 22)           # dark brown #2A1E16 (brows), never black
+LASH_RGB = (30, 22, 17)           # lashes a little darker
+# strand widths in atlas pixels (fix round 3, critics: 1-1.6 px strands at alpha scissor 0.35 broke into black
+# specks and hard lines in Godot; 2-3 px tapered strands keep their coverage through the mip chain)
+BROW_STRAND_PX = 2.4
+LASH_STRAND_PX = {"upper": 2.8, "lower": 2.2}
 
 
 def _head_build_module():
@@ -1726,8 +1730,11 @@ def _head_build_module():
     return mod
 
 
-LASH_COUNT = {"upper": 120, "lower": 62}                 # per eye [K: 90-160 upper, 70-80 lower]
-LASH_LEN_MM = {"upper": (8.0, 12.0), "lower": (5.5, 7.8)}     # ends -> middle of the lid
+LASH_COUNT = {"upper": 120, "lower": 52}                 # per eye [K: 90-160 upper, 50-80 lower]
+# upper 8-12 mm; lower about half as long and sparser (fix round 3, critics: the lower fan splayed onto the cheek)
+LASH_LEN_MM = {"upper": (8.0, 12.0), "lower": (4.2, 6.4)}     # ends -> middle of the lid
+# start direction: mostly straight out of the margin (30-45 deg to the lid surface), the curl lifts the tips
+LASH_LIFT = {"upper": 0.12, "lower": 0.30}
 
 
 def lash_strands(bvh, rng, sign, upper=True):
@@ -1766,7 +1773,7 @@ def lash_strands(bvh, rng, sign, upper=True):
             ev = -ev
         L = (lo + (hi - lo) * math.sin(math.pi * min(max(t + 0.06, 0.0), 1.0)) ** 0.8) * 1e-3
         L *= rng.uniform(0.86, 1.10)
-        d0 = (radial + ev * (0.30 if upper else 0.50) + Vector((sign * 0.22 * max(t - 0.55, 0.0), 0.0, 0.0)))
+        d0 = (radial + ev * LASH_LIFT[key] + Vector((sign * 0.22 * max(t - 0.55, 0.0), 0.0, 0.0)))
         d0 = (d0 + Vector((rng.normal(0, 0.04), rng.normal(0, 0.04), rng.normal(0, 0.04)))).normalized()
         pts = [np.array(q + d0 * (L * a) + ev * (L * b)) for a, b in zip(a_prof, b_prof)]
         out.append(pts)
@@ -1907,7 +1914,7 @@ def _brow_cards(strands, sign, bvh, atlas):
                 seg = np.linalg.norm(np.diff(s_pts, axis=0), axis=1)
                 tt = np.concatenate([[0.0], np.cumsum(seg)]) / max(seg.sum(), 1e-9)
                 atlas.line(rect, [(0.5 + 0.5 * oi / half, ti * (np.linalg.norm(s_pts[-1] - s_pts[0]) / L))
-                                  for oi, ti in zip(o, tt)], 1.3, HAIR_RGB)
+                                  for oi, ti in zip(o, tt)], BROW_STRAND_PX, HAIR_RGB)
             verts, uvs = [], []
             for k in range(5):
                 for sgn in (-1.0, 1.0):
@@ -1953,7 +1960,7 @@ def _lash_ribbons(strands, sign, upper, atlas):
             s0 = (sign * sp[0, 0] - rx.min()) / max(span, 1e-9)
             # a lash's along-ribbon coordinate drifts with its tip's x
             pts = [(s0 + (sign * p[0] - sign * sp[0, 0]) / max(span, 1e-9), k / 4.0) for k, p in enumerate(sp)]
-            atlas.line(rect, pts, 1.6 if upper else 1.2, LASH_RGB)
+            atlas.line(rect, pts, LASH_STRAND_PX["upper" if upper else "lower"], LASH_RGB)
         verts, uvs = [], []
         for i in range(nst):
             for k in range(5):
@@ -2033,7 +2040,8 @@ def build_hair_cards():
     obj.data.shade_smooth()
     _tag(obj)
     obj["gb_texture"] = "textures/" + HAIR_TEX
-    obj["gb_alpha_scissor"] = 0.35
+    obj["gb_alpha_scissor"] = 0.5
+    obj["gb_alpha_mode"] = "alpha_to_coverage"         # import hint for G3: scissor + alpha-to-coverage
     obj["gb_double_sided"] = True
     skin = bpy.data.objects["GB_Head"]
     set_anchors(obj, np.concatenate(anchors))
@@ -2233,9 +2241,24 @@ def check_cards():
     ad = max(bvh0.find_nearest(Vector(p))[3] for p in an[~brow]) if an is not None else 1.0
     fx_ok = all(get_anchors(bpy.data.objects[f"GB_EyeFX_{s}"]) is not None for s in "LR"
                 if f"GB_EyeFX_{s}" in bpy.data.objects)
-    return (worst <= 0.0006 and ad <= 0.0003 and fx_ok), \
+    # lashes must STAND OFF the lids (fix round 3, critics: glued-on fans passed the anchor test): upper lash tips
+    # (the outer 40 % of each ribbon's reach) median >= 2 mm and p10 >= 1 mm off the skin; lower tips >= 1 mm
+    proj = {}
+    if an is not None:
+        for s_, bones in (("upper", ("lid_upper_L", "lid_upper_R")), ("lower", ("lid_lower_L", "lid_lower_R"))):
+            m = np.isin(rb, [RT.BONE_INDEX[b] for b in bones])
+            if not m.any():
+                continue
+            reach = np.linalg.norm(cv[m] - an[m], axis=1)
+            tip = reach > 0.6 * reach.max()
+            dd = np.array([bvh0.find_nearest(Vector(p))[3] for p in cv[m][tip]])
+            proj[s_] = (float(np.median(dd)) * 1000.0, float(np.percentile(dd, 10)) * 1000.0)
+    lash_ok = (proj.get("upper", (0, 0))[0] >= 2.0 and proj.get("upper", (0, 0))[1] >= 1.0
+               and proj.get("lower", (0, 0))[0] >= 1.0)
+    return (worst <= 0.0006 and ad <= 0.0003 and fx_ok and lash_ok), \
         (f"brow cards: max distance to the skin {worst * 1000:.3f} mm over rest + 24 keys; lash anchors "
-         f"max {ad * 1000:.3f} mm off the skin; eye FX anchors present {fx_ok}")
+         f"max {ad * 1000:.3f} mm off the skin; lash tips off the skin (median, p10 mm) "
+         f"{ {k: (round(a, 2), round(b, 2)) for k, (a, b) in proj.items()} }; eye FX anchors present {fx_ok}")
 
 
 def check_texel_uv():

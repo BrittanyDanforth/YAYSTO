@@ -187,7 +187,7 @@ POSE_ACTIONS = ("pose_idle", "pose_guard", "pose_cower", "pose_brace")
 TRI_BUDGET = {
     "GB_Head": 30000, "GB_Body": 44000, "GB_Shorts": 4000, "GB_Eye+EyeFX": 5000, "GB_Mouth": 8500,
     "GB_BrowLash": 2000, "GB_MuscleShell": 24000, "GB_Skeleton": 36000, "GB_Brain": 28000,
-    "GB_Organs": 22000, "GB_Cord": 3000, "GB_Vessels": 14000, "GB_Variants": 60000,
+    "GB_Organs": 22000, "GB_Cord": 4200, "GB_Vessels": 14000, "GB_Variants": 60000,
 }
 TRI_BUDGET_GROUPS = {"GB_Eye+EyeFX": ("GB_Eye_L", "GB_Eye_R", "GB_EyeFX_L", "GB_EyeFX_R"),
                      "GB_Vessels": ("GB_Vessels_Art", "GB_Vessels_Ven"),
@@ -410,6 +410,9 @@ def set_scene_frame(frame):
 POINT_KEYS = {"head", "tail", "com_world", "center_world", "pivot_world", "joint", "jaw_pivot", "jaw_bone_head",
               "c", "centroid", "aabb", "points", "waypoints", "a", "b", "conus_tip", "thecal_end",
               "cervicomedullary_junction", "cmj_bible", "bounds", "origin", "offset", "axis_base", "axis_apex"}
+# scalar body-frame heights warped like the z of a point (fix round 3: spine.json cord segment ranges stayed in the
+# authoring frame while the cord mesh was lifted, so upper cervical codes read one level off)
+SCALAR_Z_KEYS = {"z_top", "z_bottom", "foramen_z", "apex_z", "central_tendon_z"}
 POINT_DICT_KEYS = {"landmarks", "landmarks_rb", "measured", "contract_rb_1_2", "eye_centres", "valves"}
 
 
@@ -433,6 +436,8 @@ def warp_json(data, _key=None, inverse=False):
             elif (k in POINT_KEYS and isinstance(v, (list, tuple)) and v
                   and all(isinstance(q, (list, tuple)) and len(q) == 4 and _is_pt(q[:3]) for q in v)):
                 out[k] = [wp(q[:3]).tolist() + [q[3]] for q in v]     # (x, y, z, radius) rows
+            elif k in SCALAR_Z_KEYS and isinstance(v, (int, float)) and not isinstance(v, bool):
+                out[k] = round(float((unlift_z if inverse else lift_z)(v)), 6)      # heights (cord segment ranges)
             elif k == "eyes" and isinstance(v, dict):
                 out[k] = {kk: (wp(vv).tolist() if _is_pt(vv) and kk in ("L", "R") else
                                ({s: (wp(p).tolist() if _is_pt(p) else p) for s, p in vv.items()}

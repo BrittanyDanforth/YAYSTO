@@ -75,6 +75,8 @@ BONE_CLEAR_MM = 0.8            # gap between a tube wall and bone
 FINAL_SIGMA_MIN = 0.003        # m, last fairing of every fitted centreline (no kinks left by bone escapes)
 BRAIN_CLEAR_MM = 0.3           # gap between an intracranial tube wall and the brain surface
 FIT_ITERS = 24
+CENTRELINE_STEP = 0.002        # m, centreline sampling (fit, checks, tube stations)
+KINK_MAX_DEG = 25.0            # max turn over a 5 mm window (except at branch origins / the first and last 4 mm)
 MAX_STEP = 0.004              # m, largest fit move per iteration
 FAIR_SIGMA = 0.005            # m, final fairing of the fitted centreline
 RING_MAX_STEP = 0.075          # m, longest straight run between two tube rings (joints get their own rings)
@@ -112,7 +114,7 @@ SUPERFICIAL_T = {"A07": (0.0, 1.0), "A08": (0.15, 1.0), "A09": (0.40, 1.0), "V02
 # of the inner table; occipital groove medial to the mastoid; jugular foramen at the top of the IJV; the
 # dural sinuses lie in bony grooves the head project's skull does not carve; the vertebro-basilar junction
 # at the foramen magnum sits on the modelled lower clivus)
-BONE_CANAL = {"A10": (1.505, 1.628), "A11": (-1.0, 1.628), "A50": (-1.0, 9.0), "A12": (-1.0, 9.0), "A09": (1.600, 1.645),
+BONE_CANAL = {"A10": (1.505, 1.628, 0.018), "A11": (-1.0, 1.628), "A50": (-1.0, 9.0), "A12": (-1.0, 9.0), "A09": (1.600, 1.645),
               "V01": (1.600, 9.0), "V30": (-1.0, 9.0), "V31": (-1.0, 9.0), "V32": (-1.0, 9.0)}
 CRANIAL = {"A11", "A50", "A51", "A52", "A53", "A54"}               # intracranial arteries (outside GB_Brain)
 UNDER_SKULL = {"V30", "V31", "V32"}               # dural sinuses: snapped under the inner table, on the brain
@@ -254,7 +256,9 @@ def centreline(seg):
     """Raw resampled centreline (P[M,3], r[M], t[M]) of a segment from its waypoints (plan §3.4.1 step 2)."""
     d0 = seg["d_mm"] * MM
     d1 = (seg["d_end_mm"] or seg["d_mm"]) * MM
-    step = min(0.010, 2.0 * d0)
+    # <= 2 mm sampling (fix round 3, critics: 10 mm samples let the bone / skin rules and checks miss 20-30 mm
+    # chords that cut through vertebral bodies and the skin)
+    step = min(CENTRELINE_STEP, 2.0 * d0)
     P, t = resample_knots(seg["points"], step)
     if seg["vessel"] in TORTUOUS:
         P = _tortuosity(P, *TORTUOUS[seg["vessel"]])
@@ -290,7 +294,10 @@ class Probe:
     def __init__(self):
         import bpy
         self.bpy = bpy
-        self.skin = self._bvh([n for n in ("GB_Body", "GB_Head") if n in bpy.data.objects])
+        # the game renders LOD0 AND LOD1: a tube must stay under both (fix round 3, critics: LOD1 chords sit up to
+        # 0.5 mm inside LOD0 and blue slivers showed through at the nose, neck base and chest wall)
+        self.skin = self._bvh([n for n in ("GB_Body", "GB_Head", "GB_Body_LOD1", "GB_Head_LOD1")
+                               if n in bpy.data.objects])
         self.bone = self._bvh(["GB_Skeleton"] if "GB_Skeleton" in bpy.data.objects else [])
         self.brain = self._bvh(["GB_Brain"] if "GB_Brain" in bpy.data.objects else [])
         self.heart = self._organ_bvh(1)                   # gb_data.organs: heart = organ id 1
@@ -480,11 +487,21 @@ def depth_bands(seg, P, r, s):
     return lo, hi
 
 
+def _canal_zone(vid, P, pad=0.0):
+    """Points of vessel ``vid`` inside its bone-canal exemption (z band, optionally only |x| >= a lateral limit:
+    the vertebral artery A10 is exempt in the C6-C1 transverse foramina and the C1 posterior-arch groove, NOT
+    medially at the occipital condyles / foramen magnum - fix round 3, critics found it 8 mm inside the condyle)."""
+    if vid not in BONE_CANAL:
+        return np.zeros(len(P), bool)
+    row = BONE_CANAL[vid]
+    m = (P[:, 2] >= row[0] - pad) & (P[:, 2] <= row[1] + pad)
+    if len(row) > 2:
+        m &= np.abs(P[:, 0]) >= row[2] - pad
+    return m
+
+
 def _bone_mask(vid, P):
-    if vid in BONE_CANAL:
-        z0, z1 = BONE_CANAL[vid]
-        return ~((P[:, 2] >= z0) & (P[:, 2] <= z1))
-    return np.ones(len(P), bool)
+    return ~_canal_zone(vid, P)
 
 
 def fit_centreline(key, vid, P0, r, probe, anchor_disp=None, seg=None, cranial=False, under_skull=False,
@@ -580,11 +597,55 @@ def fit_centreline(key, vid, P0, r, probe, anchor_disp=None, seg=None, cranial=F
     sig = float(np.clip(1.2 * np.mean(r), FINAL_SIGMA_MIN, 0.008))
     P = P + (_gauss_smooth(P, sa, sig) - P) * ends[:, None]
     P = relax(P, max(4, iters // 3))
+    # curvature limit: no more than KINK_MAX_DEG of turn per 5 mm (bend radius >= ~2 x the diameter of the
+    # vessels that kinked: IVC at the atrium, peroneal, facial, PCA, subclavian), then the hard rules again
+    P = _limit_kinks(P, anchor)
+    P = relax(P, 4)
     rep = measure(key, vid, P, r, probe, seg=seg, cranial=cranial or under_skull, bone_mask=bone_mask,
                   clear=clear)
     rep["moved_mm_max"] = round(float(np.linalg.norm(P - P0, axis=1).max() / MM), 2)
     rep["length_m"] = round(float(L), 4)
     return P, rep
+
+
+def kink_angles(P, window=0.005):
+    """Turn angle (deg) at every point between the chords to the points ``window`` metres before and after."""
+    s = _arc(P)
+    n = len(P)
+    out = np.zeros(n)
+    if n < 3 or s[-1] < 2 * window:
+        return out
+    ia = np.searchsorted(s, s - window, side="left")
+    ib = np.searchsorted(s, s + window, side="right") - 1
+    ok = (s - window >= 0.0) & (s + window <= s[-1])
+    a = P - P[np.clip(ia, 0, n - 1)]
+    b = P[np.clip(ib, 0, n - 1)] - P
+    na, nb = np.linalg.norm(a, axis=1), np.linalg.norm(b, axis=1)
+    c = (a * b).sum(1) / np.maximum(na * nb, 1e-18)
+    out[ok] = np.degrees(np.arccos(np.clip(c[ok], -1.0, 1.0)))
+    return out
+
+
+def _limit_kinks(P, anchor, max_deg=KINK_MAX_DEG, iters=60):
+    """Laplacian-relax only the points that turn more than ``max_deg`` per 5 mm (and their neighbours); the
+    first / last 4 mm (branch origins, the anchor) stay put."""
+    P = np.array(P, float)
+    s = _arc(P)
+    free = (np.minimum(s, s[-1] - s) > 0.004) & (np.asarray(anchor) > 0.5)
+    for _ in range(iters):
+        ang = kink_angles(P)
+        bad = (ang > max_deg) & free
+        if not bad.any():
+            break
+        m = bad.copy()
+        m[1:] |= bad[:-1]
+        m[:-1] |= bad[1:]
+        m &= free
+        m[0] = m[-1] = False
+        q = P.copy()
+        q[1:-1] = 0.5 * P[1:-1] + 0.25 * (P[:-2] + P[2:])
+        P[m] = q[m]
+    return P
 
 
 def measure(key, vid, P, r, probe, seg=None, cranial=False, bone_mask=None, clear=0.0):
@@ -803,6 +864,38 @@ def _stations(P, r, tol_frac=0.7, tol_min=0.0030, max_step=RING_MAX_STEP, max_tu
     return sorted(set(out))
 
 
+def _validate_chords(P, r, idx, probe, vid, skin_margin=0.5 * MM, bone_margin=0.3 * MM, passes=12):
+    """Add ring stations until every straight tube span stays as clear of bone and skin as the fitted centreline
+    allows (fix round 3, critics: 20-26 mm chords between rings cut through vertebral bodies and the skin although
+    the sparse centreline points passed): the deviation of the chord from each dense centreline point must not
+    exceed that point's slack (wall-to-bone clearance - 0.3 mm outside bone canals, wall-to-skin depth - 0.5 mm)."""
+    sd, _u = probe.bone_dist(P)
+    dep, _n = probe.skin_depth(P, parity=True)
+    slack = dep - r - skin_margin
+    bm = _bone_mask(vid, P)
+    # bone-contact vessels (costal groove, meningeal groove) may touch bone: their chord stays out of it
+    wall = np.zeros_like(r) if vid in BONE_CONTACT_OK else r + bone_margin
+    slack = np.where(bm, np.minimum(slack, sd - wall), slack)
+    slack = np.maximum(slack, 0.15 * MM)                  # a point already at its limit: chord within 0.15 mm
+    s = _arc(P)
+    idx = sorted(set(idx))
+    for _ in range(passes):
+        add = []
+        for a, b in zip(idx[:-1], idx[1:]):
+            if b - a < 2:
+                continue
+            k = np.arange(a + 1, b)
+            f = (s[k] - s[a]) / max(s[b] - s[a], 1e-12)
+            C = P[a] + (P[b] - P[a]) * f[:, None]
+            over = np.linalg.norm(C - P[k], axis=1) - slack[k]
+            if over.max() > 0.0:
+                add.append(int(k[np.argmax(over)]))
+        if not add:
+            break
+        idx = sorted(set(idx) | set(add))
+    return idx
+
+
 def _frames(P, pref=None):
     """Parallel-transport frames; ``pref`` (optional [M,3]) = preferred N axis per station."""
     T = np.gradient(P, axis=0) if len(P) > 2 else np.repeat((P[1] - P[0])[None], len(P), axis=0)
@@ -874,6 +967,8 @@ def _tube_parts(fit, probe=None):
         idx = (_stations(P, r, tol_min=0.0008, max_turn_deg=turn) if s["vessel"] in TORTUOUS
                else _stations(P, r, max_turn_deg=turn))
         idx = _joint_rings(P, idx)
+        if probe is not None:
+            idx = _validate_chords(P, r, idx, probe, s["vessel"])
         Ps, rs, ts = P[idx], r[idx], t[idx]
         if s["root"] and s["vessel"] not in ON_HEART and len(Ps) > 1:
             # great vessels join their chamber: the tube starts 1.5 r inside the heart wall with a 15 %
@@ -1258,10 +1353,55 @@ def tube_vertices_in_bone(tol=0.5 * MM):
         if vid in BONE_CONTACT_OK:
             keep &= ~m
         elif vid in BONE_CANAL:
-            z0, z1 = BONE_CANAL[vid]
-            keep &= ~(m & (v[:, 2] >= z0 - 0.004) & (v[:, 2] <= z1 + 0.004))
+            keep &= ~(m & _canal_zone(vid, v, 0.004))
     sd, _n = probe.bone_dist(v[keep])
     return float(np.mean(sd < -tol)) if keep.any() else 0.0
+
+
+def tube_facet_report(skin_mm=0.5, superficial_skin_mm=1.0, bone_mm=0.3):
+    """Mesh-level check of the tube FACETS (triangle centroids + edge midpoints, not only vertices or fitted
+    points; fix round 3): (ok, detail).  Against bone (GB_Skeleton): no sample deeper than ``bone_mm`` outside the
+    bone canals (bone-contact vessels: centreline side only, 1 x radius allowed).  Against the skin (GB_Body,
+    GB_Head and their LOD1s): every sample >= ``skin_mm`` under the surface, subcutaneous veins >= 1 mm."""
+    import bpy
+    probe = Probe()
+    segs = VS.vessel_segments()
+    out, ok = [], True
+    for name in ("GB_Vessels_Art", "GB_Vessels_Ven"):
+        o = bpy.data.objects.get(name)
+        if o is None:
+            continue
+        v, t = gbc.mesh_arrays(o.data)
+        vidx = np.round(gbc.read_point_attr(o, "gb_vidx")).astype(int)
+        tv = vidx[t[:, 0]]
+        samples = [v[t].mean(1)] + [0.5 * (v[t[:, a]] + v[t[:, b]]) for a, b in ((0, 1), (1, 2), (2, 0))]
+        S = np.vstack(samples)
+        sv = np.concatenate([tv] * 4)
+        vess = np.array([segs[i]["vessel"] for i in sv])
+        rad = np.array([0.5 * segs[i]["d_mm"] * MM for i in sv])
+        canal = np.zeros(len(S), bool)
+        contact = np.isin(vess, list(BONE_CONTACT_OK))
+        for vid in set(vess) & set(BONE_CANAL):
+            m = vess == vid
+            canal[m] = _canal_zone(vid, S[m], 0.004)
+        sd, _u = probe.bone_dist(S)
+        lim = np.where(contact, -rad * 1.05, -bone_mm * MM)
+        bad_b = (sd < lim) & ~canal
+        dep, _n = probe.skin_depth(S, parity=True)
+        sup = np.array([(v_ in SUPERFICIAL_T) for v_ in vess]) & np.array([segs[i]["kind"] == "V" for i in sv])
+        need = np.where(sup, superficial_skin_mm, skin_mm) * MM
+        bad_s = dep < need
+        ok &= not bad_b.any() and not bad_s.any()
+
+        def worst(mask, val):
+            if not mask.any():
+                return "none"
+            k = int(np.argmin(np.where(mask, val, 9.0)))
+            ids = sorted({segs[i]["id"] for i in sv[mask]})
+            return (f"{int(mask.sum())} samples, worst {val[k] / MM:+.2f} mm at {tuple(round(float(c), 3) for c in S[k])}"
+                    f" ({segs[sv[k]]['id']}); segments {ids[:10]}")
+        out.append(f"{name}: in bone {worst(bad_b, sd - lim)}; shallow {worst(bad_s, dep - need)}")
+    return ok, "; ".join(out)
 
 
 def skin_report():

@@ -559,7 +559,27 @@ def _world_parts(x, y, z):
     la_app = ell(x, y, z, (0.041, -0.036, 1.372), (0.0150, 0.0080, 0.0080))
     rvot = capsule(x, y, z, (0.032, -0.062, 1.343), (0.022, -0.058, 1.380), 0.0165, 0.0128)
     lvot = capsule(x, y, z, (0.025, -0.030, 1.335), (0.008, -0.038, 1.362), 0.0135, 0.0125)
-    return dict(ra=ra, ra_app=ra_app, la=la, la_app=la_app, rvot=rvot, lvot=lvot)
+    # auricles (fix round 3, critics: 'one small auricle flap'): flattened ear-shaped lobes with a lobulated, notched
+    # free edge - the right one over the root of the aorta, the left one curling round the pulmonary trunk
+    lob = 0.0010 * np.sin(x * 420.0 + 1.3) * np.sin(z * 380.0 + 0.4)
+    la_app = smin(la_app, ell(x, y, z, (0.047, -0.044, 1.366), (0.0165, 0.0060, 0.0095)) + lob, 0.004)
+    ra_app = smin(ra_app, ell(x, y, z, (-0.004, -0.058, 1.378), (0.0150, 0.0058, 0.0090)) + lob, 0.004)
+    # great-vessel roots grown out of the heart so the B5 tubes continue them (no capped pipe beside the heart):
+    # aortic root with the sinus bulge from the LV outflow, pulmonary root from the RV infundibulum, the SVC / IVC
+    # into the right atrium and the four pulmonary veins into the left atrium [R05 §10.3; B5 waypoints]
+    aorta = smin(capsule(x, y, z, (0.012, -0.033, 1.345), (0.006, -0.040, 1.372), 0.0170, 0.0162),
+                 ell(x, y, z, (0.009, -0.037, 1.353), (0.0185, 0.0185, 0.0120)), 0.004)
+    pulm = capsule(x, y, z, (0.030, -0.061, 1.352), (0.020, -0.054, 1.388), 0.0150, 0.0138)
+    svc = capsule(x, y, z, (-0.028, -0.027, 1.352), (-0.028, -0.029, 1.390), 0.0105, 0.0100)
+    ivc = capsule(x, y, z, (-0.027, -0.019, 1.322), (-0.024, -0.013, 1.300), 0.0092, 0.0086)
+    pv = None
+    for sx in (1.0, -1.0):
+        for dz in (0.006, -0.004):
+            q = capsule(x, y, z, (0.008 + 0.020 * sx, 0.004, 1.370 + dz), (0.008 + 0.034 * sx, 0.012, 1.376 + dz),
+                        0.0066, 0.0063)
+            pv = q if pv is None else np.minimum(pv, q)
+    return dict(ra=ra, ra_app=ra_app, la=la, la_app=la_app, rvot=rvot, lvot=lvot, aorta=aorta, pulm=pulm,
+                svc=svc, ivc=ivc, pv=pv)
 
 
 def _heart_fields(x, y, z):
@@ -573,6 +593,12 @@ def _heart_fields(x, y, z):
     atria = smin(smin(W["ra"], W["ra_app"], 0.006), smin(W["la"], W["la_app"], 0.006), 0.006)
     full = smin(vent, atria, 0.012)
     full = smin(full, W["lvot"], 0.004)
+    # great-vessel roots: smooth unions (k 5-6 mm) into the chambers they leave / enter
+    full = smin(full, W["aorta"], 0.006)
+    full = smin(full, W["pulm"], 0.006)
+    full = smin(full, W["svc"], 0.005)
+    full = smin(full, W["ivc"], 0.005)
+    full = smin(full, W["pv"], 0.004)
     full = carve(full, _STERN(x, y, z), 0.0050, 0.006)           # anterior surface clears the sternum
     # grooves: AV sulcus ring and the anterior/posterior interventricular grooves (septum plane)
     sep = SEPTUM_N[1] * b + SEPTUM_N[2] * (c - 0.017)
@@ -580,7 +606,10 @@ def _heart_fields(x, y, z):
     g_iv = np.exp(-(sep / 0.0060) ** 2) * sstep(0.02, 0.035, a) * (1.0 - sstep(0.108, 0.124, a))
     patch = sstep(0.95, 1.35, fbm3(x, y, z, 0.022, 5, 2)) * (1.0 - sstep(0.030, 0.065, a))
     groove = np.maximum(g_av, g_iv)
-    outer = full + 0.0032 * groove
+    # (fix round 3: 3.2 -> 5 mm deep channels, filled with subepicardial fat below, so the coronary sulcus and the
+    # interventricular grooves read on the surface instead of a smooth potato)
+    groove = groove * sstep(0.0, 0.012, W["aorta"] + 0.004) * sstep(0.0, 0.012, W["pulm"] + 0.004)   # not on roots
+    outer = full + 0.0050 * groove
     # cavities (walls LV 9 incl. septum, RV 4.2, atria 2.6-2.8 mm); valves close the AV plane
     trab = 0.0009 * fbm3(x, y, z, 0.006, 11, 2)                  # trabeculae carneae roughness
     lv_c = smax(lv_cav + np.maximum(trab, 0.0), 0.030 - a, 0.004)
@@ -599,7 +628,8 @@ def _heart_fields(x, y, z):
     walls = {"LV": WALL["LV"], "RV": WALL["RV"], "RA": WALL["RA"], "LA": WALL["LA"]}
     cav = {k: np.maximum(cv, outer + walls[k]) for k, cv in
            {"LV": lv_c, "RV": rv_c, "RA": ra_c, "LA": la_c}.items()}   # walls also under grooves
-    fat = np.maximum(full - 0.0009, 0.004 * (0.45 - np.maximum(groove, patch)))
+    # fat fills the grooves to ~1.5 mm under the old surface (a yellow band with the coronaries half sunk in it)
+    fat = np.maximum(full + 0.0015 * groove - 0.0009, 0.004 * (0.45 - np.maximum(groove, patch)))
     return outer, cav, fat, full
 
 
