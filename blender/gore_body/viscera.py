@@ -1300,9 +1300,11 @@ def _liver_base(x, y, z):
     slope = np.interp(x, [-0.10, -0.02, 0.02, 0.06], [0.02, 0.22, 0.75, 0.95])
     zlow = zedge + slope * np.clip(y + 0.080, 0.0, None)
     d = zlow - z
-    d = smax(d, under_diaphragm(x, y, z, 0.0018), 0.004)
-    d = smax(d, cage_sdf(x, y, z, inset=RIB_HALF_T + 0.0020), 0.010)
-    d = smax(d, abdominal_cavity(x, y, z) - 0.0010, 0.006)
+    # (fix round 3, critics: a flat vertical right face clipped hard by the cage and a flat top with a hard rim:
+    # wider smooth maxima round the diaphragmatic surface onto the costal face)
+    d = smax(d, under_diaphragm(x, y, z, 0.0018), 0.009)
+    d = smax(d, cage_sdf(x, y, z, inset=RIB_HALF_T + 0.0020), 0.020)
+    d = smax(d, abdominal_cavity(x, y, z) - 0.0010, 0.012)
     # left lobe tapers to a thin tip at the left MCL; nothing left-posterior (stomach/oesophagus)
     d = smax(d, x - 0.078 - 0.20 * np.clip(-y - 0.02, 0, None), 0.012)
     d = smax(d, y - (0.080 - 1.5 * np.clip(x, 0, None)), 0.010)
@@ -1365,17 +1367,20 @@ def omentum_sdf(x, y, z):
     a few loose drape folds; no straight cut edges."""
     cav = abdominal_cavity(x, y, z)
     ax = np.abs(x)
-    fold = 0.0016 * np.sin(x * 70.0 + 0.8) * sstep(1.10, 1.00, z)
-    lobules = fbm3(x, y, z, 0.011, 62, 2)
-    half = 0.0031 + 0.0017 * (0.5 + 0.5 * fbm3(x, y, z, 0.030, 61, 2))
+    # (fix round 3, critics: 'a rectangular yellow slab with rounded corners' - a thin lobulated fat apron now:
+    # 3-8 mm sheet, 5-15 mm fat lobules standing 2-3 mm proud, gastroepiploic vessel cords running down from the
+    # greater curvature, a free lower edge with irregular 8-12 mm scallops and loose drape folds)
+    fold = 0.0024 * np.sin(x * 70.0 + 0.8) * sstep(1.10, 1.00, z) + 0.0012 * np.sin(x * 31.0 + z * 18.0)
+    lobules = fbm3(x, y, z, 0.0085, 62, 2) + 0.6 * fbm3(x, y, z, 0.0045, 64, 1)
+    half = 0.0019 + 0.0016 * (0.5 + 0.5 * fbm3(x, y, z, 0.030, 61, 2))
     top = 1.118 - 0.020 * sstep(0.00, 0.10, -x) + 0.012 * sstep(0.02, 0.09, x)
-    # rounded, lobulated lower border: a soft U with 4-6 mm scallops
-    bottom = 0.962 + 0.034 * np.clip(ax / 0.104, 0.0, 1.2) ** 2.4 + 0.004 * np.sin(x * 62.0 + 1.3) \
-        + 0.0035 * fbm3(x, y, z, 0.020, 63, 1)
+    bottom = 0.962 + 0.034 * np.clip(ax / 0.104, 0.0, 1.2) ** 2.4 + 0.009 * np.sin(x * 45.0 + 1.3) \
+        + 0.006 * fbm3(x, y, z, 0.016, 63, 1) + 0.004 * np.sin(x * 97.0 + 0.2)
+    ves = np.exp(-(np.sin(x * 125.0 + 0.3 * np.sin(z * 40.0)) / 0.10) ** 2) * sstep(0.95, 1.08, z)
     width = 0.101 + 0.008 * np.sin(np.clip((z - 0.96) / 0.16, 0.0, 1.0) * np.pi)
     outline = smax(smax(ax - width, bottom - z, 0.022), z - top, 0.010)
     half = half + 0.0018 * sstep(0.020, 0.0, z - bottom)            # rolled, thicker free edge
-    d = np.abs(cav + 0.0068 + fold) - half + 0.0011 * lobules
+    d = np.abs(cav + 0.0068 + fold) - half + 0.0026 * lobules - 0.0011 * ves
     import body_skin as BS
     _a, yf, yb, _nf, _nb = BS.torso_station(z)
     d = smax(d, y - (0.62 * yf + 0.38 * yb), 0.006)

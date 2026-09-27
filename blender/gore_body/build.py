@@ -51,7 +51,8 @@ OWNER = {"placeholder": "B0", "skin": "B1", "head": "B2", "skeleton": "B3", "vis
 # (gb_common.StageCache).  Each stage key is also chained to the key of the stage before it in GEOMETRY
 # (skin -> head -> skeleton -> viscera -> neuro -> vascular) because later stages load/measure the
 # earlier stages' geometry, so an upstream rebuild always invalidates everything downstream.
-SOURCES = {"skin": ["body_skin.py", "uv.py", "placeholder.py", "head_integration.py", "skeleton.py", "skull.py"],
+SOURCES = {"skin": ["body_skin.py", "uv.py", "placeholder.py", "head_integration.py", "skeleton.py", "skull.py",
+                    "viscera.py"],
            "head": ["head_integration.py", "uv.py", "placeholder.py", "body_skin.py", "rig.py", "skull.py"],
            "skeleton": ["skeleton.py", "skull.py", "placeholder.py", "body_skin.py"],
            "viscera": ["viscera.py", "placeholder.py", "body_skin.py", "skeleton.py", "skull.py"],
@@ -285,6 +286,14 @@ def run(stages, opts):
         exp = export.export_subject(objs, gbc.SUBJECT_OUT, pending=pending, timings=dict(gbc.Timer.records),
                                     quick=opts["quick"], stage_keys=dict(_KEYS), status=dict(status))
     status["export"] = f"{len(exp['glb'])} glb + {len(exp['sidecars'])} sidecars + manifest"
+    if status.get("bake") == "built" and not opts["quick"]:
+        # B7 acceptance evidence: Godot 4.5.1 vs Cycles, same cameras, baked sets (fix round 3)
+        try:
+            import lookdev
+            with gbc.Timer("look-dev: Godot vs Cycles side-by-side"):
+                lookdev.godot_side_by_side()
+        except Exception as exc:                                        # pragma: no cover
+            gbc.log(f"WARNING: Godot side-by-side failed: {exc}")
     if opts["render"]:
         with gbc.Timer("renders"):
             gbc.render_views("build", samples=24)

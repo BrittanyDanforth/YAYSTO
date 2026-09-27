@@ -1155,13 +1155,13 @@ def _build_slash():
     # (the neck has no bone close under the skin: a deep throat cut goes
     # 15-25 mm into the neck; the depth also wanders along the cut)
     neck = t.inp("Region").z
-    vd = (0.0015 + D * 0.0115 * (1.0 + 1.1 * neck)) * (0.3 + 0.7 * along_d) \
+    vd = (0.0015 + D * 0.0115 * (1.0 + 1.4 * neck)) * (0.3 + 0.7 * along_d) \
         * (1.0 + 0.18 * t.noise(t.vec(u * 150.0, c.seed * 2.3, 0.0), detail=1.0))
     # a knife stops at the bone: the bed of a deep cut over the skull or the
     # cheekbone is the periosteum (the wall must not pierce the bone)
     # (the neck has no bone in front: a deep throat cut opens the strap
     # muscles down onto the larynx / trachea, ~15-20 mm)
-    vd = vd.min((t.inp("Bone Depth").max(neck * 0.019) - 0.0004).max(0.0012))
+    vd = vd.min((t.inp("Bone Depth").max(neck * 0.024) - 0.0004).max(0.0012))
     open_hw = hw + d_rim
     # near the two ends the walls also lean in along the cut, so the V closes
     # at the tips too (walls that only move sideways leave a slot at each end)
@@ -1515,12 +1515,15 @@ def _build_burn():
     edge_w = t.noise(t.vec(up_ * 55.0, c.seed * 3.0, 1.7), detail=3.0) * 0.35 \
         + t.noise(c.np * 160.0, detail=2.0) * 0.08
     n4 = t.noise(c.np * 16.0 + t.vec(0.0, c.seed * 4.0, 0.0), detail=2.0)
-    rn = rho_e / R * (1.0 + 0.45 * lobes) + 0.12 * n2 + 0.3 * n3 + 0.4 * n4 - 0.45 * lick + edge_w
+    # (a mid-scale term moves the border in and out by ~5-12 mm everywhere, so
+    # no flank of the dose ellipse runs as a straight line down the face)
+    n5 = t.noise(c.np * 40.0 + t.vec(c.seed * 2.2, 1.3, 0.0), detail=3.0)
+    rn = rho_e / R * (1.0 + 0.45 * lobes) + 0.12 * n2 + 0.3 * n3 + 0.4 * n4 - 0.45 * lick + edge_w + 0.3 * n5
     # soft edge: a 5-15 mm band of red skin; the flame tongues fade out well
     # inside the hit's reach (or the evaluation bounds show as a straight edge)
     # (the outer clamp is lobed too: a clean ellipse here gave the burn long
     # straight sides where two hits overlap)
-    b = t.smooth(1.02, 0.12, rn) * t.smooth(R * 1.5, R * 1.1, rho_e * (1.0 + 0.3 * lobes) + edge_w * R * 0.5
+    b = t.smooth(1.15, 0.1, rn) * t.smooth(R * 1.5, R * 1.1, rho_e * (1.0 + 0.3 * lobes) + edge_w * R * 0.5
                                             + n3 * R * 0.25)
     dose = (b * (0.55 + 0.6 * D)).clamp()
     partial = t.smooth(0.2, 0.3, dose) * t.smooth(0.56, 0.48, dose)
@@ -2825,10 +2828,10 @@ def _build_pools(t, hits, surface, drip):
     lump_n2 = t.noise(t.attr("pl_p0", 'FLOAT_VECTOR') * 1300.0, detail=2.0)
     lump_n3 = t.noise(t.attr("pl_p0", 'FLOAT_VECTOR') * 150.0, detail=2.0, signed=False)
     pulp = (t.attr("pl_pulp") * (0.6 + 1.5 * t.attr("b_tis"))).clamp()
-    lump = t.smooth(0.5, 0.68, lump_n * 0.7 + lump_n3 * 0.3) * pulp * fill * (1.0 - out_f)
+    lump = t.smooth(0.44, 0.66, lump_n * 0.7 + lump_n3 * 0.3) * pulp * fill * (1.0 - out_f)
     # the liquid surface is never a mirror-flat disc: a shallow meniscus
     # bulge and slow ripples; pulp (brain, torn tissue) stands out of it in lumps
-    h_in = L + lump * (0.0012 + 0.0016 * lump_n3 + 0.0005 * lump_n2) + (1.0 - lump) * 0.00016 * lump_n2
+    h_in = L + lump * (0.0016 + 0.0022 * lump_n3 + 0.0007 * lump_n2) + (1.0 - lump) * 0.00016 * lump_n2
     hfin = t.mix(h_in, h_out, out_f)
     g = t.out(t.node('GeometryNodeSetPosition', {'Geometry': g,
                                                  'Position': t.attr("pl_p0", 'FLOAT_VECTOR') + N * (hfin - (t.attr("pl_p0", 'FLOAT_VECTOR') - I).dot(N))}))
@@ -3248,7 +3251,7 @@ def _build_blood():
             rp = {"bullet": hole * 2.2 + 0.0012, "exit": hole * 3.2 + 0.004, "blunt": hole * 2.6 + 0.002}[k]
             rpy = rp
             hk = t.store(hk, "pl_col", 0.0)
-        hk = t.store(hk, "pl_pulp", {"bullet": 0.0, "exit": 0.75, "blunt": 0.25, "slash": 0.0}[k] + 0.35 * h["crush"])
+        hk = t.store(hk, "pl_pulp", {"bullet": 0.0, "exit": 1.0, "blunt": 0.25, "slash": 0.0}[k] + 0.35 * h["crush"])
         hk = t.store(hk, "pl_cr", h["crush"] if k == "blunt" else 0.0)
         # (a blunt split is a channel like a cut: it brims over only at its low end)
         hk = t.store(hk, "pl_spl", 1.0 if k == "blunt" else 0.0)
@@ -3754,6 +3757,11 @@ def _build_wound_step(kind, kind_group):
     mush = MUSH_K.get(kind, 0.0)
     if kind == "blunt":
         mush = t.smooth(0.2, 0.7, h.crush) * mush
+    if kind == "slash":
+        # a deep throat cut divides the strap muscles and the platysma: its
+        # walls are granular, bulging cut muscle and fat (refs 1 / 17), not
+        # a smooth section; the clean cheek / brow cuts keep smooth walls
+        mush = 0.8 * h.R.z * t.smooth(0.5, 0.7, h.D)
     mush = t.switch(soft, 0.0, mush)
     g = t.store(g, "g_mush", t.switch(better, t.attr("g_mush"), mush), sel=sel)
     # g_mushk = brain (1) + 2 x bleeding + 4 x incised (see _mush)
@@ -3933,12 +3941,17 @@ def _mush(t, g, on_faces):
     # three scales -- and the surface is torn by noise, so pulp is a
     # continuous wet mush with lobes, pits and crevices, REFERENCE_NOTES
     # §5.18 A, refs 3, 4, 13, 15, 16)
-    lump_pts = t.out(t.node('GeometryNodeSeparateGeometry', {'Geometry': pts, 'Selection': flap}, domain='POINT'),
+    # (pulped brain at an exit is made by the pool instead -- an amorphous,
+    # smeared mass bulging out of the blood; fused balls read as grapes)
+    lump_pts = t.out(t.node('GeometryNodeSeparateGeometry', {'Geometry': pts,
+                                                             'Selection': t.bool('OR', flap, brain)}, domain='POINT'),
                      'Inverted')
     # ball radius: the lump size, pulp a little fuller; buried half in the wall
     # (small balls, 0.45-1.7 mm: their union is a lumpy aggregate; a few
     # big balls fused into round cherries / dough balls)
-    rad = (t.attr("m_sz") * t.switch(brain, 0.55, 0.7)).max(0.00045).min(0.0017)
+    # (balls of 1.1-2.6 mm at ~1.5 mm spacing overlap: the union is one
+    # continuous lumpy layer of pulp with pits, never a row of beads)
+    rad = (t.attr("m_sz") * 1.1).max(0.0011).min(0.0026)
     lump_pts = t.out(t.node('GeometryNodeSetPosition', {'Geometry': lump_pts,
                                                         'Offset': nrm * (rad * -0.25)}))
     lump_pts = t.store(lump_pts, "m_r", rad)
@@ -4154,18 +4167,6 @@ def _build_cut():
         lump = term if lump is None else lump + term
     # torn (not incised) walls also bulge and pit at the ~5-15 mm scale
     lump = lump + t.noise(p * 75.0 + t.vec(2.3, 0.4, 5.1), detail=2.0) * 0.0011 * (1.0 - vshape)
-    # an incised wall is a clean section, but never a smooth plane: the cut
-    # subcutaneous fat bulges out as rounded yellow lobules (2-4 mm, domed,
-    # with thin septa between them) and the cut muscle below shows its
-    # bundles as low ridges (the colours come from GH_Fat by depth; this is
-    # the relief, so the wall has real shape at the 1-4 mm scale)
-    lv = t.voronoi(p + t.noise(p * 300.0, detail=1.0, color=True) * 0.0006, 380.0, 'F1', 1.0)
-    ld = t.out(lv, 'Distance')
-    dome = (1.0 - (ld / 0.72) ** 2.0).max(0.0).sqrt()
-    fat_band = t.smooth(0.08, 0.2, fr_w) * t.smooth(0.8, 0.66, fr_w)
-    mus_band = t.smooth(0.74, 0.86, fr_w)
-    bund = t.noise(p * t.vec(160.0, 160.0, 900.0) + t.vec(1.3, 0.2, 0.7), detail=2.0)
-    lump = lump + vshape * (fat_band * dome * 0.00042 + mus_band * bund * 0.00022)
     g = t.out(t.node('GeometryNodeSetPosition', {'Geometry': g, 'Selection': wallv,
                                                  'Offset': t.normal() * (lump * (0.35 + 0.65 * fr_w))}))
     # blood filling the bed of a bleeding cut: a separate liquid sheet spanning

@@ -522,6 +522,8 @@ def build_brain():
     hr = V.decimate_components(v, f, BRAIN_HR_TRIS) if len(f) > BRAIN_HR_TRIS else (v, f)
     lod = V.decimate_components(*hr, BRAIN_TRIS)
     lod = (_shrinkwrap_relax(lod[0], lod[1], brain_sdf, h), lod[1])
+    # fold-over triangles (normal against the surface gradient) shade as dark specks: relax them away (round 3)
+    lod = (gg.fix_foldovers(lod[0], lod[1], brain_sdf, h)[0], lod[1])
     gbc.log(f"  B4 brain  raw {len(f)}  hr {len(hr[1])}  lod {len(lod[1])} tris  {time.perf_counter() - t0:.1f} s")
     out = {}
     for name, (vv, ff) in (("GB_Brain", lod), ("GB_Brain_HR", hr)):

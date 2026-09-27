@@ -600,3 +600,39 @@ def weld(obj, dist=1e-6):
 def decimate_obj(obj, target_tris):
     """Collapse-decimate keeping point attributes and material indices (Blender interpolates them)."""
     return decimate_to(obj, target_tris)
+
+
+def foldover_faces(v, f, fn, eps=2e-4):
+    """Faces whose winding normal opposes the SDF gradient at their centroid (fold-overs left by decimation:
+    they shade as dark specks)."""
+    v = np.asarray(v, float)
+    f = np.asarray(f, np.int64)
+    a, b, c = v[f[:, 0]], v[f[:, 1]], v[f[:, 2]]
+    n = np.cross(b - a, c - a)
+    p = (a + b + c) / 3.0
+    g = np.stack([fn(p[:, 0] + eps, p[:, 1], p[:, 2]) - fn(p[:, 0] - eps, p[:, 1], p[:, 2]),
+                  fn(p[:, 0], p[:, 1] + eps, p[:, 2]) - fn(p[:, 0], p[:, 1] - eps, p[:, 2]),
+                  fn(p[:, 0], p[:, 1], p[:, 2] + eps) - fn(p[:, 0], p[:, 1], p[:, 2] - eps)], 1)
+    return (n * g).sum(1) < 0.0
+
+
+def fix_foldovers(v, f, fn, h, rounds=4):
+    """Relax the vertices of fold-over faces (and their neighbours) and project them back onto ``fn``'s surface;
+    returns (v, remaining fold-over count)."""
+    v = np.array(v, float)
+    f = np.asarray(f, np.int64)
+    e = np.concatenate([f[:, [0, 1]], f[:, [1, 2]], f[:, [2, 0]]])
+    for _ in range(rounds):
+        bad = foldover_faces(v, f, fn)
+        if not bad.any():
+            return v, 0
+        m = np.zeros(len(v), bool)
+        m[f[bad].ravel()] = True
+        m[e[m[e[:, 0]], 1]] = True
+        acc = np.zeros_like(v)
+        np.add.at(acc, e[:, 0], v[e[:, 1]])
+        np.add.at(acc, e[:, 1], v[e[:, 0]])
+        deg = np.maximum(np.bincount(e[:, 0], minlength=len(v)) + np.bincount(e[:, 1], minlength=len(v)), 1)
+        v[m] = 0.4 * v[m] + 0.6 * (acc / deg[:, None])[m]
+        v[m] = head().project_to_surface(fn, v[m], h, 2)
+    return v, int(foldover_faces(v, f, fn).sum())

@@ -15,6 +15,9 @@ var views := {
 	"body_three_q": [Vector3(-2.05, 1.15, 2.45), Vector3(0, 0.9, 0), 50.0],
 	"head_three_q": [Vector3(-0.52, 1.66, 0.52), Vector3(0, 1.64, 0.02), 85.0],
 	"torso_front": [Vector3(0, 1.30, 1.45), Vector3(0, 1.22, 0), 50.0],
+	"eye_close": [Vector3(0.02, 1.690, 0.22), Vector3(0.0315, 1.684, 0.0475), 85.0],
+	"neck_side": [Vector3(-0.75, 1.57, 0.02), Vector3(0, 1.53, 0.005), 85.0],
+	"body_back": [Vector3(0, 0.95, -3.2), Vector3(0, 0.9, 0), 50.0],
 }
 
 func _tex(name: String, srgb: bool) -> ImageTexture:

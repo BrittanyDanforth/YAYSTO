@@ -27,8 +27,10 @@ ACCEPT_LENGTH_CM = {"femur": 47.0, "tibia": 41.0, "fibula": 39.5, "humerus": 34.
 # ---------------------------------------------------------------------------
 # Key points (left side, body frame m)
 # ---------------------------------------------------------------------------
-CLAVICLE_WAYPOINTS = [(0.025, -0.040, 1.450), (0.070, -0.050, 1.452), (0.125, -0.020, 1.462),
-                      (0.165, 0.010, 1.462)]                         # S-curve, R05 §6.1 E
+# S-curve (fix round 3, critics: 'nearly straight rods'): medial two thirds convex forward (12-15 mm anterior to
+# the chord), lateral third turning back and concave forward toward the acromion; the ends are unchanged
+CLAVICLE_WAYPOINTS = [(0.025, -0.040, 1.450), (0.060, -0.053, 1.452), (0.100, -0.042, 1.457),
+                      (0.135, -0.012, 1.462), (0.165, 0.010, 1.462)]      # R05 §6.1 E
 CLAVICLE_SECTION_MM = {"sternal": (25, 20), "mid": (13, 10), "acromial": (25, 10)}
 
 SCAPULA = {

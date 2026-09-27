@@ -393,9 +393,14 @@ def _abdomen_relief(x, z):
     ax = np.abs(x)
     rect = band(z, 0.965, 1.255, 0.03) * sstep(0.095, 0.060, ax)
     bulk = 0.0045 * rect * (0.7 + 0.3 * gauss(z - 1.00, 0.06))      # lower belly slightly rounded
-    alba = -0.0026 * gauss(ax, 0.0060) * band(z, 1.09, 1.26, 0.02)
-    inter = sum(-0.0014 * gauss(z - zi, 0.009) for zi in (1.140, 1.198, 1.245)) * sstep(0.070, 0.045, ax)
-    semil = -0.0024 * gauss(ax - 0.078, 0.008) * band(z, 1.0, 1.23, 0.03)
+    # (fix round 3: the narrow 6-8 mm grooves printed plastic highlight stripes along the linea alba / semilunaris
+    # in Godot; softer and wider)
+    alba = -0.0019 * gauss(ax, 0.0090) * band(z, 1.09, 1.26, 0.02)
+    inter = sum(-0.0012 * gauss(z - zi, 0.011) for zi in (1.140, 1.198, 1.245)) * sstep(0.070, 0.045, ax)
+    semil = -0.0015 * gauss(ax - 0.078, 0.013) * band(z, 1.0, 1.23, 0.03)
+    # mons pubis fat pad over the symphysis (10-15 mm of suprapubic fat, fix round 3: the symphysis lay 2.2 mm
+    # under the skin)
+    mons = 0.0070 * gauss(ax, 0.042) * gauss(z - 0.895, 0.022)
     # navel [RB §7.1 navel (0, -0.108, 1.075)]: pit with a soft rim
     rn = np.hypot(ax, (z - 1.075) * 0.85)
     navel = -0.0085 * np.exp(-(rn / 0.0065) ** 2.5) + 0.0012 * gauss(rn - 0.009, 0.005)
@@ -408,7 +413,7 @@ def _abdomen_relief(x, z):
     # costal margin: slight hollow below the ribs, epigastric fossa
     epi = -0.0022 * gauss(ax, 0.03) * gauss(z - 1.245, 0.025)
     jug = -0.004 * gauss(ax, 0.012) * gauss(z - 1.458, 0.010)
-    return bulk + alba + inter + semil + navel + ing + epi + jug
+    return bulk + alba + inter + semil + navel + ing + epi + jug + mons
 
 
 def _tri_sdf2(px, pz, P):
@@ -434,20 +439,26 @@ SCAPULA = [(0.072, 1.470), (0.085, 1.322), (0.150, 1.410), (0.165, 1.455)]
 def _back_relief(x, z):
     """Spinal furrow, erector columns, scapulae (+ spine of scapula), PSIS dimples, trapezius."""
     ax = np.abs(x)
+    # (fix round 3, critics: 'a smooth featureless slab'): a 4-6 mm spinal furrow between the erector columns from
+    # T6 to L4, fuller erector columns, the medial scapular border and inferior angle, a latissimus edge
     depth = sinterp(z, [0.95, 1.00, 1.05, 1.15, 1.22, 1.30, 1.40, 1.47, 1.55],
-                      [0.003, 0.006, 0.0090, 0.0085, 0.006, 0.0025, 0.0020, 0.002, 0.004])
-    width = sinterp(z, [0.95, 1.10, 1.25, 1.45, 1.55], [0.010, 0.016, 0.012, 0.010, 0.012])
+                      [0.003, 0.006, 0.0090, 0.0088, 0.0068, 0.0052, 0.0034, 0.002, 0.004])
+    width = sinterp(z, [0.95, 1.10, 1.25, 1.45, 1.55], [0.010, 0.016, 0.013, 0.010, 0.012])
     furrow = -depth * gauss(ax, width)
-    erect = 0.0055 * gauss(ax - 0.036, 0.020) * band(z, 1.00, 1.30, 0.06)
+    erect = 0.0072 * gauss(ax - 0.034, 0.019) * band(z, 0.99, 1.34, 0.06)
     sd = _tri_sdf2(ax, z, SCAPULA)
     scap = 0.0055 * sstep(0.016, -0.022, sd)
-    scap += 0.0025 * gauss(np.hypot(ax - 0.086, z - 1.330), 0.015)            # inferior angle
+    scap += 0.0035 * gauss(np.hypot(ax - 0.086, z - 1.330), 0.013)            # inferior angle
+    # medial border: a soft ridge along the triangle's medial edge, with the rhomboid hollow just medial to it
+    scap += 0.0020 * gauss(sd + 0.004, 0.005) * sstep(0.10, 0.075, ax) * band(z, 1.33, 1.44, 0.02)
+    scap -= 0.0018 * gauss(ax - 0.058, 0.008) * band(z, 1.34, 1.43, 0.03)
     # spine of the scapula: ridge from the medial border up-laterally to the acromion
     t = np.clip(((ax - 0.075) * 0.095 + (z - 1.428) * 0.030) / (0.095 ** 2 + 0.030 ** 2), 0.0, 1.0)
     ridge = 0.0025 * gauss(np.hypot(ax - (0.075 + 0.095 * t), z - (1.428 + 0.030 * t)), 0.006)
     fossa = -0.002 * gauss(np.hypot(ax - 0.115, z - 1.448), 0.012)            # supraspinous hollow
     psis = -0.0030 * gauss(np.hypot(ax - 0.045, z - 1.010), 0.008)            # [RB §7.1 psis_dimple]
     lat = 0.003 * gauss(ax - 0.12, 0.03) * band(z, 1.18, 1.36, 0.05)
+    lat += 0.0022 * gauss(ax - (0.128 - 0.25 * (1.30 - z)), 0.010) * band(z, 1.10, 1.32, 0.04)   # latissimus edge
     trap = 0.004 * gauss(ax - 0.035, 0.03) * band(z, 1.40, 1.52, 0.04)         # upper trapezius mass
     return furrow + erect + scap + ridge + fossa + psis + lat + trap
 
@@ -1627,6 +1638,15 @@ def tension_at(points, normals):
 # ===========================================================================
 # Muscle shell SDF: skin offset inward by skin + fat (plan §8.2 B1, [RB §7.6])
 # ===========================================================================
+RIB_WRAP_BOX = Box((-0.21, -0.17, 1.06), (0.21, 0.15, 1.34), margin=0.03)
+
+
+def _rib_wrap(x, y, z):
+    """Ribs 7-12 and their cartilages (B4's rib tubes, from B3's rib table) grown by 5.5 mm of muscle."""
+    import viscera as VC
+    return VC.rib_tubes_sdf(x, y, z, grow=0.0055)
+
+
 def _body_muscle(x, y, z):
     """Body part of the shell: every component inset by skin + fat, blends widened by the same depth."""
     c = body_components(x, y, z)
@@ -1641,6 +1661,9 @@ def _body_muscle(x, y, z):
     off["pad_trunk"] = min(pads[k] for k in ("clavicle", "sternum", "psis")) - 0.0005
     off["pad_leg"] = min(pads[k] for k in ("tibia", "fibula", "foot")) - 0.0005
     shell = union_components(c, off=off, kplus=3.0 * t)
+    # the abdominal wall muscles (external oblique, transversus) wrap the costal margin: >= 5.5 mm outside ribs
+    # 7-10 and their cartilages (fix round 3, FB-4: rib 10 / cartilage 10 stood 4.7 mm outside the shell)
+    shell = smin(shell, RIB_WRAP_BOX.run(_rib_wrap, x, y, z), 0.006)
     # the widened blends bulge out by up to depth / 2; never closer than 2.5 mm to the skin (FB-4), deeper under
     # the folds that the skin compresses in the extreme poses (FOLD_FAT)
     return np.maximum(shell, union_components(c) + 0.0025 + fold_fat(np.abs(x), y, z))
@@ -2350,6 +2373,70 @@ def joint_weighted_decimate(obj, target_tris):
     return gbc.tri_count(obj.data)
 
 
+PIT_SCORE = -0.35            # vertex offset from its 1-ring centroid along the normal / mean edge length
+
+
+def _crease_mask(v):
+    """Vertices in real skin creases where a concave 1-ring is anatomy, not a decimation pit: navel, gluteal cleft,
+    perineum / crotch, inguinal folds, between the fingers and toes, the ears and the mouth / eye openings."""
+    ax = np.abs(v[:, 0])
+    x, y, z = v[:, 0], v[:, 1], v[:, 2]
+    m = np.linalg.norm(v - np.array([0.0, -0.108, 1.075]), axis=1) < 0.025                     # navel
+    m |= (ax < 0.015) & (y > 0.03) & (z > 0.78) & (z < 1.03)                                   # gluteal cleft
+    m |= (ax < 0.045) & (z > 0.78) & (z < 0.92) & (np.abs(y) < 0.06)                             # perineum
+    m |= (np.abs(ax - 0.075) < 0.045) & (y < -0.03) & (z > 0.86) & (z < 0.99)                  # inguinal folds
+    m |= (ax > 0.42) | (z < 0.10)                                                              # hands, feet
+    m |= z > SEAM_Z - 0.01                                                                     # head side of the ring
+    return m
+
+
+def pit_scores(me):
+    """Per-vertex pit score (see PIT_SCORE) of a triangle mesh (numpy)."""
+    v = gbc.get_verts(me)
+    ev = np.empty(len(me.edges) * 2, np.int64)
+    me.edges.foreach_get("vertices", ev)
+    e = ev.reshape(-1, 2)
+    n = np.empty(len(v) * 3)
+    me.vertices.foreach_get("normal", n)
+    n = n.reshape(-1, 3)
+    acc = np.zeros_like(v)
+    np.add.at(acc, e[:, 0], v[e[:, 1]])
+    np.add.at(acc, e[:, 1], v[e[:, 0]])
+    deg = np.maximum(np.bincount(e.ravel(), minlength=len(v)), 1).astype(float)
+    cen = acc / deg[:, None]
+    el = np.linalg.norm(v[e[:, 0]] - v[e[:, 1]], axis=1)
+    lsum = np.bincount(e[:, 0], el, len(v)) + np.bincount(e[:, 1], el, len(v))
+    L = np.maximum(lsum / deg, 1e-6)
+    return ((v - cen) * n).sum(1) / L, e
+
+
+def fix_pits(obj, fn, h, iters=3):
+    """Relax the decimation pits of a skin mesh (fix round 3, critics: collapsed facets read as dark dots on the
+    shins and beside the patellae, 3-8 mm pits at the axilla apex): flagged vertices (PIT_SCORE, outside the crease
+    masks) and their 1-ring get ``iters`` local Laplacian steps, then snap back onto the exact surface ``fn``.
+    Returns the number of pits fixed."""
+    me = obj.data
+    sc, e = pit_scores(me)
+    v = gbc.get_verts(me)
+    bad = (sc < PIT_SCORE) & ~_crease_mask(v)
+    if not bad.any():
+        return 0
+    ring = bad.copy()
+    ring[e[bad[e[:, 0]], 1]] = True
+    ring[e[bad[e[:, 1]], 0]] = True
+    ring &= ~(v[:, 2] > SEAM_Z - 0.004)                  # the seam ring stays exact
+    for _ in range(iters):
+        acc = np.zeros_like(v)
+        np.add.at(acc, e[:, 0], v[e[:, 1]])
+        np.add.at(acc, e[:, 1], v[e[:, 0]])
+        deg = np.maximum(np.bincount(e.ravel(), minlength=len(v)), 1).astype(float)[:, None]
+        v[ring] = 0.5 * v[ring] + 0.5 * (acc / deg)[ring]
+    v[ring] = _A().project_to_surface(fn, v[ring], h, 2)
+    gbc.set_verts(me, v)
+    me.update()
+    return int(bad.sum())
+
+
 def _protect_ring_decimate(obj, target_tris):
     """Collapse-decimate keeping the boundary (seam ring) vertices exactly (vertex group weight 0)."""
     import bpy
@@ -2394,6 +2481,9 @@ def build_body_skin(quick=None):
     with T("B1: LOD0 decimate + seam zip"):
         body = _new_mesh_object("GB_Body", hr.data.copy())
         joint_weighted_decimate(body, BODY_TRIS - 2 * len(ring))
+        for _ in range(3):
+            if not fix_pits(body, skin_sdf, h):
+                break
         _cut_and_zip(body, ring, 0.0030)
         _cut_and_zip(hr, ring, 0.5 * h)
     with T("B1: UV islands, seams, unwrap, pack"):
@@ -2410,6 +2500,9 @@ def build_body_skin(quick=None):
     with T("B1: shape keys + LOD1"):
         lod = _new_mesh_object("GB_Body_LOD1", body.data.copy())
         _protect_ring_decimate(lod, BODY_LOD1_TRIS)
+        for _ in range(3):
+            if not fix_pits(lod, skin_sdf, h):
+                break
         # decimation drops custom normals: the ring gets the analytic seam normals again (FB-1 on LOD1 too)
         import head_integration as hi
         hi.apply_seam_normals(lod)

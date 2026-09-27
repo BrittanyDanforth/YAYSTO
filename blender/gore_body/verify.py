@@ -892,6 +892,34 @@ def _min_gap(P, a, b, cls_skip=6):
     return min(kd.find(p)[2] for p in va[:: max(1, len(va) // 3000)])
 
 
+@check("scene", owner="B3")
+def b3_no_degenerate_faces():
+    """No degenerate triangles (area < 1e-10 m^2, the 'tiny black holes' on the maxilla) on GB_Skeleton, GB_Brain
+    and GB_Mouth, and no fold-over pairs (adjacent faces whose normals oppose, dihedral > 170 deg)."""
+    bpy = _bpy()
+    out, ok = [], True
+    for n in ("GB_Skeleton", "GB_Brain", "GB_Mouth"):
+        o = bpy.data.objects.get(n)
+        if o is None:
+            continue
+        v, t = gbc.mesh_arrays(o.data)
+        nrm = np.cross(v[t[:, 1]] - v[t[:, 0]], v[t[:, 2]] - v[t[:, 0]])
+        area = 0.5 * np.linalg.norm(nrm, axis=1)
+        deg = int((area < 1e-10).sum())
+        nn = nrm / np.maximum(np.linalg.norm(nrm, axis=1, keepdims=True), 1e-18)
+        e = np.concatenate([t[:, [0, 1]], t[:, [1, 2]], t[:, [2, 0]]])
+        f = np.tile(np.arange(len(t)), 3)
+        key = np.minimum(e[:, 0], e[:, 1]) * (1 << 32) + np.maximum(e[:, 0], e[:, 1])
+        o_ = np.argsort(key, kind="stable")
+        ks, fs = key[o_], f[o_]
+        pair = ks[1:] == ks[:-1]
+        fa, fb = fs[:-1][pair], fs[1:][pair]
+        fold = int(((nn[fa] * nn[fb]).sum(1) < -0.985).sum())
+        ok &= deg == 0 and fold <= 25
+        out.append(f"{n}: {deg} degenerate, {fold} fold-over pairs")
+    return ok, "; ".join(out)
+
+
 @check("scene", owner="B3", quick_ok=False)
 def b3_teeth_seated():
     """Every tooth of GB_Mouth sits in bone (fix round 3, critics: 0 % of the root vertices inside bone): per tooth
@@ -1192,6 +1220,26 @@ def neck_tape(v, t, front=None, tilts=range(0, 17, 2)):
         per = BS.hull_perimeter(q)
         best = per if best is None else min(best, per)
     return best
+
+
+@check("scene", owner="B1", quick_ok=False)
+def b1_no_skin_pits():
+    """No decimation pits on GB_Body / GB_Body_LOD1 outside the anatomical creases (vertex 1-ring score <
+    body_skin.PIT_SCORE; critics round 2: dark dots on the shins, notches beside the patellae, axilla pits)."""
+    bpy = _bpy()
+    import body_skin
+    out, ok = [], True
+    for n in ("GB_Body", "GB_Body_LOD1"):
+        o = bpy.data.objects.get(n)
+        if o is None:
+            continue
+        sc, _e = body_skin.pit_scores(o.data)
+        v = gbc.get_verts(o.data)
+        bad = (sc < body_skin.PIT_SCORE) & ~body_skin._crease_mask(v)
+        ok &= not bad.any()
+        pts = [tuple(round(float(c), 3) for c in v[i]) for i in np.nonzero(bad)[0][:6]]
+        out.append(f"{n}: {int(bad.sum())} pits {pts}")
+    return ok, "; ".join(out)
 
 
 @check("scene", owner="B1")

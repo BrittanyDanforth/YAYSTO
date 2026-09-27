@@ -91,12 +91,10 @@ def _thumb_fit():
 
 def _jaw_fit():
     """Jaw bone head = measured TMJ hinge (B2: midpoint of the head project's condyle centres)."""
-    try:
-        import head_integration as hi
-        jp = hi.jaw_pivot()
-        return tuple(round(float(c), 5) for c in jp)
-    except Exception:                                             # pragma: no cover - head import failed
-        return (0.0, 0.0085, 1.645)
+    # (fix round 3: no silent hard-coded fallback - a failed head import must stop the build, not ship a guess)
+    import head_integration as hi
+    jp = hi.jaw_pivot()
+    return tuple(round(float(c), 5) for c in jp)
 
 
 def _bone_fit():

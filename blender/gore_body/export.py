@@ -139,7 +139,8 @@ def prepare_for_export(out=gbc.SUBJECT_OUT, refresh_painter=True):
         with gbc.Timer("export: B7 atlases (bake.prepare_uvs)"):
             res["uvs"] = {k: bool(v.get("cached", False)) for k, v in bake.prepare_uvs().items()}
     except Exception as exc:                                         # pragma: no cover
-        res["uvs"] = f"prepare_uvs failed: {exc}"
+        # (fix round 3: a failed atlas preparation must fail the build, not ship stale / missing UVs silently)
+        raise RuntimeError(f"bake.prepare_uvs failed: {exc}") from exc
     wh = weights_hash()
     res["weights_hash"] = wh
     prev = _previous_manifest(out).get("rig", {}).get("painter_weights_hash")
@@ -163,6 +164,15 @@ def _eye_centre_measured(sx):
     (the exported GB_Eye_* centre and the eye/lid bone pivot)."""
     c = np.asarray(gbc.import_head().anatomy.EYE_C, float) * np.array([sx, 1.0, 1.0])
     return [round(float(a), 5) for a in gbc.head_to_body(c)]
+
+
+def _hash_key(path):
+    """Stable manifest key of a source file: 'body_skin.py', 'gb_data/x.py' or '../gore_head/anatomy.py'."""
+    ap = os.path.abspath(path)
+    snap = os.path.abspath(gbc.HEAD_SNAPSHOT_ROOT)
+    if ap.startswith(snap + os.sep) or ap.startswith(os.path.abspath(gbc.HEAD_SRC_DIR) + os.sep):
+        return "../gore_head/" + os.path.basename(ap)
+    return os.path.relpath(ap, gbc.HERE).replace(os.sep, "/")
 
 
 def landmarks_table():
@@ -521,8 +531,10 @@ def write_manifest(out, glb_paths=(), sidecars=None, pending=None, timings=None,
     data = {
         "build": {"build_id": gbc.build_id(), "blender": bpy.app.version_string, "gltf_exporter": exporter,
                   "quick": bool(quick), "timings_s": timings or {},
-                  "input_hashes": {os.path.relpath(p, gbc.HERE).replace(os.sep, "/"): gbc.file_hash(p)[:16]
-                                   for p in gbc.source_files() if os.path.exists(p)},
+                  # keys: body files relative to blender/gore_body, head files as ../gore_head/<file> (never the
+                  # local .cache/head_snapshot path the build froze them in)
+                  "input_hashes": {_hash_key(p): gbc.file_hash(p)[:16] for p in gbc.source_files()
+                                   if os.path.exists(p)},
                   "schemas": {k: k for k in gbc.SCHEMAS},
                   "stage_keys": dict(stage_keys or {}), "stage_status": dict(status or {}),
                   "head_snapshot": gbc.head_snapshot_id(),

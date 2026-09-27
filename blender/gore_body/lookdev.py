@@ -157,6 +157,7 @@ def _body_skin_material():
     dorsum, oily = t.attr("lk_dorsum"), t.attr("lk_oily")
     nail, lunula = t.attr("lk_nail"), t.attr("lk_lunula")
     warm, cool = t.attr("lk_warm"), t.attr("lk_cool")
+    crease = t.attr("lk_crease")
     # sub-millimetre detail (pores, skin furrows, single hairs) is below the body atlas' 0.84 mm texel:
     # the bake sets GB_bake_detail = 0 and gets the averaged look (the game adds it back from the
     # skin_micro tileable); look-dev renders keep 1
@@ -214,8 +215,12 @@ def _body_skin_material():
     col = t.mix(mole, col, t.mix(m_fine, (0.19, 0.105, 0.068), (0.27, 0.155, 0.10)))     # light-medium brown naevi
     # regional colour zones (red / yellow / blue of the skin-painting convention): warmer, redder
     # extremities, knees, elbows and lower face side of the neck; paler, slightly cooler trunk
-    col = t.mix(warm * body_k * 0.45, col, col * (1.06, 0.90, 0.86))
-    col = t.mix(cool * body_k * 0.35, col, col * (0.97, 0.99, 1.04))
+    # (fix round 3, critics: albedo luminance p1-p99 0.555-0.622 over the whole body - widened: redder knees,
+    # elbows, hands, feet; sallower, slightly cooler trunk; broad mottling)
+    col = t.mix(warm * body_k * 0.80, col, col * (1.10, 0.86, 0.82))
+    col = t.mix(cool * body_k * 0.60, col, col * (0.95, 0.98, 1.05))
+    col = col * (0.93 + 0.14 * t.noise(ph, 9.0, 2.0, 0.5))
+    col = col * (1.0 - crease * 0.10 * body_k)
     # light male body hair: fine dark strokes along the local down/distal direction (object z)
     hd, hcol, _ = t.voronoi(p * (1.0, 1.0, 0.28), 900.0)
     strand = (1.0 - hd.smooth(0.0, 0.16)) * t.sep(hcol)[1].smooth(0.92 - hair * 0.35, 0.95 - hair * 0.35)
@@ -237,14 +242,18 @@ def _body_skin_material():
     lum = t.luminance(col)
     skin_col = t.mix(pallor * 0.72, col, t.vec(lum, lum, lum) * (0.97, 1.0, 1.06) * 1.08)
     mid = t.noise(ph, 160.0, 2.0)
-    h = -pore * 0.9 - groove * 0.5 + fine * 0.2 + mid * 0.4 - jl * 1.2 + mont * 1.5 + mole * 0.6 \
+    h = -pore * 0.9 - groove * 0.5 + fine * 0.2 + mid * 0.4 - jl * 1.2 + mont * 1.5 + mole * 0.6 - crease * 1.6 \
         + vv * 0.8 * (1.0 - pallor * 0.5) + strand * hair * 0.3
-    rough = 0.44 + (m_fine - 0.5) * 0.14 + (fine - 0.5) * 0.12 - oily * 0.1 - t.control("wetness") * 0.04 \
+    # roughness 0.42 (oily T-zone of the chest / back) .. 0.60 (limbs), broken up at 2-3 cm (fix round 3: p5-p95 was
+    # 0.46-0.51, one continuous vinyl highlight)
+    limb = (1.0 - t.attr("lk_covered")) * (1.0 - oily) * body_k
+    rough = 0.47 + (m_fine - 0.5) * 0.14 + (fine - 0.5) * 0.12 - oily * 0.1 - t.control("wetness") * 0.04 \
+        + limb * 0.06 + (t.noise(ph, 40.0, 2.0) - 0.5) * 0.16 + crease * 0.05 \
         + pore * 0.1 + (joint * 0.08 + palm * 0.05) * body_k - nail * 0.24
     n_skin = t.bump(h, 0.0001)
     bsdf = t.principled(dict(SKIN_SSS, **{
         'Base Color': skin_col, 'Roughness': rough, 'Subsurface Weight': 1.0 - palm * 0.15,
-        'Coat Weight': 0.10 + oily * 0.1 + nail * 0.35, 'Coat Roughness': 0.32, 'Coat IOR': 1.45, 'Coat Normal': n_skin,
+        'Coat Weight': 0.05 + oily * 0.08 + nail * 0.35, 'Coat Roughness': 0.32, 'Coat IOR': 1.45, 'Coat Normal': n_skin,
         'Sheen Weight': 0.05 + hair * 0.05, 'Normal': n_skin}), sss_method='RANDOM_WALK_SKIN')
     t.output(bsdf)
     return _finish(mat, t, (0.47, 0.28, 0.19), 0.47)
@@ -352,7 +361,7 @@ def _organ_material():
     col = t.mix(dia * is_(sub, 2) * 0.9, col, (0.72, 0.68, 0.60))                     # central tendon
     oment = is_(oid, ids.get("omentum", 21))
     od, _, _ = t.voronoi(p, 260.0, 'DISTANCE_TO_EDGE')
-    col = t.mix(oment * (1.0 - od.smooth(0.0, 0.06)) * 0.6, col, (0.55, 0.18, 0.08))
+    col = t.mix(oment * (1.0 - od.smooth(0.0, 0.10)) * 0.22, col, (0.62, 0.30, 0.10))          # soft lobule outlines
     kid = is_(oid, ids.get("kidney_L", 7)).max(is_(oid, ids.get("kidney_R", 8)))
     col = t.mix(kid * (is_(sub, 3) + is_(sub, 2)).clamp() * 0.85, col, (0.78, 0.60, 0.20))   # perirenal fat
     # surface vessels on serosa and capsules
@@ -593,7 +602,7 @@ def write_seam_attr(objs, feather=(0.004, 0.018)):
         gbc.point_attr(o, "lk_seam", w.astype(np.float32), 'FLOAT')
 
 
-MOLE_COUNT = 12
+MOLE_COUNT = 8
 MOLE_MIN_SPACING = 0.08
 
 
@@ -662,6 +671,46 @@ def _lm(name, side="L"):
     if side == "R":
         p[0] = -p[0]
     return p
+
+
+def crease_field(v, nrm, region, seg):
+    """Flexion creases (0..1, 1 = the fold line) baked into the body normal / albedo at meso scale (fix round 3,
+    critics: the body bake averaged away every line, a vinyl mannequin): antecubital creases of the elbow, the two
+    to three wrist creases on the palm side, the popliteal crease behind the knee and soft horizontal skin folds
+    above the patella.  Lines are 1-1.4 mm wide gaussians across the limb axis, faded round the limb."""
+    out = np.zeros(len(v))
+
+    def lines(J, a, flex, offsets, width, reach, strength=1.0, radial=0.07):
+        a = np.asarray(a, float) / np.linalg.norm(a)
+        f_ = np.asarray(flex, float)
+        f_ = f_ - (f_ @ a) * a
+        f_ /= max(np.linalg.norm(f_), 1e-9)
+        d = v - J
+        s_ = d @ a
+        side = np.clip((d @ f_) / max(reach, 1e-6), 0.0, 1.0) ** 0.7
+        perp = np.linalg.norm(d - np.outer(s_, a), axis=1)
+        near = np.exp(-((perp - 0.0) / radial) ** 8)
+        w = np.zeros(len(v))
+        for k, (o, st) in enumerate(offsets):
+            wob = 0.0012 * np.sin((d @ f_) * 180.0 + k * 1.7)          # creases are not perfectly straight
+            w = np.maximum(w, st * np.exp(-((s_ - o - wob) / width) ** 2))
+        return w * side * near * strength
+    for sd in ("L", "R"):
+        sg = 1.0 if sd == "L" else -1.0
+        el, wr, mc = _lm("elbow_centre_L_apose", sd), _lm("wrist_centre_L_apose", sd), _lm("mcp3_L_apose", sd)
+        out = np.maximum(out, lines(el, wr - el, (0.0, -1.0, 0.0), [(-0.007, 0.7), (0.0, 1.0), (0.008, 0.6)],
+                                    0.0012, 0.03, radial=0.06))
+        hand = seg == (6 if sd == "L" else 7)
+        pn = nrm[hand & (region == 7)].mean(0) if (hand & (region == 7)).any() else np.array([-sg, 0.0, 0.0])
+        out = np.maximum(out, lines(wr, mc - wr, pn, [(-0.004, 1.0), (-0.011, 0.8), (-0.019, 0.5)], 0.0010, 0.02,
+                                    radial=0.035))
+        kn, pk = _lm("knee_centre_L", sd), _lm("patella_skin_L", sd)
+        out = np.maximum(out, lines(kn, (0.0, 0.0, -1.0), (0.0, 1.0, 0.0), [(0.0, 1.0), (-0.009, 0.5)], 0.0014,
+                                    0.04, radial=0.08))
+        out = np.maximum(out, lines(pk, (0.0, 0.0, -1.0), (0.0, -1.0, 0.0), [(-0.024, 0.45), (-0.033, 0.35),
+                                                                             (-0.042, 0.2)], 0.0016, 0.03,
+                                    radial=0.07))
+    return np.clip(out, 0.0, 1.0)
 
 
 def nipple_tip(v, nrm, side):
@@ -791,6 +840,7 @@ def body_region_fields(obj):
     wob = np.mean(np.sin(v @ k.T + ph), axis=1) * 1.6                    # ~N(0, 0.33)
     joint = joint * np.clip(0.80 + 0.45 * wob, 0.35, 1.25)
     f["lk_joint"] = _smooth_attr(me, np.clip(joint, 0, 1), 4)
+    f["lk_crease"] = crease_field(v, nrm, region, seg)
     # areola (r ~14 mm) and nipple (r ~5 mm) centred on the GEOMETRIC nipple (fix round 3, critics: the most
     # anterior skin point within 30 mm of the landmark lies on the medial pectoral bulge, 32-35 mm from the modelled
     # nipple bump, so every front view showed a painted areola beside a pale bare nipple)
@@ -949,7 +999,9 @@ TURNTABLE = {
     "feet": [((0.35, -0.65, 0.25), (0.08, -0.03, 0.05), 60)],
     # reference stage shared with the Godot side-by-side (same cameras, lights of gb_common.setup_stage)
     "ref": [((0.0, -3.2, 0.95), (0, 0, 0.9), 50), ((-2.05, -2.45, 1.15), (0, 0, 0.9), 50),
-            ((-0.52, -0.52, 1.66), (0, -0.02, 1.64), 85), ((0.0, -1.45, 1.30), (0, 0, 1.22), 50)],
+            ((-0.52, -0.52, 1.66), (0, -0.02, 1.64), 85), ((0.0, -1.45, 1.30), (0, 0, 1.22), 50),
+            ((0.02, -0.22, 1.690), (0.0315, -0.0475, 1.684), 85), ((-0.75, -0.02, 1.57), (0, -0.005, 1.53), 85),
+            ((0.0, 3.2, 0.95), (0, 0, 0.9), 50)],
     "inner": [((0.0, -1.5, 1.15), (0, 0, 1.1), 50), ((-1.05, -1.05, 1.2), (0, 0, 1.1), 50)],
     "organs": [((0.0, -0.75, 1.22), (0, -0.02, 1.2), 50), ((-0.55, -0.5, 1.25), (0, -0.02, 1.2), 50)],
     "brain": [((-0.35, -0.42, 1.74), (0, 0.01, 1.68), 85)],
@@ -983,6 +1035,76 @@ def render_views(prefix, views, objs_visible, out_dir=gbc.RENDER_DIR, samples=32
     for key, i, cam in cams:
         paths.append(gbc.render(os.path.join(out_dir, f"{prefix}_{key}_{i}.png"), cam, samples, res))
     return paths
+
+
+GODOT_REF_VIEWS = ("body_front", "body_three_q", "head_three_q", "torso_front", "eye_close", "neck_side", "body_back")
+
+
+def godot_side_by_side(out_dir=gbc.RENDER_DIR, samples=24, res=(480, 640), godot=None):
+    """B7 acceptance evidence (fix round 3, critics: the Godot reference was stale since Sep 26 and never part of the
+    build): render the exported GB_Subject.glb with its baked textures in Godot 4.5.1 (lookdev_godot_ref, Vulkan on
+    lavapipe under xvfb) and the same TURNTABLE['ref'] cameras in Cycles with the baked sets, and assemble
+    ``lookdev_cycles_vs_godot.png`` (rows = views, left Cycles, right Godot).  Returns the path or None."""
+    import shutil
+    import subprocess
+    import export
+    godot = godot or export.GODOT_BIN
+    if not os.path.exists(godot) or shutil.which("xvfb-run") is None:
+        gbc.log("WARNING: Godot side-by-side skipped (no Godot binary or xvfb-run)")
+        return None
+    tmp = os.path.join(gbc.CACHE_DIR, "godot_ref")
+    os.makedirs(tmp, exist_ok=True)
+    glb = os.path.join(gbc.SUBJECT_OUT, export.SUBJECT_GLB)
+    tex = os.path.join(gbc.SUBJECT_OUT, "textures")
+    cmd = ["xvfb-run", "-a", "-s", "-screen 0 640x800x24", godot, "--path", os.path.join(gbc.HERE, "lookdev_godot_ref"),
+           "--rendering-driver", "vulkan", "--", glb, tex, tmp]
+    run = subprocess.run(cmd, capture_output=True, text=True, timeout=1200)
+    if run.returncode != 0:
+        gbc.log(f"WARNING: Godot reference render failed rc {run.returncode}: {run.stderr[-600:]}")
+    import bake
+    bake.show_all_collections()
+    state = bake.apply_baked_materials()
+    try:
+        vis = ["GB_Body", "GB_Head", "GB_Shorts", "GB_Eye_L", "GB_Eye_R", "GB_Mouth", "GB_BrowLash", "GB_EyeFX_L",
+               "GB_EyeFX_R"]
+        cyc = render_views("ref_cycles", ["ref"], vis, tmp, samples, res)
+    finally:
+        bake._restore(state)
+    rows = []
+    for i, key in enumerate(GODOT_REF_VIEWS):
+        gp = os.path.join(tmp, f"godot_{key}.png")
+        if i < len(cyc) and os.path.exists(cyc[i]) and os.path.exists(gp):
+            rows.append((cyc[i], gp))
+    if not rows:
+        return None
+    imgs = []
+    for a, b in rows:
+        pa, pb = bpy.data.images.load(a), bpy.data.images.load(b)
+        w, h = pa.size
+        A = np.array(pa.pixels[:], np.float32).reshape(h, w, 4)
+        wb, hb = pb.size
+        B = np.array(pb.pixels[:], np.float32).reshape(hb, wb, 4)
+        if (wb, hb) != (w, h):                                # nearest resample to the Cycles size
+            yi = (np.arange(h) * hb // h).astype(int)
+            xi = (np.arange(w) * wb // w).astype(int)
+            B = B[yi][:, xi]
+        imgs.append(np.concatenate([A, B], 1))
+        bpy.data.images.remove(pa)
+        bpy.data.images.remove(pb)
+    canvas = np.concatenate(imgs[::-1], 0)
+    out = os.path.join(out_dir, "lookdev_cycles_vs_godot.png")
+    im = bpy.data.images.new("gb_side_by_side", canvas.shape[1], canvas.shape[0], alpha=True)
+    im.pixels.foreach_set(canvas.ravel())
+    im.filepath_raw = out
+    im.file_format = 'PNG'
+    im.save()
+    bpy.data.images.remove(im)
+    for key in GODOT_REF_VIEWS:
+        gp = os.path.join(tmp, f"godot_{key}.png")
+        if os.path.exists(gp):
+            shutil.copyfile(gp, os.path.join(out_dir, f"godot_ref_{key}.png"))
+    gbc.log(f"B7: Cycles vs Godot side-by-side -> {out} ({len(rows)} views)")
+    return out
 
 
 def main():

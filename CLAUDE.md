@@ -277,6 +277,10 @@ damage = 0 returns the intact mesh. Carnage (9 hits) evaluates in ~4.5 s.
   pink/white BEAD-BALLS (reads as candy/marbles) + flat red slab streams — HIGH.
 - Wounds fixer (22:02, fix2_wounds/d2t): throat cut close-up is a smooth, glossy, dark-red lens/tube with NO cross-section
   (no muscle layers, trachea rings, vessel openings, fat) — reads as a plastic slot; blunt preset still lacks swelling/bruise.
+- Wounds fixer (22:10-22:20): blunt now shows purple bruising at the lip and a bloody scalp split (good); STILL HIGH: exit hole
+  = cluster of glossy pink/white/maroon marbles (candy look) + flat red slab streams; cheek slash walls = gold/orange foil
+  with repeating stripe/step pattern (ref 12 artefact); throat cut = glossy plastic tube, no cross-section; blast teeth
+  white cubes + round red candy beads.
 - USER (HIGH, REFERENCE_NOTES §5.21): a slash stream started on intact skin beside the cut (no wound above it); every stream
   must trace up into an overflowing low point of a wound rim. Drops/streams too thick (drops ~3-4.5 mm, streams 2-5 mm wide, 0.1-0.4 mm thick).
 - USER (HIGH, REFERENCE_NOTES §5.20): crushed preset leaves the NOSE TIP intact/unbruised inside the wound; the eyeball is

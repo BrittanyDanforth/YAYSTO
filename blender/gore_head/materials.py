@@ -1110,7 +1110,9 @@ def _fat_material(g):
     # thick pale wall); the strap muscles are granular bundles
     px, py, pz = t.sep(p)
     neck = (-pz).smooth(0.095, 0.11) * d.smooth(0.25, 0.45)
-    y_ax = -0.011 - (-0.09 - pz).max(0.0).min(0.06) * 0.30
+    # (the airway lies just under the front of the neck: at the larynx the
+    # thyroid cartilage is 5-8 mm under the skin, the lumen centre ~20 mm)
+    y_ax = -0.020 - (-0.09 - pz).max(0.0).min(0.06) * 0.30
     d_ax = t.vec(px, py - y_ax, 0.0).length()
     lumen = (1.0 - d_ax.smooth(0.0072, 0.0080)) * neck
     shell = d_ax.smooth(0.0074, 0.0082) * (1.0 - d_ax.smooth(0.0102, 0.0112)) * neck

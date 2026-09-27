@@ -1249,8 +1249,8 @@ def clavicle_sdf():
     wp = np.array(BN.CLAVICLE_WAYPOINTS, float)
     sc, ac = wp[0], wp[-1]
     kn = [0.0, 0.12, 0.35, 0.55, 0.78, 1.0]
-    rn = [0.0100, 0.0072, 0.0058, 0.0052, 0.0046, 0.0045]      # vertical half
-    rb = [0.0122, 0.0080, 0.0068, 0.0066, 0.0085, 0.0100]      # horizontal half
+    rn = [0.0100, 0.0072, 0.0058, 0.0050, 0.0042, 0.0040]      # vertical half (lateral third flattened, ~8 mm)
+    rb = [0.0122, 0.0080, 0.0068, 0.0068, 0.0092, 0.0105]      # horizontal half (lateral end ~20 mm wide)
 
     def sec(n, b, t):
         return gg_superellipse(n, b, interp(t, kn, rn), interp(t, kn, rb), 2.3)
@@ -1702,18 +1702,25 @@ def femur_sdf():
 
 
 def patella_sdf():
-    """Patella (left): rounded triangle with the apex down, thick centre, ridged articular back;
-    the front ~6-8 mm under the skin (lean site 4-8 mm).  It sits in the femoral trochlea: the
-    articular ridge 5-6 mm (two cartilage layers) off the femur, 3 mm above the table centre."""
-    A = _A()
+    """Patella (left): a flattened triangular sesamoid (fix round 3, critics: 'a smooth ball') - broad rounded base
+    up, apex down, ~46 x 46 x 22 mm, a gently convex anterior face, and a posterior articular surface of two facets
+    (the lateral one broader) meeting in a vertical ridge that sits in the femoral trochlea 5-6 mm off the femur
+    (two cartilage layers); the front ~6-8 mm under the skin (lean site 4-8 mm)."""
+    import skull as SKL
     c = np.array(BN.KNEE_LEG["patella_centre"]) + np.array((0.0, 0.0135, 0.003))
+    r = 0.0115                                                       # well-rounded corners (a chestnut outline)
+    tri = [(-0.0235 + r, 0.0185 - r), (0.0235 - r, 0.0185 - r), (0.0010, -0.0290 + r)]   # (x, z) about c, apex down
 
     def fn(x, y, z):
-        zz = (z - c[2]) / 0.0265
-        sx = 1.0 / (1.0 - 0.40 * sstep(0.0, -1.0, zz))               # narrower towards the apex
-        d = A.sd_ellipsoid((x - c[0]) * sx, y, z, (0.0, c[1], c[2]), (0.0255, 0.0115, 0.0265)) / sx
-        ridge = A.sd_ellipsoid(x, y, z, (c[0] - 0.002, c[1] + 0.006, c[2]), (0.0060, 0.0065, 0.0200))
-        return smin(d, ridge, 0.004)
+        u, w = x - c[0], z - c[2]
+        d2 = SKL._poly2d(u, w, tri) - r                              # rounded triangle outline
+        q = np.clip(1.0 - (u / 0.024) ** 2 - (w / 0.030) ** 2, 0.0, 1.0)
+        front = c[1] - 0.0080 - 0.0035 * q                           # convex anterior face
+        # posterior facets: a ridge 2 mm medial of centre, the lateral facet broader and flatter
+        ridge_u = u + 0.002
+        back = c[1] + 0.0050 + 0.0065 * q - 0.18 * np.maximum(ridge_u, 0.0) - 0.26 * np.maximum(-ridge_u, 0.0)
+        d = np.maximum(front - y, y - back)
+        return smax(d2, d, 0.004)
     return fn, (c - 0.035, c + 0.035)
 
 
@@ -1750,7 +1757,11 @@ def tibia_sdf():
 
     def fn(x, y, z):
         d = smin(cond(x, y, z), shaft(x, y, z), 0.012)
-        d = smax(d, z - top, 0.006)                                           # rounded plateau rim
+        d = smax(d, z - top, 0.009)                                           # rounded plateau rim
+        # medial and lateral condyles separated behind by the posterior intercondylar fossa and in front by the
+        # anterior intercondylar area (fix round 3, critics: 'a flat disc with a hard rim')
+        d = smax(d, -A.sd_ellipsoid(x, y, z, (0.0925, 0.044, top - 0.004), (0.0070, 0.0140, 0.0150)), 0.003)
+        d = smax(d, -A.sd_ellipsoid(x, y, z, (0.0920, 0.004, top + 0.001), (0.0080, 0.0090, 0.0050)), 0.003)
         for dx in (-0.020, 0.019):
             d = smax(d, -A.sd_ellipsoid(x, y, z, (0.092 + dx, 0.024, top + 0.0045), (0.0140, 0.0170, 0.0055)), 0.002)
         d = smin(d, A.sd_ellipsoid(x, y, z, (0.092, 0.024, top - 0.001), (0.0040, 0.0060, 0.0048)), 0.002)

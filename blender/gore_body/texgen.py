@@ -547,9 +547,11 @@ def tile_skin_micro(n=TILE_SIZE):
     h = -grooves * 0.025 - pore * 0.04 + (lat.fbm(u, v, 30, octaves=3) - 0.5) * 0.01
     detail = 0.5 - grooves * 0.035 - pore * 0.09
     col = np.stack([detail, detail, detail], -1)
-    rough = 0.45 + grooves * 0.05 + pore * 0.08
+    # roughness breakup (fix round 3): 0.38-0.62 over the tile (sebum patches, dry flakes), not a constant sheen
+    rough = 0.46 + grooves * 0.05 + pore * 0.08 + (lat.fbm(u, v, 6, octaves=2, offset=(4.4, 1.9)) - 0.5) * 0.24
     ao = cavity_ao(h, tm, 0.2, 0.02)
-    return {"albedo": col, "height": h, "rough": rough, "ao": ao, "texel_mm": tm, "albedo_is_detail": True}
+    return {"albedo": col, "height": h, "rough": np.clip(rough, 0.36, 0.64), "ao": ao, "texel_mm": tm,
+            "albedo_is_detail": True}
 
 
 def tile_bone_surface(n=TILE_SIZE):
