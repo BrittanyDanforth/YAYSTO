@@ -292,7 +292,7 @@ def cord_parts(q=False):
                 xj = 0.0015 + (lat + 0.0008 - 0.0015) * j / (len(zs_) - 1)
                 pts.append((sx * xin(zj, xj), yc(zj) - 0.0008 * (k % 2), zj))
             pts.append((sx * xin(fz, 0.0040), yc(fz) - 0.0010, fz))          # leaves through its dural sleeve
-            v, f, tt = gg.sweep(pts, 0.0011, sides=4, step=0.022, smooth=True)
+            v, f, tt = gg.sweep(pts, 0.0011, sides=4, step=0.025, smooth=True)
             parts.append(gg.part(v, f, 0, gb_piece=np.full(len(v), CODE_CAUDA, np.int32), gb_tt=tt))
     for dx in (-0.0012, 0.0012):
         cm = cauda[int(np.argmin(np.abs(cauda[:, 2] - 1.087)))]

@@ -1750,7 +1750,14 @@ def b4_cord_sizes_conus():
         bad.append("conus")
     for lv in ("C2", "C5", "T7"):
         r = VT.VERTEBRA[lv]
-        m = np.abs(cord[:, 2] - r["z"]) < 0.004
+        # the cord is swept with rings every ~15 mm: measure the ring nearest to the level
+        near = np.abs(cord[:, 2] - r["z"]) < 0.010
+        if not near.any():
+            bad.append(lv)
+            rep.append(f"{lv} no cord ring within 10 mm")
+            continue
+        zc = cord[near, 2][np.argmin(np.abs(cord[near, 2] - r["z"]))]
+        m = np.abs(cord[:, 2] - zc) < 0.0015
         w = 1000 * float(cord[m, 0].max() - cord[m, 0].min())
         ap = 1000 * float(cord[m, 1].max() - cord[m, 1].min())
         rep.append(f"{lv} {w:.1f} x {ap:.1f} (bible {r['cord_w_mm']} x {r['cord_ap_mm']})")
@@ -1782,7 +1789,7 @@ def b4_cord_in_canal():
 
 @check("scene", owner="B4")
 def b4_brain():
-    """GB_Brain (B4): <= 14k (+10 %) triangles, UV2 region ids valid, every RB §4.5 region on the surface or in
+    """GB_Brain (B4): <= TRI_BUDGET (28k hero budget, fix round 1) +10 % triangles, UV2 region ids valid, every RB §4.5 region on the surface or in
     the grid, brain reaches the cord (gap 0), brain clear of the skull (<= 1 % of vertices inside bone)."""
     from gb_data import brain as BR
     import neuro as NE
@@ -1804,7 +1811,7 @@ def b4_brain():
         rng = gbc.rng("verify")
         idx = rng.choice(len(v), min(3000, len(v)), replace=False)
         inside = float((_inside_depth(_bvh(vs, ts), v[idx]) < 0).mean())
-    ok = tris <= 15400 and valid and joined and (inside is None or inside <= 0.01)
+    ok = tris <= gbc.TRI_BUDGET["GB_Brain"] * 1.10 and valid and joined and (inside is None or inside <= 0.01)
     return ok, (f"{tris} tris, region codes valid {valid}, brain bottom {v[:, 2].min():.3f} <= cord top "
                 f"{cord[:, 2].max():.3f}: {joined}, inside bone {inside}")
 
