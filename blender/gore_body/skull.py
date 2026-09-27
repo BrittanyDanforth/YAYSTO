@@ -478,7 +478,10 @@ def face_skull(x, y, z, base, clamps):
     fill = smax(fill, ax - 0.056, 0.004)
     fill = smax(fill, -(orbit - 0.0002), 0.002)
     fill = smax(fill, -(cav - 0.0010), 0.002)
-    aperture = piriform_aperture(ax, y, z)
+    # the long canine roots reach up beside the aperture: their sockets and the bone over the apices stay
+    # (fix round 3: the aperture / nasal carves opened the socket floor over both upper canines)
+    upper_roots = root_sheaths(x, y, z, True, wall=0.0015)
+    aperture = smax(piriform_aperture(ax, y, z), -upper_roots, 0.001)
     fill = smax(fill, -aperture, 0.002)
     fill = clamps(ax, y, z, fill, 0.0040)
     d = smin(base, fill, 0.002)
@@ -511,6 +514,7 @@ def face_skull(x, y, z, base, clamps):
     d = np.minimum(d, clamps(ax, y, z, septum(ax, y, z), 0.0030, mouth=False))
     # --- air spaces (walls 1.5-2 mm to the outer surfaces), the bony septum and turbinates stay
     nas = nasal_cavity(ax, y, z)
+    nas = smax(nas, -upper_roots, 0.0006)
     nas = smax(nas, -(septum(ax, y, z) + 0.0), 0.0006)
     nas = smax(nas, -turbinates(ax, y, z), 0.0004)
     sin = ell(ax, y, z, *MAX_SINUS)
