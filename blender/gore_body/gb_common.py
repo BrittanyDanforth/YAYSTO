@@ -413,26 +413,36 @@ def _is_pt(v):
     return isinstance(v, (list, tuple)) and len(v) == 3 and all(isinstance(c, (int, float)) for c in v)
 
 
-def warp_json(data, _key=None):
-    """Return a copy of a JSON payload with every body-frame point moved authoring -> final (``POINT_KEYS``)."""
+def warp_json(data, _key=None, inverse=False):
+    """Return a copy of a JSON payload with every body-frame point moved authoring -> final (``POINT_KEYS``);
+    ``inverse``: final -> authoring."""
+    wp = unwarp_points if inverse else warp_points
     if isinstance(data, dict):
         out = {}
         for k, v in data.items():
             if k in POINT_DICT_KEYS and isinstance(v, dict):
-                out[k] = {kk: (warp_points(vv).tolist() if _is_pt(vv) else warp_json(vv, kk)) for kk, vv in v.items()}
+                out[k] = {kk: (wp(vv).tolist() if _is_pt(vv) else warp_json(vv, kk, inverse)) for kk, vv in v.items()}
             elif k in POINT_KEYS and _is_pt(v):
-                out[k] = warp_points(v).tolist()
+                out[k] = wp(v).tolist()
             elif k in POINT_KEYS and isinstance(v, (list, tuple)) and v and all(_is_pt(q) for q in v):
-                out[k] = [warp_points(q).tolist() for q in v]
+                out[k] = [wp(q).tolist() for q in v]
+            elif (k in POINT_KEYS and isinstance(v, (list, tuple)) and v
+                  and all(isinstance(q, (list, tuple)) and len(q) == 4 and _is_pt(q[:3]) for q in v)):
+                out[k] = [wp(q[:3]).tolist() + [q[3]] for q in v]     # (x, y, z, radius) rows
             elif k == "eyes" and isinstance(v, dict):
-                out[k] = {kk: (warp_points(vv).tolist() if _is_pt(vv) and kk in ("L", "R") else vv)
+                out[k] = {kk: (wp(vv).tolist() if _is_pt(vv) and kk in ("L", "R") else vv)
                           for kk, vv in v.items()}
             else:
-                out[k] = warp_json(v, k)
+                out[k] = warp_json(v, k, inverse)
         return out
     if isinstance(data, list):
-        return [warp_json(v, _key) for v in data]
+        return [warp_json(v, _key, inverse) for v in data]
     return data
+
+
+def authoring_json(doc_data):
+    """An exported payload in the authoring frame (unwarped when it carries the final-frame ``frame_note``)."""
+    return warp_json(doc_data, inverse=True) if isinstance(doc_data, dict) and "frame_note" in doc_data else doc_data
 
 
 def b2g(v):

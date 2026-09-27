@@ -384,3 +384,14 @@ Rig / tests:
 - `posetest`: a point counts as outside only if the global winding number AND the nearest posed face agree
   (a remote inside-out fold along a winding ray no longer flags rigidly-inside points); "exposed" needs two
   escaping rays; shorts in a closed skin crease (two facing skin sheets within 25 mm) are reported as pinched.
+
+## Final body frame: neck lengthening (fix round 2, user feedback)
+
+The RB frame put the menton only 9.1 cm from the sternal notch (chin pressed into the neck). All stages still
+author and cache in that **authoring frame**; `build.py` then warps the whole scene once before the rig stage
+(`gbc.set_scene_frame("final")`): `z_final = z + NECK_LIFT · smoothstep(1.455, 1.540, z)` with `NECK_LIFT = 0.015`.
+Below the jugular notch nothing moves; above the jaw line everything (head, skull, brain, eyes, C1-C2) moves up
+15 mm rigidly; the neck stretches. Final: menton-notch 10.6 cm, stature 1.795 m, head offset (0, 0.020, 1.662),
+seam plane z 1.48929. The armature is built in the final frame; `rig.weights_at(p, layer, frame="final")` unwarps its
+input; exported JSON points are final (`warp_json`, each payload has `frame_note`); `verify_all` runs B6/B7 checks
+in the final frame and all others in the authoring frame. `gbc.authoring_json` reads an exported payload back.

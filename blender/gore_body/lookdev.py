@@ -559,7 +559,9 @@ def vein_field(v, vessels_json=None):
     out = np.zeros(len(v))
     if not os.path.exists(path):
         return out
-    segs = json.load(open(path))["data"]["segments"]
+    doc = json.load(open(path))["data"]
+    segs = doc["segments"]
+    final_json = "frame_note" in doc               # exported in the final frame (neck lengthened)
     for s in segs:
         if not s["id"].startswith(SUPERFICIAL_VEINS) or s.get("blood") == "art":
             continue
@@ -567,6 +569,10 @@ def vein_field(v, vessels_json=None):
         if len(P4) < 2:
             continue
         P = P4[:, :3]
+        if final_json and gbc.scene_frame() != "final":
+            P = gbc.unwarp_points(P)
+        elif not final_json and gbc.scene_frame() == "final":
+            P = gbc.warp_points(P)
         rad = P4[:, 3] if P4.shape[1] > 3 else np.full(len(P), float(s.get("d_mm") or 3.0) * 0.5e-3)
         lo, hi = P.min(0) - 0.025, P.max(0) + 0.025
         m = np.all((v >= lo) & (v <= hi), axis=1)
@@ -734,7 +740,17 @@ def _components(nv, tri):
 
 
 def prepare_attributes(objs=None):
-    """Write the lk_* point attributes the look-dev materials read onto the bake sources."""
+    """Write the lk_* point attributes the look-dev materials read onto the bake sources (evaluated in the
+    authoring frame: the region fields use the RB landmarks)."""
+    frame0 = gbc.scene_frame()
+    gbc.set_scene_frame("authoring")
+    try:
+        return _prepare_attributes(objs)
+    finally:
+        gbc.set_scene_frame(frame0)
+
+
+def _prepare_attributes(objs=None):
     names = {"body": ("GB_Body_HR", "GB_Body"), "organ": ("GB_Organs_HR", "GB_Organs")}
     done = {}
     for o_name in names["body"]:

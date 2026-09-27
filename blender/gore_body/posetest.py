@@ -333,8 +333,23 @@ def run_test(md, arm, name, spec, rest=None):
             # skin meet) cannot stay off both sheets - real cloth is pinched there; such points (an opposing
             # skin sheet within CREASE_GAP_MM along the local skin normal) are reported, not failed
             pinched = np.zeros(len(P), bool)
-            for k in np.nonzero(signed < SHORTS_MIN_MM / 1000.0)[0]:
+            low = np.nonzero(signed < SHORTS_MIN_MM / 1000.0)[0]
+            for k in low:
                 pinched[k] = _closed_crease(bvh, P[k], np.asarray(near[k][1], float))
+            # ... or the cloth's OWN skin (the skin point it hangs over at rest, posed with the skin) is itself
+            # buried under another skin sheet: thigh and belly skin have closed onto each other (hip flexion
+            # beyond ~90 deg), so the cloth between them is caught in the fold, like real cloth in a groin crease
+            rest_skin = _bvh(V0, T)
+            own = low[~pinched[low]]
+            if len(own):
+                q = []
+                for k in own:
+                    hit = rest_skin.find_nearest(sh.v[sel][k].tolist())
+                    tri = T[hit[2]]
+                    j = tri[np.argmin(np.linalg.norm(V0[tri] - np.asarray(hit[0]), axis=1))]
+                    q.append(V1[j] + 0.002 * N1[hit[2]])
+                buried = winding(bvh, N1, np.array(q)) >= 0.5
+                pinched[own[buried]] = True
             free = ~pinched
             res["shorts_mm"] = round(float(signed[free].min() * 1000.0), 2) if free.any() else None
             res["shorts_inside"] = int((signed[free] < 0).sum())

@@ -57,7 +57,7 @@ DILATE_PX = 8
 UV_MARGIN_PX = 8          # island margin of the re-charted atlases (at the set's resolution)
 MIN_CHART_M2 = 0.5e-4     # 0.5 cm2: smaller charts are merged into a neighbour
 OVERLAP_MAX = 0.001       # re-chart until at most 0.1 % of the covered texels are shared
-UV_VERSION = 4            # bump when the charting algorithm changes (part of the UV cache key)
+UV_VERSION = 5            # bump when the charting algorithm changes (part of the UV cache key)
 
 SETS = {
     # name: target, source, size, cage extrusion (m), max ray (m), AO distance (m), surfaces
@@ -629,7 +629,80 @@ def rechart(obj, size=2048, smooth=0, interior_scale=1.0, margin_px=UV_MARGIN_PX
     bpy.ops.object.mode_set(mode='OBJECT')
     obj.select_set(False)
     me.edges.foreach_set("use_seam", np.zeros(len(me.edges), bool))
+    _LAST_CHARTS[obj.name] = chart
     return int(chart.max() + 1)
+
+
+_LAST_CHARTS = {}
+
+
+def unfold_charts(obj, chart, size, margin_px, interior_scale=1.0):
+    """Fold repair (fix round 2): a planar-projected normal-cone chart can still fold over itself where the
+    surface is not a height field over the projection plane (sulcus walls, bone ridges).  Every chart that
+    owns an overlapping face is re-flattened on its own with Blender's angle-based unwrap (seams on the chart
+    borders), rescaled to the metric texel density of the rest (interior surfaces keep ``interior_scale``),
+    and all islands are re-packed.  Unlike isolating single faces this keeps the chart count and the atlas
+    coverage (isolating every overlapping face made 4-8k tiny islands and halved the texel density)."""
+    me = obj.data
+    over, polys = uv_overlap_exact(obj, size)
+    if over <= OVERLAP_MAX or not len(polys):
+        return over, 0
+    bad = np.unique(chart[polys])
+    sel = np.isin(chart, bad)
+    _set_seams(me, chart)
+    me.polygons.foreach_set("select", sel)
+    me.update()
+    me.uv_layers.active = me.uv_layers["atlas"]
+    _select_only(obj)
+    bpy.ops.object.mode_set(mode='EDIT')
+    bpy.ops.mesh.select_mode(type='FACE')
+    bpy.ops.object.mode_set(mode='OBJECT')
+    me.polygons.foreach_set("select", sel)
+    me.update()
+    bpy.ops.object.mode_set(mode='EDIT')
+    bpy.ops.uv.unwrap(method='ANGLE_BASED', fill_holes=True, correct_aspect=True, margin=0.0)
+    bpy.ops.object.mode_set(mode='OBJECT')
+    # metric rescale of the re-flattened charts, spread apart so none overlaps before the pack
+    ls = np.empty(len(me.polygons), np.int64)
+    me.polygons.foreach_get("loop_start", ls)
+    lt = np.empty(len(me.polygons), np.int64)
+    me.polygons.foreach_get("loop_total", lt)
+    lf = np.repeat(np.arange(len(me.polygons)), lt)
+    uv = np.empty(len(me.loops) * 2, np.float64)
+    me.uv_layers["atlas"].data.foreach_get("uv", uv)
+    uv = uv.reshape(-1, 2)
+    tl, tv, tp = loop_triangles(obj)
+    v = gbc.get_verts(me)
+    a3 = 0.5 * np.linalg.norm(np.cross(v[tv[:, 1]] - v[tv[:, 0]], v[tv[:, 2]] - v[tv[:, 0]]), axis=1)
+    U = uv[tl]
+    a2 = 0.5 * np.abs((U[:, 1, 0] - U[:, 0, 0]) * (U[:, 2, 1] - U[:, 0, 1])
+                      - (U[:, 2, 0] - U[:, 0, 0]) * (U[:, 1, 1] - U[:, 0, 1]))
+    good_t = ~np.isin(chart[tp], bad)
+    k_ref = np.sqrt(a2[good_t].sum() / max(a3[good_t].sum(), 1e-12)) if good_t.any() else 1.0
+    interior = _interior_faces(obj) if interior_scale != 1.0 else np.zeros(len(me.polygons), bool)
+    for j, c in enumerate(bad.tolist()):
+        tm = chart[tp] == c
+        L = np.nonzero(chart[lf] == c)[0]
+        k = np.sqrt(a3[tm].sum() / max(a2[tm].sum(), 1e-18)) * k_ref
+        if interior[chart == c].mean() > 0.5:
+            k *= interior_scale
+        q = uv[L]
+        q = (q - q.min(0)) * k
+        uv[L] = q + np.array([10.0 + 0.5 * (j % 64), 10.0 + 0.5 * (j // 64)]) * max(q.max(), 1e-6)
+    me.uv_layers["atlas"].data.foreach_set("uv", uv.astype(np.float32).ravel())
+    me.update()
+    _select_only(obj)
+    bpy.ops.object.mode_set(mode='EDIT')
+    bpy.ops.mesh.select_all(action='SELECT')
+    bpy.ops.uv.select_all(action='SELECT')
+    bpy.ops.uv.pack_islands(udim_source='CLOSEST_UDIM', margin_method='FRACTION', margin=margin_px / float(size),
+                            rotate=True, shape_method='CONCAVE', scale=True)
+    bpy.ops.object.mode_set(mode='OBJECT')
+    obj.select_set(False)
+    me.edges.foreach_set("use_seam", np.zeros(len(me.edges), bool))
+    me.polygons.foreach_set("select", np.zeros(len(me.polygons), bool))
+    me.update()
+    return uv_overlap_exact(obj, size)[0], len(bad)
 
 
 def _interior_faces(obj):
@@ -691,21 +764,16 @@ def prepare_uvs(objs=None, force=False):
                 continue
         before = uv_stats(obj, 512)
         n = rechart(obj, cfg["size"], cfg["smooth"], cfg["interior_scale"], cfg["margin"], cfg["cone"])
-        # overlap repair: faces whose texels collide are re-charted apart from their neighbours and re-packed
-        isolate = np.zeros(len(me.polygons), np.int64)
-        over, polys = uv_overlap_exact(obj, cfg["size"])
-        for rnd in range(3):
-            if over <= OVERLAP_MAX:
-                break
-            # every face found overlapping becomes its own chart (a single planar face cannot fold); the chart
-            # absorption respects the isolation, so they are not merged back into the folding neighbour
-            isolate[polys] = len(me.polygons) * (rnd + 1) + np.arange(len(polys))
-            n = rechart(obj, cfg["size"], cfg["smooth"], cfg["interior_scale"], cfg["margin"], cfg["cone"],
-                        isolate=isolate)
-            over, polys = uv_overlap_exact(obj, cfg["size"])
+        # overlap repair (fix round 2): the folded charts are re-flattened with an angle-based unwrap
+        over, nfix = unfold_charts(obj, _LAST_CHARTS[name], cfg["size"], cfg["margin"], cfg["interior_scale"])
+        if over > OVERLAP_MAX:
+            # a second pass catches charts that the pack re-scaled into a remaining fold
+            over, nfix2 = unfold_charts(obj, _LAST_CHARTS[name], cfg["size"], cfg["margin"], cfg["interior_scale"])
+            nfix += nfix2
         if over > OVERLAP_MAX:
             split_overlaps(obj, cfg["size"], cfg["margin"])
-            over, polys = uv_overlap_exact(obj, cfg["size"])
+            over, _polys = uv_overlap_exact(obj, cfg["size"])
+        _log(f"{name}: {nfix} folded chart(s) re-flattened")
         after = uv_stats(obj, 512)
         after = (after[0], over, after[2])
         uv = np.empty(len(me.loops) * 2, np.float32)

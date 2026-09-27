@@ -964,7 +964,7 @@ def skeleton_capsules_and_hit_mesh():
     path = SK.BONES_JSON
     if not os.path.exists(path):
         return False, "bones.json missing"
-    d = gbc.read_json(path)["data"]
+    d = gbc.authoring_json(gbc.read_json(path)["data"])      # meshes are checked in the authoring frame
     caps = d["capsules"]
     P = _skel_pieces()
     by = {}
@@ -985,6 +985,54 @@ def skeleton_capsules_and_hit_mesh():
     ntri = len(d["hit_mesh"]["tris"]) // 3
     return not missing and not unbound and ntri <= 20000, \
         f"{len(caps)} capsules, pieces without {missing}, not bounded {unbound}; hit mesh {ntri} tris (<= 20k)"
+
+
+MULTI_BONE_PIECES = ("hand_", "foot_")
+
+
+@check("scene", owner="B3")
+def skeleton_no_free_islands():
+    """Fix round 2 (critic: rib heads and articular processes as loose chips): every bone piece of GB_Skeleton is
+    one connected shell plus islands fully enclosed by it (marrow cores / inner tables); no free-floating island.
+    Also reports non-manifold edges of GB_Skeleton (fail above 0)."""
+    import viscera as VI
+    bpy = _bpy()
+    o = bpy.data.objects.get("GB_Skeleton")
+    if o is None:
+        return False, "GB_Skeleton missing"
+    v, t = gbc.mesh_arrays(o.data)
+    piece = gbc.read_point_attr(o, "gb_piece", 'INT')
+    if piece is None:
+        u, _c = gbc.read_codes_uv(o)
+        piece = np.rint(u).astype(int)
+    comp = VI.islands(len(v), t)
+    tc = comp[t[:, 0]]
+    free = {}
+    for pc in np.unique(piece):
+        cs = np.unique(comp[piece == pc])
+        if len(cs) < 2:
+            continue
+        sizes = {c: int((tc == c).sum()) for c in cs}
+        big = max(sizes, key=sizes.get)
+        tb = t[tc == big]
+        bvh = _bvh(v, tb)
+        for c in cs:
+            if c == big:
+                continue
+            pts = v[np.unique(t[tc == c])]
+            pts = pts[:: max(1, len(pts) // 12)]
+            if (_inside_depth(bvh, pts) > 0).any():
+                free.setdefault(int(pc), []).append(len(np.unique(t[tc == c])))
+    # non-manifold edges (edge used by != 2 triangles)
+    e = np.sort(np.concatenate([t[:, [0, 1]], t[:, [1, 2]], t[:, [2, 0]]]), axis=1)
+    _u, cnt = np.unique(e, axis=0, return_counts=True)
+    nm = int((cnt != 2).sum())
+    from gb_data import bones as BN
+    inv = {vv: kk for kk, vv in BN.BONE_PIECE_ID.items()}
+    # hand_* / foot_* pieces are groups of separate bones (carpals, metacarpals, phalanges, tarsals ...)
+    names = {inv.get(k, k): vv for k, vv in free.items() if not str(inv.get(k, k)).startswith(MULTI_BONE_PIECES)}
+    return (not names) and nm == 0, (f"free islands (piece: vertex counts) {names} (multi-bone hand/foot pieces "
+                                     f"exempt); non-manifold edges {nm}")
 
 
 @check("scene", owner="B3", severity="warn")

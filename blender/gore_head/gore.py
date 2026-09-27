@@ -1206,6 +1206,12 @@ def _build_blunt():
     sink_eye = c.is_layer(LAYER_EYE) * cr * s * 0.0075 * t.smooth(0.05, 0.025, c.rho)
     # (the flaps fold back outward over the face, fatty side up, rather than
     # standing up as petals)
+    # fade the broad cave-in and the puffy ring out before the edge of the
+    # refined patch (see _Hit.within): displacement still rising across the
+    # patch seam shows as a pale crease arc on the forehead and cheek
+    rad_p = s * 0.02 * (1.0 + 1.3 * cr) + 0.002
+    fit = t.smooth(rad_p, rad_p * 0.6, c.rho)
+    cave = cave * fit
     disp = t.vec(0.0, 0.0, -depress - frac * dep_on * 0.0005 - sink_eye + lift_cr * 0.35) + c.radial * (lift_cr * 1.3)
     # the margins are pushed apart a little and bulge (crushed, swollen lips)
     mg = t.smooth(0.003, 0.0, -cut_split) * split_on * is_skin
@@ -1213,7 +1219,7 @@ def _build_blunt():
     # massive, tight swelling of the skin around a crushed area (a puffy ring
     # 5-9 mm high outside the torn opening: the face widens, the eye closes)
     ring_sw = t.smooth(0.0, R_cr * 0.5 + 0.003, d_cr) * t.smooth(s * 0.07, s * 0.02, c.rho)
-    swell = swell + ring_sw * cr * soft_cr * s * 0.0075 * (0.4 + 0.6 * t.inp("Swelling")) * (1.0 + 0.3 * nl)
+    swell = swell + ring_sw * fit * cr * soft_cr * s * 0.0075 * (0.4 + 0.6 * t.inp("Swelling")) * (1.0 + 0.3 * nl)
     # pulped muscle exposed in the crushed area: lumpy, torn
     swell = swell + is_muscle * cr * t.smooth(R_cr * 1.6 + 0.004, R_cr * 0.5, c.rho) \
         * (t.noise(c.np * 200.0, detail=3.0, rough=0.6) * 0.0025 + t.noise(c.np * 600.0, detail=2.0) * 0.0008)
@@ -3141,7 +3147,7 @@ def build_gore_system(objs=None, mats=None):
     return {"node_group": ng, "modifiers": mods, "collections": cols, "controls": ctrl}
 
 
-_GROUP_VERSION = 7
+_GROUP_VERSION = 8
 
 
 # ---------------------------------------------------------------------------

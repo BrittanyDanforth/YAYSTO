@@ -2629,7 +2629,7 @@ def write_bones_json(meshed=None, variants=None):
     """Write ``bones.json`` (schema gb.bones/1) next to the other sidecars."""
     if variants is None and os.path.exists(BONES_JSON):
         try:
-            variants = gbc.read_json(BONES_JSON)["data"].get("variants", {})
+            variants = gbc.authoring_json(gbc.read_json(BONES_JSON)["data"]).get("variants", {})
         except Exception:
             variants = {}
     return gbc.write_json(BONES_JSON, bone_table(meshed, variants), "gb.bones/1")
