@@ -1059,7 +1059,7 @@ def _b1_skip(name="GB_Body"):
     return None if _b1_obj(name) is not None else (True, f"{name} is not built by B1 yet (placeholder)")
 
 
-def neck_tape(v, t, front=(0.0, -0.055, 1.515), tilts=range(0, 17, 2)):
+def neck_tape(v, t, front=None, tilts=range(0, 17, 2)):
     """Neck circumference like the anthropometric tape (ISO 7250-1 / ANSUR 'neck circumference'): anchored just
     below the laryngeal prominence (the RB §7.1 cricoid point) and perpendicular to the neck, i.e. a snug tape
     that settles at its smallest circumference; the back of the tape rides above the C7 / T1 prominence.  A
@@ -1067,7 +1067,10 @@ def neck_tape(v, t, front=(0.0, -0.055, 1.515), tilts=range(0, 17, 2)):
     whose skin landmark lies at y 0.075, z 1.532 - so the RB table's 0.063 back point cannot be horizontal).
     Returns the minimum hull perimeter (m) over tape tilts of 0-16 deg (back side up)."""
     import body_skin as BS
-    p0 = np.asarray(front, float)
+    # anchored 7 mm below the laryngeal prominence of the landmark table (the ANSUR / ISO 7250 tape position
+    # 'just below the laryngeal prominence'; fix round 2: the larynx moved 12 mm down)
+    p0 = np.asarray(LM.landmark("laryngeal_prominence") + np.array([0.0, 0.002, -0.007]) if front is None
+                    else front, float)
     best = None
     for deg in tilts:
         a = np.radians(deg)
@@ -1133,11 +1136,12 @@ def b1_checklist_rb7():
     tip_z = float(hand[:, 2].min())
     def nipple(sx):
         # the vertex standing out most from a quadratic fit to its 6-14 mm neighbourhood (removes the chest's
-        # own curvature), searched within 30 mm of the RB §7.1 nipple, on the HR mesh
+        # own curvature), searched within 18 mm of the RB §7.1 nipple, on the HR mesh (fix round 2: at 30 mm the
+        # search reached the lower lateral pectoral border, whose crease stands out as much as the nipple)
         c = np.array([0.10 * sx, 1.30])
         q = vh[(np.hypot(vh[:, 0] - c[0], vh[:, 2] - c[1]) < 0.045) & (vh[:, 1] < 0)]
         best, arg = -1.0, 0
-        for i in np.nonzero(np.hypot(q[:, 0] - c[0], q[:, 2] - c[1]) < 0.03)[0]:
+        for i in np.nonzero(np.hypot(q[:, 0] - c[0], q[:, 2] - c[1]) < 0.018)[0]:
             du, dw = q[:, 0] - q[i, 0], q[:, 2] - q[i, 2]
             r = np.hypot(du, dw)
             m = (r > 0.006) & (r < 0.014)

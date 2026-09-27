@@ -314,7 +314,7 @@ class StarTube:
 # z, half width, front y, back y, superellipse n (front), n (back)
 TORSO = np.array([
     (0.850, 0.118, -0.062, 0.078, 2.2, 2.2),
-    (0.880, 0.146, -0.078, 0.096, 2.3, 2.4),
+    (0.880, 0.146, -0.081, 0.096, 2.3, 2.4),     # (fix round 2: +3 mm mons pubis fat over the symphysis, FB-2 hip)
     (0.930, 0.157, -0.085, 0.100, 2.2, 2.4),     # pubic fat pad (symphysis -0.068 + 15-20 mm); groin creases
     (0.990, 0.154, -0.106, 0.095, 2.5, 2.4),     # ASIS level (asis skin -0.072 at x 0.122)
     (1.040, 0.149, -0.113, 0.093, 2.7, 2.5),
@@ -330,8 +330,8 @@ TORSO = np.array([
                                                  # (flat front: the chest wall rises flush to the clavicles)
     (1.470, 0.102, -0.050, 0.100, 2.2, 2.8),     # scapular superior angles under trapezius
     (1.485, 0.063, -0.054, 0.085, 2.1, 2.2),     # seam plane (plan D19)
-    (1.515, 0.0595, -0.057, 0.069, 2.1, 2.2),    # neck 38 cm: 12 x 11.7 (front -0.055 / back +0.063)
-    (1.540, 0.057, -0.044, 0.069, 2.1, 2.2),     # C7 spinous skin 0.075 at 1.532 (bump added); the front
+    (1.515, 0.0575, -0.057, 0.066, 2.1, 2.2),    # neck 38 cm: 12 x 11.7 (front -0.055 / back +0.063)
+    (1.540, 0.0550, -0.044, 0.067, 2.1, 2.2),     # C7 spinous skin 0.075 at 1.532 (bump added); the front
     (1.565, 0.057, -0.032, 0.075, 2.1, 2.2),     # recedes under the jaw: submental surface / cervicomental
     (1.595, 0.059, -0.024, 0.089, 2.1, 2.3),     # angle ~110 deg with the chin (menton -0.068, 1.550)
     (1.625, 0.060, -0.014, 0.098, 2.1, 2.4),     # nape: suboccipital mass under the occiput
@@ -609,7 +609,7 @@ def _shoulder(ax, y, z):
     # nape slope: the upper trapezius fibres run from the ligamentum nuchae down and out over the superior
     # angle, so behind the neck the surface falls in one ~40 deg slope from the nape to the upper back
     # (fix round 2: the superior-angle mass alone left a 1 cm 'collar ledge' at the neck base behind)
-    nape = sd_capsule(ax, y, z, (0.022, 0.066, 1.528), (0.064, 0.092, 1.462), 0.007, 0.014)
+    nape = sd_capsule(ax, y, z, (0.030, 0.072, 1.500), (0.064, 0.092, 1.462), 0.006, 0.013)
     trap = smin(trap, nape, 0.026)
     # teres major / infraspinatus lower belly: fills the posterior axillary junction (no pit behind the arm)
     teres = _fold(ax, y, z, (0.105, 0.098, 1.360), GH + 0.070 * ARM_D + 0.020 * ARM_LAT + np.array([0.0, 0.030, 0.0]),
@@ -1071,10 +1071,10 @@ def _neck_parts(ax, y, z):
     the head project's menton; the skin prominence is a narrow keel over the thyroid laminae (a lean
     man's Adam's apple, 24 mm wide, ~4 mm proud of the neck) instead of the round 35 mm ellipsoid that
     filled the space under the chin and read as a pouch."""
-    scm = sd_capsule(ax, y, z, (0.017, -0.046, 1.463), (0.058, 0.022, 1.600), 0.0080, 0.0130)
+    scm = sd_capsule(ax, y, z, (0.017, -0.045, 1.463), (0.057, 0.022, 1.600), 0.0070, 0.0115)
     # splenius capitis + upper trapezius under the occiput: the neck behind the ear is as wide as the mastoids
     # and rises into the superior nuchal line (fix round 2: the thin neck column left a step under the occiput)
-    nuchal = sd_capsule(ax, y, z, (0.034, 0.052, 1.515), (0.050, 0.055, 1.608), 0.013, 0.016)
+    nuchal = sd_capsule(ax, y, z, (0.038, 0.048, 1.545), (0.050, 0.054, 1.608), 0.007, 0.014)
     scm = smin(scm, nuchal, 0.014)
     # keel: the thyroid laminae meet in front at ~90 deg, so the skin over them is a rounded wedge, deepest
     # at the superior notch level and receding toward the cricoid (skin -0.054 at 1.504)
@@ -1109,11 +1109,11 @@ def submental_limit(ax, y, z):
 # the bone poking through (FB-4).  The muscle shell covers the same bones by 0.5 mm.
 # ===========================================================================
 # (key, skeleton builder (name, args), box lo, box hi, pad depth (m), blend k (m), tissue group)
-# fix round 2: sternum and spinous pads blend over 10-11 mm (at 3-4 mm they showed as knobs and V-lines)
+# fix round 2: sternum and spinous pads blend over 11-12 mm (at 3-4 mm they showed as knobs and V-lines)
 PAD_SITES = (
     ("clavicle", ("clavicle_sdf", ()), (0.0, -0.075, 1.425), (0.200, 0.035, 1.490), 0.0035, 0.006, "trunk"),
     ("scapula", ("scapula_sdf", ()), (0.070, -0.005, 1.428), (0.220, 0.120, 1.490), 0.0042, 0.003, "trunk"),
-    ("sternum", ("sternum_parts", ()), (0.0, -0.120, 1.270), (0.040, -0.030, 1.470), 0.0055, 0.020, "trunk"),
+    ("sternum", ("sternum_parts", ()), (0.0, -0.120, 1.270), (0.040, -0.030, 1.470), 0.0055, 0.012, "trunk"),
     ("spine", ("upper_spinous_sdf", ()), (0.0, 0.030, 1.360), (0.030, 0.130, 1.520), 0.0080, 0.011, "trunk"),
     ("iliac_crest", ("hip_bone_sdf", ()), (0.030, -0.090, 0.995), (0.170, 0.062, 1.090), 0.0060, 0.005, "trunk"),
     ("psis", ("hip_bone_sdf", ()), (0.030, 0.062, 0.985), (0.110, 0.110, 1.080), 0.0035, 0.005, "trunk"),
@@ -1515,7 +1515,7 @@ FOLD_FAT_SITES = (
     ((0.170, 0.035, 1.315), (0.040, 0.045, 0.050), 0.0040),     # posterior axillary fold / armpit
     ((0.165, -0.020, 1.330), (0.035, 0.035, 0.045), 0.0025),    # anterior axillary fold
     ((0.020, 0.010, 0.775), (0.030, 0.060, 0.055), 0.0060),     # perineum / medial groin
-    ((0.135, -0.075, 0.004), (0.040, 0.035, 0.010), 0.0040),    # plantar pad under the toes / MT heads
+    ((0.132, -0.080, 0.004), (0.040, 0.045, 0.010), 0.0060),    # plantar pad under the toes / MT heads
 )
 
 

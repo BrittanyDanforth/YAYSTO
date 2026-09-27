@@ -212,7 +212,22 @@ python3 gore.py [--no-render]      # gore system + verify_gore        -> renders
 
 ## Performance (4-core CPU, no GPU; measured in the build that made these renders)
 
-TIMINGS_PLACEHOLDER
+Measured on 2026-09-27 in a clean `python3 build.py` run (bpy 5.0.1 module, 4 CPU cores, no GPU):
+
+| Step | Time |
+|---|---|
+| Build (anatomy 41.8 s, materials 6.7 s, gore 31.5 s, hair 0.3 s) | 80 s |
+| Verification (`verify()` + `gore.verify_gore()`, applies every preset) | ~5 min |
+| Evaluate all layers per preset | gunshot 3.4 s, slash 2.6 s, blunt 4.5 s, burn 4.1 s, carnage 9.9 s, blast 6.0 s, crushed 14.8 s |
+| One 640 px preset render (40 samples, denoised) | 84-232 s |
+| Exit close-up 640 px | 442 s |
+| Blood sequence frame 480 px | 129-325 s |
+| `hero.png` 1024 px, 96 samples | 716 s |
+| All renders | 6089 s (~1 h 41 min) |
+| Whole `python3 build.py` | 6576 s (~1 h 50 min) |
+| `python3 build.py --no-render` | ~7 min |
+
+The saved `gore_head.blend` is ~30 MB. On a machine with a GPU that Cycles can use, renders are far faster.
 
 Live editing is **not** interactive. Every change to an empty re-evaluates all 12 gore layers. Expect ~2-3 s
 for one hit, ~6-8 s for the carnage preset, and tens of seconds with 20+ large hits. Set **Viewport Detail** to
@@ -222,20 +237,29 @@ for one hit, ~6-8 s for the carnage preset, and tens of seconds with 20+ large h
 
 ## Known limitations (honest list)
 
-- **Face likeness**: the head still reads somewhat like a smooth mannequin at full-head distance: soft features and a
-  plain neck. The ears were not rebuilt to sculpt level. `FACE_FEEDBACK.md` is only partly applied.
-- **Blood amount**: runs start at the wound and travel correctly, but coverage is still below the forensic references.
-  Runs do not merge into sheets. There are no pendant drops falling off the chin or earlobe, and no floor pooling.
-  Runs can still read as glossy ribbons in close-ups.
-- **Slash**: the big deep cheek cut can still read a little like a "second mouth" from three-quarter view.
-  The throat cut shows no muscle bundles, vessel openings or airway ring on its cut face.
-- **Blunt**: the fill in the blunt-split bed can still show faint banding at very close range. There is no inner-lip
-  (vestibule) laceration. Knocked-out teeth are hard to see from the front.
-- **Crushed / blast**: the crushed flaps can read as pale plates. The blast crater interior is dark and has less
-  readable shredded-muscle detail than the reference.
-- **Burn**: no ruptured blister flaps, no eyelid or lip pulled out of shape, and the eye in a burn zone is unchanged.
+Checked against the forensic references (REFERENCE_NOTES §5.18) in the final build. It is **not** at the reference
+level yet:
+
+- **Blood amount (fails §5.18 G)**: runs start inside the wound and pour over the lowest rim point with no gap
+  (§5.17 passes), and they grow over time. But each wound sheds only 1-4 separate ribbons. There are no merged sheets,
+  no fine mist speckle, no pooling in hollows, no pendant drops off the chin or earlobe, and no floor pool. The blood
+  also reads as glossy red ribbons at close range. Real head wounds are far bloodier.
+- **Mush and colour (fails §5.18 A-C for the big wounds)**: the blast and crushed wounds have torn flaps, bone chips,
+  clots and a broken jaw, but the bone plates read as clean pale paper-like sheets. The pulp is dark red glass rather
+  than wet lumpy tissue with 4+ colours and scattered small highlights. Exit bone chips are clean white wedges.
+- **Crushed silhouette (§5.18 D, partial)**: the mid-face caves in, but the change in outline is modest. A globe in
+  a crushed orbit reads as a red ball, because the whole sclera fills with haemorrhage.
+- **Entrance wound**: the right size (scalp ~7.5 mm), but the even brown abrasion collar still reads a little like a
+  ring decal in close-ups.
+- **Slash**: the deep cheek cut reads like a "second mouth" from three-quarter view. The throat cut shows no muscle
+  bundles, vessel openings or airway ring on its cut face.
+- **Blunt**: no inner-lip (vestibule) laceration. Knocked-out teeth are hard to see from the front.
+- **Burn**: no ruptured blister flaps, and no eyelid or lip pulled out of shape. The burned eye shows a clean globe.
+  The zone ends in a near-vertical line beside the nose in the front view.
+- **Face likeness**: the head still reads as a smooth mannequin: soft features, a plain neck and clay-like ears.
+  `FACE_FEEDBACK.md` is only partly applied.
+- **Cutaway**: the brain's cut face reads as marble or cauliflower, and the tongue is still slab-like.
 - **Timing**: `wound_age` is one global slider, so wounds cannot age separately.
-- **Cutaway**: the tongue is still slab-like.
-- **Speed**: see *Performance*. There is no per-layer hit culling yet.
-- Only tested with the `bpy` 5.0.1 module. The `blender -b --python build.py` path on Blender 5.1 has not been run
-  yet. Check it first on a new machine.
+- **Speed**: see *Performance*. There is no per-layer hit culling, so dragging an empty is not interactive.
+- **Not yet run on Blender 5.1**: only the `bpy` 5.0.1 module has run these scripts. Run
+  `blender -b --python build.py -- --no-render` first on a new machine.

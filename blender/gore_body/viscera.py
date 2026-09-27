@@ -848,7 +848,7 @@ def thyroid_sdf(x, y, z):
     trachea (impression) with the carotid sheath lateral [R05 §10.1]."""
     d = None
     for sx in (1.0, -1.0):
-        lobe = ell(x * sx, y, z, (0.0215, -0.0265, 1.505 + THYROID_DZ), (0.0095, 0.0090, 0.0250))
+        lobe = ell(x * sx, y, z, (0.0220, -0.0265, 1.505 + THYROID_DZ), (0.0102, 0.0096, 0.0262))
         pole = ell(x * sx, y, z, (0.0170, -0.0245, 1.524 + THYROID_DZ), (0.0055, 0.0055, 0.0070))
         lobe = smin(lobe, pole, 0.006)
         d = lobe if d is None else smin(d, lobe, 0.002)
