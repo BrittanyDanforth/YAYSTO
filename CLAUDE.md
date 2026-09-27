@@ -255,6 +255,9 @@ damage = 0 returns the intact mesh. Carnage (9 hits) evaluates in ~4.5 s.
 - USER (HIGH, REFERENCE_NOTES §5.20): crushed preset leaves the NOSE TIP intact/unbruised inside the wound; the eyeball is
   too BIG (trauma never enlarges it; keep r 0.012); the eye must take real damage (rupture = deflate/collapse + extruded
   vitreous, hyphaema, subconjunctival haemorrhage, lid tears, blow-out/enophthalmos).
+- Blunt preset (final pass rebuild): the scalp split does NOT bleed at all (only the lip bleeds) — a scalp laceration must pour.
+- Eye close-up (materials_head_eye.png): eye openings look cut into a flat mask — no lid thickness, no upper-lid crease,
+  no lash line/caruncle/tear film; skin plastic-smooth. Fix with the face work (item 16 of fix pass 2).
 - Crushed preset: outline still not caved in; mouth blast confined to a neat oval (mid-face should be pulp).
 
 **Body review notes (2026-09-26, from fixer-round-1 renders; critics of the next body round must check these):**
