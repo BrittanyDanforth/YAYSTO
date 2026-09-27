@@ -396,6 +396,8 @@ Fix round 1 (continuation, 2026-09-27):
   `materials.py`, `gh_common.py`, `build.py`, `gore.py`) are copied to `.cache/head_snapshot/<hash>/` and imported
   from there, so a 60-90 min build uses ONE version of the head even while the head team edits `gore_head`. Hash
   names of snapshot files equal the live names (`gbc._hash_name`), so keys match the live folder when unchanged.
+  Stage cache keys use only the head's geometry files (`anatomy.py`, `gh_common.py`; `gbc.head_geometry_files`):
+  `materials.py` feeds only the (uncached) bake, `build.py`/`gore.py` are the head team's gore/blood pipeline.
   The manifest records `head_snapshot` + `head_sources`; `verify.stage_caches_current` (fail) checks body-side
   staleness against that snapshot, `verify.head_project_current` (warn) reports head edits made since.
 - **PNG size limit**: 12 MB per 2,048² texels (a 4,096² hero atlas may use 48 MB, the same bytes per texel),

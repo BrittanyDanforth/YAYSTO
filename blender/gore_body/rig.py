@@ -854,8 +854,13 @@ def transfer_weights(obj, src_names=None, smooth_iters=None):
         m = t > 0.0
         if m.any():
             mid = near[m].copy()
-            mid[:, 0] = 0.0                      # the skin weights ON the midline (pelvis-dominant perineum)
-            W[m] = (1.0 - t[m, None]) * W[m] + t[m, None] * dense_weights(mid, "skin")
+            # the skin weights ON the midline (pelvis-dominant perineum), symmetric: the mean of both sides
+            # (x = 0 exactly fell to the left territory and gave the gusset 35 % thigh_L, fix round 1)
+            mid[:, 0] = 0.0005
+            wl = dense_weights(mid, "skin")
+            mid[:, 0] = -0.0005
+            wm = 0.5 * (wl + dense_weights(mid, "skin"))
+            W[m] = (1.0 - t[m, None]) * W[m] + t[m, None] * wm
     W /= np.maximum(W.sum(1, keepdims=True), 1e-12)
     return _quantise(*_top4(W))
 

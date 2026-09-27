@@ -468,7 +468,7 @@ def _torso_profile(Z, TH):
     rel = rel * trunk + ws * _side_relief(ys, Z) * trunk
     # neck: laryngeal prominence handled as a primitive; nuchal furrow at the back midline
     nuchal = -0.0025 * gauss(xs, 0.010) * band(Z, 1.55, 1.62, 0.03) * wb
-    nuchal = nuchal + 0.0062 * gauss(xs, 0.016) * gauss(Z - 1.528, 0.018) * wb       # C7 vertebra prominens
+    nuchal = nuchal + 0.0062 * gauss(xs, 0.016) * gauss(Z - 1.528, 0.012) * wb       # C7 vertebra prominens (fix round 1: 12 mm tall knob, not a 36 mm roll up the nape)
     return R0 + rel + nuchal
 
 
@@ -582,9 +582,9 @@ def _shoulder(ax, y, z):
     # upper trapezius: rises from the acromion up the side of the neck, so the neck-shoulder line is one
     # smooth slope (top line 1.525 at |x| 0.045 -> 1.497 at 0.07 -> 1.478 at 0.10 -> 1.460 at the acromion)
     # instead of a flat shelf with the neck standing on it; below the seam plane beyond |x| ~0.08 (D19 ring)
-    trap = sd_polyline(ax, y, z, [(0.044, 0.046, 1.512), (0.069, 0.042, 1.479), (0.100, 0.038, 1.458),
+    trap = sd_polyline(ax, y, z, [(0.042, 0.047, 1.502), (0.069, 0.042, 1.479), (0.100, 0.038, 1.458),
                                   (0.140, 0.031, 1.449), (0.186, 0.022, 1.444)],
-                       [0.023, 0.022, 0.021, 0.019, 0.016], k=0.02)
+                       [0.020, 0.021, 0.021, 0.019, 0.016], k=0.02)
     # clavicle: soft subcutaneous ridge over B3's bone (its waypoints), bone half-depth + skin + subcutis
     clav = sd_polyline(ax, y, z, [np.array(p) + np.array([0.0, -0.0015, 0.0015]) for p in BN_CLAVICLE],
                        [0.0088, 0.0074, 0.0070, 0.0080], k=0.014)    # (round 2: 1.5 mm lower ridge; the pad keeps cover)
@@ -617,7 +617,7 @@ def _shoulder(ax, y, z):
     # shelf and the acromion pad that printed a wavy line along the top of the shoulder).  The upper trapezius
     # over levator scapulae and the scalenes runs as one straight, slightly rounded slope from the side of the
     # neck (skin 1.504 at |x| 0.062) down to the acromion (1.474 at 0.170), ~16 deg below horizontal
-    slope = sd_capsule(ax, y, z, (0.062, 0.008, 1.492), (0.170, 0.010, 1.462), 0.0120, 0.0115)
+    slope = sd_capsule(ax, y, z, (0.068, 0.010, 1.4705), (0.170, 0.010, 1.4620), 0.0110, 0.0110)
     trap = smin(trap, slope, 0.020)
     # teres major / infraspinatus lower belly: fills the posterior axillary junction (no pit behind the arm)
     teres = _fold(ax, y, z, (0.105, 0.098, 1.360), GH + 0.070 * ARM_D + 0.020 * ARM_LAT + np.array([0.0, 0.030, 0.0]),
@@ -1223,8 +1223,16 @@ def union_components(c, off=None, kplus=0.0):
     # submental plane / cervicomental angle (applied before the head is united in skin_sdf)
     ax_ = np.abs(g["_x"])
     trunk = smax(trunk, submental_limit(ax_, g["_y"], g["_z"]) - K, 0.005 + K)
-    trunk = smin(trunk, g["trapezius"], 0.028 + 0.016 * sstep(1.455, 1.49, g["_z"]) + K)    # softer neck / shoulder junction (round 2)
+    # softer neck / shoulder junction (round 2), tapering back above the neck base (fix round 1: the 44 mm blend
+    # up the whole neck bulged the sides of the neck at the tape level: neck girth 41.3 cm vs RB 38)
+    trunk = smin(trunk, g["trapezius"], 0.028 + 0.016 * sstep(1.455, 1.49, g["_z"]) * sstep(1.530, 1.500, g["_z"]) + K)
     trunk = smin(trunk, g["clavicle"], 0.028 + K)
+    # D19 seam plane (z 1.485): outside the neck column the shoulder / trapezius top must stay below it, or the
+    # seam cut leaves a thin tongue of skin above the plane that the canonical 160-vertex ring does not follow
+    # (fix round 1: a 4-vertex hole on the trapezius top at |x| 0.09-0.11 in two builds).  A soft height cap
+    # 3.5 mm under the plane beyond |x| 0.088 (the neck column is < 0.07 wide there).
+    cap = (g["_z"] - (SEAM_Z - 0.0035 - K)) * sstep(0.074, 0.088, ax_) - 0.05 * sstep(0.088, 0.074, ax_)
+    trunk = smax(trunk, cap, 0.004)
     # supraclavicular fossa (fix round 1): behind the medial two thirds of the clavicle, between the SCM and the
     # trapezius, the top of the shoulder sinks into a soft groove instead of the torso tube's flat top (whose
     # square front edge read as a collar ledge around the neck base).  A smooth inward displacement (gaussian
@@ -1533,8 +1541,16 @@ FOLD_FAT_SITES = (
     ((0.170, 0.035, 1.315), (0.040, 0.045, 0.050), 0.0040),     # posterior axillary fold / armpit
     ((0.165, -0.020, 1.330), (0.035, 0.035, 0.045), 0.0025),    # anterior axillary fold
     ((0.020, 0.010, 0.775), (0.030, 0.060, 0.055), 0.0060),     # perineum / medial groin
+    # (fix round 1: plantar 6 -> 9.5 mm; the shell slid 3.7-5.6 mm out at toes_ext_36 - the plantar pad under the
+    # MT heads is 8-10 mm thick)
     ((0.000, -0.068, 0.885), (0.030, 0.020, 0.030), 0.0045),    # mons pubis / root of the penis over the symphysis
-    ((0.132, -0.080, 0.004), (0.040, 0.045, 0.010), 0.0060),    # plantar pad under the toes / MT heads
+    ((0.132, -0.080, 0.004), (0.040, 0.050, 0.010), 0.0095),    # plantar pad under the toes / MT heads
+    # upper trapezius behind the neck base (fix round 1: the shell slid 3.5 mm out through the skin in a shrug,
+    # shoulder_rhythm_90; the nuchal subcutis is 5-8 mm there)
+    ((0.080, 0.090, 1.474), (0.032, 0.022, 0.020), 0.0025),
+    # trapezius top under the D19 height cap (fix round 1: the flattened skin left the shell 2 mm under it; it slid
+    # 6 mm out in the shrug)
+    ((0.105, 0.040, 1.466), (0.030, 0.025, 0.018), 0.0035),
 )
 
 

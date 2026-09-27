@@ -538,6 +538,19 @@ def head_source_files(head_dir=None):
     return [os.path.join(d, f) for f in HEAD_PY]
 
 
+HEAD_GEOMETRY_PY = ("anatomy.py", "gh_common.py")
+
+
+def head_geometry_files(head_dir=None):
+    """The head files that shape the body's cached GEOMETRY (stage cache keys): the SDF anatomy and its helpers.
+    ``materials.py`` only feeds the look-dev / bake stage (never cached) and ``build.py``/``gore.py`` are the
+    head team's gore / blood / hair pipeline, which they edit constantly; keying every body stage on them threw
+    away 25 min of cached geometry on every blood-shader edit.  (B2's lashes use build.py's hair helpers and are
+    rebuilt whenever the head stage rebuilds.)"""
+    d = head_dir or HEAD_DIR
+    return [os.path.join(d, f) for f in HEAD_GEOMETRY_PY]
+
+
 def snapshot_head():
     """Freeze the head project for this build: copy its sources into ``.cache/head_snapshot/<hash>/`` and
     point ``HEAD_DIR`` there before anything imports or hashes them.
@@ -982,7 +995,7 @@ class StageCache:
             cache.save(objs.values())
 
     The key covers the listed input files, ``gb_common.py``, ``gb_geom.py``, the
-    head-project sources (``head_source_files``), all ``gb_data`` tables and the
+    head-project geometry sources (``head_geometry_files``), all ``gb_data`` tables and the
     Blender version (``build.stage_key`` adds the import closure and the upstream
     stage keys through ``input_paths``/``extra``).  Files live in ``HERE/.cache`` (not
     committed)."""
@@ -992,7 +1005,7 @@ class StageCache:
         # always: the shared toolkit and the head project's sources (every organic stage calls
         # import_head(), so a head-team change must invalidate every cache)
         deps = list(input_paths) + [os.path.join(HERE, "gb_common.py"), os.path.join(HERE, "gb_geom.py")]
-        deps += head_source_files()
+        deps += head_geometry_files()
         deps += [os.path.join(data_dir, f) for f in sorted(os.listdir(data_dir)) if f.endswith(".py")]
         self.name = name
         self.key = input_hash(deps, extra + "|" + bpy.app.version_string)[:16]
