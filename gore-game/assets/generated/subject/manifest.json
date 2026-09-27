@@ -64,7 +64,14 @@
     "stage bake": 3056.5,
     "props: export weapons.glb": 0.62,
     "props: export room.glb": 0.32,
-    "stage props": 13.1
+    "stage props": 13.1,
+    "export: B7 atlases (bake.prepare_uvs)": 0.05,
+    "export: painter bone maps (bake.bake_painter_inputs)": 33.57,
+    "stage export": 43.01,
+    "look-dev materials for the saved .blend": 24.52,
+    "save .blend": 1.32,
+    "verify": 117.8,
+    "total": 4636.94
    },
    "input_hashes": {
     "bake.py": "a6dc9d44ec7dbd56",
@@ -136,7 +143,8 @@
     "vascular": "built",
     "rig": "built (B6): skin weights, followers, poses",
     "bake": "built",
-    "props": "built"
+    "props": "built",
+    "export": "2 glb + 9 sidecars + manifest"
    }
   },
   "files": {
@@ -1742,7 +1750,7 @@
   "file_limits": {
    "ok": true,
    "over": [],
-   "total_mb": 139.07,
+   "total_mb": 139.06,
    "largest": {
     "file": "GB_Subject.glb",
     "mb": 22.25
@@ -1814,6 +1822,376 @@
      0.5
     ]
    ],
+   "deformation": {
+    "elbow_130": {
+     "level": "fb2",
+     "ok": true,
+     "poke_mm": 0.74,
+     "poke_over_3mm": 0,
+     "vol_loss": -0.0441,
+     "shorts_mm": null
+    },
+    "elbow_145": {
+     "level": "max",
+     "ok": true,
+     "poke_mm": 1.62,
+     "poke_over_3mm": 0,
+     "vol_loss": -0.002,
+     "shorts_mm": null
+    },
+    "knee_121": {
+     "level": "fb2",
+     "ok": true,
+     "poke_mm": 0.0,
+     "poke_over_3mm": 0,
+     "vol_loss": -0.0385,
+     "shorts_mm": null
+    },
+    "knee_135": {
+     "level": "max",
+     "ok": true,
+     "poke_mm": 0.0,
+     "poke_over_3mm": 0,
+     "vol_loss": -0.0135,
+     "shorts_mm": null
+    },
+    "shoulder_abd_60": {
+     "level": "fb2",
+     "ok": false,
+     "poke_mm": 3.06,
+     "poke_over_3mm": 1,
+     "vol_loss": -0.0871,
+     "shorts_mm": null
+    },
+    "shoulder_abd_90": {
+     "level": "fb2",
+     "ok": false,
+     "poke_mm": 4.76,
+     "poke_over_3mm": 5,
+     "vol_loss": -0.0857,
+     "shorts_mm": null
+    },
+    "hip_flex_108": {
+     "level": "fb2",
+     "ok": false,
+     "poke_mm": 2.42,
+     "poke_over_3mm": 0,
+     "vol_loss": -0.047,
+     "shorts_mm": -14.98
+    },
+    "hip_flex_110": {
+     "level": "max",
+     "ok": false,
+     "poke_mm": 2.57,
+     "poke_over_3mm": 0,
+     "vol_loss": -0.0447,
+     "shorts_mm": -14.96
+    },
+    "hip_flex_90": {
+     "level": "quality",
+     "ok": false,
+     "poke_mm": 1.54,
+     "poke_over_3mm": 0,
+     "vol_loss": -0.0629,
+     "shorts_mm": -14.89
+    },
+    "shoulder_flex_90": {
+     "level": "quality",
+     "ok": true,
+     "poke_mm": 2.73,
+     "poke_over_3mm": 0,
+     "vol_loss": 0.0549,
+     "shorts_mm": null
+    },
+    "shoulder_rhythm_90": {
+     "level": "quality",
+     "ok": false,
+     "poke_mm": 4.45,
+     "poke_over_3mm": 9,
+     "vol_loss": -0.3841,
+     "shorts_mm": null
+    },
+    "shoulder_twist_63": {
+     "level": "quality",
+     "ok": true,
+     "poke_mm": 0.0,
+     "poke_over_3mm": 0,
+     "vol_loss": 0.0133,
+     "shorts_mm": null
+    },
+    "shoulder_twist_-63": {
+     "level": "quality",
+     "ok": true,
+     "poke_mm": 0.44,
+     "poke_over_3mm": 0,
+     "vol_loss": 0.0083,
+     "shorts_mm": null
+    },
+    "hip_abd_40": {
+     "level": "quality",
+     "ok": false,
+     "poke_mm": 0.0,
+     "poke_over_3mm": 0,
+     "vol_loss": -0.0684,
+     "shorts_mm": -6.74
+    },
+    "hip_ext_22": {
+     "level": "quality",
+     "ok": false,
+     "poke_mm": 0.0,
+     "poke_over_3mm": 0,
+     "vol_loss": 0.0404,
+     "shorts_mm": -3.76
+    },
+    "pronation_72": {
+     "level": "quality",
+     "ok": true,
+     "poke_mm": 0.0,
+     "poke_over_3mm": 0,
+     "vol_loss": 0.0095,
+     "shorts_mm": 4.13
+    },
+    "supination_72": {
+     "level": "quality",
+     "ok": true,
+     "poke_mm": 0.0,
+     "poke_over_3mm": 0,
+     "vol_loss": 0.0096,
+     "shorts_mm": 4.13
+    },
+    "wrist_flex_67": {
+     "level": "quality",
+     "ok": true,
+     "poke_mm": 1.27,
+     "poke_over_3mm": 0,
+     "vol_loss": 0.023,
+     "shorts_mm": null
+    },
+    "wrist_ext_58": {
+     "level": "quality",
+     "ok": true,
+     "poke_mm": 0.0,
+     "poke_over_3mm": 0,
+     "vol_loss": -0.0008,
+     "shorts_mm": null
+    },
+    "fist_76": {
+     "level": "quality",
+     "ok": true,
+     "poke_mm": 1.01,
+     "poke_over_3mm": 0,
+     "vol_loss": -0.0556,
+     "shorts_mm": null
+    },
+    "ankle_plantar_45": {
+     "level": "quality",
+     "ok": true,
+     "poke_mm": 0.84,
+     "poke_over_3mm": 0,
+     "vol_loss": 0.0153,
+     "shorts_mm": null
+    },
+    "ankle_dorsi_18": {
+     "level": "quality",
+     "ok": true,
+     "poke_mm": 0.66,
+     "poke_over_3mm": 0,
+     "vol_loss": -0.0011,
+     "shorts_mm": null
+    },
+    "toes_ext_36": {
+     "level": "quality",
+     "ok": false,
+     "poke_mm": 6.76,
+     "poke_over_3mm": 4,
+     "vol_loss": 0.0386,
+     "shorts_mm": null
+    },
+    "neck_flex_42": {
+     "level": "quality",
+     "ok": false,
+     "poke_mm": 3.2,
+     "poke_over_3mm": 2,
+     "vol_loss": 0.0125,
+     "shorts_mm": null
+    },
+    "neck_ext_50": {
+     "level": "quality",
+     "ok": true,
+     "poke_mm": 0.0,
+     "poke_over_3mm": 0,
+     "vol_loss": -0.0102,
+     "shorts_mm": null
+    },
+    "neck_rot_63": {
+     "level": "quality",
+     "ok": true,
+     "poke_mm": 2.69,
+     "poke_over_3mm": 0,
+     "vol_loss": 0.0041,
+     "shorts_mm": null
+    },
+    "neck_lat_40": {
+     "level": "quality",
+     "ok": true,
+     "poke_mm": 1.31,
+     "poke_over_3mm": 0,
+     "vol_loss": 0.0015,
+     "shorts_mm": null
+    },
+    "trunk_flex_76": {
+     "level": "quality",
+     "ok": false,
+     "poke_mm": 4.36,
+     "poke_over_3mm": 5,
+     "vol_loss": 0.0507,
+     "shorts_mm": -7.02
+    },
+    "trunk_ext_31": {
+     "level": "quality",
+     "ok": true,
+     "poke_mm": 1.35,
+     "poke_over_3mm": 0,
+     "vol_loss": -0.0253,
+     "shorts_mm": 2.51
+    },
+    "trunk_rot_40": {
+     "level": "quality",
+     "ok": true,
+     "poke_mm": 0.0,
+     "poke_over_3mm": 0,
+     "vol_loss": 0.0029,
+     "shorts_mm": 2.67
+    },
+    "jaw_open_19": {
+     "level": "quality",
+     "ok": false,
+     "poke_mm": 4.61,
+     "poke_over_3mm": 10,
+     "vol_loss": null,
+     "shorts_mm": null
+    },
+    "jaw_open_26": {
+     "level": "quality",
+     "ok": false,
+     "poke_mm": 6.7,
+     "poke_over_3mm": 34,
+     "vol_loss": null,
+     "shorts_mm": null
+    }
+   },
+   "roundtrip": {
+    "meshes": 36,
+    "bones": 39,
+    "actions": [
+     "pose_brace",
+     "pose_cower",
+     "pose_guard",
+     "pose_idle"
+    ],
+    "problems": [],
+    "ok": true
+   },
+   "godot_import": {
+    "meshes": 35,
+    "bones": 39,
+    "animations": [
+     "pose_brace",
+     "pose_cower",
+     "pose_guard",
+     "pose_idle"
+    ],
+    "bone_order": "differs from rig.json: map bones by NAME (Skeleton3D.find_bone), never by index",
+    "godot_bone_order": [
+     "root",
+     "hips",
+     "spine",
+     "chest",
+     "upper_chest",
+     "neck",
+     "head",
+     "jaw",
+     "tongue",
+     "eye_L",
+     "eye_R",
+     "lid_upper_L",
+     "lid_upper_R",
+     "lid_lower_L",
+     "lid_lower_R",
+     "clavicle_L",
+     "upper_arm_L",
+     "upper_arm_twist_L",
+     "forearm_L",
+     "forearm_twist_L",
+     "hand_L",
+     "fingers_L",
+     "thumb_L",
+     "clavicle_R",
+     "upper_arm_R",
+     "upper_arm_twist_R",
+     "forearm_R",
+     "forearm_twist_R",
+     "hand_R",
+     "fingers_R",
+     "thumb_R",
+     "thigh_L",
+     "shin_L",
+     "foot_L",
+     "toes_L",
+     "thigh_R",
+     "shin_R",
+     "foot_R",
+     "toes_R"
+    ],
+    "custom0": {
+     "bones_kept": true,
+     "has_custom0": true,
+     "rgba_float": true,
+     "vertices": 3502
+    },
+    "compressed_meshes": [],
+    "skinning_vs_blender": {
+     "elbow_90": {
+      "max_mm": 0.0129,
+      "mean_mm": 0.00045,
+      "vertices": 72738
+     },
+     "hip_flex_90": {
+      "max_mm": 0.0213,
+      "mean_mm": 0.00069,
+      "vertices": 72738
+     },
+     "jaw_open_15": {
+      "max_mm": 0.0006,
+      "mean_mm": 0.00022,
+      "vertices": 72738
+     },
+     "knee_110": {
+      "max_mm": 0.0126,
+      "mean_mm": 0.00033,
+      "vertices": 72738
+     },
+     "neck_rot_30": {
+      "max_mm": 0.0012,
+      "mean_mm": 0.00023,
+      "vertices": 72738
+     },
+     "shoulder_abd_60": {
+      "max_mm": 0.0179,
+      "mean_mm": 0.0006,
+      "vertices": 72738
+     }
+    },
+    "imported_glbs": [
+     "GB_Subject.glb",
+     "GB_Subject_LOD1.glb",
+     "room.glb",
+     "weapons.glb"
+    ],
+    "import_warnings": [],
+    "problems": [],
+    "ok": true
+   },
    "prepare": {
     "uvs": {
      "GB_Skeleton": true,

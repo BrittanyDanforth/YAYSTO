@@ -57,7 +57,7 @@ DILATE_PX = 8
 UV_MARGIN_PX = 8          # island margin of the re-charted atlases (at the set's resolution)
 MIN_CHART_M2 = 0.5e-4     # 0.5 cm2: smaller charts are merged into a neighbour
 OVERLAP_MAX = 0.001       # re-chart until at most 0.1 % of the covered texels are shared
-UV_VERSION = 3            # bump when the charting algorithm changes (part of the UV cache key)
+UV_VERSION = 4            # bump when the charting algorithm changes (part of the UV cache key)
 
 SETS = {
     # name: target, source, size, cage extrusion (m), max ray (m), AO distance (m), surfaces
@@ -568,7 +568,8 @@ def grow_charts(obj, cone_deg=55.0, max_frac=0.03, absorb_deg=75.0, min_faces=6,
     small = np.nonzero((cnt < min_faces) | (carea < min_area))[0].tolist()
     for c in small:
         faces = np.nonzero(chart == c)[0]
-        cand = {chart[g] for f in faces.tolist() for g in nbr[f] if chart[g] != c}
+        cand = {chart[g] for f in faces.tolist() for g in nbr[f] if chart[g] != c
+                and (isolate is None or isolate[g] == isolate[f])}
         best, best_s = None, cos_a
         for d in cand:
             s = float((fn[faces] @ axes[d]).min())
@@ -696,9 +697,14 @@ def prepare_uvs(objs=None, force=False):
         for rnd in range(3):
             if over <= OVERLAP_MAX:
                 break
-            isolate[polys] = rnd + 1
+            # every face found overlapping becomes its own chart (a single planar face cannot fold); the chart
+            # absorption respects the isolation, so they are not merged back into the folding neighbour
+            isolate[polys] = len(me.polygons) * (rnd + 1) + np.arange(len(polys))
             n = rechart(obj, cfg["size"], cfg["smooth"], cfg["interior_scale"], cfg["margin"], cfg["cone"],
                         isolate=isolate)
+            over, polys = uv_overlap_exact(obj, cfg["size"])
+        if over > OVERLAP_MAX:
+            split_overlaps(obj, cfg["size"], cfg["margin"])
             over, polys = uv_overlap_exact(obj, cfg["size"])
         after = uv_stats(obj, 512)
         after = (after[0], over, after[2])
@@ -710,8 +716,70 @@ def prepare_uvs(objs=None, force=False):
                                 "coverage": round(after[0], 3), "overlap": round(after[1], 5),
                                 "texel_mm_at_set_size": round(after[2] * 512 / cfg["size"], 3)}
         _log(f"{name}: {n} charts, coverage {before[0]:.3f} -> {after[0]:.3f}, overlap {after[1]:.4f}")
+    # every other exported atlas (cloth, vessels, mouth, fracture variants): overlapping faces split off
+    for obj in [o for o in bpy.data.objects if o.name in gbc.exported_mesh_names(0) and o.name not in RECHART]:
+        if obj.type != 'MESH' or "atlas" not in obj.data.uv_layers or not len(obj.data.polygons):
+            continue
+        over, _p = uv_overlap_exact(obj, 1024)
+        if over > OVERLAP_MAX:
+            split_overlaps(obj, 1024, 4)
+            after, _p = uv_overlap_exact(obj, 1024)
+            _RESULTS["uv"][obj.name] = {"overlap_before": round(over, 5), "overlap": round(after, 5)}
+            _log(f"{obj.name}: overlapping faces split off, overlap {over:.4f} -> {after:.4f}")
     _RESULTS["timings_s"]["uvs"] = round(time.perf_counter() - t0, 1)
     return _RESULTS["uv"]
+
+
+def split_overlaps(obj, size, margin_px, rounds=3):
+    """Faces whose atlas texels collide get their own island (planar projection of the face itself, at the
+    mesh's mean texel scale), then all islands are re-packed.  Deterministic."""
+    me = obj.data
+    ls = np.empty(len(me.polygons), np.int64)
+    me.polygons.foreach_get("loop_start", ls)
+    lt = np.empty(len(me.polygons), np.int64)
+    me.polygons.foreach_get("loop_total", lt)
+    lv = np.empty(len(me.loops), np.int64)
+    me.loops.foreach_get("vertex_index", lv)
+    v = gbc.get_verts(me)
+    fnrm = np.empty(len(me.polygons) * 3)
+    me.polygons.foreach_get("normal", fnrm)
+    fnrm = fnrm.reshape(-1, 3)
+    for _ in range(rounds):
+        over, polys = uv_overlap_exact(obj, size)
+        if over <= OVERLAP_MAX or not len(polys):
+            break
+        uv = np.empty(len(me.loops) * 2, np.float64)
+        me.uv_layers["atlas"].data.foreach_get("uv", uv)
+        uv = uv.reshape(-1, 2)
+        # uv units per metre (area ratio over the whole mesh)
+        tl, tv, _tp = loop_triangles(obj)
+        a3 = 0.5 * np.linalg.norm(np.cross(v[tv[:, 1]] - v[tv[:, 0]], v[tv[:, 2]] - v[tv[:, 0]]), axis=1).sum()
+        U = uv[tl]
+        a2 = 0.5 * np.abs((U[:, 1, 0] - U[:, 0, 0]) * (U[:, 2, 1] - U[:, 0, 1])
+                          - (U[:, 2, 0] - U[:, 0, 0]) * (U[:, 1, 1] - U[:, 0, 1])).sum()
+        k = np.sqrt(a2 / max(a3, 1e-12))
+        for j, f in enumerate(polys.tolist()):
+            n = fnrm[f]
+            ref = np.array([0.0, 0.0, 1.0]) if abs(n[2]) < 0.9 else np.array([1.0, 0.0, 0.0])
+            e1 = np.cross(ref, n)
+            e1 /= max(np.linalg.norm(e1), 1e-12)
+            e2 = np.cross(n, e1)
+            L = np.arange(ls[f], ls[f] + lt[f])
+            p = v[lv[L]]
+            q = np.stack([p @ e1, p @ e2], 1) * k
+            uv[L] = q - q.min(0) + np.array([0.001 * (j % 100), 0.001 * (j // 100)])
+        me.uv_layers["atlas"].data.foreach_set("uv", uv.astype(np.float32).ravel())
+        me.update()
+        me.uv_layers.active = me.uv_layers["atlas"]
+        _select_only(obj)
+        bpy.ops.object.mode_set(mode='EDIT')
+        bpy.ops.mesh.select_all(action='SELECT')
+        bpy.ops.uv.select_all(action='SELECT')
+        bpy.ops.uv.pack_islands(udim_source='CLOSEST_UDIM', margin_method='FRACTION',
+                                margin=margin_px / float(size), rotate=True, shape_method='CONCAVE', scale=True)
+        bpy.ops.object.mode_set(mode='OBJECT')
+        obj.select_set(False)
+    return uv_overlap_exact(obj, size)[0]
 
 
 # ---------------------------------------------------------------------------
