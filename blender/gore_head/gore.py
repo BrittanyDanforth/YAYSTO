@@ -1309,7 +1309,9 @@ def _build_blunt():
     curl_c = 0.6 + 0.6 * t.noise(c.np * 90.0, detail=1.0, signed=False)
     lift_cr = flap_cr * flap_cr * s * 0.0035 * curl_c
     # the eye sinks into the broken orbit (the globe moves back along the hit)
-    sink_eye = c.is_layer(LAYER_EYE) * cr * s * 0.0075 * t.smooth(0.05, 0.025, c.rho)
+    # (enophthalmos of a blow-out fracture: 2-5 mm in all; the blows of a
+    # crushed face add up, so each one moves it only a little)
+    sink_eye = c.is_layer(LAYER_EYE) * cr * s * 0.0017 * t.smooth(0.05, 0.025, c.rho)
     # (the flaps fold back outward over the face, fatty side up, rather than
     # standing up as petals)
     # fade the broad cave-in and the puffy ring out before the edge of the
@@ -3689,7 +3691,8 @@ def _build_wound_step(kind, kind_group):
         mush = t.smooth(0.2, 0.7, h.crush) * mush
     mush = t.switch(soft, 0.0, mush)
     g = t.store(g, "g_mush", t.switch(better, t.attr("g_mush"), mush), sel=sel)
-    g = t.store(g, "g_mushk", t.switch(better, t.attr("g_mushk"), 1.0 if kind == "exit" else 0.0), sel=sel)
+    g = t.store(g, "g_mushk", t.switch(better, t.attr("g_mushk"), (1.0 if kind == "exit" else 0.0)
+                                        + 2.0 * t.smooth(0.02, 0.2, t.inp("Bleed"))), sel=sel)
     g = t.store(g, "g_wb", t.switch(better, t.attr("g_wb"), WALL_BLOOD.get(kind, 0.0)), sel=sel)
     g = t.store(g, "g_strand", t.switch(better, t.attr("g_strand"), strand), sel=sel)
     g = t.store(g, "g_vshape", t.switch(better, t.attr("g_vshape"), 1.0 if kind in VSHAPE_KINDS else 0.0), sel=sel)
@@ -3797,7 +3800,10 @@ def _mush(t, g, on_faces):
     pts, rot, nrm = t.out(dist, 'Points'), t.out(dist, 'Rotation'), t.out(dist, 'Normal')
     idx = t.index()
     r1, r2, r3, r4, r5 = (t.rand(0.0, 1.0, idx, 131 + k) for k in range(5))
-    brain = t.attr("g_mushk").gt(0.5)
+    # g_mushk = brain (1) + 2 x bleeding: no bleeding, no clot
+    mk = t.attr("g_mushk")
+    bleeding = mk.gt(1.5)
+    brain = t.math('FLOORED_MODULO', t.math('FLOOR', mk + 0.5), 2.0).gt(0.5)
     # three scales: 6 % big torn flaps, 36 % medium lumps, the rest grit
     big = r1.gt(0.94)
     med = t.bool('AND', r1.gt(0.58), t.bool('NOT', big))
@@ -3823,6 +3829,7 @@ def _mush(t, g, on_faces):
     cls_b = t.switch(r4.lt(0.55), t.switch(r4.lt(0.9), 0.0, 2.0), 1.0)      # pulp 55 %, clot 35 %, muscle
     cls_t = t.switch(r4.lt(0.42), t.switch(r4.lt(0.62), 2.0, 1.0), 0.0)      # muscle 42 %, fat 20 %, clot
     cls = t.switch(brain, cls_t, cls_b)
+    cls = t.switch(t.bool('AND', cls.gt(1.5), t.bool('NOT', bleeding)), cls, 0.0)
     pts = t.store(pts, "m_cls", cls)
     ico = t.out(t.node('GeometryNodeMeshIcoSphere', {'Radius': 1.0, 'Subdivisions': 2}))
     inst = t.node('GeometryNodeInstanceOnPoints', {'Points': pts, 'Instance': ico, 'Rotation': rot,
@@ -5191,13 +5198,17 @@ def verify_gore(objs=None):
             co = np.empty(len(me.vertices) * 3)
             me.vertices.foreach_get("co", co)
             ob.evaluated_get(bpy.context.evaluated_depsgraph_get()).to_mesh_clear()
-            r = np.linalg.norm(co.reshape(-1, 3), axis=1)
-            return float(r.max()), float(np.percentile(r, 5))
+            co = co.reshape(-1, 3)
+            # (size = half the largest extent: the globe may also sink back
+            # into the broken orbit, which moves it without resizing it)
+            ext = float((co.max(0) - co.min(0)).max()) * 0.5
+            r = np.linalg.norm(co - co.mean(0), axis=1)
+            return ext, float(np.percentile(r, 5))
         rmax, r5 = radii(eye_r)
         lmax, l5 = radii(eye_l)
         check("crushed orbit: the eye never grows and deflates when ruptured",
               rmax < EYE_R * 1.12 and r5 < EYE_R * 0.9 and lmax < EYE_R * 1.12 and l5 > EYE_R * 0.97,
-              f"right eye max {rmax * 1000:.1f} mm / 5th pct {r5 * 1000:.1f} mm, "
+              f"right eye half extent {rmax * 1000:.1f} mm / 5th pct radius {r5 * 1000:.1f} mm, "
               f"left (unhurt) {lmax * 1000:.1f} / {l5 * 1000:.1f} mm, true r {EYE_R * 1000:.1f} mm")
         place_test_hits(KINDS)
     for k, v in saved.items():

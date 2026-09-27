@@ -132,7 +132,9 @@ REALISM_BIBLE §2.7):
   bone chips (2-4 mm thick chunks of both tables, diploe on their broken
   edges), pulped brain and clot bulging out of the opening (see mush). The margin is raw torn dermis
   (<= ~1 mm wet); no film, pool or blotches are painted on the scalp around it.
-- **slash**: an incised cut; the knife line is narrow and the lips gape apart
+- **slash**: an incised cut (a throat cut opens 15-20 mm down onto the
+  larynx / trachea; its walls show the ringed cartilage, dark lumen and cut
+  vessel openings, see `GH_Fat`); the knife line is narrow and the lips gape apart
   (gape = length x G(angle to the skin tension lines) x depth factor, ~0.2 L
   across the lines, ~0.04 L along them), raised swollen lips, V walls of the
   skin's own tissue down to the cut depth (dermis -> fat -> muscle) meeting in
@@ -165,7 +167,10 @@ REALISM_BIBLE §2.7):
   layer and the tooth islands); other teeth near the crater are blown out
   (~55 %) or left loose and tilted; 18 bone chips in the torn tissue; the skin
   around is soot-blackened (`gore_soot`), stippled, seared and swollen; heavy
-  bleeding (6+ runs). Use size ~1.5, depth 1.0, aimed into the open mouth.
+  bleeding (6+ runs). Deeper than ~1.5 cm behind the lips the tongue, floor of
+  the mouth and palate lining are shredded (pulped, torn by ragged 3-5 mm
+  craters, blood-soaked) but never erased: a hole there only showed a black
+  void (REFERENCE_NOTES §5.15). Use size ~1.5, depth 1.0, aimed into the open mouth.
 - **eyes** (every kind that reaches an eyeball, `_KindCtx.eye_injury`,
   REFERENCE_NOTES §5.20): the globe keeps its true size (r 0.012; the blunt
   swelling never applies to the eye layer). A rupture (crushed orbit, a bullet
@@ -279,6 +284,13 @@ samples every pixel along the main run's axis from inside the hole to 5 mm
 below the rim against an exact material mask, and fails on any skin-coloured
 pixel (`renders/proof_rim_zero_gap.png`).
 
+Pools in cuts and blunt splits are channels: the liquid brims over the rim
+only at the LOW end of the wound and lies below the rim further up (0.5 mm
+per mm up the wound), so the upper walls with their dermis line, fat and
+muscle show above the blood (a cut flooded flush along its whole length read
+as a flat, painted "second mouth"). Crushed craters get no liquid sheet at
+all: their blood lies in the pits between the pulp and clot lumps.
+
 Wound walls are extruded in 6 rings with a smoothly varying ring spacing, then
 relaxed (Blur Attribute on the wall vertices) and given lumpy relief along the
 wall normal only (gore.WALL_LUMPS), so they never fold into light/dark stripes
@@ -334,3 +346,16 @@ bruise, burn, abrasion edge), `GH_Muscle`, `GH_Fat`, `GH_Bone` (reads
 (wet/dry by `blood_age`, `wetness`), `GH_Eye` (sclera, iris, pupil, glossy cornea,
 bloodshot by `gore_blood`), `GH_Teeth`, `GH_Gums`, `GH_Tongue`, `GH_MouthInterior`,
 `GH_Lips` optional. `assign_materials(objs, mats)` assigns them by object name.
+
+## Cutaway (build.py `add_cutaway`)
+
+The side cutaway shows real sections, not flat caps: the brain's white-matter
+cap carries the sulci of anatomy's own gyri field (`_sulcus_distance`: the
+nodal sheets of the same wave fields that fold the surface) as blood-lined
+clefts with a ~2.5 mm ribbon of darker grey cortex, a grey basal-ganglia
+island and the cerebellar folia around their white core; the eye is a globe
+section (`GH_EyeSection`: sclera, choroid, retina, cornea, front chamber,
+iris, lens, vitreous, optic nerve); skull and mandible show dense ivory
+tables around red-brown spongy diploe (temporary `GH_Skull_Diploe` /
+`GH_Jaw_Diploe` cores, the bone field moved 1.4-1.6 mm inward, removed again
+after the render).

@@ -1456,7 +1456,7 @@ def _teeth_material(g):
     rnd = t.white(t.vec(t.attr("tooth_id"), 0.37, 0.0))
     # (ivory enamel, never plastic white: warm, slightly translucent, yellower
     # toward the neck of the tooth)
-    body = t.mix(h.smooth(0.15, 1.0), (0.58, 0.53, 0.41), (0.50, 0.39, 0.22))
+    body = t.mix(h.smooth(0.15, 1.0), (0.50, 0.45, 0.34), (0.44, 0.34, 0.19))
     body = body * (0.92 + 0.12 * rnd)
     front = 1.0 - py.smooth(-0.075, -0.068)               # incisors and canines
     edge = (1.0 - h.smooth(0.0, 0.2)) * front
