@@ -2091,8 +2091,9 @@ DRIP_STEPS = 48
 BRANCH_STEPS = 26
 WALK_RAMP = 6                   # the first steps of a run are 1/6 .. 1 of the full step (see _walk)
 BLOOD_KINDS = ("bullet", "exit", "slash", "blunt", "blast")
-POOL_KINDS = ("bullet", "exit", "blunt")
+POOL_KINDS = ("bullet", "exit", "blunt", "slash")
 POOL_RES = 72
+POOL_COLS = 24                  # slices across a cut with their own liquid level
 # kind: (extra runs at full flow, spread of the extra runs' start across the
 # hole (fraction of its radius), cavity volume in mL at size 1 (fill time = V / Q))
 RUNS = {"bullet": (3.0, 0.9, 0.10), "exit": (7.0, 1.0, 0.9), "slash": (1.0, 0.0, 0.25),
@@ -2104,7 +2105,7 @@ RUN_SPEED = (0.016, 0.014, 0.010)
 RUN_MAX = 0.34                  # longest run (m): forehead to the cut of the neck
 BEAT_S = 0.8                    # heart period (s) of the arterial surges
 # half width (m) of a run: 0.8 mm trickle .. ~2.4 mm (rivulets 2-5 mm wide, RB §3.11, REFERENCE_NOTES §5.21)
-RUN_W = (0.0009, 0.0016, 0.0005)
+RUN_W = (0.0013, 0.0018, 0.0006)
 BRANCH_P = 0.07                # chance per trail step that a heavy run splits
 
 
@@ -2412,8 +2413,19 @@ def _drip_seeds(t, pts, kind, kind_id, damage, drip):
     g = t.store(g, "d_q", q)
     g = t.store(g, "d_src", t.attr("b_src"))
     g = t.store(g, "d_bias", (0.0, 0.0, 0.0), 'FLOAT_VECTOR')
-    for name, val in (("lp_ctr", I), ("lp_dn", dn_t), ("lp_sd", side_t), ("lp_ax", ax), ("lp_acr", acr),
-                      ("lp_n", N)):
+    ctr, n_s, dn_s, sd_s = I, N, dn_t, side_t
+    if kind == "blast":
+        # a blast in the open mouth: the impact ray may pass the lips and meet
+        # the throat, so the search starts from the mouth opening itself (the
+        # empty, ~1 cm in) and fans out in the plane facing the shot
+        Zo = h["Z"]
+        ctr = t.attr("hit_P", 'FLOAT_VECTOR') - Zo * 0.01
+        n_s = Zo
+        dn_s = (grav - Zo * Zo.dot(grav)).normalize()
+        sd_s = Zo.cross(dn_s).normalize()
+        ax = acr = dn_s
+    for name, val in (("lp_ctr", ctr), ("lp_dn", dn_s), ("lp_sd", sd_s), ("lp_ax", ax), ("lp_acr", acr),
+                      ("lp_n", n_s)):
         g = t.store(g, name, val, 'FLOAT_VECTOR')
     g = t.store(g, "lp_shape", 1.0 if kind == "slash" else 0.0)
     g = t.store(g, "lp_hl", hl_s)
@@ -2460,17 +2472,27 @@ def _build_pools(t, hits, surface, drip):
     uv = t.attr("pl_uv", 'FLOAT_VECTOR')
     T1 = (X - N * X.dot(N)).normalize()
     T2 = N.cross(T1)
-    # an oblique track opens an elongated hole: cover it
+    # an oblique track opens an elongated hole: cover it (a cut's grid is
+    # already long along the cut and narrow across it: pl_Ry < pl_R)
     stretch = 1.0 / t.math('ABSOLUTE', N.dot(Z)).max(0.45)
-    Rp = t.attr("pl_R") * stretch
-    P0 = I + (T1 * uv.x + T2 * uv.y) * Rp
+    stretch = t.mix(stretch, 1.0, t.attr("pl_col"))
+    P0 = I + (T1 * (uv.x * t.attr("pl_R")) + T2 * (uv.y * t.attr("pl_Ry"))) * stretch
     ray = t.node('GeometryNodeRaycast', {'Target Geometry': surface, 'Attribute': t.attr("g_wk"),
                                          'Source Position': P0 + N * 0.008, 'Ray Direction': -N,
                                          'Ray Length': 0.03}, data_type='FLOAT')
     hit = t.out(ray, 'Is Hit')
     wk = t.out(ray, 'Attribute')
     hgt = (t.out(ray, 'Hit Position') - I).dot(N)
-    outside = t.switch(t.bool('AND', hit, wk.lt(0.25)), 0.0, 1.0)
+    # inside the opening: the ray meets a wound wall, or passes into the
+    # track without meeting skin -- but a miss far out on a curved face (the
+    # skin falls away from the tangent plane) is outside, never a pool
+    # hanging in the air
+    r_loc = (P0 - I).length()
+    in_miss = t.switch(t.attr("pl_col").gt(0.5), r_loc.lt(t.attr("b_hole") * 1.15),
+                       t.bool('AND', t.math('ABSOLUTE', uv.x).lt(0.92),
+                              (t.math('ABSOLUTE', uv.y) * t.attr("pl_Ry")).lt(t.attr("pl_Ry") - 0.0026)), 'BOOLEAN')
+    inside = t.bool('OR', t.bool('AND', hit, wk.gt(0.25)), t.bool('AND', t.bool('NOT', hit), in_miss))
+    outside = t.switch(inside, 1.0, 0.0)
     g = t.store(g, "pl_out", outside)
     g = t.store(g, "pl_h", t.switch(hit, -0.004, hgt))
     g = t.store(g, "pl_p0", P0, 'FLOAT_VECTOR')
@@ -2480,7 +2502,12 @@ def _build_pools(t, hits, surface, drip):
     g = t.store(g, "pl_min", m_in)
     m_in = t.attr("pl_min")
     rim = out_f * m_in.gt(0.03).max(0.0)
-    pid = t.attr("pl_id", 'INT')
+    # the liquid level is set by the rim it can spill over: for a round hole
+    # the whole rim; along a cut, the rim around each slice across it (a long
+    # cut on a curved face would otherwise hang its surface in the air at one
+    # end and sink it deep at the other)
+    col = t.math('FLOOR', (uv.x + 1.0) * 0.5 * (POOL_COLS - 1) + 0.5) * t.attr("pl_col")
+    pid = t.math('ADD', t.attr("pl_id", 'INT') * POOL_COLS, col)
     cnt = t.out(t.node('GeometryNodeAccumulateField', {'Value': rim, 'Group ID': pid}), 'Total')
     sum_h = t.out(t.node('GeometryNodeAccumulateField', {'Value': rim * t.attr("pl_h"), 'Group ID': pid}), 'Total')
     mean_h = sum_h / cnt.max(1.0)
@@ -2494,8 +2521,22 @@ def _build_pools(t, hits, surface, drip):
     low = t.attr("pl_mean") - k_sm * t.math('LOGARITHM', (s_ex / t.attr("pl_cnt").max(1.0)).max(1.0), math.e)
     # (a hit whose skin did not open has no rim: no pool)
     g = t.store(g, "pl_low", low)
+    # (slices of a cut: blend the levels of neighbouring slices, no steps)
+    lb = F(t, t.node('GeometryNodeBlurAttribute', {'Value': t.attr("pl_low"), 'Iterations': 10, 'Weight': 1.0},
+                     data_type='FLOAT').outputs[0])
+    g = t.store(g, "pl_low", t.mix(t.attr("pl_low"), lb, t.attr("pl_col")))
     fill = t.smooth(0.0, t.attr("b_t0").max(0.004), drip)
-    L = t.attr("pl_low") - 0.0032 * (1.0 - fill) + 0.0003 * fill
+    # gravity: on a sloping face the liquid runs to the LOW side of the
+    # opening -- it stands at the lowest rim there and lies deeper toward the
+    # upper edge, so the upper wall of the wound shows above it
+    grav = t.vec(0.0, 0.0, -1.0)
+    g_t = grav - N * N.dot(grav)
+    up_d = (t.attr("pl_p0", 'FLOAT_VECTOR') - I).dot(g_t) * -1.0
+    # (surface tension holds the blood level across a small hole; in a wide
+    # crater gravity wins and the surface is nearly horizontal)
+    k_tilt = t.mix(0.22 + 0.7 * t.smooth(0.004, 0.016, t.attr("b_hole")), 0.4, t.attr("pl_col"))
+    tilt = up_d.max(-0.02) * k_tilt * g_t.length()
+    L = t.attr("pl_low") - 0.0032 * (1.0 - fill) + 0.0003 * fill - tilt.max(0.0)
     hs = t.attr("pl_h")
     # just past the rim the liquid drapes onto the lip where the lip is lower
     # than the level (spilling); everywhere else it tucks under the skin
@@ -2518,7 +2559,8 @@ def _build_pools(t, hits, surface, drip):
     far = F(t, t.node('GeometryNodeBlurAttribute', {'Value': 1.0 - t.attr("pl_out"), 'Iterations': 4,
                                                     'Weight': 1.0}, data_type='FLOAT').outputs[0])
     g = t.store(g, "pl_far", far)
-    drop = t.bool('OR', t.attr("pl_far").lt(0.004), t.attr("pl_cnt").lt(3.0))
+    # (no bleeding, no pool: bleed 0 or a bruise that did not split)
+    drop = t.bool('OR', t.bool('OR', t.attr("pl_far").lt(0.004), t.attr("pl_cnt").lt(3.0)), t.attr("b_q").lt(0.3))
     g = t.out(t.node('GeometryNodeDeleteGeometry', {'Geometry': g, 'Selection': drop}, domain='POINT'))
     g = t.store(g, "gore_bthin", 0.0)
     g = t.store(g, "gore_art", t.attr("b_fa") * 0.35)
@@ -2592,7 +2634,10 @@ def _find_lips(t, seeds, surface):
     # later runs fan out from where they left the rim (they came over a
     # different part of it), the main run just follows gravity
     off = (V("lp_L") - V("lp_ctr")).dot(V("lp_sd"))
-    fan = V("lp_sd") * (off / (t.attr("lp_r1") * 0.4).max(0.001)).clamp(-1.0, 1.0) * 0.45
+    # (not for a cut: runs leaving along its lower lip already lie side by
+    # side, a push would make them cross)
+    fan = V("lp_sd") * (off / (t.attr("lp_r1") * 0.4).max(0.001)).clamp(-1.0, 1.0) * 0.45 \
+        * (1.0 - t.attr("lp_shape"))
     g = t.store(g, "d_bias", t.switch(t.attr("lp_tol").gt(0.0), (0.0, 0.0, 0.0), fan, 'VECTOR'), 'FLOAT_VECTOR')
     g = t.store(g, "d_arc0", (V("lp_L") - V("lp_I")).length())
     g = t.out(t.node('GeometryNodeRemoveAttribute', {'Geometry': g, 'Pattern Mode': 'Wildcard', 'Name': "lp_*"}))
@@ -2630,9 +2675,11 @@ def _walk(t, seeds, surface, steps, rest):
     # bumps of a wound lip, it only hangs where the face itself turns down)
     # (heavy flows cling further round onto skin that turns downward --
     # under the jaw line toward the neck -- before they hang and drip)
-    ibh = t.attr("d_ib") * 0.22
+    ibh = t.attr("d_ib") ** 2.0 * 0.45
     hang = t.smooth(-0.62 - ibh, -0.42 - ibh, _nearest_normal(t, rest, p).z)
-    fac = slope * hang
+    # (a heavy flow is not stopped by skin that turns under: it keeps
+    # running along the underside of the chin / jaw onto the neck)
+    fac = (slope * hang).max(t.attr("d_ib") ** 2.0 * 0.5)
     # short steps where the run leaves the lip (it must hug the rim and the
     # skin just below it, never bridge under the lip), longer further down:
     # step k takes min(k + 1, WALK_RAMP) shares of the run's length
@@ -2674,7 +2721,7 @@ def _run_mesh(t, trail, surface, steps):
     # fuller where it slowed (creases, shallow slopes)
     n1 = t.noise(t.vec(arc * 95.0, rid * 1.37, 0.3), detail=2.0)
     n2 = t.noise(t.vec(arc * 330.0, rid * 0.71, 1.7), detail=1.0)
-    rad = dw * (0.62 + 0.38 * t.smooth(0.0, 0.14, tt)) * (1.0 + 0.34 * n1 + 0.16 * n2) \
+    rad = dw * (0.75 + 0.25 * t.smooth(0.0, 0.14, tt)) * (1.0 + 0.34 * n1 + 0.16 * n2) \
         * (1.0 + 0.5 * t.attr("d_slow"))
     # arterial surges: one bulge per heartbeat along the run (d_lam = front
     # speed x beat period), strength = arterial share
@@ -2749,7 +2796,7 @@ def _film(t, paths, surface):
     # (it gathers where the skin flattens, thins where it runs fast)
     u = (1.0 - rel * rel).max(0.0)
     crest = t.attr("f_d_cap") * (0.72 + 0.56 * t.noise(p * 170.0, detail=2.0, signed=False))
-    h = crest * t.smooth(0.0, 0.8, u) ** 0.8
+    h = crest * u ** 0.7
     g = t.store(g, "f_h", h)
     hb = F(t, t.node('GeometryNodeBlurAttribute', {'Value': t.attr("f_h"), 'Iterations': 4, 'Weight': 1.0},
                      data_type='FLOAT').outputs[0])
@@ -2763,7 +2810,7 @@ def _film(t, paths, surface):
     # Beer-Lambert thickness for the shader: the edge is a thin translucent film
     # (a 0.1-0.3 mm rivulet is still a red film, only pools / thick heads
     # reach the near-black of thick blood)
-    g = t.store(g, "gore_bthin", 1.0 - (t.attr("f_h") / 0.00055).clamp() ** 0.8)
+    g = t.store(g, "gore_bthin", 1.0 - (t.attr("f_h") / 0.00038).clamp() ** 0.8)
     for src, dst in (("f_d_art", "gore_art"), ("f_d_q", "gore_bq"), ("f_d_src", "gore_bsrc"),
                      ("f_gore_run", "gore_run"), ("f_gore_runf", "gore_runf")):
         g = t.store(g, dst, t.attr(src))
@@ -2807,15 +2854,35 @@ def _drops(t, tips, rest):
                                                    'Rotation': rot, 'Scale': t.vec(r, r * 1.15, r * 0.62)})
     pend = t.out(t.node('GeometryNodeRealizeInstances', {'Geometry': t.out(pend)}))
     pend = t.out(t.node('GeometryNodeSetPosition', {'Geometry': pend, 'Offset': t.vec(0.0, 0.0, -1.0) * (r * 0.35)}))
-    # falling drops below a hanging one while it keeps being fed (d_mov)
-    fall_sel = t.bool('AND', hang, t.attr("d_mov").gt(0.5))
-    fr = t.rand(0.0, 1.0, t.index(), 72)
-    fall = t.node('GeometryNodeInstanceOnPoints', {'Points': tips, 'Selection': fall_sel, 'Instance': ico,
-                                                   'Scale': t.vec(r * 0.85, r * 0.85, r * 1.1)})
-    fall = t.out(t.node('GeometryNodeRealizeInstances', {'Geometry': t.out(fall)}))
-    fall = t.out(t.node('GeometryNodeSetPosition', {'Geometry': fall,
-                                                    'Offset': t.vec(0.0, 0.0, -1.0) * (0.012 + 0.03 * fr)}))
-    hung = _join(t, pend, fall)
+    # (no drops frozen in mid-air below it: in a still they read as blood
+    # floating beside the head, with no path from the wound)
+    # a heavy flow does not drip off a low point, it POURS: a thin rope of
+    # blood falls from the drop (REFERENCE_NOTES §5.18 F, refs 7 / 21: it
+    # falls in ropey strands and sheets), 1-3 mm thick, beading and thinning
+    # as it falls, up to ~12 cm below the head in this still
+    pour = t.bool('AND', t.bool('AND', hang, t.attr("d_mov").gt(0.5)), t.attr("d_ib").gt(0.55))
+    rope_pts = t.out(t.node('GeometryNodeSeparateGeometry', {'Geometry': tips, 'Selection': pour},
+                            domain='POINT'), 'Selection')
+    line = t.out(t.node('GeometryNodeCurvePrimitiveLine', {'Start': (0.0, 0.0, 0.0), 'End': (0.0, 0.0, -1.0)}))
+    line = t.out(t.node('GeometryNodeResampleCurve', {'Curve': line, 'Count': 40}))
+    rl = 0.05 + 0.07 * t.rand(0.0, 1.0, t.attr("d_id", 'INT'), 73)
+    rope = t.node('GeometryNodeInstanceOnPoints', {'Points': rope_pts, 'Instance': line,
+                                                   'Scale': t.vec(1.0, 1.0, rl)})
+    rope = t.out(t.node('GeometryNodeRealizeInstances', {'Geometry': t.out(rope)}))
+    fpar = t.out(t.node('GeometryNodeSplineParameter'), 'Factor')
+    rid = t.attr("d_id", 'INT')
+    lam = 0.08 + 0.05 * t.rand(0.0, 1.0, rid, 74)
+    bead = t.math('SINE', fpar / lam * TAU + rid * 1.3).max(0.0) ** 4.0
+    r_rope = (0.0006 + 0.0006 * t.attr("d_ib")) * (1.0 - 0.55 * fpar) * (0.75 + 0.9 * bead * t.smooth(0.15, 0.5, fpar))
+    # (a slight sway: a falling stream is never a ruler-straight rod)
+    sway = t.noise(t.vec(fpar * 3.0, rid * 0.7, 0.0), detail=1.0, color=True) * (0.004 * fpar)
+    rope = t.out(t.node('GeometryNodeSetPosition', {'Geometry': rope, 'Offset': sway * t.vec(1.0, 1.0, 0.0)}))
+    rope = t.out(t.node('GeometryNodeSetCurveRadius', {'Curve': rope, 'Radius': r_rope}))
+    prof = t.out(t.node('GeometryNodeCurvePrimitiveCircle', {'Resolution': 8, 'Radius': 1.0}, mode='RADIUS'))
+    rope = t.out(t.node('GeometryNodeCurveToMesh', {'Curve': rope, 'Profile Curve': prof,
+                                                    'Scale': t.out(t.node('GeometryNodeInputRadius')),
+                                                    'Fill Caps': True}))
+    hung = _join(t, pend, rope)
     hung = t.store(hung, "d_free", 1.0)
     return beads, hung
 
@@ -2855,8 +2922,17 @@ def _build_blood():
         hk = sources[k]
         h = _hit_fields(t, damage)
         hole, _r = _wound_extent(t, k, h)
-        rp = {"bullet": hole * 2.2 + 0.0012, "exit": hole * 2.2 + 0.0015, "blunt": hole * 2.6 + 0.002}[k]
-        hk = t.store(hk, "pl_pulp", {"bullet": 0.0, "exit": 0.75, "blunt": 0.25}[k] + 0.35 * h["crush"])
+        if k == "slash":
+            Tw = t.attr("hit_T", 'FLOAT_VECTOR')
+            hl, gape = _slash_params(t, h["s"], h["e"], h["D"], Tw.dot(h["X"]), Tw.dot(h["Y"]), h["R"].x)
+            rp, rpy = hl * 1.08 + 0.0015, gape * 0.5 + 0.0028
+            hk = t.store(hk, "pl_col", 1.0)
+        else:
+            rp = {"bullet": hole * 2.2 + 0.0012, "exit": hole * 2.2 + 0.0015, "blunt": hole * 2.6 + 0.002}[k]
+            rpy = rp
+            hk = t.store(hk, "pl_col", 0.0)
+        hk = t.store(hk, "pl_pulp", {"bullet": 0.0, "exit": 0.75, "blunt": 0.25, "slash": 0.0}[k] + 0.35 * h["crush"])
+        hk = t.store(hk, "pl_Ry", rpy)
         pool_hits.append(t.store(hk, "pl_R", rp))
     pool_pts = _join(t, *pool_hits)
     pools = _build_pools(t, pool_pts, surface, drip)
@@ -3164,7 +3240,10 @@ WALL_LUMPS = ((210.0, 0.00055), (650.0, 0.00018))
 # (blunt splits have no sheet: the ragged split outline made the strip sheet
 # shade as a row of dark slats -- the refs/12 stripe artefact; their bed is
 # packed with clot lumps instead, as in the references)
-FILL_EXTENT = {"slash": 0.985}
+# (the incised cut's bed is now flooded by the same liquid surface as the
+# other openings, _build_pools: the old strip sheet shaded as a row of slats,
+# the refs/12 stripe artefact, and stood below the lips)
+FILL_EXTENT = {}
 # clot blobs per wall area (relative to CLOT_DENSITY) and the chance that a
 # vertex of the first wall ring starts a tissue strand across the gap
 CLOT_DENSITY = 30000.0        # blobs per m^2 of wall at factor 1

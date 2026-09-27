@@ -551,12 +551,10 @@ def _group_blood_film():
     cov = blood * (0.8 + 0.4 * n_big) + (n_mid - 0.5) * 0.22 * fringe
     film = cov.smooth(0.1, 0.19)
     thick = cov.smooth(0.45, 1.0)
-    # fine spatter droplets on the fringe of a bloody area
-    sd, scol, _ = t.voronoi(t.warp(p, 900.0, 0.0004), 520.0)
-    spk = (1.0 - sd.smooth(0.05, 0.17)) * t.sep(scol)[0].smooth(0.55, 0.6)
-    spk = spk * blood.smooth(0.02, 0.12) * (1.0 - blood.smooth(0.3, 0.5))
-    mask = film.max(spk)
-    thick = thick.max(spk * 0.8)
+    # (no stamped "spatter" dots on the fringe of a bloody area: blood only
+    # lies where it physically travelled -- REFERENCE_NOTES §5.9; the fringe
+    # dots also showed as a row of black dots in a cut's scratch tail)
+    mask = film
     # thin films dry first, and drying is patchy
     a = (age + (1.0 - thick) * 0.35 * age + (n_mid - 0.5) * 0.5 * age * (1.0 - age)).clamp()
 
@@ -567,8 +565,10 @@ def _group_blood_film():
     # clots in broad pools only (not along thin runs), and the darker rim where a film thins out
     clot = t.noise(p, 220.0, 3.0).smooth(0.55, 0.72) * thick.smooth(0.75, 1.0) * n_big.smooth(0.45, 0.65)
     fresh = t.mix(clot * 0.8, fresh, (0.022, 0.0025, 0.003))
+    # (the thin edge of a smear is a lighter, translucent red, not a dark
+    # outline: a dark rim reads as a painted decal)
     rim = film * (1.0 - cov.smooth(0.2, 0.34))
-    fresh = t.mix(rim * 0.5, fresh, fresh * 0.55)
+    fresh = t.mix(rim * 0.25, fresh, fresh * 0.8)
     old = t.mix(thick, base * (0.36, 0.16, 0.11), (0.026, 0.0085, 0.006))
     col = t.mix(a, fresh, old)
     # dried pools crack into flakes that show the surface underneath
@@ -1221,10 +1221,13 @@ def _blood_material(g):
     art = t.attr("gore_art")
     # thin films dry first, from the edges inward
     a = (age + (n - 0.5) * 0.4 * age * (1.0 - age) + thin * 0.35 * age).clamp()
-    fresh_v = (thick + (n_lo - 0.5) * 0.25).clamp().ramp([
+    # (thickness wanders along a stream: darker where it gathers, lighter
+    # where it thins -- never one flat red)
+    thv = (thick + (n_lo - 0.5) * 0.45 + (t.noise(p, 25.0, 2.0) - 0.5) * 0.3).clamp()
+    fresh_v = thv.ramp([
         (0.0, (0.27, 0.008, 0.015)), (0.3, (0.2, 0.005, 0.01)), (0.65, (0.11, 0.003, 0.005)),
         (1.0, (0.065, 0.0015, 0.0025))])
-    fresh_a = (thick + (n_lo - 0.5) * 0.25).clamp().ramp([
+    fresh_a = thv.ramp([
         (0.0, (0.53, 0.012, 0.014)), (0.3, (0.36, 0.008, 0.01)), (0.65, (0.18, 0.004, 0.006)),
         (1.0, (0.09, 0.002, 0.003))])
     fresh = t.mix(art, fresh_v, fresh_a)
@@ -1249,8 +1252,11 @@ def _blood_material(g):
     tis_m = (tis * 1.2 - 0.2 + (fold - 0.5) * 0.7).clamp() * 0.9
     col = t.mix(tis_m, col, pulp_col)
     rough = rough * (1.0 - tis_m) + tis_m * (0.3 + fold * 0.2)
+    # (a liquid surface is never an optical flat: slow ripples and the
+    # meniscus bulges break the reflection of a pool or a wide stream)
+    ripple = (t.noise(p, 70.0, 2.0) * 0.6 + t.noise(p, 190.0, 2.0) * 0.25) * thick
     h = clot * 0.3 * (1.0 - a) + t.noise(p, 4000.0) * a * 0.3 + fclot * t.noise(p, 700.0, 2.0) * 0.6 \
-        + tis_m * fold * 0.8
+        + tis_m * fold * 0.8 + ripple
     bsdf = t.principled({
         'Base Color': col, 'Roughness': rough.max(0.06), 'IOR': 1.36, 'Specular IOR Level': 0.5,
         # (thick blood barely scatters: a strong red subsurface glow makes
@@ -1264,8 +1270,10 @@ def _blood_material(g):
         'Normal': t.bump(h, 0.0001)})
     # the thin edge of a film lets the skin show through (translucent red);
     # the stain on the skin under it (gore_blood) tints what shows
-    alpha = 0.45 + 0.55 * thin.smooth(0.95, 0.55)
-    transp = t.node('ShaderNodeBsdfTransparent', {'Color': (0.85, 0.35, 0.35)})
+    # (only the very edge of a film lets the skin show through, tinted red;
+    # a pale, half-transparent streak inside a stream reads as a smear of paint)
+    alpha = 0.62 + 0.38 * thin.smooth(0.97, 0.75)
+    transp = t.node('ShaderNodeBsdfTransparent', {'Color': (0.62, 0.14, 0.13)})
     mixs = t.node('ShaderNodeMixShader', {0: alpha, 1: transp.outputs[0], 2: bsdf.outputs[0]})
     t.output(mixs)
     return _finish(mat, t, (0.25, 0.01, 0.01), 0.1)

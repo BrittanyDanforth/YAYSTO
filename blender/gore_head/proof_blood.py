@@ -88,19 +88,23 @@ def _skin_like(rgb):
     return (r > 0.3) & (g / rr > 0.6) & (b / rr > 0.45) & ~highlight
 
 
-def _cameras(hit, dist):
-    """Straight / 45 deg / grazing close-up cameras around a hit's rim."""
+def _cameras(hit, dist, target=None, side=False):
+    """Straight / 45 deg / grazing close-up cameras around the rim point the
+    main run leaves from (or the hit itself before anything has left it)."""
     m = hit.matrix_world.to_3x3().normalized()
     z = (m @ Vector((0.0, 0.0, 1.0))).normalized()
-    tgt = hit.matrix_world.translation + Vector((0.0, 0.0, -0.004))
+    tgt = Vector(target) if target is not None else hit.matrix_world.translation + Vector((0.0, 0.0, -0.004))
     horiz = Vector((0.0, 0.0, 1.0)).cross(z)
     horiz = horiz.normalized() if horiz.length > 1e-6 else Vector((1.0, 0.0, 0.0))
     down = Vector((0.0, 0.0, -1.0))
+    dn_t = down - z * z.dot(down)
+    dn_t = dn_t.normalized() if dn_t.length > 1e-4 else -horiz.cross(z).normalized()
     dirs = {"straight": z,
             "45": (z + horiz).normalized(),
-            # 72 deg off the normal, from the side and a little from below:
-            # looking along the skin across the rim and the stream leaving it
-            "graze": (z * 0.31 + (horiz * 0.87 + down * 0.5).normalized() * 0.95).normalized()}
+            # ~68 deg off the normal, from below the wound looking up along
+            # the stream at the lip it pours over (the skin falls away from
+            # this camera, so the stream and the rim face it)
+            "graze": (z * 0.37 + (horiz if side else dn_t) * 0.93).normalized()}
     return {v: ghc.add_camera(f"PROOF_{v}", tgt + d * dist, tgt, 85.0) for v, d in dirs.items()}
 
 
@@ -189,12 +193,20 @@ def _main_axis(m, centre, reach):
 
 
 def _stray_outside(m, centre, reach):
-    """Blood on intact skin that is not under/next to blood geometry (t = 0 check)."""
+    """Blood on intact skin farther than 4 mm from any wound vertex and from
+    any blood geometry: blood that got there without a path (t = 0 check)."""
+    from mathutils.kdtree import KDTree
     skin = (m["vcls"] == "skin") & (m["blood"] > 0.3) & (m["wound"] < 0.05) & (m["depth"] < 0.01)
     if not skin.any():
         return 0
-    d = np.linalg.norm(m["co"][skin] - centre, axis=1)
-    return int((d > reach).sum())
+    src = np.where((m["wound"] > 0.3) | (m["depth"] > 0.02) | (m["vcls"] == "blood") | (m["vcls"] == "wall"))[0]
+    if len(src) == 0:
+        return int(skin.sum())
+    kd = KDTree(len(src))
+    for k, i in enumerate(src):
+        kd.insert(m["co"][i], k)
+    kd.balance()
+    return sum(1 for p in m["co"][skin] if kd.find(p)[2] > 0.004)
 
 
 def _densify(axis, step=0.00015):
@@ -348,7 +360,8 @@ def run(args):
     bpy.ops.wm.open_mainfile(filepath=args.blend or ghc_path)
     import build  # noqa: E402  (after loading: build imports the scene helpers)
     if args.rebuild:
-        mats = {m.name: m for m in bpy.data.materials}
+        import materials  # noqa: E402
+        mats = materials.build_materials()
         gore.build_gore_node_group()
         bpy.data.node_groups[gore.GROUP_NAME]["gh_gore_version"] = gore._GROUP_VERSION
         gore.build_gore_system(None, mats)
@@ -369,7 +382,6 @@ def run(args):
         hit = bpy.data.objects[hit_name]
         centre = np.array(hit.matrix_world.translation)
         reach = {"blast": 0.07, "slash": 0.05, "crushed": 0.05}.get(label, 0.03)
-        cams = _cameras(hit, dist)
         row = {v: [] for v in VIEWS}
         for sec in times:
             ctrl["drip_time"] = sec / 60.0
@@ -377,6 +389,7 @@ def run(args):
             bpy.context.view_layer.update()
             m = _mesh_arrays(skin)
             axis, rim = _main_axis(m, centre, reach)
+            cams = _cameras(hit, dist, None if axis is None else axis[rim] + np.array([0.0, 0.0, -0.002]))
             for v in VIEWS:
                 cam = cams[v]
                 base = os.path.join(tmp, f"{label}_{v}_{sec:02d}")
@@ -408,8 +421,29 @@ def run(args):
                         if lab in ("skin", "wall") and _skin_like(img[yi, xi]):
                             gap += 1
                             bad.append((xi, yi))
+                    note = ""
+                    if n == 0 and not args._retry:
+                        # the chin, brow or nose hides the rim from this side: look across it from the side
+                        args._retry = True
+                        side = _cameras(hit, dist, axis[rim] + np.array([0.0, 0.0, -0.002]), side=True)["graze"]
+                        cam = side
+                        ghc.render(base + ".png", cam, args.samples, (args.res, args.res))
+                        img = _read_png(base + ".png")
+                        mask = _mask_label(_render_mask(cam, base + "_mask.png", args.res))
+                        uv = _project(cam, dense, args.res)
+                        vis = _visible(cam, dense)
+                        for (x, y), vv in zip(uv, vis):
+                            xi, yi = int(x), int(y)
+                            if not vv or not (0 <= xi < args.res and 0 <= yi < args.res):
+                                continue
+                            n += 1
+                            if mask[yi, xi] in ("skin", "wall") and _skin_like(img[yi, xi]):
+                                gap += 1
+                                bad.append((xi, yi))
+                        note = "side view"
+                    args._retry = False
                     res_ = dict(wound=label, view=v, t=sec, samples=n, gap=gap, stray=0, ok=(gap == 0 and n > 0),
-                                note="")
+                                note=note)
                 results.append(res_)
                 # crop (rows from the top) with the axis drawn in
                 disp = np.clip(img[::-1], 0.0, 1.0) ** (1.0 / 1.0)
@@ -427,7 +461,7 @@ def run(args):
                         for (px_, py_) in ((cx + dd, cy), (cx, cy + dd)):
                             if 0 <= px_ < tile and 0 <= py_ < tile:
                                 crop[py_, px_] = (1.0, 0.9, 0.0)
-                if res_["note"] == "" and res_["gap"]:
+                if axis is not None and res_["gap"]:
                     for (x, y) in bad:
                         cx, cy = int((x - x0) / sx), int((args.res - 1 - y - y0) / sy)
                         if 0 <= cx < tile and 0 <= cy < tile:
@@ -474,10 +508,13 @@ def main():
     p.add_argument("--times", type=int, nargs="*")
     p.add_argument("--only", nargs="*", help="subset of wound labels")
     p.add_argument("--blend", default=None, help="scene to load (default gore_head.blend)")
-    p.add_argument("--rebuild", action="store_true", help="rebuild the gore node group from gore.py first")
+    p.add_argument("--rebuild", action="store_true",
+                   help="rebuild the materials and the gore node group from the current code first")
     p.add_argument("--tmp", default=os.path.join(tempfile.gettempdir(), "gh_proof"))
     p.add_argument("--out", default=os.path.join(ghc.RENDER_DIR, "proof_rim_zero_gap.png"))
-    run(p.parse_args(argv))
+    args = p.parse_args(argv)
+    args._retry = False
+    run(args)
 
 
 if __name__ == "__main__":

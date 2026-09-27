@@ -166,6 +166,10 @@ def configure_render(samples=32, res=(640, 640)):
     scene.render.resolution_percentage = 100
     scene.render.film_transparent = False
     scene.render.image_settings.file_format = 'PNG'
+    # optional CPU cap (shared machines): GH_THREADS=2 python3 build.py
+    if os.environ.get("GH_THREADS"):
+        scene.render.threads_mode = 'FIXED'
+        scene.render.threads = int(os.environ["GH_THREADS"])
     return scene
 
 
