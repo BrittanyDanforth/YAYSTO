@@ -158,6 +158,13 @@ def prepare_for_export(out=gbc.SUBJECT_OUT, refresh_painter=True):
 # ---------------------------------------------------------------------------
 # JSON payloads owned by B0 (landmarks, codes)
 # ---------------------------------------------------------------------------
+def _eye_centre_measured(sx):
+    """Authoring-frame globe centre of one eye (sx +1 left / -1 right): the head project's EYE_C + HEAD_OFFSET
+    (the exported GB_Eye_* centre and the eye/lid bone pivot)."""
+    c = np.asarray(gbc.import_head().anatomy.EYE_C, float) * np.array([sx, 1.0, 1.0])
+    return [round(float(a), 5) for a in gbc.head_to_body(c)]
+
+
 def landmarks_table():
     """landmarks.json 'data': body landmarks (L and mirrored R), head contract (body frame), girths, eyes."""
     head = {}
