@@ -1259,7 +1259,7 @@ def bake_set(name, spec, out):
     ao = _upsample(ao_half, size)[..., 0]
     orm = np.stack([ao, rough, np.zeros_like(ao), sss], -1)
     if name in SEAM_FEATHER_SETS:
-        alb, nrm, rec["seam_feather_texels"] = feather_seam(target, size, alb, nrm, covered)
+        alb, nrm, rec["seam_feather_texels"], orm = feather_seam(target, size, alb, nrm, covered, orm)
     files = {"albedo": f"{name}_albedo.png", "normal": f"{name}_normal.png", "orm": f"{name}_orm.png"}
     _write_png(os.path.join(out, files["albedo"]), u8(srgb_encode(alb)))
     _write_png(os.path.join(out, files["normal"]), u8(nrm))
@@ -1287,13 +1287,14 @@ SEAM_FEATHER_SETS = ("head", "body")
 SEAM_FEATHER_M = (0.004, 0.018)
 
 
-def feather_seam(target, size, alb, nrm, covered):
-    """(albedo, normal, texel count) with the neck-ring feather applied (see SEAM_FEATHER_SETS)."""
+def feather_seam(target, size, alb, nrm, covered, orm=None):
+    """(albedo, normal, texel count, orm) with the neck-ring feather applied (see SEAM_FEATHER_SETS); the ORM
+    (AO, roughness, SSS) fades to its band median too, so the specular sheen does not step at the ring."""
     import gb_geom as gg
     me = target.data
     loops = gg.boundary_loops(me)
     if not loops:
-        return alb, nrm, 0
+        return alb, nrm, 0, orm
     v = gbc.get_verts(me)
     # the neck ring is the lowest open loop (the head's eye / mouth openings are boundaries too)
     ring = v[np.asarray(min(loops, key=lambda lp: float(v[np.asarray(lp), 2].mean())))]
@@ -1322,7 +1323,11 @@ def feather_seam(target, size, alb, nrm, covered):
         alb[idx] = alb[idx] * (1.0 - w[:, None]) + tgt[None, :] * w[:, None]
     flat = np.array([0.5, 0.5, 1.0])
     nrm[idx] = nrm[idx] * (1.0 - w[:, None]) + flat[None, :] * w[:, None]
-    return alb, nrm, int((w > 0).sum())
+    if orm is not None and band.any():
+        orm = np.array(orm, float, copy=True)
+        tgo = np.median(orm[idx][band], axis=0)
+        orm[idx] = orm[idx] * (1.0 - w[:, None]) + tgo[None, :] * w[:, None]
+    return alb, nrm, int((w > 0).sum()), orm
 
 
 def bake_all(objs, out, only=None):
