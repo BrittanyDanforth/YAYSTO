@@ -788,12 +788,11 @@ FOLLOWERS = ("GB_BrowLash", "GB_EyeFX_L", "GB_EyeFX_R")
 # The shorts hang 1-3 cm off the thigh, so their own position can fall outside the thigh territory.  (The
 # muscle shell was tried here too: nearest-point transfer mis-assigns it in the groin / perineum creases,
 # where the nearest skin belongs to the other side of the crease; it keeps the analytic weights.)
-TRANSFERRED = {"GB_Shorts": (("GB_Body",), 6), "GB_MuscleShell": (("GB_Body",), 2)}
-# The muscle shell takes the skin weights at the skin point straight OUT along its own normal (fix round 2): its
-# analytic weights differed from the skin above it by up to 0.4 (L1) at the axillary folds and the sole, so in
-# shoulder abduction / toe extension the shell slid 3-7 mm out through the skin.  Casting along the normal
-# (not the nearest skin point) keeps the groin / perineum creases on the correct side of the fold.
-RAY_TRANSFER = ("GB_MuscleShell",)
+TRANSFERRED = {"GB_Shorts": (("GB_Body",), 6)}
+# (fix round 2 also tried the muscle shell with the skin weights cast along its normal: the perineum then took
+# the other thigh's weights and poked 10 mm in hip flexion - the shell keeps its analytic weights and is kept
+# deeper under the compressible folds instead, body_skin.FOLD_FAT)
+RAY_TRANSFER = ()
 RAY_TRANSFER_MAX = 0.060
 TRANSFER_SMOOTH_ITERS = 6
 

@@ -1501,8 +1501,31 @@ def _body_muscle(x, y, z):
     off["pad_trunk"] = min(pads[k] for k in ("clavicle", "sternum", "psis")) - 0.0005
     off["pad_leg"] = min(pads[k] for k in ("tibia", "fibula", "foot")) - 0.0005
     shell = union_components(c, off=off, kplus=3.0 * t)
-    # the widened blends bulge out by up to depth / 2; never closer than 2.5 mm to the skin (FB-4)
-    return np.maximum(shell, union_components(c) + 0.0025)
+    # the widened blends bulge out by up to depth / 2; never closer than 2.5 mm to the skin (FB-4), deeper under
+    # the folds that the skin compresses in the extreme poses (FOLD_FAT)
+    return np.maximum(shell, union_components(c) + 0.0025 + fold_fat(np.abs(x), y, z))
+
+
+# Extra subcutaneous clearance of the muscle shell under the skin folds that close in the extreme poses
+# (fix round 2, FB-2): axillary folds (shoulder abduction), perineum / adductor crease (hip flexion), the
+# plantar fat pad under the metatarsal heads and toes (toe extension).  All three are fat-rich in reality
+# (axillary fat pad, perineal fat, 8-10 mm plantar pad) [RB §7.6 E]; linear-blend skinning compresses the skin
+# there more than the shell, which slid 3-10 mm out through it.  (centre, radii, extra depth m)
+FOLD_FAT_SITES = (
+    ((0.170, 0.035, 1.315), (0.040, 0.045, 0.050), 0.0040),     # posterior axillary fold / armpit
+    ((0.165, -0.020, 1.330), (0.035, 0.035, 0.045), 0.0025),    # anterior axillary fold
+    ((0.020, 0.010, 0.775), (0.030, 0.060, 0.055), 0.0060),     # perineum / medial groin
+    ((0.135, -0.075, 0.004), (0.040, 0.035, 0.010), 0.0040),    # plantar pad under the toes / MT heads
+)
+
+
+def fold_fat(ax, y, z):
+    """Extra muscle-shell depth (m) under the compressible folds (``FOLD_FAT_SITES``, left, |x|)."""
+    d = np.zeros_like(z, dtype=float)
+    for c, r, depth in FOLD_FAT_SITES:
+        q = ((ax - c[0]) / r[0]) ** 2 + ((y - c[1]) / r[1]) ** 2 + ((z - c[2]) / r[2]) ** 2
+        d = np.maximum(d, depth * np.exp(-q))
+    return d
 
 
 HEAD_MUSCLE_DEPTH = 0.0055      # scalp 3.5-5.5 mm skin, 5-8 mm to bone; face skin + fat ~4-6 mm [RB §7.6] E
