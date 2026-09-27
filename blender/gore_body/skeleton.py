@@ -2099,50 +2099,65 @@ def foot_parts():
 # Skull and mandible: the head project's bones (6.5 mm vault with outer/inner tables),
 # re-imported read-only at every build and moved into the body frame
 # ===========================================================================
-def _alveolar(A, ax, y, z, upper, depth=0.030):
-    """Alveolar process (head frame): bone around the tooth roots along the dental arch.  The crest sits
-    2.5 mm beyond the gum margin (under the attached gingiva, kept >= 0.7 mm inside the gum band so the
-    gum always covers it); beyond the gum band the socket walls thicken toward the base of the jaw /
-    the maxilla over ``depth``."""
-    ca = A._cerv(upper)
-    s, q = ca.arch.project(ax, y)
-    zc, D, pap = ca.props(s)
-    sgn = 1.0 if upper else -1.0
-    margin = zc - sgn * (0.0006 + 0.0027 * pap)
-    hr = (z - margin) * sgn
-    w = 0.5 * D + 0.0010 + 0.0012 * A.smoothstep(0.0025, 0.0060, hr) + 0.0024 * A.smoothstep(0.008, 0.020, hr)
-    d = np.abs(q + 0.0004) - w
-    d = smax(d, 0.0025 - hr, 0.0012)
-    d = smax(d, hr - depth, 0.004)
-    return smax(d, s - (ca.s_end + 0.0045), 0.004)
-
-
 def _condyle(A, ax, y, z):
-    """The mandibular condyle of ``gore_head.anatomy.jaw_raw`` (head frame, |x|)."""
+    """The mandibular condyle (head frame, |x|) - the same ellipsoid as ``skull._mand_ramus``."""
     return A.sd_ellipsoid(ax, y, z, (0.0500, -0.0115, -0.0020), (0.0085, 0.0048, 0.0050), rot=A.rot_xyz(0, 0, 12))
 
 
 _VERT_CACHE = {}
 
 
-def _skull_head(x, y, z):
-    """Body-side refinement of the head project's skull (head frame).
-
-    ``gore_head.anatomy.skull_sdf`` is a smooth vault with a flat cut base; the head team owns it
-    (CLAUDE.md §7).  For the full-body skeleton (x-ray, headshot close-ups) this adds, inside the head
-    skin and clear of the brain: mastoid processes, stronger zygomatic arches with the articular
-    tubercle, the glenoid (mandibular) fossa that seats the condyle, styloid processes, a rounded
-    occipital base behind the foramen magnum instead of a shelf, and the maxillary alveolar process
-    around the upper roots (no gap between the maxilla and the teeth)."""
+def _soft_clearances(x, y, z):
+    """Per-point clearance fields used to keep skull / mandible bone inside the soft tissue (head frame):
+    (combined skin with the mouth's air, skin with the mouth filled, eye spheres)."""
     import body_skin as BS
     A = _A()
     ax = np.abs(x)
+    bx, by, bz = x + HEAD_OFFSET[0], y + HEAD_OFFSET[1], z + HEAD_OFFSET[2]
+    sk = BS.skin_sdf(bx, by, bz)
+    near_mouth = A.oral_void(ax, y, z) < 0.012
+    sk_fill = sk.copy()
+    if np.any(near_mouth):
+        sk_fill[near_mouth] = A.skin_sdf(x[near_mouth], y[near_mouth], z[near_mouth], mouth_cavity=False)
+    eye = A.sd_sphere(ax, y, z, A.EYE_C, A.EYE_R)
+    return sk, sk_fill, eye
+
+
+def _atlas_axis_clear(x, y, z, d, gap=0.0015):
+    """Keep ``d`` (head frame) ``gap`` off the atlas and the axis (body frame vertebrae)."""
+    bx, by, bz = x + HEAD_OFFSET[0], y + HEAD_OFFSET[1], z + HEAD_OFFSET[2]
+    for lvl in ("C1", "C2"):
+        if lvl not in _VERT_CACHE:
+            _VERT_CACHE[lvl] = vertebra_sdf(lvl)
+        vfn, (vlo, vhi) = _VERT_CACHE[lvl]
+        near = np.all((np.stack([bx, by, bz], -1) > vlo - 0.01) & (np.stack([bx, by, bz], -1) < vhi + 0.01), -1)
+        if np.any(near):
+            dv = np.full(np.shape(bx), 1.0)
+            dv[near] = vfn(bx[near], by[near], bz[near])
+            d = np.maximum(d, -(dv - gap))
+    return d
+
+
+def _skull_head(x, y, z):
+    """Body-side skull (head frame).
+
+    ``gore_head.anatomy.skull_sdf`` is a smooth vault over a solid midface block with a flat cut base; the head
+    team owns it (CLAUDE.md §7).  For the full-body skeleton (x-ray, headshot close-ups) this adds mastoid
+    processes, the articular tubercle, the glenoid (mandibular) fossa that seats the condyle, styloid processes and
+    a rounded occipital base, and then ``skull.face_skull`` rebuilds the midface and the skull base as thin bone
+    around real air and soft-tissue spaces (fix round 3): nasal cavity with septum and turbinates, maxillary /
+    sphenoid sinuses, ethmoid and mastoid air cells, the external acoustic meatus, the infratemporal fossa with a
+    free zygomatic arch and the pterygoid plates, the hard palate and the maxillary alveolar process with sockets
+    for the anatomical-length roots."""
+    import skull as SKL
+    A = _A()
+    ax = np.abs(x)
+    sk, sk_fill, eye = _soft_clearances(x, y, z)
+    cav = SKL.cranial_cavity_body(ax, y, z)
     base = A.skull_sdf(x, y, z)
     # mastoid process: a stout cone behind and below the ear canal [RB mastoid tip 1.612 -> head -0.035]
     add = A.sd_ellipsoid(ax, y, z, (0.0515, 0.0120, -0.0285), (0.0090, 0.0115, 0.0165), rot=A.rot_xyz(18, 0, 0))
-    # zygomatic arch (from the zygomatic body to the root in front of the ear) + articular tubercle
-    add = smin(add, A.sd_capsule(ax, y, z, (0.0535, -0.0520, 0.0000), (0.0650, -0.0150, 0.0015), 0.0048,
-                                 0.0040), 0.004)
+    # articular tubercle in front of the glenoid fossa
     add = smin(add, A.sd_ellipsoid(ax, y, z, (0.0560, -0.0200, -0.0050), (0.0080, 0.0045, 0.0040)), 0.004)
     # styloid process: thin spike down and forward from under the ear canal
     add = smin(add, A.sd_capsule(ax, y, z, (0.0360, 0.0030, -0.0300), (0.0310, -0.0110, -0.0560), 0.0021,
@@ -2152,25 +2167,19 @@ def _skull_head(x, y, z):
     occ = A.sd_ellipsoid(ax, y, z, (0.0, 0.0500, -0.0260), (0.0520, 0.0400, 0.0200))
     occ = smax(occ, -A.sd_ellipsoid(ax, y, z, (0.0, 0.0200, -0.0380), (0.0160, 0.0190, 0.0150)), 0.003)
     add = smin(add, occ, 0.006)
-    # maxillary alveolar process around the upper roots
-    add = smin(add, _alveolar(A, ax, y, z, True, depth=0.022), 0.003)
     # the additions stay 5 mm inside the (combined head + neck) skin (room for the superficial temporal artery
     # over the zygomatic root: skin 1.6 + tube 1.3 + 0.8 clearance), 1 mm off the brain case and the eyes
-    bx, by, bz = x + HEAD_OFFSET[0], y + HEAD_OFFSET[1], z + HEAD_OFFSET[2]
-    add = np.maximum(add, BS.skin_sdf(bx, by, bz) + 0.005)
-    add = np.maximum(add, -(A.cranial_cavity(ax, y, z) - 0.0010))
-    add = np.maximum(add, -(A.sd_sphere(ax, y, z, A.EYE_C, A.EYE_R) - 0.0015))
-    # ... and 1.5 mm off the atlas and the axis (the occipital base / mastoid additions reached C1: 0.08 mm)
-    for lvl in ("C1", "C2"):
-        if lvl not in _VERT_CACHE:
-            _VERT_CACHE[lvl] = vertebra_sdf(lvl)
-        vfn, (vlo, vhi) = _VERT_CACHE[lvl]
-        near = np.all((np.stack([bx, by, bz], -1) > vlo - 0.01) & (np.stack([bx, by, bz], -1) < vhi + 0.01), -1)
-        if np.any(near):
-            dv = np.full(np.shape(bx), 1.0)
-            dv[near] = vfn(bx[near], by[near], bz[near])
-            add = np.maximum(add, -(dv - 0.0015))
+    add = np.maximum(add, sk + 0.005)
+    add = np.maximum(add, -(cav - 0.0010))
+    add = np.maximum(add, -(eye - 0.0015))
+    add = _atlas_axis_clear(x, y, z, add)
     d = smin(base, add, 0.004)
+
+    def clamps(ax_, y_, z_, dd, clear, mouth=True):
+        dd = np.maximum(dd, (sk if mouth else sk_fill) + clear)
+        dd = np.maximum(dd, -(eye - 0.0015))
+        return _atlas_axis_clear(x, y_, z_, dd)
+    d = SKL.face_skull(x, y, z, d, clamps)
     # glenoid fossa: seats the condyle with a 2 mm articular disc space
     return smax(d, -(_condyle(A, ax, y, z) - 0.0022), 0.0015)
 
@@ -2186,31 +2195,23 @@ def skull_sdf():
 
 
 def _mandible_head(x, y, z):
-    """Body-side mandible (head frame): ``gore_head.anatomy.jaw_raw`` (U-shaped body 30-33 mm tall at
-    the symphysis, mental protuberance, rami, gonial angle, coronoid and condylar processes) with the
-    lower alveolar process around the roots, clamped only where it must be: 4 mm inside the combined
-    skin, clear of the tongue, the lower gums, the skull (the condyle sits in the glenoid fossa with a
-    2 mm disc space) and of the mouth's air except for the alveolar band.  The head project's own
-    ``jaw_sdf`` clamps against its whole skull envelope and mouth box, which cut the condyle, the upper
-    ramus and the upper half of the body away (the flat 'plank')."""
-    import body_skin as BS
+    """Body-side mandible (head frame): ``skull.mandible_raw`` (swept body 31 mm tall at the symphysis tapering to
+    25 mm at M2, mental protuberance, ramus 30 x 52 mm with the gonial angle ~122 deg, coronoid and condyle
+    separated by the sigmoid notch, alveolar process with sockets for the anatomical-length roots), clamped only
+    where it must be: 3.5 mm inside the skin, 1.2 mm of mucosa from the mouth's air except under the lower gum
+    band, clear of the tongue and of the skull (the condyle sits in the glenoid fossa with a 2 mm disc space).
+    Fix round 3: replaces ``gore_head.anatomy.jaw_raw``, whose clamped body was a 21 mm plank without sockets."""
+    import skull as SKL
     A = _A()
     ax = np.abs(x)
-    d = A.jaw_raw(ax, y, z)
-    alv = _alveolar(A, ax, y, z, False, depth=0.034)
-    d = smin(d, alv, 0.004)
-    # chin: mental protuberance and tubercles
-    d = smin(d, A.sd_ellipsoid(ax, y, z, (0.0090, -0.0840, -0.0935), (0.0080, 0.0050, 0.0060)), 0.005)
-    bx, by, bz = x + HEAD_OFFSET[0], y + HEAD_OFFSET[1], z + HEAD_OFFSET[2]
-    d = np.maximum(d, BS.skin_sdf(bx, by, bz) + 0.004)
-    d = np.maximum(d, A.skin_sdf(x, y, z, mouth_cavity=False) + 0.004)
-    void = A.oral_void(ax, y, z)
-    d = np.maximum(d, np.minimum(-(void + 0.0012), alv))
-    d = np.maximum(d, -(A.tongue_sdf(ax, y, z) - 0.0010))
-    # outside the alveolar band nothing enters the gum band (the band itself is covered by the gum)
-    d = np.maximum(d, np.minimum(-(A.gum_sdf(ax, y, z, False) - 0.0008), alv))
+    d = SKL.mandible_raw(x, y, z)
+    sk, sk_fill, _eye = _soft_clearances(x, y, z)
+    d = np.maximum(d, sk_fill + 0.0035)
+    gum = SKL.gum_sdf(x, y, z, False)
+    d = np.maximum(d, -np.maximum(A.oral_void(ax, y, z) - 0.0012, -(gum - 0.0007)))
+    d = np.maximum(d, -(SKL.tongue_sdf(x, y, z) - 0.0010))
     d = np.maximum(d, -(_skull_head(x, y, z) - 0.0012))
-    return d
+    return _atlas_axis_clear(x, y, z, d)
 
 
 def mandible_sdf():

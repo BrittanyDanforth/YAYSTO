@@ -364,6 +364,9 @@ def brain_sdf(x, y, z):
     A = _A()
     V = _V()
     d = _tent_brain(A, x - O[0], y - O[1], z - O[2])
+    import skull as SKL
+    # the body skull raises the lateral middle fossa floor over the TMJ / ear (skull.cranial_cavity_body)
+    d = V.smax(d, SKL.cranial_cavity_body(np.abs(x - O[0]), y - O[1], z - O[2]) + A.BRAIN_GAP, 0.001)
     low = (BRAIN_CUT_Z - z) * 1.0
     d = V.smax(d, np.where(y < 0.062, low, -1.0), 0.004)            # remove the head's lower stem
     med = V.chain(x / 0.82, y, z, [(0.0, 0.0365, 1.640)] + CMJ_PATH, [0.0068, 0.0060, 0.0050, 0.0047, 0.0046, 0.0046])

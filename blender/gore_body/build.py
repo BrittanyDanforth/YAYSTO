@@ -51,11 +51,11 @@ OWNER = {"placeholder": "B0", "skin": "B1", "head": "B2", "skeleton": "B3", "vis
 # (gb_common.StageCache).  Each stage key is also chained to the key of the stage before it in GEOMETRY
 # (skin -> head -> skeleton -> viscera -> neuro -> vascular) because later stages load/measure the
 # earlier stages' geometry, so an upstream rebuild always invalidates everything downstream.
-SOURCES = {"skin": ["body_skin.py", "uv.py", "placeholder.py", "head_integration.py"],
-           "head": ["head_integration.py", "uv.py", "placeholder.py", "body_skin.py", "rig.py"],
-           "skeleton": ["skeleton.py", "placeholder.py", "body_skin.py"],
-           "viscera": ["viscera.py", "placeholder.py", "body_skin.py", "skeleton.py"],
-           "neuro": ["neuro.py", "viscera.py", "placeholder.py", "skeleton.py"],
+SOURCES = {"skin": ["body_skin.py", "uv.py", "placeholder.py", "head_integration.py", "skeleton.py", "skull.py"],
+           "head": ["head_integration.py", "uv.py", "placeholder.py", "body_skin.py", "rig.py", "skull.py"],
+           "skeleton": ["skeleton.py", "skull.py", "placeholder.py", "body_skin.py"],
+           "viscera": ["viscera.py", "placeholder.py", "body_skin.py", "skeleton.py", "skull.py"],
+           "neuro": ["neuro.py", "viscera.py", "placeholder.py", "skeleton.py", "skull.py"],
            "vascular": ["vascular.py", "placeholder.py", "rig.py"]}
 # files a geometry stage writes into SUBJECT_OUT besides its objects: stored next to the stage cache and
 # restored (with the current build_id) when the stage is loaded from cache, so every exported file set is
