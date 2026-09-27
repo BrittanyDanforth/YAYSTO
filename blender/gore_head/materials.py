@@ -1215,11 +1215,19 @@ def _blood_material(g):
     # #8E1420, thick pooled blood #5E070C to near-black #2A0306.
     thin = t.attr("gore_bthin")
     thick = 1.0 - thin
+    # arterial share of the blood (gore_art, from the vessels the wound cut):
+    # oxygenated blood is bright scarlet in a thin film (#C0141E), venous
+    # dark maroon (#8E1420); in thick layers both go near-black red (RB §3.10)
+    art = t.attr("gore_art")
     # thin films dry first, from the edges inward
     a = (age + (n - 0.5) * 0.4 * age * (1.0 - age) + thin * 0.35 * age).clamp()
-    fresh = (thick + (n_lo - 0.5) * 0.25).clamp().ramp([
-        (0.0, (0.33, 0.016, 0.022)), (0.3, (0.24, 0.006, 0.012)), (0.65, (0.12, 0.003, 0.005)),
-        (1.0, (0.07, 0.0015, 0.0025))])
+    fresh_v = (thick + (n_lo - 0.5) * 0.25).clamp().ramp([
+        (0.0, (0.27, 0.008, 0.015)), (0.3, (0.2, 0.005, 0.01)), (0.65, (0.11, 0.003, 0.005)),
+        (1.0, (0.065, 0.0015, 0.0025))])
+    fresh_a = (thick + (n_lo - 0.5) * 0.25).clamp().ramp([
+        (0.0, (0.53, 0.012, 0.014)), (0.3, (0.36, 0.008, 0.01)), (0.65, (0.18, 0.004, 0.006)),
+        (1.0, (0.09, 0.002, 0.003))])
+    fresh = t.mix(art, fresh_v, fresh_a)
     old = t.mix(n, (0.022, 0.008, 0.006), (0.045, 0.014, 0.009))
     old = t.mix(thin * 0.6, old, (0.10, 0.03, 0.02))            # dried thin film: brown stain
     col = t.mix(a, fresh, old)
@@ -1233,14 +1241,24 @@ def _blood_material(g):
     # drying edges): no even gloss, never a chrome bar at grazing angles
     rough = t.mix(a, t.mix(wet, 0.3, 0.08), 0.32 + n * 0.2) + clot * 0.1 + fclot * 0.35 \
         + (n_lo - 0.5) * 0.12 + thin * 0.08
-    h = clot * 0.3 * (1.0 - a) + t.noise(p, 4000.0) * a * 0.3 + fclot * t.noise(p, 700.0, 2.0) * 0.6
+    # pulp in the blood (gore_tis: brain / torn tissue welling out of an exit):
+    # cream-pink grey lumps with blood in their folds, soft sheen
+    tis = t.attr("gore_tis")
+    fold = t.noise(p, 900.0, 3.0)
+    pulp_col = t.mix(fold.smooth(0.3, 0.7), (0.16, 0.025, 0.022), t.mix(n_lo, (0.46, 0.28, 0.25), (0.36, 0.2, 0.18)))
+    tis_m = (tis * 1.2 - 0.2 + (fold - 0.5) * 0.7).clamp() * 0.9
+    col = t.mix(tis_m, col, pulp_col)
+    rough = rough * (1.0 - tis_m) + tis_m * (0.3 + fold * 0.2)
+    h = clot * 0.3 * (1.0 - a) + t.noise(p, 4000.0) * a * 0.3 + fclot * t.noise(p, 700.0, 2.0) * 0.6 \
+        + tis_m * fold * 0.8
     bsdf = t.principled({
         'Base Color': col, 'Roughness': rough.max(0.06), 'IOR': 1.36, 'Specular IOR Level': 0.5,
         # (thick blood barely scatters: a strong red subsurface glow makes
         # dark pooled blood read as bright red wax)
         'Subsurface Weight': (1.0 - a) * (0.08 + 0.4 * thin), 'Subsurface Radius': (1.0, 0.02, 0.02),
         'Subsurface Scale': 0.001, 'Subsurface IOR': 1.36,
-        'Coat Weight': (1.0 - a * 0.85) * (0.3 + 0.7 * wet) * (1.0 - fclot * 0.92), 'Coat IOR': 1.36,
+        'Coat Weight': (1.0 - a * 0.85) * (0.3 + 0.7 * wet) * (1.0 - fclot * 0.92) * (1.0 - tis_m * 0.6),
+        'Coat IOR': 1.36,
         'Coat Roughness': 0.06 + (1.0 - wet) * 0.2 + a * 0.3 + fclot * 0.2,
         'Coat Tint': t.mix(a, (0.9, 0.4, 0.4), (1, 1, 1)),
         'Normal': t.bump(h, 0.0001)})

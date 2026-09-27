@@ -2434,11 +2434,18 @@ def _build_pools(t, hits, surface, drip):
     cnt = t.out(t.node('GeometryNodeAccumulateField', {'Value': rim, 'Group ID': pid}), 'Total')
     sum_h = t.out(t.node('GeometryNodeAccumulateField', {'Value': rim * t.attr("pl_h"), 'Group ID': pid}), 'Total')
     mean_h = sum_h / cnt.max(1.0)
-    # (a hit whose skin did not open has no rim: no pool)
     g = t.store(g, "pl_mean", mean_h)
     g = t.store(g, "pl_cnt", cnt)
+    # the liquid stands at the LOWEST part of the rim (it runs out there):
+    # soft minimum of the rim heights, min ~ mean - k ln(sum exp(-(h - mean) / k) / n)
+    k_sm = 0.00022
+    ex = rim * t.math('EXPONENT', ((t.attr("pl_mean") - t.attr("pl_h")) / k_sm).min(40.0))
+    s_ex = t.out(t.node('GeometryNodeAccumulateField', {'Value': ex, 'Group ID': pid}), 'Total')
+    low = t.attr("pl_mean") - k_sm * t.math('LOGARITHM', (s_ex / t.attr("pl_cnt").max(1.0)).max(1.0), math.e)
+    # (a hit whose skin did not open has no rim: no pool)
+    g = t.store(g, "pl_low", low)
     fill = t.smooth(0.0, t.attr("b_t0").max(0.004), drip)
-    L = t.attr("pl_mean") - 0.0032 * (1.0 - fill) + 0.00028 * fill
+    L = t.attr("pl_low") - 0.0032 * (1.0 - fill) + 0.0003 * fill
     hs = t.attr("pl_h")
     # just past the rim the liquid drapes onto the lip where the lip is lower
     # than the level (spilling); everywhere else it tucks under the skin
@@ -2447,8 +2454,12 @@ def _build_pools(t, hits, surface, drip):
     # pulped brain in the pool of an exit (tissue share), bulging through the blood
     lump_n = t.noise(t.attr("pl_p0", 'FLOAT_VECTOR') * 380.0, detail=3.0, signed=False)
     lump_n2 = t.noise(t.attr("pl_p0", 'FLOAT_VECTOR') * 1300.0, detail=2.0)
-    lump = t.smooth(0.52, 0.72, lump_n) * t.attr("b_tis").min(0.6) * 2.0 * fill * (1.0 - out_f)
-    h_in = L + lump * (0.0016 + 0.0004 * lump_n2) + (1.0 - lump) * 0.00012 * lump_n2
+    lump_n3 = t.noise(t.attr("pl_p0", 'FLOAT_VECTOR') * 150.0, detail=2.0, signed=False)
+    pulp = (t.attr("pl_pulp") * (0.6 + 1.5 * t.attr("b_tis"))).clamp()
+    lump = t.smooth(0.5, 0.68, lump_n * 0.7 + lump_n3 * 0.3) * pulp * fill * (1.0 - out_f)
+    # the liquid surface is never a mirror-flat disc: a shallow meniscus
+    # bulge and slow ripples; pulp (brain, torn tissue) stands out of it in lumps
+    h_in = L + lump * (0.0012 + 0.0016 * lump_n3 + 0.0005 * lump_n2) + (1.0 - lump) * 0.00016 * lump_n2
     hfin = t.mix(h_in, h_out, out_f)
     g = t.out(t.node('GeometryNodeSetPosition', {'Geometry': g,
                                                  'Position': t.attr("pl_p0", 'FLOAT_VECTOR') + N * (hfin - (t.attr("pl_p0", 'FLOAT_VECTOR') - I).dot(N))}))
@@ -2466,7 +2477,7 @@ def _build_pools(t, hits, surface, drip):
     return g
 
 
-def _walk(t, seeds, surface, steps):
+def _walk(t, seeds, surface, steps, rest):
     """Walk every seed down the surface under gravity; returns (trail points, final tips).
 
     Each step goes along gravity projected onto the tangent plane (plus a
@@ -2487,9 +2498,14 @@ def _walk(t, seeds, surface, steps):
     bias = t.attr("d_bias", 'FLOAT_VECTOR')
     bias = bias - n * bias.dot(n)
     push = (1.0 - it / 7.0).max(0.0)
-    dirv = (gt / gl.max(1e-4) + wob * 0.7 + bias * push * 1.6).normalize()
+    # (two scales of meander: pinning on skin texture, wander over cm)
+    wob2 = t.noise(p * 45.0 + t.vec(0.0, t.attr("d_id", 'INT') * 0.91, 0.0), detail=1.0, color=True)
+    wob2 = wob2 - n * wob2.dot(n)
+    dirv = (gt / gl.max(1e-4) + wob * 0.55 + wob2 * 0.6 + bias * push * 1.6).normalize()
     slope = 0.2 + 0.8 * t.smooth(0.05, 0.45, gl)
-    hang = t.smooth(-0.62, -0.4, n.z)
+    # (large-scale orientation from the intact skin: blood flows over the mm
+    # bumps of a wound lip, it only hangs where the face itself turns down)
+    hang = t.smooth(-0.62, -0.4, _nearest_normal(t, rest, p).z)
     fac = slope * hang
     step = t.attr("d_len") / float(steps) * fac
     p2 = p + dirv * step
@@ -2525,7 +2541,8 @@ def _run_mesh(t, trail, surface, steps):
     # rim it pours over), widening down the run, uneven, fuller where it
     # slowed (creases, shallow slopes), a fuller head
     rad = dw * (0.6 + 0.4 * t.smooth(0.0, 0.14, tt)) \
-        * (1.0 + 0.3 * t.noise(pp * 170.0, detail=1.0) + 0.12 * t.noise(pp * 520.0)) \
+        * (1.0 + 0.28 * t.noise(pp * 60.0, detail=1.0) + 0.24 * t.noise(pp * 170.0, detail=1.0)
+           + 0.12 * t.noise(pp * 520.0)) \
         * (1.0 + 0.55 * t.attr("d_slow"))
     # arterial surges: one bulge per heartbeat along the run (d_lam = front
     # speed x beat period), strength = arterial share
@@ -2546,13 +2563,13 @@ def _run_mesh(t, trail, surface, steps):
     return tubes, path
 
 
-def _drops(t, tips, surface):
+def _drops(t, tips, rest):
     """The front of a running stream (a rounded lobe) and the drops hanging
     where a run reached skin that faces down (chin, nose tip, jaw line,
     earlobe), plus drops falling from them while the flow keeps coming."""
     ico = t.out(t.node('GeometryNodeMeshIcoSphere', {'Radius': 1.0, 'Subdivisions': 2}))
     dw = t.attr("d_w")
-    n = _nearest_normal(t, surface, t.pos())
+    n = _nearest_normal(t, rest, t.pos())
     runs = t.attr("d_len").gt(0.012)
     # moving front: flat teardrop lobe 1.3x the run's width, stretched downward
     front = t.bool('AND', runs, t.attr("d_mov").gt(0.5))
@@ -2588,14 +2605,14 @@ def _build_blood():
     """Skin-only blood geometry: pools in the wounds, runs down the skin, drops; also the run paths."""
     g_ = 'NodeSocketGeometry'
     t = NodeTree("GH_Gore_Blood",
-                 inputs=(("Surface", g_),
+                 inputs=(("Surface", g_), ("Rest", g_),
                          ("Bullet", g_), ("Exit", g_), ("Slash", g_), ("Blunt", g_), ("Blast", g_),
                          ("Vessels", g_),
                          ("Damage", 'NodeSocketFloat', 1.0), ("Bleed", 'NodeSocketFloat', 0.7),
                          ("Drip Time", 'NodeSocketFloat', 1.0), ("Material", 'NodeSocketMaterial')),
                  outputs=(("Blood", g_), ("Trail", g_)),
                  description="Blood from the cut vessels: pools in the wounds, runs down the skin")
-    surface = t.inp("Surface")
+    surface, rest = t.inp("Surface"), t.inp("Rest")
     damage, bleed, drip = t.inp("Damage"), t.inp("Bleed"), t.inp("Drip Time")
     # the vessel data mesh, one geometry per class (packed flow / radius / persistence)
     vg = t.inp("Vessels")
@@ -2620,6 +2637,7 @@ def _build_blood():
         h = _hit_fields(t, damage)
         hole, _r = _wound_extent(t, k, h)
         rp = {"bullet": hole * 2.2 + 0.0012, "exit": hole * 2.2 + 0.0015, "blunt": hole * 2.6 + 0.002}[k]
+        hk = t.store(hk, "pl_pulp", {"bullet": 0.0, "exit": 0.75, "blunt": 0.25}[k] + 0.35 * h["crush"])
         pool_hits.append(t.store(hk, "pl_R", rp))
     pool_pts = _join(t, *pool_hits)
     pools = _build_pools(t, pool_pts, surface, drip)
@@ -2637,7 +2655,7 @@ def _build_blood():
     p = t.pos()
     snapped = _nearest_point(t, surf2, p) + _nearest_normal(t, surf2, p) * (t.attr("d_w") * 0.2)
     seeds = t.out(t.node('GeometryNodeSetPosition', {'Geometry': seeds, 'Position': snapped}))
-    trail1, tips1 = _walk(t, seeds, surf2, DRIP_STEPS)
+    trail1, tips1 = _walk(t, seeds, surf2, DRIP_STEPS, rest)
 
     # branches: a heavy run splits where it crosses a bump or a crease; the
     # branch leaves sideways and then follows gravity on its own
@@ -2656,11 +2674,11 @@ def _build_blood():
     bseeds = t.store(bseeds, "d_id", t.attr("d_id", 'INT') * 64 + t.math('FLOOR', st) + 100000, 'INT')
     bseeds = t.store(bseeds, "d_step", 0.0)
     bseeds = t.store(bseeds, "d_mov", 0.0)
-    trail2, tips2 = _walk(t, bseeds, surf2, BRANCH_STEPS)
+    trail2, tips2 = _walk(t, bseeds, surf2, BRANCH_STEPS, rest)
 
     tubes1, path1 = _run_mesh(t, trail1, surf2, DRIP_STEPS)
     tubes2, path2 = _run_mesh(t, trail2, surf2, BRANCH_STEPS)
-    beads, hung = _drops(t, _join(t, tips1, tips2), surf2)
+    beads, hung = _drops(t, _join(t, tips1, tips2), rest)
     blood = _join(t, tubes1, tubes2, beads)
     # flatten the runs onto the skin: blood runs as a flat film 0.1-0.4 mm
     # thick with rounded sides (a round tube reads as a glass rod); cross
@@ -3499,7 +3517,7 @@ def build_gore_node_group():
     crop = t.out(t.node('GeometryNodeSeparateGeometry', {'Geometry': g, 'Selection': near_hits}, domain='FACE'))
     vessels = t.out(t.node('GeometryNodeObjectInfo', {'Object': t.inp("Vessels")}, transform_space='RELATIVE'),
                     'Geometry')
-    bn = t.group(blood_g, {"Surface": crop, "Bullet": hits["bullet"][0], "Exit": hits["exit"][0],
+    bn = t.group(blood_g, {"Surface": crop, "Rest": geo_in, "Bullet": hits["bullet"][0], "Exit": hits["exit"][0],
                            "Slash": hits["slash"][0], "Blunt": hits["blunt"][0], "Blast": hits["blast"][0],
                            "Vessels": vessels, "Damage": damage,
                            "Bleed": bleed, "Drip Time": t.inp("Drip Time"), "Material": t.inp("Blood Material")})
@@ -3511,8 +3529,11 @@ def build_gore_node_group():
     # (an empty trail reports distance 0 everywhere, hence Is Valid)
     ni = t.out(t.node('GeometryNodeSampleNearest', {'Geometry': trail, 'Sample Position': t.pos()}, domain='POINT'))
     dw_n = t.sample(trail, t.attr("d_w"), ni).max(0.0005)
-    trail_cov = t.smooth(dw_n * 1.9, dw_n * 0.6, t.out(prox, 'Distance') + t.noise(t.pos() * 900.0) * dw_n * 0.25) \
-        * t.out(prox, 'Is Valid') * 0.5 * bleed.gt(0.02)
+    # (a translucent film ~2-3x the run's width: where the stream wandered and
+    # the thin edge it leaves while it drains, broken up at its margin)
+    dprox = t.out(prox, 'Distance') + t.noise(t.pos() * 900.0) * dw_n * 0.35 + t.noise(t.pos() * 140.0) * dw_n * 0.6
+    trail_cov = (t.smooth(dw_n * 2.8, dw_n * 0.7, dprox) * 0.3 + t.smooth(dw_n * 1.4, dw_n * 0.6, dprox) * 0.3) \
+        * t.out(prox, 'Is Valid') * bleed.gt(0.02)
     a = t.attr("g_a", 'FLOAT_VECTOR')
     g_sk = t.store(g, "g_a", t.vec(a.x, a.y, a.z.max(trail_cov)), 'FLOAT_VECTOR', sel=near_hits)
     g = t.switch(is_skin, g, g_sk, 'GEOMETRY')

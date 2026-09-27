@@ -582,7 +582,7 @@ def _shoulder(ax, y, z):
     # upper trapezius: rises from the acromion up the side of the neck, so the neck-shoulder line is one
     # smooth slope (top line 1.525 at |x| 0.045 -> 1.497 at 0.07 -> 1.478 at 0.10 -> 1.460 at the acromion)
     # instead of a flat shelf with the neck standing on it; below the seam plane beyond |x| ~0.08 (D19 ring)
-    trap = sd_polyline(ax, y, z, [(0.042, 0.047, 1.502), (0.068, 0.043, 1.476), (0.100, 0.038, 1.457),
+    trap = sd_polyline(ax, y, z, [(0.044, 0.046, 1.512), (0.069, 0.042, 1.479), (0.100, 0.038, 1.458),
                                   (0.140, 0.031, 1.449), (0.186, 0.022, 1.444)],
                        [0.023, 0.022, 0.021, 0.019, 0.016], k=0.02)
     # clavicle: soft subcutaneous ridge over B3's bone (its waypoints), bone half-depth + skin + subcutis
@@ -1110,10 +1110,10 @@ def submental_limit(ax, y, z):
 # the bone poking through (FB-4).  The muscle shell covers the same bones by 0.5 mm.
 # ===========================================================================
 # (key, skeleton builder (name, args), box lo, box hi, pad depth (m), blend k (m), tissue group)
-# fix round 2: sternum and spinous pads blend over 11-12 mm (at 3-4 mm they showed as knobs and V-lines)
+# fix round 2: sternum / spinous / clavicle / scapula pads blend over 10-14 mm (at 3-4 mm they showed as knobs and V-lines)
 PAD_SITES = (
-    ("clavicle", ("clavicle_sdf", ()), (0.0, -0.075, 1.425), (0.200, 0.035, 1.490), 0.0035, 0.006, "trunk"),
-    ("scapula", ("scapula_sdf", ()), (0.070, -0.005, 1.428), (0.220, 0.120, 1.490), 0.0042, 0.003, "trunk"),
+    ("clavicle", ("clavicle_sdf", ()), (0.0, -0.075, 1.425), (0.200, 0.035, 1.490), 0.0035, 0.014, "trunk"),
+    ("scapula", ("scapula_sdf", ()), (0.070, -0.005, 1.428), (0.220, 0.120, 1.490), 0.0042, 0.010, "trunk"),
     ("sternum", ("sternum_parts", ()), (0.0, -0.120, 1.270), (0.040, -0.030, 1.470), 0.0055, 0.012, "trunk"),
     ("spine", ("upper_spinous_sdf", ()), (0.0, 0.030, 1.360), (0.030, 0.130, 1.520), 0.0080, 0.011, "trunk"),
     ("iliac_crest", ("hip_bone_sdf", ()), (0.030, -0.090, 0.995), (0.170, 0.062, 1.090), 0.0060, 0.005, "trunk"),
@@ -1216,7 +1216,7 @@ def union_components(c, off=None, kplus=0.0):
     # submental plane / cervicomental angle (applied before the head is united in skin_sdf)
     ax_ = np.abs(g["_x"])
     trunk = smax(trunk, submental_limit(ax_, g["_y"], g["_z"]) - K, 0.005 + K)
-    trunk = smin(trunk, g["trapezius"], 0.028 + K)
+    trunk = smin(trunk, g["trapezius"], 0.028 + 0.016 * sstep(1.455, 1.49, g["_z"]) + K)    # softer neck / shoulder junction (round 2)
     trunk = smin(trunk, g["clavicle"], 0.028 + K)
     arm = smin(g["arm"], g["deltoid"], 0.030 + K)
     arm = smin(arm, g["hand"], 0.012 + K)
