@@ -261,6 +261,175 @@ def body_to_head(p):
     return np.asarray(p, dtype=float) - HEAD_OFFSET
 
 
+# ---------------------------------------------------------------------------
+# Neck lengthening (fix round 2, user feedback): the authoring frame is the RB frame above (head at
+# HEAD_OFFSET, jugular notch 1.455); the FINAL (exported) body frame lengthens the neck by NECK_LIFT:
+#     z_final = z + NECK_LIFT * smoothstep(NECK_LIFT_Z[0], NECK_LIFT_Z[1], z)
+# i.e. nothing below the jugular notch moves, everything above the jaw line (head, skull, brain, eyes,
+# mandible, C1-C2, skull-base vessels) moves up rigidly by NECK_LIFT, and the neck between stretches.
+# In the RB frame the menton lay only 9.1 cm from the sternal notch with the chin pressed into the neck
+# (a pouch under the jaw); the final frame gives 10.5 cm (adult male neutral 10-12 cm) and a stature
+# of 1.795 m.  Every geometry stage builds (and caches) in the authoring frame; build.py warps the scene
+# once before the rig stage; rig.weights_at unwarps its inputs; export warps JSON coordinates.
+# ---------------------------------------------------------------------------
+NECK_LIFT = 0.015
+NECK_LIFT_Z = (1.455, 1.540)
+FINAL_HEAD_OFFSET = HEAD_OFFSET + np.array([0.0, 0.0, NECK_LIFT])
+
+
+def _lift_s(z):
+    t = np.clip((np.asarray(z, float) - NECK_LIFT_Z[0]) / (NECK_LIFT_Z[1] - NECK_LIFT_Z[0]), 0.0, 1.0)
+    return t * t * (3.0 - 2.0 * t)
+
+
+def _lift_ds(z):
+    """d(z_final)/dz - 1."""
+    t = np.clip((np.asarray(z, float) - NECK_LIFT_Z[0]) / (NECK_LIFT_Z[1] - NECK_LIFT_Z[0]), 0.0, 1.0)
+    return NECK_LIFT * 6.0 * t * (1.0 - t) / (NECK_LIFT_Z[1] - NECK_LIFT_Z[0])
+
+
+def lift_z(z):
+    """Authoring z -> final z."""
+    z = np.asarray(z, float)
+    return z + NECK_LIFT * _lift_s(z)
+
+
+def unlift_z(z):
+    """Final z -> authoring z (fixed point; the lift slope is <= 0.27, 14 iterations -> < 1e-9 m)."""
+    z = np.asarray(z, float)
+    za = z - NECK_LIFT * _lift_s(z)
+    for _ in range(14):
+        za = z - NECK_LIFT * _lift_s(za)
+    return za
+
+
+def warp_points(p):
+    """Authoring -> final body frame (points; one point or (N, 3))."""
+    a = np.array(p, dtype=float, copy=True)
+    a[..., 2] = lift_z(a[..., 2])
+    return a
+
+
+def unwarp_points(p):
+    """Final -> authoring body frame (points)."""
+    a = np.array(p, dtype=float, copy=True)
+    a[..., 2] = unlift_z(a[..., 2])
+    return a
+
+
+def warp_normals(p_auth, n, inverse=False):
+    """Normals at authoring points ``p_auth`` through the warp (J^-T; ``inverse``: final -> authoring normals,
+    ``p_auth`` still the authoring points)."""
+    n = np.array(n, dtype=float, copy=True)
+    j = 1.0 + _lift_ds(np.asarray(p_auth, float)[..., 2])
+    n[..., 2] = n[..., 2] * j if inverse else n[..., 2] / j
+    return n / np.maximum(np.linalg.norm(n, axis=-1, keepdims=True), 1e-12)
+
+
+def scene_frame():
+    """'authoring' or 'final' (the frame the GoreBody objects are in now)."""
+    import bpy
+    return bpy.context.scene.get("gb_frame", "authoring")
+
+
+def set_scene_frame(frame):
+    """Warp (authoring -> final) or unwarp every GoreBody mesh (vertices, shape keys, custom normals,
+    gb_anchor_* attributes), curve and empty to ``frame``.  Idempotent; props (GBP_*) and the stage are
+    not touched.  The armature is built in the final frame by rig.build_armature and is not moved."""
+    import bpy
+    cur = scene_frame()
+    if cur == frame:
+        return False
+    fwd = frame == "final"
+    root = bpy.data.collections.get("GoreBody")
+    objs = set()
+    if root is not None:
+        objs = {o for o in root.all_objects}
+    for o in objs:
+        if o.type == 'ARMATURE':
+            continue
+        if o.type == 'MESH':
+            me = o.data
+            v = get_verts(me)
+            va = v if fwd else unwarp_points(v)
+            cn = None
+            if len(me.loops) and me.has_custom_normals:
+                cn = np.empty(len(me.loops) * 3)
+                me.corner_normals.foreach_get("vector", cn)
+                lv = np.empty(len(me.loops), np.int64)
+                me.loops.foreach_get("vertex_index", lv)
+                cn = warp_normals(va[lv], cn.reshape(-1, 3), inverse=not fwd)
+            if me.shape_keys is not None:
+                for kb in me.shape_keys.key_blocks:
+                    k = np.empty(len(kb.data) * 3)
+                    kb.data.foreach_get("co", k)
+                    k = k.reshape(-1, 3)
+                    k = warp_points(k) if fwd else unwarp_points(k)
+                    kb.data.foreach_set("co", k.ravel())
+            set_verts(me, warp_points(v) if fwd else va)
+            anc = [read_point_attr(o, "gb_anchor_" + c, 'FLOAT') for c in "xyz"]
+            if all(a is not None for a in anc):
+                a = np.stack(anc, 1).astype(float)
+                a = warp_points(a) if fwd else unwarp_points(a)
+                for k, c in enumerate("xyz"):
+                    point_attr(o, "gb_anchor_" + c, a[:, k], 'FLOAT')
+            if cn is not None:
+                me.normals_split_custom_set(cn.tolist())
+            me.update()
+        elif o.type == 'CURVE':
+            for sp in o.data.splines:
+                pts = sp.bezier_points if sp.type == 'BEZIER' else sp.points
+                for pt in pts:
+                    if sp.type == 'BEZIER':
+                        for attr in ("co", "handle_left", "handle_right"):
+                            c = np.array(getattr(pt, attr)[:3])
+                            setattr(pt, attr, tuple(warp_points(c) if fwd else unwarp_points(c)))
+                    else:
+                        c = np.array(pt.co[:3])
+                        c = warp_points(c) if fwd else unwarp_points(c)
+                        pt.co = (c[0], c[1], c[2], pt.co[3])
+        if o.type in ('EMPTY', 'CURVE') or (o.type == 'MESH' and o.parent is None and any(o.location)):
+            if o.parent is None and any(o.location):
+                loc = np.array(o.location[:])
+                o.location = tuple(warp_points(loc) if fwd else unwarp_points(loc))
+    bpy.context.scene["gb_frame"] = frame
+    return True
+
+
+# JSON keys whose values are body-frame POINTS (a 3-list, or a list of 3-lists); sizes, axes, bases and
+# directions are never warped.  Dicts under POINT_DICT_KEYS map names to points.
+POINT_KEYS = {"head", "tail", "com_world", "center_world", "pivot_world", "joint", "jaw_pivot", "jaw_bone_head",
+              "c", "centroid", "aabb", "points", "waypoints", "a", "b", "conus_tip", "thecal_end",
+              "cervicomedullary_junction", "cmj_bible", "bounds", "origin", "offset", "axis_base", "axis_apex"}
+POINT_DICT_KEYS = {"landmarks", "measured", "contract_rb_1_2", "eye_centres", "valves"}
+
+
+def _is_pt(v):
+    return isinstance(v, (list, tuple)) and len(v) == 3 and all(isinstance(c, (int, float)) for c in v)
+
+
+def warp_json(data, _key=None):
+    """Return a copy of a JSON payload with every body-frame point moved authoring -> final (``POINT_KEYS``)."""
+    if isinstance(data, dict):
+        out = {}
+        for k, v in data.items():
+            if k in POINT_DICT_KEYS and isinstance(v, dict):
+                out[k] = {kk: (warp_points(vv).tolist() if _is_pt(vv) else warp_json(vv, kk)) for kk, vv in v.items()}
+            elif k in POINT_KEYS and _is_pt(v):
+                out[k] = warp_points(v).tolist()
+            elif k in POINT_KEYS and isinstance(v, (list, tuple)) and v and all(_is_pt(q) for q in v):
+                out[k] = [warp_points(q).tolist() for q in v]
+            elif k == "eyes" and isinstance(v, dict):
+                out[k] = {kk: (warp_points(vv).tolist() if _is_pt(vv) and kk in ("L", "R") else vv)
+                          for kk, vv in v.items()}
+            else:
+                out[k] = warp_json(v, k)
+        return out
+    if isinstance(data, list):
+        return [warp_json(v, _key) for v in data]
+    return data
+
+
 def b2g(v):
     """Body frame (Z up) -> Godot model space (Y up): ``(x, z, -y)`` [T10 zup2yup]."""
     a = np.asarray(v, dtype=float)

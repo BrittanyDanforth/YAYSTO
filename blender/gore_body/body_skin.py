@@ -78,9 +78,13 @@ def smax(a, b, k):
 
 
 def sstep(e0, e1, x):
-    """Hermite step from 0 at e0 to 1 at e1 (e0 > e1 gives a falling step)."""
+    """Quintic (C2) step from 0 at e0 to 1 at e1 (e0 > e1 gives a falling step).
+
+    Fix round 2: the cubic Hermite step has a curvature jump at both ends; every relief built with it
+    (pectoral border, sternal furrow, scapula outline ...) printed a straight shading line on the
+    smooth-shaded skin in raking light.  The quintic step is curvature-continuous."""
     t = np.clip((x - e0) / (e1 - e0), 0.0, 1.0)
-    return t * t * (3.0 - 2.0 * t)
+    return t * t * t * (t * (6.0 * t - 15.0) + 10.0)
 
 
 def gauss(x, s):
@@ -1089,10 +1093,10 @@ SUBMENTAL_Y = (-0.080, -0.0605, -0.0545, -0.0480, -0.0440, -0.0420)
 
 
 def submental_limit(ax, y, z):
-    """SDF-like limit (positive in front of the allowed neck front, i.e. to be carved) under the chin; zero
-    effect below 1.522 and beyond |x| 0.05 (the submandibular sides are shaped by the neck tube)."""
+    """SDF-like limit (positive in front of the allowed neck front, i.e. to be carved) under the chin; no
+    effect outside z 1.505-1.585 and beyond |x| 0.055 (the submandibular sides are shaped by the neck tube)."""
     yf = sinterp(z, SUBMENTAL_Z, SUBMENTAL_Y) + 0.020 * (ax / 0.05) ** 2
-    lat = sstep(0.055, 0.035, ax)
+    lat = sstep(0.055, 0.035, ax) * sstep(1.505, 1.522, z) * sstep(1.585, 1.570, z)
     return (yf - y) * lat - (1.0 - lat) * 0.05
 
 
@@ -1122,6 +1126,9 @@ PAD_SITES = (
     ("foot", ("foot_sdf", ()), (0.060, -0.160, 0.000), (0.130, 0.120, 0.100), 0.0025, 0.003, "leg"),
 )
 _PAD_FNS = {}
+PAD_FADE = 0.018      # m, pad fades out over this distance beyond its site box (inside the 20 mm box margin:
+                      # the bone SDFs are only valid near their bone)
+PAD_SINK = 0.012      # m, faded pad lies this far inside the bone surface (no effect on the skin)
 
 
 def _pad_fn(builder):
@@ -1140,16 +1147,18 @@ def bone_pads(ax, y, z, group):
     for _key, builder, lo, hi, pad, k, g in PAD_SITES:
         if g != group:
             continue
-        box = Box(lo, hi, margin=0.02)
+        box = Box(lo, hi, margin=0.020)
         fn = _pad_fn(builder)
         m = box.run(lambda a, b, c: fn(a, b, c) - pad, ax, y, z)
-        # the pad fades out continuously beyond its site box (3 m/m ramp on the distance outside the box):
-        # a hard cut at the box face used to leave a step (the 'sock line' ring at the ankle)
+        # the pad sinks smoothly into its bone beyond the site box: over PAD_FADE it goes from full depth to
+        # PAD_SINK inside the bone surface.  (Fix round 2: the former 3 m/m ramp removed the pad within 2-3 mm
+        # of the box face and left straight shading lines where the bone runs on - across the chest at the
+        # sternum box bottom, the lower back at the iliac box, the V lines beside the manubrium.)
         lo_, hi_ = np.asarray(lo), np.asarray(hi)
         dout = np.sqrt(np.maximum(np.maximum(lo_[0] - ax, ax - hi_[0]), 0.0) ** 2
                        + np.maximum(np.maximum(lo_[1] - y, y - hi_[1]), 0.0) ** 2
                        + np.maximum(np.maximum(lo_[2] - z, z - hi_[2]), 0.0) ** 2)
-        m = m + 3.0 * dout
+        m = m + (pad + PAD_SINK) * sstep(0.0, PAD_FADE, dout)
         kk = np.where(m < d, k, kk)
         d = np.minimum(d, m)
     return d, kk
@@ -2129,7 +2138,7 @@ def joint_weighted_decimate(obj, target_tris):
     if n <= target_tris:
         return n
     snap = gg._snapshot_codes(obj)
-    bm = rig.bone_map()
+    bm = rig.bone_map("authoring")
     J = np.array([bm[b]["head"] for b in ("upper_arm_L", "upper_arm_R", "forearm_L", "forearm_R", "hand_L",
                                           "hand_R", "thigh_L", "thigh_R", "shin_L", "shin_R", "foot_L",
                                           "foot_R")], float)

@@ -173,12 +173,13 @@ def landmarks_table():
         "landmarks": {k: list(v) for k, v in LM.all_landmarks().items()},
         "landmark_tags": {k: v["tag"] for k, v in {**LM.LANDMARKS, **LM.LANDMARKS_EXTRA}.items()},
         "head": {"measured": head, "contract_rb_1_2": contract, "offset": gbc.HEAD_OFFSET.tolist(),
-                 "seam_z": gbc.SEAM_Z},
+                 "seam_z": float(gbc.lift_z(gbc.SEAM_Z)), "seam_z_authoring": gbc.SEAM_Z,
+                 "neck_lift_m": gbc.NECK_LIFT, "neck_lift_z": list(gbc.NECK_LIFT_Z)},
         "girths": LM.GIRTHS, "arm_girths": LM.ARM_GIRTHS, "hand": LM.HAND, "foot": LM.FOOT,
         "eyes": {"L": gbc.head_to_body(np.array(LM.HEAD_CONTRACT["eye_L"])).tolist(),
                  "R": gbc.head_to_body(np.array(LM.HEAD_CONTRACT["eye_R"])).tolist(),
                  "constants": LM.EYE_CONSTANTS},
-        "body": {"stature_m": LM.STATURE_M, "mass_kg": LM.MASS_KG, "body_fat_pct": LM.BODY_FAT_PCT,
+        "body": {"stature_m": round(float(gbc.lift_z(LM.STATURE_M)), 4), "stature_rb_m": LM.STATURE_M, "mass_kg": LM.MASS_KG, "body_fat_pct": LM.BODY_FAT_PCT,
                  "bsa_m2": LM.BSA_M2, "arm_direction_L": list(LM.ARM_DIRECTION_L),
                  "arm_medial_normal_L": list(LM.ARM_MEDIAL_NORMAL_L), "foot_axis_L": list(LM.FOOT_AXIS_L)},
         "segment_masses": {k: {"fraction": v[0], "mass_kg": v[0] * SG.BODY_MASS_KG, "com_from_proximal": v[1],
@@ -230,22 +231,43 @@ def write_sidecars(out):
     import vascular
     import viscera
     files = {}
-    files["rig.json"] = gbc.write_json(os.path.join(out, "rig.json"), rig.rig_table(), "gb.rig/1")
-    files["landmarks.json"] = gbc.write_json(os.path.join(out, "landmarks.json"), landmarks_table(),
-                                             "gb.landmarks/1")
-    files["organs.json"] = gbc.write_json(os.path.join(out, "organs.json"), viscera.organ_table(), "gb.organs/1")
-    files["vessels.json"] = gbc.write_json(os.path.join(out, "vessels.json"), vascular.vessel_table(),
-                                           "gb.vessels/1")
-    files["spine.json"] = gbc.write_json(os.path.join(out, "spine.json"), neuro.spine_table(), "gb.spine/1")
-    files["codes.json"] = gbc.write_json(os.path.join(out, "codes.json"), codes_table(), "gb.codes/1")
-    labels, meta = neuro.brain_labels()
+    # every table is computed in the AUTHORING frame (the tables, the SDFs and the measured meshes agree there)
+    # and its points are then moved to the final frame (neck lengthening, gbc.NECK_LIFT)
+    frame0 = gbc.scene_frame()
+    gbc.set_scene_frame("authoring")
+    try:
+        tables = {"rig.json": (rig.rig_table(), "gb.rig/1"),
+                  "landmarks.json": (landmarks_table(), "gb.landmarks/1"),
+                  "organs.json": (viscera.organ_table(), "gb.organs/1"),
+                  "vessels.json": (vascular.vessel_table(), "gb.vessels/1"),
+                  "spine.json": (neuro.spine_table(), "gb.spine/1"),
+                  "codes.json": (codes_table(), "gb.codes/1")}
+        labels, meta = neuro.brain_labels()
+    finally:
+        gbc.set_scene_frame(frame0)
+    for f, (data, schema) in tables.items():
+        data = gbc.warp_json(data)
+        data["frame_note"] = FRAME_NOTE
+        files[f] = gbc.write_json(os.path.join(out, f), data, schema)
     files["brain_labels.png"] = gbc.write_png_u8(os.path.join(out, "brain_labels.png"), neuro.labels_atlas(labels))
+    meta = gbc.warp_json(meta)
+    meta["frame_note"] = FRAME_NOTE
     files["brain_labels.json"] = gbc.write_json(os.path.join(out, "brain_labels.json"), meta, "gb.brain_labels/1")
     for f in FOREIGN_SIDECARS:
         p = os.path.join(out, f)
         if os.path.exists(p):
+            doc = gbc.read_json(p)
+            if "frame_note" not in doc["data"]:          # written by B3 in the authoring frame: warp once
+                data = gbc.warp_json(doc["data"])
+                data["frame_note"] = FRAME_NOTE
+                gbc.write_json(p, data, doc.get("schema", "gb.bones/1"))
             files[f] = p
     return files
+
+
+FRAME_NOTE = (f"final body frame: the RB authoring frame with the neck lengthened by {gbc.NECK_LIFT * 1000:.0f} mm "
+              f"(z += {gbc.NECK_LIFT} * smoothstep({gbc.NECK_LIFT_Z[0]}, {gbc.NECK_LIFT_Z[1]}, z)); head offset "
+              f"{gbc.FINAL_HEAD_OFFSET.round(4).tolist()}")
 
 
 # ---------------------------------------------------------------------------

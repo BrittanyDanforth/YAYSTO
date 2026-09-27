@@ -983,8 +983,8 @@ def follower_weights(obj):
     a = get_anchors(obj)
     if a is None:
         raise ValueError(f"{obj.name} has no gb_anchor_* attributes")
-    idx, w = rig.weights_at(a, "skin")
-    return blend_face_weights(a, idx, w)
+    idx, w = rig.weights_at(a, "skin", frame=gbc.scene_frame())
+    return blend_face_weights(gbc.unwarp_points(a) if gbc.scene_frame() == "final" else a, idx, w)
 
 
 def blend_face_weights(points, idx, w):

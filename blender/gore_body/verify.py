@@ -2741,9 +2741,21 @@ def b6_godot_import():
 def verify_all(groups=("tables", "scene", "files"), quiet=False):
     """Run every registered check of ``groups``; returns {name: {ok, severity, owner, group, detail}}."""
     res = {}
-    for group, name, owner, sev, fn in CHECKS:
+    # geometry checks compare the meshes with the authoring tables (RB frame); the rig/deformation (B6) and
+    # bake (B7) checks run on the exported final frame (neck lengthened, gbc.NECK_LIFT).  Authoring checks
+    # run first, then the scene is warped back to where it was.
+    frame0 = None
+    try:
+        frame0 = gbc.scene_frame()
+    except Exception:                                   # no bpy (tables only)
+        pass
+    order = sorted(range(len(CHECKS)), key=lambda i: CHECKS[i][2] in FINAL_FRAME_OWNERS)
+    for i in order:
+        group, name, owner, sev, fn = CHECKS[i]
         if group not in groups:
             continue
+        if frame0 is not None and group != "tables":
+            gbc.set_scene_frame("final" if owner in FINAL_FRAME_OWNERS else "authoring")
         if CONTEXT.get("quick") and name in QUICK_SKIP:
             res[name] = {"ok": True, "skip": True, "severity": sev, "owner": owner, "group": group,
                          "detail": "skip: full-accuracy check, not meaningful on --quick meshes"}
@@ -2761,9 +2773,15 @@ def verify_all(groups=("tables", "scene", "files"), quiet=False):
                      "detail": detail}
         if skip:
             res[name]["skip"] = True
+    if frame0 is not None:
+        gbc.set_scene_frame(frame0)
+    res = {k: res[k] for k in [CHECKS[i][1] for i in range(len(CHECKS))] if k in res}
     if not quiet:
         report(res)
     return res
+
+
+FINAL_FRAME_OWNERS = ("B6", "B7")
 
 
 def failures(res):

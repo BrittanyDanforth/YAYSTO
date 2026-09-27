@@ -247,6 +247,10 @@ def run(stages, opts):
             status[st] = "cached"
         else:
             status[st] = "placeholder"
+    # every geometry stage is built / cached in the RB authoring frame; the subject is exported with the neck
+    # lengthened by gbc.NECK_LIFT (user feedback, fix round 2): warp the whole scene once, here
+    with gbc.Timer("neck lengthening warp (authoring -> final frame)"):
+        gbc.set_scene_frame("final")
     with gbc.Timer("stage rig (skin weights)"):
         present = {n: bpy.data.objects[n] for n in gbc.exported_mesh_names(0) + gbc.exported_mesh_names(1)
                    if n in bpy.data.objects}

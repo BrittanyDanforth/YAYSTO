@@ -316,7 +316,7 @@ def _new_mesh_obj(name, verts, faces):
 def dominant_bone(points):
     """Index into ``RT.BONE_NAMES`` of the strongest analytic weight per point."""
     import rig
-    idx, w = rig.weights_at(points)
+    idx, w = rig.weights_at(points, frame="authoring")
     return idx[np.arange(len(idx)), np.argmax(w, axis=1)]
 
 

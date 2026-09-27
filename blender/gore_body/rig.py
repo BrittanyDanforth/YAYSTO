@@ -135,8 +135,22 @@ def bone_rows():
     return _ROWS
 
 
-def bone_map():
-    return {b["name"]: b for b in bone_rows()}
+def bone_rows_frame(frame="final"):
+    """``bone_rows`` in the final body frame (neck lengthened, ``gbc.NECK_LIFT``: the armature, poses and
+    tests) or the authoring frame (weight gates, geometry stages, rig.json before export warps it)."""
+    if frame == "authoring":
+        return bone_rows()
+    out = []
+    for b in bone_rows():
+        b = dict(b)
+        b["head"] = tuple(float(c) for c in gbc.warp_points(b["head"]))
+        b["tail"] = tuple(float(c) for c in gbc.warp_points(b["tail"]))
+        out.append(b)
+    return out
+
+
+def bone_map(frame="final"):
+    return {b["name"]: b for b in bone_rows_frame(frame)}
 
 
 # ===========================================================================
@@ -282,7 +296,7 @@ def _gates():
     if _GATES is not None:
         return _GATES
     import body_skin as BS
-    bm = bone_map()
+    bm = bone_map("authoring")
     g = {}
     GH = np.array(bm["upper_arm_L"]["head"])
     EL = np.array(bm["forearm_L"]["head"])
@@ -579,7 +593,7 @@ def _top4(W):
     return idx, w
 
 
-def weights_at(points, layer="skin"):
+def weights_at(points, layer="skin", frame="final"):
     """Analytic skin weights for body-frame rest points (plan D8: every layer uses this).
 
     Returns ``(idx, w)`` with shapes (N, 4): bone indices into ``BONE_NAMES`` and weights on a
@@ -591,6 +605,9 @@ def weights_at(points, layer="skin"):
     n = len(p)
     if n == 0:
         return np.zeros((0, 4), np.int32), np.zeros((0, 4))
+    # rest points arrive in the final frame (neck lengthened); the weight model is authored in the RB frame
+    if frame == "final":
+        p = gbc.unwarp_points(p)
     if layer == "head_rigid":
         return rigid_weights(n, "head")
     out_i = np.empty((n, MAX_INF), np.int32)
@@ -676,7 +693,7 @@ def build_armature():
     arm.select_set(True)
     bpy.ops.object.mode_set(mode='EDIT')
     ebs = {}
-    for b in bone_rows():
+    for b in bone_rows_frame("final"):
         eb = arm_data.edit_bones.new(b["name"])
         eb.head = Vector(b["head"])
         eb.tail = Vector(b["tail"])
@@ -802,6 +819,7 @@ def transfer_weights(obj, src_names=None, smooth_iters=None):
     bvh = BVHTree.FromPolygons(np.vstack(V).tolist(), np.vstack(T).tolist())
     near = np.array([tuple(bvh.find_nearest(Vector(p))[0]) for p in pv])
     W = np.zeros((len(pv), NB))
+    near = gbc.unwarp_points(near)                  # final frame -> the weight model's authoring frame
     for s0 in range(0, len(pv), 40000):
         W[s0:s0 + 40000] = dense_weights(near[s0:s0 + 40000], "skin")
     ev = np.empty(len(me.edges) * 2, np.int64)
@@ -1251,7 +1269,7 @@ def rig_table():
     arm = bpy.data.objects.get(gbc.ARMATURE)
     physical = {b["bone"] for b in RT.bodies()}
     bones = []
-    for b in bone_rows():
+    for b in bone_rows():                      # authoring frame: export.write_sidecars warps every point
         row = {"name": b["name"], "parent": b["parent"], "head": list(b["head"]), "tail": list(b["tail"]),
                "deform": True, "physical": b["name"] in physical, "kinematic": b["kinematic"]}
         if arm is not None and b["name"] in arm.data.bones:
@@ -1267,7 +1285,7 @@ def rig_table():
         face = {"status": f"face table unavailable: {exc}"}
     face = dict(face)
     face.setdefault("blend_shapes", list(gbc.FACE_SHAPE_KEYS))
-    face["jaw_bone_head"] = list(bone_map()["jaw"]["head"])
+    face["jaw_bone_head"] = list(bone_map("authoring")["jaw"]["head"])
     kin = {}
     for n in ("forearm_twist", "fingers", "thumb", "toes"):
         kin[n] = {k: v for k, v in MYO.myotomes_for(n).items()}

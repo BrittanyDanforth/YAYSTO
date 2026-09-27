@@ -728,7 +728,7 @@ def _joint_rings(P, idx, reach=0.06, pad=0.025):
     global _JOINTS
     if _JOINTS is None:
         import rig
-        bm = rig.bone_map()
+        bm = rig.bone_map("authoring")
         _JOINTS = np.array([bm[b]["head"] for b in ("upper_arm_L", "upper_arm_R", "forearm_L", "forearm_R",
                                                     "hand_L", "hand_R", "thigh_L", "thigh_R", "shin_L", "shin_R",
                                                     "foot_L", "foot_R", "neck")], float)
@@ -1015,7 +1015,7 @@ def vessel_table():
         n_fit += bool(props)
         sa = _arc(P)
         t = sa / max(sa[-1], 1e-9)
-        idx, w = rig.weights_at(P, layer=gbc.LAYER_OF.get(mesh_for(s) or "", "vessel_art"))
+        idx, w = rig.weights_at(P, layer=gbc.LAYER_OF.get(mesh_for(s) or "", "vessel_art"), frame="authoring")
         dom = idx[np.arange(len(idx)), np.argmax(w, axis=1)]
         rec = {k: s[k] for k in ("id", "vessel", "branch", "name", "side", "kind", "circuit", "d_mm", "d_end_mm",
                                  "d_range_mm", "rest_flow_ml_min", "parent", "extra_parents", "children", "root",
@@ -1041,7 +1041,7 @@ def vessel_table():
             P, r = got[0], got[1]
         else:
             P, r, _t = nerve_centreline(nv)
-        idx, w = rig.weights_at(P, layer="nerve")
+        idx, w = rig.weights_at(P, layer="nerve", frame="authoring")
         dom = idx[np.arange(len(idx)), np.argmax(w, axis=1)]
         nerves.append({"id": nv["id"], "nerve": nv["nerve"], "side": nv["side"], "roots": nv["roots"],
                        "radius": nv["radius"], "points": [list(p) for p in P],
