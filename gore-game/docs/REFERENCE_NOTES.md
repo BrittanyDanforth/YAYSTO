@@ -369,6 +369,12 @@ SKIN STILL LOOKS THICK AND ENSURE ARTERYS ETC ALL THAT IS WIRED FOR BLOOD TOO VE
    from inside (welling up out of the track), that blood surface rises to and over the lowest part of the opening's own
    edge, and the stream is the continuation of that same liquid body — its top is INSIDE the hole, not on the skin or
    collar next to it. The collar/rim below the opening is covered by the flowing blood.
+   User's crop of `renders/hero.png` (forehead entry): the stream is WIDER than the hole's lower edge and its top is a
+   flat cut line; on the RIGHT side of the hole a wedge of clean skin sits between the hole's edge and the top of the
+   stream, so the blood looks like it "just appears" beside the wound. Required: the stream's top outline must follow
+   the hole's own lower edge exactly (the liquid spills over the lip it is touching), be no wider than the part of the
+   rim it leaves from, and widen only further down as it spreads; blood that reaches the skin beside the hole must
+   visibly come over the rim at that point. No flat-topped streams, no stream starting on skin next to the hole.
    **Zero gap, proven.** The stream must be ONE continuous liquid body with the blood inside the wound: the blood
    surface in the cavity, the wet rim lip and the stream share geometry (or overlap by >= 1 mm) with no skin pixel
    between them at ANY time (0, 5, 10, 20, 40, 60 s) and from any angle. Test: close-up renders at the rim from straight,
