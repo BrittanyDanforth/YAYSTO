@@ -1381,18 +1381,10 @@
     "cached": true
    },
    "GB_Organs": {
-    "charts": 672,
-    "coverage_before": 0.196,
-    "coverage": 0.357,
-    "overlap": 0.00399,
-    "texel_mm_at_set_size": 0.903
+    "cached": true
    },
    "GB_Brain": {
-    "charts": 2939,
-    "coverage_before": 0.061,
-    "coverage": 0.209,
-    "overlap": 0.00427,
-    "texel_mm_at_set_size": 0.355
+    "cached": true
    }
   },
   "material_map": {
@@ -1425,10 +1417,10 @@
    "tile_m": "physical size of one tileable repeat in metres (triplanar / metre UV scale)"
   },
   "timings_s": {
-   "uvs": 116.6,
+   "uvs": 0.1,
    "sets": 2934.6,
    "tileables": 75.9,
-   "painter": 32.6
+   "painter": 33.2
   },
   "files": {
    "body_albedo.png": {
