@@ -2411,6 +2411,9 @@ def build_body_skin(quick=None):
         _material_by_segment(lod, "GBM_skin_", {"head_neck": "torso", "shorts": "torso"})
         import placeholder
         placeholder.add_shape_keys(body, body_shape_fields(gbc.get_verts(body.data)), gbc.SHAPE_KEYS["GB_Body"])
+        # (fix round 3: LOD1 carried no morph targets, so breathing / distension / swelling popped off at LOD1; the
+        # fields are analytic, so they evaluate on the LOD1 vertices directly)
+        placeholder.add_shape_keys(lod, body_shape_fields(gbc.get_verts(lod.data)), gbc.SHAPE_KEYS["GB_Body"])
     for o in (body, lod, hr):
         import placeholder
         placeholder.finish_uvs(o)

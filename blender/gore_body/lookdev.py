@@ -572,6 +572,8 @@ def lookdev_on(objs):
         if o is None or o.type != 'MESH':
             continue
         me = o.data
+        if "gb_export_slots" not in me:
+            me["gb_export_slots"] = [m.name if m else "" for m in me.materials]      # GBM_* names (round trip)
         for i, m in enumerate(me.materials):
             if m is None:
                 continue
@@ -586,6 +588,9 @@ def lookdev_off(state):
     """Restore the placeholder materials swapped by lookdev_on."""
     for me, i, m in reversed(state):
         me.materials[i] = m
+    for me in {id(me): me for me, _i, _m in state}.values():
+        if "gb_export_slots" in me:
+            del me["gb_export_slots"]
 
 
 # ---------------------------------------------------------------------------
@@ -621,6 +626,29 @@ def _lm(name, side="L"):
     if side == "R":
         p[0] = -p[0]
     return p
+
+
+def nipple_tip(v, nrm, side):
+    """Skin point of the nipple bump on one side (``side`` 'L'/'R'): among the vertices within 30 mm of the RB nipple
+    landmark, the one that protrudes most along its normal above the plane of its 7-10 mm ring (the local maximum
+    of body_skin's nipple relief term).  None if no skin lies there."""
+    c = _lm("nipple_L", side)
+    idx = np.nonzero(np.linalg.norm(v - c, axis=1) < 0.030)[0]
+    if len(idx) == 0:
+        return None
+    ring_pool = np.nonzero(np.linalg.norm(v - c, axis=1) < 0.042)[0]
+    best, best_h = None, -1e9
+    P = v[ring_pool]
+    for i in idx:
+        dd = np.linalg.norm(P - v[i], axis=1)
+        ring = P[(dd > 0.007) & (dd < 0.010)]
+        if len(ring) < 6:
+            continue
+        nn = nrm[i] / max(np.linalg.norm(nrm[i]), 1e-9)
+        h = float((v[i] - ring.mean(0)) @ nn)
+        if h > best_h:
+            best, best_h = v[i], h
+    return None if best is None else np.array(best, float)
 
 
 def _gauss(v, c, r):
@@ -694,11 +722,16 @@ def body_region_fields(obj):
     for s in ("L", "R"):
         sg = 1.0 if s == "L" else -1.0
         # knee: skin over the patella and just below (kneeling skin)
+        # (fix round 3, critics: the r 35 mm gaussian times a steep normal clip baked into a sharp oval 'kneepad
+        # decal' with a dark rim): a wide soft falloff (r 42 mm, elongated along the leg), a gentle normal term
+        # that never reaches a hard zero edge, broken up by low-frequency noise below
         pk = _lm("patella_skin_L", s)
-        joint = np.maximum(joint, _gauss(v, pk + (0, -0.005, -0.012), 0.035) * np.clip(-nrm[:, 1] * 1.5, 0, 1))
+        d = (v - (pk + np.array([0.0, -0.004, -0.010]))) * np.array([1.0, 1.0, 0.75])
+        g = np.exp(-(d * d).sum(1) / (0.042 ** 2))
+        joint = np.maximum(joint, g * np.clip(0.55 - nrm[:, 1] * 0.75, 0, 1) ** 1.5)
         # elbow: olecranon skin behind the elbow centre (A-pose: posterior = +y)
         pe = _lm("elbow_centre_L_apose", s) + (0.0, 0.035, -0.01)
-        joint = np.maximum(joint, _gauss(v, pe, 0.03) * np.clip(nrm[:, 1] * 1.5, 0, 1))
+        joint = np.maximum(joint, _gauss(v, pe, 0.036) * np.clip(0.55 + nrm[:, 1] * 0.75, 0, 1) ** 1.5)
         # knuckles: dorsal MCP line (hand segment, facing away from the palm)
         hand = seg == (6 if s == "L" else 7)
         if hand.any():
@@ -715,16 +748,21 @@ def body_region_fields(obj):
         foot = seg == (8 if s == "L" else 9)
         f.setdefault("lk_dorsum", np.zeros(n))
         f["lk_dorsum"] = np.maximum(f["lk_dorsum"], foot * np.clip(nrm[:, 2] * 1.5, 0, 1) * (region != 7))
-    f["lk_joint"] = np.clip(joint, 0, 1)
-    # areola (r ~14 mm) and nipple (r ~5 mm) around the nearest skin point to each nipple landmark
+    # break the joint patches up (no clean outline): deterministic low-frequency value noise over the surface
+    rng_j = gbc.rng("lookdev_joint")
+    k = rng_j.normal(size=(24, 3)) * 55.0
+    ph = rng_j.uniform(0, 2 * np.pi, 24)
+    wob = np.mean(np.sin(v @ k.T + ph), axis=1) * 1.6                    # ~N(0, 0.33)
+    joint = joint * np.clip(0.80 + 0.45 * wob, 0.35, 1.25)
+    f["lk_joint"] = _smooth_attr(me, np.clip(joint, 0, 1), 4)
+    # areola (r ~14 mm) and nipple (r ~5 mm) centred on the GEOMETRIC nipple (fix round 3, critics: the most
+    # anterior skin point within 30 mm of the landmark lies on the medial pectoral bulge, 32-35 mm from the modelled
+    # nipple bump, so every front view showed a painted areola beside a pale bare nipple)
     ar = np.zeros(n)
     ni = np.zeros(n)
     for s in ("L", "R"):
-        c = _lm("nipple_L", s)
-        near = np.linalg.norm(v - c, axis=1) < 0.03
-        if near.any():
-            idx = np.nonzero(near)[0]
-            tip = v[idx[np.argmin(v[idx, 1])]]          # most anterior point = nipple tip
+        tip = nipple_tip(v, nrm, s)
+        if tip is not None:
             d = np.linalg.norm(v - tip, axis=1)
             ar = np.maximum(ar, 1.0 - np.clip((d - 0.0125) / 0.003, 0, 1))
             ni = np.maximum(ni, 1.0 - np.clip((d - 0.0045) / 0.0015, 0, 1))

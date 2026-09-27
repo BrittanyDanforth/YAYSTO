@@ -455,7 +455,27 @@ def shape_keys():
         have = [k.name for k in o.data.shape_keys.key_blocks[1:]] if o.data.shape_keys else []
         if have != list(keys):
             bad.append(f"{n}: {have}")
-    return not bad, f"shape keys per plan §5.6; bad: {bad}"
+    # LOD1 meshes carry the same keys as their LOD0 with similar amplitudes (fix round 3: GB_Body_LOD1 had none)
+    for n in gbc.LOD1_OBJECTS:
+        o, o0 = bpy.data.objects.get(n), bpy.data.objects.get(n.replace("_LOD1", ""))
+        if o is None or o0 is None or o0.data.shape_keys is None:
+            continue
+        k0 = {k.name: k for k in o0.data.shape_keys.key_blocks[1:]}
+        k1 = {k.name: k for k in o.data.shape_keys.key_blocks[1:]} if o.data.shape_keys else {}
+        if list(k1) != list(k0):
+            bad.append(f"{n}: keys {list(k1)} != LOD0 {list(k0)}")
+            continue
+        b0, b1 = gbc.get_verts(o0.data), gbc.get_verts(o.data)
+        for name in k0:
+            a0 = np.empty(len(b0) * 3)
+            k0[name].data.foreach_get("co", a0)
+            a1 = np.empty(len(b1) * 3)
+            k1[name].data.foreach_get("co", a1)
+            m0 = float(np.max(np.linalg.norm(a0.reshape(-1, 3) - b0, axis=1)))
+            m1 = float(np.max(np.linalg.norm(a1.reshape(-1, 3) - b1, axis=1)))
+            if m0 > 1e-4 and not (0.6 <= m1 / m0 <= 1.4):
+                bad.append(f"{n}.{name} amplitude {m1 * 1000:.1f} vs LOD0 {m0 * 1000:.1f} mm")
+    return not bad, f"shape keys per plan §5.6 (LOD1 = LOD0 names, amplitude within 40 %); bad: {bad}"
 
 
 @check("scene")
@@ -634,7 +654,7 @@ def vessels_inside_skin():
     return not bad, f"tube vertices shallower than 1 mm (count, worst mm above -1 mm, worst point): {res}"
 
 
-@check("scene")
+@check("scene", quick_ok=False)
 def triangle_budgets():
     """Plan §4.1 triangle budgets: ok only when tris <= budget (the +10 % tolerance is reported separately)."""
     bpy = _bpy()
@@ -872,7 +892,7 @@ def _min_gap(P, a, b, cls_skip=6):
     return min(kd.find(p)[2] for p in va[:: max(1, len(va) // 3000)])
 
 
-@check("scene", owner="B3")
+@check("scene", owner="B3", quick_ok=False)
 def skeleton_joint_clearance():
     """Neighbouring bones never interpenetrate (HR vertex gap >= 0.5 mm at every joint pair)."""
     if not _b3_built():
@@ -951,7 +971,7 @@ def skeleton_intercostal_spaces():
     return not bad, "front spaces mm " + ", ".join(rows) + f"; out of 15-25: {bad}"
 
 
-@check("scene", owner="B3")
+@check("scene", owner="B3", quick_ok=False)
 def skeleton_variants():
     """Fracture variants: closed fragments (every island closed), skull 20-80 fragments with median
     15-25 mm, long bones simple = 1 break (2 main fragments per bone), comminuted 8-20 per bone."""
@@ -1141,7 +1161,7 @@ def b1_girths_fb3():
         f"; out of tolerance {bad}"
 
 
-@check("scene", owner="B1")
+@check("scene", owner="B1", quick_ok=False)
 def b1_landmarks_fb3():
     """FB-3: body skin landmarks of RB §7.1 lie on the skin within +-5 mm."""
     skip = _b1_skip()
@@ -1366,7 +1386,7 @@ def b2_neck_seam_fb1():
     return _b2("check_seam")
 
 
-@check("scene", owner="B2")
+@check("scene", owner="B2", quick_ok=False)
 def b2_lids_close_and_open():
     """Lids close to 0 mm (>= 0.2 mm off the globe on the whole path) and open to 12 mm."""
     return _b2("check_lids")
@@ -1378,7 +1398,7 @@ def b2_face_shape_keys():
     return _b2("check_shape_keys")
 
 
-@check("scene", owner="B2")
+@check("scene", owner="B2", quick_ok=False)
 def b2_cards_attached():
     """Brow cards on the skin at rest and under every face key; lash roots on lid-weighted skin."""
     return _b2("check_cards")
@@ -2424,6 +2444,36 @@ def b7_position_map_precision():
     return ok, "; ".join(out)
 
 
+@check("scene", owner="B7", quick_ok=False)
+def b7_areola_on_nipple():
+    """The painted areola (lk_areola on GB_Body) is centred on the geometric nipple bump (< 3 mm; critics round 2:
+    35 mm apart = a 'double nipple'), and the two nipples are 0.20 +- 0.01 m apart [RB §7.1]."""
+    bpy = _bpy()
+    import lookdev
+    o = bpy.data.objects.get("GB_Body")
+    if o is None:
+        return False, "no GB_Body"
+    ar = gbc.read_point_attr(o, "lk_areola", 'FLOAT')
+    if ar is None:
+        return None, "lk_areola not prepared (look-dev attributes not built)"
+    v = gbc.get_verts(o.data)
+    nrm = lookdev._normals(o.data)
+    out, ok, tips = [], True, []
+    for side, sg in (("L", 1.0), ("R", -1.0)):
+        m = (ar > 0.5) & (v[:, 0] * sg > 0)
+        tip = lookdev.nipple_tip(v, nrm, side)
+        if not m.any() or tip is None:
+            return False, f"{side}: no areola / nipple found"
+        c = (v[m] * ar[m, None]).sum(0) / ar[m].sum()
+        e = float(np.linalg.norm(c - tip)) * 1000.0
+        ok &= e < 3.0
+        tips.append(tip)
+        out.append(f"{side} areola-nipple {e:.1f} mm")
+    sp = float(abs(tips[0][0] - tips[1][0]))
+    ok &= abs(sp - 0.20) <= 0.01
+    return ok, "; ".join(out) + f"; nipple spacing {sp:.3f} m"
+
+
 @check("scene", owner="B7", severity="warn")
 def b7_textures_match_uvs():
     """The UV0 atlas of every textured mesh equals the one its textures were baked for (uv_hash).  A
@@ -2898,8 +2948,18 @@ def reproduce(keep=False):
     import tempfile
     tmp = tempfile.mkdtemp(prefix="gb_reproduce_")
     env = dict(os.environ, GB_OUTPUT_ROOT=os.path.join(tmp, "out"), GB_CACHE_DIR=os.path.join(tmp, "cache"))
-    cmd = [sys.executable, os.path.join(gbc.HERE, "build.py"), "--stage", "skin", "head", "skeleton", "viscera",
-           "neuro", "vascular", "export", "--no-bake", "--no-save", "--no-verify"]
+    args = ["--stage", "skin", "head", "skeleton", "viscera", "neuro", "vascular", "export", "--no-bake", "--no-save",
+            "--no-verify"]
+    # under the Blender binary sys.executable is its bundled Python: run build.py through Blender itself
+    binary = ""
+    try:
+        binary = _bpy().app.binary_path or ""
+    except Exception:
+        pass
+    if binary and os.path.basename(binary).lower().startswith("blender"):
+        cmd = [binary, "-b", "--factory-startup", "--python", os.path.join(gbc.HERE, "build.py"), "--"] + args
+    else:
+        cmd = [sys.executable, os.path.join(gbc.HERE, "build.py")] + args
     run = subprocess.run(cmd, env=env, capture_output=True, text=True)
     if run.returncode != 0:
         return False, {"build_rc": run.returncode, "tail": run.stdout[-2000:] + run.stderr[-2000:]}

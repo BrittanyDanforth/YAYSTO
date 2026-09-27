@@ -590,7 +590,13 @@ def scene_summary(mesh_names):
         me.calc_loop_triangles()
         mi = np.empty(len(me.loop_triangles), np.int32)
         me.loop_triangles.foreach_get("material_index", mi)
-        used = sorted({me.materials[i].name for i in np.unique(mi) if i < len(me.materials) and me.materials[i]})
+        # slot names as exported: a saved .blend carries the GBL_* look-dev materials in the slots, lookdev_on
+        # records the GBM_* names it replaced in the mesh's 'gb_export_slots' (fix round 3: standalone verify on
+        # the saved blend always failed the round trip on the material names)
+        names = list(me.get("gb_export_slots") or []) or [m.name if m else "" for m in me.materials]
+        names = [names[i] if i < len(names) else (me.materials[i].name if me.materials[i] else "")
+                 for i in range(len(me.materials))]
+        used = sorted({names[i] for i in np.unique(mi) if i < len(names) and names[i]})
         meshes[n] = {"triangles": len(me.loop_triangles),
                      "shape_keys": [k.name for k in me.shape_keys.key_blocks[1:]] if me.shape_keys else [],
                      "materials": used, "groups": sorted(g.name for g in o.vertex_groups)}
