@@ -1292,8 +1292,9 @@ def _blood_material(g):
     # cream-pink grey lumps with blood in their folds, soft sheen
     tis = t.attr("gore_tis")
     fold = t.noise(p, 900.0, 3.0)
-    pulp_col = t.mix(fold.smooth(0.3, 0.7), (0.16, 0.025, 0.022), t.mix(n_lo, (0.46, 0.28, 0.25), (0.36, 0.2, 0.18)))
-    tis_m = (tis * 1.2 - 0.2 + (fold - 0.5) * 0.7).clamp() * 0.9
+    # (pulped brain #D9B8A8-#C9A99A: cream-pink grey, blood in its folds)
+    pulp_col = t.mix(fold.smooth(0.3, 0.7), (0.16, 0.025, 0.022), t.mix(n_lo, (0.62, 0.42, 0.36), (0.48, 0.31, 0.27)))
+    tis_m = (tis * 1.5 - 0.1 + (fold - 0.5) * 0.7).clamp() * 0.92
     col = t.mix(tis_m, col, pulp_col)
     rough = rough * (1.0 - tis_m) + tis_m * (0.3 + fold * 0.2)
     # (a liquid surface is never an optical flat: slow ripples and the

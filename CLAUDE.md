@@ -281,6 +281,9 @@ damage = 0 returns the intact mesh. Carnage (9 hits) evaluates in ~4.5 s.
   = cluster of glossy pink/white/maroon marbles (candy look) + flat red slab streams; cheek slash walls = gold/orange foil
   with repeating stripe/step pattern (ref 12 artefact); throat cut = glossy plastic tube, no cross-section; blast teeth
   white cubes + round red candy beads.
+- Wounds fixer (22:44, d4m): throat cut now has a yellow fat layer along its lips but the bed is still one glossy dark-red
+  sheet (no muscle/trachea/vessels); exit fragments = tiles with dots; slash walls still gold foil stripes; blast teeth white
+  cubes + candy beads. HIGH.
 - USER (HIGH, REFERENCE_NOTES §5.21): a slash stream started on intact skin beside the cut (no wound above it); every stream
   must trace up into an overflowing low point of a wound rim. Drops/streams too thick (drops ~3-4.5 mm, streams 2-5 mm wide, 0.1-0.4 mm thick).
 - USER (HIGH, REFERENCE_NOTES §5.20): crushed preset leaves the NOSE TIP intact/unbruised inside the wound; the eyeball is

@@ -3386,7 +3386,7 @@ def _build_fragments():
     # lie 2-14 mm below the outer table, spreading in a cone
     # blast chips (maxilla / mandible) are thrown into the torn tissue of the
     # crater, 1-6 mm; a crushed face has many loose plates
-    specs = (("Exit", 6.0, 0.0075, 0.003, 0.0, 0.001, 0.0045),
+    specs = (("Exit", 7.0, 0.0075, 0.003, 0.0, 0.0008, 0.0028),
              ("Blunt", 6.0, 0.0045, -0.001, -0.0025, 0.0008, 0.003),
              ("Bullet", 7.0, 0.0, -0.016, -0.007, 0.0006, 0.0018),
              ("Blast", 18.0, BLAST_R * 0.8, 0.004, -0.012, 0.001, 0.005))
@@ -3471,7 +3471,7 @@ def _build_fragments():
     # (fully red chips read as red gummies, clean ones as plaster)
     fn = t.noise(t.pos() * 700.0, detail=2.0, signed=False)
     rim = t.attr("c_rim")
-    g = t.store(g, "g_a", t.vec(rim * 0.95, 0.0, (t.smooth(0.52, 0.68, fn) * 0.7).max(rim * 0.45)), 'FLOAT_VECTOR')
+    g = t.store(g, "g_a", t.vec(rim * 0.95, 0.0, (t.smooth(0.58, 0.72, fn) * 0.55).max(rim * 0.35)), 'FLOAT_VECTOR')
     # (a little crack density only: high values stain the whole chip with seeping blood)
     g = t.store(g, "g_b", (0.0, 0.0, 0.3), 'FLOAT_VECTOR')
     g = t.out(t.node('GeometryNodeRemoveAttribute', {'Geometry': g, 'Pattern Mode': 'Exact', 'Name': "c_rim"}))
@@ -3629,7 +3629,7 @@ STRAND_P = {"blunt": 0.0014, "exit": 0.0018, "blast": 0.004}
 # wet pulp lumps and torn shreds per wall area (lumps per m^2 at factor 1) and
 # per kind: destroyed tissue is mush at three scales (REFERENCE_NOTES §5.18 A)
 MUSH_DENSITY = 450000.0
-MUSH_K = {"exit": 2.6, "blunt": 1.6, "blast": 1.3}
+MUSH_K = {"exit": 2.6, "blunt": 1.6, "blast": 0.8}
 # extra blood on the wound walls per kind: a bullet track is a narrow tube
 # lined with blood and clot (no clean yellow fat), an exit is soaked
 WALL_BLOOD = {"bullet": 0.85, "exit": 0.6, "blast": 0.6}
@@ -3782,11 +3782,6 @@ def _build_wound_step(kind, kind_group):
     mush = MUSH_K.get(kind, 0.0)
     if kind == "blunt":
         mush = t.smooth(0.2, 0.7, h.crush) * mush
-    if kind == "slash":
-        # a deep throat cut divides the strap muscles and the platysma: its
-        # walls are granular, bulging cut muscle and fat (refs 1 / 17), not
-        # a smooth section; the clean cheek / brow cuts keep smooth walls
-        mush = 0.8 * h.R.z * t.smooth(0.5, 0.7, h.D)
     mush = t.switch(soft, 0.0, mush)
     g = t.store(g, "g_mush", t.switch(better, t.attr("g_mush"), mush), sel=sel)
     # g_mushk = brain (1) + 2 x bleeding + 4 x incised (see _mush)
@@ -3983,7 +3978,7 @@ def _mush(t, g, on_faces):
     k = t.attr("m_cls")
     classes = (
         # (selection, material input, g_wk, gore_clot, blood amount)
-        (t.bool('AND', k.lt(0.5), t.bool('NOT', brain)), "Strand Material", float(WALL_STEPS + 2), 0.0, 0.45),
+        (t.bool('AND', k.lt(0.5), t.bool('NOT', brain)), "Strand Material", float(WALL_STEPS + 2), 0.0, 0.25),
         (t.bool('AND', t.bool('AND', k.gt(0.5), k.lt(1.5)), t.bool('NOT', brain)), "Wall Material",
          WALL_STEPS * 0.4, 0.0, 0.3),
         (t.bool('AND', k.lt(1.5), brain), "Pulp Material", float(WALL_STEPS + 2), 0.0, 0.7),
@@ -4290,8 +4285,13 @@ def _build_attributes():
         "gore_depth": depth,
         "gore_edge": (a.y * (1.0 - wallf)).clamp(),
         # (surface blood on the surface, the wall's own blood on the walls)
+        # (the rim vertex's own blood, a.z, is inherited by the whole column of
+        # wall vertices below it: used down the wall it painted the rim's
+        # wet / dry pattern as vertical stripes -- the refs/12 artefact; it
+        # only wets the top ring now)
         "gore_blood": t.mix(a.z.max(t.attr("g_tb")),
-                            t.mix(wall_blood.max(a.z * 0.5).max(t.attr("g_wb") * (0.7 + 0.3 * wn)), a.z,
+                            t.mix(wall_blood.max(a.z * 0.5 * t.smooth(0.2, 0.0, fr))
+                                  .max(t.attr("g_wb") * (0.7 + 0.3 * wn)), a.z,
                                   t.attr("g_own")), wallf).clamp(),
         "gore_bruise": b.x.clamp(),
         "gore_burn": b.y.clamp(),

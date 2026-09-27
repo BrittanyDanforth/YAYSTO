@@ -621,7 +621,13 @@ def _nesting(names, tol=0.0):
             continue
         v = gbc.get_verts(o.data)
         cnt, worst, wp = 0, 0.0, None
-        for p in v:
+        # alveolar bone in the mouth under the GB_Mouth gums is covered (fix round 3: long roots, real sockets)
+        covered = np.zeros(len(v), bool)
+        if n == "GB_Skeleton":
+            import skull as SKL
+            near = np.linalg.norm(v - (gbc.HEAD_OFFSET + np.array([0.0, -0.06, -0.06])), axis=1) < 0.06
+            covered[near] = SKL.gum_covered(v[near])
+        for p in v[~covered]:
             loc, nrm, _i, _d = bvh.find_nearest(Vector(p))
             if loc is None:
                 continue

@@ -114,7 +114,7 @@ SUPERFICIAL_T = {"A07": (0.0, 1.0), "A08": (0.15, 1.0), "A09": (0.40, 1.0), "V02
 # of the inner table; occipital groove medial to the mastoid; jugular foramen at the top of the IJV; the
 # dural sinuses lie in bony grooves the head project's skull does not carve; the vertebro-basilar junction
 # at the foramen magnum sits on the modelled lower clivus)
-BONE_CANAL = {"A10": (1.505, 1.628, 0.018), "A11": (-1.0, 1.628), "A50": (-1.0, 9.0), "A12": (-1.0, 9.0), "A09": (1.600, 1.645),
+BONE_CANAL = {"A10": (1.505, 1.628, 0.012), "A11": (-1.0, 1.628), "A50": (-1.0, 9.0), "A12": (-1.0, 9.0), "A09": (1.600, 1.645),
               "V01": (1.600, 9.0), "V30": (-1.0, 9.0), "V31": (-1.0, 9.0), "V32": (-1.0, 9.0)}
 CRANIAL = {"A11", "A50", "A51", "A52", "A53", "A54"}               # intracranial arteries (outside GB_Brain)
 UNDER_SKULL = {"V30", "V31", "V32"}               # dural sinuses: snapped under the inner table, on the brain
@@ -621,6 +621,7 @@ def kink_angles(P, window=0.005):
     a = P - P[np.clip(ia, 0, n - 1)]
     b = P[np.clip(ib, 0, n - 1)] - P
     na, nb = np.linalg.norm(a, axis=1), np.linalg.norm(b, axis=1)
+    ok &= (na > 0.5 * window) & (nb > 0.5 * window)             # (duplicate points / an end within the window)
     c = (a * b).sum(1) / np.maximum(na * nb, 1e-18)
     out[ok] = np.degrees(np.arccos(np.clip(c[ok], -1.0, 1.0)))
     return out

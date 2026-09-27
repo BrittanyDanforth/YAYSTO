@@ -84,7 +84,7 @@ _row("A05", "internal carotid (cervical)", "E", 4.8, (4.0, 5.5), (220, 300), "A0
      collaterals=["A05 (circle of Willis, complete in 20-50 %)", "A06 via facial/angular, STA/supraorbital"],
      tag="E->M kind; waypoint 2 (E)", pulse_delay_ms=(90, 140))
 _row("A06", "external carotid", "M", 4.0, (3.5, 5.0), (100, 150), "A04", "LR",
-     [(0.030, -0.012, 1.558), (0.050, 0.000, 1.630)],
+     [(0.030, -0.012, 1.558), (0.046, 0.015, 1.628)],
      landmarks="Ends in the parotid behind the mandibular neck", bleed=_b((200, 600), (180, 600), (5, 20)),
      self_stop="rarely", compressible="yes", stump_frac=0.6, tag="waypoint 2 (E)")
 _row("A07", "superficial temporal", "M", 2.0, (1.5, 2.5), (10, 30), "A06", "LR",
@@ -320,7 +320,7 @@ _row("A34", "peroneal", "M", 2.5, (2.5, 2.5), (20, 40), "A33", "LR",
      [(0.095, 0.060, 0.420), (0.120, 0.055, 0.200)], landmarks="Along the fibula, deep",
      bleed=_b((50, 150), None, None), self_stop="often", tag="E waypoints")
 _row("V10", "inferior vena cava", "V", 17.0, (13, 21), (3000, 3500), "RA", "R",
-     [(-0.020, -0.035, 1.050), (-0.022, -0.015, 1.260), (-0.024, -0.012, 1.298), (-0.027, -0.019, 1.328)],
+     [(-0.020, -0.035, 1.050), (-0.022, -0.015, 1.260), (-0.022, -0.010, 1.325), (-0.026, -0.016, 1.338)],
      circuit=VEN, listed="distal_first", landmarks="Right of the aorta; retrohepatic part embedded in liver",
      bleed=_b((500, 2000), (60, 300), None, "infrarenal 500-2,000 (50-200 tamponaded); retrohepatic/hepatic "
                                             "veins 1,000-3,000 -> 1-5 min"),

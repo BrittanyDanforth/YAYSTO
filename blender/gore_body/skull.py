@@ -735,3 +735,16 @@ def air_spaces_body():
                 r[k] = [round(float(v), 5) for v in r[k]]
         out.append(r)
     return out
+
+
+def gum_covered(p_body, tol=0.001):
+    """Mask of body-frame (authoring) points that lie in the mouth under the gums: inside the head's oral void and
+    within ``tol`` of the GB_Mouth gum band.  The alveolar bone there is covered by the gums (a separate mesh), so
+    the skin-nesting tests must not count it as 'outside the skin' (the lips open the oral void to the outside)."""
+    A = _A()
+    q = np.asarray(p_body, float) - gbc.HEAD_OFFSET
+    if len(q) == 0:
+        return np.zeros(0, bool)
+    ov = A.oral_void(np.abs(q[:, 0]), q[:, 1], q[:, 2])
+    gu = np.minimum(gum_sdf(q[:, 0], q[:, 1], q[:, 2], True), gum_sdf(q[:, 0], q[:, 1], q[:, 2], False))
+    return (ov < 0.002) & (gu < tol)

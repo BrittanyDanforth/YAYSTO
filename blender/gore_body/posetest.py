@@ -275,7 +275,7 @@ def run_test(md, arm, name, spec, rest=None):
     res = {"pose": note, "level": level, "vol_loss": round(1.0 - vol1 / vol0, 4) if vol0 > 0 else None,
            "radius_p5": round(radius_p5, 3)}
     worst, total, over, per, n_exposed = 0.0, 0, 0, {}, 0
-    base = rest_outside(md, rest)
+    base = rest_outside(md, rest, keep_covered=True)
     for n in INNER:
         m = md.get(n)
         if m is None:
@@ -490,9 +490,10 @@ def rest_bvh(rest):
     return _REST_BVH[key]
 
 
-def rest_outside(md, rest=None, tol=POKE_LIMIT_MM / 1000.0):
-    """{layer: bool mask} of inner vertices more than ``tol`` outside the skin in the REST pose."""
-    key = tuple(sorted((n, len(m.v)) for n, m in md.items()))
+def rest_outside(md, rest=None, tol=POKE_LIMIT_MM / 1000.0, keep_covered=False):
+    """{layer: bool mask} of inner vertices more than ``tol`` outside the skin in the REST pose.  Alveolar bone
+    under the gums counts only with ``keep_covered`` (the pose tests exclude it like any rest-pose outlier)."""
+    key = tuple(sorted((n, len(m.v)) for n, m in md.items())) + (keep_covered,)
     if key in _REST_OUT:
         return _REST_OUT[key]
     V, T, N = rest if rest is not None else skin_arrays(md)
@@ -505,6 +506,11 @@ def rest_outside(md, rest=None, tol=POKE_LIMIT_MM / 1000.0):
         dist = np.array([bvh.find_nearest(p.tolist())[3] for p in m.v])
         mask = np.zeros(len(m.v), bool)
         cand = dist > tol
+        if n == "GB_Skeleton" and cand.any() and not keep_covered:
+            # alveolar bone under the GB_Mouth gums (in the open oral void) is covered, not exposed (fix round 3)
+            import skull as SKL
+            ci = np.nonzero(cand)[0]
+            cand[ci[SKL.gum_covered(gbc.unwarp_points(m.v[ci]))]] = False
         if cand.any():
             wn = winding(bvh, N, m.v[cand])
             mask[np.nonzero(cand)[0][wn < 0.5]] = True

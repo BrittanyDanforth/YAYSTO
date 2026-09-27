@@ -573,13 +573,19 @@ def _world_parts(x, y, z):
     svc = capsule(x, y, z, (-0.028, -0.027, 1.352), (-0.028, -0.029, 1.390), 0.0105, 0.0100)
     ivc = capsule(x, y, z, (-0.027, -0.019, 1.322), (-0.024, -0.013, 1.300), 0.0092, 0.0086)
     pv = None
+    pvl = None
     for sx in (1.0, -1.0):
-        for dz in (0.006, -0.004):
-            q = capsule(x, y, z, (0.008 + 0.020 * sx, 0.004, 1.370 + dz), (0.008 + 0.034 * sx, 0.012, 1.376 + dz),
-                        0.0066, 0.0063)
+        for dz in (0.000, -0.011):
+            # four pulmonary veins enter the back of the LA below the main bronchi (hilum: veins antero-inferior)
+            a_ = (0.008 + 0.018 * sx, 0.001, 1.362 + dz)
+            b_ = (0.008 + 0.031 * sx, 0.006, 1.360 + dz)
+            q = capsule(x, y, z, a_, b_, 0.0066, 0.0063)
+            ql = capsule(x, y, z, (0.008 + 0.010 * sx, -0.001, 1.363 + dz), (0.008 + 0.027 * sx, 0.005, 1.360 + dz),
+                         0.0044, 0.0042)
             pv = q if pv is None else np.minimum(pv, q)
+            pvl = ql if pvl is None else np.minimum(pvl, ql)
     return dict(ra=ra, ra_app=ra_app, la=la, la_app=la_app, rvot=rvot, lvot=lvot, aorta=aorta, pulm=pulm,
-                svc=svc, ivc=ivc, pv=pv)
+                svc=svc, ivc=ivc, pv=pv, pv_lumen=pvl)
 
 
 def _heart_fields(x, y, z):
@@ -600,6 +606,7 @@ def _heart_fields(x, y, z):
     full = smin(full, W["ivc"], 0.005)
     full = smin(full, W["pv"], 0.004)
     full = carve(full, _STERN(x, y, z), 0.0050, 0.006)           # anterior surface clears the sternum
+    full = carve(full, airway_outer(x, y, z), 0.0015, 0.004)       # ... and the trachea / main bronchi
     # grooves: AV sulcus ring and the anterior/posterior interventricular grooves (septum plane)
     sep = SEPTUM_N[1] * b + SEPTUM_N[2] * (c - 0.017)
     g_av = np.exp(-((a - 0.021) / 0.0070) ** 2) * sstep(-0.004, 0.012, a)
@@ -625,6 +632,7 @@ def _heart_fields(x, y, z):
     ra_c = smax(ra_c, a - 0.016, 0.003)
     la_c = smax(smin(W["la"], W["la_app"], 0.006) + WALL["LA"], -(W["ra"] - 0.0005), 0.002)
     la_c = smax(la_c, np.maximum(a - 0.016, -(W["lvot"] - 0.0025)), 0.003)
+    la_c = smin(la_c, W["pv_lumen"], 0.003)                        # the veins open into the atrium (2 mm walls)
     walls = {"LV": WALL["LV"], "RV": WALL["RV"], "RA": WALL["RA"], "LA": WALL["LA"]}
     cav = {k: np.maximum(cv, outer + walls[k]) for k, cv in
            {"LV": lv_c, "RV": rv_c, "RA": ra_c, "LA": la_c}.items()}   # walls also under grooves
@@ -670,6 +678,7 @@ def pericardium_sdf(x, y, z):
     roots = smin(roots, chain(x, y, z, [(-0.028, -0.029, 1.372), (-0.028, -0.033, 1.405)], [0.0130, 0.0125]), 0.008)
     sac = smin(sac, roots, 0.012)
     sac = carve(sac, sternum_sdf(x, y, z), 0.0025, 0.004)
+    sac = carve(sac, airway_outer(x, y, z), 0.0012, 0.004)
     return smax(sac, z - 1.410, 0.004)
 
 
@@ -1303,8 +1312,8 @@ def _liver_base(x, y, z):
     # (fix round 3, critics: a flat vertical right face clipped hard by the cage and a flat top with a hard rim:
     # wider smooth maxima round the diaphragmatic surface onto the costal face)
     d = smax(d, under_diaphragm(x, y, z, 0.0018), 0.009)
-    d = smax(d, cage_sdf(x, y, z, inset=RIB_HALF_T + 0.0020), 0.020)
-    d = smax(d, abdominal_cavity(x, y, z) - 0.0010, 0.012)
+    d = smax(d, cage_sdf(x, y, z, inset=RIB_HALF_T + 0.0020), 0.014)
+    d = smax(d, abdominal_cavity(x, y, z) - 0.0010, 0.008)
     # left lobe tapers to a thin tip at the left MCL; nothing left-posterior (stomach/oesophagus)
     d = smax(d, x - 0.078 - 0.20 * np.clip(-y - 0.02, 0, None), 0.012)
     d = smax(d, y - (0.080 - 1.5 * np.clip(x, 0, None)), 0.010)
@@ -1372,7 +1381,7 @@ def omentum_sdf(x, y, z):
     # greater curvature, a free lower edge with irregular 8-12 mm scallops and loose drape folds)
     fold = 0.0024 * np.sin(x * 70.0 + 0.8) * sstep(1.10, 1.00, z) + 0.0012 * np.sin(x * 31.0 + z * 18.0)
     lobules = fbm3(x, y, z, 0.0085, 62, 2) + 0.6 * fbm3(x, y, z, 0.0045, 64, 1)
-    half = 0.0019 + 0.0016 * (0.5 + 0.5 * fbm3(x, y, z, 0.030, 61, 2))
+    half = 0.0031 + 0.0017 * (0.5 + 0.5 * fbm3(x, y, z, 0.030, 61, 2))
     top = 1.118 - 0.020 * sstep(0.00, 0.10, -x) + 0.012 * sstep(0.02, 0.09, x)
     bottom = 0.962 + 0.034 * np.clip(ax / 0.104, 0.0, 1.2) ** 2.4 + 0.009 * np.sin(x * 45.0 + 1.3) \
         + 0.006 * fbm3(x, y, z, 0.016, 63, 1) + 0.004 * np.sin(x * 97.0 + 0.2)

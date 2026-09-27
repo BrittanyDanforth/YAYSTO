@@ -188,13 +188,26 @@ REALISM_BIBLE §2.7):
   deviated 4-6 mm away from the blow, droops and swells, turns dark purple,
   the skin splits over the dorsum / tip (`gore.NOSE_C`), and both nostrils
   bleed (runs seeded in the nostrils, `gore.NOSTRIL`, 10-30 mL/min).
+- **orbit bleeding**: a bullet or exit track that passes through a globe
+  (axis within ~6 mm of the eye's rim) bleeds from the orbit: runs are seeded
+  in the lid opening and spill over the LOWER lid margin (8-18 mL/min,
+  arterial share 0.4, some vitreous / uvea in the blood).
 - **mush** (`gore._mush`, REFERENCE_NOTES §5.18 A-C): destroyed tissue
-  (crushed blunt areas, blasts) carries wet pulp lumps and torn shreds at three
-  scales (flaps 2-4 mm, lumps 1-2 mm, grit < 1 mm): torn muscle, yellow fat
-  lobules and near-black clot (`GH_Muscle` / wall material / `GH_Blood`);
-  an exit pushes pulped cream-grey brain (`Pulp Material` = `GH_Brain`) mixed
-  with clot out through the opening. Each lump keeps its own blood streaks
-  (`g_own`). Tissue strands are few, slanted, some torn and hanging (no comb).
+  (crushed blunt areas, blasts) carries wet pulp at three
+  scales. Torn flaps are thin crumpled sheets (pale fatty undersides); the
+  lumps of each tissue class (torn muscle, yellow fat, near-black matte clot
+  -- `GH_Muscle` / wall material / `GH_Blood` with `gore_clot` = 1) are FUSED
+  through a volume (Points to Volume / Volume to Mesh, balls of 1.1-2.6 mm at
+  ~1.5 mm spacing) into one continuous lumpy layer torn by noise into lobes,
+  pits and crevices -- separate smooth ellipsoids read as beans / pebbles /
+  candy.
+  Pulped brain at an exit is part of the pool (`gore_tis` lumps standing out
+  of the blood surface, shaded as `GH_Blood` pulp). Tissue strands are few,
+  slanted, some torn and hanging (no comb).
+- **bone chips** (`gore._build_fragments`): angular 5-7 sided prisms whose
+  faces are the outer / inner tables and whose broken sides show the diploe
+  (`gore_wound` on the side faces); 1.2-3.4 mm thick, the outline jittered by
+  up to ~35 % of the chip size: chunky chalky slabs, never pebbles or flakes.
 - **burn**: smooth lobed, flame-licked dose field (reaches further upward,
   zones interlock unevenly): red band, partial thickness (moist red, few large
   flattened blister domes that appear after 30 s-5 min and fill over hours, a few peeling
@@ -290,14 +303,17 @@ per mm up the wound), so the upper walls with their dermis line, fat and
 muscle show above the blood (a cut flooded flush along its whole length read
 as a flat, painted "second mouth"). Crushed craters get no liquid sheet at
 all: their blood lies in the pits between the pulp and clot lumps.
+A gaping cut that lies ACROSS gravity (a throat cut on the upright neck) is
+no cup: its liquid sinks toward the floor of the V (up to ~6.5 mm, by gape and
+by how far the cut is from vertical), so the cut walls stand out of it.
 
-Wound walls are extruded in 6 rings with a smoothly varying ring spacing, then
+Wound walls are extruded in 9 rings (gore.WALL_STEPS) with a smoothly varying ring spacing, then
 relaxed (Blur Attribute on the wall vertices) and given lumpy relief along the
 wall normal only (gore.WALL_LUMPS), so they never fold into light/dark stripes
 (the "fence plank" artefact of refs/12; `verify_gore` fails if more than 5 % of
 wall edges fold by > 60 deg). Bleeding wounds get clot blobs (flattened, lumpy,
 0.4-4 mm at three sizes, gore.CLOT_DENSITY; none in incised cuts) on the walls, floor and fill, and tissue strands
-(0.25-0.6 mm, material `GH_Muscle`) bridging the gap from the second wall ring
+(0.25-0.6 mm, material `GH_Muscle`) bridging the gap from the third wall ring
 (gore.STRAND_P per kind).
 
 Soft-tissue layers (`GH_Skin`, `GH_Muscle`, `GH_MouthCavity`) carry a static
