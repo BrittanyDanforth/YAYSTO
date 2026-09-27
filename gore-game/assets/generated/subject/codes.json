@@ -3,7 +3,7 @@
  "frame": "body_zup_m",
  "godot_mapping": "(x, z, -y)",
  "generator": "blender/gore_body/build.py",
- "build_id": "gb-d78295c975d3",
+ "build_id": "gb-4235da7a7e00",
  "data": {
   "segment": {
    "0": "head_neck",
@@ -321,6 +321,7 @@
    "GB_Cord": "x = cord segment index (C1 = 0 ... S5 = 29), 30 cauda equina, 31 dura, 40 + n root stub of segment n; y = t",
    "v_flip": "Blender stores 1 - v; the glTF exporter flips V, so Godot reads UV2 = (x, y) exactly"
   },
-  "custom0_w": "segment code (plan §3.3.1) for skin-like meshes; piece/organ id otherwise (G0 import)"
+  "custom0_w": "segment code (plan §3.3.1) for skin-like meshes; piece/organ id otherwise (G0 import)",
+  "frame_note": "final body frame: the RB authoring frame with the neck lengthened by 15 mm (z += 0.015 * smoothstep(1.455, 1.54, z)); head offset [0.0, 0.02, 1.662]"
  }
 }

@@ -3,7 +3,7 @@
  "frame": "body_zup_m",
  "godot_mapping": "(x, z, -y)",
  "generator": "blender/gore_body/build.py",
- "build_id": "gb-d78295c975d3",
+ "build_id": "gb-4235da7a7e00",
  "data": {
   "sets": {
    "head": {
@@ -11,7 +11,7 @@
     "source": "GB_Head_HR",
     "normal_source": "GB_Head_HR",
     "size": 2048,
-    "uv_hash": "7d0bec033e75f0c6",
+    "uv_hash": "635077e603d29049",
     "surfaces": [
      "GBM_skin_head",
      "GBM_mouth_lining"
@@ -25,34 +25,35 @@
      "orm": "head_orm.png"
     },
     "coverage": {
-     "valid_texels": 2519820,
-     "empty_inside_islands": 2381,
-     "empty_fraction": 0.00094,
-     "baked_outside_raster": 10,
+     "valid_texels": 2564467,
+     "empty_inside_islands": 2349,
+     "empty_fraction": 0.00092,
+     "baked_outside_raster": 6,
      "normal_from_source": 0.9991,
      "normal_wrong_part_rejected": 0
     },
     "rough_offset": 0.06,
+    "seam_feather_texels": 147376,
     "albedo_linear_luminance": {
-     "median": 0.3222,
-     "p5": 0.2935,
-     "p95": 0.3385
+     "median": 0.3219,
+     "p5": 0.294,
+     "p95": 0.3376
     },
     "albedo_linear_median_rgb": [
-     0.4718,
-     0.2889,
-     0.2162
+     0.4714,
+     0.2886,
+     0.216
     ],
-    "ao_mean": 0.939,
+    "ao_mean": 0.934,
     "normal_mean_z": 0.9756,
-    "seconds": 489.8
+    "seconds": 292.1
    },
    "body": {
     "target": "GB_Body",
     "source": "GB_Body_HR",
     "normal_source": "GB_Body_HR",
     "size": 4096,
-    "uv_hash": "188d9140e78e082f",
+    "uv_hash": "4dea4a443ae5f566",
     "surfaces": [
      "GBM_skin_torso",
      "GBM_skin_arm_L",
@@ -69,34 +70,35 @@
      "orm": "body_orm.png"
     },
     "coverage": {
-     "valid_texels": 9074040,
-     "empty_inside_islands": 95,
-     "empty_fraction": 1e-05,
-     "baked_outside_raster": 62,
+     "valid_texels": 9434465,
+     "empty_inside_islands": 139,
+     "empty_fraction": 2e-05,
+     "baked_outside_raster": 43,
      "normal_from_source": 1.0,
      "normal_wrong_part_rejected": 0
     },
     "rough_offset": 0.06,
+    "seam_feather_texels": 188069,
     "albedo_linear_luminance": {
-     "median": 0.3195,
+     "median": 0.3193,
      "p5": 0.2902,
      "p95": 0.3429
     },
     "albedo_linear_median_rgb": [
-     0.4679,
-     0.2861,
-     0.2129
+     0.4677,
+     0.2859,
+     0.2127
     ],
-    "ao_mean": 0.96,
-    "normal_mean_z": 0.9971,
-    "seconds": 1427.8
+    "ao_mean": 0.959,
+    "normal_mean_z": 0.9974,
+    "seconds": 903.5
    },
    "shorts": {
     "target": "GB_Shorts",
     "source": "GB_Shorts",
     "normal_source": "GB_Shorts",
     "size": 1024,
-    "uv_hash": "d27093262eed7efb",
+    "uv_hash": "8d868ffd9c415868",
     "surfaces": [
      "GBM_cloth"
     ],
@@ -107,10 +109,10 @@
      "orm": "shorts_orm.png"
     },
     "coverage": {
-     "valid_texels": 411508,
-     "empty_inside_islands": 41,
-     "empty_fraction": 0.0001,
-     "baked_outside_raster": 17,
+     "valid_texels": 544435,
+     "empty_inside_islands": 25,
+     "empty_fraction": 5e-05,
+     "baked_outside_raster": 24,
      "normal_from_source": 0.0,
      "normal_wrong_part_rejected": 0
     },
@@ -121,13 +123,13 @@
      "p95": 0.0417
     },
     "albedo_linear_median_rgb": [
-     0.0391,
-     0.0391,
-     0.0416
+     0.039,
+     0.039,
+     0.0415
     ],
-    "ao_mean": 0.947,
-    "normal_mean_z": 0.9992,
-    "seconds": 18.0
+    "ao_mean": 0.945,
+    "normal_mean_z": 0.9997,
+    "seconds": 17.6
    },
    "mouth": {
     "target": "GB_Mouth",
@@ -156,25 +158,25 @@
     },
     "rough_offset": 0.0,
     "albedo_linear_luminance": {
-     "median": 0.1843,
-     "p5": 0.136,
-     "p95": 0.5995
+     "median": 0.187,
+     "p5": 0.1359,
+     "p95": 0.4656
     },
     "albedo_linear_median_rgb": [
-     0.4303,
-     0.1167,
-     0.1219
+     0.4301,
+     0.1194,
+     0.1226
     ],
     "ao_mean": 0.62,
-    "normal_mean_z": 0.9695,
-    "seconds": 51.3
+    "normal_mean_z": 0.9693,
+    "seconds": 35.6
    },
    "skeleton": {
     "target": "GB_Skeleton",
     "source": "GB_Skeleton",
     "normal_source": "GB_Skeleton_HR",
     "size": 2048,
-    "uv_hash": "d16564e1672d7ce2",
+    "uv_hash": "17936fe1075bd47d",
     "surfaces": [
      "GBM_bone",
      "GBM_cartilage"
@@ -186,34 +188,34 @@
      "orm": "skeleton_orm.png"
     },
     "coverage": {
-     "valid_texels": 751763,
-     "empty_inside_islands": 150,
-     "empty_fraction": 0.0002,
-     "baked_outside_raster": 143,
-     "normal_from_source": 0.9667,
-     "normal_wrong_part_rejected": 21251
+     "valid_texels": 699414,
+     "empty_inside_islands": 157,
+     "empty_fraction": 0.00022,
+     "baked_outside_raster": 140,
+     "normal_from_source": 0.9688,
+     "normal_wrong_part_rejected": 18032
     },
     "rough_offset": 0.0,
     "albedo_linear_luminance": {
-     "median": 0.5062,
-     "p5": 0.4362,
-     "p95": 0.568
+     "median": 0.506,
+     "p5": 0.4361,
+     "p95": 0.5679
     },
     "albedo_linear_median_rgb": [
-     0.5784,
-     0.4985,
-     0.3614
+     0.5783,
+     0.4984,
+     0.3612
     ],
-    "ao_mean": 0.842,
-    "normal_mean_z": 0.9544,
-    "seconds": 220.6
+    "ao_mean": 0.841,
+    "normal_mean_z": 0.9526,
+    "seconds": 145.6
    },
    "organs": {
     "target": "GB_Organs",
     "source": "GB_Organs",
     "normal_source": "GB_Organs_HR",
     "size": 2048,
-    "uv_hash": "aff570d472063d14",
+    "uv_hash": "6b28f643b863724d",
     "surfaces": [
      "GBM_organ"
     ],
@@ -224,34 +226,34 @@
      "orm": "organs_orm.png"
     },
     "coverage": {
-     "valid_texels": 1497648,
-     "empty_inside_islands": 78,
-     "empty_fraction": 5e-05,
-     "baked_outside_raster": 84,
-     "normal_from_source": 0.9076,
-     "normal_wrong_part_rejected": 86061
+     "valid_texels": 1295014,
+     "empty_inside_islands": 110,
+     "empty_fraction": 9e-05,
+     "baked_outside_raster": 87,
+     "normal_from_source": 0.9017,
+     "normal_wrong_part_rejected": 72411
     },
     "rough_offset": 0.0,
     "albedo_linear_luminance": {
-     "median": 0.1161,
+     "median": 0.1132,
      "p5": 0.0144,
-     "p95": 0.617
+     "p95": 0.6184
     },
     "albedo_linear_median_rgb": [
-     0.3059,
-     0.0638,
-     0.0593
+     0.3051,
+     0.062,
+     0.0558
     ],
     "ao_mean": 0.574,
-    "normal_mean_z": 0.9671,
-    "seconds": 389.0
+    "normal_mean_z": 0.9655,
+    "seconds": 207.9
    },
    "brain": {
     "target": "GB_Brain",
     "source": "GB_Brain",
     "normal_source": "GB_Brain_HR",
-    "size": 2048,
-    "uv_hash": "60349d87a55a148f",
+    "size": 4096,
+    "uv_hash": "0a07c6e1fa28dc7c",
     "surfaces": [
      "GBM_brain"
     ],
@@ -262,27 +264,27 @@
      "orm": "brain_orm.png"
     },
     "coverage": {
-     "valid_texels": 877410,
-     "empty_inside_islands": 107,
+     "valid_texels": 4163289,
+     "empty_inside_islands": 479,
      "empty_fraction": 0.00012,
-     "baked_outside_raster": 150,
-     "normal_from_source": 0.8689,
+     "baked_outside_raster": 468,
+     "normal_from_source": 0.8633,
      "normal_wrong_part_rejected": 0
     },
     "rough_offset": 0.0,
     "albedo_linear_luminance": {
-     "median": 0.195,
-     "p5": 0.0676,
-     "p95": 0.2994
+     "median": 0.1943,
+     "p5": 0.0674,
+     "p95": 0.2982
     },
     "albedo_linear_median_rgb": [
-     0.3158,
-     0.1645,
-     0.1489
+     0.315,
+     0.1639,
+     0.1483
     ],
-    "ao_mean": 0.675,
-    "normal_mean_z": 0.9013,
-    "seconds": 177.4
+    "ao_mean": 0.679,
+    "normal_mean_z": 0.898,
+    "seconds": 688.4
    }
   },
   "tileables": {
@@ -1204,7 +1206,7 @@
   "painter": {
    "head": {
     "mesh": "GB_Head",
-    "uv_hash": "7d0bec033e75f0c6",
+    "uv_hash": "635077e603d29049",
     "size": 1024,
     "bone_size": 512,
     "files": {
@@ -1213,14 +1215,14 @@
      "valid": "head_valid.png",
      "bone": "head_bone.png"
     },
-    "valid_fraction": 0.6007,
+    "valid_fraction": 0.6114,
     "position": "RGB = rest position - segment origin (m, body frame); A = segment code, -1 outside islands + dilation; origins in manifest.json segment_origins",
     "bone": "R = dominant bone index (rig.json order), G = second bone, B = dominant weight x 255, A = 255 inside islands (dilated 8 px, nearest)",
     "rest_normal": "object/body-frame rest normal, 0.5 + 0.5 n"
    },
    "body": {
     "mesh": "GB_Body",
-    "uv_hash": "188d9140e78e082f",
+    "uv_hash": "4dea4a443ae5f566",
     "size": 1024,
     "bone_size": 512,
     "files": {
@@ -1229,7 +1231,7 @@
      "valid": "body_valid.png",
      "bone": "body_bone.png"
     },
-    "valid_fraction": 0.5409,
+    "valid_fraction": 0.5624,
     "position": "RGB = rest position - segment origin (m, body frame); A = segment code, -1 outside islands + dilation; origins in manifest.json segment_origins",
     "bone": "R = dominant bone index (rig.json order), G = second bone, B = dominant weight x 255, A = 255 inside islands (dilated 8 px, nearest)",
     "rest_normal": "object/body-frame rest normal, 0.5 + 0.5 n",
@@ -1238,7 +1240,7 @@
    },
    "shorts": {
     "mesh": "GB_Shorts",
-    "uv_hash": "d27093262eed7efb",
+    "uv_hash": "8d868ffd9c415868",
     "size": 1024,
     "bone_size": 512,
     "files": {
@@ -1247,7 +1249,7 @@
      "valid": "shorts_valid.png",
      "bone": "shorts_bone.png"
     },
-    "valid_fraction": 0.3924,
+    "valid_fraction": 0.5192,
     "position": "RGB = rest position - segment origin (m, body frame); A = segment code, -1 outside islands + dilation; origins in manifest.json segment_origins",
     "bone": "R = dominant bone index (rig.json order), G = second bone, B = dominant weight x 255, A = 255 inside islands (dilated 8 px, nearest)",
     "rest_normal": "object/body-frame rest normal, 0.5 + 0.5 n"
@@ -1378,13 +1380,45 @@
   },
   "uv": {
    "GB_Skeleton": {
-    "cached": true
+    "charts": 2112,
+    "coverage_before": 0.038,
+    "coverage": 0.166,
+    "overlap": 6e-05,
+    "texel_mm_at_set_size": 1.496
    },
    "GB_Organs": {
-    "cached": true
+    "charts": 643,
+    "coverage_before": 0.187,
+    "coverage": 0.309,
+    "overlap": 1e-05,
+    "texel_mm_at_set_size": 0.975
    },
    "GB_Brain": {
-    "cached": true
+    "charts": 2858,
+    "coverage_before": 0.061,
+    "coverage": 0.249,
+    "overlap": 0.00054,
+    "texel_mm_at_set_size": 0.163
+   },
+   "GB_Frac_Femur_L_comminuted": {
+    "overlap_before": 0.0011,
+    "overlap": 0.0
+   },
+   "GB_Frac_Femur_R_comminuted": {
+    "overlap_before": 0.00111,
+    "overlap": 0.0
+   },
+   "GB_Shorts": {
+    "overlap_before": 0.00295,
+    "overlap": 0.0
+   },
+   "GB_Vessels_Art": {
+    "overlap_before": 0.00245,
+    "overlap": 0.00017
+   },
+   "GB_Vessels_Ven": {
+    "overlap_before": 0.00394,
+    "overlap": 0.00033
    }
   },
   "material_map": {
@@ -1417,59 +1451,59 @@
    "tile_m": "physical size of one tileable repeat in metres (triplanar / metre UV scale)"
   },
   "timings_s": {
-   "uvs": 0.1,
-   "sets": 2934.6,
-   "tileables": 75.9,
-   "painter": 33.2
+   "uvs": 223.3,
+   "sets": 2570.5,
+   "tileables": 76.5,
+   "painter": 31.6
   },
   "files": {
    "body_albedo.png": {
-    "bytes": 5398952,
-    "sha256": "248207507124ab05"
+    "bytes": 5554929,
+    "sha256": "f72cf1bb763c40b5"
    },
    "body_bone.png": {
-    "bytes": 98306,
-    "sha256": "27811c0684ea3c6c"
+    "bytes": 99940,
+    "sha256": "00eb0702642c4959"
    },
    "body_normal.png": {
-    "bytes": 6216321,
-    "sha256": "24853e7a39ca7ea8"
+    "bytes": 5915565,
+    "sha256": "e62d3c83c09f067f"
    },
    "body_orm.png": {
-    "bytes": 8970585,
-    "sha256": "28aae99d446d606b"
+    "bytes": 9484463,
+    "sha256": "65a292917b8a8cc8"
    },
    "body_position.exr": {
-    "bytes": 1344602,
-    "sha256": "ad17886fdfb4ca81"
+    "bytes": 1432273,
+    "sha256": "db92d2c6e5ad0076"
    },
    "body_rest_normal.png": {
-    "bytes": 1361643,
-    "sha256": "83187ff4e8bb2d26"
+    "bytes": 1520774,
+    "sha256": "e50f590f138750bb"
    },
    "body_tension.png": {
-    "bytes": 154140,
-    "sha256": "817f43de393ebc62"
+    "bytes": 163943,
+    "sha256": "05804bc76b653192"
    },
    "body_tissue_depth.png": {
-    "bytes": 154423,
-    "sha256": "774153ee926b9064"
+    "bytes": 150489,
+    "sha256": "3faaf91040fe248a"
    },
    "body_valid.png": {
-    "bytes": 13203,
-    "sha256": "87bbd9dfd1bdafdd"
+    "bytes": 14143,
+    "sha256": "ecee1a5b12ee65d3"
    },
    "brain_albedo.png": {
-    "bytes": 4140404,
-    "sha256": "593f61ea8907f24d"
+    "bytes": 16033412,
+    "sha256": "8780bf9575fcb165"
    },
    "brain_normal.png": {
-    "bytes": 5522217,
-    "sha256": "b7983d9134784ea9"
+    "bytes": 21365158,
+    "sha256": "116d97f788d0b891"
    },
    "brain_orm.png": {
-    "bytes": 2918938,
-    "sha256": "a399906806a057b6"
+    "bytes": 11887439,
+    "sha256": "be4cd795b2ed8af4"
    },
    "decal_blood_albedo.png": {
     "bytes": 2437559,
@@ -1496,60 +1530,60 @@
     "sha256": "9667e7595059a2ad"
    },
    "hair_cards.png": {
-    "bytes": 292554,
-    "sha256": "7812a0739a7cb4db"
+    "bytes": 292529,
+    "sha256": "3b2805204301abc9"
    },
    "head_albedo.png": {
-    "bytes": 1883991,
-    "sha256": "825f7e0bfa852e84"
+    "bytes": 1843469,
+    "sha256": "fe2c530849bcbe1e"
    },
    "head_bone.png": {
-    "bytes": 47484,
-    "sha256": "3d1c906e401650ff"
+    "bytes": 49009,
+    "sha256": "1bdf92b5943e172f"
    },
    "head_normal.png": {
-    "bytes": 5615665,
-    "sha256": "7041e6ec35da8a76"
+    "bytes": 5588083,
+    "sha256": "f9bdfb60c3a370ab"
    },
    "head_orm.png": {
-    "bytes": 3647476,
-    "sha256": "e76b902cf0c3d81a"
+    "bytes": 3740142,
+    "sha256": "d12902fbf9461977"
    },
    "head_position.exr": {
-    "bytes": 757168,
-    "sha256": "f7ed323f22e0ef61"
+    "bytes": 747045,
+    "sha256": "c735ddb4b2cb26d8"
    },
    "head_rest_normal.png": {
-    "bytes": 1179401,
-    "sha256": "fdf9d174eee0a0ed"
+    "bytes": 1157313,
+    "sha256": "0fc72e6c4e4a2d8f"
    },
    "head_valid.png": {
-    "bytes": 6327,
-    "sha256": "c741883ba787fc3f"
+    "bytes": 6121,
+    "sha256": "11ca2926978fcce5"
    },
    "mouth_albedo.png": {
-    "bytes": 767576,
-    "sha256": "e2cc8e8349e9f3f2"
+    "bytes": 695172,
+    "sha256": "17aea80a9cbfa277"
    },
    "mouth_normal.png": {
-    "bytes": 1278897,
-    "sha256": "b96f1ef307f4e7ff"
+    "bytes": 1274725,
+    "sha256": "761f9a160de7f1a3"
    },
    "mouth_orm.png": {
-    "bytes": 976983,
-    "sha256": "fd8cfdc486a3f006"
+    "bytes": 977198,
+    "sha256": "e0357a2658320815"
    },
    "organs_albedo.png": {
-    "bytes": 2249626,
-    "sha256": "cf077da1f724e289"
+    "bytes": 2162311,
+    "sha256": "b6eac082c106465c"
    },
    "organs_normal.png": {
-    "bytes": 4650389,
-    "sha256": "41659b3b6ef6e310"
+    "bytes": 4397556,
+    "sha256": "6cdffa3d1a59c464"
    },
    "organs_orm.png": {
-    "bytes": 4884014,
-    "sha256": "0f33636f103c8fe2"
+    "bytes": 4724069,
+    "sha256": "a1b7aeb72e23b034"
    },
    "prop_g10_albedo.png": {
     "bytes": 16540,
@@ -1684,44 +1718,44 @@
     "sha256": "c3d5302257e633d5"
    },
    "shorts_albedo.png": {
-    "bytes": 269032,
-    "sha256": "e289d46e2f417f0e"
+    "bytes": 303646,
+    "sha256": "9cfd34cc25f1f2f3"
    },
    "shorts_bone.png": {
-    "bytes": 62744,
-    "sha256": "54d4d611cb99a775"
+    "bytes": 68293,
+    "sha256": "bebdf9d515e4a5a6"
    },
    "shorts_normal.png": {
-    "bytes": 383224,
-    "sha256": "8d26afb9ba6a3286"
+    "bytes": 453004,
+    "sha256": "79fb75217ba8a870"
    },
    "shorts_orm.png": {
-    "bytes": 303001,
-    "sha256": "3a7c71a563572605"
+    "bytes": 358153,
+    "sha256": "3c4cc25c59364799"
    },
    "shorts_position.exr": {
-    "bytes": 1416588,
-    "sha256": "984797deddecb8d2"
+    "bytes": 1512095,
+    "sha256": "8142350f51b2046d"
    },
    "shorts_rest_normal.png": {
-    "bytes": 1092906,
-    "sha256": "715ea67f6fa3a90f"
+    "bytes": 1316924,
+    "sha256": "0ffe29c9faeac3c9"
    },
    "shorts_valid.png": {
-    "bytes": 23855,
-    "sha256": "f084aed55a9251f4"
+    "bytes": 27017,
+    "sha256": "d97c7a622d3fc50d"
    },
    "skeleton_albedo.png": {
-    "bytes": 2736736,
-    "sha256": "8db88445c9bbf020"
+    "bytes": 2711326,
+    "sha256": "f1d0ef96d37be8ca"
    },
    "skeleton_normal.png": {
-    "bytes": 4916086,
-    "sha256": "7affb5f6c45d00b2"
+    "bytes": 4925848,
+    "sha256": "ca99582aa26fdcef"
    },
    "skeleton_orm.png": {
-    "bytes": 4277781,
-    "sha256": "042b59cb18f24e2f"
+    "bytes": 4296425,
+    "sha256": "516ddd681d6e959a"
    },
    "tile_blood_crust_albedo.png": {
     "bytes": 149461,

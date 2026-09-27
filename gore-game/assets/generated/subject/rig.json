@@ -3,7 +3,7 @@
  "frame": "body_zup_m",
  "godot_mapping": "(x, z, -y)",
  "generator": "blender/gore_body/build.py",
- "build_id": "gb-d78295c975d3",
+ "build_id": "gb-4235da7a7e00",
  "data": {
   "bones": [
    {
@@ -157,7 +157,7 @@
     "tail": [
      0.0,
      0.015,
-     1.49
+     1.49554
     ],
     "deform": true,
     "physical": true,
@@ -170,13 +170,13 @@
      ],
      "y": [
       0.0,
-      -0.24087,
-      0.97056
+      -0.23203,
+      0.97271
      ],
      "z": [
       0.0,
-      -0.97056,
-      -0.24087
+      -0.97271,
+      -0.23203
      ]
     }
    },
@@ -186,12 +186,12 @@
     "head": [
      0.0,
      0.015,
-     1.49
+     1.49554
     ],
     "tail": [
      0.0,
      0.015,
-     1.622
+     1.637
     ],
     "deform": true,
     "physical": true,
@@ -220,12 +220,12 @@
     "head": [
      0.0,
      0.015,
-     1.622
+     1.637
     ],
     "tail": [
      0.0,
      0.02,
-     1.78
+     1.795
     ],
     "deform": true,
     "physical": true,
@@ -255,12 +255,12 @@
     "head": [
      0.0,
      0.0085,
-     1.645
+     1.66
     ],
     "tail": [
      0.0,
      -0.06,
-     1.544
+     1.559
     ],
     "deform": true,
     "physical": false,
@@ -290,12 +290,12 @@
     "head": [
      0.0,
      -0.03,
-     1.585
+     1.6
     ],
     "tail": [
      0.0,
      -0.075,
-     1.59
+     1.605
     ],
     "deform": true,
     "physical": false,
@@ -325,12 +325,12 @@
     "head": [
      0.032,
      -0.05,
-     1.669
+     1.684
     ],
     "tail": [
      0.032,
      -0.062,
-     1.669
+     1.684
     ],
     "deform": true,
     "physical": false,
@@ -360,12 +360,12 @@
     "head": [
      -0.032,
      -0.05,
-     1.669
+     1.684
     ],
     "tail": [
      -0.032,
      -0.062,
-     1.669
+     1.684
     ],
     "deform": true,
     "physical": false,
@@ -395,12 +395,12 @@
     "head": [
      0.032,
      -0.05,
-     1.669
+     1.684
     ],
     "tail": [
      0.032,
      -0.05,
-     1.684
+     1.699
     ],
     "deform": true,
     "physical": false,
@@ -430,12 +430,12 @@
     "head": [
      -0.032,
      -0.05,
-     1.669
+     1.684
     ],
     "tail": [
      -0.032,
      -0.05,
-     1.684
+     1.699
     ],
     "deform": true,
     "physical": false,
@@ -465,12 +465,12 @@
     "head": [
      0.032,
      -0.05,
-     1.669
+     1.684
     ],
     "tail": [
      0.032,
      -0.05,
-     1.654
+     1.669
     ],
     "deform": true,
     "physical": false,
@@ -500,12 +500,12 @@
     "head": [
      -0.032,
      -0.05,
-     1.669
+     1.684
     ],
     "tail": [
      -0.032,
      -0.05,
-     1.654
+     1.669
     ],
     "deform": true,
     "physical": false,
@@ -540,26 +540,26 @@
     "tail": [
      0.165,
      0.01,
-     1.462
+     1.46229
     ],
     "deform": true,
     "physical": true,
     "kinematic": false,
     "rest_basis_world": {
      "x": [
-      0.0854,
+      0.08744,
       0.0,
-      -0.99635
+      -0.99617
      ],
      "y": [
-      0.93869,
-      0.33525,
-      0.08046
+      0.93854,
+      0.33519,
+      0.08238
      ],
      "z": [
-      0.33402,
-      -0.94213,
-      0.02863
+      0.33391,
+      -0.94215,
+      0.02931
      ]
     },
     "note": "SC -> AC"
@@ -575,26 +575,26 @@
     "tail": [
      -0.165,
      0.01,
-     1.462
+     1.46229
     ],
     "deform": true,
     "physical": true,
     "kinematic": false,
     "rest_basis_world": {
      "x": [
-      0.0854,
+      0.08744,
       0.0,
-      0.99635
+      0.99617
      ],
      "y": [
-      -0.93869,
-      0.33525,
-      0.08046
+      -0.93854,
+      0.33519,
+      0.08238
      ],
      "z": [
-      -0.33402,
-      -0.94213,
-      0.02863
+      -0.33391,
+      -0.94215,
+      0.02931
      ]
     },
     "note": "SC -> AC"
@@ -1943,7 +1943,7 @@
     "com_world": [
      0.0,
      0.015,
-     1.556
+     1.571
     ],
     "com_tag": "E",
     "shape": {
@@ -1951,7 +1951,7 @@
      "center_world": [
       0.0,
       0.015,
-      1.556
+      1.571
      ],
      "tag": "E (plan §3.1.2 shapes)",
      "radius": 0.055,
@@ -1969,7 +1969,7 @@
      "pivot_world": [
       0.0,
       0.015,
-      1.49
+      1.49554
      ],
      "axes": {
       "flex": {
@@ -2119,7 +2119,7 @@
     "com_world": [
      0.0,
      0.01579,
-     1.64696
+     1.66196
     ],
     "com_tag": "V (head+neck COM at the ear canal)",
     "shape": {
@@ -2127,7 +2127,7 @@
      "center_world": [
       0.0,
       0.0,
-      1.667
+      1.682
      ],
      "tag": "E (plan §3.1.2 shapes)",
      "radius": 0.08,
@@ -2145,7 +2145,7 @@
      "pivot_world": [
       0.0,
       0.015,
-      1.622
+      1.637
      ],
      "axes": {
       "flex": {
@@ -2295,7 +2295,7 @@
     "com_world": [
      0.095,
      -0.015,
-     1.456
+     1.45601
     ],
     "com_tag": "E",
     "shape": {
@@ -2303,7 +2303,7 @@
      "center_world": [
       0.095,
       -0.015,
-      1.456
+      1.45601
      ],
      "tag": "E (plan §3.1.2 shapes)",
      "radius": 0.025,
@@ -2432,7 +2432,7 @@
     "com_world": [
      -0.095,
      -0.015,
-     1.456
+     1.45601
     ],
     "com_tag": "E",
     "shape": {
@@ -2440,7 +2440,7 @@
      "center_world": [
       -0.095,
       -0.015,
-      1.456
+      1.45601
      ],
      "tag": "E (plan §3.1.2 shapes)",
      "radius": 0.025,
@@ -4498,12 +4498,12 @@
     "L": [
      0.0315,
      -0.0475,
-     1.669
+     1.684
     ],
     "R": [
      -0.0315,
      -0.0475,
-     1.669
+     1.684
     ]
    },
    "eye_radius": 0.012,
@@ -4517,7 +4517,7 @@
    "jaw_pivot": [
     0.0,
     0.0085,
-    1.645
+    1.66
    ],
    "lid_aperture_mm_to_deg": [
     [
@@ -4767,7 +4767,7 @@
    "jaw_bone_head": [
     0.0,
     0.0085,
-    1.645
+    1.66
    ]
   },
   "kinematic_myotomes": {
@@ -5493,7 +5493,7 @@
      "joint": [
       0.0,
       0.015,
-      1.49
+      1.49554
      ],
      "axis": [
       0.0,
@@ -5536,7 +5536,7 @@
      "joint": [
       0.0,
       0.015,
-      1.622
+      1.637
      ],
      "axis": [
       0.0,
@@ -5771,6 +5771,7 @@
    "torque_cap_nm": "per direction key, before tone/paralysis multipliers (plan §3.2)",
    "b2g": "Godot = (x, z, -y) of every vector here",
    "twist_bones": "drive kinematic.*_twist_*.driver every frame, else they carry 100 % of the twist like their parent (no candy-wrap relief)"
-  }
+  },
+  "frame_note": "final body frame: the RB authoring frame with the neck lengthened by 15 mm (z += 0.015 * smoothstep(1.455, 1.54, z)); head offset [0.0, 0.02, 1.662]"
  }
 }

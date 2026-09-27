@@ -3,12 +3,12 @@
  "frame": "body_zup_m",
  "godot_mapping": "(x, z, -y)",
  "generator": "blender/gore_body/build.py",
- "build_id": "gb-d78295c975d3",
+ "build_id": "gb-4235da7a7e00",
  "data": {
   "origin": [
    -0.07,
    -0.07,
-   1.595
+   1.61
   ],
   "voxel_size": [
    0.00219,
@@ -254,6 +254,7 @@
    "26": 1236
   },
   "method": "inside = GB_Brain SDF; lobes cut by the head's CENTRAL_SULCUS / LATERAL_FISSURE curves + parieto-occipital plane; thalamus, internal capsule, corpus callosum ellipsoids; cerebellum under the tentorium, vermis |x| < 11 mm; brainstem by the mesh capsules (spine.json brainstem)",
-  "status": "B4"
+  "status": "B4",
+  "frame_note": "final body frame: the RB authoring frame with the neck lengthened by 15 mm (z += 0.015 * smoothstep(1.455, 1.54, z)); head offset [0.0, 0.02, 1.662]"
  }
 }
