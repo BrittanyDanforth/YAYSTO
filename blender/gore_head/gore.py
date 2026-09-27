@@ -2553,6 +2553,10 @@ def _run_mesh(t, trail, surface, steps):
     rad = rad * (0.1 + 0.9 * t.smooth(1.0, 0.8, tt).max(t.attr("d_mov")))
     curves = t.out(t.node('GeometryNodeSetCurveRadius', {'Curve': curves, 'Radius': rad}))
     curves = t.store(curves, "d_rad", rad)
+    # run id and position along it (0 = where it leaves the wound): lets tests
+    # and the game follow a run from its source
+    curves = t.store(curves, "gore_run", t.math('ADD', t.attr("d_id", 'INT'), 0.0))
+    curves = t.store(curves, "gore_runf", tt)
     profile = t.out(t.node('GeometryNodeCurvePrimitiveCircle', {'Resolution': 10, 'Radius': 1.0}, mode='RADIUS'))
     radius = t.out(t.node('GeometryNodeInputRadius'))
     tubes = t.out(t.node('GeometryNodeCurveToMesh', {'Curve': curves, 'Profile Curve': profile,

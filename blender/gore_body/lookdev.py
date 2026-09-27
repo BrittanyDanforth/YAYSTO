@@ -451,7 +451,11 @@ def build_materials(eyes=None):
     out = {}
     out["GBL_skin_head"] = _shifted_copy(ghm["GH_Skin"], "GBL_skin_head", HEAD_OFFSET, {"gh_lip": "gb_lip"})
     out["GBL_mouth_lining"] = _shifted_copy(ghm["GH_MouthInterior"], "GBL_mouth_lining", HEAD_OFFSET)
-    out["GBL_teeth"] = _shifted_copy(ghm["GH_Teeth"], "GBL_teeth", HEAD_OFFSET, {"tooth_id": "gb_piece"})
+    # intact living teeth (fix round 2): the head project's GH_Teeth carries brown blood / stain speckles for its
+    # gore states, which read as rotten teeth on the intact body; the body uses clean ivory enamel (blood on the
+    # teeth is painted at runtime by the game's blood film)
+    out["GBL_teeth"] = _simple("GBL_teeth", (0.74, 0.68, 0.56), 0.22, sss=0.35, coat=0.35,
+                               radius=(0.9, 0.7, 0.5), noise=0.06)
     out["GBL_gums"] = _shifted_copy(ghm["GH_Gums"], "GBL_gums", HEAD_OFFSET)
     out["GBL_tongue"] = _shifted_copy(ghm["GH_Tongue"], "GBL_tongue", HEAD_OFFSET)
     out["GBL_brain"] = _shifted_copy(ghm["GH_Brain"], "GBL_brain", HEAD_OFFSET, {"gh_sulcus": "gb_depth"})
@@ -462,6 +466,8 @@ def build_materials(eyes=None):
         c = eye_centre(o) if o is not None else (0.032 if side == "L" else -0.032, -0.050, 1.669)
         out[f"GBL_eye_{side}"] = _shifted_copy(ghm["GH_Eye"], f"GBL_eye_{side}", c)
     out["GBL_skin_body"] = _body_skin_material()
+    for n_ in ("GBL_skin_head", "GBL_skin_body"):
+        _add_seam_blend(out[n_])
     out["GBL_cartilage"] = _cartilage_material()
     out["GBL_organ"] = _organ_material()
     out["GBL_cloth"] = _cloth_material()
@@ -481,6 +487,60 @@ def lookdev_for(obj, slot_name):
     return SLOT_LOOKDEV.get(slot_name)
 
 
+# Neck-ring blend (fix round 2): the head (GH_Skin copy) and body skin shaders differ slightly in sheen and
+# roughness, which printed a line where GB_Head meets GB_Body.  Both mix toward one shared neutral skin BSDF
+# by ``lk_seam`` (1 at the ring, 0 beyond 18 mm), so the two sides render identically at the join.  The baked
+# game textures get the same feather in bake.feather_seam.
+SEAM_SKIN = dict(colour=(0.469, 0.287, 0.214), rough=0.46)
+
+
+def _add_seam_blend(mat):
+    """Insert ``mix(own surface, neutral skin, lk_seam)`` before the material output."""
+    nt = mat.node_tree
+    out = next((n for n in nt.nodes if n.type == 'OUTPUT_MATERIAL' and n.is_active_output), None)
+    if out is None or not out.inputs['Surface'].is_linked or "gb_seam_mix" in nt.nodes:
+        return
+    src = out.inputs['Surface'].links[0].from_socket
+    attr = nt.nodes.new('ShaderNodeAttribute')
+    attr.attribute_name = "lk_seam"
+    neutral = nt.nodes.new('ShaderNodeBsdfPrincipled')
+    neutral.inputs['Base Color'].default_value = (*SEAM_SKIN["colour"], 1.0)
+    neutral.inputs['Roughness'].default_value = SEAM_SKIN["rough"]
+    neutral.inputs['Subsurface Weight'].default_value = 1.0
+    neutral.inputs['Subsurface Radius'].default_value = (1.0, 0.4, 0.22)
+    neutral.inputs['Subsurface Scale'].default_value = 0.004
+    neutral.inputs['Coat Weight'].default_value = 0.08
+    neutral.inputs['Coat Roughness'].default_value = 0.35
+    neutral.inputs['Sheen Weight'].default_value = 0.06
+    mix = nt.nodes.new('ShaderNodeMixShader')
+    mix.name = "gb_seam_mix"
+    nt.links.new(attr.outputs['Fac'], mix.inputs['Fac'])
+    nt.links.new(src, mix.inputs[1])
+    nt.links.new(neutral.outputs['BSDF'], mix.inputs[2])
+    nt.links.new(mix.outputs['Shader'], out.inputs['Surface'])
+
+
+def write_seam_attr(objs, feather=(0.004, 0.018)):
+    """``lk_seam`` point attribute (see _add_seam_blend) on the skin meshes that end at the neck ring."""
+    import gb_geom as gg
+    for o in objs:
+        if o is None or o.type != 'MESH' or not (o.name.startswith("GB_Head") or o.name.startswith("GB_Body")):
+            continue
+        me = o.data
+        loops = gg.boundary_loops(me)
+        if not loops:
+            continue
+        v = gbc.get_verts(me)
+        ring = v[np.asarray(min(loops, key=lambda lp: float(v[np.asarray(lp), 2].mean())))]
+        w = np.zeros(len(v))
+        near = np.abs(v[:, 2] - ring[:, 2].mean()) < 0.05
+        if near.any():
+            d = np.sqrt(((v[near][:, None, :] - ring[None, :, :]) ** 2).sum(-1)).min(1)
+            t = 1.0 - np.clip((d - feather[0]) / (feather[1] - feather[0]), 0.0, 1.0)
+            w[near] = t * t * (3.0 - 2.0 * t)
+        gbc.point_attr(o, "lk_seam", w.astype(np.float32), 'FLOAT')
+
+
 MOLE_COUNT = 12
 MOLE_MIN_SPACING = 0.08
 
@@ -488,6 +548,10 @@ MOLE_MIN_SPACING = 0.08
 def lookdev_on(objs):
     """Swap every GBM_* slot of ``objs`` to its look-dev material; returns the state for lookdev_off."""
     state = []
+    try:
+        write_seam_attr(objs)
+    except Exception as exc:                                        # pragma: no cover
+        gbc.log(f"WARNING: lk_seam not written: {exc}")
     for o in objs:
         if o is None or o.type != 'MESH':
             continue
