@@ -242,6 +242,14 @@ damage = 0 returns the intact mesh. Carnage (9 hits) evaluates in ~4.5 s.
   Catmull-Rom curve-to-mesh (keep removing `hit_mat`, `g_pack` after use); skin damage shader is ~2.5× the cost of plain
   skin (close-ups take minutes on CPU).
 
+**Head backlog after the final pass (2026-09-27, from its renders; fix next, with the face fix):**
+- Blood streams are straight, even-width red bars/ribbons: need branching, beading fronts, thin translucent film,
+  contour-following, drying edges, far more volume (REFERENCE_NOTES §5.18 G).
+- Exit close-up: near-square hole, white paper/plaster bone chips, flat red slabs; must be ragged/stellate with
+  everted shredded tissue (pathology sheet). Bone everywhere must be matte chalky ivory chunks, not white flakes.
+- seq_exit_05s: the first trickle starts slightly BELOW the rim (thin clean-skin gap) — §5.17 violation.
+- Crushed preset: outline still not caved in; mouth blast confined to a neat oval (mid-face should be pulp).
+
 **Body review notes (2026-09-26, from fixer-round-1 renders; critics of the next body round must check these):**
 - Hands: fingers read as smooth sausages; nails are flat stuck-on rectangles (a sticker problem) — nails need a real
   nail plate sunk into a nail fold with a cuticle, curved across and along, free edge. Toes stubby and blob-like.
