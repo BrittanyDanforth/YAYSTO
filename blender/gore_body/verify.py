@@ -2502,8 +2502,11 @@ def b6_seam_and_layers():
     vh, vb = gbc.get_verts(h.data), gbc.get_verts(b.data)
     ih, wh = rig.read_weights(h)
     ib, wb = rig.read_weights(b)
-    rh = np.nonzero(np.abs(vh[:, 2] - gbc.SEAM_Z) < 1e-6)[0]
-    rb_ = np.nonzero(np.abs(vb[:, 2] - gbc.SEAM_Z) < 1e-6)[0]
+    sz = gbc.seam_z_now()
+    rh = np.nonzero(np.abs(vh[:, 2] - sz) < 1e-6)[0]
+    rb_ = np.nonzero(np.abs(vb[:, 2] - sz) < 1e-6)[0]
+    if len(rh) != gbc.SEAM_RING_N:
+        return False, f"{len(rh)} GB_Head ring vertices at z {sz:.5f} (want {gbc.SEAM_RING_N})"
     kb = {tuple(np.round(vb[i], 6)): i for i in rb_}
     diff = 0.0
     for i in rh:

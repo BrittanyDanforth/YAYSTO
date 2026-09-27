@@ -326,6 +326,11 @@ def warp_normals(p_auth, n, inverse=False):
     return n / np.maximum(np.linalg.norm(n, axis=-1, keepdims=True), 1e-12)
 
 
+def seam_z_now():
+    """The seam plane height in the frame the scene is in now (SEAM_Z is the authoring value)."""
+    return float(lift_z(SEAM_Z)) if scene_frame() == "final" else SEAM_Z
+
+
 def scene_frame():
     """'authoring' or 'final' (the frame the GoreBody objects are in now)."""
     import bpy
