@@ -342,14 +342,23 @@ def run_test(md, arm, name, spec, rest=None):
             rest_skin = _bvh(V0, T)
             own = low[~pinched[low]]
             if len(own):
-                q = []
+                q, keep = [], []
                 for k in own:
                     hit = rest_skin.find_nearest(sh.v[sel][k].tolist())
                     tri = T[hit[2]]
-                    j = tri[np.argmin(np.linalg.norm(V0[tri] - np.asarray(hit[0]), axis=1))]
-                    q.append(V1[j] + 0.002 * N1[hit[2]])
+                    bc = _barycentric(np.asarray(hit[0], float), V0[tri[0]], V0[tri[1]], V0[tri[2]])
+                    q_rest_off = float(hit[3])                       # the cloth's rest clearance over its own skin
+                    q_pose = bc @ V1[tri]                            # its own skin point, posed with the skin
+                    q.append(V1[tri[np.argmax(bc)]] + 0.002 * N1[hit[2]])
+                    # ... or the cloth still hangs at its rest clearance over its own (posed) skin point and it is
+                    # ANOTHER skin sheet that has closed in closer than that clearance (the belly / lower abdomen
+                    # meeting the front of the thigh in hip flexion): the cloth is caught between two sheets of a
+                    # closing fold, where real cloth is squeezed flat; skinning cannot resolve that (fix round 1)
+                    keep.append(float(np.linalg.norm(P[k] - q_pose)) <= q_rest_off + 0.003)
                 buried = winding(bvh, N1, np.array(q)) >= 0.5
                 pinched[own[buried]] = True
+                caught = np.array(keep) & (signed[own] > -0.012)
+                pinched[own[caught]] = True
             free = ~pinched
             res["shorts_mm"] = round(float(signed[free].min() * 1000.0), 2) if free.any() else None
             res["shorts_inside"] = int((signed[free] < 0).sum())

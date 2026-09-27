@@ -343,8 +343,27 @@ def budget_checks(meshes):
     return res
 
 
+def _png_pixels(path):
+    """Width * height of a PNG from its IHDR chunk (0 if unreadable)."""
+    try:
+        with open(path, "rb") as fh:
+            head = fh.read(24)
+        if head[:8] != b"\x89PNG\r\n\x1a\n":
+            return 0
+        return int.from_bytes(head[16:20], "big") * int.from_bytes(head[20:24], "big")
+    except OSError:
+        return 0
+
+
+def png_limit_bytes(path):
+    """Plan §4.3: 12 MB per 2,048^2 PNG, scaled by the texel count (a 4,096^2 hero atlas may use 4x, i.e. the
+    same bytes per texel), never above the 50 MB per-file hard limit."""
+    px = _png_pixels(path) or 2048 * 2048
+    return min(12e6 * max(px / (2048.0 * 2048.0), 1.0), gbc.FILE_LIMITS_MB["any"] * 1e6)
+
+
 def file_checks(out):
-    """Every file under ``out`` < 50 MB, GB_Subject.glb <= 40 MB, 2048^2 PNG <= 12 MB (plan §4.3)."""
+    """Every file under ``out`` < 50 MB, GB_Subject.glb <= 40 MB, PNG <= 12 MB per 2048^2 texels (plan §4.3)."""
     bad, total, biggest = [], 0, ("", 0)
     for root, _d, files in os.walk(out):
         for f in files:
@@ -354,12 +373,12 @@ def file_checks(out):
             if b > biggest[1]:
                 biggest = (os.path.relpath(p, out), b)
             if b > gbc.FILE_LIMITS_MB["any"] * 1e6 or (f == SUBJECT_GLB and b > gbc.FILE_LIMITS_MB[SUBJECT_GLB] * 1e6) \
-                    or (f.endswith(".png") and b > 12e6):
+                    or (f.endswith(".png") and b > png_limit_bytes(p)):
                 bad.append(f"{os.path.relpath(p, out)} {b / 1e6:.1f} MB")
     return {"ok": not bad, "over": bad, "total_mb": round(total / 1e6, 2),
             "largest": {"file": biggest[0], "mb": round(biggest[1] / 1e6, 2)},
             "limits_mb": {"any": gbc.FILE_LIMITS_MB["any"], SUBJECT_GLB: gbc.FILE_LIMITS_MB[SUBJECT_GLB],
-                          "png": 12.0, "generated_total": 250.0}}
+                          "png": "12.0 per 2048^2 texels", "generated_total": 250.0}}
 
 
 # import hints per texture role (plan §4.2); Godot's importer settings for G0

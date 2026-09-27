@@ -448,6 +448,14 @@ def build_materials(eyes=None):
     scene objects of those names are used."""
     gh = _gh()
     ghm = gh.build_materials()
+    # re-running on a saved .blend whose slots already hold GBL_* materials: park the old ones under a temp name
+    # and remap their users onto the rebuilt ones at the end (removing them left empty slots -> white render)
+    prev = {}
+    for m in list(bpy.data.materials):
+        if m.name.startswith("GBL_") and not m.name.endswith("__prev"):
+            nm = m.name
+            m.name = nm + "__prev"
+            prev[nm] = m
     out = {}
     out["GBL_skin_head"] = _shifted_copy(ghm["GH_Skin"], "GBL_skin_head", HEAD_OFFSET, {"gh_lip": "gb_lip"})
     out["GBL_mouth_lining"] = _shifted_copy(ghm["GH_MouthInterior"], "GBL_mouth_lining", HEAD_OFFSET)
@@ -477,6 +485,13 @@ def build_materials(eyes=None):
     out["GBL_vessel_ven"] = _simple("GBL_vessel_ven", _lin("#8E1420"), 0.25, sss=0.3, coat=0.5, noise=0.2)
     out["GBL_tearline"] = _simple("GBL_tearline", (0.8, 0.8, 0.8), 0.02, coat=1.0, alpha=0.35)
     out["GBL_eye_occlusion"] = _simple("GBL_eye_occlusion", (0.0, 0.0, 0.0), 1.0, alpha=0.25)
+    for nm, m in prev.items():
+        new_m = bpy.data.materials.get(nm)
+        if new_m is not None and new_m != m:
+            m.user_remap(new_m)
+            bpy.data.materials.remove(m)
+        else:
+            m.name = nm
     return out
 
 

@@ -2068,24 +2068,25 @@ def export_vessel_table(path):
 #      are flattened onto, so there is never skin between them), its front
 #      advancing at 1-5 cm/s, widening with the volume, splitting into branches,
 #      slowing in creases and hanging as drops where the skin faces down.
-DRIP_STEPS = 40
-BRANCH_STEPS = 22
+DRIP_STEPS = 48
+BRANCH_STEPS = 26
+WALK_RAMP = 6                   # the first steps of a run are 1/6 .. 1 of the full step (see _walk)
 BLOOD_KINDS = ("bullet", "exit", "slash", "blunt", "blast")
 POOL_KINDS = ("bullet", "exit", "blunt")
 POOL_RES = 72
 # kind: (extra runs at full flow, spread of the extra runs' start across the
 # hole (fraction of its radius), cavity volume in mL at size 1 (fill time = V / Q))
-RUNS = {"bullet": (2.0, 0.9, 0.10), "exit": (5.0, 1.0, 0.9), "slash": (1.0, 0.0, 0.25),
-        "blunt": (4.0, 1.0, 0.7), "blast": (8.0, 1.2, 2.5)}
+RUNS = {"bullet": (3.0, 0.9, 0.10), "exit": (7.0, 1.0, 0.9), "slash": (1.0, 0.0, 0.25),
+        "blunt": (6.0, 1.0, 0.7), "blast": (12.0, 1.2, 2.5)}
 FLOW_REF = 22.0                 # mL/min at which a wound reads as heavy: I = 1 - exp(-Q / FLOW_REF)
 # front speed on skin (m/s): base + heavy flow + arterial (RB §3.11: 1-5 cm/s,
 # 2-3.5 on vertical skin)
 RUN_SPEED = (0.016, 0.014, 0.010)
 RUN_MAX = 0.34                  # longest run (m): forehead to the cut of the neck
 BEAT_S = 0.8                    # heart period (s) of the arterial surges
-# half width (m) of a run: 1.1 mm trickle .. ~3.5 mm (rivulets 2-5 mm, RB §3.11)
-RUN_W = (0.0011, 0.0019, 0.0006)
-BRANCH_P = 0.045                # chance per trail step that a heavy run splits
+# half width (m) of a run: 0.8 mm trickle .. ~2.4 mm (rivulets 2-5 mm wide, RB §3.11, REFERENCE_NOTES §5.21)
+RUN_W = (0.0008, 0.0012, 0.0004)
+BRANCH_P = 0.07                # chance per trail step that a heavy run splits
 
 
 def _nearest_normal(t, surface, pos):
@@ -2297,7 +2298,7 @@ def _drip_seeds(t, pts, kind, kind_id, damage, drip):
     q, fa = t.attr("b_q"), t.attr("b_fa")
     ib = 1.0 - t.math('EXPONENT', -q / FLOW_REF)
     if kind == "slash":
-        n_extra = e * 0.4
+        n_extra = e * 0.7
     rr = _hash(t, h["seed"], 17.0)
     amount = t.math('FLOOR', 1.0 + n_extra * ib * (0.55 + 0.9 * rr) + 0.5) * q.gt(0.3)
     dup = t.node('GeometryNodeDuplicateElements', {'Geometry': pts, 'Amount': amount}, domain='POINT')
@@ -2347,6 +2348,25 @@ def _drip_seeds(t, pts, kind, kind_id, damage, drip):
         # in the pool that fills the hole: the main run leaves from the
         # centre, the others spread across the lower part of the opening
         p0 = I + dn_t * (hole * 0.15) + side_t * t.switch(first, (r1 - 0.5) * hole * spread, 0.0)
+    # where the run leaves the wound is found on the real rim (_find_lips):
+    # these are the search parameters. Round openings are searched along
+    # rays from their centre fanning around "downhill"; a cut along its
+    # length, marching across it toward the lower lip. The main run takes the
+    # lowest rim point, later runs a random one of the low ones.
+    if kind == "slash":
+        ax = X
+        acr = Y * sy
+        hl_s = half_len
+        r_lo, r_hi = 0.0, gape * 0.5 + 0.0045
+        spill = t.math('ADD', 0.0011, gape * 0.08)
+    else:
+        ax = dn_t
+        acr = dn_t
+        hl_s = 0.0
+        r_lo = hole * 0.15
+        r_hi = hole * {"bullet": 2.6, "exit": 2.2, "blunt": 2.6, "blast": 1.9}[kind] + 0.002
+        spill = hole * {"bullet": 0.55, "exit": 0.45, "blunt": 0.4, "blast": 0.3}[kind]
+    tol = {"bullet": 0.5, "exit": 0.55, "slash": 0.3, "blunt": 0.6, "blast": 0.4}[kind]
     # timing: nothing leaves the wound before it has filled (b_t0); later runs
     # spill over as the flow goes on (4-34 s later, sooner with more flow)
     t0 = t.attr("b_t0") + t.switch(first, (0.07 + 0.5 * (1.0 - ib)) * r1, 0.0)
@@ -2373,6 +2393,17 @@ def _drip_seeds(t, pts, kind, kind_id, damage, drip):
     g = t.store(g, "d_q", q)
     g = t.store(g, "d_src", t.attr("b_src"))
     g = t.store(g, "d_bias", (0.0, 0.0, 0.0), 'FLOAT_VECTOR')
+    for name, val in (("lp_ctr", I), ("lp_dn", dn_t), ("lp_sd", side_t), ("lp_ax", ax), ("lp_acr", acr),
+                      ("lp_n", N)):
+        g = t.store(g, name, val, 'FLOAT_VECTOR')
+    g = t.store(g, "lp_shape", 1.0 if kind == "slash" else 0.0)
+    g = t.store(g, "lp_hl", hl_s)
+    g = t.store(g, "lp_r0", r_lo)
+    g = t.store(g, "lp_r1", r_hi)
+    # (score noise: 0 for the main run = the lowest rim point; the others pick
+    # among the rim points within ~tol x the opening's size of the lowest)
+    g = t.store(g, "lp_tol", t.switch(first, (hole * 2.0 * tol).max(0.0015), 0.0))
+    g = t.store(g, "d_spill", spill.max(0.0006) if kind != "slash" else spill)
     return g
 
 
@@ -2477,6 +2508,73 @@ def _build_pools(t, hits, surface, drip):
     return g
 
 
+LIP_CANDS = 13                  # candidate spill points per run (fan of rays / points along a cut)
+LIP_STEPS = 28                  # samples of each march from inside the wound across its rim
+LIP_FAN = 1.25                  # half angle (rad, ~72 deg) of the fan around "downhill"
+
+
+def _find_lips(t, seeds, surface):
+    """Put every run seed on the rim point where the blood actually spills over.
+
+    REFERENCE_NOTES §5.17 / §5.19.1 / §5.21: a run may only leave a wound at
+    a point of the wound's OWN edge that is a low point under gravity. For
+    each seed LIP_CANDS candidate marches start inside the opening (a fan of
+    rays from the centre of a round hole, or points along a cut marching
+    across it toward its lower lip); each march ray-casts down onto the
+    wounded skin until it first meets intact outer skin (g_wk < 0.25) -- that
+    sample is the rim. The main run takes the lowest rim point (world z);
+    later runs take a random low one (score = z + random * lp_tol).
+
+    Writes: position = the rim point (on the lip), d_in = a point inside the
+    opening on the same march (the run's first curve point: its top lies in
+    the blood that fills the wound), d_arc0 = distance between them. Seeds
+    whose marches found no rim keep their position (d_in = position).
+    """
+    NC, NS = LIP_CANDS, LIP_STEPS
+    g = t.store(seeds, "lp_best", 1e9)
+    g = t.store(g, "lp_L", t.pos(), 'FLOAT_VECTOR')
+    g = t.store(g, "lp_I", t.pos(), 'FLOAT_VECTOR')
+    g = t.store(g, "lp_f", 0.0)
+    rin, rout, cur = _repeat(t, NC * NS, [("Geometry", 'GEOMETRY', g)])
+    it = F(t, rin.outputs['Iteration'])
+    j = t.math('FLOOR', (it + 0.5) / float(NS))
+    k = it - j * float(NS)
+    fj = j * (2.0 / (NC - 1)) - 1.0                        # -1 .. 1
+    ang = fj * LIP_FAN
+    V = lambda n: t.attr(n, 'FLOAT_VECTOR')                 # noqa: E731
+    shape = t.attr("lp_shape")
+    m_round = V("lp_dn") * ang.cos() + V("lp_sd") * ang.sin()
+    M = t.mix(m_round, V("lp_acr"), shape)
+    C = V("lp_ctr") + V("lp_ax") * (fj * 0.85 * t.attr("lp_hl"))
+    dr = (t.attr("lp_r1") - t.attr("lp_r0")) / float(NS - 1)
+    r = t.attr("lp_r0") + dr * k
+    P = C + M * r
+    N = V("lp_n")
+    g = cur["Geometry"]
+    # new candidate: forget whether the previous march already found its rim
+    g = t.store(g, "lp_f", 0.0, sel=k.lt(0.5))
+    ray = t.node('GeometryNodeRaycast', {'Target Geometry': surface, 'Attribute': t.attr("g_wk"),
+                                         'Source Position': P + N * (0.008 + r * 0.3), 'Ray Direction': -N,
+                                         'Ray Length': 0.03 + r * 0.6}, data_type='FLOAT')
+    outer = t.bool('AND', t.out(ray, 'Is Hit'), t.out(ray, 'Attribute').lt(0.25))
+    g = t.store(g, "lp_ok", t.switch(t.bool('AND', outer, t.attr("lp_f").lt(0.5)), 0.0, 1.0))
+    g = t.store(g, "lp_hp", t.out(ray, 'Hit Position'), 'FLOAT_VECTOR')
+    rnd = t.rand(0.0, 1.0, t.attr("d_id", 'INT') * 41 + j, 7707)
+    score = V("lp_hp").z + rnd * t.attr("lp_tol")
+    better = t.bool('AND', t.attr("lp_ok").gt(0.5), score.lt(t.attr("lp_best")))
+    # (the rim lies between the last inside sample and this one: half a step back)
+    g = t.store(g, "lp_L", V("lp_hp") - M * (dr * 0.5), 'FLOAT_VECTOR', sel=better)
+    g = t.store(g, "lp_I", C + M * ((r - dr * 0.5) * 0.3), 'FLOAT_VECTOR', sel=better)
+    g = t.store(g, "lp_best", score, sel=better)
+    g = t.store(g, "lp_f", 1.0, sel=t.attr("lp_ok").gt(0.5))
+    g = _end_repeat(t, rout, [("Geometry", g)])["Geometry"]
+    g = t.out(t.node('GeometryNodeSetPosition', {'Geometry': g, 'Position': V("lp_L")}))
+    g = t.store(g, "d_in", V("lp_I"), 'FLOAT_VECTOR')
+    g = t.store(g, "d_arc0", (V("lp_L") - V("lp_I")).length())
+    g = t.out(t.node('GeometryNodeRemoveAttribute', {'Geometry': g, 'Pattern Mode': 'Wildcard', 'Name': "lp_*"}))
+    return g
+
+
 def _walk(t, seeds, surface, steps, rest):
     """Walk every seed down the surface under gravity; returns (trail points, final tips).
 
@@ -2501,13 +2599,22 @@ def _walk(t, seeds, surface, steps, rest):
     # (two scales of meander: pinning on skin texture, wander over cm)
     wob2 = t.noise(p * 45.0 + t.vec(0.0, t.attr("d_id", 'INT') * 0.91, 0.0), detail=1.0, color=True)
     wob2 = wob2 - n * wob2.dot(n)
-    dirv = (gt / gl.max(1e-4) + wob * 0.55 + wob2 * 0.6 + bias * push * 1.6).normalize()
+    # (never uphill: the meander only bends a run sideways)
+    dirv = (gt / gl.max(1e-4) + wob * 0.4 + wob2 * 0.45 + bias * push * 1.6).normalize()
     slope = 0.2 + 0.8 * t.smooth(0.05, 0.45, gl)
     # (large-scale orientation from the intact skin: blood flows over the mm
     # bumps of a wound lip, it only hangs where the face itself turns down)
-    hang = t.smooth(-0.62, -0.4, _nearest_normal(t, rest, p).z)
+    # (heavy flows cling further round onto skin that turns downward --
+    # under the jaw line toward the neck -- before they hang and drip)
+    ibh = t.attr("d_ib") * 0.22
+    hang = t.smooth(-0.62 - ibh, -0.42 - ibh, _nearest_normal(t, rest, p).z)
     fac = slope * hang
-    step = t.attr("d_len") / float(steps) * fac
+    # short steps where the run leaves the lip (it must hug the rim and the
+    # skin just below it, never bridge under the lip), longer further down:
+    # step k takes min(k + 1, WALK_RAMP) shares of the run's length
+    ramp = float(WALK_RAMP)
+    shares = ramp * (ramp + 1.0) / 2.0 + ramp * (steps - ramp)
+    step = t.attr("d_len") * ((it + 1.0).min(ramp) / shares) * fac
     p2 = p + dirv * step
     p3 = _nearest_point(t, surface, p2) + _nearest_normal(t, surface, p2) * (t.attr("d_w") * 0.2)
     tips = t.out(t.node('GeometryNodeSetPosition', {'Geometry': cur["Tips"], 'Position': p3}))
@@ -2536,21 +2643,32 @@ def _run_mesh(t, trail, surface, steps):
     tt = t.out(sp, 'Factor')
     arc = t.out(sp, 'Length')
     dw = t.attr("d_w")
-    pp = t.pos()
-    # width: narrow where it leaves the lip (never wider than the part of the
-    # rim it pours over), widening down the run, uneven, fuller where it
-    # slowed (creases, shallow slopes), a fuller head
-    rad = dw * (0.6 + 0.4 * t.smooth(0.0, 0.14, tt)) \
-        * (1.0 + 0.28 * t.noise(pp * 60.0, detail=1.0) + 0.24 * t.noise(pp * 170.0, detail=1.0)
-           + 0.12 * t.noise(pp * 520.0)) \
-        * (1.0 + 0.55 * t.attr("d_slow"))
+    rid = t.attr("d_id", 'INT')
+    a0 = t.attr("d_arc0")
+    # width: uneven along the run (necking and swelling at two scales, from
+    # the run's own arc length: a rivulet pins and bulges, it is never a bar),
+    # fuller where it slowed (creases, shallow slopes)
+    n1 = t.noise(t.vec(arc * 95.0, rid * 1.37, 0.3), detail=2.0)
+    n2 = t.noise(t.vec(arc * 330.0, rid * 0.71, 1.7), detail=1.0)
+    rad = dw * (0.62 + 0.38 * t.smooth(0.0, 0.14, tt)) * (1.0 + 0.34 * n1 + 0.16 * n2) \
+        * (1.0 + 0.5 * t.attr("d_slow"))
     # arterial surges: one bulge per heartbeat along the run (d_lam = front
     # speed x beat period), strength = arterial share
-    ph = t.math('SINE', arc / t.attr("d_lam").max(0.004) * TAU + t.attr("d_id", 'INT') * 1.7)
+    ph = t.math('SINE', arc / t.attr("d_lam").max(0.004) * TAU + rid * 1.7)
     rad = rad * (1.0 + 0.5 * t.attr("d_art") * ph.max(0.0) ** 2.0)
-    rad = rad + dw * 0.3 * t.smooth(0.85, 1.0, tt) * t.attr("d_mov")
-    # a run that stopped thins to a rounded tip
-    rad = rad * (0.1 + 0.9 * t.smooth(1.0, 0.8, tt).max(t.attr("d_mov")))
+    # a moving front is a little fuller (the bead is added in _drops)
+    rad = rad + dw * 0.2 * t.smooth(0.85, 1.0, tt) * t.attr("d_mov")
+    # a run that stopped thins to a tip and its thin tail breaks into beads
+    # (a film too thin to flow gathers into drops left along the path)
+    lam = 0.0055 + 0.004 * t.rand(0.0, 1.0, rid, 505)
+    bead = t.math('SINE', arc / lam * TAU + rid * 2.3).max(0.0) ** 3.0
+    tail = t.smooth(0.5, 0.92, tt) * (1.0 - t.attr("d_mov"))
+    rad = rad * t.mix(1.0, 0.28 + 1.05 * bead, tail * 0.85)
+    rad = rad * (0.15 + 0.85 * t.smooth(1.0, 0.86, tt).max(t.attr("d_mov")))
+    # where it leaves the wound the run is only as wide as the part of the
+    # rim it spills over (d_spill), widening further down as it spreads
+    cap = t.attr("d_spill") * (0.65 + 0.35 * t.smooth(0.0, a0.max(1e-4), arc)) + (arc - a0).max(0.0) * 0.22
+    rad = rad.min(cap)
     curves = t.out(t.node('GeometryNodeSetCurveRadius', {'Curve': curves, 'Radius': rad}))
     curves = t.store(curves, "d_rad", rad)
     # run id and position along it (0 = where it leaves the wound): lets tests
@@ -2575,28 +2693,33 @@ def _drops(t, tips, rest):
     dw = t.attr("d_w")
     n = _nearest_normal(t, rest, t.pos())
     runs = t.attr("d_len").gt(0.012)
-    # moving front: flat teardrop lobe 1.3x the run's width, stretched downward
+    # moving front: a flat rounded lobe a little wider than the run (the
+    # bead of the advancing front, <= 4.5 mm across, 0.3 mm high), stretched
+    # downhill -- not a berry
     front = t.bool('AND', runs, t.attr("d_mov").gt(0.5))
-    bead_s = dw * 1.3 * (0.55 + 0.45 * t.smooth(0.012, 0.045, t.attr("d_len")))
+    bead_s = (dw * 1.12 * (0.6 + 0.4 * t.smooth(0.012, 0.045, t.attr("d_len")))).min(0.00215)
     beads = t.node('GeometryNodeInstanceOnPoints', {'Points': tips, 'Selection': front,
-                                                    'Instance': ico, 'Scale': t.vec(bead_s, bead_s, bead_s * 1.8)})
+                                                    'Instance': ico, 'Scale': t.vec(bead_s, bead_s, bead_s * 1.5)})
     beads = t.out(t.node('GeometryNodeRealizeInstances', {'Geometry': t.out(beads)}))
-    beads = t.out(t.node('GeometryNodeSetPosition', {'Geometry': beads, 'Offset': t.vec(0.0, 0.0, -1.0) * (dw * 0.8)}))
+    beads = t.out(t.node('GeometryNodeSetPosition', {'Geometry': beads, 'Offset': t.vec(0.0, 0.0, -1.0) * (bead_s * 0.55)}))
     beads = t.store(beads, "d_flat", 0.3)
-    beads = t.store(beads, "d_rad", bead_s * 1.2)
-    beads = t.store(beads, "d_cap", 0.00034)
-    # pendant drops (30-60 uL, r ~2.0-2.4 mm) where the skin faces down
+    beads = t.store(beads, "d_rad", bead_s * 1.15)
+    beads = t.store(beads, "d_cap", 0.00030)
+    # pendant drops where the skin faces down (chin, nose tip, jaw line,
+    # earlobe): 30-60 uL = a bead 3-4.5 mm across, flattened against the skin
+    # it hangs from, a little longer than wide (REFERENCE_NOTES §5.21)
     hang = t.bool('AND', runs, n.z.lt(-0.3))
-    r = 0.0019 + 0.0005 * t.rand(0.0, 1.0, t.index(), 71)
+    r = 0.0015 + 0.0007 * t.rand(0.0, 1.0, t.index(), 71)
     pend = t.node('GeometryNodeInstanceOnPoints', {'Points': tips, 'Selection': hang, 'Instance': ico,
-                                                   'Scale': t.vec(r, r, r * 1.45)})
+                                                   'Scale': t.vec(r, r, r * 1.22)})
     pend = t.out(t.node('GeometryNodeRealizeInstances', {'Geometry': t.out(pend)}))
-    pend = t.out(t.node('GeometryNodeSetPosition', {'Geometry': pend, 'Offset': t.vec(0.0, 0.0, -1.0) * r}))
+    # (its top sits in the skin: only the hanging part shows)
+    pend = t.out(t.node('GeometryNodeSetPosition', {'Geometry': pend, 'Offset': t.vec(0.0, 0.0, -1.0) * (r * 0.55)}))
     # falling drops below a hanging one while it keeps being fed (d_mov)
     fall_sel = t.bool('AND', hang, t.attr("d_mov").gt(0.5))
     fr = t.rand(0.0, 1.0, t.index(), 72)
     fall = t.node('GeometryNodeInstanceOnPoints', {'Points': tips, 'Selection': fall_sel, 'Instance': ico,
-                                                   'Scale': t.vec(r * 0.9, r * 0.9, r * 1.25)})
+                                                   'Scale': t.vec(r * 0.85, r * 0.85, r * 1.1)})
     fall = t.out(t.node('GeometryNodeRealizeInstances', {'Geometry': t.out(fall)}))
     fall = t.out(t.node('GeometryNodeSetPosition', {'Geometry': fall,
                                                     'Offset': t.vec(0.0, 0.0, -1.0) * (0.012 + 0.03 * fr)}))
@@ -2656,10 +2779,18 @@ def _build_blood():
     seeds = t.store(seeds, "d_step", 0.0)
     seeds = t.store(seeds, "d_slow", 0.0)
     seeds = t.store(seeds, "d_mv", 1.0)
+    # every run starts on the rim point it spills over, with its first curve
+    # point inside the opening (the blood filling the wound)
+    seeds = _find_lips(t, seeds, surface)
     p = t.pos()
     snapped = _nearest_point(t, surf2, p) + _nearest_normal(t, surf2, p) * (t.attr("d_w") * 0.2)
     seeds = t.out(t.node('GeometryNodeSetPosition', {'Geometry': seeds, 'Position': snapped}))
     trail1, tips1 = _walk(t, seeds, surf2, DRIP_STEPS, rest)
+    pin = t.attr("d_in", 'FLOAT_VECTOR')
+    inside = t.out(t.node('GeometryNodeSetPosition', {'Geometry': seeds,
+                                                      'Position': _nearest_point(t, surf2, pin)}))
+    inside = t.store(inside, "d_step", -1.0)
+    trail1 = _join(t, trail1, inside)
 
     # branches: a heavy run splits where it crosses a bump or a crease; the
     # branch leaves sideways and then follows gravity on its own
@@ -2678,6 +2809,8 @@ def _build_blood():
     bseeds = t.store(bseeds, "d_id", t.attr("d_id", 'INT') * 64 + t.math('FLOOR', st) + 100000, 'INT')
     bseeds = t.store(bseeds, "d_step", 0.0)
     bseeds = t.store(bseeds, "d_mov", 0.0)
+    bseeds = t.store(bseeds, "d_spill", 1.0)
+    bseeds = t.store(bseeds, "d_arc0", 0.0)
     trail2, tips2 = _walk(t, bseeds, surf2, BRANCH_STEPS, rest)
 
     tubes1, path1 = _run_mesh(t, trail1, surf2, DRIP_STEPS)
