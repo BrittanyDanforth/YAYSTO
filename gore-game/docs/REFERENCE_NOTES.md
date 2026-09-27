@@ -358,6 +358,30 @@ section is the pass/fail bar. A render that fails any HIGH line below is not don
 7/14/21) and write one line per section: PASS or FAIL + what differs. Anything that reads cleaner, drier, smoother,
 more uniform, more symmetric or less bloody than the refs is a FAIL.
 
+## 5.19 User verdict on the final-pass exit sequence (2026-09-27, `renders/seq_exit_*`) — HIGH priority
+
+User, verbatim: "THERES STILL LEGIT A GAP ITS NOT COMMING FROMM THE ACTUAL WOUND LIKE U CAN SEE SLIGHT GAP STILL ALSO THE
+SKIN STILL LOOKS THICK AND ENSURE ARTERYS ETC ALL THAT IS WIRED FOR BLOOD TOO VERY NICELY 1:1 REALISM LIKE PHOTOS I GAVE U SHOW".
+1. **Zero gap, proven.** The stream must be ONE continuous liquid body with the blood inside the wound: the blood
+   surface in the cavity, the wet rim lip and the stream share geometry (or overlap by >= 1 mm) with no skin pixel
+   between them at ANY time (0, 5, 10, 20, 40, 60 s) and from any angle. Test: close-up renders at the rim from straight,
+   45 deg and grazing at every sequence time; sample the image along the stream axis from inside the hole to 5 mm below
+   the rim — any skin-coloured pixel = FAIL. Also the rim itself is wet and covered where blood leaves it.
+2. **Skin is thin.** Wound margins still read as a thick moulded sleeve. Real scalp/face skin is 1.5-3 mm (scalp up to
+   5-7 mm incl. galea): the visible cut edge is a thin pale dermis line over yellow fat, torn and irregular, with the
+   deeper tissue recessed and shredded below it — never a thick smooth rounded lip. Reduce wall thickness/bevel radius
+   and remove rounded rims.
+3. **Blood is wired to real vessels.** How much a wound bleeds, where from, colour and pulsing must come from the named
+   vessels it hits (REALISM_BIBLE circulation + ~55-vessel table; head: superficial temporal, occipital, posterior
+   auricular, supraorbital/supratrochlear, facial, angular, labial, dural/meningeal, venous sinuses, scalp venous plexus).
+   Arterial hits = bright scarlet, pulsing surges with the heartbeat, faster/longer streams, spray; venous = dark steady
+   welling; scalp = heavy and persistent (galea holds vessels open); bone/diploe and brain = oozing dark blood mixed with
+   tissue. Blood amount and stream count per wound follow that source, so two wounds never bleed identically. In the
+   Blender head: map each hit to its nearest vessels (a vessel table for the head in gore.py/CONTRACT.md) and drive
+   bleed rate, colour and pulse from it. In the body/Godot game: bleeding already comes from the vessel graph
+   (vessels.json) — keep it 1:1 with the bible.
+4. Compare every frame against the refs (2, 7, 17, 21 for flow and volume; 13, 18 for wound edges).
+
 ## 6. What to change in our assets (actionable)
 
 | Where | Change |

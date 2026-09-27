@@ -248,6 +248,8 @@ damage = 0 returns the intact mesh. Carnage (9 hits) evaluates in ~4.5 s.
 - Exit close-up: near-square hole, white paper/plaster bone chips, flat red slabs; must be ragged/stellate with
   everted shredded tissue (pathology sheet). Bone everywhere must be matte chalky ivory chunks, not white flakes.
 - seq_exit_05s: the first trickle starts slightly BELOW the rim (thin clean-skin gap) — §5.17 violation.
+- USER (HIGH, REFERENCE_NOTES §5.19): gap STILL visible between wound and stream on the exit sequence; wound skin still looks
+  THICK; bleeding must be wired to real named arteries/veins (rate, colour, pulsing per vessel) — 1:1 like the refs.
 - Crushed preset: outline still not caved in; mouth blast confined to a neat oval (mid-face should be pulp).
 
 **Body review notes (2026-09-26, from fixer-round-1 renders; critics of the next body round must check these):**
