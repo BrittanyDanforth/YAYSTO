@@ -228,7 +228,7 @@ _row("V05", "superior vena cava", "V", 20.0, (18, 22), (1300, 1700), "RA", "R",
      landmarks="Right sternal border; lower half intrapericardial",
      bleed=_b((500, 2000), None, (1, 5), "-> tamponade or mediastinum"), outlet_default="pericardium")
 _row("P01", "pulmonary trunk and arteries", "E", 27.0, (25, 30), (5000, 5000), "RV", "mid",
-     [("", [(0.022, -0.058, 1.378), (0.012, -0.030, 1.405)]),
+     [("", [(0.022, -0.055, 1.378), (0.012, -0.030, 1.405)]),
       ("RPA", [(0.012, -0.030, 1.405), (-0.060, 0.005, 1.385)]),
       ("LPA", [(0.012, -0.030, 1.405), (0.055, 0.015, 1.395)])],
      branch_d_mm={"RPA": 20.0, "LPA": 20.0}, branch_side={"RPA": "R", "LPA": "L"}, circuit="pulmonary_art",

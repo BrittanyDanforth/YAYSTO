@@ -115,7 +115,9 @@ SUPERFICIAL_T = {"A07": (0.0, 1.0), "A08": (0.15, 1.0), "A09": (0.40, 1.0), "V02
 # dural sinuses lie in bony grooves the head project's skull does not carve; the vertebro-basilar junction
 # at the foramen magnum sits on the modelled lower clivus)
 BONE_CANAL = {"A10": (1.505, 1.628, 0.012), "A11": (-1.0, 1.628), "A50": (-1.0, 9.0), "A12": (-1.0, 9.0), "A09": (1.600, 1.645),
-              "V01": (1.600, 9.0), "V30": (-1.0, 9.0), "V31": (-1.0, 9.0), "V32": (-1.0, 9.0)}
+              "V01": (1.594, 9.0),
+              "V30": (-1.0, 9.0), "V31": (-1.0, 9.0), "V32": (-1.0, 9.0),
+              "A07": (1.632, 1.662, 0.055)}            # A07: over the zygomatic process root, in front of the tragus
 CRANIAL = {"A11", "A50", "A51", "A52", "A53", "A54"}               # intracranial arteries (outside GB_Brain)
 UNDER_SKULL = {"V30", "V31", "V32"}               # dural sinuses: snapped under the inner table, on the brain
 ON_HEART = {"A13", "V45"}                          # coronary arteries / sinus: on the epicardium (B4 heart)
@@ -123,7 +125,7 @@ HEART_CENTRE = np.array([0.035, -0.036, 1.325])    # organs.json heart OBB centr
 TRI_SECTION = {"V30"}                                               # triangular dural sinus section
 # may touch bone: costal groove, meningeal groove, spiral groove; the basilar sits in a 3 mm prepontine gap
 # between the head project's clivus and pons (a 3.5 mm artery cannot clear both)
-BONE_CONTACT_OK = {"A16", "A12", "A11", "radial"}
+BONE_CONTACT_OK = {"A16", "A12", "A11", "radial", "V33"}   # (V33: the angular vein on the frontal process)
 
 
 # ===========================================================================
@@ -600,7 +602,7 @@ def fit_centreline(key, vid, P0, r, probe, anchor_disp=None, seg=None, cranial=F
     # curvature limit: no more than KINK_MAX_DEG of turn per 5 mm (bend radius >= ~2 x the diameter of the
     # vessels that kinked: IVC at the atrium, peroneal, facial, PCA, subclavian), then the hard rules again
     P = _limit_kinks(P, anchor)
-    P = relax(P, 4)
+    P = relax(P, max(8, iters // 2))
     rep = measure(key, vid, P, r, probe, seg=seg, cranial=cranial or under_skull, bone_mask=bone_mask,
                   clear=clear)
     rep["moved_mm_max"] = round(float(np.linalg.norm(P - P0, axis=1).max() / MM), 2)

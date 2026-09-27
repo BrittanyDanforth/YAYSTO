@@ -242,6 +242,7 @@ def cord_parts(q=False):
         a, b = sg["z_top"], sg["z_bottom"]
         zt += [a, a + 0.25 * (b - a), a + 0.75 * (b - a)]
     zt += [float(Pd[0, 2]), float(Pd[-1, 2])]
+    zt += [float(r["z"]) for r in VT.VERTEBRAE if r["cord_w_mm"] > 0]      # + one ring at every vertebral level
     zt = np.array(sorted({round(z, 5) for z in zt if Pd[-1, 2] <= z <= Pd[0, 2]}, reverse=True))
     # arc position of each target height (the cord descends monotonically from the junction to the conus)
     zz = Pd[:, 2]

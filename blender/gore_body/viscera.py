@@ -567,10 +567,10 @@ def _world_parts(x, y, z):
     # great-vessel roots grown out of the heart so the B5 tubes continue them (no capped pipe beside the heart):
     # aortic root with the sinus bulge from the LV outflow, pulmonary root from the RV infundibulum, the SVC / IVC
     # into the right atrium and the four pulmonary veins into the left atrium [R05 §10.3; B5 waypoints]
-    aorta = smin(capsule(x, y, z, (0.012, -0.033, 1.345), (0.006, -0.040, 1.372), 0.0170, 0.0162),
+    aorta = smin(capsule(x, y, z, (0.012, -0.033, 1.345), (0.007, -0.039, 1.366), 0.0170, 0.0162),
                  ell(x, y, z, (0.009, -0.037, 1.353), (0.0185, 0.0185, 0.0120)), 0.004)
-    pulm = capsule(x, y, z, (0.030, -0.061, 1.352), (0.020, -0.054, 1.388), 0.0150, 0.0138)
-    svc = capsule(x, y, z, (-0.028, -0.027, 1.352), (-0.028, -0.029, 1.390), 0.0105, 0.0100)
+    pulm = capsule(x, y, z, (0.030, -0.061, 1.352), (0.022, -0.056, 1.378), 0.0150, 0.0138)
+    svc = capsule(x, y, z, (-0.028, -0.027, 1.352), (-0.028, -0.028, 1.376), 0.0105, 0.0100)
     ivc = capsule(x, y, z, (-0.027, -0.019, 1.322), (-0.024, -0.013, 1.300), 0.0092, 0.0086)
     pv = None
     pvl = None

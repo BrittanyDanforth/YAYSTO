@@ -864,6 +864,14 @@ def _decimate_arrays(v, f, target):
     return vv, faces
 
 
+def _unfold(v, faces, fn, h):
+    """Relax decimation fold-overs (faces whose normal opposes the SDF gradient) back onto ``fn`` (round 3)."""
+    tris = np.array([f for f in faces if len(f) == 3], np.int64)
+    if not len(tris):
+        return v
+    return gg.fix_foldovers(v, tris, fn, h)[0]
+
+
 def _teeth_part(upper, h, target):
     """One jaw's teeth, each tooth its own closed island, decimated per tooth.
 
@@ -912,11 +920,13 @@ def build_mouth(quick=None):
         fn = (lambda x, y, z, u=upper: SKL.gum_sdf(x, y, z, u))
         v, q = gg.sdf_arrays(fn, (-0.036, -0.098, -0.090), (0.036, -0.024, -0.024), r["soft"])
         v, q = _decimate_arrays(v, q, MOUTH_TRIS["gums"] // 2)
+        v = _unfold(v, q, fn, r["soft"])
         parts.append(gg.part(v + HEAD_OFFSET, q, 1, gb_rigid_bone=np.full(
             len(v), bone["head" if upper else "jaw"], np.int32), gb_piece=np.zeros(len(v), np.int32)))
     # domed tongue at rest (dorsum 1.5 mm under the palate), skull.tongue_sdf (fix round 3)
     v, q = gg.sdf_arrays(SKL.tongue_sdf, (-0.030, -0.095, -0.085), (0.030, -0.005, -0.040), r["soft"])
     v, q = _decimate_arrays(v, q, MOUTH_TRIS["tongue"])
+    v = _unfold(v, q, SKL.tongue_sdf, r["soft"])
     parts.append(gg.part(v + HEAD_OFFSET, q, 2, gb_rigid_bone=np.full(len(v), bone["tongue"], np.int32),
                          gb_piece=np.zeros(len(v), np.int32)))
     obj = gg.object_from_parts("GB_Mouth", parts)

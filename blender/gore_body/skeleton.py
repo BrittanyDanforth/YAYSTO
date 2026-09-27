@@ -1017,6 +1017,32 @@ def decimate_manifold(v, f, target):
     return repair_manifold(best[1], best[2])
 
 
+def fix_slivers(v, f, min_area=2e-9, push=1.2e-4):
+    """Needle / zero-area triangles left by the collapse (their shading normal is undefined: tiny black holes on
+    the maxilla in round 2): the vertex opposite the longest edge is pushed ``push`` m along the local surface
+    normal (the mean of its faces' normals), which gives the sliver a real area without changing the shape."""
+    v = np.array(v, float)
+    f = np.asarray(f, np.int64)
+    for _ in range(3):
+        a, b, c = v[f[:, 0]], v[f[:, 1]], v[f[:, 2]]
+        n = np.cross(b - a, c - a)
+        area = 0.5 * np.linalg.norm(n, axis=1)
+        bad = np.nonzero(area < min_area)[0]
+        if not len(bad):
+            break
+        vn = np.zeros_like(v)
+        for k in range(3):
+            np.add.at(vn, f[:, k], n)
+        vn /= np.maximum(np.linalg.norm(vn, axis=1, keepdims=True), 1e-18)
+        for i in bad.tolist():
+            tri = f[i]
+            el = [np.linalg.norm(v[tri[(k + 1) % 3]] - v[tri[(k + 2) % 3]]) for k in range(3)]
+            k = int(np.argmax(el))
+            vi = tri[k]
+            v[vi] = v[vi] + vn[vi] * push
+    return v, f
+
+
 def repair_manifold(v, f):
     """After a collapse decimation: weld, drop degenerate and duplicate triangles, then remove the fans
     around any edge still shared by more than two triangles (keeping the two largest) and drop tiny
@@ -2401,7 +2427,7 @@ def mesh_pieces(quick=False, only=None, log=True):
         tot = sum(len(m["hr"][1]) for m in meshed)
         for m in meshed:
             share = len(m["hr"][1]) / max(tot, 1)
-            m["lod"] = decimate_manifold(*m["hr"], max(24, int(round(LOD_SCALE * lod * share))))
+            m["lod"] = fix_slivers(*decimate_manifold(*m["hr"], max(24, int(round(LOD_SCALE * lod * share)))))
             m["hr"] = decimate_manifold(*m["hr"], max(200, int(round(HR_FACTOR * lod * share))))
             if m["core_fn"] is not None:
                 vc, fc = mesh_sdf(m["core_fn"], m["box"], h * scale)
