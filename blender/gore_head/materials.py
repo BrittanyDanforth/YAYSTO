@@ -1388,8 +1388,14 @@ def _teeth_material(g):
     # blood on teeth is a smeared film that collects at the gum line and in
     # the gaps between the teeth; skip the film's fine-droplet fringe (on
     # enamel those droplets read as decay)
-    tb = (t.attr("gore_blood") * (0.45 + 0.75 * h.smooth(0.35, 1.0))).clamp()
-    tb = tb.smooth(0.04, 0.3) * 0.55 + tb * 0.45
+    # (the gum-line bias is warped by noise: a loose or blown-out tooth sits
+    # far from the occlusal plane and a clean height band would paint it as
+    # a red-and-white capsule)
+    smear = t.noise(p, 1400.0, 3.0, 0.6)
+    hw = (h + (smear - 0.5) * 0.9 + (t.noise(p, 380.0, 2.0) - 0.5) * 0.6).clamp()
+    tb = (t.attr("gore_blood") * (0.4 + 0.75 * hw.smooth(0.2, 1.0))).clamp()
+    tb = (tb.smooth(0.04, 0.3) * 0.55 + tb * 0.45) * (0.55 + 0.6 * smear.smooth(0.3, 0.65))
+    tb = tb.clamp()
     bl = _blood_layer(t, g, col, t.mix(wet, 0.3, 0.12), tb, p)
     nrm = t.bump(t.mix(bl["Height Mask"], peri * 0.3 + craze, bl["Height"]), 0.00004)
     bsdf = t.principled({

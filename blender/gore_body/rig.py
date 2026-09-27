@@ -788,7 +788,10 @@ FOLLOWERS = ("GB_BrowLash", "GB_EyeFX_L", "GB_EyeFX_R")
 # The shorts hang 1-3 cm off the thigh, so their own position can fall outside the thigh territory.  (The
 # muscle shell was tried here too: nearest-point transfer mis-assigns it in the groin / perineum creases,
 # where the nearest skin belongs to the other side of the crease; it keeps the analytic weights.)
-TRANSFERRED = {"GB_Shorts": (("GB_Body",), 6)}
+# Fix round 2: 2 smoothing iterations (was 6) - heavy smoothing let the cloth over the groin / hip crease move
+# unlike the skin under it (shorts 6-10 mm inside the skin at hip flexion / abduction); 2 still keeps the leg
+# opening and the crotch one continuous sheet.
+TRANSFERRED = {"GB_Shorts": (("GB_Body",), 2)}
 # (fix round 2 also tried the muscle shell with the skin weights cast along its normal: the perineum then took
 # the other thigh's weights and poked 10 mm in hip flexion - the shell keeps its analytic weights and is kept
 # deeper under the compressible folds instead, body_skin.FOLD_FAT)

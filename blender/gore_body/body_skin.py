@@ -468,7 +468,7 @@ def _torso_profile(Z, TH):
     rel = rel * trunk + ws * _side_relief(ys, Z) * trunk
     # neck: laryngeal prominence handled as a primitive; nuchal furrow at the back midline
     nuchal = -0.0025 * gauss(xs, 0.010) * band(Z, 1.55, 1.62, 0.03) * wb
-    nuchal = nuchal + 0.0030 * gauss(xs, 0.013) * gauss(Z - 1.522, 0.014) * wb       # C7 vertebra prominens
+    nuchal = nuchal + 0.0062 * gauss(xs, 0.016) * gauss(Z - 1.528, 0.018) * wb       # C7 vertebra prominens
     return R0 + rel + nuchal
 
 
@@ -1281,6 +1281,9 @@ def skin_sdf(x, y, z):
     # under the chin the blend stays tight (6 mm) so the submental plane meets the jaw in a defined
     # cervicomental angle instead of the wide blend refilling it into a pouch (fix round 2)
     k = k - 0.010 * sstep(-0.030, -0.045, y) * sstep(0.045, 0.025, np.abs(x)) * sstep(1.565, 1.550, z)
+    # behind, where the occiput meets the nape, a wider blend (up to 40 mm) so the join does not print a
+    # curved 'cap edge' line across the back of the head (fix round 2)
+    k = k + 0.012 * sstep(0.030, 0.080, y) * sstep(1.575, 1.615, z)
     return smin(b, h, k)
 
 
@@ -1516,6 +1519,7 @@ FOLD_FAT_SITES = (
     ((0.170, 0.035, 1.315), (0.040, 0.045, 0.050), 0.0040),     # posterior axillary fold / armpit
     ((0.165, -0.020, 1.330), (0.035, 0.035, 0.045), 0.0025),    # anterior axillary fold
     ((0.020, 0.010, 0.775), (0.030, 0.060, 0.055), 0.0060),     # perineum / medial groin
+    ((0.000, -0.068, 0.885), (0.030, 0.020, 0.030), 0.0045),    # mons pubis / root of the penis over the symphysis
     ((0.132, -0.080, 0.004), (0.040, 0.045, 0.010), 0.0060),    # plantar pad under the toes / MT heads
 )
 
