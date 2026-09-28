@@ -1,0 +1,191 @@
+# Agent memory: B8:build (body build + review)
+
+Transcript `agent-a4885404d3083acee.jsonl`, 2026-09-26T11:45 to 2026-09-26T13:23 UTC. Extracted automatically; the agent's own notes (what it found, decided, tried) plus every step it ran and the pass/fail lines.
+- `Bash` Survey repo and plan structure
+  - result: blender/: gore_body gore_head blender/gore_body: CONTRACT.md __pycache__ bake.py body_skin.py build.py export.py gb_common.py gb_data gb_geom.py gore_body.blend gore_body.blend1 head_face_rig.json head_integration.py lookdev.py neuro.py placeholder.py props.py renders rig.py skeleton.py t_neuro.py u ...
+- `Bash` Read plan scope, contract and B8 rows
+- `Bash` Inspect existing props.py and outputs
+  - result: ### 1.3 Scene: the forensic test room Godot frame (metres, Y up); the subject stands at the origin facing **+Z**. | Element | Specification | Why | |---|---|---| | Room | Interior x −3…+3, z −1.6…+4.4, y 0…3.0 | Fits the 8 × 8 m floor splat map [RB §8.3] | | Floor | Anti-slip grey epoxy `#8E9194`, r ...
+- `Bash` Read B8 details, build.py, props hooks
+  - result: **B8 — Props and room (8 days).** Tasks: pistol (9 mm bore, `GBP_muzzle`), shotgun (12 gauge ~18.5 mm bore), knife (single-edged 25 × 120 mm [RB §2.3], 8 edge markers), claw hammer (0.45–0.7 kg head, round face Ø 28 mm, claw marker [RB §2.5]), propane torch (nozzle marker, visible flame ~8 cm), fist ...
+- `Bash` List gb_common helpers, export options, verify structure
+  - result: 39:HERE = os.path.dirname(os.path.abspath(__file__)) 40:HEAD_DIR = os.path.normpath(os.path.join(HERE, "..", "gore_head")) 41:GAME_DIR = os.path.normpath(os.path.join(HERE, "..", "..", "gore-game")) 42:GAME_OUT = os.path.join(GAME_DIR, "assets", "generated") 43:SUBJECT_OUT = os.path.join(GAME_OUT, " ...
+- `Bash` Read verify framework and render helpers
+  - result: """Verification framework for the full-body build (owner B0; every package adds checks). Plan §5.2 ``verify_all() -> dict``, non-zero exit on failure. Checks are small functions registered with ``@check(group, owner, severity)``: * ``tables`` pure data checks of ``gb_data`` (no scene needed) * ``sce ...
+- `Bash` Read budgets and every props mention in plan
+  - result: ## 4. Budgets ### 4.1 Triangles and vertices (LOD0, subject) | Mesh | Triangles | Visible | Notes | |---|---|---|---| | `GB_Head` (head + neck to the seam, lids, ears, lips, mouth lining) | 30,000 | always | Decimated from the 1.2 mm head; 24 blend shapes | | `GB_Body` (5 surfaces: torso, arm_L, arm ...
+- `Bash` Grep bible for prop dimensions
+- `Bash` Inspect geometry helpers and render helpers
+  - result: """Geometry helpers shared by the body builders (owner B0). numpy-first mesh utilities on top of the head project's SDF toolkit (``gore_head/anatomy.py``: ``sample_grid``, ``surface_nets``, ``mesh_sdf`` ...): * ``sdf_mesh`` - polygonise an SDF into a contract-named object (remesh + projection) * ``s ...
+- `Bash` Read envelope/schemas and geometry helper code
+  - result: "GB_EyeFX_L": "eye_fx", "GB_EyeFX_R": "eye_fx", "GB_Mouth": "mouth", "GB_BrowLash": "hair", "GB_MuscleShell": "muscle", "GB_Skeleton": "bone", "GB_Brain": "brain", "GB_Organs": "organ", "GB_Cord": "cord", "GB_Vessels_Art": "vessel_art", "GB_Vessels_Ven": "vessel_ven", "GB_Head_LOD1": "skin", "GB_Bod ...
+- `Bash` Read scene helpers; check bpy and load
+  - result: def reset_scene(): """Start from an empty file with metric units (metres).""" bpy.ops.wm.read_factory_settings(use_empty=True) scene = bpy.context.scene scene.unit_settings.system = 'METRIC' scene.unit_settings.scale_length = 1.0 scene.frame_start, scene.frame_end, scene.frame_current = 1, 1, 1 retu ...
+- `Bash` Test bpy features needed (sharp, text mesh)
+
+**[09-26T11:54] note:** Now let me check the CONTRACT.md for how props are described, then write the module.
+
+- `Bash` Read contract doc and verify runner
+  - result: # gore_body module contract (plan §5, kept current) Procedural full body for the Godot game, built with Blender 5.x from code only (no downloads). The authoritative design is `gore-game/docs/FULL_BODY_PLAN.md` §5; this file records what the code actually does today and the rules every work package f ...
+
+**[09-26T11:58] note:** Now I have the full picture. I'll write props.py in parts: infrastructure first, then weapons, room, export/measure/render.
+
+- `Write` /home/user/YAYSTO/blender/gore_body/props.py
+
+**[09-26T11:59] note:** Now the pistol and shotgun.
+
+- `Bash` Append pistol and shotgun builders
+- `Bash` Fix material assignment to use item coordinates
+- `Bash` Add render helpers and test-build the pistol
+  - result: pistol built 0.3 s 3372 faces 00:00.651 cycles | WARNING CUEW initialization failed: Error opening the library 00:09.392 render | Saved: '/tmp/claude-0/-home-user-YAYSTO/e2a2594c-08ec-5384-b9ca-fd553ec0f442/scratchpad/body/B8/pistol_side.png' 00:15.438 render | Saved: '/tmp/claude-0/-home-user-YAYST ...
+- `Read` /tmp/claude-0/-home-user-YAYSTO/e2a2594c-08ec-5384-b9ca-fd553ec0f442/scratchpad/body/B8/pistol_side.png
+- `Read` /tmp/claude-0/-home-user-YAYSTO/e2a2594c-08ec-5384-b9ca-fd553ec0f442/scratchpad/body/B8/pistol_tq.png
+- `Bash` Orient studio sweep toward camera and rerender
+- `Read` /tmp/claude-0/-home-user-YAYSTO/e2a2594c-08ec-5384-b9ca-fd553ec0f442/scratchpad/body/B8/pistol_tq.png
+- `Read` /tmp/claude-0/-home-user-YAYSTO/e2a2594c-08ec-5384-b9ca-fd553ec0f442/scratchpad/body/B8/pistol_muzzle.png
+- `Bash` Brighten studio lights, test shotgun
+  - result: 949: key = _stage_light("GBP_StudioKey", tuple(c + np.array([-1.2, -0.3, 1.4]) * rad * 3), tuple(c), 150 * rad ** 2 * 9, 952: 50 * rad ** 2 * 9, rad * 3.0, (0.9, 0.94, 1.0)) 954: 160 * rad ** 2 * 9, rad * 1.5) shotgun built 0.3 s 11822 faces 00:00.685 cycles | WARNING CUEW initialization failed: Err ...
+- `Read` /tmp/claude-0/-home-user-YAYSTO/e2a2594c-08ec-5384-b9ca-fd553ec0f442/scratchpad/body/B8/shotgun_side.png
+- `Read` /tmp/claude-0/-home-user-YAYSTO/e2a2594c-08ec-5384-b9ca-fd553ec0f442/scratchpad/body/B8/shotgun_tq.png
+- `Read` /tmp/claude-0/-home-user-YAYSTO/e2a2594c-08ec-5384-b9ca-fd553ec0f442/scratchpad/body/B8/shotgun_muzzle.png
+- `Bash` Fit camera to projected bounding box; darker walnut
+
+**[09-26T12:05] note:** Now the knife, hammer, torch, fist, ruler, penlight and thermometer.
+
+- `Bash` Append remaining item builders; test knife, hammer
+  - result: knife built 0.1 s 6538 faces 00:00.428 cycles | WARNING CUEW initialization failed: Error opening the library hammer built 0.2 s 2767 faces [This command modified 1 file you've previously read: blender/gore_body/props.py. Call Read before editing.]
+- `Read` /tmp/claude-0/-home-user-YAYSTO/e2a2594c-08ec-5384-b9ca-fd553ec0f442/scratchpad/body/B8/knife_side.png
+- `Read` /tmp/claude-0/-home-user-YAYSTO/e2a2594c-08ec-5384-b9ca-fd553ec0f442/scratchpad/body/B8/knife_tq.png
+- `Read` /tmp/claude-0/-home-user-YAYSTO/e2a2594c-08ec-5384-b9ca-fd553ec0f442/scratchpad/body/B8/hammer_side.png
+- `Read` /tmp/claude-0/-home-user-YAYSTO/e2a2594c-08ec-5384-b9ca-fd553ec0f442/scratchpad/body/B8/hammer_tq.png
+- `Bash` Test-build remaining items and render
+
+**[09-26T12:12] note:** While that renders, I'll write the room.
+
+- `Bash` Append room builders part 1 (floor, walls, ceiling, backstop)
+  - result: done torch built 0.1 s 4172 faces 00:00.428 cycles | WARNING CUEW initialization failed: Error opening the library fist built 2.9 s 24213 faces ruler built 0.1 s 1994 faces penlight built 0.1 s 5164 faces thermometer built 0.0 s 820 faces
+- `Bash` Remove bogus parameter; check PIL availability
+  - result: ModuleNotFoundError: No module named 'PIL'
+- `Read` /tmp/claude-0/-home-user-YAYSTO/e2a2594c-08ec-5384-b9ca-fd553ec0f442/scratchpad/body/B8/torch_tq.png
+- `Read` /tmp/claude-0/-home-user-YAYSTO/e2a2594c-08ec-5384-b9ca-fd553ec0f442/scratchpad/body/B8/fist_tq.png
+- `Read` /tmp/claude-0/-home-user-YAYSTO/e2a2594c-08ec-5384-b9ca-fd553ec0f442/scratchpad/body/B8/fist_side.png
+- `Read` /tmp/claude-0/-home-user-YAYSTO/e2a2594c-08ec-5384-b9ca-fd553ec0f442/scratchpad/body/B8/fist_muzzle.png
+- `Bash` Refine fist SDF (conforming pad, no holes)
+  - result: fist built 2.7 s 24416 faces 00:03.089 cycles | WARNING CUEW initialization failed: Error opening the library
+- `Read` /tmp/claude-0/-home-user-YAYSTO/e2a2594c-08ec-5384-b9ca-fd553ec0f442/scratchpad/body/B8/fist_tq.png
+- `Read` /tmp/claude-0/-home-user-YAYSTO/e2a2594c-08ec-5384-b9ca-fd553ec0f442/scratchpad/body/B8/fist_side.png
+- `Bash` Fill fist curl, slimmer wrist
+- `Read` /tmp/claude-0/-home-user-YAYSTO/e2a2594c-08ec-5384-b9ca-fd553ec0f442/scratchpad/body/B8/fist_tq.png
+- `Read` /tmp/claude-0/-home-user-YAYSTO/e2a2594c-08ec-5384-b9ca-fd553ec0f442/scratchpad/body/B8/fist_side.png
+- `Bash` Append room parts 2 (drain, door, table, trolley, markers, collision)
+- `Bash` Construct wall faces with correct winding
+- `Bash` Append measurement, JSON and export code
+- `Bash` Add render/main; build all props without export
+  - result: /home/user/YAYSTO/blender/gore_body/props.py:166: DeprecationWarning: 'Material.use_nodes' is expected to be removed in Blender 6.0 mat.use_nodes = True [gore_body] props: pistol 10 meshes 3372 faces 5 markers 0.3 s [gore_body] props: shotgun 13 meshes 11822 faces 5 markers 0.3 s [gore_body] props:  ...
+- `Bash` Check duplication, fix tube measure, rerun
+  - result: 2648 props.py [gore_body] props built in 6.3 s BAD pistol.bore_d 9.900 spec 9.0 BAD pistol.overall_length 196.383 spec 192.0 OK pistol.height 139.000 spec 139.0 OK pistol.slide_width 25.400 spec 25.4 OK pistol.grip_width 30.000 spec 30.0 OK pistol.barrel_length 114.000 spec 114.0 BAD shotgun.bore_d  ...
+- `Bash` Fix measurements/specs, widen fist; full run with renders
+- `Bash` Add B8 checks to verify.py
+  - result: 242:def _bpy(): 243- import bpy 244- return bpy 245- 246- 247-@check("scene") 248-def contract_objects_present(): ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ File "/usr/local/lib/python3.11/dist-packages/numpy/core/_methods.py", line 41, in _amax return umr_maximum(a, axis, None, out, keepdims, initial,  ...
+- `Bash` Show error context
+  - result: [gore_body] props: hammer 3 meshes 2767 faces 3 markers 0.2 s [gore_body] props: torch 10 meshes 4172 faces 2 markers 0.2 s [gore_body] props: fist 1 meshes 24386 faces 2 markers 3.1 s [gore_body] props: ruler 2 meshes 1994 faces 1 markers 0.2 s [gore_body] props: penlight 5 meshes 5164 faces 2 mark ...
+- `Bash` Fix bore selectors; rerun full props with renders
+  - result: 2241: bore = B[(B[:, 1] > 125.0) & (r < 4.7)] 2242: out["pistol"] = {"bore_d": 2 * float(np.hypot(bore[:, 0], bore[:, 2]).max()), 2253: out["shotgun"] = {"bore_d": 2 * float(r[(B[:, 1] > 221.0) & (r < 9.5)].max()), 12:22:05 | INFO: Primitives created: 1 12:22:05 | INFO: Extracting primitive: GBP_Roo ...
+- `Bash` Triangulate n-gons in finish step; check renders
+- `Read` /home/user/YAYSTO/blender/gore_body/renders/props_pistol_side_r.png
+- `Read` /home/user/YAYSTO/blender/gore_body/renders/props_pistol_muzzle.png
+- `Bash` Wait for more renders
+- `Bash` Wait until knife renders exist
+- `Read` /home/user/YAYSTO/blender/gore_body/renders/props_shotgun_side_r.png
+- `Read` /home/user/YAYSTO/blender/gore_body/renders/props_shotgun_muzzle.png
+- `Read` /home/user/YAYSTO/blender/gore_body/renders/props_knife_edge.png
+- `Bash` Add focused close-up views to render_item
+- `Bash` Check whether render process still runs
+- `Bash` Check whether patch applied
+- `Bash` Apply render close-up patch
+- `Bash` Add partial render flags; render room views
+  - result: ok OK penlight.length 141.100 spec 141.1 OK thermometer.probe_d 3.500 spec 3.5 OK thermometer.probe_length 123.000 spec 123.0 00:07.367 cycles | WARNING CUEW initialization failed: Error opening the library 01:08.524 render | Saved: '/home/user/YAYSTO/blender/gore_body/renders/props_room_player.png' ...
+- `Read` /home/user/YAYSTO/blender/gore_body/renders/props_room_player.png
+- `Read` /home/user/YAYSTO/blender/gore_body/renders/props_room_corner.png
+- `Bash` Debug room materials and normals
+- `Bash` Hide collision meshes from render; quick room render
+- `Read` /home/user/YAYSTO/blender/gore_body/renders/props_room_player.png
+- `Read` /home/user/YAYSTO/blender/gore_body/renders/props_room_corner.png
+- `Bash` Tone down lights, hide spotless items; render all room views
+- `Read` /home/user/YAYSTO/blender/gore_body/renders/props_knife_tq.png
+- `Bash` Pistol frame rounding/finger grooves; knife grind finish
+- `Bash` Delegate export.export_props to props.py
+- `Bash` Wait for all nine room renders
+- `Read` /home/user/YAYSTO/blender/gore_body/renders/props_room_player.png
+- `Read` /home/user/YAYSTO/blender/gore_body/renders/props_room_backstop.png
+- `Read` /home/user/YAYSTO/blender/gore_body/renders/props_room_tiles_grazing.png
+- `Read` /home/user/YAYSTO/blender/gore_body/renders/props_room_trolley.png
+- `Read` /home/user/YAYSTO/blender/gore_body/renders/props_room_table.png
+- `Read` /home/user/YAYSTO/blender/gore_body/renders/props_room_door.png
+- `Read` /home/user/YAYSTO/blender/gore_body/renders/props_room_drain.png
+- `Read` /home/user/YAYSTO/blender/gore_body/renders/props_room_scale_bar.png
+- `Bash` Darker rubber, uniform backstop mesh, trolley tool layout
+- `Bash` Render all item close-ups plus updated room views
+- `Bash` Check whether Godot project exists
+- `Bash` Inspect exported JSON sidecars
+- `Bash` Test-import the prop GLBs in a scratch Godot project
+- `Bash` Wait for first batch of item renders
+- `Read` /home/user/YAYSTO/blender/gore_body/renders/props_pistol_side_l.png
+- `Read` /home/user/YAYSTO/blender/gore_body/renders/props_pistol_muzzle.png
+- `Read` /home/user/YAYSTO/blender/gore_body/renders/props_pistol_port.png
+- `Read` /home/user/YAYSTO/blender/gore_body/renders/props_shotgun_action.png
+- `Read` /home/user/YAYSTO/blender/gore_body/renders/props_shotgun_muzzle.png
+- `Read` /home/user/YAYSTO/blender/gore_body/renders/props_knife_edge.png
+- `Bash` Fix inverted boolean cutters, materials, knife view
+- `Bash` Wait for the item render process to finish
+- `Bash` List latest renders
+- `Read` /home/user/YAYSTO/blender/gore_body/renders/props_room_trolley.png
+- `Read` /home/user/YAYSTO/blender/gore_body/renders/props_room_backstop.png
+- `Read` /home/user/YAYSTO/blender/gore_body/renders/props_hammer_face.png
+- `Read` /home/user/YAYSTO/blender/gore_body/renders/props_hammer_claw.png
+- `Read` /home/user/YAYSTO/blender/gore_body/renders/props_torch_nozzle.png
+- `Read` /home/user/YAYSTO/blender/gore_body/renders/props_torch_valve.png
+- `Read` /home/user/YAYSTO/blender/gore_body/renders/props_fist_tq.png
+- `Read` /home/user/YAYSTO/blender/gore_body/renders/props_fist_thumb.png
+- `Read` /home/user/YAYSTO/blender/gore_body/renders/props_ruler_scale.png
+- `Read` /home/user/YAYSTO/blender/gore_body/renders/props_thermometer_tq.png
+- `Read` /home/user/YAYSTO/blender/gore_body/renders/props_penlight_tq.png
+- `Bash` Export props and re-render knife and pistol
+  - result: 00:06.952 cycles | WARNING CUEW initialization failed: Error opening the library 00:24.362 render | Saved: '/home/user/YAYSTO/blender/gore_body/renders/props_pistol_side_r.png' 00:41.396 render | Saved: '/home/user/YAYSTO/blender/gore_body/renders/props_pistol_side_l.png' 00:59.957 render | Saved: ' ...
+- `Read` /home/user/YAYSTO/blender/gore_body/renders/props_knife_edge.png
+- `Read` /home/user/YAYSTO/blender/gore_body/renders/props_pistol_side_l.png
+- `Read` /home/user/YAYSTO/blender/gore_body/renders/props_knife_side.png
+- `Bash` Run build.py --stage props end to end
+  - result: [ 0.0 s] placeholder: armature + poses [ 17.9 s] placeholder: head + body skin (seam ring) [ 6.4 s] placeholder: shorts + muscle shell [ 1.3 s] placeholder: eyes, eye FX, mouth, brow/lash [ 23.1 s] placeholder: skeleton + fracture variants [ 5.7 s] placeholder: brain, organs, cord, vessels [ 1.6 s]  ...
+- `Bash` Show B8 checks and build summary
+  - result: [PASS] tables B0 rig_bones_and_bodies: 39 bones, 20 bodies, parents first True, total mass 75.01 kg [WARN] scene B4 b4_organ_centres_sizes: off: ['liver centre 27.5 mm', 'spleen centre 16.8 mm', 'adrenal_L centre 6.2 mm', 'lung_R centre 24.0 mm', 'lung_L centre 27.0 mm', 'liver size ratio [0.92, 0.8 ...
+- `Bash` Clean degenerate faces, lighten meshes, fix room check
+  - result: [gore_body] props: pistol 10 meshes 4979 faces 5 markers 0.3 s [gore_body] props: shotgun 13 meshes 12779 faces 5 markers 0.3 s [gore_body] props: knife 5 meshes 6896 faces 10 markers 0.1 s [gore_body] props: hammer 3 meshes 3347 faces 3 markers 0.2 s [gore_body] props: torch 10 meshes 4620 faces 2  ...
+- `Bash` Render room views with the subject from the saved build
+  - result: 00:01.082 cycles | WARNING CUEW initialization failed: Error opening the library 00:24.044 render | Saved: '/home/user/YAYSTO/blender/gore_body/renders/props_room_subject_player.png' 00:47.423 render | Saved: '/home/user/YAYSTO/blender/gore_body/renders/props_room_subject_corner.png'
+- `Read` /home/user/YAYSTO/blender/gore_body/renders/props_room_subject_player.png
+- `Read` /home/user/YAYSTO/blender/gore_body/renders/props_room_subject_corner.png
+- `Bash` Remove dead code in props.py
+- `Bash` Check unused imports
+- `Bash` Remove unused import; rerun end-to-end build
+  - result: Plan §5.7 lists ``GBP_muzzle``; two firearms share one file and Blender names are unique, so the muzzles are ``GBP_muzzle_pistol`` and ``GBP_muzzle_shotgun`` (both with ``gbp_marker = "muzzle"``). Run alone: ``python3 props.py [--quick] [--render] [--render-items a,b] [--render-room all|v1,v2] [--no ...
+- `Bash` Re-test Godot import of final GLBs
+- `Bash` Re-test Godot import in a fresh scratch project
+- `Bash` Start final full render set; find contract props lines
+- `Bash` Check directory state
+- `Bash` Locate props lines and sections in contract
+- `Bash` Document props and room in the module contract
+- `Bash` Check ignore rules and changed files
+- `Bash` Check JSON outputs are byte-identical across runs
+  - result: props.json: OK room.json: OK
+- `Bash` Wait for final render set
+- `Bash` Keep waiting for final renders
+- `Read` /home/user/YAYSTO/blender/gore_body/renders/props_pistol_tq.png
+- `Read` /home/user/YAYSTO/blender/gore_body/renders/props_room_corner.png
+- `Read` /home/user/YAYSTO/blender/gore_body/renders/props_fist_thumb.png
+- `Bash` Crisper tile faces and thumb; re-render fist and room
+- `Read` /home/user/YAYSTO/blender/gore_body/renders/props_room_corner.png
+- `Read` /home/user/YAYSTO/blender/gore_body/renders/props_fist_thumb.png
+- `Bash` Final end-to-end build with verify
+  - result: [ 54.4 s] stage placeholder [ 9.5 s] stage props [ 6.6 s] stage export [PASS] tables B0 rig_bones_and_bodies: 39 bones, 20 bodies, parents first True, total mass 75.01 kg [PASS] scene B8 b8_props_present: roots + 19 item markers + 12 room markers; missing []; tool spots missing [] [PASS] scene B8 b8 ...
+- `StructuredOutput` 

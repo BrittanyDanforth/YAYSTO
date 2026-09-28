@@ -1,0 +1,66 @@
+# Agent memory: critic:gore:r3 (head build + review)
+
+Transcript `agent-abc5b3e2b75563ea1.jsonl`, 2026-09-26T18:45 to 2026-09-26T19:07 UTC. Extracted automatically; the agent's own notes (what it found, decided, tried) plus every step it ran and the pass/fail lines.
+- `Bash` List project files, renders and system load
+- `Bash` Read contract and face feedback, recent commits
+  - result: # Gore Head: build contract > **Reference photos:** real forensic reference photos are in the git-ignored folder `refs/` at the repo root (1-8). LOOK at them with the image viewer whenever you build or judge anything wound-, blood-, tissue-, bone-, skull-, brain- or death-related, and compare your r ...
+- `Read` /home/user/YAYSTO/blender/gore_head/renders/gore_slash.png
+- `Read` /home/user/YAYSTO/blender/gore_head/renders/gore_bullet.png
+- `Read` /home/user/YAYSTO/blender/gore_head/renders/gore_exit.png
+- `Read` /home/user/YAYSTO/blender/gore_head/renders/gore_blunt.png
+- `Read` /home/user/YAYSTO/blender/gore_head/renders/gore_burn.png
+- `Read` /home/user/YAYSTO/blender/gore_head/renders/closeup_exit.png
+- `Read` /home/user/YAYSTO/blender/gore_head/renders/preset_gunshot_front.png
+- `Read` /home/user/YAYSTO/blender/gore_head/renders/preset_gunshot_back.png
+- `Read` /home/user/YAYSTO/blender/gore_head/renders/preset_slash_three_q.png
+- `Read` /home/user/YAYSTO/blender/gore_head/renders/preset_carnage_front.png
+- `Read` /home/user/YAYSTO/blender/gore_head/renders/preset_carnage_three_q.png
+- `Read` /home/user/YAYSTO/blender/gore_head/renders/preset_blunt_front.png
+- `Read` /home/user/YAYSTO/blender/gore_head/renders/preset_burn_three_q.png
+- `Bash` List functions and constants in gore.py
+- `Bash` List more functions in gore.py and build.py presets
+  - result: 2308:def _surface_bvh(): 2341:def _first_front_hit(bvh, origin, d, length): 2356:def _snap(bvh, loc, d, radius=0.0045): 2380:def add_hit(kind, location, direction=None, size=1.0, elongation=1.0, depth=0.6, name=None, roll=0.0, 2445:def add_hits(hits): 2450:def clear_hits(): 2460:def _standin_materia ...
+- `Bash` Read presets, camera setup, test scene helpers
+  - result: # --------------------------------------------------------------------------- # A hit is (kind, location, keyword arguments for gore.add_hit). Locations are # rough points near the skin in head space (metres, face toward -Y, character's # right = -X); add_hit snaps them onto the surface. `toward` (b ...
+- `Bash` Find blood pool, spatter, fill and drip_time usages
+- `Bash` Read hit context helper and pool subgroup
+- `Bash` Read bullet and exit builders
+  - result: def _build_bullet(): """Entry wound (9 mm FMJ): small hole, abrasion collar, bevelled bone, brain track. Research 01 / REALISM_BIBLE rows 1-6: the skin hole is SMALLER than the bullet (skin recoils): scalp ~7.5 mm, face ~7 mm, neck ~5 mm; a crisp red-brown abrasion collar 1.6-2.4 mm wide, concentric ...
+- `Bash` Read drip seeds and blood builder
+- `Bash` Read layer constants and wound step / fill code
+- `Bash` Check available Python libraries and resources
+  - result: Traceback (most recent call last): File "<string>", line 1, in <module> ModuleNotFoundError: No module named 'matplotlib' Traceback (most recent call last): File "<string>", line 1, in <module> ModuleNotFoundError: No module named 'PIL' 1.26.4 4 total used free shared buff/cache available Mem: 15 1  ...
+- `Bash` Inspect existing critic scratch directories
+  - result: critic_gore_r2: total 7032 drwxr-xr-x 2 root root 4096 Sep 26 13:00 . drwx------ 23 root root 4096 Sep 26 18:45 .. -rw-r--r-- 1 root root 240331 Sep 26 12:44 blunt_cran_45.png -rw-r--r-- 1 root root 163135 Sep 26 12:45 blunt_cran_clay60.png -rw-r--r-- 1 root root 196865 Sep 26 12:45 blunt_cran_graze ...
+- `Bash` Read previous critic harness and clip render script
+- `Bash` List headshot clip frames
+
+**[09-26T18:46] note:** Now let me write the critic harness: open the saved .blend, place hits, render straight/45°/grazing views plus clay, and print numeric cross-section profiles.
+
+- `Write` /tmp/claude-0/-home-user-YAYSTO/e2a2594c-08ec-5384-b9ca-fd553ec0f442/scratchpad/critic_gore_r3/crit.py
+- `Bash` Check render helpers and exposure constant
+- `Bash` Start two background critic render jobs
+- `Write` /tmp/claude-0/-home-user-YAYSTO/e2a2594c-08ec-5384-b9ca-fd553ec0f442/scratchpad/critic_gore_r3/seq.py
+- `Bash` Check progress of the render jobs
+- `Bash` Check progress of the render jobs
+- `Bash` Read slash builder
+  - result: def _slash_params(t, s, e, D, tx, ty, scalp): """Length and gape of an incised cut. Gape (total opening at the widest point) = L * G(theta) * f_depth * f_region (research 02 / REALISM_BIBLE row 12): G ~ 0.21 L across the skin tension lines, ~0.035 L along them; a cut must pass the dermis to gape; sc ...
+- `Bash` Read blunt and burn builders
+- `Bash` Check render progress
+  - result: logA.txt:[crit] entry GH_Hits_Bullet loc=(-0.0638, -0.0346, 0.0466) scale=(1.0, 1.0, 1.0) logA.txt:[crit] profile across(mm): [-1.1, -1.1, -1.2, -1.3, -1.4, -1.4, -1.4, -1.5, -1.5, -1.5, -1.6, -1.6, -1.6, -1.6, -1.7, -1.8, -1.9, -4.7, -5.1, None, None, None, -5.2, -4.8, -2.0, -1.8, -1.7, -1.6, -1.5, ...
+- `Bash` List material functions and blood colours
+- `Bash` Read blood material and blood film group
+- `Bash` Wait until first four renders exist
+- `Read` /tmp/claude-0/-home-user-YAYSTO/e2a2594c-08ec-5384-b9ca-fd553ec0f442/scratchpad/critic_gore_r3/entry_straight.png
+- `Read` /tmp/claude-0/-home-user-YAYSTO/e2a2594c-08ec-5384-b9ca-fd553ec0f442/scratchpad/critic_gore_r3/entry_45.png
+- `Read` /tmp/claude-0/-home-user-YAYSTO/e2a2594c-08ec-5384-b9ca-fd553ec0f442/scratchpad/critic_gore_r3/blunt_cran_straight.png
+- `Read` /tmp/claude-0/-home-user-YAYSTO/e2a2594c-08ec-5384-b9ca-fd553ec0f442/scratchpad/critic_gore_r3/blunt_cran_45.png
+- `Bash` Start blood time-sequence render job
+- `Bash` List sections of the realism bible
+- `Bash` Read the fix table and blood-on-surfaces section
+- `Bash` Wait for more renders
+- `Read` /tmp/claude-0/-home-user-YAYSTO/e2a2594c-08ec-5384-b9ca-fd553ec0f442/scratchpad/critic_gore_r3/seq_entry_000.png
+- `Read` /tmp/claude-0/-home-user-YAYSTO/e2a2594c-08ec-5384-b9ca-fd553ec0f442/scratchpad/critic_gore_r3/seq_exit_000.png
+- `Read` /tmp/claude-0/-home-user-YAYSTO/e2a2594c-08ec-5384-b9ca-fd553ec0f442/scratchpad/critic_gore_r3/entry_graze.png
+- `Read` /tmp/claude-0/-home-user-YAYSTO/e2a2594c-08ec-5384-b9ca-fd553ec0f442/scratchpad/critic_gore_r3/entry_clay55.png
+- `Bash` Wait for more renders

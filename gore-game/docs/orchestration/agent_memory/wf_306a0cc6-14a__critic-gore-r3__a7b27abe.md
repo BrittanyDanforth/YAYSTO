@@ -1,0 +1,37 @@
+# Agent memory: critic:gore:r3 (head build + review)
+
+Transcript `agent-ae23457f7a7b27abe.jsonl`, 2026-09-27T02:08 to 2026-09-27T02:08 UTC. Extracted automatically; the agent's own notes (what it found, decided, tried) plus every step it ran and the pass/fail lines.
+- `Bash` List reference and render folders, check load
+- `Read` /home/user/YAYSTO/refs/1.png
+- `Read` /home/user/YAYSTO/refs/2.png
+- `Read` /home/user/YAYSTO/refs/3.webp
+- `Read` /home/user/YAYSTO/refs/4.webp
+- `Read` /home/user/YAYSTO/refs/5.webp
+- `Read` /home/user/YAYSTO/refs/6.webp
+- `Read` /home/user/YAYSTO/refs/7.png
+- `Read` /home/user/YAYSTO/refs/8.png
+- `Read` /home/user/YAYSTO/refs/12_our_render_wall_stripes.png
+- `Read` /home/user/YAYSTO/refs/13_blast_face_mouth_explosive.png
+- `Read` /home/user/YAYSTO/refs/14_body_position_pool.png
+- `Read` /home/user/YAYSTO/refs/15_repeated_blunt_face_a.png
+- `Read` /home/user/YAYSTO/refs/16_repeated_blunt_face_b.webp
+- `Read` /home/user/YAYSTO/refs/17_neck_transection_pool.png
+- `Read` /home/user/YAYSTO/refs/18_chop_head_torn_tissue.webp
+- `Read` /home/user/YAYSTO/refs/19_skull_cut_brain_exposed.webp
+- `Read` /home/user/YAYSTO/refs/20_gsw_pathology_grid.webp
+- `Read` /home/user/YAYSTO/refs/21_face_gsw_seated_pool.png
+- `Read` /home/user/YAYSTO/refs/25_our_blood_disconnected.png
+- `Read` /home/user/YAYSTO/refs/26_our_blood_disconnected_zoom.png
+- `Read` /home/user/YAYSTO/refs/face_ref_male.webp
+- `Read` /home/user/YAYSTO/refs/face_ref_sculpt.png
+- `Read` /home/user/YAYSTO/refs/gsw_pathology_sheet.webp
+- `Read` /home/user/YAYSTO/blender/gore_head/renders/contact_sheet_wounds.png
+- `Read` /home/user/YAYSTO/blender/gore_head/renders/closeup_exit.png
+- `Read` /home/user/YAYSTO/blender/gore_head/renders/preset_slash_three_q.png
+- `Read` /home/user/YAYSTO/blender/gore_head/renders/preset_carnage_front.png
+- `Read` /home/user/YAYSTO/blender/gore_head/renders/seq_entry_00s.png
+- `Read` /home/user/YAYSTO/blender/gore_head/renders/seq_entry_10s.png
+- `Read` /home/user/YAYSTO/blender/gore_head/renders/seq_entry_60s.png
+- `Read` /home/user/YAYSTO/blender/gore_head/renders/seq_exit_00s.png
+- `Read` /home/user/YAYSTO/blender/gore_head/renders/seq_exit_05s.png
+- `Read` /home/user/YAYSTO/blender/gore_head/renders/seq_exit_60s.png

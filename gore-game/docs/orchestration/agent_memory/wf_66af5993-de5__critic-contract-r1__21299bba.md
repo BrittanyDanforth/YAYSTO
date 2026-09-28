@@ -1,0 +1,107 @@
+# Agent memory: critic:contract:r1 (body build + review)
+
+Transcript `agent-ab30f529521299bba.jsonl`, 2026-09-26T19:44 to 2026-09-26T20:34 UTC. Extracted automatically; the agent's own notes (what it found, decided, tried) plus every step it ran and the pass/fail lines.
+- `Bash` List body project and generated assets
+- `Bash` Read build.py and plan headings
+  - result: """Full-body build orchestration (owner B0). Plan §5.1-5.2. Usage (bpy module or Blender binary):: python3 build.py [--stage STAGE ...] [--quick] [--no-bake] [--render] [--no-save] [--no-verify] blender -b --python build.py -- [same options] Stages: placeholder | skin | head | skeleton | viscera | n ...
+- `Bash` Read plan budgets and contract
+  - result: ## 4. Budgets ### 4.1 Triangles and vertices (LOD0, subject) | Mesh | Triangles | Visible | Notes | |---|---|---|---| | `GB_Head` (head + neck to the seam, lids, ears, lips, mouth lining) | 30,000 | always | Decimated from the 1.2 mm head; 24 blend shapes | | `GB_Body` (5 surfaces: torso, arm_L, arm ...
+- `Bash` Check paths and caches
+  - result: 9:* paths (``HERE``, ``GAME_OUT`` ...) - always relative to this folder; 37:# Paths (plan §5.1: only relative to HERE) 39:HERE = os.path.dirname(os.path.abspath(__file__)) 40:HEAD_DIR = os.path.normpath(os.path.join(HERE, "..", "gore_head")) 41:GAME_DIR = os.path.normpath(os.path.join(HERE, "..", ". ...
+- `Bash` Create clean scratch copies for builds
+- `Bash` Copy projects into scratch
+- `Bash` Copy projects into scratch
+- `Bash` Run quick all-stage build from clean
+- `Bash` Read module CONTRACT
+  - result: # gore_body module contract (plan §5, kept current) Procedural full body for the Godot game, built with Blender 5.x from code only (no downloads). The authoritative design is `gore-game/docs/FULL_BODY_PLAN.md` §5; this file records what the code actually does today and the rules every work package f ...
+- `Bash` Read rest of CONTRACT
+  - result: `GBP_Penlight`, `GBP_Thermometer`. Moving parts are separate meshes (slide, triggers, forend, flame). - Item frame: authored +Y forward / +Z up → Godot −Z forward / +Y up. **Markers** (`Node3D` in Godot): local +Y (Godot −basis.z) = action direction, +Z = up; kind in `gbp_marker` extras. `GBP_muzzle ...
+- `Bash` Read stage_cache and import_head
+  - result: self.materials = materials self.gh_common = gh_common _HEAD = None def import_head(): """Import the head project's modules read-only and return them. ``blender/gore_head`` is appended to ``sys.path`` (never inserted first, so its ``build.py`` cannot shadow ours) and re-imported fresh on every build  ...
+- `Bash` Map stage module dependencies
+- `Bash` Find inner imports per stage module
+- `Bash` Inspect file writes and reads in modules
+- `Bash` Check quick build progress
+  - result: # condyle ellipsoid centre in anatomy.jaw_raw: (+-0.0500, -0.0115, -0.0020) head frame return gbc.head_to_body(np.array([0.0, -0.0115, -0.0020])) def face_rig_table(head=None, measure=True): """rig.json "face" block (plan §5.8): bone pivots and axes, the measured lid table, blend shapes. With ``head ...
+- `Bash` Copy docs; find doc-reading code
+- `Bash` Find bible_waypoints users
+- `Bash` Check use of bible waypoints in vascular
+- `Bash` Inspect exported JSON envelopes
+- `Bash` Inspect manifest content
+- `Bash` Check budget logic in export
+- `Bash` Headless Godot import of all glbs
+- `Bash` Dump imported scene structure in Godot
+- `Bash` Histogram of segment/region codes in glb
+  - result: Exit code 1 Traceback (most recent call last): File "<stdin>", line 7, in <module> File "/tmp/claude-0/-home-user-YAYSTO/e2a2594c-08ec-5384-b9ca-fd553ec0f442/scratchpad/body/critic_contract_r1/glb.py", line 14, in acc arr=np.frombuffer(bin_,dtype=np.dtype('<'+t),count=None,offset=0) ^^^^^^^^^^^^^^^^ ...
+- `Bash` Histogram of segment/region codes in glb
+- `Bash` Check quick build progress
+- `Bash` Find where skin writes maps
+- `Bash` Find bake_body_maps callers
+- `Bash` Inspect GLTF options and verify checks
+- `Bash` Inspect godot import check
+  - result: export.py:61:GODOT_BIN = "/opt/godot/Godot_v4.5.1-stable_linux.x86_64" export.py:790:def godot_import_check(glb, godot=GODOT_BIN, timeout=900): export.py:808: # display with the OpenGL (Mesa llvmpipe) driver when xvfb-run exists, else headless (no pose bakes) export.py:809: xvfb = shutil.which("xvfb ...
+- `Bash` Read rest of godot check
+  - result: order_same = got.get("bones") == list(rig.BONE_NAMES) want = [n for n in gbc.exported_mesh_names(0) if n in bpy.data.objects] meshes = got.get("meshes", {}) for n in want: m = meshes.get(n) if m is None: probs.append(f"{n} missing") continue if not m["skin"]: probs.append(f"{n} not skinned") if not  ...
+- `Bash` Wait and check quick build
+
+**[09-26T19:47] note:** Meanwhile, I'll review code quality aspects.
+
+- `Bash` Check stray files and RNG usage
+  - result: import sys, time; sys.path.insert(0,'/home/user/YAYSTO/blender/gore_body') import numpy as np, bpy, gb_common as gbc, neuro as N gbc.reset_scene(); gbc.collections() t=time.time(); c=N.build_cord_only(); print('cord tris', gbc.tri_count(c.data), round(time.time()-t,1)) u,v=gbc.read_codes_uv(c); prin ...
+- `Bash` Check viscera RNG seeding
+- `Bash` Wait for quick build to finish
+- `Bash` Run full all-stage build from clean (no bake)
+- `Bash` Check stub usage and skin_all
+- `Bash` Check blender binary and arg parsing
+- `Bash` Check subprocess invocations
+- `Bash` Read round trip launcher
+- `Bash` Validate JSON schemas vs plan examples
+- `Bash` Inspect vessel points format and jaw binding
+- `Bash` List vessel points bound to jaw bone
+- `Bash` Read weights_at signature
+- `Bash` Measure jaw weights on deep vessels
+- `Bash` Check which inner parts get jaw weight
+- `Bash` Check pose tests for jaw
+- `Bash` Check both build logs
+- `Bash` Check verify main and writes
+  - result: 2614:if __name__ == "__main__": 2615- args = gbc.script_args() 2616- groups = ["tables", "files"] 2617- if "--blend" in args: 2618- import bpy 2619- bpy.ops.wm.open_mainfile(filepath=os.path.abspath(args[args.index("--blend") + 1])) 2620- groups.append("scene") 2621- r = verify_all(tuple(groups)) 26 ...
+- `Bash` Run standalone verify on repo build
+- `Bash` List remaining renders
+- `Read` /home/user/YAYSTO/blender/gore_body/renders/lookdev_cycles_vs_godot.png
+- `Read` /home/user/YAYSTO/blender/gore_body/renders/body_skin_detail_shoulder_tq.png
+- `Bash` Wait for quick build
+  - result: Info: Baking map saved to internal image, save it externally or pack it Info: Baking map saved to internal image, save it externally or pack it Info: Baking map saved to internal image, save it externally or pack it Info: Baking map saved to internal image, save it externally or pack it Info: Baking ...
+- `Bash` Show verify failures and warnings
+  - result: [FAIL] scene B2 b2_face_shape_keys: 24 keys; base self-intersections 0; bad ['AU01_L', 'AU01_R', 'AU02_L', 'AU02_R', 'AU04_L', 'AU04_R', 'AU06_L', 'AU06_R', 'AU07_L', 'AU07_R', 'AU09_L', 'AU09_R', 'AU10_L', 'AU10_R', 'AU12_L', 'AU12_R', 'AU15_L', 'AU15_R', 'AU20_L', 'AU20_R', 'mouth_slack_L', 'mouth ...
+- `Bash` Read b2_face_shape_keys check
+- `Bash` Read head shape key check
+- `Bash` Diagnose face shape key failure
+- `Bash` Check both build progress
+- `Bash` Audit scene contract in repo blend
+- `Bash` Check file sizes and texture listing consistency
+- `Bash` Check manifest texture references
+- `Bash` Wait for full build
+  - result: 20:19:15 | INFO: Finished glTF 2.0 export in 0.29213428497314453 s [gore_body] props: exported weapons.glb, room.glb, props.json, room.json; critical dimensions OK [ 11.0 s] stage props [gore_body] bake: GB_Skeleton: 2198 charts, coverage 0.040 -> 0.283, overlap 0.0090 [gore_body] bake: GB_Organs: 6 ...
+- `Bash` Wait for full build
+- `Bash` Show full-build verify failures and stage timings
+  - result: [WARN] scene B4 b4_organ_centres_sizes: off: ['liver centre 27.5 mm', 'spleen centre 16.8 mm', 'adrenal_L centre 6.2 mm', 'lung_R centre 24.0 mm', 'lung_L centre 27.0 mm', 'liver size ratio [0.92, 0.87, 0.93]'] | all: heart 3.6mm; liver 27.5mm; spleen 16.8mm; kidney_L 1.2mm; kidney_R 1.2mm; adrenal_ ...
+- `Bash` Compare clean full outputs with repo outputs
+- `Bash` Diff JSON outputs
+- `Bash` Compare cache keys and source mtimes
+- `Bash` Check gore_head file changes
+- `Bash` Compare per-mesh geometry of both glbs
+- `Bash` Test skin stage determinism twice
+- `Bash` Standalone verify on clean full blend
+- `Bash` Find posing helpers
+- `Bash` Measure deep-structure motion on jaw open
+- `Bash` Wait for determinism test
+- `Bash` Show standalone verify results on clean blend
+  - result: [WARN] scene B4 b4_organ_centres_sizes: off: ['liver centre 27.5 mm', 'spleen centre 16.8 mm', 'adrenal_L centre 6.2 mm', 'lung_R centre 24.0 mm', 'lung_L centre 27.0 mm', 'liver size ratio [0.92, 0.87, 0.93]'] | all: heart 3.6mm; liver 27.5mm; spleen 16.8mm; kidney_L 1.2mm; kidney_R 1.2mm; adrenal_ ...
+- `Bash` Compare head source hashes to manifest
+- `Bash` Check quick bake progress
+- `Bash` Read bake _quick
+- `Bash` Wait for quick build to finish
+  - result: [gore_body] B5 vascular: 201 segments, 20 nerves, tubes {'GB_Vessels_Art': 8600, 'GB_Vessels_Ven': 6440} (total 15040), 8.1 s [PASS] tables B0 rig_bones_and_bodies: 39 bones, 20 bodies, parents first True, total mass 75.01 kg [WARN] scene B3 skeleton_lean_site_depths: depth mm tibial_face 3.9, patel ...
+- `Bash` Check nested godot project and git tracking
+- `Bash` Check if builds mutate head_face_rig.json
+- `StructuredOutput` 

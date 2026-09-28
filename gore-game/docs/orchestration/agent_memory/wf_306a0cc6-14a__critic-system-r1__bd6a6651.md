@@ -1,0 +1,37 @@
+# Agent memory: critic:system:r1 (head build + review)
+
+Transcript `agent-a1d434ebfbd6a6651.jsonl`, 2026-09-26T06:17 to 2026-09-26T06:47 UTC. Extracted automatically; the agent's own notes (what it found, decided, tried) plus every step it ran and the pass/fail lines.
+- `Bash` List project files and check bpy
+- `Bash` Copy project to scratch and read contract
+- `Bash` Inspect argv handling and paths
+- `Bash` Search for absolute paths
+- `Bash` Read build main
+- `Bash` Run clean build in scratch copy, time it
+- `Bash` Run clean build in scratch copy, time it
+  - result: rc=0 t=224 13:/tmp/claude-0/-home-user-YAYSTO/e2a2594c-08ec-5384-b9ca-fd553ec0f442/scratchpad/critic_system_r1/proj/build.py:394: DeprecationWarning: 'Material.use_nodes' is expected to be removed in Blender 6.0 15:/tmp/claude-0/-home-user-YAYSTO/e2a2594c-08ec-5384-b9ca-fd553ec0f442/scratchpad/criti ...
+- `Bash` Read build log start
+  - result: GH_Skin 180620 verts 8.1 s GH_Muscle 64762 verts 5.7 s GH_Skull 126474 verts 6.5 s GH_Jaw 21032 verts 1.6 s GH_Brain 167644 verts 10.7 s GH_Eye_L 3386 verts 0.2 s GH_Eye_R 3386 verts 0.2 s GH_Teeth_Upper 31192 verts 0.3 s GH_Teeth_Lower 29044 verts 0.2 s GH_Gums 30380 verts 1.3 s GH_Tongue 10368 ver ...
+- `Bash` Read build.py structure and save_blend
+- `Bash` Skim gore.py header and function list
+- `Bash` Read add_hit, build_gore_system, gh_common
+  - result: def ensure_hit_collections(): """Create GH_Hits and its five per-kind child collections. Returns {kind: collection}.""" root = ghc.get_collection(HITS_ROOT) return {k: ghc.get_collection(HIT_COLLECTIONS[k], root) for k in KINDS} # outer surfaces a hit can land on (a shot into the eye or the open mou ...
+- `Bash` Reload saved blend in fresh process and inspect
+- `Bash` Check orphan data, hair modifiers, hit_mat nodes
+- `Bash` Read verify_gore and materials driver usage
+  - result: def _mesh_signature(ob): """(vertex count, face count, position checksum, blood-material face count) of the evaluated mesh.""" dg = bpy.context.evaluated_depsgraph_get() ev = ob.evaluated_get(dg) me = ev.to_mesh() n = len(me.vertices) co = [0.0] * (3 * n) me.vertices.foreach_get("co", co) chk = roun ...
+- `Bash` Test add_hit per kind at many surface points
+- `Bash` Run control, transform, extreme and 20-hit tests
+- `Bash` Check bruising attribute, determinism, drips at neck cut
+- `Bash` Render stress-test images at low res
+- `Read` /tmp/claude-0/-home-user-YAYSTO/e2a2594c-08ec-5384-b9ca-fd553ec0f442/scratchpad/critic_system_r1/r20_GH_Cam_front.png
+- `Read` /tmp/claude-0/-home-user-YAYSTO/e2a2594c-08ec-5384-b9ca-fd553ec0f442/scratchpad/critic_system_r1/r20_GH_Cam_three_q.png
+- `Read` /tmp/claude-0/-home-user-YAYSTO/e2a2594c-08ec-5384-b9ca-fd553ec0f442/scratchpad/critic_system_r1/rext_side.png
+- `Bash` Simulate Blender argv handling
+- `Bash` Read verify, animate_controls, hair group
+  - result: def evaluate_all(objs): """Force a full evaluation of every layer (all modifiers). Returns seconds.""" for ob in objs.values(): ob.update_tag() t0 = time.time() dg = bpy.context.evaluated_depsgraph_get() dg.update() for ob in objs.values(): if ob.type == 'MESH': ev = ob.evaluated_get(dg) ev.to_mesh( ...
+- `Bash` Time save and frame change on saved file
+- `Bash` Profile build phases with timing wrapper
+- `Bash` Read presets and apply_preset
+  - result: # aims the hit at a point instead of giving a direction: the wound track then # runs from the hit toward that point. # bullet path of the gunshot: right temple -> left side of the back of the head _ENTRY = (-0.070, -0.040, 0.046) _EXIT = (0.052, 0.066, 0.058) PRESETS = { "intact": dict( hits=[], con ...
+- `Bash` Measure eye change from forehead blunt hit
+- `StructuredOutput` 

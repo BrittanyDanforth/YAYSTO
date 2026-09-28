@@ -1,0 +1,214 @@
+# Agent memory: fix:r2 (body build + review)
+
+Transcript `agent-a5f5dac68cfc3006f.jsonl`, 2026-09-27T19:19 to 2026-09-27T21:02 UTC. Extracted automatically; the agent's own notes (what it found, decided, tried) plus every step it ran and the pass/fail lines.
+- `Bash` List body project files and git state
+  - result: total 218796 drwxr-xr-x 7 root root 4096 Sep 27 16:27 . drwxr-xr-x 4 root root 4096 Sep 26 05:35 .. drwxr-xr-x 7 root root 4096 Sep 27 15:35 .cache -rw-r--r-- 1 root root 30 Sep 26 06:52 .gitignore -rw-r--r-- 1 root root 38961 Sep 27 11:29 CONTRACT.md drwxr-xr-x 2 root root 4096 Sep 27 15:10 __pycac ...
+- `Bash` Read build script and contract start
+- `Bash` List refs and scratch, running processes
+  - result: <persisted-output> Output too large (31.2KB). Full output saved to: /root/.claude/projects/-home-user-YAYSTO/e2a2594c-08ec-5384-b9ca-fd553ec0f442/tool-results/bw38x34c3.txt Preview (first 2KB): """Full-body build orchestration (owner B0). Plan §5.1-5.2. Usage (bpy module or Blender binary):: python3 ...
+- `Bash` Read rest of build.py
+  - result: ``.cache/quick_out`` (never into ``gore-game/assets/generated``) unless ``--force-export`` is given, and full-accuracy acceptance checks are reported as ``skip``. ``--stage placeholder`` therefore means "placeholder only, no caches"; ``--stage all`` builds every stage. Timings are printed and stored ...
+- `Bash` Survey scratchpad contents
+  - result: __pycache__ _selftest_front.png anatomy anatomy_r3_orig.py audio_removal bb_hits.txt blood_rule.txt body body_resume.js build_r3_orig.py cachecheck.py check.js check.mjs clip15 critic_gore_r1 critic_gore_r2 critic_gore_r3 critic_system_r1 critic_system_r2 critic_system_r3 critic_visual_r1 critic_vis ...
+- `Bash` List critic and previous fix dirs
+  - result: asym.py asym2.py attrs.py bd.py br_back.png br_side.png br_top.png br_under.png cns_sag.png cns_sag_head.png cord_side.png d_deltoid.png d_knee.png d_shin.png evalchk.py face_front.png facechk.py h_heart_front.png h_heart_tq.png h_peri_front.png h_peri_side.png h_upperabd_back.png h_upperabd_front.p ...
+- `Bash` List head_integration functions
+- `Bash` Read eye and head skin build code
+- `Bash` Check previous verify failures and timings
+  - result: [WARN] scene B3 skeleton_lean_site_depths: depth mm tibial_face 7.2, patella 5.9, malleoli 4.3, sternum 11.1; out of range ['tibial_face 7.2 (want 3-6)'] [WARN] scene B4 b4_lung_volume: lung volumes L {'lung_R': 1.225, 'lung_L': 1.128} vs FRC R 1.80 / L 1.55 [FAIL] scene B6 b6_deformation_fb2: faili ...
+- `Bash` Show stage timings from last full build
+- `Bash` Plan structure and acceptance tests
+  - result: 17:## 0. Read this first 19:### 0.1 Evidence tags and sources 24:### 0.2 Decisions at a glance 48:### 0.3 Deviations from the bible (and why) 60:### 0.4 Limits of this pass 66:## 1. Product scope for the full body 68:### 1.1 In and out of scope (v1) 79:### 1.2 The subject 88:### 1.3 Scene: the foren ...
+- `Read` /home/user/YAYSTO/refs/1.png
+- `Read` /home/user/YAYSTO/refs/2.png
+- `Read` /home/user/YAYSTO/refs/3.webp
+- `Read` /home/user/YAYSTO/refs/4.webp
+- `Read` /home/user/YAYSTO/refs/5.webp
+- `Read` /home/user/YAYSTO/refs/6.webp
+- `Read` /home/user/YAYSTO/refs/7.png
+- `Read` /home/user/YAYSTO/refs/8.png
+- `Read` /home/user/YAYSTO/refs/12_our_render_wall_stripes.png
+- `Read` /home/user/YAYSTO/refs/13_blast_face_mouth_explosive.png
+- `Read` /home/user/YAYSTO/refs/14_body_position_pool.png
+- `Read` /home/user/YAYSTO/refs/15_repeated_blunt_face_a.png
+- `Read` /home/user/YAYSTO/refs/16_repeated_blunt_face_b.webp
+- `Read` /home/user/YAYSTO/refs/17_neck_transection_pool.png
+- `Read` /home/user/YAYSTO/refs/18_chop_head_torn_tissue.webp
+- `Read` /home/user/YAYSTO/refs/19_skull_cut_brain_exposed.webp
+- `Read` /home/user/YAYSTO/refs/20_gsw_pathology_grid.webp
+- `Read` /home/user/YAYSTO/refs/21_face_gsw_seated_pool.png
+- `Read` /home/user/YAYSTO/refs/25_our_blood_disconnected.png
+- `Read` /home/user/YAYSTO/refs/26_our_blood_disconnected_zoom.png
+- `Read` /home/user/YAYSTO/refs/face_ref_male.webp
+- `Read` /home/user/YAYSTO/refs/face_ref_sculpt.png
+- `Read` /home/user/YAYSTO/refs/gsw_pathology_sheet.webp
+- `Bash` List skeleton functions
+- `Bash` Read skull and mandible code
+- `Bash` List head anatomy functions
+- `Bash` Read teeth, gums, tongue code of head
+- `Bash` Read mouth build and head skull code
+- `Bash` Read critic's jaw section script
+- `Read` /tmp/claude-0/-home-user-YAYSTO/e2a2594c-08ec-5384-b9ca-fd553ec0f442/scratchpad/body/critic_anatomy_r2/s_skull_side.png
+- `Read` /tmp/claude-0/-home-user-YAYSTO/e2a2594c-08ec-5384-b9ca-fd553ec0f442/scratchpad/body/critic_anatomy_r2/xj_sag_x002.png
+- `Read` /tmp/claude-0/-home-user-YAYSTO/e2a2594c-08ec-5384-b9ca-fd553ec0f442/scratchpad/body/critic_anatomy_r2/xh_tra_+000.png
+- `Bash` Read meshing helpers
+- `Bash` Per-piece skeleton timing
+- `Bash` List body_skin functions
+- `Bash` Read neck and union components
+  - result: FOOT_BOX = Box((0.02, -0.17, -0.01), (0.19, 0.14, 0.24), margin=0.03) # =========================================================================== # Neck primitives # =========================================================================== def _neck_parts(ax, y, z): """Sternocleidomastoid ridges ...
+- `Read` /tmp/claude-0/-home-user-YAYSTO/e2a2594c-08ec-5384-b9ca-fd553ec0f442/scratchpad/body/critic_anatomy_r2/seam_side.png
+- `Read` /tmp/claude-0/-home-user-YAYSTO/e2a2594c-08ec-5384-b9ca-fd553ec0f442/scratchpad/body/critic_anatomy_r2/seam_back.png
+- `Read` /tmp/claude-0/-home-user-YAYSTO/e2a2594c-08ec-5384-b9ca-fd553ec0f442/scratchpad/body/critic_anatomy_r2/seam_front.png
+- `Bash` Read Box, StarTube, TORSO table
+- `Bash` Read shoulder function
+  - result: class Box: """Axis-aligned box used to skip far points. ``lo``/``hi`` must enclose the component; outside the box expanded by ``margin`` the component is not evaluated and ``distance to the expanded box + margin`` is returned, a lower bound of the true distance that is never below ``margin`` (so smo ...
+- `Bash` Find SEAM_Z usages
+- `Bash` Survey gore-game folder
+- `Bash` Look at the Godot lookdev harness
+- `Bash` Find eye bone definitions
+- `Bash` Read rig_table head and gb_common head helpers
+- `Bash` Read eye FX build code
+- `Edit` /home/user/YAYSTO/blender/gore_body/head_integration.py
+- `Edit` /home/user/YAYSTO/blender/gore_body/head_integration.py
+- `Bash` Find eye centre usages
+- `Bash` Check landmark export and verify joint check
+- `Bash` Update eye bone centre in rig table
+- `Bash` Patch rig and lookdev eye defaults
+- `Bash` Update verify eye pivot check
+- `Bash` Update exported eye landmarks
+- `Edit` /home/user/YAYSTO/blender/gore_body/export.py
+- `Bash` Look at previous neck iteration script
+- `Bash` Find larynx and trachea positions
+- `Bash` Print cervical vertebra table rows
+- `Bash` Render current neck region clay preview
+- `Bash` Check PIL and montage helper
+  - result: Traceback (most recent call last): File "<string>", line 1, in <module> ModuleNotFoundError: No module named 'PIL' /tmp/claude-0/-home-user-YAYSTO/e2a2594c-08ec-5384-b9ca-fd553ec0f442/scratchpad/body/B0/montage.py """montage.py out.png in1.png in2.png ... (side by side, same height)""" import sys, b ...
+- `Bash` Create montage helper and neck montage
+- `Read` /tmp/claude-0/-home-user-YAYSTO/e2a2594c-08ec-5384-b9ca-fd553ec0f442/scratchpad/body/fix4/n0/m.png
+- `Bash` Measure head vs combined neck cross-sections
+- `Bash` Make SDF section tool and render neck sections
+- `Read` /tmp/claude-0/-home-user-YAYSTO/e2a2594c-08ec-5384-b9ca-fd553ec0f442/scratchpad/body/fix4/n0/secs.png
+- `Bash` Neck-related landmarks
+- `Bash` Read skeleton Tube and Sheet classes
+- `Bash` Section under the chin with head/body parts
+- `Read` /tmp/claude-0/-home-user-YAYSTO/e2a2594c-08ec-5384-b9ca-fd553ec0f442/scratchpad/body/fix4/n0/chin.png
+- `Bash` Check neck girth definition and verify
+- `Bash` Read neck tape measure
+- `Bash` Find laryngeal landmark and landmark_errors
+- `Bash` Which landmarks must lie on the skin
+- `Bash` Read larynx, oesophagus, thyroid SDFs
+- `Bash` Vertebra body depths
+- `Bash` List critic visual renders
+- `Bash` Montage of previous neck renders
+- `Read` /tmp/claude-0/-home-user-YAYSTO/e2a2594c-08ec-5384-b9ca-fd553ec0f442/scratchpad/body/fix4/prev_neck.png
+- `Bash` Read tissue groups and muscle shell code
+  - result: FAT_SCALE = LM.BODY_FAT_PCT / 15.0 # fat map is for 15 % body fat (tissue.FAT_MM) GROUPS = {"torso": ("torso", "scm", "larynx", "trapezius", "clavicle", "ant_fold", "post_fold", "pad_trunk"), "glute": ("glute",), "arm": ("arm", "deltoid"), "hand": ("hand",), "leg": ("leg", "pad_leg"), "foot": ("foot ...
+- `Bash` Read body_skin header and helpers
+
+**[09-27T19:38] note:** Let me look at the current `_torso_profile` interplay and then write the new neck design.
+
+- `Bash` Find usages of neck component names
+- `Bash` Replace neck stations in the torso table
+- `Bash` Add neck_relief to the torso profile
+- `Bash` Add trapezius sweep and remove old capsules
+- `Bash` Review updated shoulder function
+- `Bash` Write SCM tubes and submental fill
+
+**[09-27T19:40] note:** Now the union changes (remove cap and submental limit, new blend radii) and the neck Box.
+
+- `Bash` Update union of neck components
+  - result: def union_components(c, off=None, kplus=0.0): """Blend the components into the body. ``off``: per-component inward offsets (m); ``kplus`` widens every blend radius (the muscle shell passes its own depth, so an inward offset keeps rounded creases instead of cusps in the armpit, groin and shoulder)."" ...
+- `Bash` Fix belt line box margin with assertion helper
+- `Bash` Section images of the new neck
+- `Read` /tmp/claude-0/-home-user-YAYSTO/e2a2594c-08ec-5384-b9ca-fd553ec0f442/scratchpad/body/fix4/n1/secs.png
+- `Bash` Render new neck preview
+  - result: 00:25.789 cycles | WARNING CUEW initialization failed: Error opening the library DONE
+- `Read` /tmp/claude-0/-home-user-YAYSTO/e2a2594c-08ec-5384-b9ca-fd553ec0f442/scratchpad/body/fix4/n2/m.png
+- `Bash` Sections with component contours
+- `Read` /tmp/claude-0/-home-user-YAYSTO/e2a2594c-08ec-5384-b9ca-fd553ec0f442/scratchpad/body/fix4/n2/secs.png
+- `Bash` Rewrite trapezius section and check sections
+- `Read` /tmp/claude-0/-home-user-YAYSTO/e2a2594c-08ec-5384-b9ca-fd553ec0f442/scratchpad/body/fix4/n3/secs.png
+- `Bash` Render 3D preview of neck v3
+  - result: 00:25.732 cycles | WARNING CUEW initialization failed: Error opening the library DONE saved n3/cor.png 880 440
+- `Read` /tmp/claude-0/-home-user-YAYSTO/e2a2594c-08ec-5384-b9ca-fd553ec0f442/scratchpad/body/fix4/n3/m.png
+- `Bash` Sections of the head/neck join behind the ear
+- `Read` /tmp/claude-0/-home-user-YAYSTO/e2a2594c-08ec-5384-b9ca-fd553ec0f442/scratchpad/body/fix4/n3/join.png
+- `Bash` Lower back clip, widen suboccipital neck
+- `Read` /tmp/claude-0/-home-user-YAYSTO/e2a2594c-08ec-5384-b9ca-fd553ec0f442/scratchpad/body/fix4/n4/join.png
+- `Bash` Render neck v4 preview
+  - result: 00:33.433 cycles | WARNING CUEW initialization failed: Error opening the library DONE
+- `Read` /tmp/claude-0/-home-user-YAYSTO/e2a2594c-08ec-5384-b9ca-fd553ec0f442/scratchpad/body/fix4/n4/m.png
+- `Bash` Horizontal sections through the neck
+- `Read` /tmp/claude-0/-home-user-YAYSTO/e2a2594c-08ec-5384-b9ca-fd553ec0f442/scratchpad/body/fix4/n4/tra.png
+- `Bash` Find hard-coded seam heights
+- `Bash` Raise SEAM_Z to 1.520
+- `Bash` Read landmarks module functions
+- `Bash` Find larynx/trachea references
+- `Bash` Read organ primitive tables for the neck
+- `Bash` Move larynx, trachea top, thyroid back
+- `Bash` Check verify references to larynx offsets
+- `Bash` Extend larynx mesh boxes
+- `Bash` Add landmark deviation mechanism
+- `Bash` Warp landmarks_rb in JSON
+- `Bash` Warp eyes rb sub-dict
+- `Bash` Check neck organ clearance under the skin
+- `Bash` Move laryngeal ridge peak up and re-check
+- `Bash` Larynx 8.5 mm back, ridge 7.8 mm
+- `Bash` Measure the midline neck front profile
+- `Bash` Midline neck front profile (full)
+- `Bash` Set measured larynx landmark deviations
+- `Bash` Head-frame sections of the current skull
+- `Read` /tmp/claude-0/-home-user-YAYSTO/e2a2594c-08ec-5384-b9ca-fd553ec0f442/scratchpad/body/fix4/sk0/m.png
+- `Bash` Read head mouth and oral void code
+- `Bash` Print tooth frames
+
+**[09-27T19:58] note:** Now I'll write the new body-side skull module (facial skeleton with air spaces, sockets, palate, mandible, long tooth roots).
+
+- `Bash` Find skull/jaw box references
+- `Bash` Who uses the head layer SDFs
+- `Bash` Check rig and neuro use of skull SDFs
+- `Write` /home/user/YAYSTO/blender/gore_body/skull.py
+- `Bash` Clean up skull module code
+- `Bash` Wire skull module into skeleton
+- `Bash` Section images of the new skull
+- `Read` /tmp/claude-0/-home-user-YAYSTO/e2a2594c-08ec-5384-b9ca-fd553ec0f442/scratchpad/body/fix4/sk1/m.png
+- `Bash` Debug mandible sections
+- `Read` /tmp/claude-0/-home-user-YAYSTO/e2a2594c-08ec-5384-b9ca-fd553ec0f442/scratchpad/body/fix4/sk2/m.png
+- `Bash` Probe mandible clamp values along a line
+- `Read` /tmp/claude-0/-home-user-YAYSTO/e2a2594c-08ec-5384-b9ca-fd553ec0f442/scratchpad/body/fix4/sk1/z_-0.075.png
+- `Bash` Rework gums, mandible arch, profile and ramus
+- `Bash` Section images after mandible rework
+- `Read` /tmp/claude-0/-home-user-YAYSTO/e2a2594c-08ec-5384-b9ca-fd553ec0f442/scratchpad/body/fix4/sk3/m1.png
+- `Bash` Inspect neuro brain build
+- `Bash` Read brain SDF code (body and head)
+- `Bash` Raise middle cranial fossa over the TMJ
+- `Bash` Use body cranial cavity in skeleton and neuro
+- `Bash` Move brain cavity clamp to brain_sdf
+- `Bash` Add skull.py to stage source closures
+- `Bash` Re-run skull sections in parallel
+- `Read` /tmp/claude-0/-home-user-YAYSTO/e2a2594c-08ec-5384-b9ca-fd553ec0f442/scratchpad/body/fix4/sk4/m1.png
+- `Bash` Probe symphysis values along a vertical line
+- `Bash` Probe the palate along a vertical line
+- `Bash` Mesh and render the new skull and mandible
+  - result: skull 566648 331.933527469635 mand 91260 97.88159418106079 07:15.222 cycles | WARNING CUEW initialization failed: Error opening the library DONE real 7m44.716s user 7m55.752s sys 0m19.346s
+- `Bash` Montage of the skull renders
+- `Read` /tmp/claude-0/-home-user-YAYSTO/e2a2594c-08ec-5384-b9ca-fd553ec0f442/scratchpad/body/fix4/sk5/m.png
+- `Bash` Bound septum, reshape TMJ roof and ITF, smooth ramus
+- `Bash` Add alveolar ridge; re-render skull
+  - result: skull 554356 338.90920662879944 mand 95716 121.53488969802856 07:46.038 cycles | WARNING CUEW initialization failed: Error opening the library DONE
+- `Read` /tmp/claude-0/-home-user-YAYSTO/e2a2594c-08ec-5384-b9ca-fd553ec0f442/scratchpad/body/fix4/sk6/m.png
+- `Read` /tmp/claude-0/-home-user-YAYSTO/e2a2594c-08ec-5384-b9ca-fd553ec0f442/scratchpad/body/fix4/sk6/s_tq.png
+- `Bash` Re-render saved skull meshes darker
+  - result: 00:05.424 cycles | WARNING CUEW initialization failed: Error opening the library DONE
+- `Read` /tmp/claude-0/-home-user-YAYSTO/e2a2594c-08ec-5384-b9ca-fd553ec0f442/scratchpad/body/fix4/sk6b/m.png
+- `Bash` Remove facial visor, pear aperture; re-render
+  - result: skull 552068 359.3205327987671 mand 95716 116.28959774971008 08:01.111 cycles | WARNING CUEW initialization failed: Error opening the library DONE
+- `Read` /tmp/claude-0/-home-user-YAYSTO/e2a2594c-08ec-5384-b9ca-fd553ec0f442/scratchpad/body/fix4/sk7/m.png
+- `Bash` Sections through the facial visor region
+- `Read` /tmp/claude-0/-home-user-YAYSTO/e2a2594c-08ec-5384-b9ca-fd553ec0f442/scratchpad/body/fix4/sk8/m.png
+- `Bash` Probe the slab points
+- `Bash` Maxilla flare envelope; re-render
+  - result: skull 552696 355.8323836326599 mand 95716 114.84815406799316 07:56.254 cycles | WARNING CUEW initialization failed: Error opening the library DONE
+- `Read` /tmp/claude-0/-home-user-YAYSTO/e2a2594c-08ec-5384-b9ca-fd553ec0f442/scratchpad/body/fix4/sk9/m.png
+- `Read` /tmp/claude-0/-home-user-YAYSTO/e2a2594c-08ec-5384-b9ca-fd553ec0f442/scratchpad/body/fix4/sk9/s_front.png
+- `Bash` Bound palate inside the dental arch; re-render

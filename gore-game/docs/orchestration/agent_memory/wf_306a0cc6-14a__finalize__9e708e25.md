@@ -1,0 +1,159 @@
+# Agent memory: finalize (head build + review)
+
+Transcript `agent-a0bda61639e708e25.jsonl`, 2026-09-27T02:09 to 2026-09-27T06:57 UTC. Extracted automatically; the agent's own notes (what it found, decided, tried) plus every step it ran and the pass/fail lines.
+- `Bash` List project files, renders, git status, load
+- `Bash` List refs and build.py structure, README images
+  - result: total 4292 drwxr-xr-x 2 root root 4096 Sep 26 21:32 . drwxr-xr-x 6 root root 4096 Sep 26 19:24 .. -rw------- 1 root root 510453 Sep 26 07:24 1.png -rw------- 1 root root 81860 Sep 26 19:17 12_our_render_wall_stripes.png -rw------- 1 root root 363476 Sep 26 19:17 13_blast_face_mouth_explosive.png -rw ...
+- `Bash` Read build.py header, render functions, main
+  - result: """Assemble the procedural gore head: anatomy, materials, live gore, presets. Everything is generated from code (see CONTRACT.md): no downloaded meshes, textures, HDRIs or add-ons. This script 1. builds every anatomical layer (anatomy.py), 2. builds and assigns the procedural materials (materials.py ...
+- `Bash` Check module self-test outputs
+
+**[09-27T02:09] note:** Now start the full clean build in the background while I review the references.
+
+- `Bash` Run full clean build with renders
+- `Read` /home/user/YAYSTO/refs/1.png
+- `Read` /home/user/YAYSTO/refs/2.png
+- `Read` /home/user/YAYSTO/refs/3.webp
+- `Read` /home/user/YAYSTO/refs/4.webp
+- `Read` /home/user/YAYSTO/refs/5.webp
+- `Read` /home/user/YAYSTO/refs/6.webp
+- `Read` /home/user/YAYSTO/refs/7.png
+- `Read` /home/user/YAYSTO/refs/8.png
+- `Read` /home/user/YAYSTO/refs/12_our_render_wall_stripes.png
+- `Read` /home/user/YAYSTO/refs/13_blast_face_mouth_explosive.png
+- `Read` /home/user/YAYSTO/refs/14_body_position_pool.png
+- `Read` /home/user/YAYSTO/refs/15_repeated_blunt_face_a.png
+- `Read` /home/user/YAYSTO/refs/16_repeated_blunt_face_b.webp
+- `Read` /home/user/YAYSTO/refs/17_neck_transection_pool.png
+- `Read` /home/user/YAYSTO/refs/18_chop_head_torn_tissue.webp
+- `Read` /home/user/YAYSTO/refs/19_skull_cut_brain_exposed.webp
+- `Read` /home/user/YAYSTO/refs/20_gsw_pathology_grid.webp
+- `Read` /home/user/YAYSTO/refs/21_face_gsw_seated_pool.png
+- `Read` /home/user/YAYSTO/refs/25_our_blood_disconnected.png
+- `Read` /home/user/YAYSTO/refs/26_our_blood_disconnected_zoom.png
+- `Read` /home/user/YAYSTO/refs/face_ref_male.webp
+- `Read` /home/user/YAYSTO/refs/face_ref_sculpt.png
+- `Read` /home/user/YAYSTO/refs/gsw_pathology_sheet.webp
+- `Bash` Read REFERENCE_NOTES sections 5.15-5.18
+  - result: 101:### 5.3 Multiple gunshot wounds in a seated person 112:### 5.4 Amputation of hands and feet (sharp cut through the limbs) 121:### 5.5 Large skull and scalp defect exposing the brain (spinning-blade / slicing injury to the side of the head) 131:### 5.6 Bleeding from the mouth after a shot inside  ...
+- `Bash` Read current README and build progress
+  - result: # Gore Head: a procedural human head with live, layered gore (Blender 5.x) ![Hero: the carnage preset, three-quarter view](renders/hero.png) A realistic adult male head built **entirely from Python code**, with a layered anatomy inside it and a live geometry-nodes gore system. You place wounds as em ...
+- `ToolSearch` 
+- `Monitor` gore head build progress
+- `Bash` Find blood run start logic
+- `Bash` Read drip seed and blood build code
+- `Bash` Wait until gunshot renders are done
+
+**[09-27T02:10] note:** <br>
+
+- `Bash` Block until gunshot renders exist
+- `Bash` Check verification results
+  - result: [build] anatomy 41.8 s, materials 6.7 s, gore 31.5 s, hair 0.3 s, total build 80.3 s [PASS] gore_* attributes on all evaluated layers [PASS] skin attributes non-trivial: wound>0.5:26020, depth>0.5:14856, edge>0.5:1894, blood>0.5:44371, bruise>0.5:67229, burn>0.5:2525, fracture>0.5:0, soot>0.5:57543  ...
+- `Bash` Wait for gunshot renders
+- `Read` /home/user/YAYSTO/blender/gore_head/renders/preset_intact_three_q.png
+- `Read` /home/user/YAYSTO/blender/gore_head/renders/preset_gunshot_three_q.png
+- `Read` /home/user/YAYSTO/blender/gore_head/renders/preset_gunshot_back.png
+- `Bash` Wait for all preset renders
+- `Read` /home/user/YAYSTO/blender/gore_head/renders/preset_slash_three_q.png
+- `Read` /home/user/YAYSTO/blender/gore_head/renders/preset_blunt_front.png
+- `Read` /home/user/YAYSTO/blender/gore_head/renders/preset_burn_front.png
+- `Bash` Wait for crushed preset renders
+- `Bash` Wait for crushed preset renders
+- `Read` /home/user/YAYSTO/blender/gore_head/renders/preset_carnage_three_q.png
+- `Read` /home/user/YAYSTO/blender/gore_head/renders/preset_blast_front.png
+- `Read` /home/user/YAYSTO/blender/gore_head/renders/preset_crushed_front.png
+- `Read` /home/user/YAYSTO/blender/gore_head/renders/preset_crushed_three_q.png
+- `Bash` Find crushed eye handling
+- `Bash` Read crush eye code and eye material blood use
+- `Bash` Read eye material
+- `Bash` Zoom crop of crushed render
+- `Read` /tmp/claude-0/-home-user-YAYSTO/e2a2594c-08ec-5384-b9ca-fd553ec0f442/scratchpad/final/crush_zoom.png
+- `Bash` Patch eye blood film to leave cornea clear
+- `Bash` Render crushed test with bone tinted green
+  - result: 01:56.192 cycles | WARNING CUEW initialization failed: Error opening the library 03:36.389 render | Saved: '/tmp/claude-0/-home-user-YAYSTO/e2a2594c-08ec-5384-b9ca-fd553ec0f442/scratchpad/final/crush_a.png' 04:52.684 render | Saved: '/tmp/claude-0/-home-user-YAYSTO/e2a2594c-08ec-5384-b9ca-fd553ec0f4 ...
+- `Read` /tmp/claude-0/-home-user-YAYSTO/e2a2594c-08ec-5384-b9ca-fd553ec0f442/scratchpad/final/crush_a.png
+- `Read` /tmp/claude-0/-home-user-YAYSTO/e2a2594c-08ec-5384-b9ca-fd553ec0f442/scratchpad/final/crush_a_bone.png
+- `Bash` Find refinement/reach radius
+- `Bash` Read within() bounds and displacement code
+- `Bash` Read refinement group
+- `Bash` Read blunt crush setup
+- `Bash` Taper crush displacement inside refined patch
+- `Bash` Re-render crushed test after taper fix
+  - result: 02:05.085 cycles | WARNING CUEW initialization failed: Error opening the library 06:05.686 render | Saved: '/tmp/claude-0/-home-user-YAYSTO/e2a2594c-08ec-5384-b9ca-fd553ec0f442/scratchpad/final/crush_b_bone.png'
+- `Read` /tmp/claude-0/-home-user-YAYSTO/e2a2594c-08ec-5384-b9ca-fd553ec0f442/scratchpad/final/crush_b.png
+- `Bash` Wait for full build to finish
+- `Bash` Check render progress
+- `Read` /home/user/YAYSTO/blender/gore_head/renders/seq_entry_05s.png
+- `Read` /home/user/YAYSTO/blender/gore_head/renders/seq_entry_20s.png
+- `Read` /home/user/YAYSTO/blender/gore_head/renders/closeup_exit.png
+- `Bash` Wait for full build to finish
+- `Bash` Wait for full build to finish
+- `Bash` Wait for full build to finish
+- `Bash` Check progress
+- `Bash` Wait for full build to finish
+- `Bash` Rebuild with fixes, re-render crushed and contact sheet
+- `Read` /home/user/YAYSTO/blender/gore_head/renders/hero.png
+- `Read` /home/user/YAYSTO/blender/gore_head/renders/stages.png
+- `Read` /home/user/YAYSTO/blender/gore_head/renders/cutaway.png
+- `Bash` After build2, re-run gore and materials self-tests
+
+**[09-27T04:00] note:** Meanwhile, I'll update the README (timings and known limitations).
+
+- `Bash` Fill README timings and limitations
+- `Bash` Verify control defaults and stray-hit threshold
+  - result: 16:CONTROLS_NAME = "GH_Controls" 20: "damage": (1.0, 0.0, 1.0, "Global wound progression. 0 = intact even with hits placed"), 61: obj = bpy.data.objects.get(CONTROLS_NAME) 63: obj = bpy.data.objects.new(CONTROLS_NAME, None) CONTROLS_NAME = "GH_Controls" # name: (default, min, max, description) CONTR ...
+- `Bash` Wait for rebuild and check
+- `Bash` Wait for rebuild and check
+- `Bash` Show rebuild results
+  - result: build_anatomy total 45.4 s [build] anatomy 45.4 s, materials 8.0 s, gore 35.8 s, hair 0.5 s, total build 89.7 s [PASS] wound walls have no accordion folds (< 5 % of wall edges > 60 deg): 345 of 22410 wall edges folded (1.5 %) [PASS] preset 'crushed': 16.07 s, skin 253668 verts, peaks wound=1.00 dept ...
+- `Read` /home/user/YAYSTO/blender/gore_head/renders/preset_crushed_three_q.png
+- `Read` /home/user/YAYSTO/blender/gore_head/renders/contact_sheet_wounds.png
+- `Bash` Make eye haemorrhage confluent, not speckled
+- `Bash` Quick crushed eye test render
+- `Read` /tmp/claude-0/-home-user-YAYSTO/e2a2594c-08ec-5384-b9ca-fd553ec0f442/scratchpad/final/crush_c.png
+- `Bash` Darker, varied haemorrhage colour
+- `Bash` Wait for gore.py self-test
+- `Bash` Wait for gore.py self-test
+- `Bash` Wait for gore.py self-test
+- `Read` /home/user/YAYSTO/blender/gore_head/renders/gore_blunt.png
+- `Read` /home/user/YAYSTO/blender/gore_head/renders/gore_slash.png
+- `Read` /home/user/YAYSTO/blender/gore_head/renders/gore_burn.png
+- `Read` /home/user/YAYSTO/blender/gore_head/renders/gore_blast.png
+- `Bash` Read blast builder
+- `Bash` Read blast pulp and blood section
+- `Bash` Read hit gate function
+- `Bash` Read teeth material
+- `Bash` Make teeth blood patchy, no hard bands
+- `Bash` Wait for materials self-test
+- `Bash` Check materials progress
+
+**[09-27T05:07] note:** Starting the final consistency build now (it queues behind the CPU).
+
+- `Bash` Final build re-rendering affected presets
+- `Bash` Wait for materials self-test
+- `Bash` Wait for materials self-test end
+- `Bash` Re-run gore self-test after final build
+- `Read` /home/user/YAYSTO/blender/gore_head/renders/materials_head.png
+- `Bash` Wait for final build
+- `Bash` Wait for final build
+- `Bash` Check final build progress
+- `Bash` Wait for blast render
+- `Read` /home/user/YAYSTO/blender/gore_head/renders/preset_blast_front.png
+- `Bash` Wait for final build end
+- `Bash` Wait for final build end
+- `Bash` Wait for final build end
+- `Bash` Check progress
+- `Bash` Wait for final build end
+- `Read` /home/user/YAYSTO/blender/gore_head/renders/preset_crushed_three_q.png
+- `Read` /home/user/YAYSTO/blender/gore_head/renders/contact_sheet_wounds.png
+- `Bash` Small README updates
+- `Bash` Wait for gore self-test
+- `Bash` Wait for gore self-test
+- `Bash` Wait for gore self-test
+- `Bash` Wait for gore self-test
+- `Bash` Check gore self-test progress
+- `Read` /home/user/YAYSTO/blender/gore_head/renders/gore_blast.png
+- `Bash` Finish, clean, list files
+- `Bash` Remove backup blend, check git state
+  - result: 4c78a1c Record body brow/lash magenta cards, brown teeth, remaining neck ledge and seam 12de5f2 WIP snapshot: head final pass renders 6714f1f Record body magenta-eye texture error and skin dots blender/gore_head/renders/gore_blast.png | Bin 639765 -> 649557 bytes blender/gore_head/renders/gore_burn. ...
+- `StructuredOutput` 
