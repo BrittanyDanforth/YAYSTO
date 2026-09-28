@@ -1,0 +1,260 @@
+{
+ "schema": "gb.brain_labels/1",
+ "frame": "body_zup_m",
+ "godot_mapping": "(x, z, -y)",
+ "generator": "blender/gore_body/build.py",
+ "build_id": "gb-310482e25e44",
+ "data": {
+  "origin": [
+   -0.07,
+   -0.07,
+   1.61
+  ],
+  "voxel_size": [
+   0.00219,
+   0.00297,
+   0.00261
+  ],
+  "dims": [
+   64,
+   64,
+   64
+  ],
+  "atlas": {
+   "file": "brain_labels.png",
+   "tiles": [
+    8,
+    8
+   ],
+   "tile_px": [
+    64,
+    64
+   ],
+   "slice_order": "tile t = k (z index) at column t % 8, row t // 8 from the top",
+   "pixel": "column i (x), row j (y) from the top of the tile; R = region id"
+  },
+  "regions": {
+   "0": {
+    "name": "none",
+    "side": "-",
+    "rb_row": "",
+    "voxels": 198216,
+    "volume_ml": 3358.9
+   },
+   "1": {
+    "name": "prefrontal_L",
+    "side": "L",
+    "rb_row": "Prefrontal",
+    "voxels": 4601,
+    "volume_ml": 77.97
+   },
+   "2": {
+    "name": "prefrontal_R",
+    "side": "R",
+    "rb_row": "Prefrontal",
+    "voxels": 4888,
+    "volume_ml": 82.83
+   },
+   "3": {
+    "name": "motor_strip_L",
+    "side": "L",
+    "rb_row": "Motor strip / internal capsule",
+    "voxels": 2223,
+    "volume_ml": 37.67
+   },
+   "4": {
+    "name": "motor_strip_R",
+    "side": "R",
+    "rb_row": "Motor strip / internal capsule",
+    "voxels": 2223,
+    "volume_ml": 37.67
+   },
+   "5": {
+    "name": "frontal_eye_field_L",
+    "side": "L",
+    "rb_row": "Frontal eye field",
+    "voxels": 658,
+    "volume_ml": 11.15
+   },
+   "6": {
+    "name": "frontal_eye_field_R",
+    "side": "R",
+    "rb_row": "Frontal eye field",
+    "voxels": 658,
+    "volume_ml": 11.15
+   },
+   "7": {
+    "name": "broca_L",
+    "side": "L",
+    "rb_row": "Left (dominant) language areas",
+    "voxels": 287,
+    "volume_ml": 4.86
+   },
+   "8": {
+    "name": "wernicke_L",
+    "side": "L",
+    "rb_row": "Left (dominant) language areas",
+    "voxels": 892,
+    "volume_ml": 15.12
+   },
+   "9": {
+    "name": "parietal_L",
+    "side": "L",
+    "rb_row": "(parietal, sensory; left: language support)",
+    "voxels": 9134,
+    "volume_ml": 154.78
+   },
+   "10": {
+    "name": "parietal_R",
+    "side": "R",
+    "rb_row": "Right parietal (left neglect)",
+    "voxels": 9351,
+    "volume_ml": 158.46
+   },
+   "11": {
+    "name": "occipital_L",
+    "side": "L",
+    "rb_row": "Occipital",
+    "voxels": 3309,
+    "volume_ml": 56.07
+   },
+   "12": {
+    "name": "occipital_R",
+    "side": "R",
+    "rb_row": "Occipital",
+    "voxels": 3309,
+    "volume_ml": 56.07
+   },
+   "13": {
+    "name": "temporal_L",
+    "side": "L",
+    "rb_row": "Temporal",
+    "voxels": 5009,
+    "volume_ml": 84.88
+   },
+   "14": {
+    "name": "temporal_R",
+    "side": "R",
+    "rb_row": "Temporal",
+    "voxels": 5684,
+    "volume_ml": 96.32
+   },
+   "15": {
+    "name": "thalamus_L",
+    "side": "L",
+    "rb_row": "Thalamus / diencephalon",
+    "voxels": 276,
+    "volume_ml": 4.68
+   },
+   "16": {
+    "name": "thalamus_R",
+    "side": "R",
+    "rb_row": "Thalamus / diencephalon",
+    "voxels": 276,
+    "volume_ml": 4.68
+   },
+   "17": {
+    "name": "internal_capsule_L",
+    "side": "L",
+    "rb_row": "Motor strip / internal capsule",
+    "voxels": 328,
+    "volume_ml": 5.56
+   },
+   "18": {
+    "name": "internal_capsule_R",
+    "side": "R",
+    "rb_row": "Motor strip / internal capsule",
+    "voxels": 328,
+    "volume_ml": 5.56
+   },
+   "19": {
+    "name": "cerebellum_L",
+    "side": "L",
+    "rb_row": "Cerebellar hemisphere",
+    "voxels": 3335,
+    "volume_ml": 56.51
+   },
+   "20": {
+    "name": "cerebellum_R",
+    "side": "R",
+    "rb_row": "Cerebellar hemisphere",
+    "voxels": 3335,
+    "volume_ml": 56.51
+   },
+   "21": {
+    "name": "vermis",
+    "side": "mid",
+    "rb_row": "Vermis",
+    "voxels": 1328,
+    "volume_ml": 22.5
+   },
+   "22": {
+    "name": "midbrain",
+    "side": "mid",
+    "rb_row": "Midbrain",
+    "voxels": 596,
+    "volume_ml": 10.1
+   },
+   "23": {
+    "name": "pons_tegmentum",
+    "side": "mid",
+    "rb_row": "Pons, tegmentum",
+    "voxels": 270,
+    "volume_ml": 4.58
+   },
+   "24": {
+    "name": "pons_basis",
+    "side": "mid",
+    "rb_row": "Pons, ventral basis only",
+    "voxels": 196,
+    "volume_ml": 3.32
+   },
+   "25": {
+    "name": "medulla",
+    "side": "mid",
+    "rb_row": "Medulla",
+    "voxels": 198,
+    "volume_ml": 3.36
+   },
+   "26": {
+    "name": "corpus_callosum",
+    "side": "mid",
+    "rb_row": "(midline white matter; part of bilateral hemisphere damage)",
+    "voxels": 1236,
+    "volume_ml": 20.94
+   }
+  },
+  "counts": {
+   "0": 198216,
+   "1": 4601,
+   "2": 4888,
+   "3": 2223,
+   "4": 2223,
+   "5": 658,
+   "6": 658,
+   "7": 287,
+   "8": 892,
+   "9": 9134,
+   "10": 9351,
+   "11": 3309,
+   "12": 3309,
+   "13": 5009,
+   "14": 5684,
+   "15": 276,
+   "16": 276,
+   "17": 328,
+   "18": 328,
+   "19": 3335,
+   "20": 3335,
+   "21": 1328,
+   "22": 596,
+   "23": 270,
+   "24": 196,
+   "25": 198,
+   "26": 1236
+  },
+  "method": "inside = GB_Brain SDF; lobes cut by the head's CENTRAL_SULCUS / LATERAL_FISSURE curves + parieto-occipital plane; thalamus, internal capsule, corpus callosum ellipsoids; cerebellum under the tentorium, vermis |x| < 11 mm; brainstem by the mesh capsules (spine.json brainstem)",
+  "status": "B4",
+  "frame_note": "final body frame: the RB authoring frame with the neck lengthened by 15 mm (z += 0.015 * smoothstep(1.455, 1.54, z)); head offset [0.0, 0.02, 1.662]"
+ }
+}

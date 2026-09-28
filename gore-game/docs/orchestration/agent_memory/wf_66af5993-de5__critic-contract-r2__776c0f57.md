@@ -1,0 +1,269 @@
+# Agent memory: critic:contract:r2 (body build + review)
+
+Transcript `agent-ace791166776c0f57.jsonl`, 2026-09-27T17:27 to 2026-09-27T19:19 UTC. Extracted automatically; the agent's own notes (what it found, decided, tried) plus every step it ran and the pass/fail lines.
+- `Bash` Show repo status and list key folders
+  - result: On branch claude/blender-cloud-l8ujco Your branch is up to date with 'origin/claude/blender-cloud-l8ujco'. nothing to commit, working tree clean ca498e9 WIP snapshot: head wounds fixer in progress, body review round 2 747db44 WIP snapshot: head wounds fixer in progress, body review round 2 c39af60 W ...
+- `Bash` Check running processes and machine resources
+- `Bash` List plan section headings
+  - result: 17:## 0. Read this first 19:### 0.1 Evidence tags and sources 24:### 0.2 Decisions at a glance 48:### 0.3 Deviations from the bible (and why) 60:### 0.4 Limits of this pass 66:## 1. Product scope for the full body 68:### 1.1 In and out of scope (v1) 79:### 1.2 The subject 88:### 1.3 Scene: the foren ...
+  - result: root 2195 0.0 0.0 7204 4948 ? S Sep26 0:00 /bin/bash -c source /root/.claude/shell-snapshots/snapshot-bash-1790403374365-46bgz2.sh 2>/dev/null || true && export BUN_OPTIONS="--smol${BUN_OPTIONS:+ $BUN_OPTIONS}" && shopt -u extglob 2>/dev/null || true && { \builtin unalias -- 'unsetenv'; \builtin uns ...
+- `Bash` Read plan sections 4 and 5
+  - result: ## 4. Budgets ### 4.1 Triangles and vertices (LOD0, subject) | Mesh | Triangles | Visible | Notes | |---|---|---|---| | `GB_Head` (head + neck to the seam, lids, ears, lips, mouth lining) | 30,000 | always | Decimated from the 1.2 mm head; 24 blend shapes | | `GB_Body` (5 surfaces: torso, arm_L, arm ...
+- `Bash` Show gore_body sizes, line counts, gitignore
+- `Bash` List gore_body files, cache, tracked files
+- `Bash` Inspect git history and manifest summary
+- `Bash` Read build.py header
+  - result: """Full-body build orchestration (owner B0). Plan §5.1-5.2. Usage (bpy module or Blender binary):: python3 build.py [--stage STAGE ...] [--quick] [--no-bake] [--render] [--no-save] [--no-verify] [--force-export] blender -b --python build.py -- [same options] Stages: placeholder | skin | head | skele ...
+- `Bash` Read rest of build.py
+  - result: fh.write(json.dumps(doc, indent=1, ensure_ascii=False, allow_nan=False) + "\n") else: shutil.copyfile(src, dst) restored.append(rel) return restored def _stage_skin(): import body_skin out = dict(body_skin.build_body_skin()) skin = out.get("GB_Body") out.update(body_skin.build_shorts(skin)) out.upda ...
+- `Bash` List gb_common definitions
+  - result: 39:HERE = os.path.dirname(os.path.abspath(__file__)) 40:HEAD_DIR = os.path.normpath(os.path.join(HERE, "..", "gore_head")) 41:GAME_DIR = os.path.normpath(os.path.join(HERE, "..", "..", "gore-game")) 42:GAME_OUT = os.path.join(GAME_DIR, "assets", "generated") 43:SUBJECT_OUT = os.path.join(GAME_OUT, " ...
+- `Bash` Show manifest build info and head source hashes
+- `Bash` Inspect head snapshot cache
+- `Bash` Find committed version matching snapshot anatomy
+- `Bash` Search for process-kill commands in scripts
+  - result: assets docs tools 01_head_build_and_review.js 02_research_round1.js 03_research_round2.js 04_body_blender.js 05_body_godot.js 06_head_fix_pass2.js AGENT_REPORTS.md README.md journals
+- `Bash` Look at Godot import check in export.py
+  - result: 61:# Godot 4.5.1 binary for the import check: $GODOT_BIN (e.g. the Windows .exe path on the user's PC), else the 62-# cloud container's install. When missing the check is reported as skipped with a visible warning. 63:GODOT_BIN = os.environ.get("GODOT_BIN", "/opt/godot/Godot_v4.5.1-stable_linux.x86_ ...
+
+**[09-27T17:28] note:** Let me set up the two clean clones and start the builds in the background.
+
+- `Bash` Create two clean scratch checkouts for builds
+- `Bash` Create two clean scratch checkouts for builds
+- `Bash` Start clean full and quick builds in background
+- `Bash` Check why builds exited immediately
+- `Bash` Run clean full build (all stages) in background
+- `Bash` Run clean quick build (all stages) in background
+
+**[09-27T17:29] note:** Builds started. While they run, I'll go through the mandatory reference images.
+
+- `Bash` List refs and reference notes headings
+  - result: total 4292 drwxr-xr-x 2 root root 4096 Sep 26 21:32 . drwxr-xr-x 6 root root 4096 Sep 26 19:24 .. -rw------- 1 root root 510453 Sep 26 07:24 1.png -rw------- 1 root root 81860 Sep 26 19:17 12_our_render_wall_stripes.png -rw------- 1 root root 363476 Sep 26 19:17 13_blast_face_mouth_explosive.png -rw ...
+- `Bash` Read the visual acceptance standard section
+  - result: ## 5.18 VISUAL ACCEPTANCE STANDARD (from ALL real refs 1-8, 13-21, GSW sheets) — applies to every wound, blood and body render The user (after we reviewed every reference together): "look at the 10+ real gore images now and update any standard ... u can see the mushyness the everything some caved in ...
+
+**[09-27T17:29] note:** Now opening every ref image one by one.
+
+- `Read` /home/user/YAYSTO/refs/1.png
+- `Read` /home/user/YAYSTO/refs/2.png
+- `Read` /home/user/YAYSTO/refs/3.webp
+- `Read` /home/user/YAYSTO/refs/4.webp
+- `Read` /home/user/YAYSTO/refs/5.webp
+- `Read` /home/user/YAYSTO/refs/6.webp
+- `Read` /home/user/YAYSTO/refs/7.png
+- `Read` /home/user/YAYSTO/refs/8.png
+- `Read` /home/user/YAYSTO/refs/12_our_render_wall_stripes.png
+- `Read` /home/user/YAYSTO/refs/13_blast_face_mouth_explosive.png
+- `Read` /home/user/YAYSTO/refs/14_body_position_pool.png
+- `Read` /home/user/YAYSTO/refs/15_repeated_blunt_face_a.png
+- `Read` /home/user/YAYSTO/refs/16_repeated_blunt_face_b.webp
+- `Read` /home/user/YAYSTO/refs/17_neck_transection_pool.png
+- `Read` /home/user/YAYSTO/refs/18_chop_head_torn_tissue.webp
+- `Read` /home/user/YAYSTO/refs/19_skull_cut_brain_exposed.webp
+- `Read` /home/user/YAYSTO/refs/20_gsw_pathology_grid.webp
+- `Read` /home/user/YAYSTO/refs/21_face_gsw_seated_pool.png
+- `Read` /home/user/YAYSTO/refs/25_our_blood_disconnected.png
+- `Read` /home/user/YAYSTO/refs/26_our_blood_disconnected_zoom.png
+- `Read` /home/user/YAYSTO/refs/gsw_pathology_sheet.webp
+- `Read` /home/user/YAYSTO/refs/face_ref_male.webp
+- `Read` /home/user/YAYSTO/refs/face_ref_sculpt.png
+- `Bash` Check build progress
+
+**[09-27T17:30] note:** Now a Godot headless import check of all committed glbs in a scratch project.
+
+- `Bash` Godot headless import of all committed glbs
+- `Bash` Dump node tree of imported glbs in Godot
+- `Bash` Show room.glb part of the dump
+- `Bash` Parse GB_Subject.glb for contract details
+- `Bash` Show triangle budgets in code and manifest
+  - result: POSE_ACTIONS = ("pose_idle", "pose_guard", "pose_cower", "pose_brace") # Triangle budgets, LOD0 (plan §4.1). Pairs share one budget line in the plan. TRI_BUDGET = { "GB_Head": 30000, "GB_Body": 44000, "GB_Shorts": 4000, "GB_Eye+EyeFX": 5000, "GB_Mouth": 8500, "GB_BrowLash": 2000, "GB_MuscleShell": 2 ...
+- `Bash` Check CONTRACT.md for brain budget deviation
+  - result: 6:applied** (see "Fix round 1: changes and deviations" at the end). Remaining failures are listed there. 349:## Fix round 1: changes and deviations (kept current) 351:Deviations from the bible / plan that the code now makes on purpose (each also noted where it is coded): 363:| GB_Brain budget | plan ...
+- `Bash` Read CONTRACT.md header and deviations
+  - result: # gore_body module contract (plan §5, kept current) Procedural full body for the Godot game, built with Blender 5.x from code only (no downloads). The authoritative design is `gore-game/docs/FULL_BODY_PLAN.md` §5; this file records what the code actually does today and the rules every work package f ...
+- `Bash` List JSON envelopes and data keys
+- `Bash` Run JSON schema and cross-consistency checks
+  - result: rig: non-snake_case keys (61): ['AU05', 'AU26', 'AU43', 'C1', 'C2', 'C3', 'C4', 'C5', 'C6', 'C7', 'C8', 'GB_BrowLash brows', 'GB_BrowLash lashes', 'GB_EyeFX occlusion', 'GB_EyeFX tearline', 'GB_Eye_*', 'GB_Mouth lower teeth/gum', 'GB_Mouth tongue', 'GB_Mouth upper teeth/gum', 'L', 'L1', 'L2', 'L3',  ...
+- `Bash` Rerun JSON checks with root-body fix
+- `Bash` Check one-sided vessels and cord code coverage
+- `Bash` Check plan on how the cord level is derived
+- `Bash` Verify manifest file hashes and list texture sizes
+- `Bash` Check argv handling, absolute paths, stray files
+- `Bash` Inspect verify.py CLI and write operations
+- `Bash` Read verify_all and entry point
+  - result: def verify_all(groups=("tables", "scene", "files"), quiet=False): """Run every registered check of ``groups``; returns {name: {ok, severity, owner, group, detail}}.""" res = {} # geometry checks compare the meshes with the authoring tables (RB frame); the rig/deformation (B6) and # bake (B7) checks  ...
+- `Bash` Prepare a committed-state clone for verify runs
+- `Bash` Run verify.py with the committed blend (background)
+- `Bash` List newest body renders
+- `Bash` Inspect the Godot look-dev reference project
+- `Bash` Check xvfb availability and rest of main.gd
+  - result: /usr/bin/xvfb-run /usr/bin/Xvfb asahi_icd.json gfxstream_vk_icd.json intel_hasvk_icd.json intel_icd.json lvp_icd.json nouveau_icd.json radeon_icd.json virtio_icd.json m.set_shader_parameter("eye_centre", c) m.set_shader_parameter("iris_disc_radius", iris_r) return m func _lash_mat() -> StandardMater ...
+- `Bash` Render committed subject in Godot via look-dev harness
+  - result: real 1m17.904s user 0m45.786s sys 0m8.670s rc=0 ALSA lib conf.c:5204:(_snd_config_evaluate) function snd_func_card_inum returned error: No such file or directory ALSA lib confmisc.c:422:(snd_func_concat) error evaluating strings ALSA lib conf.c:5204:(_snd_config_evaluate) function snd_func_concat re ...
+- `Read` /tmp/claude-0/-home-user-YAYSTO/e2a2594c-08ec-5384-b9ca-fd553ec0f442/scratchpad/body/critic_contract_r2/godot_ld/out/godot_body_front.png
+- `Read` /tmp/claude-0/-home-user-YAYSTO/e2a2594c-08ec-5384-b9ca-fd553ec0f442/scratchpad/body/critic_contract_r2/godot_ld/out/godot_head_front.png
+- `Read` /tmp/claude-0/-home-user-YAYSTO/e2a2594c-08ec-5384-b9ca-fd553ec0f442/scratchpad/body/critic_contract_r2/godot_ld/out/godot_eye_close.png
+- `Bash` Inspect textures.json eye entries
+- `Bash` Check PIL availability
+  - result: Traceback (most recent call last): File "<stdin>", line 3, in <module> ModuleNotFoundError: No module named 'PIL' Traceback (most recent call last): File "<string>", line 1, in <module> ModuleNotFoundError: No module named 'PIL' ModuleNotFoundError: No module named 'imageio'
+- `Read` /home/user/YAYSTO/gore-game/assets/generated/subject/textures/eye_sclera_albedo.png
+- `Read` /home/user/YAYSTO/gore-game/assets/generated/subject/textures/eye_iris_albedo.png
+- `Bash` Analyse eye mesh geometry and UV pole
+- `Bash` Render straight-on eye views in Godot
+- `Read` /tmp/claude-0/-home-user-YAYSTO/e2a2594c-08ec-5384-b9ca-fd553ec0f442/scratchpad/body/critic_contract_r2/godot_ld/out2/godot_eyes_front.png
+- `Read` /tmp/claude-0/-home-user-YAYSTO/e2a2594c-08ec-5384-b9ca-fd553ec0f442/scratchpad/body/critic_contract_r2/godot_ld/out2/godot_eye_front.png
+- `Read` /tmp/claude-0/-home-user-YAYSTO/e2a2594c-08ec-5384-b9ca-fd553ec0f442/scratchpad/body/critic_contract_r2/godot_ld/out2/godot_neck_front_low.png
+- `Read` /tmp/claude-0/-home-user-YAYSTO/e2a2594c-08ec-5384-b9ca-fd553ec0f442/scratchpad/body/critic_contract_r2/godot_ld/out/godot_neck_side.png
+- `Read` /tmp/claude-0/-home-user-YAYSTO/e2a2594c-08ec-5384-b9ca-fd553ec0f442/scratchpad/body/critic_contract_r2/godot_ld/out/godot_shoulder_tq.png
+- `Bash` Summarize verify results on committed blend
+  - result: [WARN] scene B3 skeleton_lean_site_depths: depth mm tibial_face 7.2, patella 5.9, malleoli 4.3, sternum 11.1; out of range ['tibial_face 7.2 (want 3-6)'] [WARN] scene B4 b4_lung_volume: lung volumes L {'lung_R': 1.225, 'lung_L': 1.128} vs FRC R 1.80 / L 1.55 [FAIL] scene B6 b6_deformation_fb2: faili ...
+- `Bash` Show details of failing verify checks
+  - result: [FAIL] scene B6 b6_deformation_fb2: failing ['hip_flex_108']; elbow_130: poke 0.0 mm / 0 > 3 mm, exposed 0, vol loss -0.0593; knee_121: poke 0.0 mm / 0 > 3 mm, exposed 0, vol loss -0.05; shoulder_abd_60: poke 0.13 mm / 0 > 3 mm, exposed 0, vol loss -0.0876; shoulder_abd_90: poke 0.0 mm / 0 > 3 mm, e ...
+- `Bash` Check build progress
+- `Bash` Check for build writes into tracked source files
+- `Bash` Read hashing, build_id and StageCache
+- `Bash` Check whether sources changed since the committed build
+  - result: cbf95dd 2026-09-27 16:01:40 +0000 Record wounds fixer test findings a6da9e1 2026-09-27 13:46:22 +0000 WIP snapshot: head fix pass 2 and body fix round 1 in progress changed since build: [] ['head_integration.py', '.cache/head_snapshot/0135ed610fb5/anatomy.py', '.cache/head_snapshot/0135ed610fb5/mate ...
+- `Bash` Search for version-sensitive Blender API usage
+- `Bash` Show glTF export options
+- `Bash` Read plan bone list section
+- `Bash` Check scipy availability
+  - result: Exit code 1 Traceback (most recent call last): File "<string>", line 1, in <module> ModuleNotFoundError: No module named 'scipy'
+- `Bash` Show verify's UV atlas checks
+  - result: [PASS] scene B0 uv_maps: UV0 atlas, UV1 gb_codes; bad: [] [PASS] scene B0 codes_valid: UV2 codes inside their code tables; bad: [] [PASS] files B0 glb_contents: nodes missing []; 39 joints; materials missing []; primitives without UV2/JOINTS []; images 0; animations ['pose_brace', 'pose_cower', 'pos ...
+- `Bash` Measure UV island margins and overlap
+- `Read` /home/user/YAYSTO/gore-game/assets/generated/subject/textures/brain_albedo.png
+- `Bash` Check build progress
+- `Read` /home/user/YAYSTO/blender/gore_body/renders/rig_pose_hip_flex_110.png
+- `Read` /home/user/YAYSTO/blender/gore_body/renders/rig_pose_jaw_open_19.png
+- `Read` /home/user/YAYSTO/blender/gore_body/renders/rig_pose_shoulder_abd_90.png
+- `Bash` Show verify nesting and clearance checks
+  - result: [PASS] scene B0 codes_valid: UV2 codes inside their code tables; bad: [] [PASS] scene B0 nesting_inside_skin: (vertices outside, worst mm, worst point): {'GB_Skeleton': (0, 0.0, None), 'GB_MuscleShell': (0, 0.0, None), 'GB_Organs': (0, 0.0, None), 'GB_Brain': (0, 0.0, None), 'GB_Cord': (0, 0.0, None ...
+- `Bash` List rig and posetest functions
+- `Bash` Measure inner-layer nesting at rest and poses
+- `Bash` Show rest-pose nesting results
+- `Bash` Inspect skin topology and odd nearest faces
+- `Bash` Check build progress
+- `Bash` Static code quality scan of body modules
+- `Bash` Inspect broad exception handlers
+  - result: export.py-132- res = {"uvs": "bake module unavailable", "painter": "unchanged"} export.py-133- try: export.py-134- import bake export.py:135: except Exception as exc: # pragma: no cover - B7 missing export.py-136- res["uvs"] = f"bake import failed: {exc}" export.py-137- return res export.py-138- try ...
+- `Bash` Inspect landmarks.json summary
+- `Bash` Show verify landmark checks
+  - result: [PASS] tables B0 rig_joint_positions: joint heads vs RB §7.1/§1.2 landmarks within 2 mm; off: [] [PASS] tables B0 landmark_checklist: nipples 0.155 below the notch, 0.200 apart; navel 0.198 below the xiphoid [PASS] scene B1 b1_girths_fb3: cm (measured, target, tol): neck 39.2/38.0, chest 101.0/100.0 ...
+- `Read` /home/user/YAYSTO/gore-game/assets/generated/subject/textures/head_albedo.png
+- `Bash` Wait and check build progress
+- `Bash` Measure deep-structure drag at jaw drop
+- `Bash` Check build progress
+- `Bash` Read CONTRACT.md tail (remaining failures)
+- `Bash` List CONTRACT.md sections
+  - result: 8:## Run 32:## Rules (plan §5.1) 48:## Files and owners (plan §5.2) 70:### Stage builder contract (how a package replaces the placeholder) 88:## Collections and objects (plan §5.3) 105:## Per-vertex data (plan §5.5) 127:## Materials, shape keys, bones, actions (plan §5.6) 136:## Exported files (plan ...
+- `Bash` Read CONTRACT exported files and verification sections
+  - result: ## Exported files (plan §5.7–5.9) → `gore-game/assets/generated/subject/` `GB_Subject.glb` (armature + outer + inner + variants, ~21 MB), `GB_Subject_LOD1.glb`, `manifest.json`, `rig.json`, `landmarks.json`, `organs.json`, `vessels.json`, `spine.json`, `codes.json`, `brain_labels.png` (8 × 8 tiles o ...
+- `Bash` Check seam ring normals and weights in glb
+- `ToolSearch` 
+- `Bash` Find inner vertices shallow under or outside the skin
+- `Bash` Check vessel pokes at the death jaw drop
+- `Bash` Check build progress
+- `Bash` Print rig.json bodies summary
+- `Bash` Write rebuild comparison script
+- `Read` /tmp/claude-0/-home-user-YAYSTO/e2a2594c-08ec-5384-b9ca-fd553ec0f442/scratchpad/body/critic_contract_r2/godot_ld/out/godot_back.png
+- `Read` /tmp/claude-0/-home-user-YAYSTO/e2a2594c-08ec-5384-b9ca-fd553ec0f442/scratchpad/body/critic_contract_r2/godot_ld/out/godot_torso_front.png
+- `Bash` Render close views of suspected seams in Godot
+- `Read` /tmp/claude-0/-home-user-YAYSTO/e2a2594c-08ec-5384-b9ca-fd553ec0f442/scratchpad/body/critic_contract_r2/godot_ld/out3/godot_lowback.png
+- `Read` /tmp/claude-0/-home-user-YAYSTO/e2a2594c-08ec-5384-b9ca-fd553ec0f442/scratchpad/body/critic_contract_r2/godot_ld/out3/godot_head_back.png
+- `Read` /tmp/claude-0/-home-user-YAYSTO/e2a2594c-08ec-5384-b9ca-fd553ec0f442/scratchpad/body/critic_contract_r2/godot_ld/out3/godot_sternum.png
+- `Bash` Compare painted areola, nipple geometry and landmark
+- `Bash` Find areola/nipple code in look-dev and bake
+- `Bash` Read look-dev areola attribute code
+- `Bash` Check build progress
+- `Bash` Render Cycles close-ups from the saved blend
+- `Bash` Summarize quick build result
+  - result: quick took 1397s [gore_body] B5 vascular: 201 segments, 20 nerves, tubes {'GB_Vessels_Art': 7828, 'GB_Vessels_Ven': 6244} (total 14072), 9.2 s [PASS] tables B0 rig_bones_and_bodies: 39 bones, 20 bodies, parents first True, total mass 75.01 kg [FAIL] scene B0 triangle_budgets: plan §4.1 budgets; over ...
+- `Bash` Check Cycles render and full build progress
+- `Read` /tmp/claude-0/-home-user-YAYSTO/e2a2594c-08ec-5384-b9ca-fd553ec0f442/scratchpad/body/critic_contract_r2/cyc/cycles_eye_L.png
+- `Read` /tmp/claude-0/-home-user-YAYSTO/e2a2594c-08ec-5384-b9ca-fd553ec0f442/scratchpad/body/critic_contract_r2/cyc/cycles_face.png
+- `Bash` Inspect sclera texture alpha and colour
+- `Bash` Debug the Godot eye shader inputs
+- `Read` /tmp/claude-0/-home-user-YAYSTO/e2a2594c-08ec-5384-b9ca-fd553ec0f442/scratchpad/body/critic_contract_r2/godot_dbg/out/godot_eye_front.png
+- `Bash` Check skin bind poses vs rest in Godot import
+- `Bash` Compare eye bone pivot with eyeball centre
+- `Bash` Look for eye rotation checks and eye bone table
+- `Bash` Read verify eye_centres check
+- `Bash` Check full build progress
+- `Bash` Show full build stage timings so far
+- `Bash` Check repository size and asset commit churn
+- `Bash` Estimate static texture VRAM vs plan
+- `Bash` Read godot_import_check implementation
+  - result: def godot_import_check(glb, godot=GODOT_BIN, timeout=900): """Import ``glb`` with Godot headless in a temporary project and inspect it. Returns (ok, detail); ok is None when the Godot binary is not installed (the check is then skipped, not failed).""" if not os.path.exists(godot): gbc.log(f"WARNING: ...
+- `Bash` Show Godot check result recorded in manifest
+- `Bash` Render fracture variants and skeleton in Cycles
+- `Read` /home/user/YAYSTO/gore-game/assets/generated/subject/textures/hair_cards.png
+- `Bash` Show deformation test details for failing poses
+- `Bash` Check build and render progress
+- `Bash` Find subprocess and sys.executable usage
+- `Bash` Read round_trip subprocess code
+- `Bash` Read plan work package overview and acceptance
+- `Bash` Wait for fracture renders to finish
+- `Read` /tmp/claude-0/-home-user-YAYSTO/e2a2594c-08ec-5384-b9ca-fd553ec0f442/scratchpad/body/critic_contract_r2/cyc/frac_skull_L.png
+- `Read` /tmp/claude-0/-home-user-YAYSTO/e2a2594c-08ec-5384-b9ca-fd553ec0f442/scratchpad/body/critic_contract_r2/cyc/skull_side.png
+- `Read` /tmp/claude-0/-home-user-YAYSTO/e2a2594c-08ec-5384-b9ca-fd553ec0f442/scratchpad/body/critic_contract_r2/cyc/skull_front.png
+- `Read` /tmp/claude-0/-home-user-YAYSTO/e2a2594c-08ec-5384-b9ca-fd553ec0f442/scratchpad/body/critic_contract_r2/cyc/frac_femur_L_comm.png
+- `Read` /tmp/claude-0/-home-user-YAYSTO/e2a2594c-08ec-5384-b9ca-fd553ec0f442/scratchpad/body/critic_contract_r2/cyc/thorax.png
+- `Bash` Read CONTRACT props section
+- `Bash` Write Cycles neck render script, check stage helper
+- `Bash` Render Cycles neck and face views
+- `Bash` Wait for Cycles neck renders
+- `Bash` Check render and build progress
+- `Read` /tmp/claude-0/-home-user-YAYSTO/e2a2594c-08ec-5384-b9ca-fd553ec0f442/scratchpad/body/critic_contract_r2/cyc/cyc_neck_side.png
+- `Bash` Wait for remaining neck renders
+- `Bash` Check progress
+- `Read` /tmp/claude-0/-home-user-YAYSTO/e2a2594c-08ec-5384-b9ca-fd553ec0f442/scratchpad/body/critic_contract_r2/cyc/cyc_neck_front.png
+- `Read` /tmp/claude-0/-home-user-YAYSTO/e2a2594c-08ec-5384-b9ca-fd553ec0f442/scratchpad/body/critic_contract_r2/cyc/cyc_neck_back_tq.png
+- `Bash` Wait for the clean full build to finish
+- `Read` /tmp/claude-0/-home-user-YAYSTO/e2a2594c-08ec-5384-b9ca-fd553ec0f442/scratchpad/body/critic_contract_r2/cyc/cycles_chest.png
+- `Bash` Summarize the clean full build result
+- `Bash` Investigate the full build status
+- `Bash` Wait for the clean full build EXIT line
+- `Bash` Compare stage side files from the rebuild with committed
+- `Bash` Compare rebuilt head textures with committed
+- `Bash` Measure pixel differences in head normal map
+- `Bash` Check LOD1 blend shapes vs LOD0
+- `Bash` Read GB_Body LOD1 creation code
+- `Bash` Decode FB-15 codes at landmark vertices
+- `Bash` Check bake progress
+- `Bash` Render brain and organs in Cycles
+- `Bash` Wait for inner renders
+- `Read` /tmp/claude-0/-home-user-YAYSTO/e2a2594c-08ec-5384-b9ca-fd553ec0f442/scratchpad/body/critic_contract_r2/cyc/cyc_brain_side.png
+- `Read` /tmp/claude-0/-home-user-YAYSTO/e2a2594c-08ec-5384-b9ca-fd553ec0f442/scratchpad/body/critic_contract_r2/cyc/cyc_organs_front.png
+- `Bash` Check bake progress
+- `Bash` Wait up to ~10 min for the full build
+- `Bash` Wait up to ~10 min more for the full build
+- `Bash` Compare rebuilt textures with committed so far
+- `Bash` Quantify texture differences between identical builds
+- `Bash` Wait up to ~10 min more for the full build
+- `Bash` Inspect why the full build task ended with 144
+- `Bash` List rebuild outputs and running processes
+
+**[09-27T19:11] note:** Now comparing the clean rebuild against the committed assets.
+
+- `Bash` Compare clean rebuild outputs with committed assets
+- `Bash` Find differences in organs.json and LOD1 glb
+- `Bash` Check whether skeleton/organ geometry or only UVs differ
+- `Bash` Locate diaphragm build and UV packing code
+- `Bash` Read pack_islands calls
+- `Bash` Run verify on the clean rebuild's blend
+- `Bash` Godot headless import of the rebuilt glbs
+- `Read` /home/user/YAYSTO/gore-game/assets/generated/subject/textures/body_albedo.png
+- `Bash` Wait for verify on the rebuild
+  - result: [WARN] scene B3 skeleton_lean_site_depths: depth mm tibial_face 7.2, patella 5.9, malleoli 4.3, sternum 11.1; out of range ['tibial_face 7.2 (want 3-6)'] [WARN] scene B4 b4_lung_volume: lung volumes L {'lung_R': 1.225, 'lung_L': 1.128} vs FRC R 1.80 / L 1.55 [FAIL] scene B6 b6_deformation_fb2: faili ...
+- `Bash` Check triangle winding vs normals in the glb
+- `Bash` Quantify flipped-shading triangles in inner meshes
+- `Bash` Find inside-out closed components in all meshes
+- `Bash` Identify organ components with negative volume
+- `Bash` Locate eye mesh construction in head_integration
+- `Bash` Read build_eyes
+- `Bash` Read _eye_arrays
+- `Bash` Check .gitattributes and hash-based checks
+- `Bash` Cite relevant passing verify checks
+  - result: [PASS] files B0 stage_caches_current: all 6 stage keys match the current sources (head sources: build snapshot 0135ed610fb5) [PASS] files B0 head_project_current: head sources unchanged since snapshot 0135ed610fb5 [PASS] tables B0 json_deterministic: write_json byte-identical on repeat, envelope key ...
+- `StructuredOutput` 

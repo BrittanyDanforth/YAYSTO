@@ -1,0 +1,123 @@
+# Agent memory: fix:r2 (body build + review)
+
+Transcript `agent-aa3c462b6183e0eaa.jsonl`, 2026-09-28T01:12 to 2026-09-28T01:24 UTC. Extracted automatically; the agent's own notes (what it found, decided, tried) plus every step it ran and the pass/fail lines.
+
+**[09-28T01:12] note:** I'll start by reading the agent memory index and live notes to see where the previous runs stopped.
+
+- `Bash` Show agent memory index and live notes
+  - result: | last activity (UTC) | run | agent | file | |---|---|---|---| | 2026-09-25T22:53 | head build + review | build:anatomy | [wf_306a0cc6-14a__build-anatomy__20712890.md](wf_306a0cc6-14a__build-anatomy__20712890.md) (24 KB) | | 2026-09-26T00:47 | head build + review | build:gore | [wf_306a0cc6-14a__bui ...
+- `Bash` Read latest fix-r2 memory file
+  - result: <persisted-output> Output too large (33.8KB). Full output saved to: /root/.claude/projects/-home-user-YAYSTO/e2a2594c-08ec-5384-b9ca-fd553ec0f442/tool-results/bp0zum3qp.txt Preview (first 2KB): # Agent memory: fix:r2 (body build + review) Transcript `agent-aedcb7fbb6b5fea3b.jsonl`, 2026-09-27T21:03  ...
+- `Bash` Show tail of memory file without results
+  - result: - `Bash` Limit gusset rule to perineum; re-test hip poses - `Bash` Read shorts SDF construction - `Bash` Side-specific seat weights; re-test - `Bash` Narrow seat rule to posterior seat; re-test - `Bash` Add gusset slack behind the perineum - `Bash` Read remaining posetest test table and level handli ...
+- `Bash` Extract notes from fix-r2 memory files
+- `Bash` Check processes, git state, body dir
+  - result: **[09-27T19:38] note:** Let me look at the current `_torso_profile` interplay and then write the new neck design. - `Bash` Find usages of neck component names - `Bash` Replace neck stations in the torso table - `Bash` Add neck_relief to the torso profile - `Bash` Add trapezius sweep and remove old c ...
+  - result: root 1266 104 12.9 3468420 2141632 ? Rl 00:41 32:20 python3 /tmp/claude-0/-home-user-YAYSTO/e2a2594c-08ec-5384-b9ca-fd553ec0f442/scratchpad/body/fix5/gbmake.py --stage all root 6627 0.0 0.0 2716 1768 ? S 01:08 0:00 timeout 3000 python3 proof_blood.py --blend /tmp/claude-0/-home-user-YAYSTO/e2a2594c- ...
+
+**[09-28T01:13] note:** A full build launched by the previous agent is still running. Let me find its log and progress.
+
+- `Bash` Inspect fix5 scratch dir and gbmake
+- `Bash` Find build process output target
+- `Bash` Show current build log tail
+- `Bash` Show verify fails of previous full build
+- `Bash` Tail of previous fix-r2 memory with results
+  - result: : 4200, "GB_Vessels": 18000, "GB_Variants": 60000, [PASS] scene B6 b6_godot_import: {'meshes': 35, 'bones': 39, 'animations': ['pose_brace', 'pose_cower', 'pose_guard', 'pose_idle'], 'bone_order': 'differs from rig.json: map bones by NAME (Skeleton3D.find_bone), nev ... - `Bash` List verify failures ...
+- `Bash` Create live memory file
+
+**[09-28T01:13] note:** Now the mandatory reference photos. Let me list them and view each.
+
+- `Bash` List refs and reference notes sections
+  - result: total 4292 drwxr-xr-x 2 root root 4096 Sep 26 21:32 . drwxr-xr-x 6 root root 4096 Sep 26 19:24 .. -rw------- 1 root root 510453 Sep 26 07:24 1.png -rw------- 1 root root 81860 Sep 26 19:17 12_our_render_wall_stripes.png -rw------- 1 root root 363476 Sep 26 19:17 13_blast_face_mouth_explosive.png -rw ...
+- `Bash` Read the 5.18 visual acceptance standard
+  - result: ## 5.18 VISUAL ACCEPTANCE STANDARD (from ALL real refs 1-8, 13-21, GSW sheets) — applies to every wound, blood and body render The user (after we reviewed every reference together): "look at the 10+ real gore images now and update any standard ... u can see the mushyness the everything some caved in ...
+- `Read` /home/user/YAYSTO/refs/1.png
+- `Read` /home/user/YAYSTO/refs/2.png
+- `Read` /home/user/YAYSTO/refs/3.webp
+- `Read` /home/user/YAYSTO/refs/4.webp
+- `Read` /home/user/YAYSTO/refs/5.webp
+- `Read` /home/user/YAYSTO/refs/6.webp
+- `Read` /home/user/YAYSTO/refs/7.png
+- `Read` /home/user/YAYSTO/refs/8.png
+- `Read` /home/user/YAYSTO/refs/12_our_render_wall_stripes.png
+- `Read` /home/user/YAYSTO/refs/13_blast_face_mouth_explosive.png
+- `Read` /home/user/YAYSTO/refs/14_body_position_pool.png
+- `Read` /home/user/YAYSTO/refs/15_repeated_blunt_face_a.png
+- `Read` /home/user/YAYSTO/refs/16_repeated_blunt_face_b.webp
+- `Read` /home/user/YAYSTO/refs/17_neck_transection_pool.png
+- `Read` /home/user/YAYSTO/refs/18_chop_head_torn_tissue.webp
+- `Read` /home/user/YAYSTO/refs/19_skull_cut_brain_exposed.webp
+- `Read` /home/user/YAYSTO/refs/20_gsw_pathology_grid.webp
+- `Read` /home/user/YAYSTO/refs/21_face_gsw_seated_pool.png
+- `Read` /home/user/YAYSTO/refs/25_our_blood_disconnected.png
+- `Read` /home/user/YAYSTO/refs/26_our_blood_disconnected_zoom.png
+- `Read` /home/user/YAYSTO/refs/face_ref_male.webp
+- `Read` /home/user/YAYSTO/refs/face_ref_sculpt.png
+- `Read` /home/user/YAYSTO/refs/gsw_pathology_sheet.webp
+- `Bash` Log refs; list skull.py functions
+- `Bash` List verify check names
+- `Bash` Find verify check registration names
+  - result: 161 53:def check(group, owner="B0", severity="fail", quick_ok=True):
+- `Bash` List verify check function names
+- `Bash` Check eye winding and eye pivot fixes
+- `Bash` Grep for which medium issues are addressed
+- `Bash` Read texgen sclera function
+- `Bash` See build.py imports and stages
+- `Bash` Inspect test build outputs
+- `Bash` Test-build verify fails and warnings
+  - result: [FAIL] files B0 stage_caches_current: stale stages: {'skin': 'manifest 3839f9d8676275a0 != current 30aafeb09dae6e29', 'head': 'manifest 6a7d77a32a9fb881 != current 150436749fbddca6', 'skeleton': 'manifest fafa374ccac58ad1 != current 01aa933c0f203809', 'viscera': 'manifest 93a70f56bdcbfb52 != current ...
+- `Read` /tmp/claude-0/-home-user-YAYSTO/e2a2594c-08ec-5384-b9ca-fd553ec0f442/scratchpad/body/fix5/ld2/m3.png
+- `Read` /tmp/claude-0/-home-user-YAYSTO/e2a2594c-08ec-5384-b9ca-fd553ec0f442/scratchpad/body/fix5/ld2/skull_side.png
+- `Read` /tmp/claude-0/-home-user-YAYSTO/e2a2594c-08ec-5384-b9ca-fd553ec0f442/scratchpad/body/fix5/ld2/heart.png
+- `Bash` Check build stage progress
+- `Bash` List vascular functions and kink check
+  - result: 137:def _strict_waypoints(vid): 146:def bible_waypoints(): 190:def blood_of(seg): 196:def sides_for(seg): 201:def mesh_for(seg): 210:def _arc(P): 215:def resample_knots(points, step, n_dense=16): 245:def _tortuosity(P, amp, wavelength): 257:def centreline(seg): 271:def nerve_rows(): 282:def nerve_ce ...
+- `Bash` Read vascular standalone entry point
+- `Bash` Run standalone vessel diagnostics
+- `Bash` Read bone and facet report functions
+  - result: def bone_report(): """Arterial/venous tubes intersecting GB_Skeleton outside bone canals: (ok, detail).""" probe = Probe() hits = [] for s in VS.vessel_segments(): if mesh_for(s) is None: continue P, r, _p = _fitted_or_raw(s) sd, _n = probe.bone_dist(P) m = (sd < r - 0.5 * MM) & _bone_mask(s["vessel ...
+- `Bash` Per-segment vessel facets in bone
+- `Bash` Read fit_centreline and chord validation
+  - result: def fit_centreline(key, vid, P0, r, probe, anchor_disp=None, seg=None, cranial=False, under_skull=False, bone_contact=False, iters=FIT_ITERS, root=False, on_heart=False): """Fit one centreline to the scene; returns (P, report dict). ``anchor_disp``: displacement of the parent at this segment's origi ...
+- `Bash` Find recent renders by the previous agent
+- `Read` /tmp/claude-0/-home-user-YAYSTO/e2a2594c-08ec-5384-b9ca-fd553ec0f442/scratchpad/body/fix5/ld2/face_tq.png
+- `Read` /tmp/claude-0/-home-user-YAYSTO/e2a2594c-08ec-5384-b9ca-fd553ec0f442/scratchpad/body/fix5/ld2/chest.png
+- `Read` /tmp/claude-0/-home-user-YAYSTO/e2a2594c-08ec-5384-b9ca-fd553ec0f442/scratchpad/body/fix5/ld2/brain_side.png
+- `Read` /tmp/claude-0/-home-user-YAYSTO/e2a2594c-08ec-5384-b9ca-fd553ec0f442/scratchpad/body/fix5/ld2/eye_close.png
+- `Read` /tmp/claude-0/-home-user-YAYSTO/e2a2594c-08ec-5384-b9ca-fd553ec0f442/scratchpad/body/fix5/ld2/eye_side.png
+- `Bash` Read hair strand and lash ribbon code
+- `Bash` Read lash_strands generator
+  - result: def lash_strands(bvh, rng, sign, upper=True): """Eyelashes of one lid (head frame, 5 points each): rooted in 2-3 staggered rows on the lid margin, leaving it straight forward and curling up (upper) / down (lower) and a little outward at the lateral canthus; upper 8-12 mm, lower 5.5-7.8 mm, longest i ...
+- `Bash` Read lash constants and cache list
+- `Bash` Measure lash geometry numerically
+- `Bash` Rework lash direction, clumping, tip clearance
+- `Bash` Log progress; check build stage
+- `Bash` Fix memory timestamps; check log tail
+- `Bash` Inspect scapula/hip bone and shorts slit code
+- `Bash` Look at skull render harness
+- `Bash` List skull render outputs
+- `Bash` List objects in stage caches
+- `Bash` Render skull clay views from caches
+- `Read` /tmp/claude-0/-home-user-YAYSTO/e2a2594c-08ec-5384-b9ca-fd553ec0f442/scratchpad/body/fixr2c/sk0/side.png
+- `Read` /tmp/claude-0/-home-user-YAYSTO/e2a2594c-08ec-5384-b9ca-fd553ec0f442/scratchpad/body/fixr2c/sk0/tq.png
+- `Read` /tmp/claude-0/-home-user-YAYSTO/e2a2594c-08ec-5384-b9ca-fd553ec0f442/scratchpad/body/fixr2c/sk0/front.png
+- `Bash` Find shorts weighting in rig.py
+- `Bash` Read weight transfer code for shorts
+  - result: idx = np.zeros((n, 4), np.int32) w = np.zeros((n, 4)) for v in obj.data.vertices: gs = sorted(((g.weight, gmap[g.group]) for g in v.groups if g.weight > 0), reverse=True)[:4] for k, (wt, b) in enumerate(gs): idx[v.index, k] = b w[v.index, k] = wt return idx, w # meshes whose vertices follow the skin ...
+- `Bash` Check low-severity verify fixes
+- `Bash` Read b6_roundtrip check
+  - result: def b6_roundtrip(): """Round trip: GB_Subject.glb re-imported in a fresh Blender has every mesh with the same triangles, shape keys, materials and vertex groups, the 39 bones and the 4 actions.""" if not _b6_ready(): return True, "n/a (no scene)" import export if "roundtrip" not in export.CHECKS: ok ...
+- `Bash` Check round_trip material comparison
+- `Bash` Read round_trip implementation
+- `Bash` Look for standalone vs assembled head renders
+- `Bash` Find same-camera comparison code
+- `Bash` Find neck comparison script
+- `Read` /tmp/claude-0/-home-user-YAYSTO/e2a2594c-08ec-5384-b9ca-fd553ec0f442/scratchpad/body/fix5/neck1/m.png
+- `Bash` Understand neck-lift frame warp
+- `Bash` Render assembled vs standalone head from caches
+- `Read` /tmp/claude-0/-home-user-YAYSTO/e2a2594c-08ec-5384-b9ca-fd553ec0f442/scratchpad/body/fixr2c/nc0/m.png
+- `Bash` Locate neck SDF code in body_skin
+- `Bash` Read neck stations, SCM, clip and skin_sdf
+  - result: (0.930, 0.157, -0.085, 0.100, 2.2, 2.4), # pubic fat pad (symphysis -0.068 + 15-20 mm); groin creases (0.990, 0.154, -0.106, 0.095, 2.5, 2.4), # ASIS level (asis skin -0.072 at x 0.122) (1.040, 0.149, -0.113, 0.093, 2.7, 2.5), (1.075, 0.1465, -0.117, 0.0895, 2.8, 2.6), # navel 84 cm: 29.5 x 20.5 (fr ...
+- `Bash` Check matplotlib availability
+  - result: Traceback (most recent call last): File "<string>", line 1, in <module> ModuleNotFoundError: No module named 'matplotlib' ModuleNotFoundError: No module named 'skimage'

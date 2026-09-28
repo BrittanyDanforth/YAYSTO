@@ -1,0 +1,1837 @@
+"""Texture bakes (owner B7).  Plan §3.3.7, §4.2, §5.2, §8.2 B7.
+
+Entry points (called by ``build.py`` in the ``bake`` stage, after the rig and before the export):
+
+``prepare_uvs(objs)``               re-charts the ``atlas`` UVs of GB_Skeleton, GB_Organs and GB_Brain
+                                    (their build-time smart-project atlases used 4-17 % of the texture)
+``bake_all(objs, out)``             albedo / normal / ORM+SSS sets per mesh (plan §4.2) with Cycles
+``bake_tileables(out)``             seamless tileables, iris, sclera, blood decal atlas, room/prop sets
+``bake_painter_inputs(objs, out)``  position (EXR half, segment-relative), rest normal, valid mask and
+                                    dominant-bone maps for the head, body and shorts painter atlases
+``write_texture_manifest(out)``     ``textures/textures.json`` (schema gb.textures/1): every file with its
+                                    channels, colour space, import hint, mesh/surfaces and UV hash
+
+Conventions (all images)
+========================
+* Rows are written top to bottom with v = 1 at the top (Godot / glTF image origin).
+* Albedo PNGs are sRGB; normal maps are tangent space, OpenGL / Godot convention (+Y = +v), baked
+  with MikkTSpace on the LOD0 mesh; ORM = R ambient occlusion, G roughness, B metallic,
+  A = subsurface (SSS) mask for mesh sets, height (0-1) for tileables.
+* Every mesh texture is dilated past its islands (8 px) and the rest of the image is filled by
+  push-pull, so mip maps never pull in black.
+* The ``uv_hash`` of each mesh set is the hash of the LOD0 ``atlas`` UVs the set was baked for;
+  ``verify.py`` compares it with the exported mesh (textures and UVs must match).
+
+Mesh sets (plan §4.2)
+=====================
+======== ==================== ================= ====== =================================
+set      target (UV0 atlas)   bake source       size   look-dev materials
+======== ==================== ================= ====== =================================
+head     GB_Head              GB_Head_HR        2048   GBL_skin_head, GBL_mouth_lining
+body     GB_Body              GB_Body_HR        4096   GBL_skin_body
+shorts   GB_Shorts            GB_Shorts         1024   GBL_cloth
+mouth    GB_Mouth             GB_Mouth          1024   GBL_teeth, GBL_gums, GBL_tongue
+skeleton GB_Skeleton          GB_Skeleton_HR    2048   GBL_bone, GBL_cartilage
+organs   GB_Organs            GB_Organs_HR      2048   GBL_organ
+brain    GB_Brain             GB_Brain_HR       4096   GBL_brain
+======== ==================== ================= ====== =================================
+GB_Head_LOD1 / GB_Body_LOD1 share their LOD0's atlas layout and use the same sets.
+"""
+import hashlib
+import math
+import json
+import os
+import sys
+import time
+
+import numpy as np
+
+import bpy
+
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import gb_common as gbc  # noqa: E402
+
+SCHEMA = "gb.textures/1"
+gbc.SCHEMAS.setdefault(SCHEMA, ("sets", "tileables", "eyes", "decals", "painter", "room", "material_map"))
+
+DILATE_PX = 8
+UV_MARGIN_PX = 8          # island margin of the re-charted atlases (at the set's resolution)
+MIN_CHART_M2 = 0.5e-4     # 0.5 cm2: smaller charts are merged into a neighbour
+OVERLAP_MAX = 0.001       # re-chart until at most 0.1 % of the covered texels are shared
+UV_VERSION = 7            # bump when the charting algorithm changes (part of the UV cache key)
+
+SETS = {
+    # name: target, source, size, cage extrusion (m), max ray (m), AO distance (m), surfaces
+    "head": dict(target="GB_Head", source="GB_Head_HR", size=2048, cage=0.003, ray=0.008, ao=0.03, rough_offset=0.06,
+                 surfaces=["GBM_skin_head", "GBM_mouth_lining"], lod1=["GB_Head_LOD1"]),
+    "body": dict(target="GB_Body", source="GB_Body_HR", size=4096, cage=0.003, ray=0.008, ao=0.06, rough_offset=0.06,
+                 detail=0.0,
+                 surfaces=["GBM_skin_torso", "GBM_skin_arm_L", "GBM_skin_arm_R", "GBM_skin_leg_L",
+                           "GBM_skin_leg_R"], lod1=["GB_Body_LOD1"]),
+    "shorts": dict(target="GB_Shorts", source=None, size=1024, cage=0.0, ray=0.0, ao=0.05,
+                   surfaces=["GBM_cloth"]),
+    "mouth": dict(target="GB_Mouth", source=None, size=1024, cage=0.0, ray=0.0, ao=0.008,
+                  surfaces=["GBM_teeth", "GBM_gums", "GBM_tongue"]),
+    # inner parts sit a few mm apart (nested organs, joints, 2 mm sulci): small cages plus a part-id
+    # check so a bake ray never takes a neighbour's surface
+    "skeleton": dict(target="GB_Skeleton", source="GB_Skeleton_HR", size=2048, cage=0.0015, ray=0.004, ao=0.015,
+                     surfaces=["GBM_bone", "GBM_cartilage"], id_attr="gb_piece", emit_from="target"),
+    "organs": dict(target="GB_Organs", source="GB_Organs_HR", size=2048, cage=0.0015, ray=0.004, ao=0.01,
+                   surfaces=["GBM_organ"], id_attr="gb_organ", emit_from="target"),
+    "brain": dict(target="GB_Brain", source="GB_Brain_HR", size=4096, cage=0.0008, ray=0.002, ao=0.006,
+                  surfaces=["GBM_brain"], emit_from="target"),
+}
+# margins >= 8 px at 2048 (RB §8.3; BC7 mips 2-3 no longer bleed across islands)
+# repair: how folded charts are fixed (fix round 2) - "unfold" (angle-based re-flattening: keeps the coverage;
+# texel distortion stays within 1 stop on bone and organs) or "refine" (planar sub-charts: no distortion, more
+# islands; the brain's gyri made the angle-based charts 2.5 stops uneven).  The brain atlas is 4096 so its
+# 2-3k small charts keep a 0.36 mm texel with the 9 px margin.
+RECHART = {"GB_Skeleton": dict(size=2048, smooth=2, interior_scale=0.45, cone=60.0, margin=9, repair="unfold"),
+           "GB_Organs": dict(size=2048, smooth=2, interior_scale=0.6, cone=60.0, margin=9, repair="unfold"),
+           "GB_Brain": dict(size=4096, smooth=0, interior_scale=1.0, cone=62.0, margin=9, repair="refine")}
+PAINTER = {"head": ("GB_Head", 1024, 512), "body": ("GB_Body", 1024, 512), "shorts": ("GB_Shorts", 1024, 512)}
+
+_RESULTS = {"sets": {}, "tileables": {}, "eyes": {}, "decals": {}, "painter": {}, "room": {}, "uv": {},
+            "timings_s": {}}
+
+
+# ---------------------------------------------------------------------------
+# Small helpers
+# ---------------------------------------------------------------------------
+def _log(msg):
+    gbc.log(f"bake: {msg}")
+
+
+def _quick():
+    return bool(os.environ.get("GB_BAKE_QUICK"))
+
+
+def _sz(size):
+    return max(128, size // 4) if _quick() else size
+
+
+def uv_hash(obj):
+    """Stable hash of an object's ``atlas`` UVs (1e-5 quantised) and loop topology."""
+    me = obj.data
+    uv = np.empty(len(me.loops) * 2, np.float32)
+    me.uv_layers["atlas"].data.foreach_get("uv", uv)
+    lv = np.empty(len(me.loops), np.int64)
+    me.loops.foreach_get("vertex_index", lv)
+    h = hashlib.sha256()
+    h.update(np.rint(uv.astype(np.float64) * 1e5).astype(np.int64).tobytes())
+    h.update(lv.tobytes())
+    return h.hexdigest()[:16]
+
+
+def _write_png(path, img):
+    gbc.write_png_u8(path, img)
+    return path
+
+
+def srgb_encode(lin):
+    lin = np.clip(lin, 0.0, 1.0)
+    return np.where(lin <= 0.0031308, lin * 12.92, 1.055 * np.power(lin, 1.0 / 2.4) - 0.055)
+
+
+def u8(x):
+    return np.clip(np.rint(np.asarray(x, float) * 255.0), 0, 255).astype(np.uint8)
+
+
+def write_exr_half(path, rgba_top_down):
+    """Write a float (H, W, 4) array (row 0 = top) as a half-float ZIP OpenEXR via Blender."""
+    h, w = rgba_top_down.shape[:2]
+    name = "GB7_exr_tmp"
+    old = bpy.data.images.get(name)
+    if old is not None:
+        bpy.data.images.remove(old)
+    img = bpy.data.images.new(name, w, h, alpha=True, float_buffer=True)
+    img.colorspace_settings.name = 'Non-Color'
+    img.pixels.foreach_set(np.ascontiguousarray(rgba_top_down[::-1], np.float32).ravel())
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+    # save_render honours the half-float + ZIP settings; the view transform is overridden to
+    # Standard so the linear data is written unchanged (round trip checked to half precision)
+    s = bpy.context.scene.render.image_settings
+    keep = (s.file_format, s.color_depth, s.exr_codec, s.color_mode)
+    s.file_format, s.color_mode = 'OPEN_EXR', 'RGBA'
+    s.color_depth, s.exr_codec = '16', 'ZIP'
+    try:
+        keep_cm = s.color_management
+        s.color_management = 'OVERRIDE'
+        s.view_settings.view_transform = 'Standard'
+        s.view_settings.look = 'None'
+    except (AttributeError, TypeError):
+        keep_cm = None
+    img.save_render(path, scene=bpy.context.scene)
+    s.file_format, s.color_depth, s.exr_codec, s.color_mode = keep
+    if keep_cm is not None:
+        s.color_management = keep_cm
+    bpy.data.images.remove(img)
+    return path
+
+
+# ---------------------------------------------------------------------------
+# UV rasteriser (numpy) and image fill
+# ---------------------------------------------------------------------------
+def loop_triangles(obj):
+    """(tri loops (T,3), tri verts (T,3), tri polygon index (T,))."""
+    me = obj.data
+    me.calc_loop_triangles()
+    n = len(me.loop_triangles)
+    tl = np.empty(n * 3, np.int64)
+    me.loop_triangles.foreach_get("loops", tl)
+    tv = np.empty(n * 3, np.int64)
+    me.loop_triangles.foreach_get("vertices", tv)
+    tp = np.empty(n, np.int64)
+    me.loop_triangles.foreach_get("polygon_index", tp)
+    return tl.reshape(-1, 3), tv.reshape(-1, 3), tp
+
+
+def rasterize(obj, size, uv_name="atlas"):
+    """Rasterise the UV triangles at texel centres.
+
+    Returns (tri (H, W) int32 = triangle index or -1, bary (H, W, 3) float32), row 0 = top (v = 1)."""
+    me = obj.data
+    uv = np.empty(len(me.loops) * 2, np.float32)
+    me.uv_layers[uv_name].data.foreach_get("uv", uv)
+    uv = uv.reshape(-1, 2).astype(np.float64) * size - 0.5
+    tl, _tv, _tp = loop_triangles(obj)
+    tri_img = np.full((size, size), -1, np.int32)
+    bary = np.zeros((size, size, 3), np.float32)
+    P = uv[tl]                                            # (T, 3, 2)
+    x0 = np.clip(np.floor(P[:, :, 0].min(1)).astype(int), 0, size - 1)
+    x1 = np.clip(np.ceil(P[:, :, 0].max(1)).astype(int), 0, size - 1)
+    y0 = np.clip(np.floor(P[:, :, 1].min(1)).astype(int), 0, size - 1)
+    y1 = np.clip(np.ceil(P[:, :, 1].max(1)).astype(int), 0, size - 1)
+    for i in range(len(tl)):
+        if x1[i] < x0[i] or y1[i] < y0[i]:
+            continue
+        (ax, ay), (bx, by), (cx, cy) = P[i]
+        den = (by - cy) * (ax - cx) + (cx - bx) * (ay - cy)
+        if abs(den) < 1e-12:
+            continue
+        X, Y = np.meshgrid(np.arange(x0[i], x1[i] + 1), np.arange(y0[i], y1[i] + 1))
+        l1 = ((by - cy) * (X - cx) + (cx - bx) * (Y - cy)) / den
+        l2 = ((cy - ay) * (X - cx) + (ax - cx) * (Y - cy)) / den
+        l3 = 1.0 - l1 - l2
+        m = (l1 >= -1e-7) & (l2 >= -1e-7) & (l3 >= -1e-7)
+        if not m.any():
+            continue
+        tri_img[Y[m], X[m]] = i
+        bary[Y[m], X[m]] = np.stack([l1[m], l2[m], l3[m]], -1)
+    return tri_img[::-1].copy(), bary[::-1].copy()
+
+
+def interp(obj, tri_img, bary, per_loop=None, per_vertex=None):
+    """Interpolate per-loop or per-vertex values (N, C) over a rasterised image."""
+    tl, tv, _ = loop_triangles(obj)
+    idx = tl if per_loop is not None else tv
+    val = np.asarray(per_loop if per_loop is not None else per_vertex, float)
+    if val.ndim == 1:
+        val = val[:, None]
+    out = np.zeros(tri_img.shape + (val.shape[1],))
+    m = tri_img >= 0
+    t = tri_img[m]
+    b = bary[m].astype(float)
+    out[m] = (val[idx[t, 0]] * b[:, :1] + val[idx[t, 1]] * b[:, 1:2] + val[idx[t, 2]] * b[:, 2:3])
+    return out
+
+
+def dilate(img, mask, px=DILATE_PX):
+    """Grow covered texels ``px`` times into empty 8-neighbours (average of covered neighbours)."""
+    img = np.array(img, float)
+    cov = np.array(mask, bool)
+    if img.ndim == 2:
+        img = img[..., None]
+    for _ in range(px):
+        acc = np.zeros_like(img)
+        cnt = np.zeros(cov.shape)
+        for dy in (-1, 0, 1):
+            for dx in (-1, 0, 1):
+                if dx == 0 and dy == 0:
+                    continue
+                sc = np.roll(cov, (dy, dx), (0, 1))
+                acc += np.roll(img, (dy, dx), (0, 1)) * sc[..., None]
+                cnt += sc
+        new = ~cov & (cnt > 0)
+        img[new] = acc[new] / cnt[new][:, None]
+        cov |= new
+    return img, cov
+
+
+def push_pull_fill(img, mask):
+    """Fill every empty texel from a coverage-weighted mip pyramid (keeps covered texels)."""
+    img = np.array(img, float)
+    if img.ndim == 2:
+        img = img[..., None]
+    w = np.asarray(mask, float)
+    levels = [(img * w[..., None], w)]
+    while levels[-1][1].shape[0] > 1:
+        c, ww = levels[-1]
+        h2, w2 = c.shape[0] // 2, c.shape[1] // 2
+        c2 = c[:h2 * 2, :w2 * 2].reshape(h2, 2, w2, 2, -1).sum((1, 3))
+        ww2 = ww[:h2 * 2, :w2 * 2].reshape(h2, 2, w2, 2).sum((1, 3))
+        levels.append((c2, ww2))
+    c, ww = levels[-1]
+    filled = c / np.maximum(ww[..., None], 1e-12)
+    for c, ww in reversed(levels[:-1]):
+        up = np.repeat(np.repeat(filled, 2, 0), 2, 1)[:c.shape[0], :c.shape[1]]
+        own = c / np.maximum(ww[..., None], 1e-12)
+        k = np.clip(ww, 0.0, 1.0)[..., None]
+        filled = own * k + up * (1.0 - k)
+    out = np.where(np.asarray(mask, bool)[..., None], img, filled)
+    return out
+
+
+def finish_map(img, mask, px=DILATE_PX):
+    """Dilate ``px`` texels, then push-pull fill the rest."""
+    d, cov = dilate(img, mask, px)
+    return push_pull_fill(d, cov)
+
+
+# ---------------------------------------------------------------------------
+# Scene visibility for bakes
+# ---------------------------------------------------------------------------
+class Visibility:
+    """Context manager: include every collection, show only ``names`` to the renderer."""
+
+    def __init__(self, names):
+        self.names = set(names)
+
+    def __enter__(self):
+        self.state = {"lc": [], "col": [], "obj": []}
+        vl = bpy.context.view_layer
+
+        def walk(lc):
+            self.state["lc"].append((lc, lc.exclude, lc.hide_viewport))
+            lc.exclude = False
+            lc.hide_viewport = False
+            for c in lc.children:
+                walk(c)
+        walk(vl.layer_collection)
+        for c in bpy.data.collections:
+            self.state["col"].append((c, c.hide_render, c.hide_viewport))
+            c.hide_render = False
+            c.hide_viewport = False
+        for o in bpy.data.objects:
+            self.state["obj"].append((o, o.hide_render, o.hide_viewport, o.hide_get()))
+            show = o.name in self.names
+            o.hide_render = not show
+            o.hide_viewport = False
+            try:
+                o.hide_set(not show)
+            except RuntimeError:
+                pass
+        return self
+
+    def __exit__(self, *exc):
+        for o, hr, hv, hs in self.state["obj"]:
+            o.hide_render, o.hide_viewport = hr, hv
+            try:
+                o.hide_set(hs)
+            except RuntimeError:
+                pass
+        for c, hr, hv in self.state["col"]:
+            c.hide_render, c.hide_viewport = hr, hv
+        for lc, ex, hv in self.state["lc"]:
+            lc.exclude, lc.hide_viewport = ex, hv
+        return False
+
+
+def show_all_collections():
+    """Include every layer collection (for scripts that open a saved build)."""
+    def walk(lc):
+        lc.exclude = False
+        for c in lc.children:
+            walk(c)
+    walk(bpy.context.view_layer.layer_collection)
+
+
+# ---------------------------------------------------------------------------
+# Atlas re-charting for the inner meshes
+# ---------------------------------------------------------------------------
+def _label_components(n, pairs):
+    """Connected-component labels of n items joined by index ``pairs`` (min-label propagation)."""
+    lab = np.arange(n)
+    if len(pairs) == 0:
+        return lab
+    a, b = pairs[:, 0], pairs[:, 1]
+    for _ in range(10000):
+        la, lb = lab[a], lab[b]
+        m = np.minimum(la, lb)
+        new = lab.copy()
+        np.minimum.at(new, a, m)
+        np.minimum.at(new, b, m)
+        new = new[new]
+        new = new[new]
+        if np.array_equal(new, lab):
+            break
+        lab = new
+    _, lab = np.unique(lab, return_inverse=True)
+    return lab
+
+
+def _face_topology(me):
+    """(face normals, centres, areas, face adjacency pairs (E,2), edge index per pair, loops per face)."""
+    F = len(me.polygons)
+    fn = np.empty(F * 3, np.float32)
+    me.polygons.foreach_get("normal", fn)
+    fc = np.empty(F * 3, np.float32)
+    me.polygons.foreach_get("center", fc)
+    fa = np.empty(F, np.float32)
+    me.polygons.foreach_get("area", fa)
+    ls = np.empty(F, np.int64)
+    me.polygons.foreach_get("loop_start", ls)
+    lt = np.empty(F, np.int64)
+    me.polygons.foreach_get("loop_total", lt)
+    le = np.empty(len(me.loops), np.int64)
+    me.loops.foreach_get("edge_index", le)
+    lf = np.repeat(np.arange(F), lt)
+    order = np.argsort(le, kind="stable")
+    e_sorted, f_sorted = le[order], lf[order]
+    same = e_sorted[1:] == e_sorted[:-1]
+    pairs = np.stack([f_sorted[:-1][same], f_sorted[1:][same]], 1)
+    pedge = e_sorted[1:][same]
+    return (fn.reshape(-1, 3).astype(float), fc.reshape(-1, 3).astype(float), fa.astype(float), pairs, pedge,
+            le, lf)
+
+
+def _euler_ok(me, faces_by_chart, le, lf, lv):
+    """Charts that cannot be flattened: closed pieces (Euler characteristic >= 2).  Disks (1) and
+    disks with holes (<= 0) have planar conformal maps and are kept."""
+    bad = []
+    F = len(me.polygons)
+    for cid, fidx in faces_by_chart.items():
+        sel = np.zeros(F, bool)
+        sel[fidx] = True
+        lm = sel[lf]
+        V = len(np.unique(lv[lm]))
+        E = len(np.unique(le[lm]))
+        if V - E + len(fidx) >= 2:
+            bad.append(cid)
+    return bad
+
+
+def chart_faces(obj, smooth_iters=6, min_frac=0.02, min_faces=40):
+    """Segment a mesh into disk-like charts: faces grouped by their neighbourhood-smoothed normal
+    (6 axis directions), majority-filtered, small charts merged into neighbours, non-disk charts
+    split by planes.  Returns chart id per polygon."""
+    me = obj.data
+    fn, fc, fa, pairs, pedge, le, lf = _face_topology(me)
+    lv = np.empty(len(me.loops), np.int64)
+    me.loops.foreach_get("vertex_index", lv)
+    F = len(fn)
+    comp = _label_components(F, pairs)
+    # neighbourhood-smoothed normals (area weighted)
+    ns = fn * fa[:, None]
+    for _ in range(smooth_iters):
+        acc = ns.copy()
+        np.add.at(acc, pairs[:, 0], ns[pairs[:, 1]])
+        np.add.at(acc, pairs[:, 1], ns[pairs[:, 0]])
+        ns = acc / np.maximum(np.linalg.norm(acc, axis=1, keepdims=True), 1e-12) * fa[:, None]
+    ns = ns / np.maximum(np.linalg.norm(ns, axis=1, keepdims=True), 1e-12)
+    dirs = np.array([[1, 0, 0], [-1, 0, 0], [0, 1, 0], [0, -1, 0], [0, 0, 1], [0, 0, -1]], float)
+    lab = np.argmax(ns @ dirs.T, axis=1)
+    for _ in range(3):                                 # majority filter
+        hist = np.zeros((F, 6))
+        hist[np.arange(F), lab] += 1.5 * fa
+        np.add.at(hist, (pairs[:, 0], lab[pairs[:, 1]]), fa[pairs[:, 1]])
+        np.add.at(hist, (pairs[:, 1], lab[pairs[:, 0]]), fa[pairs[:, 0]])
+        lab = np.argmax(hist, axis=1)
+    key = comp * 8 + lab
+
+    def charts_from(key):
+        keep = key[pairs[:, 0]] == key[pairs[:, 1]]
+        return _label_components(F, pairs[keep])
+    chart = charts_from(key)
+    comp_area = np.bincount(comp, weights=fa)
+    for _ in range(12):                                # merge small charts into their best neighbour
+        ch_area = np.bincount(chart, weights=fa)
+        ch_n = np.bincount(chart)
+        ch_comp = np.zeros(len(ch_area), int)
+        ch_comp[chart] = comp
+        small = (ch_area < comp_area[ch_comp] * min_frac) | (ch_n < min_faces)
+        ca, cb = chart[pairs[:, 0]], chart[pairs[:, 1]]
+        cross = ca != cb
+        if not (small[ca] & cross).any() and not (small[cb] & cross).any():
+            break
+        # for every small chart, the neighbour with the longest shared boundary (count of edges)
+        src = np.concatenate([ca[cross], cb[cross]])
+        dst = np.concatenate([cb[cross], ca[cross]])
+        m = small[src] & ~(small[dst] & (ch_area[dst] < ch_area[src]))
+        src, dst = src[m], dst[m]
+        if len(src) == 0:
+            break
+        k = src.astype(np.int64) * (len(ch_area) + 1) + dst
+        uk, cnt = np.unique(k, return_counts=True)
+        s_, d_ = uk // (len(ch_area) + 1), uk % (len(ch_area) + 1)
+        best = {}
+        for s, d, c in zip(s_, d_, cnt):
+            if s not in best or c > best[s][1]:
+                best[s] = (d, c)
+        remap = np.arange(len(ch_area))
+        for s, (d, _c) in best.items():
+            remap[s] = d
+        for _ in range(8):
+            remap = remap[remap]
+        chart = remap[chart]
+        _, chart = np.unique(chart, return_inverse=True)
+    # split charts that are not disks (closed pieces, rings around holes) by planes
+    for _ in range(8):
+        groups = {}
+        for i, c in enumerate(chart):
+            groups.setdefault(c, []).append(i)
+        groups = {c: np.asarray(f) for c, f in groups.items()}
+        bad = _euler_ok(me, groups, le, lf, lv)
+        if not bad:
+            break
+        nxt = chart.max() + 1
+        for c in bad:
+            f = groups[c]
+            pts = fc[f]
+            cen = (pts * fa[f, None]).sum(0) / max(fa[f].sum(), 1e-12)
+            ext = pts.max(0) - pts.min(0)
+            side = pts[:, int(np.argmax(ext))] > cen[int(np.argmax(ext))]
+            if side.all() or (~side).all():
+                side = np.arange(len(f)) % 2 == 0
+            chart[f[side]] = nxt
+            nxt += 1
+        # a plane split can disconnect a side: relabel by connectivity inside each chart
+        chart = charts_from(chart)
+    return chart
+
+
+def _set_seams(me, chart):
+    """UV seams on every edge between different charts (and on non-manifold/boundary edges)."""
+    fn, fc, fa, pairs, pedge, le, lf = _face_topology(me)
+    seam = np.ones(len(me.edges), bool)                 # boundary edges stay seams
+    inner = chart[pairs[:, 0]] == chart[pairs[:, 1]]
+    counts = np.bincount(le, minlength=len(me.edges))
+    ok = inner & (counts[pedge] == 2)
+    seam[pedge[ok]] = False
+    me.edges.foreach_set("use_seam", seam)
+    me.update()
+
+
+def _select_only(obj):
+    vl = bpy.context.view_layer
+    for o in list(bpy.context.selected_objects):
+        o.select_set(False)
+    obj.hide_set(False)
+    obj.select_set(True)
+    vl.objects.active = obj
+
+
+def grow_charts(obj, cone_deg=55.0, max_frac=0.03, absorb_deg=75.0, min_faces=6, smooth=0, isolate=None,
+                min_area=0.0):
+    """Greedy normal-cone charts: from the largest unassigned face, grow over edge neighbours whose
+    normal lies within ``cone_deg`` of the seed normal (area capped at ``max_frac`` of the mesh).
+    Every chart is then a height field over the plane normal to its seed, so a planar projection
+    maps it without folds and with at most 1 / cos(cone) stretch.  Tiny charts are absorbed by a
+    neighbour whose cone they fit within ``absorb_deg``.  Returns (chart per face, axis per chart)."""
+    from collections import deque
+    me = obj.data
+    fn, fc, fa, pairs, pedge, le, lf = _face_topology(me)
+    F = len(fn)
+    for _ in range(smooth):          # optional light smoothing of the growth normals (noisy meshes)
+        acc = fn * fa[:, None]
+        np.add.at(acc, pairs[:, 0], fn[pairs[:, 1]] * fa[pairs[:, 1], None])
+        np.add.at(acc, pairs[:, 1], fn[pairs[:, 0]] * fa[pairs[:, 0], None])
+        fn = acc / np.maximum(np.linalg.norm(acc, axis=1, keepdims=True), 1e-12)
+    nbr = [[] for _ in range(F)]
+    for a_, b_ in pairs.tolist():
+        nbr[a_].append(b_)
+        nbr[b_].append(a_)
+    cos_c = np.cos(np.radians(cone_deg))
+    cap = fa.sum() * max_frac
+    chart = np.full(F, -1, np.int64)
+    axes = []
+    order = np.argsort(-fa, kind="stable")
+    k = 0
+    for seed in order.tolist():
+        if chart[seed] >= 0:
+            continue
+        ax = fn[seed]
+        chart[seed] = k
+        area = fa[seed]
+        q = deque([seed])
+        while q:
+            f = q.popleft()
+            for g in nbr[f]:
+                if isolate is not None and isolate[g] != isolate[seed]:
+                    continue                  # faces found overlapping before never share a chart with others
+                if chart[g] < 0 and area < cap and fn[g] @ ax >= cos_c:
+                    chart[g] = k
+                    area += fa[g]
+                    q.append(g)
+        axes.append(ax)
+        k += 1
+    axes = np.asarray(axes)
+    # absorb tiny charts into a neighbour whose axis they still face
+    cnt = np.bincount(chart, minlength=k)
+    carea = np.bincount(chart, weights=fa, minlength=k)
+    cos_a = np.cos(np.radians(absorb_deg))
+    small = np.nonzero((cnt < min_faces) | (carea < min_area))[0].tolist()
+    for c in small:
+        faces = np.nonzero(chart == c)[0]
+        cand = {chart[g] for f in faces.tolist() for g in nbr[f] if chart[g] != c
+                and (isolate is None or isolate[g] == isolate[f])}
+        best, best_s = None, cos_a
+        for d in cand:
+            s = float((fn[faces] @ axes[d]).min())
+            if s >= best_s:
+                best, best_s = d, s
+        if best is not None:
+            chart[faces] = best
+    _, chart = np.unique(chart, return_inverse=True)
+    used = np.unique(chart)
+    # recompute each chart's projection axis as its area-weighted mean normal (still inside the cone)
+    ax = np.zeros((len(used), 3))
+    np.add.at(ax, chart, fn * fa[:, None])
+    ax /= np.maximum(np.linalg.norm(ax, axis=1, keepdims=True), 1e-12)
+    return chart, ax
+
+
+def rechart(obj, size=2048, smooth=0, interior_scale=1.0, margin_px=UV_MARGIN_PX, cone_deg=55.0, isolate=None):
+    """Replace ``obj``'s ``atlas`` UVs with normal-cone charts, planar-projected and packed.
+
+    Charts are projected in metres (uniform texel density by construction), interior surfaces (bone
+    marrow cores: ``gb_class`` 6; organ cavities: negative-volume components) are scaled by
+    ``interior_scale`` since they only show in cuts, then Blender packs the islands with a
+    ``margin_px`` margin at ``size``."""
+    # charts below 0.5 cm2 are absorbed by a neighbour (fewer tiny islands, fewer seams where wounds cut)
+    chart, axes = grow_charts(obj, cone_deg, smooth=smooth, isolate=isolate, min_area=MIN_CHART_M2)
+    return _project_pack(obj, chart, axes, size, interior_scale, margin_px)
+
+
+def uv_islands(me):
+    """Island id per polygon of the 'atlas' UV layer: faces joined across every edge whose two loops carry the same
+    UV coordinates on both faces (numpy + union-find; deterministic)."""
+    nl = len(me.loops)
+    uv = np.empty(nl * 2, np.float32)
+    me.uv_layers["atlas"].data.foreach_get("uv", uv)
+    uv = uv.reshape(-1, 2)
+    lv = np.empty(nl, np.int64)
+    me.loops.foreach_get("vertex_index", lv)
+    ls = np.empty(len(me.polygons), np.int64)
+    lt = np.empty(len(me.polygons), np.int64)
+    me.polygons.foreach_get("loop_start", ls)
+    me.polygons.foreach_get("loop_total", lt)
+    lf = np.repeat(np.arange(len(ls)), lt)
+    nxt = np.arange(nl) + 1
+    last = ls + lt - 1
+    nxt[last] = ls
+    a, b = lv, lv[nxt]
+    key = np.where(a < b, a * (1 << 32) + b, b * (1 << 32) + a)
+    ua = np.where((a < b)[:, None], uv, uv[nxt])
+    ub = np.where((a < b)[:, None], uv[nxt], uv)
+    order = np.lexsort((lf, key))
+    parent = np.arange(len(ls))
+
+    def find(i):
+        while parent[i] != i:
+            parent[i] = parent[parent[i]]
+            i = parent[i]
+        return i
+    ks, fo = key[order], lf[order]
+    uao, ubo = ua[order], ub[order]
+    same = (ks[1:] == ks[:-1]) & (np.abs(uao[1:] - uao[:-1]).max(1) < 1e-6) & (np.abs(ubo[1:] - ubo[:-1]).max(1) < 1e-6)
+    for i in np.nonzero(same)[0].tolist():
+        r1, r2 = find(int(fo[i])), find(int(fo[i + 1]))
+        if r1 != r2:
+            parent[max(r1, r2)] = min(r1, r2)
+    roots = np.array([find(i) for i in range(len(ls))])
+    _u, isl = np.unique(roots, return_inverse=True)
+    return isl, lf, uv
+
+
+def pack_islands_np(obj, size, margin_px):
+    """Deterministic replacement for ``bpy.ops.uv.pack_islands`` (fix round 3, critics: a clean rebuild gave a
+    different GB_Skeleton atlas and 95-99 % different inner texture maps).  Every island keeps its relative texel
+    scale, is rotated to its minimum-area bounding rectangle (hull calipers, landscape), and the rectangles are
+    shelf-packed tallest first into the smallest square that holds them, with ``margin_px`` texels between islands
+    at the ``size`` atlas; stable sorts only, so the same mesh always gives the same atlas."""
+    me = obj.data
+    isl, lf, uv = uv_islands(me)
+    li = isl[lf]
+    n = int(isl.max()) + 1 if len(isl) else 0
+    out = np.array(uv, float)
+    rects = []
+    for k in range(n):
+        L = np.nonzero(li == k)[0]
+        q = out[L]
+        c = q.mean(0)
+        q = q - c
+        best = None
+        try:
+            from scipy.spatial import ConvexHull            # noqa: F401  (not in the bpy wheel: fall back)
+            hull = q[ConvexHull(q).vertices]
+        except Exception:
+            hull = q
+        e = np.diff(np.vstack([hull, hull[:1]]), axis=0) if len(hull) > 2 else np.array([[1.0, 0.0]])
+        angs = np.unique(np.round(np.mod(np.arctan2(e[:, 1], e[:, 0]), np.pi / 2), 6))
+        if len(angs) > 64:
+            angs = np.linspace(0.0, np.pi / 2, 64, endpoint=False)
+        for a in np.concatenate([[0.0], angs]):
+            R = np.array([[math.cos(a), math.sin(a)], [-math.sin(a), math.cos(a)]])
+            r = hull @ R.T
+            w, h = r[:, 0].max() - r[:, 0].min(), r[:, 1].max() - r[:, 1].min()
+            if best is None or w * h < best[0] - 1e-18:
+                best = (w * h, a, w, h)
+        _ar, a, w, h = best
+        R = np.array([[math.cos(a), math.sin(a)], [-math.sin(a), math.cos(a)]])
+        if h > w:                                             # landscape
+            R = np.array([[0.0, 1.0], [-1.0, 0.0]]) @ R
+            w, h = h, w
+        q = q @ R.T
+        q = q - q.min(0)
+        out[L] = q
+        rects.append((k, max(w, 1e-9), max(h, 1e-9), L))
+    if not rects:
+        return
+    total = sum(w * h for _k, w, h, _L in rects)
+    side = math.sqrt(total / 0.72)
+    order = sorted(range(len(rects)), key=lambda i: (-round(rects[i][2], 9), -round(rects[i][1], 9), rects[i][0]))
+    for _try in range(200):
+        gap = side * margin_px / float(size)
+        x = y = row_h = 0.0
+        pos = {}
+        ok = True
+        for i in order:
+            _k, w, h, _L = rects[i]
+            if x + w > side + 1e-12:
+                x, y, row_h = 0.0, y + row_h + gap, 0.0
+            if y + h > side + 1e-12 or w > side:
+                ok = False
+                break
+            pos[i] = (x, y)
+            x += w + gap
+            row_h = max(row_h, h)
+        if ok:
+            break
+        side *= 1.03
+    for i, (x0, y0) in pos.items():
+        L = rects[i][3]
+        out[L] = (out[L] + np.array([x0, y0])) / side
+    me.uv_layers["atlas"].data.foreach_set("uv", out.astype(np.float32).ravel())
+    me.update()
+
+
+def _project_pack(obj, chart, axes, size, interior_scale, margin_px):
+    """Planar-project every chart along its axis (metres), scale interior surfaces, pack with a margin."""
+    me = obj.data
+    _, _, _, _, _, le, lf = _face_topology(me)
+    lv = np.empty(len(me.loops), np.int64)
+    me.loops.foreach_get("vertex_index", lv)
+    v = gbc.get_verts(me)
+    lc = chart[lf]
+    ax = axes[lc]
+    ref = np.where(np.abs(ax[:, 2:3]) < 0.9, np.array([[0.0, 0.0, 1.0]]), np.array([[1.0, 0.0, 0.0]]))
+    e1 = np.cross(ref, ax)
+    e1 /= np.maximum(np.linalg.norm(e1, axis=1, keepdims=True), 1e-12)
+    e2 = np.cross(ax, e1)
+    p = v[lv]
+    uv = np.stack([(p * e1).sum(1), (p * e2).sum(1)], 1)
+    scale = np.ones(len(chart))
+    if interior_scale != 1.0:
+        scale[_interior_faces(obj)] = interior_scale
+    uv = uv * scale[lf][:, None]
+    # small offsets per chart so islands never share UV coordinates before packing
+    uv = uv + (lc[:, None] % 97) * 0.0
+    if "atlas" not in me.uv_layers:
+        me.uv_layers.new(name="atlas")
+    me.uv_layers["atlas"].data.foreach_set("uv", uv.astype(np.float32).ravel())
+    # mark chart borders as seams so the packer sees the islands, then clear them again
+    _set_seams(me, chart)
+    me.uv_layers.active = me.uv_layers["atlas"]
+    pack_islands_np(obj, size, margin_px)
+    me.edges.foreach_set("use_seam", np.zeros(len(me.edges), bool))
+    _LAST_CHARTS[obj.name] = chart
+    _LAST_AXES[obj.name] = axes
+    return int(chart.max() + 1)
+
+
+_LAST_AXES = {}
+
+
+def refine_folded(obj, size, interior_scale, margin_px, cones=(38.0, 26.0, 16.0)):
+    """Fold repair by planar sub-charts (fix round 2): every chart that owns an overlapping face is split into
+    smaller normal-cone sub-charts (``cones`` in turn), each planar-projected along its own seed normal, and the
+    atlas is re-packed.  Planar projection keeps the metric texel density (stretch <= 1 / cos(cone)), unlike an
+    angle-based unwrap of a wrinkled chart, which folds the texel density by 2-3 stops on the brain's gyri."""
+    me = obj.data
+    fn, _fc, fa, pairs, _pe, _le, _lf = _face_topology(me)
+    nbr = [[] for _ in range(len(fn))]
+    for a_, b_ in pairs.tolist():
+        nbr[a_].append(b_)
+        nbr[b_].append(a_)
+    n_split = 0
+    over = uv_overlap_exact(obj, size)[0]
+    for cone in cones:
+        over, polys = uv_overlap_exact(obj, size)
+        if over <= OVERLAP_MAX or not len(polys):
+            break
+        chart = _LAST_CHARTS[obj.name].copy()
+        axes = list(_LAST_AXES[obj.name])
+        bad = set(np.unique(chart[polys]).tolist())
+        cos_c = np.cos(np.radians(cone))
+        k = int(chart.max()) + 1
+        for c in sorted(bad):
+            faces = np.nonzero(chart == c)[0]
+            free = set(faces.tolist())
+            first = True
+            for seed in faces[np.argsort(-fa[faces], kind="stable")].tolist():
+                if seed not in free:
+                    continue
+                ax = fn[seed]
+                cid = c if first else k
+                if first:
+                    axes[c] = ax
+                    first = False
+                else:
+                    axes.append(ax)
+                    k += 1
+                free.discard(seed)
+                chart[seed] = cid
+                stack = [seed]
+                while stack:
+                    f = stack.pop()
+                    for g in nbr[f]:
+                        if g in free and fn[g] @ ax >= cos_c:
+                            free.discard(g)
+                            chart[g] = cid
+                            stack.append(g)
+            n_split += 1
+        _project_pack(obj, chart, np.asarray(axes), size, interior_scale, margin_px)
+    return uv_overlap_exact(obj, size)[0], n_split
+
+
+_LAST_CHARTS = {}
+
+
+def unfold_charts(obj, chart, size, margin_px, interior_scale=1.0):
+    """Fold repair (fix round 2): a planar-projected normal-cone chart can still fold over itself where the
+    surface is not a height field over the projection plane (sulcus walls, bone ridges).  Every chart that
+    owns an overlapping face is re-flattened on its own with Blender's angle-based unwrap (seams on the chart
+    borders), rescaled to the metric texel density of the rest (interior surfaces keep ``interior_scale``),
+    and all islands are re-packed.  Unlike isolating single faces this keeps the chart count and the atlas
+    coverage (isolating every overlapping face made 4-8k tiny islands and halved the texel density)."""
+    me = obj.data
+    over, polys = uv_overlap_exact(obj, size)
+    if over <= OVERLAP_MAX or not len(polys):
+        return over, 0
+    bad = np.unique(chart[polys])
+    sel = np.isin(chart, bad)
+    _set_seams(me, chart)
+    me.polygons.foreach_set("select", sel)
+    me.update()
+    me.uv_layers.active = me.uv_layers["atlas"]
+    _select_only(obj)
+    bpy.ops.object.mode_set(mode='EDIT')
+    bpy.ops.mesh.select_mode(type='FACE')
+    bpy.ops.object.mode_set(mode='OBJECT')
+    me.polygons.foreach_set("select", sel)
+    me.update()
+    bpy.ops.object.mode_set(mode='EDIT')
+    bpy.ops.uv.unwrap(method='ANGLE_BASED', fill_holes=True, correct_aspect=True, margin=0.0)
+    bpy.ops.object.mode_set(mode='OBJECT')
+    # metric rescale of the re-flattened charts, spread apart so none overlaps before the pack
+    ls = np.empty(len(me.polygons), np.int64)
+    me.polygons.foreach_get("loop_start", ls)
+    lt = np.empty(len(me.polygons), np.int64)
+    me.polygons.foreach_get("loop_total", lt)
+    lf = np.repeat(np.arange(len(me.polygons)), lt)
+    uv = np.empty(len(me.loops) * 2, np.float64)
+    me.uv_layers["atlas"].data.foreach_get("uv", uv)
+    uv = uv.reshape(-1, 2)
+    tl, tv, tp = loop_triangles(obj)
+    v = gbc.get_verts(me)
+    a3 = 0.5 * np.linalg.norm(np.cross(v[tv[:, 1]] - v[tv[:, 0]], v[tv[:, 2]] - v[tv[:, 0]]), axis=1)
+    U = uv[tl]
+    a2 = 0.5 * np.abs((U[:, 1, 0] - U[:, 0, 0]) * (U[:, 2, 1] - U[:, 0, 1])
+                      - (U[:, 2, 0] - U[:, 0, 0]) * (U[:, 1, 1] - U[:, 0, 1]))
+    good_t = ~np.isin(chart[tp], bad)
+    k_ref = np.sqrt(a2[good_t].sum() / max(a3[good_t].sum(), 1e-12)) if good_t.any() else 1.0
+    interior = _interior_faces(obj) if interior_scale != 1.0 else np.zeros(len(me.polygons), bool)
+    for j, c in enumerate(bad.tolist()):
+        tm = chart[tp] == c
+        L = np.nonzero(chart[lf] == c)[0]
+        k = np.sqrt(a3[tm].sum() / max(a2[tm].sum(), 1e-18)) * k_ref
+        if interior[chart == c].mean() > 0.5:
+            k *= interior_scale
+        q = uv[L]
+        q = (q - q.min(0)) * k
+        uv[L] = q + np.array([10.0 + 0.5 * (j % 64), 10.0 + 0.5 * (j // 64)]) * max(q.max(), 1e-6)
+    me.uv_layers["atlas"].data.foreach_set("uv", uv.astype(np.float32).ravel())
+    me.update()
+    pack_islands_np(obj, size, margin_px)
+    me.edges.foreach_set("use_seam", np.zeros(len(me.edges), bool))
+    me.polygons.foreach_set("select", np.zeros(len(me.polygons), bool))
+    me.update()
+    return uv_overlap_exact(obj, size)[0], len(bad)
+
+
+def _interior_faces(obj):
+    """Per-polygon mask of interior surfaces (marrow cores, organ cavities)."""
+    me = obj.data
+    F = len(me.polygons)
+    cls = gbc.read_point_attr(obj, "gb_class", 'INT')
+    ls = np.empty(F, np.int64)
+    me.polygons.foreach_get("loop_start", ls)
+    lv = np.empty(len(me.loops), np.int64)
+    me.loops.foreach_get("vertex_index", lv)
+    if cls is not None:
+        return cls[lv[ls]] == 6
+    import lookdev
+    inner = lookdev.organ_interior(obj)
+    return inner[lv[ls]] > 0.5
+
+
+def uv_stats(obj, size=1024):
+    """(coverage fraction, overlap fraction of covered texels, texel size mm at ``size``)."""
+    me = obj.data
+    tl, tv, _ = loop_triangles(obj)
+    uv = np.empty(len(me.loops) * 2, np.float32)
+    me.uv_layers["atlas"].data.foreach_get("uv", uv)
+    uv = uv.reshape(-1, 2).astype(float)
+    t = uv[tl]
+    a_uv = 0.5 * np.abs((t[:, 1, 0] - t[:, 0, 0]) * (t[:, 2, 1] - t[:, 0, 1])
+                        - (t[:, 2, 0] - t[:, 0, 0]) * (t[:, 1, 1] - t[:, 0, 1]))
+    v = gbc.get_verts(me)
+    P = v[tv]
+    a3 = 0.5 * np.linalg.norm(np.cross(P[:, 1] - P[:, 0], P[:, 2] - P[:, 0]), axis=1)
+    tri_img, _ = rasterize(obj, size)
+    cov = (tri_img >= 0).mean()
+    over = max(0.0, a_uv.sum() - cov) / max(a_uv.sum(), 1e-9)
+    texel = np.sqrt(a3.sum() / max(a_uv.sum(), 1e-12)) / size * 1000.0
+    return float(cov), float(over), float(texel)
+
+
+def prepare_uvs(objs=None, force=False):
+    """Re-chart GB_Skeleton, GB_Organs and GB_Brain atlases (cached by mesh hash in .cache/)."""
+    t0 = time.perf_counter()
+    for name, cfg in RECHART.items():
+        obj = bpy.data.objects.get(name)
+        if obj is None:
+            continue
+        me = obj.data
+        v = gbc.get_verts(me)
+        lv = np.empty(len(me.loops), np.int64)
+        me.loops.foreach_get("vertex_index", lv)
+        h = hashlib.sha256(np.rint(v * 1e5).astype(np.int64).tobytes() + lv.tobytes()
+                           + f"{UV_VERSION}{sorted(cfg.items())}".encode()).hexdigest()[:16]
+        path = os.path.join(gbc.CACHE_DIR, f"uv-{name}-{h}.npy")
+        if os.path.exists(path) and not force:
+            uv = np.load(path)
+            if uv.shape[0] == len(me.loops) * 2:
+                me.uv_layers["atlas"].data.foreach_set("uv", uv)
+                me.update()
+                _RESULTS["uv"][name] = {"cached": True}
+                continue
+        before = uv_stats(obj, 512)
+        n = rechart(obj, cfg["size"], cfg["smooth"], cfg["interior_scale"], cfg["margin"], cfg["cone"])
+        # overlap repair (fix round 2): folded charts are split into smaller planar sub-charts; what still
+        # overlaps after that is re-flattened with an angle-based unwrap, the last few faces split off
+        if cfg.get("repair") == "refine":
+            over, nfix = refine_folded(obj, cfg["size"], cfg["interior_scale"], cfg["margin"])
+        else:
+            over, nfix = uv_overlap_exact(obj, cfg["size"])[0], 0
+        if over > OVERLAP_MAX:
+            over, nfix2 = unfold_charts(obj, _LAST_CHARTS[name], cfg["size"], cfg["margin"], cfg["interior_scale"])
+            nfix += nfix2
+        if over > OVERLAP_MAX:
+            split_overlaps(obj, cfg["size"], cfg["margin"])
+            over, _polys = uv_overlap_exact(obj, cfg["size"])
+        _log(f"{name}: {nfix} folded chart(s) re-flattened")
+        after = uv_stats(obj, 512)
+        after = (after[0], over, after[2])
+        uv = np.empty(len(me.loops) * 2, np.float32)
+        me.uv_layers["atlas"].data.foreach_get("uv", uv)
+        os.makedirs(gbc.CACHE_DIR, exist_ok=True)
+        np.save(path, uv)
+        _RESULTS["uv"][name] = {"charts": n, "coverage_before": round(before[0], 3),
+                                "coverage": round(after[0], 3), "overlap": round(after[1], 5),
+                                "texel_mm_at_set_size": round(after[2] * 512 / cfg["size"], 3)}
+        _log(f"{name}: {n} charts, coverage {before[0]:.3f} -> {after[0]:.3f}, overlap {after[1]:.4f}")
+    # every other exported atlas (cloth, vessels, mouth, fracture variants): overlapping faces split off
+    for obj in [o for o in bpy.data.objects if o.name in gbc.exported_mesh_names(0) and o.name not in RECHART]:
+        if obj.type != 'MESH' or "atlas" not in obj.data.uv_layers or not len(obj.data.polygons):
+            continue
+        over, _p = uv_overlap_exact(obj, 1024)
+        if over > OVERLAP_MAX:
+            split_overlaps(obj, 1024, 4)
+            after, _p = uv_overlap_exact(obj, 1024)
+            _RESULTS["uv"][obj.name] = {"overlap_before": round(over, 5), "overlap": round(after, 5)}
+            _log(f"{obj.name}: overlapping faces split off, overlap {over:.4f} -> {after:.4f}")
+    _RESULTS["timings_s"]["uvs"] = round(time.perf_counter() - t0, 1)
+    return _RESULTS["uv"]
+
+
+def split_overlaps(obj, size, margin_px, rounds=3):
+    """Faces whose atlas texels collide get their own island (planar projection of the face itself, at the
+    mesh's mean texel scale), then all islands are re-packed.  Deterministic."""
+    me = obj.data
+    ls = np.empty(len(me.polygons), np.int64)
+    me.polygons.foreach_get("loop_start", ls)
+    lt = np.empty(len(me.polygons), np.int64)
+    me.polygons.foreach_get("loop_total", lt)
+    lv = np.empty(len(me.loops), np.int64)
+    me.loops.foreach_get("vertex_index", lv)
+    v = gbc.get_verts(me)
+    fnrm = np.empty(len(me.polygons) * 3)
+    me.polygons.foreach_get("normal", fnrm)
+    fnrm = fnrm.reshape(-1, 3)
+    for _ in range(rounds):
+        over, polys = uv_overlap_exact(obj, size)
+        if over <= OVERLAP_MAX or not len(polys):
+            break
+        uv = np.empty(len(me.loops) * 2, np.float64)
+        me.uv_layers["atlas"].data.foreach_get("uv", uv)
+        uv = uv.reshape(-1, 2)
+        # uv units per metre (area ratio over the whole mesh)
+        tl, tv, _tp = loop_triangles(obj)
+        a3 = 0.5 * np.linalg.norm(np.cross(v[tv[:, 1]] - v[tv[:, 0]], v[tv[:, 2]] - v[tv[:, 0]]), axis=1).sum()
+        U = uv[tl]
+        a2 = 0.5 * np.abs((U[:, 1, 0] - U[:, 0, 0]) * (U[:, 2, 1] - U[:, 0, 1])
+                          - (U[:, 2, 0] - U[:, 0, 0]) * (U[:, 1, 1] - U[:, 0, 1])).sum()
+        k = np.sqrt(a2 / max(a3, 1e-12))
+        for j, f in enumerate(polys.tolist()):
+            n = fnrm[f]
+            ref = np.array([0.0, 0.0, 1.0]) if abs(n[2]) < 0.9 else np.array([1.0, 0.0, 0.0])
+            e1 = np.cross(ref, n)
+            e1 /= max(np.linalg.norm(e1), 1e-12)
+            e2 = np.cross(n, e1)
+            L = np.arange(ls[f], ls[f] + lt[f])
+            p = v[lv[L]]
+            q = np.stack([p @ e1, p @ e2], 1) * k
+            uv[L] = q - q.min(0) + np.array([0.001 * (j % 100), 0.001 * (j // 100)])
+        me.uv_layers["atlas"].data.foreach_set("uv", uv.astype(np.float32).ravel())
+        me.update()
+        me.uv_layers.active = me.uv_layers["atlas"]
+        pack_islands_np(obj, size, margin_px)
+    return uv_overlap_exact(obj, size)[0]
+
+
+# ---------------------------------------------------------------------------
+# Cycles bakes
+# ---------------------------------------------------------------------------
+def _main_bsdf(mat):
+    """The principled BSDF that shades intact tissue (first shader of a Mix Shader chain)."""
+    nt = mat.node_tree
+    out = next((n for n in nt.nodes if n.bl_idname == 'ShaderNodeOutputMaterial' and n.is_active_output), None)
+    if out is None:
+        out = next(n for n in nt.nodes if n.bl_idname == 'ShaderNodeOutputMaterial')
+    node = out.inputs['Surface'].links[0].from_node
+    for _ in range(10):
+        if node.bl_idname == 'ShaderNodeBsdfPrincipled':
+            return node, out
+        if node.bl_idname == 'ShaderNodeMixShader':
+            node = node.inputs[1].links[0].from_node
+            continue
+        break
+    return None, out
+
+
+PASS_INPUT = {"albedo": "Base Color", "rough": "Roughness", "sss": "Subsurface Weight", "metal": "Metallic"}
+
+
+def _socket_into(nt, sock, dst):
+    """Feed the value of input socket ``sock`` (its link or default) into ``dst``."""
+    if sock.is_linked:
+        nt.links.new(sock.links[0].from_socket, dst)
+    else:
+        dv = sock.default_value
+        if dst.type == 'RGBA':
+            dst.default_value = tuple(dv)[:3] + (1.0,) if hasattr(dv, "__len__") else (dv, dv, dv, 1.0)
+        else:
+            dst.default_value = dv if not hasattr(dv, "__len__") else float(dv[0])
+
+
+def emission_variant(mat, what):
+    """Copy of ``mat`` whose surface is an Emission of its main BSDF data.
+
+    ``albedo``: Base Color.  ``data``: RGB = (Roughness, Subsurface Weight, Metallic), so one bake
+    gives three ORM channels."""
+    name = f"{mat.name}__{what}"
+    old = bpy.data.materials.get(name)
+    if old is not None:
+        bpy.data.materials.remove(old)
+    m = mat.copy()
+    m.name = name
+    bsdf, out = _main_bsdf(m)
+    nt = m.node_tree
+    em = nt.nodes.new('ShaderNodeEmission')
+    em.inputs['Strength'].default_value = 1.0
+    if bsdf is None:
+        em.inputs['Color'].default_value = (0.5, 0.5, 0.0, 1.0)
+    elif what == "albedo":
+        _socket_into(nt, bsdf.inputs['Base Color'], em.inputs['Color'])
+    else:
+        comb = nt.nodes.new('ShaderNodeCombineColor')
+        for i, key in enumerate(("Roughness", "Subsurface Weight", "Metallic")):
+            _socket_into(nt, bsdf.inputs[key], comb.inputs[i])
+        nt.links.new(comb.outputs[0], em.inputs['Color'])
+    for lk in list(out.inputs['Surface'].links):
+        nt.links.remove(lk)
+    nt.links.new(em.outputs[0], out.inputs['Surface'])
+    return m
+
+
+def _bake_image(name, size):
+    img = bpy.data.images.get(name)
+    if img is not None:
+        bpy.data.images.remove(img)
+    img = bpy.data.images.new(name, size, size, alpha=True, float_buffer=True)
+    img.colorspace_settings.name = 'Non-Color'
+    img.generated_color = (0.0, 0.0, 0.0, 0.0)
+    return img
+
+
+def _target_material(img):
+    mat = bpy.data.materials.get("GB7_bake_target") or bpy.data.materials.new("GB7_bake_target")
+    if mat.node_tree is None:
+        mat.use_nodes = True
+    nt = mat.node_tree
+    nt.nodes.clear()
+    tex = nt.nodes.new('ShaderNodeTexImage')
+    tex.image = img
+    uvn = nt.nodes.new('ShaderNodeUVMap')
+    uvn.uv_map = "atlas"
+    nt.links.new(uvn.outputs[0], tex.inputs['Vector'])
+    out = nt.nodes.new('ShaderNodeOutputMaterial')
+    nt.links.new(tex.outputs['Color'], out.inputs['Surface'])
+    nt.nodes.active = tex
+    return mat
+
+
+def _id_material(attr):
+    """Emission material showing an integer point attribute as value / 256 (part-id bake)."""
+    mat = bpy.data.materials.get("GB7_id") or bpy.data.materials.new("GB7_id")
+    if mat.node_tree is None:
+        mat.use_nodes = True
+    nt = mat.node_tree
+    nt.nodes.clear()
+    at = nt.nodes.new('ShaderNodeAttribute')
+    at.attribute_type = 'GEOMETRY'
+    at.attribute_name = attr
+    mth = nt.nodes.new('ShaderNodeMath')
+    mth.operation = 'DIVIDE'
+    mth.inputs[1].default_value = 256.0
+    nt.links.new(at.outputs['Fac'], mth.inputs[0])
+    em = nt.nodes.new('ShaderNodeEmission')
+    nt.links.new(mth.outputs[0], em.inputs['Color'])
+    out = nt.nodes.new('ShaderNodeOutputMaterial')
+    nt.links.new(em.outputs[0], out.inputs['Surface'])
+    return mat
+
+
+def _retarget(obj, img):
+    """Point the bake-target image nodes of ``obj``'s materials at ``img``."""
+    for m in obj.data.materials:
+        if m is None or m.node_tree is None:
+            continue
+        nt = m.node_tree
+        node = nt.nodes.get("GB7_target")
+        if node is None and m.name == "GB7_bake_target":
+            node = next((n for n in nt.nodes if n.bl_idname == 'ShaderNodeTexImage'), None)
+        if node is not None:
+            node.image = img
+            nt.nodes.active = node
+
+
+def _upsample(a, size):
+    """Nearest 2x upsample of a (h, w, c) array to (size, size, c), then a 3x3 box smooth."""
+    f = size // a.shape[0]
+    u = np.repeat(np.repeat(a, f, 0), f, 1)
+    if f > 1:
+        acc = np.zeros_like(u)
+        for dy in (-1, 0, 1):
+            for dx in (-1, 0, 1):
+                acc += np.roll(u, (dy, dx), (0, 1))
+        u = acc / 9.0
+    return u
+
+
+def _read(img):
+    size = img.size[0]
+    a = np.empty(size * size * 4, np.float32)
+    img.update()
+    img.pixels.foreach_get(a)
+    return a.reshape(size, size, 4)[::-1].astype(float)
+
+
+def _cycles(samples):
+    sc = bpy.context.scene
+    sc.render.engine = 'CYCLES'
+    sc.cycles.device = 'CPU'
+    sc.cycles.samples = samples
+    sc.cycles.use_denoising = False
+    try:
+        sc.cycles.use_adaptive_sampling = False
+    except AttributeError:
+        pass
+    return sc
+
+
+def _bake(pass_type, target, source, img, spec, samples, **kw):
+    """One Cycles bake of ``pass_type`` into ``img`` for ``target`` (from ``source`` if given)."""
+    sc = _cycles(samples)
+    bk = sc.render.bake
+    bk.use_selected_to_active = source is not None
+    bk.use_cage = False
+    bk.cage_extrusion = spec["cage"]
+    bk.max_ray_distance = spec["ray"]
+    bk.margin = 0
+    bk.use_clear = False
+    # unbaked texels keep alpha 0: that is how coverage (and holes inside islands) is measured
+    img.pixels.foreach_set(np.zeros(img.size[0] * img.size[1] * 4, np.float32))
+    bk.target = 'IMAGE_TEXTURES'
+    vl = bpy.context.view_layer
+    for o in list(bpy.context.selected_objects):
+        o.select_set(False)
+    if source is not None:
+        source.select_set(True)
+    target.select_set(True)
+    vl.objects.active = target
+    bpy.ops.object.bake(type=pass_type, **kw)
+    return _read(img)
+
+
+def _swap_materials(obj, mapping):
+    """Replace ``obj``'s slot materials using ``mapping(material) -> material``; returns restore list."""
+    me = obj.data
+    st = []
+    for i, m in enumerate(me.materials):
+        nm = mapping(m)
+        if nm is not None and nm is not m:
+            st.append((me, i, m))
+            me.materials[i] = nm
+    return st
+
+
+def _restore(st):
+    for me, i, m in reversed(st):
+        me.materials[i] = m
+
+
+def _set_detail(mats, value):
+    """Set the look-dev materials' GB_bake_detail value (1 = full micro detail, 0 = texel-averaged)."""
+    for m in mats:
+        if m is not None and m.node_tree is not None and "GB_bake_detail" in m.node_tree.nodes:
+            m.node_tree.nodes["GB_bake_detail"].outputs[0].default_value = float(value)
+
+
+def _prepare_self(obj, img):
+    """Self-bake: every current material of ``obj`` gets an active image node on ``img``."""
+    for m in obj.data.materials:
+        if m is None or m.node_tree is None:
+            continue
+        nt = m.node_tree
+        tex = nt.nodes.get("GB7_target") or nt.nodes.new('ShaderNodeTexImage')
+        tex.name = "GB7_target"
+        tex.image = img
+        nt.nodes.active = tex
+
+
+def _clear_self(obj):
+    for m in obj.data.materials:
+        if m is not None and m.node_tree is not None and m.node_tree.nodes.get("GB7_target") is not None:
+            m.node_tree.nodes.remove(m.node_tree.nodes["GB7_target"])
+
+
+def bake_set(name, spec, out):
+    """Bake one mesh set (albedo, normal, ORM + SSS).  Returns its record for textures.json.
+
+    * Albedo / roughness / SSS: emission bakes of the look-dev material's main BSDF inputs, from
+      the high-res source (``emit_from='source'``: head, body, whose masks are sharper there) or
+      evaluated directly on the LOD0 target (``'target'``: nested inner meshes, no ray misses).
+    * Normal: high-res -> LOD0 (selected to active, MikkTSpace) for the geometric detail; texels whose
+      ray missed or hit another part (part-id check) take the LOD0's own bump-only normal instead.
+    * AO: on the LOD0 geometry at half resolution (low frequency), upsampled."""
+    import lookdev
+    t0 = time.perf_counter()
+    target = bpy.data.objects.get(spec["target"])
+    if target is None:
+        return None
+    source = bpy.data.objects.get(spec["source"]) if spec.get("source") else None
+    emit_src = source if (source is not None and spec.get("emit_from", "source") == "source") else None
+    size = _sz(spec["size"])
+    s_emit, s_nrm, s_ao = (1, 1, 4) if _quick() else (1, 1, 16)
+    visible = [target.name] + ([source.name] if source is not None else [])
+    tri_img, _bary = rasterize(target, size)
+    valid = tri_img >= 0
+    rec = {"target": target.name, "source": (emit_src or target).name,
+           "normal_source": (source or target).name, "size": size, "uv_hash": uv_hash(target),
+           "surfaces": spec["surfaces"], "lod1": spec.get("lod1", []), "files": {}}
+    maps = {}
+    with Visibility(visible):
+        img = _bake_image(f"GB7_{name}", size)
+        tmat = _target_material(img)
+        ld_state = lookdev.lookdev_on([target] + ([source] if source is not None else []))
+        shade = emit_src or target
+        _set_detail(list(target.data.materials) + (list(source.data.materials) if source is not None else []),
+                    spec.get("detail", 1.0))
+        base_mats = [m for m in dict.fromkeys(shade.data.materials) if m is not None]
+        for what in ("albedo", "data"):
+            variants = {m.name: emission_variant(m, what) for m in base_mats}
+            st = _swap_materials(shade, lambda m: variants.get(m.name) if m is not None else None)
+            if emit_src is not None:
+                st += _swap_materials(target, lambda m: tmat)
+            else:
+                _prepare_self(target, img)
+            maps[what] = _bake('EMIT', target, emit_src, img, spec, s_emit)
+            _restore(st)
+            for m in variants.values():
+                bpy.data.materials.remove(m)
+        if source is not None:
+            st = _swap_materials(target, lambda m: tmat)
+            maps["normal_hr"] = _bake('NORMAL', target, source, img, spec, s_nrm, normal_space='TANGENT',
+                                      normal_r='POS_X', normal_g='POS_Y', normal_b='POS_Z')
+            if spec.get("id_attr"):
+                idm = _id_material(spec["id_attr"])
+                st2 = _swap_materials(source, lambda m: idm)
+                maps["id"] = _bake('EMIT', target, source, img, spec, 1)
+                _restore(st2)
+            _restore(st)
+        _prepare_self(target, img)
+        maps["normal_self"] = _bake('NORMAL', target, None, img, spec, s_nrm, normal_space='TANGENT',
+                                    normal_r='POS_X', normal_g='POS_Y', normal_b='POS_Z')
+        world = bpy.context.scene.world or bpy.data.worlds.new("GB7_world")
+        bpy.context.scene.world = world
+        world.light_settings.distance = spec["ao"]
+        vis_state = []
+        if source is not None:               # the high-res copy must not occlude the LOD0
+            vis_state.append((source, source.visible_diffuse, source.visible_shadow, source.visible_glossy))
+            source.visible_diffuse = source.visible_shadow = source.visible_glossy = False
+        ao_img = _bake_image(f"GB7_{name}_ao", max(64, size // 2))
+        _prepare_self(target, ao_img)
+        maps["ao"] = _bake('AO', target, None, ao_img, spec, s_ao)
+        for o, d, s, g in vis_state:
+            o.visible_diffuse, o.visible_shadow, o.visible_glossy = d, s, g
+        bpy.data.images.remove(ao_img)
+        _clear_self(target)
+        _set_detail(list(target.data.materials) + (list(source.data.materials) if source is not None else []), 1.0)
+        lookdev.lookdev_off(ld_state)
+        bpy.data.images.remove(img)
+    covered = maps["albedo"][..., 3] > 0.5
+    holes = valid & ~covered
+    n_ok = np.zeros_like(valid)
+    wrong = np.zeros_like(valid)
+    if "normal_hr" in maps:
+        n_ok = maps["normal_hr"][..., 3] > 0.5
+        if "id" in maps:
+            # a ray that crossed into a neighbouring part (nested organs, touching bones) sampled the
+            # wrong surface: compare the part id it hit with the part id of the texel's own triangle
+            tid = gbc.read_point_attr(target, spec["id_attr"], 'INT')
+            _tl, tv, _tp = loop_triangles(target)
+            want = np.where(valid, tid[tv[np.maximum(tri_img, 0), 0]], -1)
+            got = np.rint(maps["id"][..., 0] * 256.0).astype(int)
+            wrong = valid & n_ok & (got != want)
+            n_ok = n_ok & ~wrong
+    rec["coverage"] = {"valid_texels": int(valid.sum()), "empty_inside_islands": int(holes.sum()),
+                       "empty_fraction": round(float(holes.sum()) / max(int(valid.sum()), 1), 6),
+                       "baked_outside_raster": int((covered & ~valid).sum()),
+                       "normal_from_source": round(float((n_ok & valid).sum()) / max(int(valid.sum()), 1), 4),
+                       "normal_wrong_part_rejected": int(wrong.sum())}
+    if os.environ.get("GB_BAKE_DEBUG"):
+        dbg = np.stack([valid, covered, n_ok], -1).astype(float)
+        _write_png(os.path.join(os.environ["GB_BAKE_DEBUG"], f"{name}_coverage.png"), u8(dbg))
+    alb = finish_map(maps["albedo"][..., :3], covered)
+    ns = maps["normal_self"]
+    n_raw = np.where(n_ok[..., None], maps["normal_hr"][..., :3], ns[..., :3]) if "normal_hr" in maps \
+        else ns[..., :3]
+    nrm = finish_map(n_raw, (ns[..., 3] > 0.5) | n_ok)
+    nv = nrm * 2.0 - 1.0
+    nv /= np.maximum(np.linalg.norm(nv, axis=-1, keepdims=True), 1e-6)
+    nrm = nv * 0.5 + 0.5
+    data = finish_map(maps["data"][..., :3], covered)
+    # game roughness: the Cycles skin adds a separate glossy coat on top of its base roughness; a single
+    # GGX lobe in the game needs the base raised to read as skin rather than wet plastic
+    rough, sss = np.clip(data[..., 0] + spec.get("rough_offset", 0.0), 0.0, 1.0), data[..., 1]
+    rec["rough_offset"] = spec.get("rough_offset", 0.0)
+    ao_half = finish_map(maps["ao"][..., :1], maps["ao"][..., 3] > 0.5)
+    ao = _upsample(ao_half, size)[..., 0]
+    orm = np.stack([ao, rough, np.zeros_like(ao), sss], -1)
+    if name in SEAM_FEATHER_SETS:
+        alb, nrm, rec["seam_feather_texels"], orm = feather_seam(target, size, alb, nrm, covered, orm)
+    files = {"albedo": f"{name}_albedo.png", "normal": f"{name}_normal.png", "orm": f"{name}_orm.png"}
+    _write_png(os.path.join(out, files["albedo"]), u8(srgb_encode(alb)))
+    _write_png(os.path.join(out, files["normal"]), u8(nrm))
+    _write_png(os.path.join(out, files["orm"]), u8(orm))
+    rec["files"] = files
+    lum = alb[..., 0] * 0.2126 + alb[..., 1] * 0.7152 + alb[..., 2] * 0.0722
+    rec["albedo_linear_luminance"] = {"median": round(float(np.median(lum[valid])), 4),
+                                      "p5": round(float(np.percentile(lum[valid], 5)), 4),
+                                      "p95": round(float(np.percentile(lum[valid], 95)), 4)}
+    rec["albedo_linear_median_rgb"] = [round(float(np.median(alb[..., c][valid])), 4) for c in range(3)]
+    rec["ao_mean"] = round(float(ao[valid].mean()), 3)
+    rec["normal_mean_z"] = round(float(nv[..., 2][valid].mean()), 4)
+    rec["seconds"] = round(time.perf_counter() - t0, 1)
+    _log(f"set {name}: {size}^2, empty {rec['coverage']['empty_inside_islands']} texels, normal from source "
+         f"{rec['coverage']['normal_from_source'] * 100:.1f} %, {rec['seconds']} s")
+    return rec
+
+
+# The head (GB_Head) and body (GB_Body) atlases meet at the zipped neck ring.  Their normals match exactly
+# (FB-1), but the two bakes come from different high-res sources and island borders, and printed a thin
+# light/dark line around the neck base in the textured renders (fix round 2).  Within SEAM_FEATHER_M of the
+# ring both sets fade their tangent normal to flat and their albedo to the set's own median skin colour of
+# the 20-40 mm band next to the ring (head and body medians agree within 1 %, b7_skin_luminance).
+SEAM_FEATHER_SETS = ("head", "body")
+SEAM_FEATHER_M = (0.004, 0.018)
+
+
+def feather_seam(target, size, alb, nrm, covered, orm=None):
+    """(albedo, normal, texel count, orm) with the neck-ring feather applied (see SEAM_FEATHER_SETS); the ORM
+    (AO, roughness, SSS) fades to its band median too, so the specular sheen does not step at the ring."""
+    import gb_geom as gg
+    me = target.data
+    loops = gg.boundary_loops(me)
+    if not loops:
+        return alb, nrm, 0, orm
+    v = gbc.get_verts(me)
+    # the neck ring is the lowest open loop (the head's eye / mouth openings are boundaries too)
+    ring = v[np.asarray(min(loops, key=lambda lp: float(v[np.asarray(lp), 2].mean())))]
+    tri_img, bary = rasterize(target, size)
+    # rasterize() returns row 0 = top; match the orientation of the baked arrays by their coverage
+    cov_r = tri_img >= 0
+    if (cov_r & covered).sum() < (cov_r[::-1] & covered).sum():
+        tri_img, bary = tri_img[::-1], bary[::-1]
+    pos = interp(target, tri_img, bary, per_vertex=v)
+    m = tri_img >= 0
+    zr = ring[:, 2]
+    near = m & (pos[..., 2] > zr.min() - 0.05) & (pos[..., 2] < zr.max() + 0.05)
+    idx = np.nonzero(near)
+    P = pos[idx]
+    d = np.full(len(P), 1.0)
+    for s0 in range(0, len(P), 200000):
+        q = P[s0:s0 + 200000]
+        d[s0:s0 + 200000] = np.sqrt(((q[:, None, :] - ring[None, :, :]) ** 2).sum(-1)).min(1)
+    w = 1.0 - np.clip((d - SEAM_FEATHER_M[0]) / (SEAM_FEATHER_M[1] - SEAM_FEATHER_M[0]), 0.0, 1.0)
+    w = w * w * (3.0 - 2.0 * w)
+    band = (d > 0.020) & (d < 0.040)
+    alb = np.array(alb, float, copy=True)
+    nrm = np.array(nrm, float, copy=True)
+    if band.any():
+        tgt = np.median(alb[idx][band], axis=0)
+        alb[idx] = alb[idx] * (1.0 - w[:, None]) + tgt[None, :] * w[:, None]
+    flat = np.array([0.5, 0.5, 1.0])
+    nrm[idx] = nrm[idx] * (1.0 - w[:, None]) + flat[None, :] * w[:, None]
+    if orm is not None and band.any():
+        orm = np.array(orm, float, copy=True)
+        tgo = np.median(orm[idx][band], axis=0)
+        orm[idx] = orm[idx] * (1.0 - w[:, None]) + tgo[None, :] * w[:, None]
+    return alb, nrm, int((w > 0).sum()), orm
+
+
+def bake_all(objs, out, only=None):
+    """Bake every mesh set of SETS into ``out`` (prepare_uvs + lookdev attributes first)."""
+    import lookdev
+    t0 = time.perf_counter()
+    os.makedirs(out, exist_ok=True)
+    prepare_uvs(objs)
+    lookdev.build_materials()
+    lookdev.prepare_attributes()
+    for name, spec in SETS.items():
+        if only and name not in only:
+            continue
+        rec = bake_set(name, spec, out)
+        if rec is not None:
+            _RESULTS["sets"][name] = rec
+    bake_eyes(out)
+    _RESULTS["timings_s"]["sets"] = round(time.perf_counter() - t0, 1)
+    write_texture_manifest(out)
+    return _RESULTS["sets"]
+
+
+# ---------------------------------------------------------------------------
+# Eyes (numpy): iris disc + sclera in the GB_Eye atlas
+# ---------------------------------------------------------------------------
+def bake_eyes(out):
+    """eye_iris_albedo.png (RGB + A height), eye_iris_normal.png, eye_sclera_albedo.png (atlas UV of
+    GB_Eye_L/R; A = 1 on the sclera, 0 inside the cornea where the refracted iris shows)."""
+    import texgen as tg
+    import lookdev
+    n = _sz(1024)
+    d = tg.iris(n)
+    h = d["height"]
+    hn = np.clip((h - h.min()) / max(np.ptp(h), 1e-9), 0, 1)
+    alb = np.concatenate([tg.to_u8(tg.linear_to_srgb(d["albedo"])), tg.to_u8(hn)[..., None]], -1)
+    _write_png(os.path.join(out, "eye_iris_albedo.png"), alb)
+    nrm = tg.height_to_normal(h, d["texel_mm"], wrap=False, strength=1.0)
+    _write_png(os.path.join(out, "eye_iris_normal.png"), tg.to_u8(nrm * 0.5 + 0.5))
+    rec = {"iris": {"files": {"albedo_height": "eye_iris_albedo.png", "normal": "eye_iris_normal.png"},
+                    "size": n, "radius_m": d["radius_m"], "iris_r_m": tg.IRIS_R, "pupil_r_m": tg.PUPIL_R,
+                    "limbus_r_m": tg.LIMBUS_R, "mapping": "image centre = gaze axis; edge (uv radius 0.5) = "
+                    "radius_m; +u = eye-local +X, +v = eye-local +Z; pupil drawn at pupil_r_m, remap "
+                    "rn = (r - pupil) / (iris_r - pupil) for dilation", "height_range_mm":
+                    [round(float(h.min()), 4), round(float(h.max()), 4)]}}
+    eye = bpy.data.objects.get("GB_Eye_L")
+    if eye is not None:
+        size = _sz(1024)
+        tri, bary = rasterize(eye, size)
+        v = gbc.get_verts(eye.data)
+        c = np.array(lookdev.eye_centre(eye))
+        p = interp(eye, tri, bary, per_vertex=v - c)
+        valid = tri >= 0
+        col, hh, iris_m = tg.sclera(p[valid].reshape(-1, 3))
+        img = np.zeros((size, size, 3))
+        img[valid] = col
+        a = np.zeros((size, size))
+        a[valid] = 1.0 - iris_m
+        img = finish_map(img, valid)
+        a = finish_map(a[..., None], valid)[..., 0]
+        _write_png(os.path.join(out, "eye_sclera_albedo.png"),
+                   np.concatenate([u8(srgb_encode(img)), u8(a)[..., None]], -1))
+        rec["sclera"] = {"file": "eye_sclera_albedo.png", "size": size, "uv": "atlas of GB_Eye_L and GB_Eye_R",
+                         "uv_hash": uv_hash(eye), "alpha": "1 sclera, 0 cornea/iris window"}
+    _RESULTS["eyes"] = rec
+    return rec
+
+
+# ---------------------------------------------------------------------------
+# Tileables, decals, room
+# ---------------------------------------------------------------------------
+def _write_set(out, prefix, d, metal=0.0):
+    import texgen as tg
+    s = tg.pack_set(d["albedo"], d["height"], d["rough"], d["ao"], d["texel_mm"], d.get("metal", metal))
+    files = {}
+    for k in ("albedo", "normal", "orm"):
+        fn = f"{prefix}_{k}.png"
+        _write_png(os.path.join(out, fn), s[k])
+        files[k] = fn
+    err = max(tg.tile_edge_error(s[k]) for k in s)
+    return files, err
+
+
+def bake_tileables(out):
+    """Seamless tissue tileables, decals and room/prop tileables (numpy, deterministic)."""
+    import texgen as tg
+    t0 = time.perf_counter()
+    os.makedirs(out, exist_ok=True)
+    n = 128 if _quick() else tg.TILE_SIZE
+    for name, fn in tg.TILEABLES.items():
+        d = fn(n)
+        files, err = _write_set(out, f"tile_{name}", d)
+        _RESULTS["tileables"][name] = {"files": files, "size": n, "tile_m": tg.TILE_M[name],
+                                       "edge_error_255": round(err, 3), "core": name in tg.CORE_TILEABLES,
+                                       "albedo_is_detail": bool(d.get("albedo_is_detail", False))}
+    alb, nrm, orm, info = tg.decal_atlas(64 if _quick() else 256)
+    _write_png(os.path.join(out, "decal_blood_albedo.png"), alb)
+    _write_png(os.path.join(out, "decal_blood_normal.png"), nrm)
+    _write_png(os.path.join(out, "decal_blood_orm.png"), orm)
+    _RESULTS["decals"] = {"files": {"albedo": "decal_blood_albedo.png", "normal": "decal_blood_normal.png",
+                                    "orm": "decal_blood_orm.png"}, "grid": 8, "tile_px": alb.shape[0] // 8,
+                          "count": len(info), "tiles": info,
+                          "channels": "albedo RGB fresh blood colour (sRGB), A coverage; ORM A = thickness 0-1"}
+    for name, fn in tg.ROOM_TEXTURES.items():
+        d = fn()
+        files, err = _write_set(out, name, d)
+        _RESULTS["room"][name] = {"files": files, "size": d["albedo"].shape[0], "tile_m": tg.ROOM_TILE_M[name],
+                                  "metallic": float(d.get("metal", 0.0)), "edge_error_255": round(err, 3)}
+    _RESULTS["timings_s"]["tileables"] = round(time.perf_counter() - t0, 1)
+    write_texture_manifest(out)
+    return _RESULTS["tileables"]
+
+
+# ---------------------------------------------------------------------------
+# Painter inputs
+# ---------------------------------------------------------------------------
+def bake_painter_inputs(objs, out):
+    """Position (segment-relative, half EXR), rest normal, valid mask and dominant-bone maps."""
+    import export
+    import rig
+    t0 = time.perf_counter()
+    os.makedirs(out, exist_ok=True)
+    origins = export.segment_origins()
+    by_code = {v["code"]: np.array(v["origin"]) for v in origins.values()}
+    for name, (oname, size, bsize) in PAINTER.items():
+        obj = bpy.data.objects.get(oname)
+        if obj is None:
+            continue
+        size, bsize = _sz(size), _sz(bsize)
+        me = obj.data
+        v = gbc.get_verts(me)
+        seg = gbc.read_point_attr(obj, "gb_seg", 'INT')
+        seg = np.full(len(v), 10 if name == "shorts" else 0) if seg is None else seg
+        tri, bary = rasterize(obj, size)
+        valid = tri >= 0
+        pos = interp(obj, tri, bary, per_vertex=v)
+        # segment per texel: the triangle's first-corner segment (segments do not blend)
+        tl, tv, _ = loop_triangles(obj)
+        tseg = seg[tv[:, 0]]
+        segimg = np.where(valid, tseg[np.maximum(tri, 0)], -1)
+        org = np.zeros(pos.shape)
+        for code, o in by_code.items():
+            org[segimg == code] = o
+        rel = pos - org
+        rgba = np.concatenate([rel, segimg[..., None].astype(float)], -1)
+        rgba[~valid] = 0.0
+        rgba[~valid, 3] = -1.0
+        # dilation keeps the segment code of the nearest island (positions extend smoothly)
+        dil, cov = dilate(rgba, valid, DILATE_PX)
+        dil[~cov] = 0.0
+        dil[~cov, 3] = -1.0
+        # a dilated texel between two segments gets an averaged code: snap back to the nearest valid code
+        codes = dil[..., 3]
+        dil[..., 3] = np.where(cov, np.rint(codes), -1.0)
+        write_exr_half(os.path.join(out, f"{name}_position.exr"), dil)
+        # rest normal (object space), 8-bit
+        nrm = np.empty(len(me.loops) * 3, np.float32)
+        me.loops.foreach_get("normal", nrm)
+        n_img = interp(obj, tri, bary, per_loop=nrm.reshape(-1, 3))
+        n_img /= np.maximum(np.linalg.norm(n_img, axis=-1, keepdims=True), 1e-9)
+        n_img = finish_map(n_img, valid)
+        n_img /= np.maximum(np.linalg.norm(n_img, axis=-1, keepdims=True), 1e-9)
+        _write_png(os.path.join(out, f"{name}_rest_normal.png"), u8(n_img * 0.5 + 0.5))
+        _write_png(os.path.join(out, f"{name}_valid.png"), u8(valid.astype(float)))
+        # dominant bone at the lower resolution
+        tri_b, bary_b = rasterize(obj, bsize)
+        vb = tri_b >= 0
+        pb = interp(obj, tri_b, bary_b, per_vertex=v)
+        idx, w = rig.weights_at(pb[vb])
+        order = np.argsort(-w, axis=1)
+        i0 = idx[np.arange(len(idx)), order[:, 0]]
+        i1 = idx[np.arange(len(idx)), order[:, 1]]
+        w0 = w[np.arange(len(w)), order[:, 0]]
+        bone = np.zeros((bsize, bsize, 4))
+        bone[vb, 0] = i0
+        bone[vb, 1] = i1
+        bone[vb, 2] = w0 * 255.0
+        bone[vb, 3] = 255.0
+        # nearest-neighbour dilation for the indices (never average bone ids)
+        bone = _dilate_nearest(bone, vb, DILATE_PX)
+        _write_png(os.path.join(out, f"{name}_bone.png"), np.clip(np.rint(bone), 0, 255).astype(np.uint8))
+        _RESULTS["painter"][name] = {
+            "mesh": oname, "uv_hash": uv_hash(obj), "size": size, "bone_size": bsize,
+            "files": {"position": f"{name}_position.exr", "rest_normal": f"{name}_rest_normal.png",
+                      "valid": f"{name}_valid.png", "bone": f"{name}_bone.png"},
+            "valid_fraction": round(float(valid.mean()), 4),
+            "position": "RGB = rest position - segment origin (m, body frame); A = segment code, -1 outside "
+                        "islands + dilation; origins in manifest.json segment_origins",
+            "bone": "R = dominant bone index (rig.json order), G = second bone, B = dominant weight x 255, "
+                    "A = 255 inside islands (dilated 8 px, nearest)",
+            "rest_normal": "object/body-frame rest normal, 0.5 + 0.5 n"}
+        if name == "body":
+            _RESULTS["painter"][name]["tissue_depth"] = "body_tissue_depth.png (B1)"
+            _RESULTS["painter"][name]["tension"] = "body_tension.png (B1)"
+    _RESULTS["timings_s"]["painter"] = round(time.perf_counter() - t0, 1)
+    write_texture_manifest(out)
+    return _RESULTS["painter"]
+
+
+def _dilate_nearest(img, mask, px):
+    img = np.array(img, float)
+    cov = np.array(mask, bool)
+    for _ in range(px):
+        new_img = img.copy()
+        new_cov = cov.copy()
+        for dy, dx in ((1, 0), (-1, 0), (0, 1), (0, -1), (1, 1), (-1, -1), (1, -1), (-1, 1)):
+            sc = np.roll(cov, (dy, dx), (0, 1))
+            take = sc & ~new_cov
+            new_img[take] = np.roll(img, (dy, dx), (0, 1))[take]
+            new_cov |= take
+        img, cov = new_img, new_cov
+    return img
+
+
+# ---------------------------------------------------------------------------
+# textures.json
+# ---------------------------------------------------------------------------
+MATERIAL_MAP = {
+    "GBM_skin_head": "head", "GBM_mouth_lining": "head", "GBM_skin_torso": "body", "GBM_skin_arm_L": "body",
+    "GBM_skin_arm_R": "body", "GBM_skin_leg_L": "body", "GBM_skin_leg_R": "body", "GBM_cloth": "shorts",
+    "GBM_teeth": "mouth", "GBM_gums": "mouth", "GBM_tongue": "mouth", "GBM_bone": "skeleton",
+    "GBM_cartilage": "skeleton", "GBM_organ": "organs", "GBM_brain": "brain",
+    "GBM_eye": "eyes (iris + sclera)", "GBM_muscle_*": "tile_muscle_fibre / tile_muscle_cross (triplanar)",
+    "GB_Frac_* GBM_bone": "tile_bone_surface outside, tile_bone_cut / tile_diploe on fracture faces (triplanar)",
+    "GBM_hair_card": "hair_cards.png (B2)",
+}
+
+
+def write_texture_manifest(out):
+    """Write textures/textures.json from everything baked in this process (merged with a previous file)."""
+    path = os.path.join(out, "textures.json")
+    prev = {}
+    if os.path.exists(path):
+        try:
+            prev = gbc.read_json(path)["data"]
+        except (ValueError, KeyError):
+            prev = {}
+    data = {}
+    for k in ("sets", "tileables", "eyes", "decals", "painter", "room", "uv"):
+        merged = dict(prev.get(k, {}))
+        merged.update(_RESULTS.get(k, {}))
+        data[k] = merged
+    data["material_map"] = MATERIAL_MAP
+    data["conventions"] = {
+        "rows": "top to bottom, v = 1 at the top (Godot image origin)",
+        "albedo": "sRGB PNG (import as BC7 sRGB)",
+        "normal": "tangent space, OpenGL/Godot +Y, MikkTSpace on the LOD0 mesh (import as RGTC normal map)",
+        "orm": "R ambient occlusion, G roughness, B metallic, A SSS mask (mesh sets) or height 0-1 "
+               "(tileables); linear (BC7 linear)",
+        "painter": "lossless, uncompressed import (position EXR half)",
+        "tile_m": "physical size of one tileable repeat in metres (triplanar / metre UV scale)"}
+    tim = dict(prev.get("timings_s", {}))
+    tim.update(_RESULTS["timings_s"])
+    data["timings_s"] = tim
+    files = {}
+    for fn in sorted(os.listdir(out)):
+        if fn.endswith((".png", ".exr")):
+            p = os.path.join(out, fn)
+            files[fn] = {"bytes": os.path.getsize(p), "sha256": gbc.file_hash(p)[:16]}
+    data["files"] = files
+    gbc.write_json(path, data, SCHEMA)
+    return path
+
+
+# ---------------------------------------------------------------------------
+# Baked-material preview (renders what the game shows)
+# ---------------------------------------------------------------------------
+def _baked_material(set_name, rec, out, sss_radius=(1.0, 0.4, 0.22), sss_scale=0.0035):
+    name = f"GB7_baked_{set_name}"
+    old = bpy.data.materials.get(name)
+    if old is not None:
+        bpy.data.materials.remove(old)
+    mat = bpy.data.materials.new(name)
+    if mat.node_tree is None:
+        mat.use_nodes = True
+    nt = mat.node_tree
+    nt.nodes.clear()
+    uvn = nt.nodes.new('ShaderNodeUVMap')
+    uvn.uv_map = "atlas"
+
+    def tex(fn, cs):
+        img = bpy.data.images.load(os.path.join(out, fn), check_existing=True)
+        img.colorspace_settings.name = cs
+        n = nt.nodes.new('ShaderNodeTexImage')
+        n.image = img
+        nt.links.new(uvn.outputs[0], n.inputs['Vector'])
+        return n
+    a = tex(rec["files"]["albedo"], 'sRGB')
+    nm = tex(rec["files"]["normal"], 'Non-Color')
+    orm = tex(rec["files"]["orm"], 'Non-Color')
+    sep = nt.nodes.new('ShaderNodeSeparateColor')
+    nt.links.new(orm.outputs['Color'], sep.inputs[0])
+    nmap = nt.nodes.new('ShaderNodeNormalMap')
+    nmap.uv_map = "atlas"
+    nt.links.new(nm.outputs['Color'], nmap.inputs['Color'])
+    bsdf = nt.nodes.new('ShaderNodeBsdfPrincipled')
+    bsdf.subsurface_method = 'RANDOM_WALK_SKIN' if set_name in ("head", "body") else 'RANDOM_WALK'
+    mixao = nt.nodes.new('ShaderNodeMix')
+    mixao.data_type = 'RGBA'
+    mixao.blend_type = 'MULTIPLY'
+    mixao.inputs['Factor'].default_value = 1.0
+    nt.links.new(a.outputs['Color'], mixao.inputs['A'])
+    nt.links.new(sep.outputs[0], mixao.inputs['B'])
+    nt.links.new(mixao.outputs['Result'], bsdf.inputs['Base Color'])
+    nt.links.new(sep.outputs[1], bsdf.inputs['Roughness'])
+    nt.links.new(sep.outputs[2], bsdf.inputs['Metallic'])
+    nt.links.new(orm.outputs['Alpha'], bsdf.inputs['Subsurface Weight'])
+    bsdf.inputs['Subsurface Radius'].default_value = sss_radius
+    bsdf.inputs['Subsurface Scale'].default_value = sss_scale
+    nt.links.new(nmap.outputs[0], bsdf.inputs['Normal'])
+    o = nt.nodes.new('ShaderNodeOutputMaterial')
+    nt.links.new(bsdf.outputs[0], o.inputs['Surface'])
+    return mat
+
+
+def apply_baked_materials(out=None):
+    """Put preview materials using the baked sets on the LOD0 targets (for renders). Returns restore list."""
+    out = out or os.path.join(gbc.SUBJECT_OUT, "textures")
+    data = gbc.read_json(os.path.join(out, "textures.json"))["data"]
+    st = []
+    for name, rec in data["sets"].items():
+        obj = bpy.data.objects.get(rec["target"])
+        if obj is None:
+            continue
+        mat = _baked_material(name, rec, out)
+        st += _swap_materials(obj, lambda m: mat)
+    return st
+
+
+def main():
+    """Standalone: open the saved build, bake (``--only set,set``, ``--tiles``, ``--painter``), no save."""
+    args = gbc.script_args()
+    if "--quick" in args:
+        os.environ["GB_BAKE_QUICK"] = "1"
+    blend = args[args.index("--blend") + 1] if "--blend" in args else gbc.BLEND_PATH
+    out = args[args.index("--out") + 1] if "--out" in args else os.path.join(gbc.SUBJECT_OUT, "textures")
+    bpy.ops.wm.open_mainfile(filepath=blend)
+    show_all_collections()
+    only = args[args.index("--only") + 1].split(",") if "--only" in args else None
+    if "--tiles" in args:
+        bake_tileables(out)
+    if "--painter" in args:
+        bake_painter_inputs(None, out)
+    if only is not None or not ("--tiles" in args or "--painter" in args):
+        bake_all(None, out, only)
+    if "--save" in args:
+        bpy.ops.wm.save_as_mainfile(filepath=args[args.index("--save") + 1], compress=True)
+
+
+if __name__ == "__main__":
+    main()
+
+
+def uv_overlap_exact(obj, size=2048, uv_name="atlas"):
+    """(overlap fraction, overlapping polygon indices): every UV triangle is rasterised at texel centres with
+    a half-open rule (a centre on a shared edge belongs to one triangle), texel hits are counted, and a
+    texel hit by two or more triangles is an overlap (two surfaces sharing texels).  Unlike uv_stats this is
+    exact up to one texel, so it does not mistake partially covered border texels for overlap."""
+    me = obj.data
+    uv = np.empty(len(me.loops) * 2, np.float32)
+    me.uv_layers[uv_name].data.foreach_get("uv", uv)
+    uv = uv.reshape(-1, 2).astype(np.float64) * size - 0.5
+    tl, _tv, tp = loop_triangles(obj)
+    cnt = np.zeros((size, size), np.int32)
+    owner = np.full((size, size), -1, np.int64)
+    P = uv[tl]
+    x0 = np.clip(np.floor(P[:, :, 0].min(1)).astype(int), 0, size - 1)
+    x1 = np.clip(np.ceil(P[:, :, 0].max(1)).astype(int), 0, size - 1)
+    y0 = np.clip(np.floor(P[:, :, 1].min(1)).astype(int), 0, size - 1)
+    y1 = np.clip(np.ceil(P[:, :, 1].max(1)).astype(int), 0, size - 1)
+    bad_tris = set()
+    for i in range(len(tl)):
+        (ax, ay), (bx, by), (cx, cy) = P[i]
+        den = (by - cy) * (ax - cx) + (cx - bx) * (ay - cy)
+        if abs(den) < 1e-12:
+            continue
+        X, Y = np.meshgrid(np.arange(x0[i], x1[i] + 1), np.arange(y0[i], y1[i] + 1))
+        l1 = ((by - cy) * (X - cx) + (cx - bx) * (Y - cy)) / den
+        l2 = ((cy - ay) * (X - cx) + (ax - cx) * (Y - cy)) / den
+        l3 = 1.0 - l1 - l2
+        m = (l1 > 1e-9) & (l2 > 1e-9) & (l3 > 1e-9)
+        if not m.any():
+            continue
+        xs, ys = X[m], Y[m]
+        hit = cnt[ys, xs] > 0
+        if hit.any():
+            bad_tris.add(i)
+            bad_tris.update(int(t) for t in np.unique(owner[ys[hit], xs[hit]]) if t >= 0)
+        cnt[ys, xs] += 1
+        owner[ys, xs] = i
+    covered = (cnt > 0).sum()
+    frac = float((cnt > 1).sum()) / max(int(covered), 1)
+    polys = np.unique(tp[np.array(sorted(bad_tris), np.int64)]) if bad_tris else np.zeros(0, np.int64)
+    return frac, polys
+
+
+def uv_distortion(obj):
+    """Area distortion of the atlas: (p10, p90) of log2(UV area / 3-D area) per triangle, relative to
+    the area-weighted median (0 = perfectly uniform texel density)."""
+    me = obj.data
+    tl, tv, _ = loop_triangles(obj)
+    uv = np.empty(len(me.loops) * 2, np.float32)
+    me.uv_layers["atlas"].data.foreach_get("uv", uv)
+    t = uv.reshape(-1, 2).astype(float)[tl]
+    a_uv = 0.5 * np.abs((t[:, 1, 0] - t[:, 0, 0]) * (t[:, 2, 1] - t[:, 0, 1])
+                        - (t[:, 2, 0] - t[:, 0, 0]) * (t[:, 1, 1] - t[:, 0, 1]))
+    P = gbc.get_verts(me)[tv]
+    a3 = 0.5 * np.linalg.norm(np.cross(P[:, 1] - P[:, 0], P[:, 2] - P[:, 0]), axis=1)
+    ok = a3 > 1e-12
+    r = np.log2(np.maximum(a_uv[ok], 1e-20) / a3[ok])
+    w = a3[ok]
+    o = np.argsort(r)
+    cw = np.cumsum(w[o]) / w.sum()
+    med = r[o][np.searchsorted(cw, 0.5)]
+    return (float(r[o][np.searchsorted(cw, 0.1)] - med), float(r[o][np.searchsorted(cw, 0.9)] - med))

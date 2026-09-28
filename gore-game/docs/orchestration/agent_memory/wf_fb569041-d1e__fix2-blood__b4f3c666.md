@@ -1,0 +1,306 @@
+# Agent memory: fix2:blood (head fix pass 2)
+
+Transcript `agent-acb63b178b4f3c666.jsonl`, 2026-09-27T08:05 to 2026-09-27T14:54 UTC. Extracted automatically; the agent's own notes (what it found, decided, tried) plus every step it ran and the pass/fail lines.
+- `Bash` Inspect project, refs, scratch, processes
+- `Read` /home/user/YAYSTO/refs/1.png
+- `Read` /home/user/YAYSTO/refs/2.png
+- `Read` /home/user/YAYSTO/refs/3.webp
+- `Read` /home/user/YAYSTO/refs/4.webp
+- `Read` /home/user/YAYSTO/refs/5.webp
+- `Read` /home/user/YAYSTO/refs/6.webp
+- `Read` /home/user/YAYSTO/refs/7.png
+- `Read` /home/user/YAYSTO/refs/8.png
+- `Read` /home/user/YAYSTO/refs/12_our_render_wall_stripes.png
+- `Read` /home/user/YAYSTO/refs/13_blast_face_mouth_explosive.png
+- `Read` /home/user/YAYSTO/refs/14_body_position_pool.png
+- `Read` /home/user/YAYSTO/refs/15_repeated_blunt_face_a.png
+- `Read` /home/user/YAYSTO/refs/16_repeated_blunt_face_b.webp
+- `Read` /home/user/YAYSTO/refs/17_neck_transection_pool.png
+- `Read` /home/user/YAYSTO/refs/18_chop_head_torn_tissue.webp
+- `Read` /home/user/YAYSTO/refs/19_skull_cut_brain_exposed.webp
+- `Read` /home/user/YAYSTO/refs/20_gsw_pathology_grid.webp
+- `Read` /home/user/YAYSTO/refs/21_face_gsw_seated_pool.png
+- `Read` /home/user/YAYSTO/refs/25_our_blood_disconnected.png
+- `Read` /home/user/YAYSTO/refs/26_our_blood_disconnected_zoom.png
+- `Read` /home/user/YAYSTO/refs/gsw_pathology_sheet.webp
+- `Read` /home/user/YAYSTO/refs/face_ref_male.webp
+- `Read` /home/user/YAYSTO/refs/face_ref_sculpt.png
+- `Bash` List REFERENCE_NOTES headings
+  - result: 16:## 1. How much blood there is, and where it goes 41:## 2. Torn tissue (high-energy, chopping, crushing and blunt wounds) 57:## 3. Clean transections (a blade or edge cutting straight through) 65:## 4. Skin colour after major blood loss 70:## 5. Injury types seen in the reference set (what each in ...
+- `Bash` Read REFERENCE_NOTES 5.9 to end
+  - result: ## 5.9 Blood source rule (user requirement) BLOOD MUST COME FROM THE WOUND (user, verbatim: "VERY UNREALISTIC BLOOD WOULD POUR OUT THE WOUND OF HEADSHOT AND NOT MAGICALLY APPEAR BLOOD AROUND THE HOLE IT WOULD COME FROM THE INJURY ETC BE 1:1 REALISTIC THATS STANDARD EXTREME REALISM"): - NO blood may  ...
+- `Bash` Read previous fixer's scratch scripts
+- `Read` /tmp/claude-0/-home-user-YAYSTO/e2a2594c-08ec-5384-b9ca-fd553ec0f442/scratchpad/fix2_blood/t3_Entry.png
+- `Read` /tmp/claude-0/-home-user-YAYSTO/e2a2594c-08ec-5384-b9ca-fd553ec0f442/scratchpad/fix2_blood/t3_Exit.png
+- `Read` /tmp/claude-0/-home-user-YAYSTO/e2a2594c-08ec-5384-b9ca-fd553ec0f442/scratchpad/fix2_blood/t4s.png
+- `Read` /tmp/claude-0/-home-user-YAYSTO/e2a2594c-08ec-5384-b9ca-fd553ec0f442/scratchpad/fix2_blood/t4b.png
+- `Read` /tmp/claude-0/-home-user-YAYSTO/e2a2594c-08ec-5384-b9ca-fd553ec0f442/scratchpad/fix2_blood/t4x.png
+- `Bash` Outline gore.py
+- `Bash` Read vessel table section
+- `Bash` Read blood section part 1
+- `Bash` Read blood section part 2
+- `Bash` Find blood attribute usage
+- `Bash` Read attributes and main group
+- `Bash` List renders, face feedback, git status
+  - result: total 24332 drwxr-xr-x 2 root root 4096 Sep 27 06:56 . drwxr-xr-x 4 root root 4096 Sep 27 07:42 .. -rw-r--r-- 1 root root 499437 Sep 26 23:34 anatomy_cutaway.png -rw-r--r-- 1 root root 444469 Sep 26 23:34 anatomy_front.png -rw-r--r-- 1 root root 443660 Sep 26 23:34 anatomy_side.png -rw-r--r-- 1 root ...
+- `Read` /home/user/YAYSTO/blender/gore_head/renders/gore_exit.png
+- `Read` /home/user/YAYSTO/blender/gore_head/renders/hero.png
+- `Bash` Read layer constants and cut builder
+- `Bash` Read main group constants and wound step
+- `Bash` Read _build_cut
+- `Read` /home/user/YAYSTO/blender/gore_head/renders/closeup_exit.png
+- `Read` /home/user/YAYSTO/blender/gore_head/renders/gore_slash.png
+- `Bash` Read GH_Blood material
+- `Bash` Find presets in build.py
+  - result: 63:# A hit is (kind, location, keyword arguments for gore.add_hit). Locations are 65:# right = -X); add_hit snaps them onto the surface. `toward` (build.py only) 73:PRESETS = { 80: ("bullet", _ENTRY, dict(toward=_EXIT, size=1.0, depth=1.0, name="GH_Hit_Entry")), 81: ("exit", _EXIT, dict(toward=_ENTR ...
+- `Bash` Read presets
+  - result: # --------------------------------------------------------------------------- # Presets # --------------------------------------------------------------------------- # A hit is (kind, location, keyword arguments for gore.add_hit). Locations are # rough points near the skin in head space (metres, fac ...
+- `Bash` Time the dev harness on entry wound
+  - result: 0 4 08:08:39 up 1 day, 1:58, 0 user, load average: 0.54, 2.32, 3.60 00:00.333 blend | Read blend: "/tmp/claude-0/-home-user-YAYSTO/e2a2594c-08ec-5384-b9ca-fd553ec0f442/scratchpad/fix2_blood/base.blend" [gore] head vessel table snapped in 1.1 s [gore] bone depth baked in 2.1 s [dev] rebuilt in 58.3s  ...
+- `Read` /tmp/claude-0/-home-user-YAYSTO/e2a2594c-08ec-5384-b9ca-fd553ec0f442/scratchpad/fix2_blood/x0_Entry_straight_20s.png
+- `Bash` Check CONTRACT vessel docs
+  - result: 3:> **Reference photos:** real forensic reference photos are in the git-ignored folder `refs/` at the repo root (1-8). LOOK at them with the image viewer whenever you build or judge anything wound-, blood-, tissue-, bone-, skull-, brain- or death-related, and compare your renders side by side. Use i ...
+- `Bash` Read CONTRACT blood section
+  - result: `GH_MouthCavity` / `GH_Tongue` as soft tissue so wounds through the mouth open them too). All use one shared node group (plus internal subgroups) with a layer setting, so wounds in nested layers line up: the skin hole is widest, muscle smaller, skull smaller still and only opened when depth is enoug ...
+- `Bash` Read blood film shader group
+- `Bash` Read node DSL
+  - result: class F: """A node output socket with operator overloading (float or vector).""" __slots__ = ("t", "s") def __init__(self, tree, sock): self.t = tree self.s = sock # arithmetic ----------------------------------------------------------- def __add__(self, o): return self.t.op('ADD', self, o) def __ra ...
+- `Bash` Read hit points and _Hit, slash params
+  - result: def _build_hit_points(): """Collection of hit empties -> point cloud with the hit frame per point. Uses Collection Info (Separate Children, relative transforms) so every empty becomes one instance whose transform is the empty's transform in the modified object's space. Each hit is ray-cast along its ...
+- `Bash` Read clot blobs and strands
+
+**[09-27T08:14] note:** Now let me write the lip-search and the stream changes. First, the seed parameters in `_drip_seeds`.
+
+- `Bash` Back up files, list d_ attributes
+- `Edit` /home/user/YAYSTO/blender/gore_head/gore.py
+- `Edit` /home/user/YAYSTO/blender/gore_head/gore.py
+- `Edit` /home/user/YAYSTO/blender/gore_head/gore.py
+
+**[09-27T08:15] note:** Now the lip search itself, placed before `_walk`.
+
+- `Edit` /home/user/YAYSTO/blender/gore_head/gore.py
+- `Bash` Progressive walk steps and hang threshold
+- `Bash` Rewrite run width profile
+- `Bash` Drops sizes and blood wiring
+- `Bash` Test blunt cranium stream start
+- `Read` /tmp/claude-0/-home-user-YAYSTO/e2a2594c-08ec-5384-b9ca-fd553ec0f442/scratchpad/fix2_blood/x1_Blunt_Cranium_wide_20s.png
+- `Bash` View tail of run mesh and blood assembly
+- `Bash` Replace tubes with a skin-conforming film sheet
+- `Bash` Render blunt cranium with film streams
+- `Bash` Tile the two renders
+- `Read` /tmp/claude-0/-home-user-YAYSTO/e2a2594c-08ec-5384-b9ca-fd553ec0f442/scratchpad/fix2_blood/x2.png
+- `Bash` Merge side-by-side runs, lighter film colour
+- `Read` /tmp/claude-0/-home-user-YAYSTO/e2a2594c-08ec-5384-b9ca-fd553ec0f442/scratchpad/fix2_blood/x3_Blunt_Cranium_wide_20s.png
+- `Bash` Probe skin blood attributes
+- `Bash` Probe skin-only blood coverage
+- `Bash` Flat-topped union film and wider smear
+- `Read` /tmp/claude-0/-home-user-YAYSTO/e2a2594c-08ec-5384-b9ca-fd553ec0f442/scratchpad/fix2_blood/x4_Blunt_Cranium_wide_20s.png
+- `Bash` Render blunt preset three-quarter view
+- `Bash` Tile three-quarter renders
+- `Read` /tmp/claude-0/-home-user-YAYSTO/e2a2594c-08ec-5384-b9ca-fd553ec0f442/scratchpad/fix2_blood/x5.png
+- `Bash` Wider runs and fan-out bias
+- `Bash` Batch render all wound types at 20 s
+- `Bash` Tile batch renders
+- `Read` /tmp/claude-0/-home-user-YAYSTO/e2a2594c-08ec-5384-b9ca-fd553ec0f442/scratchpad/fix2_blood/y1.png
+- `Bash` Meniscus profile, crest variation, flattened pendant drops
+- `Bash` Check available image libs
+  - result: Traceback (most recent call last): File "<string>", line 1, in <module> ModuleNotFoundError: No module named 'PIL' 1.26.4 ModuleNotFoundError: No module named 'cv2'
+- `Bash` Find gore_run usages
+- `Bash` Show gore_run and stray blood check
+- `Bash` Make run ids 1-based, check verify usage
+- `Bash` Read gh_common helpers
+- `Bash` Read render helpers
+  - result: return scene def configure_render(samples=32, res=(640, 640)): scene = bpy.context.scene scene.render.engine = 'CYCLES' scene.cycles.device = 'CPU' scene.cycles.samples = samples scene.cycles.use_adaptive_sampling = True scene.cycles.max_bounces = 8 try: scene.cycles.use_denoising = True scene.cycle ...
+- `Write` /home/user/YAYSTO/blender/gore_head/proof_blood.py
+- `Bash` Trial run of the zero-gap proof
+  - result: [gore] head vessel table snapped in 1.3 s [gore] bone depth baked in 2.1 s [proof] entry straight t= 0s samples= 0 gap_px= 0 stray=0 PASS no run yet (31.1s) [proof] entry 45 t= 0s samples= 0 gap_px= 0 stray=0 PASS no run yet (38.1s) [proof] entry graze t= 0s samples= 0 gap_px= 0 stray=0 PASS no run  ...
+- `Bash` Replace Workbench mask with Cycles emission mask
+- `Bash` Trial run of proof with emission mask
+  - result: 01:18.430 cycles | WARNING CUEW initialization failed: Error opening the library [proof] entry straight t=20s samples= 38 gap_px= 0 stray=0 PASS (42.2s) [proof] entry 45 t=20s samples= 38 gap_px= 0 stray=0 PASS (38.1s) [proof] entry graze t=20s samples= 38 gap_px= 0 stray=0 PASS (31.4s) [proof] blun ...
+- `Read` /tmp/claude-0/-home-user-YAYSTO/e2a2594c-08ec-5384-b9ca-fd553ec0f442/scratchpad/fix2_blood/proof_t1.png
+- `Bash` Proof: side graze camera, occlusion test, wider crops
+- `Bash` Rerun proof with visibility and rim marker
+  - result: -rw-r--r-- 1 root root 104461379 Sep 27 08:35 /tmp/claude-0/-home-user-YAYSTO/e2a2594c-08ec-5384-b9ca-fd553ec0f442/scratchpad/fix2_blood/work.blend 01:23.928 cycles | WARNING CUEW initialization failed: Error opening the library [proof] entry straight t=20s samples= 38 gap_px= 0 stray=0 PASS (52.0s) ...
+- `Read` /tmp/claude-0/-home-user-YAYSTO/e2a2594c-08ec-5384-b9ca-fd553ec0f442/scratchpad/fix2_blood/proof_t2.png
+- `Bash` Render wound set at 40 s and carnage
+- `Bash` Read bullet and exit kind builders
+  - result: def _finish_kind(t, cut, disp=None, dispn=0.0, wall=None, center=None, wound=0.0, edge=0.0, blood=0.0, bruise=0.0, burn=0.0, fracture=0.0): t.result("Cut", cut) t.result("Disp", disp if disp is not None else (0.0, 0.0, 0.0)) t.result("Disp N", dispn) t.result("Wall", wall if wall is not None else (0 ...
+- `Bash` Read fat/wall material
+- `Bash` Wait for batch renders
+- `ToolSearch` 
+- `Bash` Wait for tile image
+- `Bash` Thin, per-flap exit eversion
+- `Monitor` wait y2 tile
+
+**[09-27T09:16] note:** Meanwhile I'll document the vessel table in CONTRACT.md.
+
+- `Bash` Document vessel table in CONTRACT
+- `Bash` Add AREA_SOURCES table and export
+- `Bash` View build gore system call
+- `Bash` Export vessel JSON in build
+- `Monitor` wait y2 tile again
+- `Bash` Check batch progress
+- `Bash` Inspect batch output tail
+- `Bash` List y2 renders
+- `Read` /tmp/claude-0/-home-user-YAYSTO/e2a2594c-08ec-5384-b9ca-fd553ec0f442/scratchpad/fix2_blood/y2.png
+- `Bash` Blast rim search from mouth opening; wider runs
+- `Bash` Render slash close-ups and blast
+- `Monitor` wait y3 tile
+- `Monitor` wait y3 tile (2)
+- `Bash` Read slash builder
+- `Bash` Remove fake fringe spatter dots from blood film shader
+- `Monitor` wait y3 tile (3)
+- `Bash` Block until y3 exists
+- `Read` /tmp/claude-0/-home-user-YAYSTO/e2a2594c-08ec-5384-b9ca-fd553ec0f442/scratchpad/fix2_blood/y3.png
+- `Bash` Find pool/fill references
+
+**[09-27T09:22] note:** Now implement slash pools with per-column rim level.
+
+- `Bash` Slash pools with per-slice rim levels
+- `Bash` Test slash pools and blast
+- `Bash` Wait for y4 renders
+  - result: [multi] rebuilt in 86.5s 01:39.525 cycles | WARNING CUEW initialization failed: Error opening the library [multi] /tmp/claude-0/-home-user-YAYSTO/e2a2594c-08ec-5384-b9ca-fd553ec0f442/scratchpad/fix2_blood/y4_Slash_Cheek_straight_40s.png 51.5s [multi] /tmp/claude-0/-home-user-YAYSTO/e2a2594c-08ec-538 ...
+- `Read` /tmp/claude-0/-home-user-YAYSTO/e2a2594c-08ec-5384-b9ca-fd553ec0f442/scratchpad/fix2_blood/y4.png
+- `Bash` Probe blast run start points
+- `Bash` Cling heavy flows, rounder meniscus, pool gravity tilt, no mid-air drops
+- `Bash` Render y5 test set
+- `Bash` Wait for y5
+- `Read` /tmp/claude-0/-home-user-YAYSTO/e2a2594c-08ec-5384-b9ca-fd553ec0f442/scratchpad/fix2_blood/y5.png
+- `Bash` Blood colour variation, ripples, lighter smear edge, heavy-flow cling
+- `Bash` Render y6 test set
+- `Bash` Wait for y6
+- `Read` /tmp/claude-0/-home-user-YAYSTO/e2a2594c-08ec-5384-b9ca-fd553ec0f442/scratchpad/fix2_blood/y6.png
+- `Bash` Probe blast runs after cling change
+- `Bash` Pouring ropes from low points for heavy flows; no fan for slashes
+- `Bash` Render y7 (ropes, slash)
+- `Bash` Wait for y7
+- `Read` /tmp/claude-0/-home-user-YAYSTO/e2a2594c-08ec-5384-b9ca-fd553ec0f442/scratchpad/fix2_blood/y7.png
+- `Bash` Run verify_gore
+- `Bash` Wait for verify results
+  - result: [PASS] gore_* attributes on all evaluated layers [PASS] skin attributes non-trivial: wound>0.5:19528, depth>0.5:8364, edge>0.5:1894, blood>0.5:416659, bruise>0.5:67229, burn>0.5:2525, fracture>0.5:0, soot>0.5:57543 [PASS] damage=0 identical to no hits: skin (170387, 170318) vs (170387, 170318); woun ...
+- `Bash` No pool without bleeding
+- `Bash` Render rim thickness checks
+- `Bash` Wait for y8
+- `Read` /tmp/claude-0/-home-user-YAYSTO/e2a2594c-08ec-5384-b9ca-fd553ec0f442/scratchpad/fix2_blood/y8.png
+- `Bash` Film alpha fix; check build options
+- `Bash` Build CLI options
+  - result: 1193: p.add_argument("--preset", choices=PRESET_NAMES, default=None, 1195: p.add_argument("--no-render", action="store_true", help="build and save only") 1196: p.add_argument("--out", default=os.path.join(HERE, BLEND_NAME), help=".blend output path") 1197: p.add_argument("--samples", type=int, defau ...
+- `Bash` Thread cap env var; run full build
+- `Bash` Run full build detached
+- `Bash` Start full build detached
+- `Bash` Check build processes
+- `Monitor` full head build progress
+- `Bash` Write side-by-side compare script
+- `Bash` Wait for build verification stage
+  - result: GH_Teeth_Upper 31192 verts 0.2 s GH_Teeth_Lower 29044 verts 0.2 s GH_Gums 23906 verts 0.9 s GH_Tongue 11650 verts 0.3 s build_anatomy total 41.8 s [gore] head vessel table snapped in 1.1 s [gore] bone depth baked in 2.0 s [build] anatomy 41.9 s, materials 7.9 s, gore 62.9 s, hair 0.3 s, total build  ...
+- `Bash` Check blend save time and load
+- `Bash` Run full zero-gap proof in parallel
+- `Monitor` zero-gap proof failures
+- `Bash` Wait for full proof
+- `Bash` Proof progress so far
+  - result: [proof] entry straight t= 0s samples= 0 gap_px= 0 stray=0 PASS no run yet (26.4s) [proof] entry 45 t= 0s samples= 0 gap_px= 0 stray=0 PASS no run yet (33.9s) [proof] entry graze t= 0s samples= 0 gap_px= 0 stray=0 PASS no run yet (25.7s) [proof] entry straight t= 5s samples= 50 gap_px= 0 stray=0 PASS ...
+- `Read` /tmp/claude-0/-home-user-YAYSTO/e2a2594c-08ec-5384-b9ca-fd553ec0f442/scratchpad/fix2_blood/proof/entry_graze_40.png
+- `Bash` Graze camera looking up the stream; quick test
+- `Bash` Check proof process and edit state
+- `Bash` Apply graze camera edit and test
+- `Bash` Check state
+- `Bash` Apply graze camera edit and start test
+- `Bash` Wait for graze test
+  - result: [proof] entry straight t=20s samples= 39 gap_px= 0 stray=0 PASS (38.7s) [proof] entry 45 t=20s samples= 39 gap_px= 0 stray=0 PASS (35.3s) [proof] entry graze t=20s samples= 39 gap_px= 0 stray=0 PASS (34.4s) [proof] entry straight t=40s samples= 39 gap_px= 0 stray=0 PASS (40.7s) [proof] entry 45 t=40 ...
+- `Read` /tmp/claude-0/-home-user-YAYSTO/e2a2594c-08ec-5384-b9ca-fd553ec0f442/scratchpad/fix2_blood/proof_g.png
+- `Bash` Start full proof run
+- `Monitor` full proof failures
+- `Bash` Tile new preset renders
+- `Read` /tmp/claude-0/-home-user-YAYSTO/e2a2594c-08ec-5384-b9ca-fd553ec0f442/scratchpad/fix2_blood/b_gs.png
+- `Bash` Wait for full proof completion
+- `Monitor` full proof finished
+- `Bash` Progress check
+- `Monitor` proof lines
+- `Bash` Wait for first 36 proof results
+- `ToolSearch` 
+- `TaskStop` 
+  - result: {"message":"Successfully stopped task: b7wbp69w1 (tail -f /tmp/claude-0/-home-user-YAYSTO/e2a2594c-08ec-5384-b9ca-fd553ec0f442/scratchpad/fix2_blood/proof_full2.log | grep --line-buffered -E \"\\[proof\\]|Traceback\")","task_id":"b7wbp69w1","task_type":"local_bash","command":"tail -f /tmp/claude-0/- ...
+- `TaskStop` 
+  - result: {"message":"Successfully stopped task: bqtyv2z04 (tail -f /tmp/claude-0/-home-user-YAYSTO/e2a2594c-08ec-5384-b9ca-fd553ec0f442/scratchpad/fix2_blood/proof_full2.log | grep --line-buffered -E \" FAIL |Traceback|PASS ->\")","task_id":"bqtyv2z04","task_type":"local_bash","command":"tail -f /tmp/claude- ...
+- `Bash` Wait quietly for proof end
+- `Bash` Interim proof failures
+- `Bash` Wait for build to finish
+- `Monitor` build or proof finished
+- `Bash` Block until build or proof done
+- `Bash` Block until build or proof done (2)
+- `Bash` Block until build or proof done (3)
+- `Bash` Progress
+  - result: [proof] slash straight t= 0s samples= 0 gap_px= 0 stray=9 FAIL no run yet (24.5s) [proof] slash 45 t= 0s samples= 0 gap_px= 0 stray=9 FAIL no run yet (39.5s) [proof] slash graze t= 0s samples= 0 gap_px= 0 stray=9 FAIL no run yet (43.2s) [proof] slash straight t= 5s samples= 0 gap_px= 0 stray=0 FAIL  ...
+- `Bash` Debug slash proof axis
+- `Bash` Proof cameras target the rim point; better stray test
+- `Bash` Check add_camera reuse
+- `Bash` Stop old proof; check build stage
+- `Bash` Read render_all
+- `Bash` Restart full proof with new cameras
+
+**[09-27T11:17] note:** Let me look at the new preset renders from the build meanwhile.
+
+- `Bash` Tile preset renders
+- `Read` /tmp/claude-0/-home-user-YAYSTO/e2a2594c-08ec-5384-b9ca-fd553ec0f442/scratchpad/fix2_blood/b_2.png
+- `Bash` Pools: misses far from the opening are outside
+- `Bash` Stop build/proof; test crushed pools
+- `Bash` Wait for crushed test
+  - result: [multi] rebuilt in 87.7s 01:40.221 cycles | WARNING CUEW initialization failed: Error opening the library [multi] /tmp/claude-0/-home-user-YAYSTO/e2a2594c-08ec-5384-b9ca-fd553ec0f442/scratchpad/fix2_blood/y9_Crush_2_three_q_60s.png 61.1s [multi] /tmp/claude-0/-home-user-YAYSTO/e2a2594c-08ec-5384-b9c ...
+- `Read` /tmp/claude-0/-home-user-YAYSTO/e2a2594c-08ec-5384-b9ca-fd553ec0f442/scratchpad/fix2_blood/y9.png
+- `Bash` Crater gravity tilt; start final build
+- `Bash` Run final build and full proof, 2 threads each
+- `Bash` Wait for build verification
+- `Bash` Wait for build verification (2)
+  - result: [PASS] gore_* attributes on all evaluated layers [PASS] skin attributes non-trivial: wound>0.5:19528, depth>0.5:8364, edge>0.5:1894, blood>0.5:402051, bruise>0.5:67229, burn>0.5:2525, fracture>0.5:0, soot>0.5:57543 [PASS] damage=0 identical to no hits: skin (170387, 170318) vs (170387, 170318); woun ...
+- `Bash` Wait for full proof
+- `Bash` Wait for full proof (2)
+- `Bash` Interim proof status
+- `Bash` Wait for full proof (3)
+- `Bash` Wait for full proof (4)
+- `Bash` Wait for full proof (5)
+- `Bash` Interim status
+  - result: [proof] blast graze t= 5s samples= 0 gap_px= 0 stray=0 FAIL (43.7s) [proof] blast graze t=10s samples= 0 gap_px= 0 stray=0 FAIL (43.2s) 82 [build] rendered renders/preset_burn_three_q.png in 335.2 s [build] rendered renders/preset_carnage_front.png in 268.6 s
+- `Bash` Proof: side graze fallback when rim hidden
+- `Bash` Wait for proof run 4 end
+- `Bash` Wait for proof run 4 end (2)
+- `Bash` Wait for proof run 4 end (3)
+  - result: [proof] blast graze t= 5s samples= 0 gap_px= 0 stray=0 FAIL (43.7s) [proof] blast graze t=10s samples= 0 gap_px= 0 stray=0 FAIL (43.2s) [proof] crushed graze t=10s samples= 0 gap_px= 0 stray=0 FAIL (80.6s) [proof] crushed straight t=20s samples= 0 gap_px= 0 stray=0 FAIL (73.2s) [proof] crushed graze ...
+- `Read` /tmp/claude-0/-home-user-YAYSTO/e2a2594c-08ec-5384-b9ca-fd553ec0f442/scratchpad/fix2_blood/proof_full4.png
+- `Bash` Generalise side-view fallback; rerun blast and crushed
+- `Bash` Verify edit and process
+- `Bash` Wait for build end
+- `Bash` Wait for build and proof
+- `Bash` Status
+- `Bash` Wait for proof run 5
+- `Bash` Wait for proof run 5 (2)
+- `Bash` Wait for proof run 5 (3)
+  - result: [proof] crushed straight t=20s samples= 0 gap_px= 0 stray=0 FAIL side view (176.8s) [proof] crushed graze t=20s samples= 0 gap_px= 0 stray=0 FAIL side view (203.3s) [proof] crushed graze t=40s samples= 0 gap_px= 0 stray=0 FAIL side view (194.3s) [proof] crushed graze t=60s samples= 0 gap_px= 0 stray ...
+- `Bash` Debug crushed visibility
+- `Bash` View _main_axis head
+- `Bash` Proof: choose a visible main run; rerun crushed
+- `Bash` Build status
+- `Bash` Wait crushed proof
+- `Bash` Wait crushed proof (2)
+- `Bash` Wait crushed proof (3)
+- `Bash` Wait crushed proof (4)
+  - result: [proof] 18/18 PASS -> /tmp/claude-0/-home-user-YAYSTO/e2a2594c-08ec-5384-b9ca-fd553ec0f442/scratchpad/fix2_blood/proof_full6.png
+- `Bash` Compose final proof sheet
+- `Read` /home/user/YAYSTO/blender/gore_head/renders/proof_rim_zero_gap.png
+- `Bash` Wait for build end
+- `Bash` Run anatomy overlap checks
+- `Bash` Wait for build and anatomy
+- `Bash` Anatomy check results
+  - result: OK GH_Gums vs GH_Skull overlaps= 0 min gap= 1.42 mm at (-0.032,-0.048,-0.040) OK GH_Gums vs GH_Jaw overlaps= 0 min gap= 1.36 mm at (+0.032,-0.043,-0.066) OK GH_Gums vs GH_Muscle overlaps= 0 min gap= 1.16 mm at (-0.033,-0.048,-0.042) OK GH_Cervical vs GH_Muscle overlaps= 0 min gap= 0.70 mm at (-0.026 ...
+- `Bash` Count anatomy results
+- `Bash` Wait for build end (2)
+
+**[09-27T14:51] note:** Build complete. Let me look at the hero and exit sequence.
+
+- `Read` /home/user/YAYSTO/blender/gore_head/renders/hero.png
+- `Bash` Build side-by-side ref comparisons
+- `Read` /tmp/claude-0/-home-user-YAYSTO/e2a2594c-08ec-5384-b9ca-fd553ec0f442/scratchpad/fix2_blood/cmp_exit.png
+- `Read` /tmp/claude-0/-home-user-YAYSTO/e2a2594c-08ec-5384-b9ca-fd553ec0f442/scratchpad/fix2_blood/cmp_blast.png
+- `Read` /tmp/claude-0/-home-user-YAYSTO/e2a2594c-08ec-5384-b9ca-fd553ec0f442/scratchpad/fix2_blood/cmp_flow.png
+- `Bash` Report vessel sources per preset
+- `Bash` Git status of changes
+- `StructuredOutput` 

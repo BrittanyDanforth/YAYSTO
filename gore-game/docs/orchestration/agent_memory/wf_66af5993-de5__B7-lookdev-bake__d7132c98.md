@@ -1,0 +1,257 @@
+# Agent memory: B7:lookdev-bake (body build + review)
+
+Transcript `agent-af96dda06d7132c98.jsonl`, 2026-09-26T13:23 to 2026-09-26T17:53 UTC. Extracted automatically; the agent's own notes (what it found, decided, tried) plus every step it ran and the pass/fail lines.
+- `Bash` List body project files
+- `Bash` Read stubs and build script
+- `Bash` Outline plan and find B7 mentions
+  - result: """Texture bakes (owner B7). Plan §3.3.7, §4.2, §5.2, §8.2 B7. ``bake_all(objs, out)`` albedo / normal / ORM+SSS sets per mesh (2,048^2), textures/*.png ``bake_tileables(out)`` seamless 512^2 tileables (muscle fibre, fat lobule, bone cut, diploe, blood crust, cloth weave) ``bake_painter_inputs(objs, ...
+  - result: 15:## 0. Read this first 17:### 0.1 Evidence tags and sources 22:### 0.2 Decisions at a glance 46:### 0.3 Deviations from the bible (and why) 58:### 0.4 Limits of this pass 64:## 1. Product scope for the full body 66:### 1.1 In and out of scope (v1) 77:### 1.2 The subject 86:### 1.3 Scene: the foren ...
+- `Bash` Read plan sections relevant to B7
+  - result: <persisted-output> Output too large (49.9KB). Full output saved to: /root/.claude/projects/-home-user-YAYSTO/e2a2594c-08ec-5384-b9ca-fd553ec0f442/tool-results/b1ofyim4s.txt Preview (first 2KB): ### 3.3 Layered gore on skinned meshes #### 3.3.1 Principle Godot skins in a compute pre-pass, so a spatia ...
+- `Bash` Read texture budget and contract sections
+  - result: - Every closed inner mesh draws its back faces as its **interior**: myocardium `#7B2626` with dark chamber blood, lung `#A04A55` with froth sparkle, liver `#7A2E23`, spleen `#5E2433`, kidney cortex-over-medulla gradient, brain white matter `#E6DACA` under grey `#B79C94`, bone marrow red `#B5524A` (f ...
+- `Bash` Read B7 details and acceptance tests
+  - result: | `manifest.json` | Schema versions, generator versions (`bpy` 5.0.1, exporter 5.0.21), build id, input hashes, per-mesh/surface vertex and triangle counts, rest bounds, wound-grid bounds, **segment origin table** (for the position maps), texture list with import hints, budget check results | | `rig ...
+- `Bash` Outline head materials module
+- `Bash` Read head materials skin shader
+- `Read` /root/.claude/projects/-home-user-YAYSTO/e2a2594c-08ec-5384-b9ca-fd553ec0f442/tool-results/bthe7fb8c.txt
+- `Bash` Inspect saved body scene meshes and UVs
+  - result: F0926 13:24:38.833177 25910 utilities.cc:354] Check failed: !IsGoogleLoggingInitialized() You called InitGoogleLogging() twice! *** Check failure stack trace: *** @ 0x7f595137560d google::LogMessage::Fail() @ 0x7f59513778be google::LogMessage::SendToLog() @ 0x7f59513751fe google::LogMessage::Flush() ...
+- `Bash` Rerun scene inspection with renamed script
+- `Bash` Measure UV coverage and overlap per mesh
+- `Bash` List gb_common helpers and export functions
+  - result: 39:HERE = os.path.dirname(os.path.abspath(__file__)) 40:HEAD_DIR = os.path.normpath(os.path.join(HERE, "..", "gore_head")) 41:GAME_DIR = os.path.normpath(os.path.join(HERE, "..", "..", "gore-game")) 42:GAME_OUT = os.path.join(GAME_DIR, "assets", "generated") 43:SUBJECT_OUT = os.path.join(GAME_OUT, " ...
+- `Bash` Read seeds, schemas, manifest writer
+  - result: # --------------------------------------------------------------------------- # Deterministic RNG (plan §5.1): every random draw uses rng(<name>) # --------------------------------------------------------------------------- SEEDS = { "placeholder": 26_0926_00, "body_skin": 26_0926_01, "shorts": 26_0 ...
+- `Bash` Read control helpers and other head materials
+- `Bash` Check CPU load and tools
+- `Bash` Read render and png helpers
+  - result: def log(msg): """Uniform console output for build scripts.""" print(f"[gore_body] {msg}", flush=True) # --------------------------------------------------------------------------- # Test renders (plan §5.1: <= 640 px, <= 48 samples, denoised) # ------------------------------------------------------- ...
+- `Bash` Read verify framework
+  - result: """Verification framework for the full-body build (owner B0; every package adds checks). Plan §5.2 ``verify_all() -> dict``, non-zero exit on failure. Checks are small functions registered with ``@check(group, owner, severity)``: * ``tables`` pure data checks of ``gb_data`` (no scene needed) * ``sce ...
+- `Bash` Time Cycles bakes at 2048 squared
+- `Read` /home/user/YAYSTO/blender/gore_body/renders/body_skin_three_q.png
+- `Bash` List head renders
+- `Read` /home/user/YAYSTO/blender/gore_head/renders/preset_intact_three_q.png
+- `Bash` Inspect organs.json ids and sub-parts
+- `Bash` Inspect organ record and codes table
+- `Bash` Find superficial veins in vessels.json
+- `Bash` Test smart UV unwrap and pack for inner meshes
+- `Bash` Compare smart UV angle limits and island counts
+- `Bash` Check available Python libraries
+  - result: Traceback (most recent call last): File "<string>", line 1, in <module> ModuleNotFoundError: No module named 'scipy' Traceback (most recent call last): File "<string>", line 1, in <module> ModuleNotFoundError: No module named 'PIL' ModuleNotFoundError: No module named 'cv2'
+- `Bash` Inspect rig weights API and segments table
+- `Bash` Inspect tissue tables and B1 map functions
+- `Bash` Read B1 rasterizer and dilation helpers
+- `Write` /home/user/YAYSTO/blender/gore_body/texgen.py
+- `Bash` Switch noise lattice to integer hashing
+- `Bash` Generate tileables, time and check seams
+- `Bash` Test exact periodicity of tileable generators
+- `Bash` Debug seam metric on muscle tile
+- `Bash` Fix Voronoi search reach and rerun tile test
+- `Bash` Locate discontinuity rows in tileables
+- `Bash` Replace seam metric and rerun
+- `Read` /tmp/claude-0/-home-user-YAYSTO/e2a2594c-08ec-5384-b9ca-fd553ec0f442/scratchpad/body/B7/prev_muscle_fibre.png
+- `Bash` Rewrite muscle fibre tile with stripe fascicles
+- `Read` /tmp/claude-0/-home-user-YAYSTO/e2a2594c-08ec-5384-b9ca-fd553ec0f442/scratchpad/body/B7/prev_muscle_fibre.png
+- `Bash` Tune muscle wobble and tone
+- `Read` /tmp/claude-0/-home-user-YAYSTO/e2a2594c-08ec-5384-b9ca-fd553ec0f442/scratchpad/body/B7/prev_muscle_fibre.png
+- `Bash` Make contact sheet of tissue tileables
+- `Read` /tmp/claude-0/-home-user-YAYSTO/e2a2594c-08ec-5384-b9ca-fd553ec0f442/scratchpad/body/B7/sheet1.png
+- `Bash` Retune fat, diploe and crust; resheet
+- `Read` /tmp/claude-0/-home-user-YAYSTO/e2a2594c-08ec-5384-b9ca-fd553ec0f442/scratchpad/body/B7/sheet1.png
+- `Bash` Remove fbm clipping gain and resheet
+- `Read` /tmp/claude-0/-home-user-YAYSTO/e2a2594c-08ec-5384-b9ca-fd553ec0f442/scratchpad/body/B7/sheet1.png
+- `Bash` Tone down transverse muscle tile
+- `Bash` Find joint and landmark tables
+- `Bash` Read landmark table
+- `Bash` List organ ids and bible colours
+- `Bash` Read ShaderBuilder helper API
+  - result: def _isvec(x): if isinstance(x, _S): return x.s.type in ('VECTOR', 'RGBA') return isinstance(x, (tuple, list)) class _S: """An output socket with arithmetic operators. Floats become Math nodes and vectors/colours Vector Math nodes, so shader formulas read like ordinary expressions (``a * 0.5 + b``). ...
+- `Bash` Check mix/gauss/ramp signatures
+- `Write` /home/user/YAYSTO/blender/gore_body/lookdev.py
+- `Bash` Check organ table and attribute helper
+- `Bash` Fix organ id mapping
+- `Bash` See how collections visibility is set
+- `Write` /home/user/YAYSTO/blender/gore_body/bake.py
+- `Bash` Test inner-mesh UV rechart
+- `Bash` Diagnose low UV coverage
+- `Bash` Relax chart topology rule and retest
+- `Bash` Render UV layouts to an image
+- `Read` /tmp/claude-0/-home-user-YAYSTO/e2a2594c-08ec-5384-b9ca-fd553ec0f442/scratchpad/body/B7/uvlayout.png
+- `Bash` Try smart project on smoothed copy
+- `Read` /tmp/claude-0/-home-user-YAYSTO/e2a2594c-08ec-5384-b9ca-fd553ec0f442/scratchpad/body/B7/uvlayout2.png
+- `Bash` Count mesh connected components
+- `Bash` Retry charts with minimum-stretch unwrap
+- `Read` /tmp/claude-0/-home-user-YAYSTO/e2a2594c-08ec-5384-b9ca-fd553ec0f442/scratchpad/body/B7/uvlayout.png
+- `Bash` Sweep brain chart smoothing vs distortion
+- `Bash` Sweep brain with smaller charts
+- `Bash` Wait for brain sweep results
+- `ToolSearch` 
+- `Bash` Wait for brain sweep to finish
+- `Bash` Normal-cone charts with planar projection test
+- `Bash` Retest with smoothed growth normals and smaller margins
+- `Bash` Brain chart with less smoothing
+- `Bash` Brain charts without normal smoothing
+- `Read` /tmp/claude-0/-home-user-YAYSTO/e2a2594c-08ec-5384-b9ca-fd553ec0f442/scratchpad/body/B7/uvlayout.png
+- `Bash` Quick test bake of head and body sets
+  - result: [gore_body] bake: GB_Skeleton: 2198 charts, coverage 0.040 -> 0.283, overlap 0.0090 [gore_body] bake: GB_Organs: 638 charts, coverage 0.174 -> 0.436, overlap 0.0111 [gore_body] bake: GB_Brain: 2489 charts, coverage 0.058 -> 0.327, overlap 0.0145 Traceback (most recent call last): File "/tmp/claude-0 ...
+- `Bash` Inspect vessel point format
+- `Bash` Fix vein field and rerun quick bake
+- `Bash` Show quick bake stats
+- `Bash` Montage baked head/body maps
+- `Read` /tmp/claude-0/-home-user-YAYSTO/e2a2594c-08ec-5384-b9ca-fd553ec0f442/scratchpad/body/B7/sheet_bake.png
+- `Bash` Unit test the fill function
+- `Bash` Decode baked PNG directly
+- `Bash` Fix coverage detection and rebake quick
+- `Bash` Locate head bake holes
+- `Bash` Widen head cage and retest holes
+- `Bash` Measure LOD0 to HR surface deviation
+- `Bash` Start full-resolution bake of all sets in background
+
+**[09-26T14:15] note:** Understood — I'll skip the cleanup (files just get overwritten) and start the bake without removal.
+
+- `Bash` Start full-resolution bake in background
+- `Bash` Read verify_all and B8 section location
+  - result: 1787:# B8 props and room (plan §8.2 B8 acceptance): critical dimensions +-1 mm, markers present, 1790:B8_MARKERS = (["GBP_muzzle_pistol", "GBP_muzzle_shotgun", "GBP_hammer_face", "GBP_claw", "GBP_torch_nozzle", 1793:B8_ROOM_MARKERS = ("GBP_room_subject_mark", "GBP_room_player_spawn", "GBP_room_light ...
+- `Bash` Add PNG reader to texgen; check bake progress
+
+**[09-26T14:16] note:** Now the verify checks.
+
+- `Bash` Add B7 checks to verify.py
+- `Bash` Check controls dict name
+- `Bash` Wait for full bake to finish
+- `Bash` Preview decal atlas and iris
+- `Read` /tmp/claude-0/-home-user-YAYSTO/e2a2594c-08ec-5384-b9ca-fd553ec0f442/scratchpad/body/B7/prev_decals.png
+- `Bash` Tweak drop edges and smear decals
+- `Read` /tmp/claude-0/-home-user-YAYSTO/e2a2594c-08ec-5384-b9ca-fd553ec0f442/scratchpad/body/B7/prev_iris.png
+- `Bash` Check bake progress
+- `Bash` Outline CONTRACT.md
+- `Bash` Read exported files section
+- `Bash` Wait for head set to finish
+- `Bash` Count completed bake passes
+- `Bash` Stop slow full bake
+- `Bash` Verify bake process stopped
+- `Bash` Combine data passes and half-res AO
+- `Bash` Add image retarget and upsample helpers
+- `Bash` Quick test self-bake sets with new passes
+- `Bash` Restart full bake in background
+- `Bash` Wait for head set
+- `Bash` Montage head albedo and normal
+- `Read` /tmp/claude-0/-home-user-YAYSTO/e2a2594c-08ec-5384-b9ca-fd553ec0f442/scratchpad/body/B7/m_head.png
+- `Bash` Tighten head cage; wait for body set
+- `Bash` Montage body albedo and ORM
+- `Read` /tmp/claude-0/-home-user-YAYSTO/e2a2594c-08ec-5384-b9ca-fd553ec0f442/scratchpad/body/B7/m_body.png
+- `Bash` Inspect body ORM channel stats
+- `Bash` Wait for all sets to finish
+- `Bash` Bake stats and inner set montage
+- `Bash` Locate bake_set sections to patch
+- `Bash` Add part-id rejection and smaller inner cages
+- `Read` /tmp/claude-0/-home-user-YAYSTO/e2a2594c-08ec-5384-b9ca-fd553ec0f442/scratchpad/body/B7/m_inner.png
+- `Bash` Rebake inner sets; generate tileables and painter maps
+- `Bash` List generated tileable and painter files
+- `Bash` Fix seam metric; test half EXR writing
+- `Bash` Switch EXR writer to half-float ZIP
+  - result: def write_exr_half(path, rgba_top_down): """Write a float (H, W, 4) array (row 0 = top) as a half-float ZIP OpenEXR via Blender.""" h, w = rgba_top_down.shape[:2] name = "GB7_exr_tmp" old = bpy.data.images.get(name) if old is not None: bpy.data.images.remove(old) img = bpy.data.images.new(name, w, h ...
+- `Bash` Preview bone and rest-normal painter maps
+- `Read` /tmp/claude-0/-home-user-YAYSTO/e2a2594c-08ec-5384-b9ca-fd553ec0f442/scratchpad/body/B7/m_painter.png
+- `Bash` Wait for inner rebake and show stats
+- `Bash` Write render test script
+- `Bash` Add inner render views
+- `Bash` Wait for inner rebake to finish
+- `Bash` Show current bake_set
+- `Bash` Rewrite bake_set with self emit and normal fallback
+- `Bash` Quick-mode test of new bake flow
+- `Bash` Full bake with new flow in background
+- `Bash` Wait for full bake
+- `Bash` Read verification and findings sections
+- `Bash` Document B7 in CONTRACT.md
+- `Bash` Write scratch Godot reference-stage project
+- `Bash` Fix camera FOV; check bake progress
+- `Bash` Add shared reference views
+- `Bash` Wait for full bake
+- `Bash` Keep waiting for full bake
+- `Bash` Check progress
+- `Bash` Wait for bake end
+- `Bash` Render the Godot reference stage with baked textures
+  - result: Vulkan 1.4.318 - Forward+ - Using Device #0: Unknown - llvmpipe (LLVM 20.1.2, 256 bits) libpulse.so.0: cannot open shared object file: No such file or directory libpulse.so.0: cannot open shared object file: No such file or directory ALSA lib confmisc.c:855:(parse_card) cannot find card '0' ALSA lib ...
+- `Bash` Montage Godot renders
+- `Read` /tmp/claude-0/-home-user-YAYSTO/e2a2594c-08ec-5384-b9ca-fd553ec0f442/scratchpad/body/B7/m_godot.png
+- `Bash` Blender render of baked sets on reference views
+  - result: 00:13.714 cycles | WARNING CUEW initialization failed: Error opening the library RENDER 67.39792537689209 baked_ref_0.png baked_ref_1.png baked_ref_2.png baked_ref_3.png godot_body_front.png godot_body_three_q.png godot_head_three_q.png godot_torso_front.png
+- `Bash` Montage Blender baked renders
+- `Read` /tmp/claude-0/-home-user-YAYSTO/e2a2594c-08ec-5384-b9ca-fd553ec0f442/scratchpad/body/B7/m_blender.png
+- `Bash` Shoulder close-ups baked vs procedural
+  - result: 00:14.476 cycles | WARNING CUEW initialization failed: Error opening the library RENDER 43.904555797576904 00:18.994 cycles | WARNING CUEW initialization failed: Error opening the library RENDER 15.028130531311035
+- `Read` /tmp/claude-0/-home-user-YAYSTO/e2a2594c-08ec-5384-b9ca-fd553ec0f442/scratchpad/body/B7/m_shoulder.png
+- `Bash` Align body skin formulas with the head at the seam
+- `Bash` Add skin roughness offset; render procedural shoulder
+  - result: 01:07.515 cycles | WARNING CUEW initialization failed: Error opening the library RENDER 15.637170314788818
+- `Read` /tmp/claude-0/-home-user-YAYSTO/e2a2594c-08ec-5384-b9ca-fd553ec0f442/scratchpad/body/B7/m_shoulder.png
+- `Bash` Inspect HR object visibility flags
+- `Bash` Debug HR render visibility
+- `Bash` Fix render visibility ordering and rerender
+  - result: 00:18.954 cycles | WARNING CUEW initialization failed: Error opening the library RENDER 171.6647927761078
+- `Read` /tmp/claude-0/-home-user-YAYSTO/e2a2594c-08ec-5384-b9ca-fd553ec0f442/scratchpad/body/B7/m_shoulder.png
+- `Bash` Check which geometry stage caches hit
+- `Bash` Stabilise UV cache key
+- `Bash` Run full build bake stage end to end
+- `Bash` Wait for the build to finish
+- `Bash` Continue waiting for build
+- `Bash` Check build progress
+- `Bash` Wait for build end
+- `Bash` Wait for build and show summary
+  - result: 16:26:06 | INFO: Extracting primitive: GB_Frac_Skull_L 16:26:06 | INFO: Primitives created: 1 16:26:06 | INFO: Extracting primitive: GB_Frac_Skull_R 16:26:06 | INFO: Primitives created: 1 16:26:06 | INFO: Extracting primitive: GB_Frac_Skull_T 16:26:06 | INFO: Primitives created: 1 16:26:06 | INFO: E ...
+- `Bash` Show B7 check results and timings
+  - result: [ 59.3 s] stage placeholder [gore_body] bake: GB_Skeleton: 2198 charts, coverage 0.040 -> 0.283, overlap 0.0090 [gore_body] bake: GB_Organs: 638 charts, coverage 0.174 -> 0.436, overlap 0.0111 [gore_body] bake: GB_Brain: 2489 charts, coverage 0.058 -> 0.327, overlap 0.0145 [gore_body] bake: set head ...
+- `Bash` Check texture output sizes
+- `Bash` Validate position EXR round-trip accuracy
+- `Bash` Add position-map precision check and run B7 checks
+- `Bash` Render final look-dev sets in background
+- `Bash` Godot render with final textures
+- `Bash` Contact sheet of tileables, room, iris, sclera, decals
+- `Read` /home/user/YAYSTO/blender/gore_body/renders/lookdev_textures.png
+- `Bash` Wait for look-dev renders
+- `Bash` Check render progress
+  - result: rlog1.txt:00:13.063 cycles | WARNING CUEW initialization failed: Error opening the library rlog1.txt:RENDER 349.2608165740967 rlog2.txt:00:23.632 cycles | WARNING CUEW initialization failed: Error opening the library lookdev_baked_feet_0.png lookdev_baked_hand_0.png lookdev_baked_hand_1.png lookdev_ ...
+
+**[09-26T16:39] note:** Let me build the Godot vs Cycles side-by-side while the rest render.
+
+- `Bash` Compose Cycles vs Godot comparison
+- `Read` /home/user/YAYSTO/blender/gore_body/renders/lookdev_cycles_vs_godot.png
+- `Bash` Montage shorts maps
+- `Read` /tmp/claude-0/-home-user-YAYSTO/e2a2594c-08ec-5384-b9ca-fd553ec0f442/scratchpad/body/B7/m_shorts.png
+- `Bash` Simplify cloth material and rebake shorts
+- `Bash` Wait for remaining renders
+
+**[09-26T16:51] note:** Meanwhile, let me look at the finished procedural (Cycles reference) body turntable.
+
+- `Bash` Montage procedural body turntable
+- `Read` /tmp/claude-0/-home-user-YAYSTO/e2a2594c-08ec-5384-b9ca-fd553ec0f442/scratchpad/body/B7/m_proc_body.png
+- `Bash` Wait for remaining renders
+- `Bash` Montage head/hand and inner renders
+- `Read` /tmp/claude-0/-home-user-YAYSTO/e2a2594c-08ec-5384-b9ca-fd553ec0f442/scratchpad/body/B7/m_heads.png
+- `Bash` Add bake detail switch to body skin
+- `Read` /tmp/claude-0/-home-user-YAYSTO/e2a2594c-08ec-5384-b9ca-fd553ec0f442/scratchpad/body/B7/m_inner_r.png
+- `Bash` Final end-to-end build of the bake stage
+- `Bash` Wait for final build
+- `Bash` Block until final build finishes
+- `Bash` Keep waiting for final build
+- `Bash` Wait and summarise final build
+- `Bash` Check final build progress
+- `Bash` Wait for final build end
+- `Bash` Wait for final build end
+  - result: [gore_body] bake: set head: 2048^2, empty 2360 texels, normal from source 99.9 %, 935.2 s [gore_body] bake: set body: 2048^2, empty 25 texels, normal from source 100.0 %, 473.3 s [gore_body] bake: set shorts: 1024^2, empty 46 texels, normal from source 0.0 %, 19.5 s [gore_body] bake: set mouth: 1024 ...
+- `Bash` Re-render baked hand/ref and Godot comparison
+- `Read` /tmp/claude-0/-home-user-YAYSTO/e2a2594c-08ec-5384-b9ca-fd553ec0f442/scratchpad/body/B7/m_hand2.png
+- `Bash` Average knuckle lines in baked body
+- `Bash` Widen dorsal veins and rebake body set
+- `Bash` Final re-render of baked views and Godot comparison
+- `Read` /tmp/claude-0/-home-user-YAYSTO/e2a2594c-08ec-5384-b9ca-fd553ec0f442/scratchpad/body/B7/m_hand3.png
+- `Bash` Run verify on the saved build; list changed files
+  - result: [PASS] scene B0 highres_bake_sources: GB_HighRes bake sources missing (built by B1-B4 for B7): [] [PASS] files B7 b7_texture_files: 99 files, sets ['body', 'brain', 'head', 'mouth', 'organs', 'shorts', 'skeleton'] [PASS] files B7 b7_no_empty_texels: head miss 0.093% black 0; body miss 0.001% black 0 ...
+- `Bash` Move Godot reference stage into B7 folder and verify it runs
+- `Bash` Check Godot run time and ignore its cache folder
+- `Bash` Document the Godot reference stage
+- `Read` /home/user/YAYSTO/blender/gore_body/renders/lookdev_cycles_vs_godot.png
+- `StructuredOutput` 

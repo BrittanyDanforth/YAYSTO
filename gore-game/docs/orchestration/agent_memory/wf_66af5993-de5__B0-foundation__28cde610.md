@@ -1,0 +1,141 @@
+# Agent memory: B0:foundation (body build + review)
+
+Transcript `agent-ae535e7a228cde610.jsonl`, 2026-09-26T06:17 to 2026-09-26T07:12 UTC. Extracted automatically; the agent's own notes (what it found, decided, tried) plus every step it ran and the pass/fail lines.
+- `Bash` 
+  - result: blender/: gore_body gore_head gore-game/: assets docs tools gore-game/assets: __pycache__ gb_common.py gb_data gb_geom.py renders rig.py 13:## 0. Read this first 15:### 0.1 Evidence tags and sources 20:### 0.2 Decisions at a glance 44:### 0.3 Deviations from the bible (and why) 56:### 0.4 Limits of  ...
+- `Bash` 
+- `Bash` 
+- `Bash` 
+- `Bash` 
+- `Bash` 
+- `Bash` 
+  - result: # Gore Head — Full-Body Build Plan (technical direction) > Audio removed by the user; the game has no sound. Audio sections below were deleted or reworded to visuals. > **Visual reference notes:** also apply `gore-game/docs/REFERENCE_NOTES.md` (generic properties of real wounds and blood from forens ...
+  - result: ### 5.2 Files and entry points | File | Owner | Entry points | Produces | |---|---|---|---| | `CONTRACT.md` | B0 | — | This section, kept current | | `gb_common.py` | B0 | `HERE`, `GAME_OUT`, `SEEDS`, `head_to_body(p)`, `b2g(v)`, `collections()`, `link(obj, col)`, `write_json(path, data, schema)`, ` ...
+  - result: ## 2. Architecture overview ### 2.1 Build and runtime flow ``` BLENDER 5.0 (bpy, 4 cores, offline) GODOT 4.5 (runtime) blender/gore_head (existing: SDF toolkit, head layers, res://pipeline/import/subject_post_import.gd materials, GN gore reference) CUSTOM0 = rest pos (RGBA32F), materials, │ import ( ...
+  - result: | 5 | Open wound (G3) | When a wound needs a real hole (§3.3.4), its surface switches to the discard variant, a skinned **wound-wall mesh** is generated, and RevealManager shows the inner layers within 5–10 cm | | 6 | Inner meshes (G3) | Closed inner meshes render back faces (`cull_disabled`, `FRONT ...
+- `Bash` 
+  - result: 705:| `CONTRACT.md` | B0 | — | This section, kept current | 706:| `gb_common.py` | B0 | `HERE`, `GAME_OUT`, `SEEDS`, `head_to_body(p)`, `b2g(v)`, `collections()`, `link(obj, col)`, `write_json(path, data, schema)`, `stage_cache(name, input_paths)`; stubs for `weights_at` (B6) and `seam_ring` (B2) |  ...
+- `Bash` 
+- `Read` /home/user/YAYSTO/blender/gore_body/gb_common.py
+  - result: 1 """Shared helpers for the procedural full body (`blender/gore_body`, Blender 5.x). 2 3 Everything in this project is generated from code: no downloaded meshes, 4 textures, HDRIs or add-ons. Works both as the ``bpy`` Python module 5 (``python3 build.py``) and inside Blender (``blender -b --python b ...
+- `Read` /home/user/YAYSTO/blender/gore_body/gb_geom.py
+  - result: 1 """Geometry helpers shared by the body builders (owner B0). 2 3 numpy-first mesh utilities on top of the head project's SDF toolkit 4 (``gore_head/anatomy.py``: ``sample_grid``, ``surface_nets``, ``mesh_sdf`` ...): 5 6 * ``sdf_mesh`` - polygonise an SDF into a contract-named object (remesh + proje ...
+- `Read` /home/user/YAYSTO/blender/gore_body/rig.py
+- `Bash` 
+- `Bash` 
+- `Bash` 
+- `Bash` 
+- `Bash` 
+  - result: """Rig table: 39 deform bones (plan §3.1.1) and 20 physical bodies (plan §3.1.2). Positions are [RB §7.2] (V) unless marked E. Bones are ``snake_case`` with ``_L/_R`` suffixes (plan §0.3); right-side rows are mirrored from the left. Joint axes are defined anatomically and resolved numerically into w ...
+  - result: """Vessel graph rows (RB §3.3; R03 §4-§11, R05 §10.4) - B0 transcription, B5 extends. Every row of the bible's vessel table is here with its numbers kept verbatim (``note`` keeps the original bleed text). Where the bible gives only an end point, a landmark phrase or "along X", B0 added the missing w ...
+- `Bash` 
+- `Bash` 
+- `Bash` 
+  - result: sys.path.insert(0, os.path.dirname(os.path.abspath(__file__))) import gh_common as ghc # noqa: E402 COLLECTION = "GoreHead" # --------------------------------------------------------------------------- # Landmarks (metres). Mirrored features are given for the left (+X) side. # ---------------------- ...
+- `Bash` 
+- `Bash` 
+  - result: export const meta = { name: 'gore-body-blender', description: 'Build the procedural full body in Blender (skin, shorts, head join, skeleton, organs, cord, vessels, props, bakes, rig, export) per FULL_BODY_PLAN', phases: [ { title: 'Foundation', detail: 'B0: scaffold, data tables, placeholder + expor ...
+- `Bash` 
+  - result: 1465:JAW_BOX = ((-0.065, -0.100, -0.112), (0.065, 0.012, 0.012)) 1471:def _fib_dirs(n, seed=3): 1485:def gyri_field(x, y, z): 1492:def _wave_nodal_distance(x, y, z, dirs, phases, wavelength): 1523:def _sulcus_profile(s, depth=0.0030, width=0.0008, half_gyrus=0.0044, round_d=0.0034): 1533:CENTRAL_SUL ...
+
+**[09-26T06:20] note:** Let me time the head-project pieces at coarse resolution.
+
+- `Bash` 
+- `Bash` 
+- `Bash` 
+- `Bash` 
+- `Bash` 
+- `Bash` 
+- `Bash` 
+- `Bash` 
+- `Bash` 
+
+**[09-26T06:26] note:** Now the placeholder body SDF. I'll write the skin part first and look at it before building the rest.
+
+- `Write` /home/user/YAYSTO/blender/gore_body/placeholder.py
+- `Bash` 
+  - result: Traceback (most recent call last): File "/tmp/claude-0/-home-user-YAYSTO/e2a2594c-08ec-5384-b9ca-fd553ec0f442/scratchpad/body/B0/t3.py", line 6, in <module> h,b,ring = P.build_head_body(P.RES["quick"], True) ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ File "/home/user/YAYSTO/blender/gore_body/placeholde ...
+- `Bash` 
+  - result: skin 6.6255903244018555 27752 42631 27934 42760 00:06.950 cycles | WARNING CUEW initialization failed: Error opening the library 00:12.075 render | Saved: '/tmp/claude-0/-home-user-YAYSTO/e2a2594c-08ec-5384-b9ca-fd553ec0f442/scratchpad/body/B0/r/skin_front.png' 00:16.949 render | Saved: '/tmp/claude ...
+- `Bash` 
+- `Read` /tmp/claude-0/-home-user-YAYSTO/e2a2594c-08ec-5384-b9ca-fd553ec0f442/scratchpad/body/B0/r/skin_m.png
+- `Bash` 
+- `Bash` 
+- `Bash` 
+- `Bash` 
+- `Bash` 
+- `Write` /home/user/YAYSTO/blender/gore_body/neuro.py
+- `Bash` 
+- `Bash` 
+- `Bash` 
+- `Bash` 
+- `Bash` 
+- `Bash` 
+- `Bash` 
+- `Read` /tmp/claude-0/-home-user-YAYSTO/e2a2594c-08ec-5384-b9ca-fd553ec0f442/scratchpad/body/B0/r/m1.png
+- `Bash` 
+- `Read` /tmp/claude-0/-home-user-YAYSTO/e2a2594c-08ec-5384-b9ca-fd553ec0f442/scratchpad/body/B0/r/m2.png
+- `Bash` 
+- `Read` /tmp/claude-0/-home-user-YAYSTO/e2a2594c-08ec-5384-b9ca-fd553ec0f442/scratchpad/body/B0/r/m3.png
+- `Read` /tmp/claude-0/-home-user-YAYSTO/e2a2594c-08ec-5384-b9ca-fd553ec0f442/scratchpad/body/B0/r/m4.png
+- `Bash` 
+- `Bash` 
+- `Bash` 
+- `Read` /tmp/claude-0/-home-user-YAYSTO/e2a2594c-08ec-5384-b9ca-fd553ec0f442/scratchpad/body/B0/r/m5.png
+- `Bash` 
+- `Write` /home/user/YAYSTO/blender/gore_body/export.py
+- `Bash` 
+- `Write` /home/user/YAYSTO/blender/gore_body/verify.py
+- `Write` /home/user/YAYSTO/blender/gore_body/build.py
+- `Bash` 
+  - result: [gore_body] stages ['placeholder'] quick=True blender 5.0.1 [ 0.0 s] placeholder: armature + poses [ 6.4 s] placeholder: head + body skin (seam ring) [ 2.6 s] placeholder: shorts + muscle shell [ 0.9 s] placeholder: eyes, eye FX, mouth, brow/lash [ 11.2 s] placeholder: skeleton + fracture variants [ ...
+- `Bash` 
+- `Bash` 
+- `Bash` 
+- `Bash` 
+- `Bash` 
+- `Bash` 
+  - result: [ 26.2 s] stage placeholder [ 0.9 s] stage rig (skin weights) [ 5.5 s] stage export [PASS] tables B0 rig_bones_and_bodies: 39 bones, 20 bodies, parents first True, total mass 75.01 kg [WARN] scene B0 highres_bake_sources: GB_HighRes bake sources missing (built by B1-B4 for B7): ['GB_Head_HR', 'GB_Bo ...
+- `Bash` 
+- `Bash` 
+- `Bash` 
+  - result: [PASS] tables B0 rig_bones_and_bodies: 39 bones, 20 bodies, parents first True, total mass 75.01 kg [WARN] scene B0 highres_bake_sources: GB_HighRes bake sources missing (built by B1-B4 for B7): ['GB_Head_HR', 'GB_Body_HR', 'GB_Skeleton_HR', 'GB_Organs_HR', 'GB_Brain_HR'] [WARN] scene B5 vessels_ins ...
+- `Bash` 
+- `Bash` 
+- `Bash` 
+  - result: [] ['--quick'] ['--quick'] [ 0.0 s] placeholder: armature + poses [ 17.7 s] placeholder: head + body skin (seam ring) [ 6.4 s] placeholder: shorts + muscle shell [ 1.4 s] placeholder: eyes, eye FX, mouth, brow/lash [ 21.8 s] placeholder: skeleton + fracture variants [ 5.4 s] placeholder: brain, orga ...
+- `Bash` 
+- `Read` /tmp/claude-0/-home-user-YAYSTO/e2a2594c-08ec-5384-b9ca-fd553ec0f442/scratchpad/body/B0/r/F1.png
+- `Read` /tmp/claude-0/-home-user-YAYSTO/e2a2594c-08ec-5384-b9ca-fd553ec0f442/scratchpad/body/B0/r/F2.png
+- `Bash` 
+- `Read` /tmp/claude-0/-home-user-YAYSTO/e2a2594c-08ec-5384-b9ca-fd553ec0f442/scratchpad/body/B0/r/m6.png
+- `Bash` 
+- `Read` /tmp/claude-0/-home-user-YAYSTO/e2a2594c-08ec-5384-b9ca-fd553ec0f442/scratchpad/body/B0/r/m6.png
+- `Bash` 
+- `Bash` 
+- `Read` /tmp/claude-0/-home-user-YAYSTO/e2a2594c-08ec-5384-b9ca-fd553ec0f442/scratchpad/body/B0/r/m6.png
+- `Bash` 
+  - result: 237:NECK_BLEND = (1.500, 1.600) # z band where the body neck hands over to the head project's head 470: in_mouth = (np.abs(c[:, 0]) < 0.034) & (c[:, 1] > -0.105) & (c[:, 1] < -0.01) & (c[:, 2] > -0.09) & (c[:, 2] < -0.02) [PASS] tables B0 rig_bones_and_bodies: 39 bones, 20 bodies, parents first True ...
+- `Bash` 
+- `Read` /tmp/claude-0/-home-user-YAYSTO/e2a2594c-08ec-5384-b9ca-fd553ec0f442/scratchpad/body/B0/r/G1.png
+- `Read` /tmp/claude-0/-home-user-YAYSTO/e2a2594c-08ec-5384-b9ca-fd553ec0f442/scratchpad/body/B0/r/G2.png
+- `Bash` 
+- `Bash` 
+  - result: 1022: specs = [("GB_Frac_Skull_L", "skull", (1.0, 0.0, 0.3)), ("GB_Frac_Skull_R", "skull", (-1.0, 0.0, 0.3)), 1028: specs.append((f"GB_Frac_{bone}_{side}_{kind}", tuple(f"{p}_{side}" for p in pieces), kind)) 1029: for name, src, how in specs: [PASS] tables B0 rig_bones_and_bodies: 39 bones, 20 bodie ...
+- `Bash` 
+  - result: [PASS] scene B0 rigid_parts_follow_their_bone: vertices not 100 % on their rigid bone: {} verify: 31 checks, 0 failures, 2 warnings
+- `Bash` 
+  - result: [PASS] scene B0 bone_pieces_side_consistent: piece/bone side mismatches: [] verify: 32 checks, 0 failures, 2 warnings 7 3 1 2 1
+- `Read` /tmp/claude-0/-home-user-YAYSTO/e2a2594c-08ec-5384-b9ca-fd553ec0f442/scratchpad/body/B0/r/G2.png
+- `Bash` 
+  - result: [PASS] files B0 glb_contents: nodes missing []; 39 joints; materials missing []; primitives without UV2/JOINTS []; images 0; animations ['pose_brace', 'pose_cower', 'pose_guard', 'pose_idle']; morph targets {'GB_Body': 4, 'GB_Head': 24, 'GB_Organs': 6} verify: 16 checks, 0 failures, 0 warnings [PASS ...
+- `Bash` 
+  - result: RUN1 built RUN2 cached built-test ['GB_Inner'] <bpy_struct, Object("GB_Armature") at 0x29b83f18> FAILS ['material_slots'] neuro-21ccad081221a838.blend
+- `Bash` 
+  - result: RUN1 built RUN2 cached built-test ['GB_Inner'] <bpy_struct, Object("GB_Armature") at 0x1ab05838> FAILS []
+- `Bash` 
+- `Bash` 
+- `Write` /home/user/YAYSTO/blender/gore_body/CONTRACT.md
+- `Bash` 
+  - result: [ 57.1 s] stage placeholder [ 1.0 s] stage rig (skin weights) [ 4.9 s] stage export [PASS] tables B0 rig_bones_and_bodies: 39 bones, 20 bodies, parents first True, total mass 75.01 kg [WARN] scene B0 highres_bake_sources: GB_HighRes bake sources missing (built by B1-B4 for B7): ['GB_Head_HR', 'GB_Bo ...
+- `StructuredOutput` 
