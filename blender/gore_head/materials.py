@@ -672,12 +672,15 @@ def _group_fat():
     n = t.noise(p, 1400.0, 2.0)
     # pale cream-yellow lobules (fresh subcutaneous fat is not orange)
     # (saturated but not bright: a lit wound wall must not blow out to white)
-    col = (lob * 0.45 + tone * 0.4 + n * 0.15).ramp([(0.15, (0.34, 0.19, 0.035)), (0.5, (0.48, 0.31, 0.07)),
-                                                     (0.85, (0.56, 0.42, 0.14))])
+    # (REFERENCE_NOTES §5.22: face / neck fat is PALE CREAM #E8D9B5-#D9C6A0,
+    # faintly yellow and pink-tinged, never a saturated yellow band; kept
+    # below its sRGB value so a lit wall does not blow out)
+    col = (lob * 0.45 + tone * 0.4 + n * 0.15).ramp([(0.15, (0.36, 0.27, 0.17)), (0.5, (0.47, 0.37, 0.24)),
+                                                     (0.85, (0.55, 0.45, 0.31))])
     cap = t.ridge(t.noise(t.warp(p, 120.0, 0.002), 160.0, 3.0), 0.012) * t.noise(p, 45.0).smooth(0.4, 0.6)
     col = t.mix(sept * 0.6, col, (0.48, 0.17, 0.08))
     col = t.mix(cap * 0.75, col, (0.30, 0.025, 0.018))
-    blush = t.noise(p, 60.0, 3.0).smooth(0.6, 0.8) * 0.25     # blood-tinged patches
+    blush = t.noise(p, 60.0, 3.0).smooth(0.5, 0.75) * 0.45    # blood-tinged pink / brown patches
     col = t.mix(blush, col, col * (0.9, 0.45, 0.35))
     t.result("Color", col)
     t.result("Roughness", t.mix(wet, 0.45, 0.2) + sept * 0.1)
@@ -1084,10 +1087,16 @@ def _fat_material(g):
     dermis = t.mix(t.noise(p, 900.0), DERMIS_LO, DERMIS_HI) * (0.8, 0.7, 0.7)
     col = t.mix(dm, f["Color"], dermis)
     # deep in a cut: muscle (dark red, blood-soaked)
-    fm = dj.smooth(0.58, 0.68)
+    # (the fat is a thin layer: face 2-6 mm, neck 2-5 mm, under 1.5-3 mm of
+    # skin; below ~45 % of a wall's depth it is muscle, §5.22)
+    fm = dj.smooth(0.40, 0.50)
     # lips have almost no fat: under the vermilion lies the orbicularis muscle
     fm = fm.max(t.attr("gh_lip").smooth(0.2, 0.6) * dj.smooth(0.1, 0.18))
     col = t.mix(fm, col, mus["Color"] * (0.8, 0.7, 0.7))
+    # fresh fat is quickly stained red-brown by the blood running over it:
+    # most of the thin fat line is blood-tinged, only small lobules stay cream
+    fstain = t.noise(t.warp(p, 150.0, 0.002), 260.0, 3.0).smooth(0.38, 0.62) * (1.0 - fm) * (1.0 - dm)
+    col = t.mix(fstain * 0.75, col, col * (0.62, 0.22, 0.17))
     # blood between the fat lobules
     sept = 1.0 - f["Height"].smooth(0.1, 0.5)
     col = t.mix(sept * 0.55 * (1.0 - dm), col, (0.10, 0.012, 0.012))

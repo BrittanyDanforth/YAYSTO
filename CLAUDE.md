@@ -97,16 +97,15 @@ integration stage and becomes the head of the full body.
 
 ---
 
-## 3. Status snapshot (when the cloud session stopped, 2026-09-26 ~05:15 UTC)
+## 3. Status snapshot (updated 2026-09-28 ~01:40 UTC, end of the cloud session) — READ `gore-game/docs/LOCAL_HANDOFF.md` NEXT
 
 | Track | State |
 |---|---|
-| **Blender head** (`blender/gore_head/`) | Built and integrated. `build.py` builds everything in one process (~49 s), 6 presets, 15 renders, `gore_head.blend` (27.6 MB). **Review/fix rounds did NOT run** (stopped right after the anti-sticker feedback was added). Known issues: §7. |
-| **Research round 1** | Done + fact-checked → `gore-game/docs/research/01–06` → `REALISM_BIBLE.md`, `FULL_BODY_PLAN.md`. |
-| **Research round 2** | Done + fact-checked → `gore-game/docs/research2/01–06` → `BEHAVIOUR_BIBLE.md`. |
-| **Full body in Blender** (`blender/gore_body/`) | **Not started** (the B0 agent had just launched; nothing was written). |
-| **Godot game** (`gore-game/` project) | **Not started** (only docs exist; the "remove audio from docs" prep step did not run). |
-| Old browser (Three.js) prototype | Abandoned and deleted. Ignore any mention of Three.js/artifact/jsdelivr in old notes. |
+| **Blender head** (`blender/gore_head/`) | Built; review rounds 1-3 + final pass done; **head fix pass 2 in progress** (`orchestration/06_head_fix_pass2.js`): blood part DONE (blood seeded on the wound rim, zero-gap proof `proof_blood.py`, named head-vessel table, branching streams); wounds part mostly done (eye rupture/lid tear/black eye, crushed crater, burn on the eye, blast pulp, open neck gash) but still open: glossy gel blood, second-mouth slash with foil stripes, throat cut without cross-section, too much yellow fat, candy teeth/beads, tile bone, entry grommet, flat brain cut; face part + strict review NOT done. `gore_head.blend` in git (~31 MB). |
+| **Research** | Rounds 1 + 2 done and fact-checked → `REALISM_BIBLE.md`, `BEHAVIOUR_BIBLE.md`, `FULL_BODY_PLAN.md`. |
+| **Full body in Blender** (`blender/gore_body/`) | Built (B0-B8), exported to `gore-game/assets/generated/` (in git, last complete set = fix round 2 build) and loads in Godot. Fix round 1 done; review round 2: all critics needs_work (38 HIGH total across head+body in `orchestration/LATEST_REPORTS.md`); **fix round 2 in progress**. Neck lengthened 1.5 cm (NECK_LIFT, stature 1.795 m). `gore_body.blend` (~105 MB) NOT in git — regenerate with `build.py --stage all`. |
+| **Godot game** | **Not started** — the user said not to start it yet. |
+| Agent memory | `gore-game/docs/orchestration/agent_memory/` (INDEX.md + live/ notes) — read before continuing any task. |
 
 Fact-check caveat: during research the shared web-search budget (200) ran out and web page fetching was blocked by the
 cloud proxy. Research numbers come from search-result summaries of cited papers + the agents' medical knowledge; the
@@ -150,6 +149,19 @@ gore-game/docs/
     AGENT_REPORTS.md    every agent's full final report, verbatim (head build, both research rounds)
     journals/*.jsonl    raw workflow journals
 gore-game/tools/jpeg_encode.py    small helper left from the dropped web exporter (plan §6.1 keeps it)
+gore-game/docs/LOCAL_HANDOFF.md   ← handoff for the local PC: setup, status, every open issue, how to continue, gates
+gore-game/docs/orchestration/LATEST_REPORTS.md   verbatim latest critic + fixer reports (38 HIGH issues, concrete fixes)
+gore-game/docs/orchestration/agent_memory/       every agent's step log (INDEX.md) + live/ notes by running fixers
+gore-game/docs/orchestration/06_head_fix_pass2.js head fix pass 2 (17 items + 16b, fixers blood→wounds→face, critics)
+gore-game/tools/dump_agent_memory.py             regenerates agent_memory/ from Claude Code transcripts
+blender/gore_head/proof_blood.py                 zero-gap proof (skin pixels between wound rim and blood, 0-60 s)
+blender/gore_head/FACE_FEEDBACK.md               user's face verdict (ears, cheekbones, nostrils; deep-set eyes dropped)
+blender/gore_head/dev_tools/, blender/gore_body/dev_tools/   fixers' render/probe helpers (cloud paths inside)
+blender/gore_body/                ← full body: build.py (stages), body_skin, skeleton, skull, viscera, vascular, neuro,
+                                    head_integration, rig, uv, bake, lookdev, texgen, props, export, verify, posetest,
+                                    CONTRACT.md; gore_body.blend NOT in git (regenerate)
+gore-game/assets/generated/       exported subject (GB_Subject.glb + LOD1 + rig/landmarks/organs/vessels/spine/codes
+                                    JSON, textures) and props (weapons.glb, room.glb) — loads in Godot
 ```
 
 The bibles are huge. Grep for the section you need (`grep -n "^## \|^### " file`) instead of reading them whole.
@@ -180,25 +192,16 @@ blood_age, bruising, swelling, skin_tone, pallor). Godot: install **Godot 4.5.1*
 
 ---
 
-## 6. What to do next (in order)
+## 6. What to do next (in order) — details in `gore-game/docs/LOCAL_HANDOFF.md`
 
-1. **Verify the local toolchain**: run the head build with Blender 5.1 (`--no-render`), fix any 5.0→5.1 API differences.
-2. ~~Strip audio from the docs~~ — DONE (2026-09-26). Was: delete plan work package G8, plan §3.8, `BEHAVIOUR_BIBLE.md §7`, audio
-   rows in checklists/folder layouts/dependency graphs; add "Audio removed by the user; no sound in the game." at the
-   top of each bible/plan; mark `research2/06_sounds_voice_face.md` sound sections as reference-only.
-3. **Head review + fix rounds** (never ran). Priority 1 = anti-sticker (§8). Then the §7 backlog and
-   `REALISM_BIBLE.md §2.7` (25 fixes). Critics render every wound type close-up from 3 angles + a cross-section.
-   Script: `gore-game/docs/orchestration/01_head_build_and_review.js` (build/integrate already done; run review/fix/final).
-4. **Full body in Blender** per `FULL_BODY_PLAN.md §5, §8`: B0 (scaffold, data tables from the bible, placeholder +
-   export) → B1 skin/shorts/muscle shell, B3 skeleton, B2 head join (import `gore_head` read-only), B4 organs + cord +
-   brainstem, B5 vessels + nerves, B8 props + room → B7 look-dev/bakes → B6 rig, weights, export → review/fix.
-   Script: `orchestration/04_body_blender.js`.
-5. **Godot game** per `FULL_BODY_PLAN.md §6, §8`: G0 scaffold/import/tests, G1 physiology → G2 hits + morphology,
-   G5 ragdoll/motor → G3 gore rendering (real geometry!), G6 eyes/face → G4 blood FX, G7 tools/UI/x-ray → integrate →
-   5 critics (forensic realism vs RB §9, behaviour vs BB §9, gore visuals/anti-sticker, tech/perf, UX) → fix rounds.
-   Script: `orchestration/05_body_godot.js`.
-6. Final QA against every checklist, heavy-gore perf gate, README, screenshots; Windows/Linux exports once the user
-   approves the export-template download.
+1. **Local setup:** pull the branch, copy the user's reference photos into `refs/` (not in git), check the toolchain
+   with Blender 5.1 (`build.py -- --no-render`, `gore.py -- --no-render`, `anatomy.py`), regenerate `gore_body.blend`.
+2. **Read agent memory** (`orchestration/agent_memory/INDEX.md`, `live/`) and `orchestration/LATEST_REPORTS.md`.
+3. **Head:** finish fix pass 2 (open wound items in §7 + LATEST_REPORTS) → face per `FACE_FEEDBACK.md` → full build +
+   `proof_blood.py` → strict critics vs every ref (§5.18 section-H table) → fix until no HIGH remains.
+4. **Body:** finish fix round 2 → build/verify/export → review round 3 → fix; re-export with the finished head.
+5. **Godot game only when the user says so** (`orchestration/05_body_godot.js`, FULL_BODY_PLAN §6/§8).
+6. Final QA, 60 fps gate on the user's GPU, Windows/Linux exports after the user approves the export-template download.
 
 ---
 
@@ -378,8 +381,9 @@ Big work was done with multi-agent **workflows** (Claude Code's Workflow tool, "
   USER_FEEDBACK anti-sticker block and the §2.7 fix pointer.
 - `02_research_round1.js`, `03_research_round2.js` — per-topic researcher → independent adversarial fact-checker
   (pipelined) → synthesis into a bible (+ plan). Contains the security rules given to web-reading agents.
-- `04_body_blender.js`, `05_body_godot.js` — the full-body build (package agents per FULL_BODY_PLAN, then critics + fixers).
-  They were launched and immediately stopped; nothing was produced yet.
+- `04_body_blender.js` — the full-body build (package agents per FULL_BODY_PLAN, then critics + fixers); ran B0-B8,
+  review/fix round 1, review round 2, fix round 2 in progress. `05_body_godot.js` — the game build; NOT run yet.
+- `06_head_fix_pass2.js` — head fix pass 2 (blood → wounds → face fixers, then strict critics + fix rounds).
 
 **Agent memory (restarts lose agents' working memory):** `gore-game/tools/dump_agent_memory.py` extracts every workflow
 agent's step-by-step log (edits, tests, renders, pass/fail) from the Claude Code transcripts into
