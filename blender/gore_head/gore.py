@@ -2347,7 +2347,7 @@ BRANCH_STEPS = 26
 WALK_RAMP = 6                   # the first steps of a run are 1/6 .. 1 of the full step (see _walk)
 BLOOD_KINDS = ("bullet", "exit", "slash", "blunt", "blast")
 POOL_KINDS = ("bullet", "exit", "blunt", "slash")
-POOL_RES = 72
+POOL_RES = 104                  # (grid cells ~as fine as before the exit grid grew to 3.2 hole radii)
 POOL_COLS = 24                  # slices across a cut with their own liquid level
 # kind: (extra runs at full flow, spread of the extra runs' start across the
 # hole (fraction of its radius), cavity volume in mL at size 1 (fill time = V / Q))
