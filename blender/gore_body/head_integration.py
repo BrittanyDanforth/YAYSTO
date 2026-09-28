@@ -1750,7 +1750,9 @@ LASH_COUNT = {"upper": 120, "lower": 52}                 # per eye [K: 90-160 up
 # upper 8-12 mm; lower about half as long and sparser (fix round 3, critics: the lower fan splayed onto the cheek)
 LASH_LEN_MM = {"upper": (8.0, 12.0), "lower": (4.2, 6.4)}     # ends -> middle of the lid
 # start direction: mostly straight out of the margin (30-45 deg to the lid surface), the curl lifts the tips
-LASH_LIFT = {"upper": 0.12, "lower": 0.30}
+LASH_LIFT = {"upper": 0.06, "lower": 0.22}
+# tip clearance from the skin (critics round 2: lashes lying on the lid; verify wants >= 2 mm upper)
+LASH_TIP_CLEAR_MM = {"upper": 2.2, "lower": 1.4}
 
 
 def lash_strands(bvh, rng, sign, upper=True):
@@ -1768,7 +1770,14 @@ def lash_strands(bvh, rng, sign, upper=True):
     count = LASH_COUNT[key]
     lo, hi = LASH_LEN_MM[key]
     a_prof = (0.0, 0.27, 0.53, 0.76, 0.94)                       # along the start direction
-    b_prof = (0.0, 0.03, 0.11, 0.25, 0.42) if upper else (0.0, 0.02, 0.07, 0.15, 0.24)   # curl
+    # curl (fix round 2 continuation, critics: the upper fan stood 6 mm up the lid and read as painted on it;
+    # real upper lashes project ~6-8 mm forward and only ~3-5 mm up, the lower ones forward-down)
+    b_prof = (0.0, 0.02, 0.08, 0.18, 0.30) if upper else (0.0, 0.015, 0.05, 0.11, 0.18)
+    min_clear = LASH_TIP_CLEAR_MM[key] * 1e-3
+    # lashes gather in small clumps (3-5 strands whose tips converge), never a combed regular fan
+    n_clump = max(1, count // 4)
+    clump_of = np.minimum((np.arange(count) * n_clump) // count, n_clump - 1)
+    clump_jit = [Vector((rng.normal(0, 0.05), rng.normal(0, 0.05), rng.normal(0, 0.05))) for _c in range(n_clump)]
     out = []
     for k in range(count):
         t = 0.04 + 0.93 * (k + rng.uniform(0.0, 0.9)) / count
@@ -1789,9 +1798,20 @@ def lash_strands(bvh, rng, sign, upper=True):
             ev = -ev
         L = (lo + (hi - lo) * math.sin(math.pi * min(max(t + 0.06, 0.0), 1.0)) ** 0.8) * 1e-3
         L *= rng.uniform(0.86, 1.10)
-        d0 = (radial + ev * LASH_LIFT[key] + Vector((sign * 0.22 * max(t - 0.55, 0.0), 0.0, 0.0)))
-        d0 = (d0 + Vector((rng.normal(0, 0.04), rng.normal(0, 0.04), rng.normal(0, 0.04)))).normalized()
-        pts = [np.array(q + d0 * (L * a) + ev * (L * b)) for a, b in zip(a_prof, b_prof)]
+        noise = Vector((rng.normal(0, 0.03), rng.normal(0, 0.03), rng.normal(0, 0.03)))
+        lat = Vector((sign * 0.22 * max(t - 0.55, 0.0), 0.0, 0.0))
+        lift = LASH_LIFT[key]
+        pts = None
+        for _try in range(6):
+            d0 = (radial + ev * lift + lat + clump_jit[clump_of[k]] + noise).normalized()
+            curl = [b * (1.0 - 0.15 * _try) for b in b_prof]
+            pts = [np.array(q + d0 * (L * a) + ev * (L * b)) for a, b in zip(a_prof, curl)]
+            # the tip must stand clear of the lid/cheek skin: otherwise tilt the lash further forward
+            if bvh.find_nearest(Vector(pts[-1]))[3] >= min_clear:
+                break
+            radial = (radial + Vector((0.0, -0.35, 0.0))).normalized()
+            lift *= 0.5
+            lat = lat * 0.5
         out.append(pts)
     return out
 
