@@ -36,7 +36,11 @@ When unsure what the user wanted, search SESSION_LOG.md for their exact words.
 
 ## 1. First-hour checklist (do these in order)
 
-1. **Pull the branch** `claude/blender-cloud-l8ujco` (all code, docs, renders, game assets, agent memory are in it).
+1. **Stop the cloud first, then pull.** The cloud fixers (head wounds fixer, body fix round 2) were still running after
+   this handoff was written and may have pushed later commits. Make sure the cloud session is stopped, then pull the
+   branch `claude/blender-cloud-l8ujco` (all code, docs, renders, game assets, agent memory), then read
+   `orchestration/agent_memory/live/*.md` for their newest steps. Never run a local fixer while a cloud one still edits
+   the same files — two copies overwrite each other.
 2. **Reference photos:** copy the user's forensic reference photos into `refs/` at the repo root (git-ignored on
    purpose; never commit them). Expected files: `1.png 2.png 3.webp 4.webp 5.webp 6.webp 7.png 8.png
    12_our_render_wall_stripes.png 13_blast_face_mouth_explosive.png 14_body_position_pool.png
@@ -45,6 +49,10 @@ When unsure what the user wanted, search SESSION_LOG.md for their exact words.
    21_face_gsw_seated_pool.png 25_our_blood_disconnected.png 26_our_blood_disconnected_zoom.png
    gsw_pathology_sheet.webp face_ref_male.webp face_ref_sculpt.png` (12, 25, 26 are OUR bad renders = what to avoid).
    If the user does not have them locally, ask them to copy them — reviews without the refs are invalid.
+   Upload → name mapping (the user's chat uploads): 1-8 → `1.png`…`8.png`; 9 → `face_ref_sculpt.png`; 10 →
+   `face_ref_male.webp`; 11 → `gsw_pathology_sheet.webp`; 13-16 → `13_…16_…`; 17-21 → `17_…21_…`. OUR annotated bad
+   renders (12, 22-31, 25, 26 — what to avoid) ARE committed in `gore-game/docs/feedback_renders/`; copy them into
+   `refs/` too.
 3. **Toolchain check (Blender 5.1 was never run here; only the bpy 5.0.1 module):**
    - `cd blender/gore_head && blender -b --python build.py -- --no-render` → must print all verify checks passed.
    - `blender -b --python gore.py -- --no-render` (verify_gore) and `blender -b --python anatomy.py` (30 overlap checks).
@@ -71,6 +79,15 @@ When unsure what the user wanted, search SESSION_LOG.md for their exact words.
 | Head (Blender) | built; review rounds 1–3 + final pass done; **fix pass 2 in progress**: blood part DONE, wounds part ~most done, face part + strict review NOT done | `blender/gore_head/renders/`, `orchestration/LATEST_REPORTS.md` |
 | Body (Blender) | built B0–B8, exported to Godot; fix round 1 done; review round 2 done (all 3 critics "needs_work"); **fix round 2 in progress** | `blender/gore_body/`, `gore-game/assets/generated/`, `LATEST_REPORTS.md` |
 | Godot game | **NOT started** (user: "dont start making the actual game yet") | — |
+
+Last estimate given to the user (09-28 01:04): overall ~35-45 % (research ~100 %, head ~70 %, body ~60 %, Godot 0 %).
+First playable (room, shoot, blood from wounds, bleed, ragdoll fall, basic brain/spine) ≈ 1-3 days of agent work once
+the user says start; the full polished 1:1 version and the 60 fps gate need the user's GPU and many visual fix rounds.
+
+**KEEP (user-approved or proven; do not regress):** the intact head's tooth shapes ("U DID TEETH GREAT"; the brown
+speckle on the body and the cube/candy teeth in the blast are still bugs); the nose base and curve; loose teeth and a
+broken jaw in the mouth blast; the eye cutaway section; the branching scalp-split pour; blood seeded on the rim with
+zero gap (`proof_blood.py`).
 
 What got clearly better during the cloud session (keep it, don't regress it):
 - Blood comes OUT of the wound: every run is seeded on the wound's own rim, never wider than the rim part it spills
@@ -99,6 +116,8 @@ latest reviewers + fixers' own "still open" lists) and `CLAUDE.md §7` (user fee
 - Mouth blast: teeth = white cubes, tissue = round candy beads; gums/palate/tongue must be destroyed (§5.15, ref 13).
 - Blunt: swelling/bruising at the impact spot, crushed abraded margins (refs 15/16).
 - Entry: still a neat round grommet with a soft halo; must be small irregular with a 1.6–2.4 mm abrasion collar.
+- Multi-hit face (e.g. 4 entries): by ~48 s blood must cover much of the face and pour off the chin (the 4-shot clip had
+  one straight line per run and far too little blood).
 - Cutaway: brain cut centre = flat white disc (needs grey ribbon + white matter + folds + blood in sulci).
 - Burn: too glossy; odd pale blob beside the eye.
 - Face (FACE_FEEDBACK.md): ears clay-like, cheekbones, head length, nostrils, eyelid thickness/crease/lash line,

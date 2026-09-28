@@ -1187,6 +1187,15 @@ def _bone_material(g):
     seep = (1.0 - cd1.smooth(0.0, 0.16)) * fz.smooth(0.2, 0.55)      # blood soaking out of the cracks
     stain = fz.smooth(0.05, 0.6) * t.noise(p, 260.0, 3.0).smooth(0.3, 0.65)
     col = t.mix(stain * 0.45, col, col * (0.62, 0.30, 0.24))
+    # bone exposed in a fresh wound is soaked: blood and serum stain the
+    # porous surface a patchy pink-brown ivory (refs 13, 15, 16), and torn
+    # periosteum / marrow leaves darker smears -- clean chalk-white plates
+    # read as paper or plaster (§5.18 A/B)
+    soak = (wound.max(frac) + t.attr("gore_blood") * 0.5).clamp().smooth(0.05, 0.45) \
+        * (0.45 + 0.55 * t.noise(p, 160.0, 3.0).smooth(0.3, 0.7))
+    col = t.mix(soak * 0.8, col, col * (0.74, 0.45, 0.36))
+    smear_b = t.noise(t.warp(p, 300.0, 0.001), 420.0, 2.0).smooth(0.6, 0.75) * soak
+    col = t.mix(smear_b * 0.7, col, (0.20, 0.05, 0.04))
     col = t.mix(seep * 0.7, col, col * (0.45, 0.10, 0.08))
     # cracks are filled with blood: deep red-brown, not ink-black lines
     col = t.mix(hair * 0.6, col, (0.16, 0.03, 0.02))
@@ -1276,7 +1285,17 @@ def _blood_material(g):
     a = (age + (n - 0.5) * 0.4 * age * (1.0 - age) + thin * 0.35 * age).clamp()
     # (thickness wanders along a stream: darker where it gathers, lighter
     # where it thins -- never one flat red)
-    thv = (thick + (n_lo - 0.5) * 0.45 + (t.noise(p, 25.0, 2.0) - 0.5) * 0.3).clamp()
+    # where several runs merge into one sheet (a face below a crushed or
+    # blasted mid-face) the liquid is still made of rivulets: long streaks
+    # along gravity (head -Z), thicker dark channels between thin translucent
+    # lanes where the skin shows through -- one even coat reads as a rubber
+    # mask / gel bag (§5.18 C, refs 3, 18, 21)
+    streak = t.noise(t.warp(p * (1.0, 1.0, 0.13), 60.0, 0.003), 240.0, 3.0, 0.55) * 0.75 \
+        + t.noise(p * (1.0, 1.0, 0.3), 900.0, 2.0) * 0.25
+    sheet = thin.smooth(0.12, 0.3) * (1.0 - t.attr("gore_tis"))
+    lane = (1.0 - streak.smooth(0.36, 0.56)) * sheet
+    chan = streak.smooth(0.55, 0.72) * sheet
+    thv = (thick + (n_lo - 0.5) * 0.45 + (t.noise(p, 25.0, 2.0) - 0.5) * 0.3 - lane * 0.45 + chan * 0.35).clamp()
     fresh_v = thv.ramp([
         (0.0, (0.27, 0.008, 0.015)), (0.3, (0.2, 0.005, 0.01)), (0.65, (0.11, 0.003, 0.005)),
         (1.0, (0.065, 0.0015, 0.0025))])
@@ -1320,8 +1339,8 @@ def _blood_material(g):
     h = clot * 0.3 * (1.0 - a) + t.noise(p, 4000.0) * a * 0.3 + fclot * t.noise(p, 700.0, 2.0) * 0.6 \
         + tis_m * fold * 0.8 + ripple + film * (sk_rel * 0.9 + beads * 0.6)
     # patches where the film is tacky / wiped thin: satin, not mirror
-    tack = t.noise(p, 45.0, 3.0).smooth(0.5, 0.7) * film
-    rough = rough + tack * 0.25 + film * 0.06
+    tack = (t.noise(p, 45.0, 3.0).smooth(0.5, 0.7) * film).max(lane * 0.8)
+    rough = rough + tack * 0.25 + film * 0.06 + lane * 0.12
     bsdf = t.principled({
         'Base Color': col, 'Roughness': rough.max(0.06), 'IOR': 1.36, 'Specular IOR Level': 0.5,
         # (thick blood barely scatters: a strong red subsurface glow makes
@@ -1339,7 +1358,9 @@ def _blood_material(g):
     # the stain on the skin under it (gore_blood) tints what shows
     # (only the very edge of a film lets the skin show through, tinted red;
     # a pale, half-transparent streak inside a stream reads as a smear of paint)
-    alpha = 0.62 + 0.38 * thin.smooth(0.97, 0.75)
+    # (the thin lanes between the rivulets of a merged sheet let the skin
+    # tint through: a translucent red wash, not an opaque coat)
+    alpha = (0.62 + 0.38 * thin.smooth(0.97, 0.75)) * (1.0 - lane * 0.5)
     transp = t.node('ShaderNodeBsdfTransparent', {'Color': (0.62, 0.14, 0.13)})
     mixs = t.node('ShaderNodeMixShader', {0: alpha, 1: transp.outputs[0], 2: bsdf.outputs[0]})
     t.output(mixs)

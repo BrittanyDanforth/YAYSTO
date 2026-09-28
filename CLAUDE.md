@@ -1,7 +1,7 @@
 # CLAUDE.md — startup context for this repo (READ ALL OF IT)
 
 This file is loaded automatically by Claude Code at the start of every session. It carries the full context of the
-work done so far in a long cloud session (2026-09-25 → 2026-09-26), so a new session on the user's local PC can pick up
+work done so far in a long cloud session (2026-09-25 → 2026-09-28), so a new session on the user's local PC can pick up
 exactly where it stopped. Everything the user asked for, every decision, every rule, where every file is, what is
 done, what is broken and what comes next is here. The deep material lives in the files listed in §4; read the ones
 relevant to your task before touching anything.
@@ -21,8 +21,19 @@ blood pressure, per-vessel bleeding (arterial spurts pulsing with the heart, ven
 consciousness, brain damage by region, paralysis by spinal level, realistic eyes when dying, post-mortem changes.
 The player uses **pistol, shotgun, knife (drag to slice, click to stab), fist, hammer, torch** plus an examine tool
 and an x-ray view. The subject stands in a tiled forensic test room and collapses as a ragdoll when incapacitated.
-It started as "a head with a really good gore system" in Blender; that head (`blender/gore_head/`) is finished to the
-integration stage and becomes the head of the full body.
+It started as "a head with a really good gore system" in Blender; that head (`blender/gore_head/`) is built and integrated
+but still in fix pass 2 (see §3); it becomes the head of the full body.
+
+**Game rule (user, verbatim intent: "not RARE CODED IN LIKE RARE AS IN PHYSICS JUST LIKE REAL LIFE SURVIVING A HEAD SHOT"):**
+outcomes are NEVER scripted, preset or dice-rolled. The bullet/blade/blow path is traced through the 3D anatomy; damage =
+what it actually crossed + force (calibre, bat mass × swing speed). Surviving a headshot happens only when the traced path
+misses everything vital (the ~70-90 % pre-hospital headshot lethality emerges on its own). Only behavioural variability
+from real data is sampled per subject (30-50 % don't notice a torso hit for >3 s, ~1 in 6 keep going, fencing ~66 %).
+Blender presets are test scenes only; in the game wounds accumulate hit by hit (a second hit near a crack breaks more
+easily, new cracks stop at old ones, bruises age on their own clocks); skull dents = GB_Frac_* pieces picked, placed and
+scaled from the hit while the skin is dented and torn live. **No medic/treatment exists:** every 'fatal unless treated'
+injury is fatal; slow killers (epidural haematoma, liver/spleen bleeds, tamponade) keep their real delays but the time
+scale compresses them into on-screen minutes (the user: "im not gonna wait a hour ingame").
 
 ---
 
@@ -54,7 +65,7 @@ integration stage and becomes the head of the full body.
   A STICKER ETC LIKE NICELY RELAISTIC DONE 1:1 REALISM". Every wound must be real geometry (see §8, the verbatim rule).
 - **Reference photos:** the user supplied real forensic reference photos for education. Use them ONLY for generic
   injury/blood properties (recorded in `gore-game/docs/REFERENCE_NOTES.md`); never faces, tattoos, identities or a
-  specific person's injuries; never commit the photos. The photos (1-21 plus face and GSW sheets) are in the git-ignored `refs/` folder at the repo root (they must be copied there locally; they are NOT in git); `refs/12_our_render_wall_stripes.png` shows OUR stripe artefact to eliminate; every agent building or reviewing wounds, blood, tissue, bone, skull, brain or the dead body must LOOK at them and compare renders side by side.
+  specific person's injuries; never commit the photos. The photos (1-21 plus face and GSW sheets) are in the git-ignored `refs/` folder at the repo root (they must be copied there locally; they are NOT in git; upload→name mapping in LOCAL_HANDOFF §1.2); OUR annotated bad renders the user flagged (12, 22-31, 25/26) are committed in `gore-game/docs/feedback_renders/`; `refs/12_our_render_wall_stripes.png` shows OUR stripe artefact to eliminate; every agent building or reviewing wounds, blood, tissue, bone, skull, brain or the dead body must LOOK at them and compare renders side by side.
 - **Standing rule (user, 2026-09-27): "ensure 1:1 realism on ur efforts. allways".** Every change on every part is judged against real
   anatomy and the refs. (Eyes: the deeper-set eye fix is no longer required; keep the eyes unless anatomically wrong.)
 - **Don't soften realism.** They explicitly want brain-damage deficits ("lose ability to do stuff, eyes might cross,
@@ -71,6 +82,24 @@ integration stage and becomes the head of the full body.
   download from Godot's GitHub, checksum-verifiable). Ask before downloading. Until then the game runs from the editor.
 - They like it when parallel agents / multi-step orchestration are used for big work, with critics that check quality
   (see §9 on how the work was orchestrated).
+- **Never interrupt running work** (repeated many times: "ENSURE U DONT MESSUP ANY EXSISTING TASK"). Don't restart,
+  kill or message running build agents to show renders or answer questions; only look at files already on disk and
+  render previews from a COPY at low priority. Messaging an agent mid-run once spawned a duplicate that edited the same
+  files; a rejected tool call in the main session also stopped running workflows. New feedback goes into notes/docs
+  (REFERENCE_NOTES, this file) that the NEXT agent/round reads.
+- **Communication:** the user is often sarcastic ("ITS PERFECTLY FINE" meant "obviously NOT realistic" — misreading it
+  once produced a wrong rule); if praise of a clearly unrealistic render seems odd, ask before writing it as a keep-rule.
+  Answer short and concrete; scenario style ("shot in the stomach → doubles over, hands to belly..."); plain yes/no when
+  asked ("just simple say yes or no"). When describing the future game, say only what the bibles/plan specify and label
+  it "planned, not built" ("DONT MAKE STUFF UP"). Show renders often with honest flaws; when a clip is slow, encode the
+  frames already done instead of making them wait ("i dont want the rest its taking to long").
+- **Video policy (settled 2026-09-26):** no frame analysis of real footage of a person being killed, whatever a site's
+  terms say. Acceptable instead: ballistic-gelatin/skull-model high-speed studies, surgical/ER teaching videos of living
+  patients, blood-spatter training videos, SFX breakdowns. Other games (the user likes GoreBox, compared us with Half
+  Sword) may be studied only from screenshots/videos the user sends; never download or run their files; never copy assets.
+- **Pending decisions to ask about:** (1) Godot export-template download (above); (2) the branch history holds ~500 MB
+  of old gore_body.blend commits (slow clone) — a history rewrite was offered, never approved; (3) Git LFS for the
+  ~105 MB body .blend would need a git-lfs install — ask; the user said never compress or split the body files.
 
 ### 2.1 What the user asked, in order (their words, lightly condensed)
 
@@ -94,6 +123,22 @@ integration stage and becomes the head of the full body.
 14. "THE CUTS LOOK LIKE STICKERS ..." (anti-sticker rule). 15. "STOP WE CAN CONTINUE ON LOCAL PC" + "put huge file into
     like a startup so can understand past context ... ur research everything ... Blender etc ur exact everything u was
     giving to the task".
+16. "dont start making the actual game yet" (09-26). 17. Sent real forensic photos for gore properties only, never faces:
+    "USE THEM FOR SPECIFIC INJURIES ... UPDATE UR STANDARD"; "MAKE SURE UR BODY BLENDER BUILD ... USING THOSE IMAGES AS
+    REFERENCES ALLWAYS"; "ENSURE THE REVIEWERS ARE ACTUALLY GONNA VIEWW THE IMAGES"; "PUT IT INTO GITHUB OR WHERE EVER SO
+    U CAN KEEP REFRENCING IT". 18. Face verdict (FACE_FEEDBACK.md; "U DID TEETH GREAT", nose base/curve good).
+19. Pathology sheet for exits. 20. Blood must pour out of the wound (CLAUDE §8). 21. Stripe artefact / blast / pooling /
+    crushed-face refs. 22. Gums sarcasm ("PERFECTLY FINE" = not realistic). 23. Material separation, walls "not that
+    thick". 24. Blood disconnected from the wound. 25. "look at the 10+ real gore images ... mushyness" → REFERENCE_NOTES
+    §5.18. 26. Neck: lump under the jaw, bumps under ears, "NEED ALOT EFFORT"; standalone hero head fine vs deformed on
+    the body. 27. Gap still there, skin too thick, bleeding wired to arteries (§5.19). 28. "u dont gotta fix the eyes
+    deepset just ensure 1:1 realism on ur efforts. allways". 29. Nose tip untouched, eyeball too big, eye must take real
+    damage (§5.20). 30. "ENSURE ALL THOSE STUFF I SAID AND U SAID WILL GO INTO FINAL PASS ... VERY VERY THOROUGH".
+31. A stream "from nothing" beside the slash + drops too thick (§5.21). 32. "y so much fat or yellow" (§5.22).
+33. Asked for a 4-shots-to-the-face clip (done: 4 small entries, too little blood/straight runs/no head reaction).
+34. "GET THERE MEMORY PUT INTO A READ TO START FILE ... BIG BLEND FILE ... GITHUB" → agent_memory/, SESSION_LOG.md.
+35. "dont COMPRESS IT ... UR GONNA BREAK IT" (body files). 36. "I DONT WANT LOCAL TO START AND BE NON 1:1 REALISM" →
+    LOCAL_HANDOFF.md. Full verbatim log: gore-game/docs/orchestration/SESSION_LOG.md.
 
 ---
 
@@ -191,6 +236,9 @@ Options after `--` are parsed; relative paths only (`gh_common.HERE`). This path
 empties in the `GH_Hits_*` collections; sliders on the `GH_Controls` empty (damage, bleed, drip_time, wetness,
 blood_age, bruising, swelling, skin_tone, pallor). Godot: install **Godot 4.5.1** (official site; verify checksum).
 
+**Clips/video:** render from a copy of the .blend at low priority (never the files agents are editing); Blender 5.x MP4 needs
+`scene.render.image_settings.media_type='VIDEO'` before `file_format='FFMPEG'` (Blender cannot write GIF).
+
 ---
 
 ## 6. What to do next (in order) — details in `gore-game/docs/LOCAL_HANDOFF.md`
@@ -216,9 +264,11 @@ voxel remesh fills sealed hollows), GH_Jaw, GH_Brain (hemispheres, fissure, gyri
 (origin at centre, local −Y gaze, r 0.012, cornea bulge 1.3 mm, limbus r 0.0059), GH_Teeth_Upper/Lower (14 each, one
 island per tooth), GH_Gums, GH_Tongue; eyebrows/eyelashes added as hair strands in build.py. Landmarks: top (0,0.005,0.125),
 glabella (0,−0.093,0.035), nose tip (0,−0.111,−0.014), mouth (0,−0.094,−0.055) width 48 mm, chin bottom
-(0,−0.080,−0.103), eyes (±0.032,−0.070,0.022), ear canals (±0.072,0,0). Every organic part is a numpy signed-distance
+(0,−0.080,−0.103), eyes (±0.0315,−0.0675,0.022) r 0.012 (IPD 63 mm), ear canals (±0.072,0,0). CONTRACT.md is the source of
+truth for landmarks; face fix round 3 already applied (FACE_FEEDBACK.md 'Status after fix round 3'); new parts since:
+GH_Cervical, spinal cord, airway, frontal/maxillary sinus, domed tongue, head vessel table (fix pass 2). Every organic part is a numpy signed-distance
 field → surface-nets mesh → Blender remesh → vertices snapped back to the exact surface; inner layers derive from skin
-offsets so nesting holds (26 overlap checks pass).
+offsets so nesting holds (30 overlap checks pass).
 
 **Gore system:** one shared geometry-nodes group `GH_Gore` (≈33 subgroups) is the LAST modifier on skin, muscle, skull,
 jaw, brain, eyes, teeth, gums; a Layer input (0 skin … 7 gums) selects behaviour. Hits are empties in `GH_Hits_Bullet /
@@ -230,7 +280,8 @@ paints dermis → fat → muscle → bone; blood drips are real tubes walked dow
 `gore_wound, gore_depth, gore_edge, gore_blood, gore_bruise, gore_burn, gore_fracture` drive `materials.py`.
 damage = 0 returns the intact mesh. Carnage (9 hits) evaluates in ~4.5 s.
 
-**Known issues backlog (fix these):**
+**Known issues backlog (HISTORICAL, 2026-09-26; several items since fixed. Current truth = `orchestration/LATEST_REPORTS.md`
++ the 2026-09-27 list below + `agent_memory/live/`. Re-verify each item with a render before working on it):**
 - **Slashes (cheek, neck) and some cuts read as flat stickers** from front/three-quarter views — the #1 complaint (§8).
 - Blunt splits have paper-sharp even edges; need crushed, abraded, bruised margins with tissue bridges; more swelling.
 - Teeth show brown speckles that read as rot; should be blood smears. Teeth look denture-uniform, short roots.
@@ -472,7 +523,9 @@ hemiplegia, toward the injured side), paraplegic drop (arms still catch), stumbl
 ## 11. Full-body plan decisions (FULL_BODY_PLAN.md summary)
 
 Body frame: metres, Z up, face −Y, left +X, origin on the floor between the feet; head reused unchanged, moved by
-(0, 0.020, 1.647), joined at the neck (~1.485 m) with a zipped seam ring. Body ~1.78 m / 75 kg. GDScript + Godot
+(0, 0.020, 1.647), joined at the neck (~1.485 m) with a zipped seam ring. Body ~1.78 m / 75 kg. NECK_LIFT (fix round 1):
+build.py warps the whole GoreBody scene once before the rig stage, z' = z + 0.015·smoothstep(1.455, 1.540, z); tables, SDF
+literals and HEAD_OFFSET stay in the authoring frame, so stature is now ~1.795 m; landmark/rig JSON export in the lifted frame. GDScript + Godot
 shaders/compute only (no C++). Wounds stored in rest space (CUSTOM0 rest positions) so they never slide on a moving
 body; holes ≤ 12 mm in the skin shader over real inner meshes, larger ones cut real holes + generated wound walls.
 Ragdoll = PhysicalBoneSimulator3D + Jolt + PD control with per-joint directional strength caps from a myotome table, so

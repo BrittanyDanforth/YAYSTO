@@ -3501,7 +3501,7 @@ def _build_fragments():
     # (fully red chips read as red gummies, clean ones as plaster)
     fn = t.noise(t.pos() * 700.0, detail=2.0, signed=False)
     rim = t.attr("c_rim")
-    g = t.store(g, "g_a", t.vec(rim * 0.95, 0.0, (t.smooth(0.58, 0.72, fn) * 0.55).max(rim * 0.35)), 'FLOAT_VECTOR')
+    g = t.store(g, "g_a", t.vec(rim * 0.95, 0.0, (t.smooth(0.4, 0.62, fn) * 0.75).max(rim * 0.5)), 'FLOAT_VECTOR')
     # (a little crack density only: high values stain the whole chip with seeping blood)
     g = t.store(g, "g_b", (0.0, 0.0, 0.3), 'FLOAT_VECTOR')
     g = t.out(t.node('GeometryNodeRemoveAttribute', {'Geometry': g, 'Pattern Mode': 'Exact', 'Name': "c_rim"}))
