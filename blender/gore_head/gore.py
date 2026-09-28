@@ -3112,7 +3112,10 @@ def _film(t, paths, surface):
     # re-meshed skin) that renders as a jagged, pixel-cut paper edge: relax
     # the contact line along itself (only boundary neighbours are averaged,
     # so the film does not shrink) and let it pin on the skin again
-    bnd = _edge_float(t, _is_boundary_edge(t)).gt(0.01)
+    # (never at the lip: where the stream leaves the rim it is only as wide as
+    # the spill and must touch the rim exactly -- relaxing it there opened a
+    # one-pixel sliver of skin between the rim and the stream)
+    bnd = t.bool('AND', _edge_float(t, _is_boundary_edge(t)).gt(0.01), t.attr("f_gore_runf").gt(0.12))
     wb = t.switch(bnd, 0.0, 1.0)
     for _ in range(2):
         sm = F(t, t.node('GeometryNodeBlurAttribute', {'Value': t.pos(), 'Iterations': 4, 'Weight': wb},
