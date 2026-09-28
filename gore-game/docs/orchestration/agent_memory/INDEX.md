@@ -62,3 +62,5 @@ Read the newest file for a task before continuing it; earlier files are the same
 | 2026-09-27T21:02 | head fix pass 2 | fix2:wounds | [wf_fb569041-d1e__fix2-wounds__3b7a1544.md](wf_fb569041-d1e__fix2-wounds__3b7a1544.md) (25 KB) |
 | 2026-09-28T01:12 | body build + review | fix:r2 | [wf_66af5993-de5__fix-r2__6b5fea3b.md](wf_66af5993-de5__fix-r2__6b5fea3b.md) (33 KB) |
 | 2026-09-28T01:12 | head fix pass 2 | fix2:wounds | [wf_fb569041-d1e__fix2-wounds__6acb9425.md](wf_fb569041-d1e__fix2-wounds__6acb9425.md) (40 KB) |
+| 2026-09-28T01:24 | head fix pass 2 | fix2:wounds | [wf_fb569041-d1e__fix2-wounds__bbfcbec9.md](wf_fb569041-d1e__fix2-wounds__bbfcbec9.md) (7 KB) |
+| 2026-09-28T01:24 | body build + review | fix:r2 | [wf_66af5993-de5__fix-r2__183e0eaa.md](wf_66af5993-de5__fix-r2__183e0eaa.md) (10 KB) |

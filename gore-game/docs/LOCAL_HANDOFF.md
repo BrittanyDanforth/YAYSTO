@@ -8,6 +8,13 @@ that prove it. The user will be angry at anything lazy, placeholder-looking, glo
 ---
 
 
+
+> **CLOUD STOPPED at 2026-09-28 01:24 UTC (user: "STOP THE RUNNING ONES ... GOING LOCAL").** Both cloud jobs were stopped cleanly by the
+> lead: head fix pass 2 (wounds fixer, mid-work) and body fix round 2 (mid-work, its last full build was killed before it
+> wrote anything into the repo, so `gore-game/assets/generated/` = the last complete committed set). All their edits up to
+> that moment are committed. Their final step logs are in `orchestration/agent_memory/` (newest `fix2-wounds` and
+> `fix-r2` files) and their own running notes in `agent_memory/live/` — the local session continues from THERE.
+
 ## 0. Task list (the cloud session's task tracker, with HONEST status)
 
 | # | Task | Real status |
