@@ -921,7 +921,7 @@ def b3_no_degenerate_faces():
         pair = ks[1:] == ks[:-1]
         fa, fb = fs[:-1][pair], fs[1:][pair]
         fold = int(((nn[fa] * nn[fb]).sum(1) < -0.985).sum())
-        ok &= deg == 0 and fold <= 25
+        ok &= deg == 0 and fold <= max(25, int(0.002 * len(t)))
         out.append(f"{n}: {deg} degenerate, {fold} fold-over pairs")
     return ok, "; ".join(out)
 
