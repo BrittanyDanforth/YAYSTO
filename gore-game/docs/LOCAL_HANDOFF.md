@@ -7,6 +7,33 @@ that prove it. The user will be angry at anything lazy, placeholder-looking, glo
 
 ---
 
+
+## 0. Task list (the cloud session's task tracker, with HONEST status)
+
+| # | Task | Real status |
+|---|---|---|
+| 1 | Head build + review rounds 1-3 + final pass | done → continued as #8 |
+| 2 | Research round 1 (wounds, bleeding, death/eyes, anatomy, Godot tech) | done, fact-checked (`docs/research/`, REALISM_BIBLE, FULL_BODY_PLAN) |
+| 3 | Research round 2 (neuro deficits, reactions, falls, agonal movement, severe trauma, sound) | done, fact-checked (`docs/research2/`, BEHAVIOUR_BIBLE; sound = reference only) |
+| 4 | Build full body B0-B8 (skin+shorts, skeleton, organs, cord, vessels, rig, export) | done → review/fix continues as #9 |
+| 5 | Build the Godot 4.5 game (gore, physiology, vessels, neuro, eyes, reactions, ragdoll, tools, UI) — NO AUDIO | **NOT STARTED** — only when the user says go (`orchestration/05_body_godot.js`) |
+| 6 | Final QA, Windows/Linux exports, README, screenshots, push | **NOT STARTED** (exports need the user's OK to download Godot export templates) |
+| 7 | Strip audio sections from FULL_BODY_PLAN.md and BEHAVIOUR_BIBLE.md | done |
+| 8 | Finish head review/fix rounds (anti-sticker first) | **IN PROGRESS** — head fix pass 2: blood done, wounds mostly done, then face, then strict critics |
+| 9 | Build the full-body character in Blender (no game yet) | **IN PROGRESS** — body fix round 2, then review round 3 |
+| 10 | Remove audio from plan and bibles | done |
+| 11 | Update CLAUDE.md status when builds finish, commit and push | in progress (updated at hand-off; update again when #8/#9 finish) |
+| 12 | Fix the head's face per FACE_FEEDBACK.md | pending — part 3 of head fix pass 2 (deep-set eyes dropped by the user) |
+
+## 0b. The whole conversation is saved
+
+`gore-game/docs/orchestration/SESSION_LOG.md` = every user message verbatim and every reply, 2026-09-25 → 09-28
+(regenerate on the cloud with `gore-game/tools/dump_session_log.py`). All research is in the bibles and
+`docs/research/`, `docs/research2/` (fact-checked source files); user feedback verdicts are in REFERENCE_NOTES
+§5.9-5.22 and CLAUDE.md §7; the agents' step logs are in `orchestration/agent_memory/`; the latest reviewer/fixer
+reports verbatim are in `orchestration/LATEST_REPORTS.md`; every workflow script (all prompts) is in `orchestration/`.
+When unsure what the user wanted, search SESSION_LOG.md for their exact words.
+
 ## 1. First-hour checklist (do these in order)
 
 1. **Pull the branch** `claude/blender-cloud-l8ujco` (all code, docs, renders, game assets, agent memory are in it).

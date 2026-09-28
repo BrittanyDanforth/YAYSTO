@@ -150,6 +150,7 @@ gore-game/docs/
     journals/*.jsonl    raw workflow journals
 gore-game/tools/jpeg_encode.py    small helper left from the dropped web exporter (plan §6.1 keeps it)
 gore-game/docs/LOCAL_HANDOFF.md   ← handoff for the local PC: setup, status, every open issue, how to continue, gates
+gore-game/docs/orchestration/SESSION_LOG.md      the ENTIRE cloud conversation (every user message verbatim + replies)
 gore-game/docs/orchestration/LATEST_REPORTS.md   verbatim latest critic + fixer reports (38 HIGH issues, concrete fixes)
 gore-game/docs/orchestration/agent_memory/       every agent's step log (INDEX.md) + live/ notes by running fixers
 gore-game/docs/orchestration/06_head_fix_pass2.js head fix pass 2 (17 items + 16b, fixers blood→wounds→face, critics)
