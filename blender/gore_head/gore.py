@@ -3068,11 +3068,6 @@ def _film(t, paths, surface):
     """
     sel = t.out(t.node('GeometryNodeProximity', {'Target': paths}, target_element='EDGES'), 'Distance').lt(FILM_REACH)
     sel = t.bool('AND', sel, t.attr("gore_clot").lt(0.5))
-    # (a run that crosses a gaping wound falls INTO it: the film follows the
-    # lip and the top of the wall, but does not wrap the deep walls -- a
-    # glossy sheet over a throat cut hid its whole cross-section)
-    # (g_wk = wall ring: the top 40 % of a wall, ~dermis and fat, keeps it)
-    sel = t.bool('AND', sel, t.attr("g_wk").lt(WALL_STEPS * 0.4))
     near = t.out(t.node('GeometryNodeSeparateGeometry', {'Geometry': surface, 'Selection': sel}, domain='FACE'),
                  'Selection')
     area = t.out(t.node('GeometryNodeInputMeshFaceArea'))
@@ -3107,7 +3102,18 @@ def _film(t, paths, surface):
     g = t.store(g, "f_h", t.attr("f_h").max(t.attr("f_hb")) * t.attr("f_h").gt(1e-6))
     wet = F(t, t.node('GeometryNodeFieldOnDomain', {'Value': t.switch(t.attr("f_h").gt(1e-6), 0.0, 1.0)},
                       domain='FACE', data_type='FLOAT').outputs[0])
-    g = t.out(t.node('GeometryNodeDeleteGeometry', {'Geometry': g, 'Selection': wet.lt(0.34)}, domain='FACE'))
+    # a run that crosses ANOTHER gaping wound far below its own source falls
+    # INTO it: its film follows the lip and the top of the wall but does not
+    # wrap the deep walls (a glossy sheet over a throat cut hid its whole
+    # cross-section). A run's own start (gore_runf < 0.15) keeps its film on
+    # the walls: before the pool has filled, that film is what joins the
+    # blood inside the wound to the rim (zero gap).
+    deep = t.bool('AND', t.attr("g_wk").gt(WALL_STEPS * 0.4), t.attr("f_gore_runf").gt(0.15))
+    deep_f = F(t, t.node('GeometryNodeFieldOnDomain', {'Value': t.switch(deep, 0.0, 1.0)},
+                         domain='FACE', data_type='FLOAT').outputs[0])
+    g = t.out(t.node('GeometryNodeDeleteGeometry', {'Geometry': g, 'Selection': t.bool('OR', wet.lt(0.34),
+                                                                                      deep_f.gt(0.5))},
+                     domain='FACE'))
     # the deleted faces leave a stair-step outline (the triangles of the
     # re-meshed skin) that renders as a jagged, pixel-cut paper edge: relax
     # the contact line along itself (only boundary neighbours are averaged,
