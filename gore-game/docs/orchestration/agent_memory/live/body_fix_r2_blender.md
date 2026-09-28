@@ -1,0 +1,4 @@
+# live memory: body Blender fix round 2 (continuation agent, started 2026-09-28 01:13 UTC)
+- USER (relayed, verbatim): "dont COMPRESS IT IDK THE BODY BUT IDK UR GONNA BREAK IT DOING THAT" -> do NOT downscale/compress body assets (no 2K body, no texture compression, no git squashing).
+- 01:13 found: previous agent's final full build still RUNNING: pid 1266 `python3 scratchpad/body/fix5/gbmake.py --stage all` (pkill-safe launcher name), started 00:41, log scratchpad/body/fix5/final2/build.log. It contains all fix-r2 edits (skull.py new, neck, brain, eyes, vessels, organs...). Previous run (fix5/final) was killed in bake by an outside pkill.
+- Plan: let it finish (do not edit modules it still imports lazily: verify.py, lookdev.py, posetest.py, export.py, bake.py), then read verify fails + renders, fix remaining, rebuild.
